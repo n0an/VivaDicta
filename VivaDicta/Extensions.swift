@@ -20,3 +20,146 @@ extension Transition where Self == BlurTransition {
         BlurTransition(radius: radius)
     }
 }
+
+
+//extension View {
+//    func badge<B: View>(@ViewBuilder _ badge: () -> B) -> some View {
+//        overlay(alignment: .topTrailing) {
+//            badge()
+//                .alignmentGuide(.top) { $0.height/2 }
+//                .alignmentGuide(.trailing) { $0.width/2 }
+//        }
+//    }
+//}
+
+
+//struct Badge: ViewModifier {
+//    @Environment(\.badgeColor) private var badgeColor
+//    func body(content: Content) -> some View {
+//        content
+//            .font(.caption)
+//            .foregroundColor(.white)
+//            .padding(.horizontal, 5)
+//            .padding(.vertical, 2)
+//            .background {
+//                Capsule(style: .continuous)
+//                    .fill(badgeColor)
+//            }
+//    }
+//}
+
+
+
+//enum BadgeColorKey: EnvironmentKey {
+//    static var defaultValue: Color = .blue
+//}
+//
+//extension EnvironmentValues {
+//    var badgeColor: Color {
+//        get { self[BadgeColorKey.self] }
+//        set { self[BadgeColorKey.self] = newValue }
+//    }
+//}
+//
+//extension View {
+//    func badgeColor(_ color: Color) -> some View {
+//        environment(\.badgeColor, color)
+//    }
+//}
+
+
+
+
+
+protocol BadgeStyle {
+    associatedtype Body: View
+    @ViewBuilder func makeBody(_ label: AnyView) -> Body
+}
+
+struct DefaultBadgeStyle: BadgeStyle {
+    var color: Color = .red
+    func makeBody(_ label: AnyView) -> some View {
+        label
+            .font(.caption)
+            .foregroundColor(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(color)
+            }
+    }
+}
+
+enum BadgeStyleKey: EnvironmentKey {
+    static var defaultValue: any BadgeStyle = DefaultBadgeStyle()
+}
+
+extension EnvironmentValues {
+    var badgeStyle: any BadgeStyle {
+        get { self[BadgeStyleKey.self] }
+        set { self[BadgeStyleKey.self] = newValue }
+    }
+}
+
+struct OverlayBadge<BadgeLabel: View>: ViewModifier {
+    var alignment: Alignment = .topTrailing
+    var label: BadgeLabel
+    @Environment(\.badgeStyle) private var badgeStyle
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: alignment) {
+                AnyView(badgeStyle.makeBody(AnyView(label)))
+                    .fixedSize()
+                    .alignmentGuide(alignment.horizontal) { $0[HorizontalAlignment.center] }
+                    .alignmentGuide(alignment.vertical) { $0[VerticalAlignment.center] }
+            }
+    }
+}
+
+
+extension View {
+    func badge<V: View>(alignment: Alignment = .topTrailing,
+                        @ViewBuilder _ content: () -> V) -> some View {
+        modifier(OverlayBadge(alignment: alignment, label: content()))
+    }
+}
+
+
+struct FancyBadgeStyle: BadgeStyle {
+    var background: some View {
+        ZStack {
+            ContainerRelativeShape()
+                .fill(Color.red)
+                .overlay {
+                    ContainerRelativeShape()
+                        .fill(LinearGradient(colors: [.white, .clear],
+                                            startPoint: .top, endPoint: .center))
+                }
+            ContainerRelativeShape()
+                .strokeBorder(Color.white, lineWidth: 2)
+                .shadow(radius: 2)
+        }
+    }
+    func makeBody(_ label: AnyView) -> some View {
+        label
+            .foregroundColor(.white)
+            .font(.caption)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(background)
+            .containerShape(Capsule(style: .continuous))
+    }
+}
+
+extension View {
+    func badgeStyle(_ style: any BadgeStyle) -> some View {
+        environment(\.badgeStyle, style)
+    }
+}
+
+extension BadgeStyle where Self == FancyBadgeStyle {
+    static var fancy: FancyBadgeStyle {
+        FancyBadgeStyle()
+    }
+}

@@ -24,6 +24,8 @@ struct TabBarView: View {
             
             Tab("Record", systemImage: "waveform.circle.fill", value: TabTag.record) {
                 Text("Record")
+                    .badge { Text(10, format: .number) }
+                    
             }
             
             Tab("Notes", systemImage: "text.document", value: TabTag.transcriptions) {
@@ -38,6 +40,8 @@ struct TabBarView: View {
                 Text("Models")
             }
         }
+        .badgeStyle(.fancy)
+        
     }
 }
 
