@@ -1,0 +1,84 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Xcode
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.xcuserstate
+
+# SwiftPM
+.swiftpm/
+Package.resolved
+
+# Carthage
+Carthage/Build/
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+fastlane/.env
+
+# Archives
+*.xcarchive
+
+# Code coverage
+*.xccoverage
+
+# Asset catalog compiler cache
+*.assetcatalog
+
+# SwiftUI Previews
+*.preview-thumbnails
+
+# Simulator logs
+*.simruntime
+
+# SwiftLint
+.swiftlint.yml
+
+# IDE workspace
+*.xcworkspace
+
+# AppCenter
+appcenter-pre-build.sh
+appcenter-post-build.sh
+
+# Firebase Crashlytics
+*.crash
+
+# SPM build artifacts
+.build/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+# Logs
+*.log
+
+# Misc
+*.orig
+*.backup
+*.xcuserdatad
