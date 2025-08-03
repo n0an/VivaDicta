@@ -23,8 +23,7 @@ struct TabBarView: View {
         TabView(selection: $selectedTab) {
             
             Tab("Record", systemImage: "waveform.circle.fill", value: TabTag.record) {
-                Text("Record")
-                    .badge { Text(10, format: .number) }
+                RecordView()
                     
             }
             
