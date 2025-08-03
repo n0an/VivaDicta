@@ -11,7 +11,7 @@ struct RecordView: View {
     @State var viewModel: RecordViewModel
     
     init() {
-        self._viewModel = .init(wrappedValue: .init())
+        self._viewModel = State(wrappedValue: RecordViewModel())
     }
     
     var body: some View {
