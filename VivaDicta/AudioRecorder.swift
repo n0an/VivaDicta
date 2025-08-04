@@ -7,7 +7,7 @@
 
 import SwiftUI
 import AVFoundation
-import AVFAudio
+//import AVFAudio
 
 struct Record {
     var name: String
@@ -33,44 +33,43 @@ class AudioRecorder {
     private var audioPermissionStatus: AVAudioApplication.recordPermission = .undetermined
    
     
-    func requestAudioPermission() {
-        AVAudioApplication.requestRecordPermission() { granted in
-            self.audioPermissionStatus = granted ? .granted : .denied
-        }
-    }
     
     func recordAudio() {
-        
-        
-        if self.audioPermissionStatus == .undetermined {
-            requestAudioPermission()
-        } else {
-            // Open iOS Settings here
-        }
-        
-        
-        let settings = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1
-        ]
-        
-        do {
-            try recordingSession.setCategory(.playAndRecord)
-            try recordingSession.setActive(true)
+        Task {
+            if self.audioPermissionStatus == .undetermined {
+                self.audioPermissionStatus = await hasPermissionToRecord() ? .granted : .denied
+                guard self.audioPermissionStatus == .granted else {
+                    print("record is prohibitted")
+                    return
+                }
+            } else {
+                // Open iOS Settings here
+            }
             
-            audioRecorder = try AVAudioRecorder(url: temporaryURL, settings: settings)
-            audioRecorder?.record()
-            recordingState = .recording
-        } catch {
-            print(error.localizedDescription)
+            
+            let settings = [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: 44100,
+                AVNumberOfChannelsKey: 1
+            ]
+            
+            do {
+                try recordingSession.setCategory(.playAndRecord)
+                try recordingSession.setActive(true)
+                
+                audioRecorder = try AVAudioRecorder(url: temporaryURL, settings: settings)
+                audioRecorder?.record()
+                recordingState = .recording
+            } catch {
+                print(error.localizedDescription)
+            }
         }
+        
         
         
     }
     
     func stopRecording() {
-//        Task {
             audioRecorder?.stop()
             
             let id = UUID()
@@ -87,10 +86,16 @@ class AudioRecorder {
                 recordingState = .idle
             }
             print(fileURL)
-//        }
+
         
-        
-        
+    }
+    
+    private func hasPermissionToRecord() async -> Bool {
+        await withCheckedContinuation { continuation in
+            AVAudioApplication.requestRecordPermission { authorized in
+                continuation.resume(returning: authorized)
+            }
+        }
     }
 }
 
