@@ -33,42 +33,44 @@ class AudioRecorder {
     private var audioPermissionStatus: AVAudioApplication.recordPermission = .undetermined
    
     
-    func requestAudioPermission() async {
-        if await AVAudioApplication.requestRecordPermission() {
-            self.audioPermissionStatus = .granted
-        } else {
-            self.audioPermissionStatus = .denied
+    func requestAudioPermission() {
+        AVAudioApplication.requestRecordPermission() { granted in
+            self.audioPermissionStatus = granted ? .granted : .denied
         }
     }
     
     func recordAudio() {
-        Task {
-            if audioPermissionStatus != .granted {
-                await requestAudioPermission()
-            }
-            
-            let settings = [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: 44100,
-                AVNumberOfChannelsKey: 1
-            ]
-
-            do {
-                try recordingSession.setCategory(.playAndRecord)
-                try recordingSession.setActive(true)
-
-                audioRecorder = try AVAudioRecorder(url: temporaryURL, settings: settings)
-                audioRecorder?.record()
-                recordingState = .recording
-            } catch {
-                print(error.localizedDescription)
-            }
+        
+        
+        if self.audioPermissionStatus == .undetermined {
+            requestAudioPermission()
+        } else {
+            // Open iOS Settings here
         }
+        
+        
+        let settings = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 1
+        ]
+        
+        do {
+            try recordingSession.setCategory(.playAndRecord)
+            try recordingSession.setActive(true)
+            
+            audioRecorder = try AVAudioRecorder(url: temporaryURL, settings: settings)
+            audioRecorder?.record()
+            recordingState = .recording
+        } catch {
+            print(error.localizedDescription)
+        }
+        
         
     }
     
     func stopRecording() {
-        Task {
+//        Task {
             audioRecorder?.stop()
             
             let id = UUID()
@@ -85,7 +87,7 @@ class AudioRecorder {
                 recordingState = .idle
             }
             print(fileURL)
-        }
+//        }
         
         
         
