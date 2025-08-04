@@ -13,8 +13,15 @@ class RecordViewModel {
     var isRecording = false {
         didSet {
             print("record tapped")
+            if isRecording {
+                audioRecorder.recordAudio()
+            } else {
+                audioRecorder.stopRecording()
+            }
         }
     }
+    
+    var audioRecorder = AudioRecorder()
     
     
     
