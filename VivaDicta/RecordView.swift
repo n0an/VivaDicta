@@ -25,10 +25,10 @@ struct RecordView: View {
             
             switch vm.recordingState {
             case .recording:
-                cancelRecordingButton
+                stopRecordingButton
                 
             case .transcribing:
-                cancelButton
+                cancelTranscribingButton
                 
             default: EmptyView()
             }
@@ -69,7 +69,7 @@ struct RecordView: View {
         .buttonStyle(.borderless)
     }
     
-    var cancelButton: some View {
+    var stopRecordingButton: some View {
         Button(role: .destructive) {
             vm.stopCaptureAudio()
         } label: {
@@ -82,9 +82,9 @@ struct RecordView: View {
 
     }
     
-    var cancelRecordingButton: some View {
+    var cancelTranscribingButton: some View {
         Button(role: .destructive) {
-            vm.stopCaptureAudio()
+            vm.cancelTranscribe()
         } label: {
             Image(systemName: "xmark.circle.fill")
                 .symbolRenderingMode(.multicolor)

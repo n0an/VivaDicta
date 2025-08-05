@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import AVFoundation
 
 enum RecordingState {
     case idle
@@ -21,9 +22,22 @@ struct RecordError: Error {
     
 }
 
-
 @Observable
-class RecordViewModel {
+class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
+    var audioPlayer: AVAudioPlayer!
+    var audioRecorder: AVAudioRecorder!
+    #if !os(macOS)
+    var recordingSession = AVAudioSession.sharedInstance()
+    #endif
+    
+    var animationTimer: Timer?
+    var recordingTimer: Timer?
+    var prevAudioPower: Double?
+    
+    var captureURL: URL {
+        URL.documentsDirectory.appendingPathComponent("recording.m4a")
+    }
+    
     var recordingState: RecordingState = .idle {
         didSet {
             print(recordingState)
@@ -38,14 +52,42 @@ class RecordViewModel {
         }
     }
     
+    
+    func startCaptureAudio() {
+        recordingState = .recording
+    }
+    
     func stopCaptureAudio() {
+        resetValues()
         recordingState = .transcribing
     }
     
-    func startCaptureAudio() {
-
-        recordingState = .recording
-
+    func cancelTranscribe() {
+        recordingState = .idle
+    }
+    
+    func resetValues() {
+        audioPower = 0
+        prevAudioPower = nil
+        
+        audioRecorder?.stop()
+        audioRecorder = nil
+        
+        audioPlayer?.stop()
+        audioPlayer = nil
+        
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+        
+        animationTimer?.invalidate()
+        animationTimer = nil
+    }
+    
+    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        if !flag {
+            resetValues()
+            recordingState = .idle
+        }
     }
     
 }
