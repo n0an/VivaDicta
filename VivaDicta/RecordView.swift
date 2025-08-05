@@ -12,25 +12,27 @@ struct RecordView: View {
     @State var isSymbolAnimating = false
     
     var body: some View {
-        VStack {
-            overlayView
-        }
-    }
-    
-    @ViewBuilder
-    var overlayView: some View {
-        switch vm.recordingState {
-        case .idle, .error:
-            startCaptureButton
-        case .recording:
-            stopCaptureButton
-        case .transcribing:
-            Image(systemName: "brain")
-                .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
-                .font(.system(size: 128))
-                .onAppear { isSymbolAnimating = true }
-                .onDisappear { isSymbolAnimating = false }
-        default: EmptyView()
+        VStack(spacing: 16) {
+            switch vm.recordingState {
+            case .idle, .error:
+                startCaptureButton
+            case .recording:
+                stopCaptureButton
+            case .transcribing:
+                Image(systemName: "brain")
+                    .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
+                    .font(.system(size: 128))
+                    .onAppear { isSymbolAnimating = true }
+                    .onDisappear { isSymbolAnimating = false }
+            default: EmptyView()
+            }
+            
+            if case let .error(error) = vm.recordingState {
+                Text(error.localizedDescription)
+                    .foregroundStyle(.red)
+                    .font(.caption2)
+                    .lineLimit(2)
+            }
         }
     }
     
@@ -42,7 +44,8 @@ struct RecordView: View {
             Image(systemName: "mic.circle")
                 .symbolRenderingMode(.multicolor)
                 .font(.system(size: 128))
-        }.buttonStyle(.borderless)
+        }
+        .buttonStyle(.borderless)
     }
     
     var stopCaptureButton: some View {
@@ -54,7 +57,8 @@ struct RecordView: View {
                 .symbolRenderingMode(.multicolor)
                 .tint(.red)
                 .font(.system(size: 128))
-        }.buttonStyle(.borderless)
+        }
+        .buttonStyle(.borderless)
     }
 }
 
@@ -76,6 +80,6 @@ struct RecordView: View {
 
 #Preview("Error") {
     let vm = RecordViewModel()
-    vm.recordingState = .error("An error has occured")
+    vm.recordingState = .error(RecordError())
     return RecordView(vm: vm)
 }

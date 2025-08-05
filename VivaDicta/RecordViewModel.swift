@@ -6,14 +6,18 @@
 //
 
 import SwiftUI
-
+import Foundation
 
 enum RecordingState {
     case idle
     case recording
     case transcribing
     case completed
-    case error(String)
+    case error(RecordError)
+    
+}
+
+struct RecordError: Error {
     
 }
 
