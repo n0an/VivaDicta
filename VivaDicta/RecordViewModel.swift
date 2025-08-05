@@ -30,6 +30,14 @@ class RecordViewModel {
         }
     }
     
+    var audioPower = 0.0
+    var siriWaveFormOpacity: CGFloat {
+        switch recordingState {
+        case .recording: return 1
+        default: return 0
+        }
+    }
+    
     func stopCaptureAudio() {
         recordingState = .transcribing
     }

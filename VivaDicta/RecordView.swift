@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SiriWaveView
 
 struct RecordView: View {
     @State var vm = RecordViewModel()
@@ -13,17 +14,22 @@ struct RecordView: View {
     
     var body: some View {
         VStack(spacing: 16) {
+            
+            
+            Spacer()
+            SiriWaveView(power: $vm.audioPower)
+                .opacity(vm.siriWaveFormOpacity)
+                .frame(height: 256)
+                .overlay { overlayView }
+            Spacer()
+            
             switch vm.recordingState {
-            case .idle, .error:
-                startCaptureButton
             case .recording:
-                stopCaptureButton
+                cancelRecordingButton
+                
             case .transcribing:
-                Image(systemName: "brain")
-                    .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
-                    .font(.system(size: 128))
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
+                cancelButton
+                
             default: EmptyView()
             }
             
@@ -33,6 +39,21 @@ struct RecordView: View {
                     .font(.caption2)
                     .lineLimit(2)
             }
+        }
+    }
+    
+    @ViewBuilder
+    var overlayView: some View {
+        switch vm.recordingState {
+        case .idle, .error:
+            startCaptureButton
+        case .transcribing:
+            Image(systemName: "brain")
+                .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
+                .font(.system(size: 128))
+                .onAppear { isSymbolAnimating = true }
+                .onDisappear { isSymbolAnimating = false }
+        default: EmptyView()
         }
     }
     
@@ -48,18 +69,31 @@ struct RecordView: View {
         .buttonStyle(.borderless)
     }
     
-    var stopCaptureButton: some View {
-        Button {
+    var cancelButton: some View {
+        Button(role: .destructive) {
             vm.stopCaptureAudio()
-            print("stop")
         } label: {
-            Image(systemName: "stop.circle")
-                .symbolRenderingMode(.multicolor)
-                .tint(.red)
-                .font(.system(size: 128))
+            Image(systemName: "stop.circle.fill")
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(.red)
+                .font(.system(size: 44))
         }
         .buttonStyle(.borderless)
+
     }
+    
+    var cancelRecordingButton: some View {
+        Button(role: .destructive) {
+            vm.stopCaptureAudio()
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 44))
+        }
+        .buttonStyle(.borderless)
+
+    }
+    
 }
 
 #Preview("Idle") {
@@ -69,6 +103,7 @@ struct RecordView: View {
 #Preview("Recording") {
     let vm = RecordViewModel()
     vm.recordingState = .recording
+    vm.audioPower = 0.3
     return RecordView(vm: vm)
 }
 
