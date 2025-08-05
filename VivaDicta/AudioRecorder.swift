@@ -31,7 +31,7 @@ class AudioRecorder {
     private let temporaryURL = URL.documentsDirectory.appending(path: "recording.m4a")
     
     private var audioPermissionStatus: AVAudioApplication.recordPermission = .undetermined
-   
+    
     
     
     func recordAudio() {
@@ -70,23 +70,23 @@ class AudioRecorder {
     }
     
     func stopRecording() {
-            audioRecorder?.stop()
-            
-            let id = UUID()
-            let filename = "\(id.uuidString).m4a"
-            
-            let fileURL = URL.documentsDirectory.appending(path: filename)
-            
-            let record = Record(name: "test", fileURL: fileURL.absoluteString)
-            do {
-                try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
-                recordingState = .completed(record)
-            } catch {
-                print(error.localizedDescription)
-                recordingState = .idle
-            }
-            print(fileURL)
-
+        audioRecorder?.stop()
+        
+        let id = UUID()
+        let filename = "\(id.uuidString).m4a"
+        
+        let fileURL = URL.documentsDirectory.appending(path: filename)
+        
+        let record = Record(name: "test", fileURL: fileURL.absoluteString)
+        do {
+            try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
+            recordingState = .completed(record)
+        } catch {
+            print(error.localizedDescription)
+            recordingState = .idle
+        }
+        print(fileURL)
+        
         
     }
     
