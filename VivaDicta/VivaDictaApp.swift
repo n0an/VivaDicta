@@ -2,7 +2,7 @@
 //  VivaDictaApp.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 02.08.2025.
+//  Created by Anton Novoselov on 2025.08.02
 //
 
 import SwiftUI

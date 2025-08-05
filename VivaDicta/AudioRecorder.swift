@@ -73,7 +73,7 @@ class AudioRecorder {
         let record = Record(name: "test", fileURL: fileURL.absoluteString)
         do {
             try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
-            recordingState = .completed
+//            recordingState = .completed
         } catch {
             print(error.localizedDescription)
             recordingState = .idle

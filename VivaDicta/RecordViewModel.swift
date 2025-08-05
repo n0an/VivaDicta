@@ -2,7 +2,7 @@
 //  RecordViewModel.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 03.08.2025.
+//  Created by Anton Novoselov on 2025.08.03
 //
 
 import SwiftUI
@@ -13,20 +13,19 @@ enum RecordingState {
     case idle
     case recording
     case transcribing
-    case completed
     case error(RecordError)
-    
 }
 
 enum RecordError: Error {
     case avInitError
     case userDenied
     case recordError
+    case transcribe
     case other
 }
 
 @Observable
-class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
+class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
     #if !os(macOS)
@@ -38,6 +37,9 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
     // TODO: Add auto stop feature later
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
+    
+    
+    var transcribingSpeechTask: Task<Void, Never>?
     
     var captureURL: URL {
         URL.documentsDirectory.appendingPathComponent("recording.m4a")
@@ -83,7 +85,6 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
         recordingState = .recording
         
         do {
-            
             let settings = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
                 AVSampleRateKey: 12000,
@@ -132,18 +133,55 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
         do {
             let data = try Data(contentsOf: captureURL)
             
-            print("HERE")
+//            try playAudio(data: data)
             
-//            processingSpeechTask = processSpeechTask(audioData: data)
-            
-            recordingState = .transcribing
+            transcribingSpeechTask = transcribeSpeechTask(audioData: data)
         } catch {
             recordingState = .error(.recordError)
         }
+    }
+    
+    func transcribeSpeechTask(audioData: Data) -> Task<Void, Never> {
+        Task { @MainActor [unowned self] in
+            do {
+                self.recordingState = .transcribing
+                
+                let openAITranscriptionService = OpenAITranscriptionService()
+                
+                let transcribedText = try await openAITranscriptionService.generateAudioTransciptions(audioData: audioData)
+                
+                print(transcribedText)
+                self.recordingState = .idle
+//                try Task.checkCancellation()
+//                let responseText = try await client.promptChatGPT(prompt: prompt)
+                
+//                try Task.checkCancellation()
+//                let data = try await client.generateSpeechFrom(input: responseText, voice:
+//                        .init(rawValue: selectedVoice.rawValue) ?? .alloy)
+                
+//                try Task.checkCancellation()
+//                try self.playAudio(data: data)
+            } catch {
+                if Task.isCancelled { return }
+                recordingState = .error(.transcribe)
+                resetValues()
+            }
+        }
+    }
+    
+    func playAudio(data: Data) throws {
+        self.recordingState = .transcribing
+        audioPlayer = try AVAudioPlayer(data: data)
+        audioPlayer.isMeteringEnabled = true
+        audioPlayer.delegate = self
+        audioPlayer.play()
         
-        
-        
-        
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
+            guard self.audioPlayer != nil else { return }
+            self.audioPlayer.updateMeters()
+            let power = min(1, max(0, 1 - abs(Double(self.audioPlayer.averagePower(forChannel: 0)) / 160) ))
+            self.audioPower = power
+        })
     }
     
     func cancelTranscribe() {
@@ -175,4 +213,8 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
         }
     }
     
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        resetValues()
+        recordingState = .idle
+    }
 }
