@@ -115,6 +115,6 @@ struct RecordView: View {
 
 #Preview("Error") {
     let vm = RecordViewModel()
-    vm.recordingState = .error(RecordError())
+    vm.recordingState = .error(RecordError.avInitError)
     return RecordView(vm: vm)
 }
