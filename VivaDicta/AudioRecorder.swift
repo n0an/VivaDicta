@@ -8,7 +8,7 @@
 import SwiftUI
 import AVFoundation
 
-struct Record {
+struct Record: Equatable {
     var name: String
     var fileURL: String
     
@@ -18,7 +18,22 @@ enum RecordingState: Equatable {
     case idle
     case recording
     case transcribing
-    case completed
+    case completed(Record)
+    
+    static func == (lhs: RecordingState, rhs: RecordingState) -> Bool {
+        switch (lhs, rhs) {
+        case (.idle, .idle):
+            return true
+        case (.recording, .recording):
+            return true
+        case (.transcribing, .transcribing):
+            return true
+        case let (.completed(record1), .completed(record2)):
+            return record1 == record2
+        default:
+            return false
+        }
+    }
 }
 
 
@@ -80,7 +95,7 @@ class AudioRecorder {
         let record = Record(name: "test", fileURL: fileURL.absoluteString)
         do {
             try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
-            recordingState = .completed
+            recordingState = .completed(record)
         } catch {
             print(error.localizedDescription)
             recordingState = .idle
