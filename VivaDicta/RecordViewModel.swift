@@ -34,8 +34,10 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
     #endif
     
     var animationTimer: Timer?
-    var recordingTimer: Timer?
-    var prevAudioPower: Double?
+    
+    // TODO: Add auto stop feature later
+//    var recordingTimer: Timer?
+//    var prevAudioPower: Double?
     
     var captureURL: URL {
         URL.documentsDirectory.appendingPathComponent("recording.m4a")
@@ -102,20 +104,21 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
                 self.audioPower = power
             })
             
-            recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: true, block: { [unowned self]_ in
-                guard self.audioRecorder != nil else { return }
-                self.audioRecorder.updateMeters()
-                let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                if self.prevAudioPower == nil {
-                    self.prevAudioPower = power
-                    return
-                }
-                if let prevAudioPower = self.prevAudioPower, prevAudioPower < 0.25 && power < 0.175 {
-                    self.finishCaptureAudio()
-                    return
-                }
-                self.prevAudioPower = power
-            })
+            // TODO: Add auto stop feature later
+//            recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: true, block: { [unowned self]_ in
+//                guard self.audioRecorder != nil else { return }
+//                self.audioRecorder.updateMeters()
+//                let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
+//                if self.prevAudioPower == nil {
+//                    self.prevAudioPower = power
+//                    return
+//                }
+//                if let prevAudioPower = self.prevAudioPower, prevAudioPower < 0.25 && power < 0.175 {
+//                    self.stopCaptureAudio()
+//                    return
+//                }
+//                self.prevAudioPower = power
+//            })
             
         } catch {
             resetValues()
@@ -123,7 +126,8 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
         }
     }
     
-    func finishCaptureAudio() {
+    func stopCaptureAudio() {
+        
         resetValues()
         do {
             let data = try Data(contentsOf: captureURL)
@@ -131,14 +135,15 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
             print("HERE")
             
 //            processingSpeechTask = processSpeechTask(audioData: data)
+            
+            recordingState = .transcribing
         } catch {
             recordingState = .error(.recordError)
         }
-    }
-    
-    func stopCaptureAudio() {
-        resetValues()
-        recordingState = .transcribing
+        
+        
+        
+        
     }
     
     func cancelTranscribe() {
@@ -147,7 +152,6 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
     
     func resetValues() {
         audioPower = 0
-        prevAudioPower = nil
         
         audioRecorder?.stop()
         audioRecorder = nil
@@ -155,8 +159,10 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate {
         audioPlayer?.stop()
         audioPlayer = nil
         
-        recordingTimer?.invalidate()
-        recordingTimer = nil
+        // TODO: Add auto stop feature later
+//        prevAudioPower = nil
+//        recordingTimer?.invalidate()
+//        recordingTimer = nil
         
         animationTimer?.invalidate()
         animationTimer = nil
