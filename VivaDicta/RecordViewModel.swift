@@ -7,32 +7,33 @@
 
 import SwiftUI
 
+
+enum RecordingState {
+    case idle
+    case recording
+    case transcribing
+    case completed
+    case error(String)
+    
+}
+
+
 @Observable
 class RecordViewModel {
-    var audioRecorder = AudioRecorder()
-    
-    var recordButtonParams: (String, String) {
-        switch audioRecorder.recordingState {
-        case .idle:
-            ("Record", "record.circle")
-        case .recording:
-            ("Stop", "stop.circle")
-        case .transcribing:
-            ("Record", "record.circle")
-        case .completed:
-            ("Record", "record.circle")
-//        case .error(let error):
-//            ("Record", "record.circle")
+    var recordingState: RecordingState = .idle {
+        didSet {
+            print(recordingState)
         }
     }
     
-    func recordButtonTapped() {
-        print("record button tapped")
-        if audioRecorder.recordingState != .recording {
-            audioRecorder.recordAudio()
-        } else {
-            audioRecorder.stopRecording()
-        }
+    func stopCaptureAudio() {
+        recordingState = .transcribing
+    }
+    
+    func startCaptureAudio() {
+
+        recordingState = .recording
+
     }
     
 }

@@ -14,28 +14,6 @@ struct Record: Equatable {
     
 }
 
-enum RecordingState: Equatable {
-    case idle
-    case recording
-    case transcribing
-    case completed(Record)
-    
-    static func == (lhs: RecordingState, rhs: RecordingState) -> Bool {
-        switch (lhs, rhs) {
-        case (.idle, .idle):
-            return true
-        case (.recording, .recording):
-            return true
-        case (.transcribing, .transcribing):
-            return true
-        case let (.completed(record1), .completed(record2)):
-            return record1 == record2
-        default:
-            return false
-        }
-    }
-}
-
 
 @Observable
 class AudioRecorder {
@@ -95,7 +73,7 @@ class AudioRecorder {
         let record = Record(name: "test", fileURL: fileURL.absoluteString)
         do {
             try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
-            recordingState = .completed(record)
+            recordingState = .completed
         } catch {
             print(error.localizedDescription)
             recordingState = .idle
