@@ -7,7 +7,6 @@
 
 import SwiftUI
 import AVFoundation
-//import AVFAudio
 
 struct Record {
     var name: String
@@ -15,15 +14,16 @@ struct Record {
     
 }
 
+enum RecordingState: Equatable {
+    case idle
+    case recording
+    case transcribing
+    case completed
+}
+
 
 @Observable
 class AudioRecorder {
-    enum RecordingState {
-        case idle
-        case recording
-        case completed(Record)
-    }
-    
     var recordingState: RecordingState = .idle
     
     private var recordingSession = AVAudioSession.sharedInstance()
@@ -80,7 +80,7 @@ class AudioRecorder {
         let record = Record(name: "test", fileURL: fileURL.absoluteString)
         do {
             try FileManager.default.moveItem(at: temporaryURL, to: fileURL)
-            recordingState = .completed(record)
+            recordingState = .completed
         } catch {
             print(error.localizedDescription)
             recordingState = .idle

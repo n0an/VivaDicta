@@ -8,16 +8,14 @@
 import SwiftUI
 
 struct RecordView: View {
-    @State var viewModel: RecordViewModel
-    
-    init() {
-        self._viewModel = State(wrappedValue: RecordViewModel())
-    }
+    @State var viewModel = RecordViewModel()
     
     var body: some View {
         VStack {
-            Button(viewModel.isRecording ? "Stop" : "Record") {
-                viewModel.isRecording.toggle()
+            Button {
+                viewModel.recordButtonTapped()
+            } label: {
+                Label(viewModel.recordButtonParams.0, systemImage: viewModel.recordButtonParams.1)
             }
         }
     }
