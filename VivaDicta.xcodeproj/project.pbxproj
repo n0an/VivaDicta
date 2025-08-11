@@ -8,10 +8,27 @@
 
 /* Begin PBXBuildFile section */
 		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
+		18D047892E4A99BB00674B30 /* whisper.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D047872E4A99AA00674B30 /* whisper.xcframework */; };
+		18D0478A2E4A99BB00674B30 /* whisper.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 18D047872E4A99AA00674B30 /* whisper.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		180E1D6C2E4A994800AE33B1 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				18D0478A2E4A99BB00674B30 /* whisper.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		181D04D72E3E55E400D357A6 /* VivaDicta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VivaDicta.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		18D047872E4A99AA00674B30 /* whisper.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = whisper.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -27,6 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18D047892E4A99BB00674B30 /* whisper.xcframework in Frameworks */,
 				181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -34,10 +52,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		180E1D682E4A994800AE33B1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				18D047872E4A99AA00674B30 /* whisper.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		181D04CE2E3E55E400D357A6 = {
 			isa = PBXGroup;
 			children = (
 				181D04D92E3E55E400D357A6 /* VivaDicta */,
+				180E1D682E4A994800AE33B1 /* Frameworks */,
 				181D04D82E3E55E400D357A6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -60,6 +87,7 @@
 				181D04D32E3E55E400D357A6 /* Sources */,
 				181D04D42E3E55E400D357A6 /* Frameworks */,
 				181D04D52E3E55E400D357A6 /* Resources */,
+				180E1D6C2E4A994800AE33B1 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
