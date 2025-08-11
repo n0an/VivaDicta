@@ -28,6 +28,6 @@ struct TranscriptionsView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .transcriptionsMockData) {
     TranscriptionsView()
 }

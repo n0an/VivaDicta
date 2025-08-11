@@ -28,3 +28,34 @@ class Transcription {
         self.enhancementModelName = enhancementModelName
     }
 }
+
+extension Transcription {
+    static let mockData: [Transcription] =
+    [
+        Transcription(
+            title: "mock1",
+            text: "hello world",
+            timestamp: .now,
+            enhancedText: "enhanced 1",
+            audioFileURL: "",
+            transcriptionModelName: "openai",
+            enhancementModelName: ""),
+        Transcription(
+            title: "mock2",
+            text: "how are you",
+            timestamp: .now,
+            enhancedText: "enhanced 2",
+            audioFileURL: "",
+            transcriptionModelName: "whisper.cpp",
+            enhancementModelName: ""),
+        Transcription(
+            title: "mock3",
+            text: "knock knock Neo",
+            timestamp: .now,
+            enhancedText: "enhanced 3",
+            audioFileURL: "",
+            transcriptionModelName: "elevellabs",
+            enhancementModelName: "")
+        
+    ]
+}

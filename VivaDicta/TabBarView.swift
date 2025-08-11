@@ -44,7 +44,6 @@ struct TabBarView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .transcriptionsMockData) {
     TabBarView()
 }
-
