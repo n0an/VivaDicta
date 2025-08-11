@@ -9,6 +9,7 @@ import SwiftUI
 import SiriWaveView
 
 struct RecordView: View {
+    @Environment(\.modelContext) var modelContext
     @State var vm = RecordViewModel()
     @State var isSymbolAnimating = false
     
@@ -71,7 +72,7 @@ struct RecordView: View {
     
     var stopRecordingButton: some View {
         Button(role: .destructive) {
-            vm.stopCaptureAudio()
+            vm.stopCaptureAudio(modelContext: modelContext)
         } label: {
             Image(systemName: "stop.circle.fill")
                 .symbolRenderingMode(.monochrome)

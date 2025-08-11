@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import AVFoundation
+import SwiftData
 
 enum RecordingState {
     case idle
@@ -127,7 +128,7 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
         }
     }
     
-    func stopCaptureAudio() {
+    func stopCaptureAudio(modelContext: ModelContext) {
         
         resetValues()
         do {
@@ -135,13 +136,13 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
             
 //            try playAudio(data: data)
             
-            transcribingSpeechTask = transcribeSpeechTask(audioData: data)
+            transcribingSpeechTask = transcribeSpeechTask(audioData: data, modelContext: modelContext)
         } catch {
             recordingState = .error(.recordError)
         }
     }
     
-    func transcribeSpeechTask(audioData: Data) -> Task<Void, Never> {
+    func transcribeSpeechTask(audioData: Data, modelContext: ModelContext) -> Task<Void, Never> {
         Task { @MainActor [unowned self] in
             do {
                 self.recordingState = .transcribing
@@ -150,9 +151,23 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
                 
                 let transcribedText = try await openAITranscriptionService.generateAudioTransciptions(audioData: audioData)
                 
+                try Task.checkCancellation()
+                
                 print(transcribedText)
                 self.recordingState = .idle
-//                try Task.checkCancellation()
+                
+                let transcription = Transcription(
+                    title: "test",
+                    text: transcribedText,
+                    timestamp: .now,
+                    enhancedText: "mock",
+                    audioFileURL: "mock",
+                    transcriptionModelName: "whisper",
+                    enhancementModelName: "none")
+                
+                modelContext.insert(transcription)
+                try modelContext.save()
+                //                try Task.checkCancellation()
 //                let responseText = try await client.promptChatGPT(prompt: prompt)
                 
 //                try Task.checkCancellation()
@@ -185,6 +200,9 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
     }
     
     func cancelTranscribe() {
+        transcribingSpeechTask?.cancel()
+        transcribingSpeechTask = nil
+        resetValues()
         recordingState = .idle
     }
     
