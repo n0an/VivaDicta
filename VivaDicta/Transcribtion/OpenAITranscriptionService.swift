@@ -12,11 +12,10 @@ enum TranscriptionServiceError: Error {
     case statusCode(Int)
 }
 
-struct OpenAITranscriptionService {
-    
+struct OpenAITranscriptionService: TranscribtionService {
     let apiKey = "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"
     
-    public func generateAudioTransciptions(audioData: Data, fileName: String = "recording.m4a") async throws -> String {
+    public func generateAudioTransciptions(audioData: Data) async throws -> String {
         var request = URLRequest(url: URL(string: "https://api.openai.com/v1/audio/transcriptions")!)
         let boundary: String = UUID().uuidString
         request.timeoutInterval = 30
@@ -25,7 +24,7 @@ struct OpenAITranscriptionService {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
         let bodyBuilder = MultipartFormDataBodyBuilder(boundary: boundary, entries: [
-            .file(paramName: "file", fileName: fileName, fileData: audioData, contentType: "audio/mpeg"),
+            .file(paramName: "file", fileName: "recording.m4a", fileData: audioData, contentType: "audio/mpeg"),
             .string(paramName: "model", value: "gpt-4o-transcribe"),
             .string(paramName: "response_format", value: "text")
         ])

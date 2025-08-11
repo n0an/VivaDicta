@@ -8,9 +8,6 @@
 import SwiftUI
 import SwiftData
 
-
-
-
 struct TranscriptionsView: View {
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
     
