@@ -12,16 +12,17 @@ struct RecordView: View {
     @Environment(\.modelContext) var modelContext
     @State var vm = RecordViewModel()
     @State var isSymbolAnimating = false
-    @Binding var selectedTab: TabBarView.TabTag
+    
+    var appState: AppState
     
     var body: some View {
-        if vm.transcriptionService == nil {
+        if appState.canTranscribe {
+            modelSelectedView
+        } else {
             Button("Select transcription model") {
                 print("send to models screen")
-                selectedTab = .models
+                appState.selectedTab = .models
             }
-        } else {
-            modelSelectedView
         }
     }
     
@@ -106,24 +107,28 @@ struct RecordView: View {
 }
 
 #Preview("Idle") {
-    RecordView(selectedTab: .constant(.models))
+    @State @Previewable var appState = AppState()
+    RecordView(appState: appState)
 }
 
 #Preview("Recording") {
+    @State @Previewable var appState = AppState()
     let vm = RecordViewModel()
     vm.recordingState = .recording
     vm.audioPower = 0.3
-    return RecordView(vm: vm, selectedTab: .constant(.models))
+    return RecordView(vm: vm, appState: appState)
 }
 
 #Preview("Transcribing") {
+    @State @Previewable var appState = AppState()
     let vm = RecordViewModel()
     vm.recordingState = .transcribing
-    return RecordView(vm: vm, selectedTab: .constant(.models))
+    return RecordView(vm: vm, appState: appState)
 }
 
 #Preview("Error") {
+    @State @Previewable var appState = AppState()
     let vm = RecordViewModel()
     vm.recordingState = .error(RecordError.avInitError)
-    return RecordView(vm: vm, selectedTab: .constant(.models))
+    return RecordView(vm: vm, appState: appState)
 }

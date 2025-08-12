@@ -1,5 +1,5 @@
 //
-//  WhisperState.swift
+//  AppState.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.12
@@ -8,9 +8,18 @@
 import Foundation
 import SwiftUI
 
+enum TabTag {
+    case record
+    case transcriptions
+    case models
+    case settings
+}
+
 @Observable
-class WhisperState {
+class AppState {
     var canTranscribe = false
+    
+    var selectedTab: TabTag = .record
     
     private var whisperContext: WhisperContext?
     

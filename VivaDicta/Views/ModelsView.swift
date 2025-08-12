@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ModelsView: View {
-    var whisperState: WhisperState
+    @Bindable var appState: AppState
     
     var body: some View {
         List {
@@ -30,13 +30,13 @@ struct ModelsView: View {
     func loadModel(whisperModel: WhisperModel) {
 //        Task {
             // here
-            whisperState.loadModel(modelUrl: whisperModel.fileURL)
+            appState.loadModel(modelUrl: whisperModel.fileURL)
 //        }
     }
     
 }
 
 #Preview {
-    @Previewable @State var whisperState = WhisperState()
-    ModelsView(whisperState: whisperState)
+    @Previewable @State var appState = AppState()
+    ModelsView(appState: appState)
 }
