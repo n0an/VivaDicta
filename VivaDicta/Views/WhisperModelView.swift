@@ -28,24 +28,20 @@ struct WhisperModelView: View {
         HStack {
             Text("\(model.name) \(model.info)")
             Spacer()
-            buttons
-        }
-        .padding()
-        
-    }
-    
-    var buttons: some View {
-        HStack {
             switch downloadStatus {
             case .download:
                 downloadButton
             case .downloading:
                 progressView
             case .downloaded:
-                selectButton
-                deleteButton
+                HStack {
+                    selectButton
+//                    deleteButton
+                }
             }
         }
+        .padding()
+        
     }
     
     var progressView: some View {

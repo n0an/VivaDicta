@@ -28,10 +28,10 @@ struct ModelsView: View {
     
     
     func loadModel(whisperModel: WhisperModel) {
-        Task {
+//        Task {
             // here
             whisperState.loadModel(modelUrl: whisperModel.fileURL)
-        }
+//        }
     }
     
 }
