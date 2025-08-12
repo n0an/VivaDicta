@@ -86,15 +86,16 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
         recordingState = .recording
         
         do {
-            let settings = [
-                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 12000,
+            let settings: [String : Any] = [
+                AVFormatIDKey: Int(kAudioFormatLinearPCM),
+                AVSampleRateKey: 16000.0,
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
             ]
             
-            audioRecorder = try AVAudioRecorder(url: captureURL,
-                                                settings: settings)
+            audioRecorder = try AVAudioRecorder(
+                url: captureURL,
+                settings: settings)
             audioRecorder.isMeteringEnabled = true
             audioRecorder.delegate = self
             audioRecorder.record()
@@ -129,43 +130,39 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
     }
     
     func stopCaptureAudio(modelContext: ModelContext) {
-        
         resetValues()
-        do {
-            let data = try Data(contentsOf: captureURL)
-            
-//            try playAudio(data: data)
-            
-            transcribingSpeechTask = transcribeSpeechTask(audioData: data, modelContext: modelContext)
-        } catch {
-            recordingState = .error(.recordError)
-        }
+        transcribingSpeechTask = transcribeSpeechTask(recordURL: captureURL, modelContext: modelContext)
     }
     
-    func transcribeSpeechTask(audioData: Data, modelContext: ModelContext) -> Task<Void, Never> {
+    func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext) -> Task<Void, Never> {
         Task { @MainActor [unowned self] in
             do {
                 self.recordingState = .transcribing
                 
-                let openAITranscriptionService = OpenAITranscriptionService()
+                let whisperCPPTranscriptionService = WhisperState()
+                await whisperCPPTranscriptionService.loadAndTranscribe(recordURL)
                 
-                let transcribedText = try await openAITranscriptionService.generateAudioTransciptions(audioData: audioData)
+//                let audioData = try Data(contentsOf: captureURL)
+//                
+//                let openAITranscriptionService = OpenAITranscriptionService()
+//                
+//                let transcribedText = try await openAITranscriptionService.generateAudioTransciptions(audioData: audioData)
                 
                 try Task.checkCancellation()
                 
-                print(transcribedText)
+//                print(transcribedText)
                 self.recordingState = .idle
                 
-                let transcription = Transcription(
-                    title: "test",
-                    text: transcribedText,
-                    timestamp: .now,
-                    enhancedText: "mock",
-                    audioFileURL: "mock",
-                    transcriptionModelName: "whisper",
-                    enhancementModelName: "none")
-                
-                modelContext.insert(transcription)
+//                let transcription = Transcription(
+//                    title: "test",
+//                    text: transcribedText,
+//                    timestamp: .now,
+//                    enhancedText: "mock",
+//                    audioFileURL: "mock",
+//                    transcriptionModelName: "whisper",
+//                    enhancementModelName: "none")
+//                
+//                modelContext.insert(transcription)
                 try modelContext.save()
                 //                try Task.checkCancellation()
 //                let responseText = try await client.promptChatGPT(prompt: prompt)
