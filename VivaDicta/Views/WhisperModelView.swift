@@ -17,6 +17,10 @@ struct WhisperModelView: View {
     private var model: WhisperModel
     @State private var downloadStatus: DownloadStatus
     
+    @State private var downloadTask: URLSessionDownloadTask?
+    @State private var progress = 0.0
+    @State private var observation: NSKeyValueObservation?
+    
     private var onSelect: (WhisperModel) -> Void
     
     var body: some View {
@@ -36,12 +40,23 @@ struct WhisperModelView: View {
             case .download:
                 downloadButton
             case .downloading:
-                // Progressbar here
-                EmptyView()
+                progressView
             case .downloaded:
                 selectButton
                 deleteButton
             }
+        }
+    }
+    
+    var progressView: some View {
+        HStack {
+            ProgressView(value: progress)
+                .progressViewStyle(LinearProgressViewStyle())
+                .frame(width: 100)
+            Text("\(Int(progress * 100))%")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(width: 30)
         }
     }
     
@@ -89,15 +104,14 @@ struct WhisperModelView: View {
         downloadStatus = .downloading
         print("Downloading model \(model.name) from \(model.url)")
         guard let url = URL(string: model.url) else { return }
-
-        URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
+        
+        downloadTask = URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
             if let error = error {
                 print("Error: \(error.localizedDescription)")
                 return
             }
 
-            guard let response = response as? HTTPURLResponse,
-                  200...299 ~= response.statusCode else {
+            guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else {
                 print("Server error!")
                 return
             }
@@ -111,13 +125,14 @@ struct WhisperModelView: View {
             } catch let err {
                 print("Error: \(err.localizedDescription)")
             }
-        }.resume()
+        }
 
-//        observation = downloadTask?.progress.observe(\.fractionCompleted) { progress, _ in
-//            self.progress = progress.fractionCompleted
-//        }
-//
-//        downloadTask?.resume()
+        observation = downloadTask?.progress.observe(\.fractionCompleted) { progress, _ in
+            self.progress = progress.fractionCompleted
+        }
+
+        downloadTask?.resume()
+        
     }
 }
 
