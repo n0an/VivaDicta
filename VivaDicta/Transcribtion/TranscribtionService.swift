@@ -8,5 +8,5 @@
 import Foundation
 
 protocol TranscribtionService {
-    func generateAudioTransciptions(audioData: Data) async throws ->  String
+    func generateAudioTransciptions(fileURL: URL) async throws ->  String
 }

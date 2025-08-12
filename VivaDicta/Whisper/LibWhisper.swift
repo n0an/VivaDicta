@@ -20,7 +20,7 @@ actor WhisperContext {
 
     func fullTranscribe(samples: [Float]) {
         // Leave 2 processors free (i.e. the high-efficiency cores).
-        let maxThreads = max(1, min(8, cpuCount() - 2))
+        let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         print("Selecting \(maxThreads) threads")
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         "en".withCString { en in
@@ -55,14 +55,6 @@ actor WhisperContext {
         }
         return transcription
     }
-
-    static func benchMemcpy(nThreads: Int32) async -> String {
-        return String.init(cString: whisper_bench_memcpy_str(nThreads))
-    }
-
-    static func benchGgmlMulMat(nThreads: Int32) async -> String {
-        return String.init(cString: whisper_bench_ggml_mul_mat_str(nThreads))
-    }
     
     static func createContext(path: String) throws -> WhisperContext {
         var params = whisper_context_default_params()
@@ -80,8 +72,4 @@ actor WhisperContext {
             throw WhisperError.couldNotInitializeContext
         }
     }
-}
-
-fileprivate func cpuCount() -> Int {
-    ProcessInfo.processInfo.processorCount
 }

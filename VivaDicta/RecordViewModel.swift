@@ -139,8 +139,12 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
             do {
                 self.recordingState = .transcribing
                 
-                let whisperCPPTranscriptionService = WhisperState()
-                await whisperCPPTranscriptionService.loadAndTranscribe(recordURL)
+                
+                let whisperCPPTranscriptionService = LocalWhisperTranscriptionService()
+                let transcribedText = try await whisperCPPTranscriptionService.generateAudioTransciptions(fileURL: recordURL)
+                
+//                let whisperCPPTranscriptionService = WhisperState()
+//                await whisperCPPTranscriptionService.loadAndTranscribe(recordURL)
                 
 //                let audioData = try Data(contentsOf: captureURL)
 //                
@@ -150,7 +154,7 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
                 
                 try Task.checkCancellation()
                 
-//                print(transcribedText)
+                print(transcribedText)
                 self.recordingState = .idle
                 
 //                let transcription = Transcription(
