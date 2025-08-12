@@ -29,7 +29,7 @@ actor WhisperContext {
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         
         // Read language directly from UserDefaults
-        let selectedLanguage = UserDefaults.standard.string(forKey: "SelectedLanguage") ?? "ru"
+        let selectedLanguage = UserDefaults.standard.string(forKey: "selectedLanguageKey") ?? "ru"
         if selectedLanguage != "auto" {
             languageCString = Array(selectedLanguage.utf8CString)
             params.language = languageCString?.withUnsafeBufferPointer { ptr in
@@ -40,8 +40,8 @@ actor WhisperContext {
             params.language = nil
         }
         
-        if true  || prompt != nil {
-            promptCString = Array("Здравствуйте, как ваши дела? Приятно познакомиться.".utf8CString)
+        if let prompt {
+            promptCString = Array(prompt.utf8CString)
             params.initial_prompt = promptCString?.withUnsafeBufferPointer { ptr in
                 ptr.baseAddress
             }

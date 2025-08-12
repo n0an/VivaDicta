@@ -11,6 +11,7 @@ import whisper
 struct LocalWhisperTranscriptionService: TranscriptionService {
     
     var selectedModel: WhisperModelEnum
+    var selectedLanguage: Language = .auto
     
     private var whisperContext: WhisperContext?
     
@@ -53,6 +54,7 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
     private func loadAndTranscribe(_ url: URL) async -> String {
         do {
             let whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
+            await whisperContext.setPrompt(selectedLanguage.prompt)
             
             let data = try readAudioSamples(url)
             await whisperContext.fullTranscribe(samples: data)
