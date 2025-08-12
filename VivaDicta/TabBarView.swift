@@ -32,7 +32,7 @@ struct TabBarView: View {
             }
             
             Tab("Models", systemImage: "sparkles", value: TabTag.models) {
-                Text("Models")
+                ModelsView()
             }
             
             Tab("Settings", systemImage: "gear", value: TabTag.settings) {
