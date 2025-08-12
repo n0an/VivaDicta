@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum TranscriptionProvider {
+    case localWhisper(WhisperModelEnum)
+    case openAI
+}
+
 enum WhisperModelEnum: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
     

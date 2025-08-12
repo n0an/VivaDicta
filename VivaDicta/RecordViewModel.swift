@@ -35,12 +35,15 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
     
     var animationTimer: Timer?
     
-    var transcriptionService: TranscribtionService?
+    var transcriptionService: TranscriptionService?
     
     // TODO: Add auto stop feature later
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
     
+    init(transcriptionService: TranscriptionService?) {
+        self.transcriptionService = transcriptionService
+    }
     
     var transcribingSpeechTask: Task<Void, Never>?
     

@@ -26,6 +26,11 @@ struct RecordView: View {
         }
     }
     
+    init(appState: AppState) {
+        self._vm = State(wrappedValue: RecordViewModel(transcriptionService: appState.transcriptionService))
+        self.appState = appState
+    }
+    
     var modelSelectedView: some View {
         VStack(spacing: 16) {
             Spacer()
@@ -111,24 +116,24 @@ struct RecordView: View {
     RecordView(appState: appState)
 }
 
-#Preview("Recording") {
-    @State @Previewable var appState = AppState()
-    let vm = RecordViewModel()
-    vm.recordingState = .recording
-    vm.audioPower = 0.3
-    return RecordView(vm: vm, appState: appState)
-}
-
-#Preview("Transcribing") {
-    @State @Previewable var appState = AppState()
-    let vm = RecordViewModel()
-    vm.recordingState = .transcribing
-    return RecordView(vm: vm, appState: appState)
-}
-
-#Preview("Error") {
-    @State @Previewable var appState = AppState()
-    let vm = RecordViewModel()
-    vm.recordingState = .error(RecordError.avInitError)
-    return RecordView(vm: vm, appState: appState)
-}
+//#Preview("Recording") {
+//    @State @Previewable var appState = AppState()
+//    let vm = RecordViewModel(transcriptionService: appState.transcriptionService)
+//    vm.recordingState = .recording
+//    vm.audioPower = 0.3
+//    return RecordView(vm: vm, appState: appState)
+//}
+//
+//#Preview("Transcribing") {
+//    @State @Previewable var appState = AppState()
+//    let vm = RecordViewModel(transcriptionService: appState.transcriptionService)
+//    vm.recordingState = .transcribing
+//    return RecordView(vm: vm, appState: appState)
+//}
+//
+//#Preview("Error") {
+//    @State @Previewable var appState = AppState()
+//    let vm = RecordViewModel(transcriptionService: appState.transcriptionService)
+//    vm.recordingState = .error(RecordError.avInitError)
+//    return RecordView(vm: vm, appState: appState)
+//}

@@ -8,14 +8,51 @@
 import Foundation
 import whisper
 
-struct LocalWhisperTranscriptionService: TranscribtionService {
+struct LocalWhisperTranscriptionService: TranscriptionService {
+    
+    var selectedModel: WhisperModelEnum
+    
+    private var whisperContext: WhisperContext?
+    
+    init(selectedModel: WhisperModelEnum) {
+        self.selectedModel = selectedModel
+        
+        do {
+            whisperContext = nil
+            whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
+        } catch {
+            print(error.localizedDescription)
+        }
+        
+        
+    }
+    
+    
     public func generateAudioTransciptions(fileURL: URL) async throws -> String {
         return await loadAndTranscribe(fileURL)
     }
     
+    public func transcribeAudio(_ url: URL) async {
+//        guard canTranscribe else { return }
+        guard let whisperContext else { return }
+        
+        do {
+//            canTranscribe = false
+            
+            let data = try readAudioSamples(url)
+            await whisperContext.fullTranscribe(samples: data)
+            let text = await whisperContext.getTranscription()
+            print(text)
+        } catch {
+            print(error.localizedDescription)
+        }
+        
+//        canTranscribe = true
+    }
+    
     private func loadAndTranscribe(_ url: URL) async -> String {
         do {
-            let whisperContext = try WhisperContext.createContext(path: URL.documentsDirectory.appendingPathComponent("tiny.bin").path())
+            let whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
             
             let data = try readAudioSamples(url)
             await whisperContext.fullTranscribe(samples: data)
