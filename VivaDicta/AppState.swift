@@ -25,31 +25,35 @@ class AppState {
     
     private var whisperContext: WhisperContext?
     
-    func loadAndTranscribe(_ url: URL) async {
-        loadModel(modelUrl: URL.documentsDirectory.appendingPathComponent("tiny.bin"))
-        await transcribeAudio(url)
-    }
+//    func loadAndTranscribe(_ url: URL) async {
+//        loadModel(modelUrl: URL.documentsDirectory.appendingPathComponent("tiny.bin"))
+//        await transcribeAudio(url)
+//    }
         
     init() {
         self.whisperContext = whisperContext
         if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
            let selectedModel = WhisperModelEnum(rawValue: selectedModelKey) {
-            loadModel(modelUrl: selectedModel.fileURL)
+            loadModel(model: selectedModel)
         }
 //        let key = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel")
 //        self.selectedLocalWhisperModel = WhisperModelEnum(rawValue: key ?? "") ?? .tiny
     }
     
-    func loadModel(modelUrl: URL? = nil) {
+    func loadModel(model: WhisperModelEnum) {
         do {
             whisperContext = nil
-            if let modelUrl {
-                whisperContext = try WhisperContext.createContext(path: modelUrl.path())
-                // save here
-            } else {
-                print("Could not locate model")
-            }
+//            if let modelUrl {
+//                whisperContext = try WhisperContext.createContext(path: modelUrl.path())
+//                // save here
+//            } else {
+//                print("Could not locate model")
+//            }
+            whisperContext = try WhisperContext.createContext(path: model.fileURL.path())
+
             canTranscribe = true
+            
+            UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
         } catch {
             print(error.localizedDescription)
         }

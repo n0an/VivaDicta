@@ -14,19 +14,19 @@ struct WhisperModelView: View {
         case downloaded
     }
     
-    private var model: WhisperModel
+    private var model: WhisperModelEnum
     @State private var downloadStatus: DownloadStatus
     
     @State private var downloadTask: URLSessionDownloadTask?
     @State private var progress = 0.0
     @State private var observation: NSKeyValueObservation?
     
-    private var onSelect: (WhisperModel) -> Void
+    private var onSelect: (WhisperModelEnum) -> Void
     
     var body: some View {
         
         HStack {
-            Text("\(model.name) \(model.info)")
+            Text("\(model.rawValue) \(model.info)")
             Spacer()
             switch downloadStatus {
             case .download:
@@ -60,8 +60,8 @@ struct WhisperModelView: View {
         Button("Download") {
             download()
         }
-        .padding(8)
         .foregroundStyle(.white)
+        .padding(8)
         .background(.blue, in: .rect(cornerRadius: 8))
     }
     
@@ -69,9 +69,10 @@ struct WhisperModelView: View {
         Button("Select") {
             onSelect(model)
         }
-        .padding(8)
         .foregroundStyle(.white)
+        .padding(8)
         .background(.green, in: .rect(cornerRadius: 8))
+
     }
     
     var deleteButton: some View {
@@ -84,13 +85,13 @@ struct WhisperModelView: View {
             }
             downloadStatus = .download
         }
-        .padding(8)
         .foregroundStyle(.white)
+        .padding(8)
         .background(.red, in: .rect(cornerRadius: 8))
     }
     
-    init(model: WhisperModel,
-         onSelect: @escaping (WhisperModel) -> Void) {
+    init(model: WhisperModelEnum,
+         onSelect: @escaping (WhisperModelEnum) -> Void) {
         self.model = model
         self.downloadStatus = self.model.fileExists ? .downloaded : .download
         self.onSelect = onSelect
@@ -98,8 +99,8 @@ struct WhisperModelView: View {
     
     private func download() {
         downloadStatus = .downloading
-        print("Downloading model \(model.name) from \(model.url)")
-        guard let url = URL(string: model.url) else { return }
+        print("Downloading model \(model.rawValue) from \(model.downloadURL)")
+        guard let url = model.downloadURL else { return }
         
         downloadTask = URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
             if let error = error {
@@ -133,6 +134,6 @@ struct WhisperModelView: View {
 }
 
 #Preview {
-    WhisperModelView(model: WhisperModel.models[0], onSelect: {_ in print("select") })
+    WhisperModelView(model: WhisperModelEnum.tiny, onSelect: {_ in print("select") })
 }
 

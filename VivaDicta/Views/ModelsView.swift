@@ -13,8 +13,7 @@ struct ModelsView: View {
     var body: some View {
         List {
             Section(header: Text("Local Whisper Models")) {
-                ForEach(WhisperModel.models) { model in
-                    
+                ForEach(WhisperModelEnum.allCases) { model in
                     WhisperModelView(model: model) { model in
                         loadModel(whisperModel: model)
                     }
@@ -27,11 +26,8 @@ struct ModelsView: View {
     }
     
     
-    func loadModel(whisperModel: WhisperModel) {
-//        Task {
-            // here
-            appState.loadModel(modelUrl: whisperModel.fileURL)
-//        }
+    func loadModel(whisperModel: WhisperModelEnum) {
+        appState.loadModel(model: whisperModel)
     }
     
 }
