@@ -28,10 +28,6 @@ struct WhisperModel: Identifiable {
         }
     }
     
-//    func fileExists() -> Bool {
-//        FileManager.default.fileExists(atPath: fileURL.path)
-//    }
-    
     static let models: [WhisperModel] = [
         WhisperModel(name: "tiny", info: "(F16, 75 MiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin", filename: "tiny.bin"),
         WhisperModel(name: "tiny-q5_1", info: "(31 MiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin", filename: "tiny-q5_1.bin"),

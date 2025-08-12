@@ -16,6 +16,8 @@ struct TabBarView: View {
     }
     
     @State var selectedTab: TabTag = .record
+    @State var whisperState = WhisperState()
+    
     var body: some View {
         let _ = Self._printChanges()
         let _ = print("Executing <TabBarView> body")
@@ -29,11 +31,13 @@ struct TabBarView: View {
             
             Tab("Notes", systemImage: "text.document", value: TabTag.transcriptions) {
                 TranscriptionsView()
+                    
             }
             
             Tab("Models", systemImage: "sparkles", value: TabTag.models) {
-                ModelsView()
+                ModelsView(whisperState: whisperState)
             }
+            .badge(whisperState.canTranscribe ? 1 : 0)
             
             Tab("Settings", systemImage: "gear", value: TabTag.settings) {
                 Text("Models")

@@ -8,17 +8,14 @@
 import SwiftUI
 
 struct ModelsView: View {
-//    @ObservedObject var whisperState: WhisperState
-    @Environment(\.dismiss) var dismiss
+    var whisperState: WhisperState
     
-
-    func loadModel(WhisperModel: WhisperModel) {
+    func loadModel(whisperModel: WhisperModel) {
         Task {
-            dismiss()
-//            whisperState.loadModel(path: WhisperModel.fileURL)
+            whisperState.loadModel(modelUrl: whisperModel.fileURL)
         }
     }
-
+    
     var body: some View {
         List {
             Section(header: Text("Models")) {
@@ -31,4 +28,9 @@ struct ModelsView: View {
         .listStyle(GroupedListStyle())
         .navigationBarTitle("Models", displayMode: .inline).toolbar {}
     }
+}
+
+#Preview {
+    @Previewable @State var whisperState = WhisperState()
+    ModelsView(whisperState: whisperState)
 }
