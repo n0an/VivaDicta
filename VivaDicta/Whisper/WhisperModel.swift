@@ -43,6 +43,20 @@ enum WhisperModelEnum: String {
     case largeV3Turbo_q5_0 = "large-v3-turbo-q5_0"
     case largeV3Turbo_q8_0 = "large-v3-turbo-q8_0"
     
+    static let defaultURL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/"
+    
+    var filename: String {
+        "\(self.rawValue).bin"
+    }
+    
+    var downloadURL: URL? {
+        URL(string: "\(Self.defaultURL)/ggml-\(filename)")
+    }
+    
+    var fileURL: URL {
+        URL.documentsDirectory.appendingPathComponent(filename)
+    }
+    
 }
 
 struct WhisperModel: Identifiable {
