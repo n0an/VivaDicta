@@ -114,7 +114,7 @@ struct WhisperModelView: View {
 
             do {
                 if let temporaryURL = temporaryURL {
-                    try FileManager.default.copyItem(at: temporaryURL, to: model.fileURL)
+                    try FileManager.default.moveItem(at: temporaryURL, to: model.fileURL)
                     print("Writing to \(model.filename) completed")
                     downloadStatus = .downloaded
                 }
