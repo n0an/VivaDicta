@@ -101,7 +101,7 @@ struct DownloadButton: View {
             }
             .swipeActions {
                 if status == .downloaded {
-                    Button("Delete") {
+                    Button("Delete", role: .destructive) {
                         do {
                             try FileManager.default.removeItem(at: model.fileURL)
                         } catch {
