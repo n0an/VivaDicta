@@ -12,11 +12,21 @@ struct RecordView: View {
     @Environment(\.modelContext) var modelContext
     @State var vm = RecordViewModel()
     @State var isSymbolAnimating = false
+    @Binding var selectedTab: TabBarView.TabTag
     
     var body: some View {
+        if vm.transcriptionService == nil {
+            Button("Select transcription model") {
+                print("send to models screen")
+                selectedTab = .models
+            }
+        } else {
+            modelSelectedView
+        }
+    }
+    
+    var modelSelectedView: some View {
         VStack(spacing: 16) {
-            
-            
             Spacer()
             SiriWaveView(power: $vm.audioPower)
                 .opacity(vm.siriWaveFormOpacity)
@@ -92,30 +102,28 @@ struct RecordView: View {
                 .font(.system(size: 44))
         }
         .buttonStyle(.borderless)
-
     }
-    
 }
 
 #Preview("Idle") {
-    RecordView()
+    RecordView(selectedTab: .constant(.models))
 }
 
 #Preview("Recording") {
     let vm = RecordViewModel()
     vm.recordingState = .recording
     vm.audioPower = 0.3
-    return RecordView(vm: vm)
+    return RecordView(vm: vm, selectedTab: .constant(.models))
 }
 
 #Preview("Transcribing") {
     let vm = RecordViewModel()
     vm.recordingState = .transcribing
-    return RecordView(vm: vm)
+    return RecordView(vm: vm, selectedTab: .constant(.models))
 }
 
 #Preview("Error") {
     let vm = RecordViewModel()
     vm.recordingState = .error(RecordError.avInitError)
-    return RecordView(vm: vm)
+    return RecordView(vm: vm, selectedTab: .constant(.models))
 }

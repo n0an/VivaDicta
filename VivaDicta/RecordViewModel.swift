@@ -35,6 +35,8 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
     
     var animationTimer: Timer?
     
+    var transcriptionService: TranscribtionService?
+    
     // TODO: Add auto stop feature later
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
@@ -139,9 +141,13 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
             do {
                 self.recordingState = .transcribing
                 
+                if let transcriptionService {
+                    let transcribedText = try await transcriptionService.generateAudioTransciptions(fileURL: recordURL)
+                    print(transcribedText)
+                }
                 
-                let whisperCPPTranscriptionService = LocalWhisperTranscriptionService()
-                let transcribedText = try await whisperCPPTranscriptionService.generateAudioTransciptions(fileURL: recordURL)
+//                let whisperCPPTranscriptionService = LocalWhisperTranscriptionService()
+//                let transcribedText = try await whisperCPPTranscriptionService.generateAudioTransciptions(fileURL: recordURL)
                 
 //                let whisperCPPTranscriptionService = WhisperState()
 //                await whisperCPPTranscriptionService.loadAndTranscribe(recordURL)
@@ -154,7 +160,7 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
                 
                 try Task.checkCancellation()
                 
-                print(transcribedText)
+//                print(transcribedText)
                 self.recordingState = .idle
                 
 //                let transcription = Transcription(

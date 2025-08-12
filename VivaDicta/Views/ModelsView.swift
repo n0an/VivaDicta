@@ -12,13 +12,14 @@ struct ModelsView: View {
     
     func loadModel(whisperModel: WhisperModel) {
         Task {
+            // here
             whisperState.loadModel(modelUrl: whisperModel.fileURL)
         }
     }
     
     var body: some View {
         List {
-            Section(header: Text("Models")) {
+            Section(header: Text("Local Whisper Models")) {
                 ForEach(WhisperModel.models) { WhisperModel in
                     DownloadButton(model: WhisperModel)
                         .onLoad(perform: loadModel)
@@ -26,7 +27,7 @@ struct ModelsView: View {
             }
         }
         .listStyle(GroupedListStyle())
-        .navigationBarTitle("Models", displayMode: .inline).toolbar {}
+        .navigationBarTitle("Models", displayMode: .inline)
     }
 }
 

@@ -25,7 +25,7 @@ struct TabBarView: View {
         TabView(selection: $selectedTab) {
             
             Tab("Record", systemImage: "waveform.circle.fill", value: TabTag.record) {
-                RecordView()
+                RecordView(selectedTab: $selectedTab)
                     
             }
             
