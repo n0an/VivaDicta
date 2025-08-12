@@ -17,6 +17,8 @@ enum TabTag {
 
 @Observable
 class AppState {
+    var selectedLocalWhisperModel: String = ""
+    
     var canTranscribe = false
     
     var selectedTab: TabTag = .record

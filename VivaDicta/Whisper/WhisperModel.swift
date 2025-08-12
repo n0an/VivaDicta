@@ -7,6 +7,44 @@
 
 import Foundation
 
+enum WhisperModelEnum: String {
+    case tiny
+    case tiny_q5_1 = "tiny-q5_1"
+    case tiny_q8_0 = "tiny-q8_0"
+    
+    case tiny_en = "tiny.en"
+    case tiny_en_q5_1 = "tiny.en-q5_1"
+    case tiny_en_q8_0 = "tiny.en-q8_0"
+    
+    case base = "base"
+    case base_q5_1 = "base-q5_1"
+    case base_q8_0 = "base-q8_0"
+    
+    case base_en = "base.en"
+    case base_en_q5_1 = "base.en-q5_1"
+    case base_en_q8_0 = "base.en-q8_0"
+    
+    case medium = "medium"
+    case medium_q5_0 = "medium-q5_0"
+    case medium_q8_0 = "medium-q8_0"
+    
+    case medium_en = "medium.en"
+    case medium_en_q5_0 = "medium.en-q5_0"
+    case medium_en_q8_0 = "medium.en-q8_0"
+    
+    case largeV2 = "large-v2"
+    case largeV2_q5_0 = "large-v2-q5_0"
+    case largeV2_q8_0 = "large-v2-q8_0"
+    
+    case largeV3 = "large-v3"
+    case largeV3_q5_0 = "large-v3-q5_0"
+    
+    case largeV3Turbo = "large-v3-turbo"
+    case largeV3Turbo_q5_0 = "large-v3-turbo-q5_0"
+    case largeV3Turbo_q8_0 = "large-v3-turbo-q8_0"
+    
+}
+
 struct WhisperModel: Identifiable {
     var id = UUID()
     var name: String
@@ -53,7 +91,7 @@ struct WhisperModel: Identifiable {
         WhisperModel(name: "medium.en", info: "(F16, 1.5 GiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin", filename: "medium.en.bin"),
         WhisperModel(name: "medium.en-q5_0", info: "(514 MiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en-q5_0.bin", filename: "medium.en-q5_0.bin"),
         WhisperModel(name: "medium.en-q8_0", info: "(785 MiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en-q8_0.bin", filename: "medium.en-q8_0.bin"),
-        WhisperModel(name: "large-v1", info: "(F16, 2.9 GiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin", filename: "large.bin"),
+//        WhisperModel(name: "large-v1", info: "(F16, 2.9 GiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin", filename: "large.bin"),
         WhisperModel(name: "large-v2", info: "(F16, 2.9 GiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v2.bin", filename: "large-v2.bin"),
         WhisperModel(name: "large-v2-q5_0", info: "(1.1 GiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v2-q5_0.bin", filename: "large-v2-q5_0.bin"),
         WhisperModel(name: "large-v2-q8_0", info: "(1.5 GiB)", url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v2-q8_0.bin", filename: "large-v2-q8_0.bin"),
