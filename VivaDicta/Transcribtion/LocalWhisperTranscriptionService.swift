@@ -20,47 +20,26 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
         self.selectedLanguage = selectedLanguage
         
         do {
-            whisperContext = nil
             whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
         } catch {
             print(error.localizedDescription)
         }
-        
     }
-    
     
     public func generateAudioTransciptions(fileURL: URL) async throws -> String {
-        return await loadAndTranscribe(fileURL)
+        return await transcribeAudio(fileURL)
     }
     
-    public func transcribeAudio(_ url: URL) async {
-//        guard canTranscribe else { return }
-        guard let whisperContext else { return }
+    public func transcribeAudio(_ url: URL) async -> String {
+        guard let whisperContext else { return "" }
         
         do {
-//            canTranscribe = false
-            
-            let data = try readAudioSamples(url)
-            await whisperContext.fullTranscribe(samples: data)
-            let text = await whisperContext.getTranscription()
-            print(text)
-        } catch {
-            print(error.localizedDescription)
-        }
-        
-//        canTranscribe = true
-    }
-    
-    private func loadAndTranscribe(_ url: URL) async -> String {
-        do {
-            let whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
             await whisperContext.setPrompt(selectedLanguage.prompt)
             print("=== Language = \(selectedLanguage.prompt)")
             let data = try readAudioSamples(url)
             await whisperContext.fullTranscribe(samples: data)
             let text = await whisperContext.getTranscription()
             return text
-            
         } catch {
             print(error.localizedDescription)
             return ""

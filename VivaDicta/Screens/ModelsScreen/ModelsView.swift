@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 struct ModelsView: View {
     @Bindable var appState: AppState
     

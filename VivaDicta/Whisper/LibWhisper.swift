@@ -50,7 +50,6 @@ actor WhisperContext {
             params.initial_prompt = nil
         }
         
-        
         params.print_realtime = true
         params.print_progress = false
         params.print_timestamps = true
