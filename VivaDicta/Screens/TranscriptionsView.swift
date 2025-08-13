@@ -15,13 +15,9 @@ struct TranscriptionsView: View {
         
         List {
             ForEach(transcriptions) { transcription in
-                
                 Text(transcription.text)
-                
             }
         }
-        
-        
     }
 }
 

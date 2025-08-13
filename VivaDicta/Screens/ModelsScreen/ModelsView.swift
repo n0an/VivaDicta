@@ -11,8 +11,6 @@ import SwiftUI
 struct ModelsView: View {
     @Bindable var appState: AppState
     
-//    @State var selectedLanguage: Language = .en
-    
     var body: some View {
         
         VStack {
@@ -33,24 +31,19 @@ struct ModelsView: View {
                         WhisperModelView(model: model) { model in
                             loadModel(whisperModel: model)
                         }
-                        
                     }
                 }
             }
             .listStyle(GroupedListStyle())
         }
-        
-        
+           
         .navigationBarTitle("Models", displayMode: .inline)
     }
     
     
     func loadModel(whisperModel: WhisperModelEnum) {
-//        appState.loadModel(model: whisperModel)
-//        appState.selectedLocalWhisperModel = whisperModel
         appState.createTranscriber(model: whisperModel)
     }
-    
 }
 
 #Preview {

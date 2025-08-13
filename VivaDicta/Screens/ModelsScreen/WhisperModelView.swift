@@ -15,8 +15,8 @@ struct WhisperModelView: View {
     }
     
     private var model: WhisperModelEnum
-    @State private var downloadStatus: DownloadStatus
     
+    @State private var downloadStatus: DownloadStatus
     @State private var downloadTask: URLSessionDownloadTask?
     @State private var progress = 0.0
     @State private var observation: NSKeyValueObservation?

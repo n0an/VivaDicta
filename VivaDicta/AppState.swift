@@ -11,14 +11,14 @@ import SwiftUI
 
 @Observable
 class AppState {
-    var selectedLocalWhisperModel: WhisperModelEnum?
+    var selectedTab: TabTag = .record
     var transcriptionService: TranscriptionService?
     
-    var canTranscribe = false
+    var canTranscribe: Bool {
+        transcriptionService != nil
+    }
     
-    var selectedTab: TabTag = .record
-    
-    private var whisperContext: WhisperContext?
+    var selectedLocalWhisperModel: WhisperModelEnum?
     
     var selectedLanguage: Language = .auto {
         didSet {
@@ -27,12 +27,9 @@ class AppState {
     }
     
     init() {
-        self.whisperContext = whisperContext
         if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
            let selectedModel = WhisperModelEnum(rawValue: selectedModelKey) {
             self.selectedLocalWhisperModel = selectedModel
-            self.canTranscribe = true
-//            loadModel(model: selectedModel)
             self.createTranscriber(model: selectedModel)
         }
         
@@ -40,43 +37,21 @@ class AppState {
            let savedSelectedLanguage = Language(rawValue: selectedLanguageKey) {
             self.selectedLanguage = savedSelectedLanguage
         }
-        
     }
     
     func setLanguage(_ language: Language) {
         self.transcriptionService?.selectedLanguage = language
         UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
-        
-        
     }
     
     func createTranscriber(model: WhisperModelEnum) {
         selectedLocalWhisperModel = model
         transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
-        canTranscribe = true
         UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
     }
-    
-//    func loadModel(model: WhisperModelEnum) {
-//        
-//        self.transcriptionService = LocalWhisperTranscriptionService(selectedModel: model)
-//        
-//        do {
-//            whisperContext = nil
-//            whisperContext = try WhisperContext.createContext(path: model.fileURL.path())
-//
-//            canTranscribe = true
-//            
-//            UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
-//        } catch {
-//            print(error.localizedDescription)
-//        }
-//    }
-    
 }
 
-
-
+// MARK: - Global
 enum TabTag {
     case record
     case transcriptions

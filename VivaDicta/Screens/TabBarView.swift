@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct TabBarView: View {
-//    @State var selectedTab: TabTag = .record
     @State var appState = AppState()
     
     var body: some View {
@@ -19,25 +18,21 @@ struct TabBarView: View {
             
             Tab("Record", systemImage: "waveform.circle.fill", value: TabTag.record) {
                 RecordView(appState: appState)
-                    
             }
             
             Tab("Notes", systemImage: "text.document", value: TabTag.transcriptions) {
                 TranscriptionsView()
-                    
             }
             
             Tab("Models", systemImage: "sparkles", value: TabTag.models) {
                 ModelsView(appState: appState)
             }
-            .badge(appState.canTranscribe ? 1 : 0)
             
             Tab("Settings", systemImage: "gear", value: TabTag.settings) {
                 Text("Models")
             }
         }
         .badgeStyle(.fancy)
-        
     }
 }
 
