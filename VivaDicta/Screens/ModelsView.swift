@@ -19,7 +19,7 @@ struct ModelsView: View {
             Menu("Language", systemImage: "globe") {
                 Picker("Language", selection: $appState.selectedLanguage) {
                     ForEach(Language.allCases, id: \.self) { language in
-                        Text(language.rawValue)
+                        Text(language.fullName)
                             .tag(language)
                     }
                 }

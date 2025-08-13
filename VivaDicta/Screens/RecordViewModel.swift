@@ -35,14 +35,15 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
     
     var animationTimer: Timer?
     
-    var transcriptionService: TranscriptionService?
+//    var transcriptionService: TranscriptionService?
+    var appState: AppState?
     
     // TODO: Add auto stop feature later
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
     
-    init(transcriptionService: TranscriptionService?) {
-        self.transcriptionService = transcriptionService
+    init(appState: AppState?) {
+        self.appState = appState
     }
     
     var transcribingSpeechTask: Task<Void, Never>?
@@ -144,7 +145,7 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
             do {
                 self.recordingState = .transcribing
                 
-                if let transcriptionService {
+                if let transcriptionService = appState?.transcriptionService {
                     let transcribedText = try await transcriptionService.generateAudioTransciptions(fileURL: recordURL)
                     print(transcribedText)
                 }

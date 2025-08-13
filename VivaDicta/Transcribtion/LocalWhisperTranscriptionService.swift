@@ -11,12 +11,13 @@ import whisper
 struct LocalWhisperTranscriptionService: TranscriptionService {
     
     var selectedModel: WhisperModelEnum
-    var selectedLanguage: Language = .auto
+    var selectedLanguage: Language
     
     private var whisperContext: WhisperContext?
     
-    init(selectedModel: WhisperModelEnum) {
+    init(selectedModel: WhisperModelEnum, selectedLanguage: Language) {
         self.selectedModel = selectedModel
+        self.selectedLanguage = selectedLanguage
         
         do {
             whisperContext = nil
@@ -24,7 +25,6 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
         } catch {
             print(error.localizedDescription)
         }
-        
         
     }
     
@@ -55,7 +55,7 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
         do {
             let whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
             await whisperContext.setPrompt(selectedLanguage.prompt)
-            
+            print("=== Language = \(selectedLanguage.prompt)")
             let data = try readAudioSamples(url)
             await whisperContext.fullTranscribe(samples: data)
             let text = await whisperContext.getTranscription()

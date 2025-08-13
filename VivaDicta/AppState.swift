@@ -8,6 +8,75 @@
 import Foundation
 import SwiftUI
 
+
+@Observable
+class AppState {
+    var selectedLocalWhisperModel: WhisperModelEnum?
+    var transcriptionService: TranscriptionService?
+    
+    var canTranscribe = false
+    
+    var selectedTab: TabTag = .record
+    
+    private var whisperContext: WhisperContext?
+    
+    var selectedLanguage: Language = .auto {
+        didSet {
+            setLanguage(selectedLanguage)
+        }
+    }
+    
+    init() {
+        self.whisperContext = whisperContext
+        if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
+           let selectedModel = WhisperModelEnum(rawValue: selectedModelKey) {
+            self.selectedLocalWhisperModel = selectedModel
+            self.canTranscribe = true
+//            loadModel(model: selectedModel)
+            self.createTranscriber(model: selectedModel)
+        }
+        
+        if let selectedLanguageKey = UserDefaults.standard.string(forKey: "selectedLanguageKey"),
+           let savedSelectedLanguage = Language(rawValue: selectedLanguageKey) {
+            self.selectedLanguage = savedSelectedLanguage
+        }
+        
+    }
+    
+    func setLanguage(_ language: Language) {
+        self.transcriptionService?.selectedLanguage = language
+        UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
+        
+        
+    }
+    
+    func createTranscriber(model: WhisperModelEnum) {
+        selectedLocalWhisperModel = model
+        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
+        canTranscribe = true
+        UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
+    }
+    
+//    func loadModel(model: WhisperModelEnum) {
+//        
+//        self.transcriptionService = LocalWhisperTranscriptionService(selectedModel: model)
+//        
+//        do {
+//            whisperContext = nil
+//            whisperContext = try WhisperContext.createContext(path: model.fileURL.path())
+//
+//            canTranscribe = true
+//            
+//            UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
+//        } catch {
+//            print(error.localizedDescription)
+//        }
+//    }
+    
+}
+
+
+
 enum TabTag {
     case record
     case transcriptions
@@ -18,8 +87,19 @@ enum TabTag {
 enum Language: String, CaseIterable, Identifiable {
     var id: Self { self }
     case auto = "Auto Detect"
-    case en = "English"
-    case ru = "Russian"
+    case en
+    case ru
+    
+    var fullName: String {
+        switch self {
+        case .auto:
+            "Auto Detect"
+        case .en:
+            "English"
+        case .ru:
+            "Russian"
+        }
+    }
     
     var prompt: String {
         let languagePrompts = [
@@ -63,100 +143,6 @@ enum Language: String, CaseIterable, Identifiable {
             "default": ""
         ]
         
-        return languagePrompts[self.rawValue] ?? ""
+        return languagePrompts[self.rawValue] ?? "Hello, how are you doing? Nice to meet you."
     }
-}
-
-@Observable
-class AppState {
-    var selectedLocalWhisperModel: WhisperModelEnum?
-    var transcriptionService: TranscriptionService?
-    
-    var canTranscribe = false
-    
-    var selectedTab: TabTag = .record
-    
-    private var whisperContext: WhisperContext?
-    
-    var selectedLanguage: Language = .auto {
-        didSet {
-            setLanguage(selectedLanguage)
-        }
-    }
-    
-    init() {
-        self.whisperContext = whisperContext
-        if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
-           let selectedModel = WhisperModelEnum(rawValue: selectedModelKey) {
-            self.selectedLocalWhisperModel = selectedModel
-            self.canTranscribe = true
-//            loadModel(model: selectedModel)
-            self.createTranscriber(model: selectedModel)
-        }
-        
-        if let selectedLanguageKey = UserDefaults.standard.string(forKey: "selectedLanguageKey"),
-           let savedSelectedLanguage = Language(rawValue: selectedLanguageKey) {
-            self.selectedLanguage = savedSelectedLanguage
-        }
-        
-    }
-    
-    func setLanguage(_ language: Language) {
-        
-        UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
-        
-        
-    }
-    
-    func createTranscriber(model: WhisperModelEnum) {
-        selectedLocalWhisperModel = model
-        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model)
-        canTranscribe = true
-        UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
-    }
-    
-//    func loadModel(model: WhisperModelEnum) {
-//        
-//        self.transcriptionService = LocalWhisperTranscriptionService(selectedModel: model)
-//        
-//        do {
-//            whisperContext = nil
-//            whisperContext = try WhisperContext.createContext(path: model.fileURL.path())
-//
-//            canTranscribe = true
-//            
-//            UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
-//        } catch {
-//            print(error.localizedDescription)
-//        }
-//    }
-    
-//    public func transcribeAudio(_ url: URL) async {
-//        guard canTranscribe else { return }
-//        guard let whisperContext else { return }
-//        
-//        do {
-//            canTranscribe = false
-//            
-//            let data = try readAudioSamples(url)
-//            await whisperContext.fullTranscribe(samples: data)
-//            let text = await whisperContext.getTranscription()
-//            print(text)
-//        } catch {
-//            print(error.localizedDescription)
-//        }
-//        
-//        canTranscribe = true
-//    }
-//    
-//    private func readAudioSamples(_ url: URL) throws -> [Float] {
-//        let data = try Data(contentsOf: url)
-//        let floats = stride(from: 44, to: data.count, by: 2).map {
-//            return data[$0..<$0 + 2].withUnsafeBytes {
-//                let short = Int16(littleEndian: $0.load(as: Int16.self))
-//                return max(-1.0, min(Float(short) / 32767.0, 1.0))
-//            }
-//        }
-//        return floats
-//    }
 }

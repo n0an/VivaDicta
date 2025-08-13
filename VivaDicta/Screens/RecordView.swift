@@ -27,7 +27,7 @@ struct RecordView: View {
     }
     
     init(appState: AppState) {
-        self._vm = State(wrappedValue: RecordViewModel(transcriptionService: appState.transcriptionService))
+        self._vm = State(wrappedValue: RecordViewModel(appState: appState))
         self.appState = appState
     }
     
