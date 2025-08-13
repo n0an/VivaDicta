@@ -176,7 +176,7 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
 //                    enhancementModelName: "none")
 //                
 //                modelContext.insert(transcription)
-                try modelContext.save()
+//                try modelContext.save()
                 //                try Task.checkCancellation()
 //                let responseText = try await client.promptChatGPT(prompt: prompt)
                 

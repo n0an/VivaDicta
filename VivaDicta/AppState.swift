@@ -89,7 +89,9 @@ class AppState {
         if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
            let selectedModel = WhisperModelEnum(rawValue: selectedModelKey) {
             self.selectedLocalWhisperModel = selectedModel
+            self.canTranscribe = true
 //            loadModel(model: selectedModel)
+            self.createTranscriber(model: selectedModel)
         }
         
         if let selectedLanguageKey = UserDefaults.standard.string(forKey: "selectedLanguageKey"),
@@ -104,6 +106,13 @@ class AppState {
         UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
         
         
+    }
+    
+    func createTranscriber(model: WhisperModelEnum) {
+        selectedLocalWhisperModel = model
+        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model)
+        canTranscribe = true
+        UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
     }
     
 //    func loadModel(model: WhisperModelEnum) {

@@ -47,7 +47,8 @@ struct ModelsView: View {
     
     func loadModel(whisperModel: WhisperModelEnum) {
 //        appState.loadModel(model: whisperModel)
-        appState.selectedLocalWhisperModel = whisperModel
+//        appState.selectedLocalWhisperModel = whisperModel
+        appState.createTranscriber(model: whisperModel)
     }
     
 }
