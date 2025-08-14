@@ -7,9 +7,16 @@
 
 import Foundation
 
-enum TranscriptionProvider {
-    case localWhisper(WhisperModelEnum)
+enum TranscriptionModel: Hashable {
+    case local(WhisperModelEnum)
+    case cloud
+}
+
+enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
+    var id: String { self.rawValue }
     case openAI
+    case elevenlabs
+    case groq
 }
 
 enum WhisperModelEnum: String, CaseIterable, Identifiable {
