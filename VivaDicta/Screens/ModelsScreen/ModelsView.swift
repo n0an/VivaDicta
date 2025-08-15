@@ -10,11 +10,9 @@ import SwiftUI
 struct ModelsView: View {
     @Bindable var appState: AppState
     
-    @State var navigationPath: [TranscriptionModel] = []
-    
     var body: some View {
         
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             VStack {
                 Menu("Language", systemImage: "globe") {
                     Picker("Language", selection: $appState.selectedLanguage) {
@@ -27,44 +25,17 @@ struct ModelsView: View {
                 .padding(.trailing, 40)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 
-                
                 List {
                     NavigationLink("Cloud") {
-                        List {
-                            Section(header: Text("Cloud Models")) {
-                                ForEach(CloudTranscriptionModel.allCases) { model in
-                                    Text("ooo")
-//                                    WhisperModelView(model: model) { model in
-//                                        loadModel(whisperModel: model)
-//                                    }
-                                }
-                            }
-                        }
-                        .listStyle(GroupedListStyle())
-                        
+                        CloudModelsList()
                     }
                     NavigationLink("Local") {
-                        List {
-                            Section(header: Text("Local Whisper Models")) {
-                                ForEach(WhisperModelEnum.allCases) { model in
-                                    WhisperModelView(model: model) { model in
-                                        loadModel(whisperModel: model)
-                                    }
-                                }
-                            }
-                        }
-                        .listStyle(GroupedListStyle())
-                        
+                        WhisperModelsList(appState: appState)
                     }
                 }
             }
             .navigationBarTitle("Models", displayMode: .inline)
         }
-    }
-    
-    
-    func loadModel(whisperModel: WhisperModelEnum) {
-        appState.createTranscriber(model: whisperModel)
     }
 }
 

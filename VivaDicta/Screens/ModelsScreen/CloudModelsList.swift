@@ -1,0 +1,31 @@
+//
+//  CloudModelsList.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2025.08.15
+//
+
+import SwiftUI
+
+struct CloudModelsList: View {
+    var body: some View {
+        List {
+            Section(header: Text("Local Whisper Models")) {
+                ForEach(CloudTranscriptionModel.allCases) { model in
+                    CloudModelView(model: model) { model in
+                        loadModel(cloudModel: model)
+                    }
+                }
+            }
+        }
+        .listStyle(GroupedListStyle())
+    }
+    
+    func loadModel(cloudModel: CloudTranscriptionModel) {
+        
+    }
+}
+
+#Preview {
+    CloudModelsList()
+}
