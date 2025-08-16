@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct TabBarView: View {
     @State var appState = AppState()
@@ -32,7 +33,14 @@ struct TabBarView: View {
                 Text("Models")
             }
         }
+        .task {
+//            try? Tips.resetDatastore()
+            try? Tips.configure([
+                .displayFrequency(.immediate),
+                .datastoreLocation(.applicationDefault)])
+        }
         .badgeStyle(.fancy)
+        
     }
 }
 

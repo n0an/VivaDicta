@@ -19,9 +19,11 @@ struct RecordView: View {
         if appState.canTranscribe {
             modelSelectedView
         } else {
-            Button("Select transcription model") {
+            Button {
                 print("send to models screen")
                 appState.selectedTab = .models
+            } label: {
+                Text("Select transcription model")
             }
         }
     }

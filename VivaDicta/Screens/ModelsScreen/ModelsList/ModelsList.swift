@@ -2,7 +2,7 @@
 //  ModelsList.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 16.08.2025.
+//  Created by Anton Novoselov on 2025.08.16
 //
 
 import SwiftUI
