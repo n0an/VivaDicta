@@ -82,3 +82,16 @@ appcenter-post-build.sh
 *.orig
 *.backup
 *.xcuserdatad
+
+# Claude Code
+.claude_code/
+.claude/
+claude_session_*
+.claude_context
+.claude_memory
+.claude_cache
+*.claude_temp
+
+# But keep CLAUDE.md files
+!CLAUDE.md
+!**/CLAUDE.md
