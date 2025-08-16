@@ -10,7 +10,7 @@ import SwiftUI
 struct CloudModelsList: View {
     var body: some View {
         List {
-            Section(header: Text("Local Whisper Models")) {
+            Section(header: Text("Cloud Models")) {
                 ForEach(CloudTranscriptionModel.allCases) { model in
                     CloudModelView(model: model) { model in
                         loadModel(cloudModel: model)
