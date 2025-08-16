@@ -13,14 +13,17 @@ struct ModelsView: View {
     var body: some View {
         NavigationStack {
             List {
-                NavigationLink("Cloud") {
-                    CloudModelsList()
+                NavigationLink(value: TranscriptionModel.cloud) {
+                    Label("Cloud", systemImage: "cloud.circle")
                 }
-                NavigationLink("Local") {
-                    WhisperModelsList(appState: appState)
+                NavigationLink(value: TranscriptionModel.local) {
+                    Label("Local", systemImage: "cpu")
                 }
             }
             .navigationBarTitle("Models")
+            .navigationDestination(for: TranscriptionModel.self) { modelType in
+                ModelsList(appState: appState, modelType: modelType)
+            }
             .toolbar {
                 ToolbarItem {
                     Menu("Language", systemImage: "globe") {

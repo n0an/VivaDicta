@@ -8,7 +8,7 @@
 import Foundation
 
 enum TranscriptionModel: Hashable {
-    case local(WhisperModelEnum)
+    case local
     case cloud
 }
 
@@ -19,7 +19,7 @@ enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
     case groq
 }
 
-enum WhisperModelEnum: String, CaseIterable, Identifiable {
+enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
     var id: String { self.rawValue }
     
     case tiny
