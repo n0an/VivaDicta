@@ -25,8 +25,8 @@ enum RecordError: Error {
     case other
 }
 
-@Observable
-class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlayerDelegate {
+@Observable @MainActor
+class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
     #if !os(macOS)
@@ -76,8 +76,10 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
             try recordingSession.setActive(true)
             
             AVAudioApplication.requestRecordPermission { [weak self] allowed in
-                if !allowed {
-                    self?.recordingState = .error(.userDenied)
+                Task { @MainActor in
+                    if !allowed {
+                        self?.recordingState = .error(.userDenied)
+                    }
                 }
             }
         } catch {
@@ -107,10 +109,12 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
             audioRecorder.record()
             
             animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
-                guard self.audioRecorder != nil else { return }
-                self.audioRecorder.updateMeters()
-                let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                self.audioPower = power
+                Task { @MainActor in
+                    guard self.audioRecorder != nil else { return }
+                    self.audioRecorder.updateMeters()
+                    let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
+                    self.audioPower = power
+                }
             })
             
             // TODO: Add auto stop feature later
@@ -203,10 +207,12 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
         audioPlayer.play()
         
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
-            guard self.audioPlayer != nil else { return }
-            self.audioPlayer.updateMeters()
-            let power = min(1, max(0, 1 - abs(Double(self.audioPlayer.averagePower(forChannel: 0)) / 160) ))
-            self.audioPower = power
+            Task { @MainActor in
+                guard self.audioPlayer != nil else { return }
+                self.audioPlayer.updateMeters()
+                let power = min(1, max(0, 1 - abs(Double(self.audioPlayer.averagePower(forChannel: 0)) / 160) ))
+                self.audioPower = power
+            }
         })
     }
     
@@ -235,15 +241,19 @@ class RecordViewModel: NSObject, @MainActor AVAudioRecorderDelegate, AVAudioPlay
         animationTimer = nil
     }
     
-    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-        if !flag {
-            resetValues()
-            recordingState = .idle
+    nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        Task { @MainActor in
+            if !flag {
+                resetValues()
+                recordingState = .idle
+            }
         }
     }
     
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        resetValues()
-        recordingState = .idle
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            resetValues()
+            recordingState = .idle
+        }
     }
 }

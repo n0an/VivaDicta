@@ -8,7 +8,7 @@ enum WhisperError: Error {
 
 // Meet Whisper C++ constraint: Don't access from more than one thread at a time.
 actor WhisperContext {
-    private var context: OpaquePointer
+    private nonisolated(unsafe) var context: OpaquePointer
     private var languageCString: [CChar]?
     private var prompt: String?
     private var promptCString: [CChar]?

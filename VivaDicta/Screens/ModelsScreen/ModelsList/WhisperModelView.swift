@@ -99,33 +99,37 @@ struct WhisperModelView: View {
     
     private func download() {
         downloadStatus = .downloading
-        print("Downloading model \(model.rawValue) from \(model.downloadURL)")
+        print("Downloading model \(model.rawValue) from \(model.downloadURL?.absoluteString ?? "unknown URL")")
         guard let url = model.downloadURL else { return }
         
         downloadTask = URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
-            if let error = error {
-                print("Error: \(error.localizedDescription)")
-                return
-            }
-
-            guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else {
-                print("Server error!")
-                return
-            }
-
-            do {
-                if let temporaryURL = temporaryURL {
-                    try FileManager.default.moveItem(at: temporaryURL, to: model.fileURL)
-                    print("Writing to \(model.filename) completed")
-                    downloadStatus = .downloaded
+            Task { @MainActor in
+                if let error = error {
+                    print("Error: \(error.localizedDescription)")
+                    return
                 }
-            } catch let err {
-                print("Error: \(err.localizedDescription)")
+
+                guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else {
+                    print("Server error!")
+                    return
+                }
+
+                do {
+                    if let temporaryURL = temporaryURL {
+                        try FileManager.default.moveItem(at: temporaryURL, to: model.fileURL)
+                        print("Writing to \(model.filename) completed")
+                        downloadStatus = .downloaded
+                    }
+                } catch let err {
+                    print("Error: \(err.localizedDescription)")
+                }
             }
         }
 
         observation = downloadTask?.progress.observe(\.fractionCompleted) { progress, _ in
-            self.progress = progress.fractionCompleted
+            Task { @MainActor in
+                self.progress = progress.fractionCompleted
+            }
         }
 
         downloadTask?.resume()

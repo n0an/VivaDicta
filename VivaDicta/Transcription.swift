@@ -30,7 +30,7 @@ class Transcription {
 }
 
 extension Transcription {
-    static let mockData: [Transcription] =
+    nonisolated(unsafe) static let mockData: [Transcription] =
     [
         Transcription(
             title: "mock1",
