@@ -20,7 +20,7 @@ struct WhisperModelsList: View {
                 }
             }
         }
-        .listStyle(GroupedListStyle())
+        .listStyle(.grouped)
     }
     
     func loadModel(whisperModel: WhisperModelEnum) {

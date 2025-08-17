@@ -18,7 +18,7 @@ struct CloudModelsList: View {
                 }
             }
         }
-        .listStyle(GroupedListStyle())
+        .listStyle(.grouped)
     }
     
     func loadModel(cloudModel: CloudTranscriptionModel) {
