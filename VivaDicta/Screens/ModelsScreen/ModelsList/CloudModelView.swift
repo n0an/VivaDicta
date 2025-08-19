@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct CloudModelView: View {
-    
     private var model: CloudTranscriptionModel
-    
     private var onSelect: (CloudTranscriptionModel) -> Void
     
     var body: some View {
@@ -39,6 +37,5 @@ struct CloudModelView: View {
 }
 
 #Preview {
-    CloudModelView(model: .openAI) {  _ in
-    }
+    CloudModelView(model: .openAI) {  _ in }
 }
