@@ -95,3 +95,6 @@ claude_session_*
 # But keep CLAUDE.md files
 !CLAUDE.md
 !**/CLAUDE.md
+
+buildServer.json
+Makefile
