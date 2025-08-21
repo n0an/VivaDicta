@@ -141,7 +141,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func stopCaptureAudio(modelContext: ModelContext) {
         resetValues()
-        transcribingSpeechTask = transcribeSpeechTask(recordURL: captureURL, modelContext: modelContext)
+        let finalURL = URL.documentsDirectory.appendingPathComponent("\(UUID().uuidString).m4a")
+        do {
+            try FileManager.default.moveItem(at: captureURL, to: finalURL)
+            transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
+        } catch {
+            print("file err")
+        }
     }
     
     func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext) -> Task<Void, Never> {
@@ -152,6 +158,24 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 if let transcriptionService = appState?.transcriptionService {
                     let transcribedText = try await transcriptionService.generateAudioTransciptions(fileURL: recordURL)
                     print(transcribedText)
+                    
+                    
+                    let transcribedTextArr = transcribedText.components(separatedBy: CharacterSet.alphanumerics.inverted)
+                    let maxTitleWords = min(transcribedTextArr.count, 3)
+                    
+                    let title = Array(transcribedTextArr[0..<maxTitleWords]).joined(separator: " ")
+                    
+                    let transcription = Transcription(
+                        title: title,
+                        text: transcribedText,
+                        timestamp: .now,
+                        enhancedText: "mock",
+                        audioFileURL: recordURL.absoluteString,
+                        transcriptionModelName: "whisper",
+                        enhancementModelName: "none")
+                    
+                    modelContext.insert(transcription)
+                    try modelContext.save()
                 }
                 
 //                let whisperCPPTranscriptionService = LocalWhisperTranscriptionService()
