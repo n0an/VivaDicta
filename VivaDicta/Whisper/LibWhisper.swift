@@ -22,7 +22,7 @@ actor WhisperContext {
         whisper_free(context)
     }
 
-    func fullTranscribe(samples: [Float]) -> Bool {
+    @discardableResult func fullTranscribe(samples: [Float]) -> Bool {
         // Leave 2 processors free (i.e. the high-efficiency cores).
         let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         print("Selecting \(maxThreads) threads")

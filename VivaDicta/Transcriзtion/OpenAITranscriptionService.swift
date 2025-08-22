@@ -27,11 +27,16 @@ struct OpenAITranscriptionService: TranscriptionService {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
-        let bodyBuilder = MultipartFormDataBodyBuilder(boundary: boundary, entries: [
-            .file(paramName: "file", fileName: "recording.m4a", fileData: audioData, contentType: "audio/mpeg"),
-            .string(paramName: "model", value: "gpt-4o-transcribe"),
-            .string(paramName: "response_format", value: "text")
-        ])
+        let bodyBuilder = MultipartFormDataBodyBuilder(
+            boundary: boundary,
+            entries: [
+                .file(paramName: "file",
+                      fileName: "recording.m4a",
+                      fileData: audioData,
+                      contentType: "audio/mpeg"),
+                .string(paramName: "model", value: "gpt-4o-transcribe"),
+                .string(paramName: "response_format", value: "text")
+            ])
         request.httpBody = bodyBuilder.build()
         
         
