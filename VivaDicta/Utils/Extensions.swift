@@ -195,3 +195,26 @@ extension Color {
     
     var sui: Color { Color(self) }
 }
+
+
+private struct OnFirstAppearModifier: ViewModifier {
+    @State private var didPerform = false
+
+    let action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        content.onAppear {
+            if !didPerform {
+                didPerform = true
+
+                action?()
+            }
+        }
+    }
+}
+
+extension View {
+    func onFirstAppear(perform action: (() -> Void)? = nil) -> some View {
+        modifier(OnFirstAppearModifier(action: action))
+    }
+}
