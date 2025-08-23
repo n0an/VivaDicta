@@ -164,6 +164,7 @@ extension BadgeStyle where Self == FancyBadgeStyle {
     }
 }
 
+// MARK: - Debug
 extension View {
     @ViewBuilder
     func debugBorder() -> some View {
