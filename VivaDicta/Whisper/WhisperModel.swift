@@ -13,14 +13,14 @@ enum TranscriptionModel: Hashable {
 }
 
 enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
-    var id: String { self.rawValue }
+    var id: Self { self }
     case openAI
     case elevenlabs
     case groq
 }
 
 enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
-    var id: String { self.rawValue }
+    var id: Self { self }
     
     case tiny
     case tiny_q5_1 = "tiny-q5_1"
