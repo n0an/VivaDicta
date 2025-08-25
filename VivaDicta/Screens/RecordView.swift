@@ -18,6 +18,7 @@ struct RecordView: View {
     var body: some View {
         if appState.canTranscribe {
             modelSelectedView
+            
         } else {
             Button {
                 print("send to models screen")
