@@ -13,10 +13,84 @@ export interface TestResult {
   failureDetails?: string[]
 }
 
+async function findBestSimulatorDestination(): Promise<string> {
+  try {
+    // Get iPhone simulators specifically
+    const { stdout } = await execAsync('xcodebuild -scheme VivaDicta -workspace ./VivaDicta.xcodeproj/project.xcworkspace -showdestinations 2>/dev/null | grep "iOS Simulator" | grep "iPhone"')
+    
+    console.log('📱 Available iPhone Simulator destinations:')
+    console.log(stdout.trim().split('\n').slice(0, 10).join('\n')) // Show first 10 for brevity
+    
+    const lines = stdout.split('\n').filter(line => line.trim())
+    
+    // Preferred simulator patterns in order of preference
+    const preferredPatterns = [
+      /iPhone 16 Pro.*OS:18\.1/,   // iPhone 16 Pro with iOS 18.1
+      /iPhone 16 Pro.*OS:18\./,    // iPhone 16 Pro with any iOS 18.x
+      /iPhone 16.*OS:18\.1/,       // iPhone 16 with iOS 18.1
+      /iPhone 16.*OS:18\./,        // iPhone 16 with any iOS 18.x
+      /iPhone 15 Pro.*OS:18\./,    // iPhone 15 Pro with iOS 18.x
+      /iPhone 15.*OS:18\./,        // iPhone 15 with iOS 18.x
+      /iPhone 14.*OS:18\./,        // iPhone 14 with iOS 18.x
+      /iPhone 13.*OS:18\./,        // iPhone 13 with iOS 18.x
+      /iPhone.*OS:18\./,           // Any iPhone with iOS 18.x
+      /iPhone/                     // Any iPhone (fallback)
+    ]
+    
+    // Try to find the best match
+    for (const pattern of preferredPatterns) {
+      const matchingLine = lines.find(line => pattern.test(line))
+      if (matchingLine) {
+        // Extract destination info from line like:
+        // { platform:iOS Simulator, arch:arm64, id:XXX, OS:18.1, name:iPhone 16 Pro }
+        const nameMatch = matchingLine.match(/name:([^,}]+)/)
+        const osMatch = matchingLine.match(/OS:([^,}]+)/)
+        
+        if (nameMatch && osMatch) {
+          const name = nameMatch[1].trim()
+          const osVersion = osMatch[1].trim()
+          const destination = `platform=iOS Simulator,name=${name},OS=${osVersion}`
+          console.log(`✅ Selected: ${destination}`)
+          return destination
+        }
+      }
+    }
+    
+    // If no perfect match, use first available iPhone
+    const firstiPhoneLine = lines[0]
+    if (firstiPhoneLine) {
+      const nameMatch = firstiPhoneLine.match(/name:([^,}]+)/)
+      const osMatch = firstiPhoneLine.match(/OS:([^,}]+)/)
+      
+      if (nameMatch && osMatch) {
+        const name = nameMatch[1].trim()
+        const osVersion = osMatch[1].trim()
+        const destination = `platform=iOS Simulator,name=${name},OS=${osVersion}`
+        console.log(`✅ Fallback selected: ${destination}`)
+        return destination
+      }
+    }
+    
+    // Ultimate fallback
+    console.log('⚠️ Using ultimate fallback destination')
+    return 'platform=iOS Simulator,name=Any iOS Simulator Device'
+    
+  } catch (error) {
+    console.log('⚠️ Failed to detect simulators, using simple fallback')
+    console.log(`Error: ${error}`)
+    // Simple fallback that should work on most systems
+    return 'platform=iOS Simulator,name=Any iOS Simulator Device'
+  }
+}
+
 export async function runIOSTests(): Promise<TestResult> {
   console.log('🧪 Running iOS tests...')
   
-  const testCommand = `xcodebuild test -scheme VivaDicta -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination "platform=iOS Simulator,name=iPhone 16 Pro,OS=18.1" CODE_SIGNING_ALLOWED=NO`
+  // Try to find the best available simulator
+  const destination = await findBestSimulatorDestination()
+  console.log(`📱 Using destination: ${destination}`)
+  
+  const testCommand = `xcodebuild test -scheme VivaDicta -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination "${destination}" CODE_SIGNING_ALLOWED=NO`
   
   try {
     const startTime = Date.now()
