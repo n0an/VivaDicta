@@ -148,7 +148,7 @@ async function getFileContent(
     }
     
     return null
-  } catch (error) {
+  } catch (error: any) {
     if (error.status === 404) {
       // File might be deleted or renamed
       return null

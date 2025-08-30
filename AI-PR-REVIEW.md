@@ -1,128 +1,97 @@
-# AI PR Review System for VivaDicta
+# AI PR Review + iOS Test Automation
 
-This repository includes an AI-powered Pull Request review system that automatically analyzes code changes and provides detailed feedback when PRs are opened or updated.
-
-## Features
-
-🤖 **Automated Code Reviews**: AI analyzes your Swift/iOS code changes and provides detailed feedback
-📝 **PR Comments**: Reviews are posted as comments directly on your Pull Requests
-🔍 **Multi-Language Support**: Works with Swift, TypeScript, and other languages in your codebase
-⚡ **Fast Feedback**: Get code reviews within minutes of opening a PR
-
-## Setup Instructions
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Configure AI Provider
-
-You need to set up either OpenAI or Anthropic API access:
-
-#### Option A: OpenAI (Recommended)
-1. Get an API key from [OpenAI](https://platform.openai.com/)
-2. Add it to your GitHub repository secrets as `OPENAI_API_KEY`
-
-#### Option B: Anthropic
-1. Get an API key from [Anthropic](https://console.anthropic.com/)
-2. Add it to your GitHub repository secrets as `ANTHROPIC_API_KEY`
-3. Set the repository variable `LLM_PROVIDER` to `anthropic`
-
-### 3. Repository Configuration
-
-1. **GitHub Secrets**: Go to your repository Settings > Secrets and variables > Actions
-   - Add `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` (depending on your choice)
-
-2. **Repository Variables** (Optional):
-   - `LLM_PROVIDER`: Set to `openai` (default) or `anthropic`
-   - `LLM_MODEL`: Override the default model (e.g., `gpt-4o`, `claude-3-5-sonnet-20241022`)
-
-### 4. Test the Setup
-
-1. Create a new branch
-2. Make some code changes
-3. Open a Pull Request to the `main` branch
-4. Watch the AI review appear in the PR comments!
+This repository includes an automated AI-powered Pull Request review system with iOS test execution.
 
 ## How It Works
 
-1. **Trigger**: The system activates when you open or update a PR targeting the `main` branch
-2. **Analysis**: The AI analyzes all changed files, commit messages, and PR context
-3. **Review**: Generates a comprehensive code review focusing on:
-   - Code quality and best practices
-   - Potential bugs or issues
-   - Performance considerations
-   - Security concerns
-   - Swift/iOS specific recommendations
-4. **Comment**: Posts the review as a comment on your PR
+When a Pull Request is opened, updated, or reopened against the `main` branch:
 
-## File Structure
+1. **Code Review Phase**: AI analyzes the PR changes and generates a comprehensive code review
+2. **iOS Test Phase**: Automatically runs the existing iOS test suite using xcodebuild
+3. **Results**: Posts a combined comment with both code review findings and test results
 
+## Workflow Overview
+
+The automation runs on **macOS runners** (required for iOS development) with the following steps:
+
+1. **Checkout code** with full git history
+2. **Setup Node.js** for the AI review scripts  
+3. **Setup Xcode** with latest stable version
+4. **Create & boot iOS Simulator** (iPhone 16 Pro)
+5. **Run AI Agent** which performs:
+   - Code review generation
+   - iOS test execution
+   - Results posting
+
+## Configuration
+
+### Required GitHub Secrets
+
+Set these in your repository settings under `Settings > Secrets and variables > Actions`:
+
+- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` - For AI code review
+- `LLM_PROVIDER` - Either `"openai"` or `"anthropic"` (optional, defaults to openai)
+
+### Test Execution
+
+The system runs iOS tests using:
+```bash
+xcodebuild test -scheme VivaDicta \
+  -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+  -destination "platform=iOS Simulator,name=iPhone 16 Pro,OS=18.1" \
+  CODE_SIGNING_ALLOWED=NO
 ```
-├── .github/workflows/ai-agent.yml    # GitHub Actions workflow
-├── scripts/ai-pr-review.ts           # Main entry point
-├── lib/agents/                       # AI agent modules
-│   ├── flow-runner.ts                # Orchestrates the review process
-│   ├── code-review.ts                # Generates code reviews
-│   ├── github-comments.ts            # Manages PR comments
-│   ├── pr-context.ts                 # Gathers PR information
-│   └── llm.ts                        # AI provider interface
-├── package.json                      # Dependencies
-├── tsconfig.json                     # TypeScript configuration
-└── ai-config.example                 # Environment variables example
-```
 
-## Customization
+## Project Structure
 
-### Review Focus Areas
+### AI Agent Files
+- `.github/workflows/ai-agent.yml` - GitHub Actions workflow
+- `scripts/ai-pr-review.ts` - Entry point script
+- `lib/agents/flow-runner.ts` - Main orchestration logic
+- `lib/agents/ios-test-runner.ts` - iOS test execution
+- `lib/agents/code-review.ts` - AI code review generation
+- `lib/agents/github-comments.ts` - PR comment management
+- `lib/agents/pr-context.ts` - PR data collection
+- `lib/agents/llm.ts` - AI provider integration
 
-The AI reviews focus on:
-- **Swift/iOS Best Practices**: Architecture patterns, memory management, threading
-- **Code Quality**: Readability, maintainability, DRY principles
-- **Security**: Input validation, data handling, permissions
-- **Performance**: Efficient algorithms, memory usage, UI responsiveness
-- **Testing**: Test coverage and quality (when tests are present)
+### Test Files
+- `VivaDictaTests/VivaDictaTests.swift` - Main test file
+- Uses Swift Testing framework
 
-### Excluded Files
+## Features
 
-The system automatically excludes:
-- Binary files (images, frameworks)
-- Generated files (Xcode user data, build artifacts)
-- Dependencies (node_modules, Pods)
-- Large files that would exceed token limits
+### Code Review
+- AI-powered analysis of code changes
+- File-by-file detailed review
+- Overall suggestions and recommendations
+- Intelligent context understanding
 
-## Troubleshooting
+### iOS Test Automation
+- Runs existing test suite automatically
+- Parses test results and provides detailed reporting
+- Shows test counts, duration, and failure details
+- No test generation - only executes existing tests
 
-### Common Issues
+### GitHub Integration
+- Automatic PR comments with results
+- Real-time updates during execution
+- Clear success/failure indicators
+- Preserves review history
 
-1. **No review appears**: Check that you have the required API key set in repository secrets
-2. **Review fails**: Check the Actions tab for detailed error logs
-3. **Incomplete reviews**: Very large PRs might hit token limits - consider breaking them into smaller PRs
+## Simple Design
 
-### Debugging
+This implementation is intentionally simplified compared to the level-3-agent reference:
+- **No test generation** - only runs existing tests
+- **No iterative test fixing** - reports results as-is  
+- **No gating logic** - always runs tests after review
+- **Single workflow** - combines review and testing in one job
 
-1. Go to Actions tab in your GitHub repository
-2. Click on the failed workflow run
-3. Check the "AI Agent PR Review" job logs for detailed error information
+## Usage
 
-## Cost Considerations
+Simply open a Pull Request against the `main` branch. The AI agent will automatically:
+1. Post an initial "starting" comment
+2. Generate and post a code review
+3. Update the comment to show "running tests"
+4. Post final results with both review and test outcomes
 
-- **OpenAI**: Approximately $0.01-0.10 per review depending on PR size
-- **Anthropic**: Similar pricing structure
-- Costs scale with the amount of code changed in each PR
-
-## Contributing
-
-To modify the AI review behavior:
-1. Edit the prompt in `lib/agents/code-review.ts`
-2. Adjust file filtering in `lib/agents/pr-context.ts`
-3. Customize comment formatting in `lib/agents/flow-runner.ts`
-
-## Support
-
-If you encounter issues:
-1. Check the GitHub Actions logs
-2. Verify your API keys are correctly set
-3. Ensure your repository has the necessary permissions for Actions
+The entire process typically takes 2-5 minutes depending on code complexity and test suite size.

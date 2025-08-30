@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   ai-review:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     
     steps:
       - name: Checkout code
@@ -29,6 +29,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+          
+      - name: Select Xcode Version
+        run: |
+          # Use latest stable Xcode available on runner
+          xcode-select -p
+          xcodebuild -version
+          
+      - name: List Available Simulators
+        run: xcrun simctl list devices
 
       - name: Run AI Agent
         env:
