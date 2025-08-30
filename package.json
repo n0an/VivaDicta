@@ -1,0 +1,33 @@
+{
+    "name": "vivadicta-ai-agent",
+    "version": "1.0.0",
+    "description": "AI-powered PR review agent for VivaDicta iOS app",
+    "main": "index.js",
+    "scripts": {
+        "ai-review": "tsx scripts/ai-pr-review.ts",
+        "build": "tsc",
+        "dev": "tsx --watch scripts/ai-pr-review.ts"
+    },
+    "keywords": [
+        "ai",
+        "pr-review",
+        "github-actions",
+        "ios",
+        "swift"
+    ],
+    "author": "VivaDicta Team",
+    "license": "MIT",
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.24.3",
+        "@octokit/rest": "^20.1.1",
+        "openai": "^4.52.7"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.9",
+        "tsx": "^4.15.7",
+        "typescript": "^5.5.2"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
