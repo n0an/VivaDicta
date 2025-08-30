@@ -17,6 +17,9 @@ struct ModelsList: View {
             WhisperModelsList(appState: appState)
         case .cloud:
             CloudModelsList()
+            
+            
+            
         }
     }
 }
