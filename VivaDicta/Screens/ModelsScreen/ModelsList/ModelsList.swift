@@ -11,9 +11,6 @@ struct ModelsList: View {
     var appState: AppState
     var modelType: TranscriptionModel
     
-    
-    
-    
     var body: some View {
         switch modelType {
         case .local:
