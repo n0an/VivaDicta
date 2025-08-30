@@ -21,8 +21,7 @@ extension Transition where Self == BlurTransition {
     }
 }
 
-
-//extension View {
+// extension View {
 //    func badge<B: View>(@ViewBuilder _ badge: () -> B) -> some View {
 //        overlay(alignment: .topTrailing) {
 //            badge()
@@ -30,10 +29,9 @@ extension Transition where Self == BlurTransition {
 //                .alignmentGuide(.trailing) { $0.width/2 }
 //        }
 //    }
-//}
+// }
 
-
-//struct Badge: ViewModifier {
+// struct Badge: ViewModifier {
 //    @Environment(\.badgeColor) private var badgeColor
 //    func body(content: Content) -> some View {
 //        content
@@ -46,30 +44,24 @@ extension Transition where Self == BlurTransition {
 //                    .fill(badgeColor)
 //            }
 //    }
-//}
+// }
 
-
-
-//enum BadgeColorKey: EnvironmentKey {
+// enum BadgeColorKey: EnvironmentKey {
 //    static var defaultValue: Color = .blue
-//}
+// }
 //
-//extension EnvironmentValues {
+// extension EnvironmentValues {
 //    var badgeColor: Color {
 //        get { self[BadgeColorKey.self] }
 //        set { self[BadgeColorKey.self] = newValue }
 //    }
-//}
+// }
 //
-//extension View {
+// extension View {
 //    func badgeColor(_ color: Color) -> some View {
 //        environment(\.badgeColor, color)
 //    }
-//}
-
-
-
-
+// }
 
 protocol BadgeStyle {
     associatedtype Body: View
@@ -92,7 +84,7 @@ struct DefaultBadgeStyle: BadgeStyle {
 }
 
 enum BadgeStyleKey: EnvironmentKey {
-    static var defaultValue: any BadgeStyle = DefaultBadgeStyle()
+    nonisolated(unsafe) static var defaultValue: any BadgeStyle = DefaultBadgeStyle()
 }
 
 extension EnvironmentValues {
@@ -117,14 +109,13 @@ struct OverlayBadge<BadgeLabel: View>: ViewModifier {
     }
 }
 
-
 extension View {
     func badge<V: View>(alignment: Alignment = .topTrailing,
-                        @ViewBuilder _ content: () -> V) -> some View {
+                        @ViewBuilder _ content: () -> V) -> some View
+    {
         modifier(OverlayBadge(alignment: alignment, label: content()))
     }
 }
-
 
 struct FancyBadgeStyle: BadgeStyle {
     var background: some View {
@@ -134,13 +125,14 @@ struct FancyBadgeStyle: BadgeStyle {
                 .overlay {
                     ContainerRelativeShape()
                         .fill(LinearGradient(colors: [.white, .clear],
-                                            startPoint: .top, endPoint: .center))
+                                             startPoint: .top, endPoint: .center))
                 }
             ContainerRelativeShape()
                 .strokeBorder(Color.white, lineWidth: 2)
                 .shadow(radius: 2)
         }
     }
+
     func makeBody(_ label: AnyView) -> some View {
         label
             .foregroundColor(.white)
@@ -165,16 +157,17 @@ extension BadgeStyle where Self == FancyBadgeStyle {
 }
 
 // MARK: - Debug
+
 extension View {
     @ViewBuilder
     func debugBorder() -> some View {
         #if DEBUG
-        self.border(Color.random())
+            border(Color.random())
         #else
-        self
+            self
         #endif
     }
-    
+
     @ViewBuilder
     func iflet<Value>(_ value: Value?, @ViewBuilder transform: (Value, Self) -> some View) -> some View {
         if let value {
@@ -188,15 +181,14 @@ extension View {
 extension Color {
     static func random() -> Color {
         Color(
-            red: Double.random(in: 0...1),
-            green: Double.random(in: 0...1),
-            blue: Double.random(in: 0...1)
+            red: Double.random(in: 0 ... 1),
+            green: Double.random(in: 0 ... 1),
+            blue: Double.random(in: 0 ... 1)
         )
     }
-    
+
     var sui: Color { Color(self) }
 }
-
 
 private struct OnFirstAppearModifier: ViewModifier {
     @State private var didPerform = false
