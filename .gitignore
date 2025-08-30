@@ -78,6 +78,14 @@ appcenter-post-build.sh
 # Logs
 *.log
 
+# Node.js / TypeScript
+node_modules
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Misc
 *.orig
 *.backup

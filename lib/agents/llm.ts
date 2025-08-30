@@ -1,92 +1,65 @@
-import OpenAI from 'openai'
-import Anthropic from '@anthropic-ai/sdk'
+import { openai, createOpenAI } from '@ai-sdk/openai'
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
+import type { LanguageModel } from 'ai'
 
 const LLM_PROVIDER = process.env.LLM_PROVIDER || 'openai'
 
-export async function callLLM(prompt: string): Promise<string> {
+/**
+ * Returns the configured LLM model instance for use with AI SDK's generateObject
+ */
+export function getLLMModel(): LanguageModel {
   switch (LLM_PROVIDER.toLowerCase()) {
     case 'openai':
-      return await callOpenAI(prompt)
+      return getOpenAIModel()
     case 'anthropic':
-      return await callAnthropic(prompt)
+      return getAnthropicModel()
     default:
       throw new Error(`Unsupported LLM provider: ${LLM_PROVIDER}`)
   }
 }
 
-async function callOpenAI(prompt: string): Promise<string> {
+function getOpenAIModel(): LanguageModel {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required')
   }
 
-  const client = new OpenAI({ apiKey })
-  const model = process.env.LLM_MODEL || 'gpt-4o'
-
-  console.log(`🤖 Using OpenAI model: ${model}`)
-
-  try {
-    const response = await client.chat.completions.create({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert code reviewer with deep knowledge of software engineering best practices, security, performance, and maintainability. You specialize in iOS development with Swift and are familiar with modern development patterns.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.1,
-      max_tokens: 4000
-    })
-
-    const content = response.choices[0]?.message?.content
-    if (!content) {
-      throw new Error('No content received from OpenAI')
-    }
-
-    return content
-  } catch (error) {
-    console.error('Error calling OpenAI:', error)
-    throw error
-  }
+  const modelName = process.env.LLM_MODEL || 'gpt-4o'
+  console.log(`🤖 Using OpenAI model: ${modelName}`)
+  
+  // Create OpenAI provider with API key
+  const openaiProvider = createOpenAI({
+    apiKey: apiKey
+  })
+  
+  return openaiProvider(modelName)
 }
 
-async function callAnthropic(prompt: string): Promise<string> {
+function getAnthropicModel(): LanguageModel {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     throw new Error('ANTHROPIC_API_KEY environment variable is required')
   }
 
-  const client = new Anthropic({ apiKey })
-  const model = process.env.LLM_MODEL || 'claude-3-5-sonnet-20241022'
+  const modelName = process.env.LLM_MODEL || 'claude-sonnet-4-20250514'
+  console.log(`🤖 Using Anthropic model: ${modelName}`)
+  
+  // Create Anthropic provider with API key
+  const anthropicProvider = createAnthropic({
+    apiKey: apiKey
+  })
+  
+  return anthropicProvider(modelName)
+}
 
-  console.log(`🤖 Using Anthropic model: ${model}`)
-
-  try {
-    const response = await client.messages.create({
-      model,
-      max_tokens: 4000,
-      temperature: 0.1,
-      system: 'You are an expert code reviewer with deep knowledge of software engineering best practices, security, performance, and maintainability. You specialize in iOS development with Swift and are familiar with modern development patterns.',
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
-
-    const content = response.content[0]
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Anthropic')
-    }
-
-    return content.text
-  } catch (error) {
-    console.error('Error calling Anthropic:', error)
-    throw error
-  }
+// Legacy function for backward compatibility - can be removed after migration
+export async function callLLM(prompt: string): Promise<string> {
+  console.warn('⚠️  callLLM is deprecated. Use getLLMModel() with generateObject instead.')
+  
+  // This is a simplified fallback that maintains existing behavior
+  // but doesn't provide the type safety benefits of generateObject
+  const model = getLLMModel()
+  
+  // For now, we'll throw an error to force migration to the new pattern
+  throw new Error('callLLM is deprecated. Please migrate to using getLLMModel() with generateObject for type-safe responses.')
 }

@@ -1,95 +1,89 @@
-import { callLLM } from './llm'
+import { z } from 'zod'
+import { generateObject } from 'ai'
+import { getLLMModel } from './llm'
 import { PRContext } from './pr-context'
 
-export interface CodeReviewResponse {
-  summary: string
-  files: Array<{
-    filename: string
-    summary: string
-    suggestions: string[]
-  }>
-  overallSuggestions: string[]
-}
+// Zod schema for type-safe LLM responses
+const reviewSchema = z.object({
+  summary: z.string().describe('A brief overview of the changes and overall assessment'),
+  fileAnalyses: z.array(
+    z.object({
+      path: z.string().describe('The file path'),
+      analysis: z.string().describe('Analysis of what this file does and changes made')
+    })
+  ).describe('Analysis of each changed file'),
+  overallSuggestions: z.array(z.string()).describe('Overall suggestions for the PR')
+})
+
+export type CodeReviewResponse = z.infer<typeof reviewSchema>
 
 export async function generateCodeReview(prContext: PRContext): Promise<CodeReviewResponse> {
   const prompt = buildCodeReviewPrompt(prContext)
   
   console.log('🤖 Calling LLM for code review...')
-  const response = await callLLM(prompt)
-  
+  console.log(`\n\n\n\n\n--------------------------------`)
+  console.log(`Review prompt:\n${prompt}`)
+  console.log(`--------------------------------\n\n\n\n\n`)
+
+  // Obtain the configured LLM model (OpenAI or Anthropic, etc.)
+  const modelInfo = getLLMModel()
+
   try {
-    // Try to extract JSON from the response
-    const jsonResponse = extractJSON(response)
-    return JSON.parse(jsonResponse)
+    // Use ai-sdk's generateObject to parse strictly into the schema we declared above.
+    const result = await generateObject({
+      model: modelInfo,
+      schema: reviewSchema,
+      schemaName: "review",
+      schemaDescription: "Code review feedback in JSON",
+      prompt
+    })
+
+    return result.object
   } catch (error) {
-    console.error('Error parsing LLM response:', error)
-    console.error('Raw response:', response)
+    console.error('Error calling LLM with generateObject:', error)
     
-    // Fallback response
+    // Fallback response with the new schema structure
     return {
-      summary: 'Error parsing AI response. The AI provided feedback but it could not be properly formatted.',
-      files: [],
-      overallSuggestions: ['Please review the code manually due to AI parsing error.']
+      summary: 'Error generating AI review. The AI service encountered an issue.',
+      fileAnalyses: [],
+      overallSuggestions: ['Please review the code manually due to AI service error.']
     }
   }
 }
 
-function extractJSON(response: string): string {
-  // Try to find JSON within markdown code blocks
-  const jsonBlockMatch = response.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
-  if (jsonBlockMatch) {
-    return jsonBlockMatch[1]
-  }
-  
-  // Try to find JSON by looking for the first { to the last }
-  const firstBrace = response.indexOf('{')
-  const lastBrace = response.lastIndexOf('}')
-  
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    return response.substring(firstBrace, lastBrace + 1)
-  }
-  
-  // If no JSON structure found, return the original response
-  return response.trim()
-}
+
 
 function buildCodeReviewPrompt(prContext: PRContext): string {
-  return `You are an expert code reviewer. Please provide a comprehensive code review for this Pull Request.
-
-**PR Information:**
-- Title: ${prContext.title}
-- Description: ${prContext.description || 'No description provided'}
-- Author: ${prContext.author}
-- Target Branch: ${prContext.targetBranch}
-- Source Branch: ${prContext.sourceBranch}
-
-**Recent Commits:**
-${prContext.commits.map(c => `- ${c.message} (${c.author})`).join('\n')}
-
-**Changed Files:**
-${prContext.changedFiles.map(f => 
-  `\n### File: ${f.filename}
+  const changedFilesPrompt = prContext.changedFiles.map(f => 
+    `\n### File: ${f.filename}
 Status: ${f.status}
 Changes: +${f.additions} -${f.deletions}
 
 \`\`\`${getFileExtension(f.filename)}
 ${f.content}
 \`\`\``
-).join('\n')}
+  ).join('\n')
 
-Please provide your review in the following JSON format. IMPORTANT: Return ONLY valid JSON, no markdown code blocks or extra text:
-
+  return `You are an expert code reviewer. Return valid JSON only, with the structure:
 {
-  "summary": "A brief overview of the changes and overall assessment",
-  "files": [
-    {
-      "filename": "path/to/file",
-      "summary": "What this file does and changes made",
-      "suggestions": ["Specific suggestion 1", "Specific suggestion 2"]
-    }
+  "summary": "string",
+  "fileAnalyses": [
+    { "path": "string", "analysis": "string" }
   ],
-  "overallSuggestions": ["Overall suggestion 1", "Overall suggestion 2"]
+  "overallSuggestions": ["string"]
 }
+
+PR Title: ${prContext.title}
+PR Description: ${prContext.description || 'No description provided'}
+Author: ${prContext.author}
+Target Branch: ${prContext.targetBranch}
+Source Branch: ${prContext.sourceBranch}
+
+Commits:
+${prContext.commits.map(c => `- ${c.message} (${c.author})`).join('\n')}
+
+Changed Files:
+${changedFilesPrompt}
 
 Focus on:
 - Code quality and best practices
@@ -120,3 +114,4 @@ function getFileExtension(filename: string): string {
   
   return extensionMap[ext || ''] || ''
 }
+
