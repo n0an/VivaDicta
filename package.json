@@ -18,11 +18,11 @@
     "author": "VivaDicta Team",
     "license": "MIT",
     "dependencies": {
-        "@ai-sdk/anthropic": "^0.0.39",
-        "@ai-sdk/openai": "^0.0.42",
+        "@ai-sdk/anthropic": "^1.1.6",
+        "@ai-sdk/openai": "^1.1.5",
         "@octokit/rest": "^20.1.1",
-        "ai": "^3.4.32",
-        "zod": "^3.23.8"
+        "ai": "^4.1.11",
+        "zod": "^3.24.1"
     },
     "devDependencies": {
         "@types/node": "^20.14.9",

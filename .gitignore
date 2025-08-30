@@ -79,7 +79,7 @@ appcenter-post-build.sh
 *.log
 
 # Node.js / TypeScript
-node_modules
+node_modules/
 dist/
 *.tsbuildinfo
 npm-debug.log*
