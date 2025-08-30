@@ -18,7 +18,9 @@ export async function generateCodeReview(prContext: PRContext): Promise<CodeRevi
   const response = await callLLM(prompt)
   
   try {
-    return JSON.parse(response)
+    // Try to extract JSON from the response
+    const jsonResponse = extractJSON(response)
+    return JSON.parse(jsonResponse)
   } catch (error) {
     console.error('Error parsing LLM response:', error)
     console.error('Raw response:', response)
@@ -30,6 +32,25 @@ export async function generateCodeReview(prContext: PRContext): Promise<CodeRevi
       overallSuggestions: ['Please review the code manually due to AI parsing error.']
     }
   }
+}
+
+function extractJSON(response: string): string {
+  // Try to find JSON within markdown code blocks
+  const jsonBlockMatch = response.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+  if (jsonBlockMatch) {
+    return jsonBlockMatch[1]
+  }
+  
+  // Try to find JSON by looking for the first { to the last }
+  const firstBrace = response.indexOf('{')
+  const lastBrace = response.lastIndexOf('}')
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return response.substring(firstBrace, lastBrace + 1)
+  }
+  
+  // If no JSON structure found, return the original response
+  return response.trim()
 }
 
 function buildCodeReviewPrompt(prContext: PRContext): string {
@@ -56,7 +77,7 @@ ${f.content}
 \`\`\``
 ).join('\n')}
 
-Please provide your review in the following JSON format:
+Please provide your review in the following JSON format. IMPORTANT: Return ONLY valid JSON, no markdown code blocks or extra text:
 
 {
   "summary": "A brief overview of the changes and overall assessment",
