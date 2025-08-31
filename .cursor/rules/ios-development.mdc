@@ -1,7 +1,6 @@
 ---
-description: iOS Development Patterns for VivaDicta
-globs: ["**/*.swift", "**/*.xcodeproj/**"]
-alwaysApply: false
+description: iOS Development Rules for VivaDicta
+alwaysApply: true
 ---
 
 # VivaDicta iOS Development Rules
