@@ -93,7 +93,7 @@ yarn-error.log*
 
 # Claude Code
 .claude_code/
-.claude/
+
 claude_session_*
 .claude_context
 .claude_memory

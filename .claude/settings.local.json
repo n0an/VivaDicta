@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(env)",
+      "mcp__XcodeBuildMCP__list_schems_proj",
+      "mcp__XcodeBuildMCP__show_build_set_proj",
+      "mcp__XcodeBuildMCP__build_dev_proj",
+      "mcp__XcodeBuildMCP__build_sim_name_proj",
+      "Bash(swift --version)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/antonnovoselov/.config"
+    ]
+  },
+  "outputStyle": "default"
+}
