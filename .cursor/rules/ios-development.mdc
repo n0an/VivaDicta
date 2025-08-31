@@ -1,0 +1,64 @@
+---
+description: iOS Development Patterns for VivaDicta
+globs: ["**/*.swift", "**/*.xcodeproj/**"]
+alwaysApply: false
+---
+
+# VivaDicta iOS Development Rules
+
+## Swift 6.0 & Concurrency
+- Use Swift 6.0 with strict concurrency enabled
+- Prefer `@Observable` macro over `@StateObject` for state management
+- Use actors for thread-safe access to shared resources (like WhisperContext)
+- Always use `async/await` for asynchronous operations
+- Avoid force unwrapping - use proper error handling
+
+## Architecture Patterns
+- Follow MVVM pattern with SwiftUI
+- Keep business logic in service layers (TranscriptionService protocol)
+- Use SwiftData for persistence with proper model definitions
+- Maintain separation between UI (Views) and business logic (ViewModels)
+
+## Code Style
+- Use descriptive names for variables and functions
+- Prefer SwiftUI over UIKit for new UI components
+- Use proper access control (private, internal, public)
+- Add documentation comments for public APIs
+
+## Audio & Transcription
+- Use AVAudioRecorder for audio recording
+- Implement proper audio session management
+- Handle transcription errors gracefully
+- Support both local (Whisper.cpp) and cloud (OpenAI) services
+
+## Testing
+- Write unit tests for ViewModels and services
+- Use iOS Simulator for testing (iPhone 16 Pro, latest OS)
+- Test both success and error scenarios
+- Mock external dependencies in tests
+
+## Build Commands
+When asked to build or test:
+- Use xcodebuild with workspace: `./VivaDicta.xcodeproj/project.xcworkspace`
+- Target: `platform=iOS Simulator,name=iPhone 16 Pro,OS=latest`
+- Configuration: Debug for development
+- Use `xcbeautify` for readable output
+
+## File Organization
+- Keep related files together (Models, Views, Services)
+- Use proper folder structure: Screens/, Transcription/, Utils/
+- Follow Apple's naming conventions
+- Group functionality by feature, not by type
+
+## Documentation Reference
+The `/docs/` directory contains comprehensive Apple technology documentation:
+- `@swift6-migration.mdc` - Swift 6 migration guide and concurrency best practices
+- `@swift-concurrency.md` - Detailed Swift concurrency patterns and async/await usage
+- `@swift-observable.mdc` - Swift Observation framework (@Observable macro)
+- `@swift-testing-*.mdc` - Swift Testing framework API and best practices
+- `@swiftdata.md` - SwiftData persistence patterns and model definitions
+- `@swiftui.md` - SwiftUI patterns, view composition, and state management
+- `@uikit.md` - UIKit integration and interoperability
+- `@swift-argument-parser.mdc` - Command-line argument parsing
+
+Reference these docs when working with Apple frameworks, implementing new features, or resolving framework-specific questions.
