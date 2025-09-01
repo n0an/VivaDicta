@@ -131,24 +131,10 @@ struct WhisperModelView: View {
     
     private func unzipAndSetupCoreMLModel(for model: WhisperModelEnum, zipPath: URL, progressKey: String) async throws {
         let coreMLDestination = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc")
-        
-        try? FileManager.default.removeItem(at: coreMLDestination)
-        try await unzipCoreMLFile(zipPath, to: URL.documentsDirectory)
+        try Zip.unzipFile(zipPath, destination: URL.documentsDirectory, overwrite: true, password: nil)
         try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
     }
-    
-    private func unzipCoreMLFile(_ zipPath: URL, to destination: URL) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            do {
-                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
-                try Zip.unzipFile(zipPath, destination: destination, overwrite: true, password: nil)
-                continuation.resume()
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-    
+        
     private func verifyAndCleanupCoreMLFiles(_ model: WhisperModelEnum, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory), isDirectory.boolValue else {
