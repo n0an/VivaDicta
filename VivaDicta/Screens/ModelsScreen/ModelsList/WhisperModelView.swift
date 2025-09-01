@@ -18,18 +18,9 @@ struct WhisperModelView: View {
     private var model: WhisperModelEnum
     
     @State private var downloadStatus: DownloadStatus
-    @State private var downloadTask: URLSessionDownloadTask?
-    @State private var downloadCoreMLModelTask: URLSessionDownloadTask?
     @State private var progress = 0.0
     @State private var observation: NSKeyValueObservation?
-    @State private var observationCoreMLModel: NSKeyValueObservation?
-    
-    
-    @State var availableModels: [WhisperModelEnum] = []
-    
     @State var downloadProgress: [String: Double] = [:]
-    
-    let modelsDirectory: URL = URL.documentsDirectory.appendingPathComponent("WhisperModels")
     
     private var onSelect: (WhisperModelEnum) -> Void
     
@@ -44,10 +35,7 @@ struct WhisperModelView: View {
             case .downloading:
                 progressView
             case .downloaded:
-                HStack {
-                    selectButton
-//                    deleteButton
-                }
+                selectButton
             }
         }
         .padding()
@@ -86,20 +74,6 @@ struct WhisperModelView: View {
 
     }
     
-    var deleteButton: some View {
-        Button("Delete", role: .destructive) {
-            print("Delete")
-            do {
-                try FileManager.default.removeItem(at: model.fileURL)
-            } catch {
-                print("Error deleting file: \(error)")
-            }
-            downloadStatus = .download
-        }
-        .foregroundStyle(.white)
-        .padding(8)
-        .background(.red, in: .rect(cornerRadius: 8))
-    }
     
     init(model: WhisperModelEnum,
          onSelect: @escaping (WhisperModelEnum) -> Void) {
@@ -181,11 +155,6 @@ struct WhisperModelView: View {
         }
         print("Error downloading model \(model.rawValue): \(error.localizedDescription)")
     }
-    
-    
-    
-    
-    
     
     private func downloadFileWithProgress(from url: URL, progressKey: String) async throws -> Data {
         await MainActor.run {
