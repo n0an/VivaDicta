@@ -18,9 +18,23 @@ struct WhisperModelView: View {
     private var model: WhisperModelEnum
     
     @State private var downloadStatus: DownloadStatus
-    @State private var progress = 0.0
     @State private var observation: NSKeyValueObservation?
     @State var downloadProgress: [String: Double] = [:]
+    
+    private var currentProgress: Double {
+        let mainKey = model.rawValue + "_main"
+        let coreMLKey = model.rawValue + "_coreml"
+        
+        let mainProgress = downloadProgress[mainKey] ?? 0.0
+        let coreMLProgress = downloadProgress[coreMLKey] ?? 0.0
+        
+        // If model supports CoreML, average both progresses
+        if model.coreMLDownloadURL != nil {
+            return (mainProgress * 0.5) + (coreMLProgress * 0.5)
+        } else {
+            return mainProgress
+        }
+    }
     
     private var onSelect: (WhisperModelEnum) -> Void
     
@@ -44,10 +58,10 @@ struct WhisperModelView: View {
     
     var progressView: some View {
         HStack {
-            ProgressView(value: progress)
+            ProgressView(value: currentProgress)
                 .progressViewStyle(LinearProgressViewStyle())
                 .frame(width: 100)
-            Text("\(Int(progress * 100))%")
+            Text("\(Int(currentProgress * 100))%")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(width: 30)
@@ -96,7 +110,7 @@ struct WhisperModelView: View {
     
     
     private func performModelDownload(_ model: WhisperModelEnum, _ url: URL) async throws {
-        _ = try await downloadMainModel(model, from: url)
+        try await downloadMainModel(model, from: url)
         
         if let coreMLDownloadURL = model.coreMLDownloadURL {
             try await downloadAndSetupCoreMLModel(for: model, from: coreMLDownloadURL)
@@ -109,11 +123,10 @@ struct WhisperModelView: View {
         }
     }
     
-    private func downloadMainModel(_ model: WhisperModelEnum, from url: URL) async throws -> Data {
+    private func downloadMainModel(_ model: WhisperModelEnum, from url: URL) async throws {
         let progressKeyMain = model.rawValue + "_main"
         let data = try await downloadFileWithProgress(from: url, progressKey: progressKeyMain)
         try data.write(to: model.fileURL)
-        return data
     }
     
     private func unzipAndSetupCoreMLModel(for model: WhisperModelEnum, zipPath: URL, progressKey: String) async throws {
@@ -193,7 +206,6 @@ struct WhisperModelView: View {
                 let currentProgress = round(progress.fractionCompleted * 100) / 100
                 Task { @MainActor in
                     self.downloadProgress[progressKey] = currentProgress
-                    self.progress = currentProgress
                 }
             }
         }

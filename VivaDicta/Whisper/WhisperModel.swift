@@ -17,7 +17,7 @@ enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
     case openAI
     case elevenlabs
     case groq
-}   
+}
 
 enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
     var id: Self { self }
