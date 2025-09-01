@@ -146,7 +146,7 @@ struct WhisperModelView: View {
         let coreMLDestination = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc")
         
         try? FileManager.default.removeItem(at: coreMLDestination)
-        try await unzipCoreMLFile(zipPath, to: coreMLDestination)
+        try await unzipCoreMLFile(zipPath, to: URL.documentsDirectory)
         try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
     }
     

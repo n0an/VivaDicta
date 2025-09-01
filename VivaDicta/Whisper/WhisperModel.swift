@@ -22,48 +22,28 @@ enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
 enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
     var id: Self { self }
     
-    case tiny
-    case tiny_q5_1 = "tiny-q5_1"
-    case tiny_q8_0 = "tiny-q8_0"
+    case tiny = "ggml-tiny"
+    case tiny_q5_1 = "ggml-tiny-q5_1"
+    case tiny_q8_0 = "ggml-tiny-q8_0"
     
-    case tiny_en = "tiny.en"
-    case tiny_en_q5_1 = "tiny.en-q5_1"
-    case tiny_en_q8_0 = "tiny.en-q8_0"
+    case tiny_en = "ggml-tiny.en"
+    case tiny_en_q5_1 = "ggml-tiny.en-q5_1"
+    case tiny_en_q8_0 = "ggml-tiny.en-q8_0"
     
-    case base = "base"
-    case base_q5_1 = "base-q5_1"
-    case base_q8_0 = "base-q8_0"
+    case base = "ggml-base"
+    case base_q5_1 = "ggml-base-q5_1"
+    case base_q8_0 = "ggml-base-q8_0"
     
-    case base_en = "base.en"
-    case base_en_q5_1 = "base.en-q5_1"
-    case base_en_q8_0 = "base.en-q8_0"
+    case base_en = "ggml-base.en"
+    case base_en_q5_1 = "ggml-base.en-q5_1"
+    case base_en_q8_0 = "ggml-base.en-q8_0"
     
-    case small = "small"
-    case small_q5_1 = "small-q5_1"
-    case small_q8_0 = "small-q8_0"
+    case largeV3 = "ggml-large-v3"
+    case largeV3_q5_0 = "ggml-large-v3-q5_0"
     
-    case small_en = "small.en"
-    case small_en_q5_1 = "small.en-q5_1"
-    case small_en_q8_0 = "small.en-q8_0"
-    
-    case medium = "medium"
-    case medium_q5_0 = "medium-q5_0"
-    case medium_q8_0 = "medium-q8_0"
-    
-    case medium_en = "medium.en"
-    case medium_en_q5_0 = "medium.en-q5_0"
-    case medium_en_q8_0 = "medium.en-q8_0"
-    
-    case largeV2 = "large-v2"
-    case largeV2_q5_0 = "large-v2-q5_0"
-    case largeV2_q8_0 = "large-v2-q8_0"
-    
-    case largeV3 = "large-v3"
-    case largeV3_q5_0 = "large-v3-q5_0"
-    
-    case largeV3Turbo = "large-v3-turbo"
-    case largeV3Turbo_q5_0 = "large-v3-turbo-q5_0"
-    case largeV3Turbo_q8_0 = "large-v3-turbo-q8_0"
+    case largeV3Turbo = "ggml-large-v3-turbo"
+    case largeV3Turbo_q5_0 = "ggml-large-v3-turbo-q5_0"
+    case largeV3Turbo_q8_0 = "ggml-large-v3-turbo-q8_0"
     
     static let defaultURL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/"
     
@@ -72,13 +52,13 @@ enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
     }
     
     var downloadURL: URL? {
-        URL(string: "\(Self.defaultURL)ggml-\(filename)")
+        URL(string: "\(Self.defaultURL)\(filename)")
     }
     
     var coreMLDownloadURL: URL? {
         // Only non-quantized models have Core ML versions
         guard !rawValue.contains("q5") && !rawValue.contains("q8") else { return nil }
-        return URL(string: "\(Self.defaultURL)ggml-\(rawValue)-encoder.mlmodelc.zip")
+        return URL(string: "\(Self.defaultURL)\(rawValue)-encoder.mlmodelc.zip")
     }
     
 //    var coreMLEncoderURL: URL? // Path to the unzipped .mlmodelc directory
@@ -124,36 +104,6 @@ enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
             "(57 MiB)"
         case .base_en_q8_0:
             "(78 MiB)"
-        case .small:
-            "(F16, 466 MiB)"
-        case .small_q5_1:
-            "(181 MiB)"
-        case .small_q8_0:
-            "(252 MiB)"
-        case .small_en:
-            "(F16, 466 MiB)"
-        case .small_en_q5_1:
-            "(181 MiB)"
-        case .small_en_q8_0:
-            "(252 MiB)"
-        case .medium:
-            "(F16, 1.5 GiB)"
-        case .medium_q5_0:
-            "(514 MiB)"
-        case .medium_q8_0:
-            "(785 MiB)"
-        case .medium_en:
-            "(F16, 1.5 GiB)"
-        case .medium_en_q5_0:
-            "(514 MiB)"
-        case .medium_en_q8_0:
-            "(785 MiB)"
-        case .largeV2:
-            "(F16, 2.9 GiB)"
-        case .largeV2_q5_0:
-            "(1.1 GiB)"
-        case .largeV2_q8_0:
-            "(1.5 GiB)"
         case .largeV3:
             "(F16, 2.9 GiB)"
         case .largeV3_q5_0:
