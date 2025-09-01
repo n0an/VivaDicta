@@ -8,11 +8,13 @@ enum WhisperError: Error {
 
 // Meet Whisper C++ constraint: Don't access from more than one thread at a time.
 actor WhisperContext {
-    private nonisolated(unsafe) var context: OpaquePointer
+    private nonisolated(unsafe) var context: OpaquePointer?
     private var languageCString: [CChar]?
     private var prompt: String?
     private var promptCString: [CChar]?
     private var vadModelPath: String?
+    
+    private init() {}
 
     init(context: OpaquePointer) {
         self.context = context
@@ -87,22 +89,62 @@ actor WhisperContext {
         return transcription
     }
     
+//    static func createContext(path: String) throws -> WhisperContext {
+//        var params = whisper_context_default_params()
+//#if targetEnvironment(simulator)
+//        params.use_gpu = false
+//        print("Running on the simulator, using CPU")
+//#else
+//        params.flash_attn = true // Enabled by default for Metal
+//#endif
+//        let context = whisper_init_from_file_with_params(path, params)
+//        if let context {
+//            return WhisperContext(context: context)
+//        } else {
+//            print("Couldn't load model at \(path)")
+//            throw WhisperError.couldNotInitializeContext
+//        }
+//    }
+    
     static func createContext(path: String) throws -> WhisperContext {
+        
+            let whisperContext = WhisperContext()
+            Task {
+                
+                try await whisperContext.initializeModel(path: path)
+            }
+            
+            // Load VAD model from bundle resources
+    //        let vadModelPath = await VADModelManager.shared.getModelPath()
+    //        await whisperContext.setVADModelPath(vadModelPath)
+            
+            return whisperContext
+        
+        
+    }
+    
+    private func initializeModel(path: String) async throws {
         var params = whisper_context_default_params()
-#if targetEnvironment(simulator)
+        #if targetEnvironment(simulator)
         params.use_gpu = false
-        print("Running on the simulator, using CPU")
-#else
-        params.flash_attn = true // Enabled by default for Metal
-#endif
+//        logger.info("Running on the simulator, using CPU")
+        #else
+        params.flash_attn = true // Enable flash attention for Metal
+        logger.info("Flash attention enabled for Metal")
+        #endif
+        
         let context = whisper_init_from_file_with_params(path, params)
         if let context {
-            return WhisperContext(context: context)
+            self.context = context
         } else {
-            print("Couldn't load model at \(path)")
-            throw WhisperError.couldNotInitializeContext
+//            logger.error("Couldn't load model at \(path)")
+            throw WhisperStateError.modelLoadFailed
         }
     }
+    
+    
+    
+    
     
     func setPrompt(_ prompt: String?) {
         self.prompt = prompt
