@@ -113,28 +113,33 @@ struct WhisperModelView: View {
         
         Task {
             do {
-                try await downloadMainModel(model, from: url)
-                
-                if let coreMLDownloadURL = model.coreMLDownloadURL {
-                    try await downloadAndPrepareCoreMLFile(from: coreMLDownloadURL, progressKey: model.rawValue + "_coreml")
-                }
-                
-//                availableModels.append(model)
-//                self.downloadProgress.removeValue(forKey: model.rawValue + "_main")
+                try await performModelDownload(model, url)
             } catch {
-                handleModelDownloadError(model, error)
+                await handleModelDownloadError(model, error)
             }
         }
-        
     }
     
     
-    private func downloadMainModel(_ model: WhisperModelEnum, from url: URL) async throws {
+    private func performModelDownload(_ model: WhisperModelEnum, _ url: URL) async throws {
+        _ = try await downloadMainModel(model, from: url)
+        
+        if let coreMLDownloadURL = model.coreMLDownloadURL {
+            try await downloadAndSetupCoreMLModel(for: model, from: coreMLDownloadURL)
+        }
+        
+        await MainActor.run {
+            downloadStatus = .downloaded
+            downloadProgress.removeValue(forKey: model.rawValue + "_main")
+            downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
+        }
+    }
+    
+    private func downloadMainModel(_ model: WhisperModelEnum, from url: URL) async throws -> Data {
         let progressKeyMain = model.rawValue + "_main"
-        
-        
-        try await downloadFile(from: url, progressKey: progressKeyMain)
-
+        let data = try await downloadFileWithProgress(from: url, progressKey: progressKeyMain)
+        try data.write(to: model.fileURL)
+        return data
     }
     
     private func unzipAndSetupCoreMLModel(for model: WhisperModelEnum, zipPath: URL, progressKey: String) async throws {
@@ -148,7 +153,7 @@ struct WhisperModelView: View {
     private func unzipCoreMLFile(_ zipPath: URL, to destination: URL) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             do {
-//                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
                 try Zip.unzipFile(zipPath, destination: destination, overwrite: true, password: nil)
                 continuation.resume()
             } catch {
@@ -158,8 +163,6 @@ struct WhisperModelView: View {
     }
     
     private func verifyAndCleanupCoreMLFiles(_ model: WhisperModelEnum, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
-//        var model = model
-        
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory), isDirectory.boolValue else {
             try? FileManager.default.removeItem(at: zipPath)
@@ -167,15 +170,16 @@ struct WhisperModelView: View {
         }
         
         try? FileManager.default.removeItem(at: zipPath)
-//        model.coreMLEncoderURL = destination
-        self.downloadProgress.removeValue(forKey: progressKey)
-        
-//        return model
+        downloadProgress.removeValue(forKey: progressKey)
     }
     
-    private func handleModelDownloadError(_ model: WhisperModelEnum, _ error: any Error) {
-        self.downloadProgress.removeValue(forKey: model.rawValue + "_main")
-        self.downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
+    private func handleModelDownloadError(_ model: WhisperModelEnum, _ error: any Error) async {
+        await MainActor.run {
+            downloadStatus = .download
+            downloadProgress.removeValue(forKey: model.rawValue + "_main")
+            downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
+        }
+        print("Error downloading model \(model.rawValue): \(error.localizedDescription)")
     }
     
     
@@ -183,147 +187,57 @@ struct WhisperModelView: View {
     
     
     
-    private func downloadFile(from url: URL, progressKey: String) async throws {
-        downloadStatus = .downloading
-//        print("Downloading model \(model.rawValue) from \(model.downloadURL?.absoluteString ?? "unknown URL")")
-//        guard let url = model.downloadURL else { return }
+    private func downloadFileWithProgress(from url: URL, progressKey: String) async throws -> Data {
+        await MainActor.run {
+            downloadStatus = .downloading
+        }
         
-        downloadTask = URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
-            Task { @MainActor in
+        let destinationURL = URL.documentsDirectory.appendingPathComponent(UUID().uuidString)
+        
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+            let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
                 if let error = error {
-                    print("Error: \(error.localizedDescription)")
+                    continuation.resume(throwing: error)
                     return
                 }
-
-                guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else {
-                    print("Server error!")
+                
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode),
+                      let tempURL = tempURL else {
+                    continuation.resume(throwing: URLError(.badServerResponse))
                     return
                 }
-
+                
                 do {
-                    if let temporaryURL = temporaryURL {
-                        try FileManager.default.moveItem(at: temporaryURL, to: model.fileURL)
-                        print("Writing to \(model.filename) completed")
-                        downloadStatus = .downloaded
-                    }
-                } catch let err {
-                    print("Error: \(err.localizedDescription)")
+                    try FileManager.default.moveItem(at: tempURL, to: destinationURL)
+                    let data = try Data(contentsOf: destinationURL, options: .mappedIfSafe)
+                    continuation.resume(returning: data)
+                    try? FileManager.default.removeItem(at: destinationURL)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+            
+            task.resume()
+            
+            observation = task.progress.observe(\.fractionCompleted) { progress, _ in
+                let currentProgress = round(progress.fractionCompleted * 100) / 100
+                Task { @MainActor in
+                    self.downloadProgress[progressKey] = currentProgress
+                    self.progress = currentProgress
                 }
             }
         }
-
-        observation = downloadTask?.progress.observe(\.fractionCompleted) { progress, _ in
-            Task { @MainActor in
-                self.downloadProgress[progressKey] = progress.fractionCompleted
-                self.progress = progress.fractionCompleted
-            }
-        }
-
-        downloadTask?.resume()
-        
     }
     
-    private func downloadAndPrepareCoreMLFile(from url: URL, progressKey: String) async throws {
-        downloadStatus = .downloading
-//        print("Downloading model \(model.rawValue) from \(model.downloadURL?.absoluteString ?? "unknown URL")")
-//        guard let url = model.downloadURL else { return }
+    private func downloadAndSetupCoreMLModel(for model: WhisperModelEnum, from url: URL) async throws {
+        let progressKeyCoreML = model.rawValue + "_coreml"
+        let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
         
-        downloadCoreMLModelTask = URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
-            Task { @MainActor in
-                if let error = error {
-                    print("Error: \(error.localizedDescription)")
-                    return
-                }
-
-                guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else {
-                    print("Server error!")
-                    return
-                }
-                
-                
-//                
-////                let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
-//                guard let temporaryURL else { return }
-//                let coreMLData = Data(contentsOf: temporaryURL)
-//                
-//                let coreMLZipPath = modelsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc.zip")
-//                try coreMLData.write(to: coreMLZipPath)
-//                
-//                try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
-                
-                
-                
-
-                do {
-                    if let temporaryURL = temporaryURL {
-                        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc.zip")
-
-                        try FileManager.default.moveItem(at: temporaryURL, to: coreMLZipPath)
-                        
-                        print("Writing coreml zip to \(model.filename) completed")
-                        
-                        try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKey)
-
-                        
-                        downloadStatus = .downloaded
-                    }
-                } catch let err {
-                    print("Error: \(err.localizedDescription)")
-                }
-            }
-        }
-
-        observationCoreMLModel = downloadCoreMLModelTask?.progress.observe(\.fractionCompleted) { progress, _ in
-            Task { @MainActor in
-                self.downloadProgress[progressKey] = progress.fractionCompleted
-                self.progress = progress.fractionCompleted
-            }
-        }
-
-        downloadCoreMLModelTask?.resume()
+        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc.zip")
+        try coreMLData.write(to: coreMLZipPath)
         
-    }
-    
-    
-    
-    
-    private func download() {
-        downloadStatus = .downloading
-        print("Downloading model \(model.rawValue) from \(model.downloadURL?.absoluteString ?? "unknown URL")")
-        guard let url = model.downloadURL else { return }
-        
-        downloadTask = URLSession.shared.downloadTask(with: url) { temporaryURL, response, error in
-            Task { @MainActor in
-                if let error = error {
-                    print("Error: \(error.localizedDescription)")
-                    return
-                }
-
-                guard let response = response as? HTTPURLResponse, (200...299).contains(response.statusCode) else {
-                    print("Server error!")
-                    return
-                }
-
-                do {
-                    if let temporaryURL = temporaryURL {
-                        try FileManager.default.moveItem(at: temporaryURL, to: model.fileURL)
-                        print("Writing to \(model.filename) completed")
-                        downloadStatus = .downloaded
-                    }
-                } catch let err {
-                    print("Error: \(err.localizedDescription)")
-                }
-            }
-        }
-
-        observation = downloadTask?.progress.observe(\.fractionCompleted) { progress, _ in
-            Task { @MainActor in
-                self.progress = progress.fractionCompleted
-            }
-        }
-
-        downloadTask?.resume()
-        
+        try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
     }
 }
 
