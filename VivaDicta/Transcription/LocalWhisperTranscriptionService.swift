@@ -20,8 +20,7 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
         self.selectedLanguage = selectedLanguage
         
         do {
-            
-                whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
+            whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
             
         } catch {
             print(error.localizedDescription)
