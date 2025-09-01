@@ -75,6 +75,21 @@ enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
         URL(string: "\(Self.defaultURL)ggml-\(filename)")
     }
     
+    var coreMLDownloadURL: URL? {
+        // Only non-quantized models have Core ML versions
+        guard !rawValue.contains("q5") && !rawValue.contains("q8") else { return nil }
+        return URL(string: "\(Self.defaultURL)/\(rawValue)-encoder.mlmodelc.zip)")
+    }
+    
+//    var coreMLEncoderURL: URL? // Path to the unzipped .mlmodelc directory
+//    var isCoreMLDownloaded: Bool { coreMLEncoderURL != nil }
+    
+    var coreMLEncoderDirectoryName: String? {
+        guard coreMLDownloadURL != nil else { return nil }
+        return "\(rawValue)-encoder.mlmodelc"
+    }
+    
+    
     var fileURL: URL {
         URL.documentsDirectory.appendingPathComponent(filename)
     }
@@ -159,3 +174,33 @@ enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
     }
 }
 
+
+
+
+struct WhisperModel: Identifiable {
+    let id = UUID()
+    let name: String
+    let url: URL
+    var coreMLEncoderURL: URL? // Path to the unzipped .mlmodelc directory
+    var isCoreMLDownloaded: Bool { coreMLEncoderURL != nil }
+    
+    var downloadURL: String {
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/\(filename)"
+    }
+    
+    var filename: String {
+        "\(name).bin"
+    }
+    
+    // Core ML related properties
+    var coreMLZipDownloadURL: String? {
+        // Only non-quantized models have Core ML versions
+        guard !name.contains("q5") && !name.contains("q8") else { return nil }
+        return "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/\(name)-encoder.mlmodelc.zip"
+    }
+    
+    var coreMLEncoderDirectoryName: String? {
+        guard coreMLZipDownloadURL != nil else { return nil }
+        return "\(name)-encoder.mlmodelc"
+    }
+}
