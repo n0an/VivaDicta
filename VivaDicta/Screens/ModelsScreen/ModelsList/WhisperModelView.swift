@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WhisperModelView: View {
-    private var model: WhisperModelEnum
+    private var model: WhisperModel
     private let downloadManager: WhisperModelDownloadManager
     
     private var currentProgress: Double {
@@ -19,7 +19,7 @@ struct WhisperModelView: View {
         downloadManager.downloadStatus(for: model)
     }
     
-    private var onSelect: (WhisperModelEnum) -> Void
+    private var onSelect: (WhisperModel) -> Void
     
     var body: some View {
         
@@ -74,15 +74,15 @@ struct WhisperModelView: View {
     }
     
     
-    init(model: WhisperModelEnum,
+    init(model: WhisperModel,
          downloadManager: WhisperModelDownloadManager,
-         onSelect: @escaping (WhisperModelEnum) -> Void) {
+         onSelect: @escaping (WhisperModel) -> Void) {
         self.model = model
         self.downloadManager = downloadManager
         self.onSelect = onSelect
     }
     
-    func downloadModel(_ model: WhisperModelEnum) {
+    func downloadModel(_ model: WhisperModel) {
         Task {
             do {
                 try await downloadManager.downloadModel(model)
@@ -95,7 +95,7 @@ struct WhisperModelView: View {
 
 #Preview {
     WhisperModelView(
-        model: WhisperModelEnum.tiny, 
+        model: WhisperModel.tiny, 
         downloadManager: WhisperModelDownloadManager(), 
         onSelect: {_ in print("select") }
     )
