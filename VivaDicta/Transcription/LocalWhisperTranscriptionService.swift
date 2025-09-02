@@ -28,23 +28,24 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
     }
     
     public func generateAudioTransciptions(fileURL: URL) async throws -> String {
-        return await transcribeAudio(fileURL)
+        return try await transcribeAudio(fileURL)
     }
     
-    public func transcribeAudio(_ url: URL) async -> String {
+    public func transcribeAudio(_ url: URL) async throws -> String {
         guard let whisperContext else { return "" }
         
-        do {
-            await whisperContext.setPrompt(selectedLanguage.prompt)
-            print("=== Language = \(selectedLanguage.prompt)")
-            let data = try readAudioSamples(url)
-            await whisperContext.fullTranscribe(samples: data)
-            let text = await whisperContext.getTranscription()
-            return text
-        } catch {
-            print(error.localizedDescription)
-            return ""
+        await whisperContext.setPrompt(selectedLanguage.prompt)
+        print("=== Language = \(selectedLanguage.prompt)")
+        let data = try readAudioSamples(url)
+        
+        let success = await whisperContext.fullTranscribe(samples: data)
+        
+        guard success else {
+            throw WhisperStateError.whisperCoreFailed
         }
+        
+        return await whisperContext.getTranscription()
+        
     }
     
     private func readAudioSamples(_ url: URL) throws -> [Float] {
