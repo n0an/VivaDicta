@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// MARK: - BlurTransition
 struct BlurTransition: Transition {
     var radius: CGFloat
     func body(content: Content, phase: TransitionPhase) -> some View {
@@ -63,6 +64,7 @@ extension Transition where Self == BlurTransition {
 //    }
 // }
 
+// MARK: - Badges
 protocol BadgeStyle {
     associatedtype Body: View
     @ViewBuilder func makeBody(_ label: AnyView) -> Body
@@ -111,8 +113,7 @@ struct OverlayBadge<BadgeLabel: View>: ViewModifier {
 
 extension View {
     func badge<V: View>(alignment: Alignment = .topTrailing,
-                        @ViewBuilder _ content: () -> V) -> some View
-    {
+                        @ViewBuilder _ content: () -> V) -> some View {
         modifier(OverlayBadge(alignment: alignment, label: content()))
     }
 }
@@ -157,7 +158,6 @@ extension BadgeStyle where Self == FancyBadgeStyle {
 }
 
 // MARK: - Debug
-
 extension View {
     @ViewBuilder
     func debugBorder() -> some View {
@@ -178,6 +178,7 @@ extension View {
     }
 }
 
+// MARK: - Color
 extension Color {
     static func random() -> Color {
         Color(
@@ -190,6 +191,7 @@ extension Color {
     var sui: Color { Color(self) }
 }
 
+// MARK: - onFirstAppear
 private struct OnFirstAppearModifier: ViewModifier {
     @State private var didPerform = false
 
