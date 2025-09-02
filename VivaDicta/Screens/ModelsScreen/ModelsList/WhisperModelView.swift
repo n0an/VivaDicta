@@ -18,7 +18,7 @@ struct WhisperModelView: View {
     
     @State private var downloadStatus: DownloadStatus
     
-    private let downloadManager = WhisperModelDownloadManager()
+    private let downloadManager: WhisperModelDownloadManager
     
     private var currentProgress: Double {
         downloadManager.currentProgress(for: model)
@@ -80,8 +80,10 @@ struct WhisperModelView: View {
     
     
     init(model: WhisperModelEnum,
+         downloadManager: WhisperModelDownloadManager,
          onSelect: @escaping (WhisperModelEnum) -> Void) {
         self.model = model
+        self.downloadManager = downloadManager
         self.downloadStatus = self.model.fileExists ? .downloaded : .download
         self.onSelect = onSelect
     }
@@ -106,6 +108,10 @@ struct WhisperModelView: View {
 }
 
 #Preview {
-    WhisperModelView(model: WhisperModelEnum.tiny, onSelect: {_ in print("select") })
+    WhisperModelView(
+        model: WhisperModelEnum.tiny, 
+        downloadManager: WhisperModelDownloadManager(), 
+        onSelect: {_ in print("select") }
+    )
 }
 

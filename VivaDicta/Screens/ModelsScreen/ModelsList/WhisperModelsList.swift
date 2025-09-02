@@ -9,12 +9,16 @@ import SwiftUI
 
 struct WhisperModelsList: View {
     var appState: AppState
+    @State private var downloadManager = WhisperModelDownloadManager()
     
     var body: some View {
         List {
             Section(header: Text("Local Whisper Models")) {
                 ForEach(WhisperModelEnum.allCases) { model in
-                    WhisperModelView(model: model) { model in
+                    WhisperModelView(
+                        model: model, 
+                        downloadManager: downloadManager
+                    ) { model in
                         loadModel(whisperModel: model)
                     }
                 }
