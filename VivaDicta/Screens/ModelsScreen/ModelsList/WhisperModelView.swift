@@ -8,20 +8,15 @@
 import SwiftUI
 
 struct WhisperModelView: View {
-    enum DownloadStatus: String {
-        case download
-        case downloading
-        case downloaded
-    }
-    
     private var model: WhisperModelEnum
-    
-    @State private var downloadStatus: DownloadStatus
-    
     private let downloadManager: WhisperModelDownloadManager
     
     private var currentProgress: Double {
         downloadManager.currentProgress(for: model)
+    }
+    
+    private var downloadStatus: DownloadStatus {
+        downloadManager.downloadStatus(for: model)
     }
     
     private var onSelect: (WhisperModelEnum) -> Void
@@ -84,24 +79,15 @@ struct WhisperModelView: View {
          onSelect: @escaping (WhisperModelEnum) -> Void) {
         self.model = model
         self.downloadManager = downloadManager
-        self.downloadStatus = self.model.fileExists ? .downloaded : .download
         self.onSelect = onSelect
     }
     
     func downloadModel(_ model: WhisperModelEnum) {
-        downloadStatus = .downloading
-        
         Task {
             do {
                 try await downloadManager.downloadModel(model)
-                await MainActor.run {
-                    downloadStatus = .downloaded
-                }
             } catch {
                 await downloadManager.handleModelDownloadError(model, error)
-                await MainActor.run {
-                    downloadStatus = .download
-                }
             }
         }
     }

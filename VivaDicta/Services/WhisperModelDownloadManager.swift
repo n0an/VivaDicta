@@ -8,14 +8,25 @@
 import Foundation
 import Zip
 
+enum DownloadStatus: String {
+    case download
+    case downloading
+    case downloaded
+}
+
 @Observable
 class WhisperModelDownloadManager {
     public var downloadProgress: [String: Double] = [:]
+    public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
     
     public func downloadModel(_ model: WhisperModelEnum) async throws {
         guard let url = model.downloadURL else {
             throw WhisperDownloadError.invalidURL 
+        }
+        
+        await MainActor.run {
+            downloadStatuses[model.rawValue] = .downloading
         }
         
         try await performModelDownload(model, url)
@@ -29,6 +40,7 @@ class WhisperModelDownloadManager {
         }
         
         await MainActor.run {
+            downloadStatuses[model.rawValue] = .downloaded
             downloadProgress.removeValue(forKey: model.rawValue + "_main")
             downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
         }
@@ -112,6 +124,7 @@ class WhisperModelDownloadManager {
     
     func handleModelDownloadError(_ model: WhisperModelEnum, _ error: any Error) async {
         await MainActor.run {
+            downloadStatuses[model.rawValue] = .download
             downloadProgress.removeValue(forKey: model.rawValue + "_main")
             downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
         }
@@ -130,6 +143,10 @@ class WhisperModelDownloadManager {
         } else {
             return mainProgress
         }
+    }
+    
+    func downloadStatus(for model: WhisperModelEnum) -> DownloadStatus {
+        return downloadStatuses[model.rawValue] ?? (model.fileExists ? .downloaded : .download)
     }
 }
 
