@@ -2,7 +2,7 @@
 //  WhisperModelDownloadManager.swift
 //  VivaDicta
 //
-//  Created by Claude Code on 2025.09.01
+//  Created by Anton Novoselov on 2025.09.02
 //
 
 import Foundation
@@ -10,13 +10,11 @@ import Zip
 
 @Observable
 class WhisperModelDownloadManager {
-    var downloadProgress: [String: Double] = [:]
-    
+    public var downloadProgress: [String: Double] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
     
-    
-    func downloadModel(_ model: WhisperModelEnum) async throws {
-        guard let url = model.downloadURL else { 
+    public func downloadModel(_ model: WhisperModelEnum) async throws {
+        guard let url = model.downloadURL else {
             throw WhisperDownloadError.invalidURL 
         }
         
@@ -127,7 +125,6 @@ class WhisperModelDownloadManager {
         let mainProgress = downloadProgress[mainKey] ?? 0.0
         let coreMLProgress = downloadProgress[coreMLKey] ?? 0.0
         
-        // If model supports CoreML, average both progresses
         if model.coreMLDownloadURL != nil {
             return (mainProgress * 0.5) + (coreMLProgress * 0.5)
         } else {
