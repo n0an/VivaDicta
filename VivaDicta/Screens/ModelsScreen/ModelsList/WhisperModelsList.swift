@@ -14,7 +14,7 @@ struct WhisperModelsList: View {
     var body: some View {
         List {
             Section(header: Text("Local Whisper Models")) {
-                ForEach(WhisperModelEnum.allCases) { model in
+                ForEach(WhisperModel.allCases) { model in
                     WhisperModelView(
                         model: model, 
                         downloadManager: downloadManager
@@ -27,7 +27,7 @@ struct WhisperModelsList: View {
         .listStyle(.grouped)
     }
     
-    func loadModel(whisperModel: WhisperModelEnum) {
+    func loadModel(whisperModel: WhisperModel) {
         appState.createTranscriber(model: whisperModel)
     }
 }

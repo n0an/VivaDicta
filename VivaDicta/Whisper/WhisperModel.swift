@@ -19,7 +19,7 @@ enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
     case groq
 }
 
-enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
+enum WhisperModel: String, Hashable, CaseIterable, Identifiable {
     var id: Self { self }
     
     case tiny = "ggml-tiny"
@@ -117,8 +117,8 @@ enum WhisperModelEnum: String, Hashable, CaseIterable, Identifiable {
         }
     }
     
-    static var downloadedModels: [WhisperModelEnum] {
-        return WhisperModelEnum.allCases.filter {
+    static var downloadedModels: [WhisperModel] {
+        return WhisperModel.allCases.filter {
             FileManager.default.fileExists(atPath: $0.fileURL.path())
         }
     }

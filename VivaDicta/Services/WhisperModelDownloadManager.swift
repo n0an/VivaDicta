@@ -20,7 +20,7 @@ class WhisperModelDownloadManager {
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
     
-    public func downloadModel(_ model: WhisperModelEnum) async throws {
+    public func downloadModel(_ model: WhisperModel) async throws {
         guard let url = model.downloadURL else {
             throw WhisperDownloadError.invalidURL 
         }
@@ -32,7 +32,7 @@ class WhisperModelDownloadManager {
         try await performModelDownload(model, url)
     }
     
-    private func performModelDownload(_ model: WhisperModelEnum, _ url: URL) async throws {
+    private func performModelDownload(_ model: WhisperModel, _ url: URL) async throws {
         try await downloadMainModel(model, from: url)
         
         if let coreMLDownloadURL = model.coreMLDownloadURL {
@@ -46,13 +46,13 @@ class WhisperModelDownloadManager {
         }
     }
     
-    private func downloadMainModel(_ model: WhisperModelEnum, from url: URL) async throws {
+    private func downloadMainModel(_ model: WhisperModel, from url: URL) async throws {
         let progressKeyMain = model.rawValue + "_main"
         let data = try await downloadFileWithProgress(from: url, progressKey: progressKeyMain)
         try data.write(to: model.fileURL)
     }
     
-    private func downloadAndSetupCoreMLModel(for model: WhisperModelEnum, from url: URL) async throws {
+    private func downloadAndSetupCoreMLModel(for model: WhisperModel, from url: URL) async throws {
         let progressKeyCoreML = model.rawValue + "_coreml"
         let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
         
@@ -62,7 +62,7 @@ class WhisperModelDownloadManager {
         try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
     }
     
-    private func unzipAndSetupCoreMLModel(for model: WhisperModelEnum, zipPath: URL, progressKey: String) async throws {
+    private func unzipAndSetupCoreMLModel(for model: WhisperModel, zipPath: URL, progressKey: String) async throws {
         let coreMLDestination = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc")
         
         try? FileManager.default.removeItem(at: coreMLDestination)
@@ -70,7 +70,7 @@ class WhisperModelDownloadManager {
         try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
     }
     
-    private func verifyAndCleanupCoreMLFiles(_ model: WhisperModelEnum, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
+    private func verifyAndCleanupCoreMLFiles(_ model: WhisperModel, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory), isDirectory.boolValue else {
             try? FileManager.default.removeItem(at: zipPath)
@@ -122,7 +122,7 @@ class WhisperModelDownloadManager {
         }
     }
     
-    func handleModelDownloadError(_ model: WhisperModelEnum, _ error: any Error) async {
+    func handleModelDownloadError(_ model: WhisperModel, _ error: any Error) async {
         await MainActor.run {
             downloadStatuses[model.rawValue] = .download
             downloadProgress.removeValue(forKey: model.rawValue + "_main")
@@ -131,7 +131,7 @@ class WhisperModelDownloadManager {
         print("Error downloading model \(model.rawValue): \(error.localizedDescription)")
     }
     
-    func currentProgress(for model: WhisperModelEnum) -> Double {
+    func currentProgress(for model: WhisperModel) -> Double {
         let mainKey = model.rawValue + "_main"
         let coreMLKey = model.rawValue + "_coreml"
         
@@ -145,7 +145,7 @@ class WhisperModelDownloadManager {
         }
     }
     
-    func downloadStatus(for model: WhisperModelEnum) -> DownloadStatus {
+    func downloadStatus(for model: WhisperModel) -> DownloadStatus {
         return downloadStatuses[model.rawValue] ?? (model.fileExists ? .downloaded : .download)
     }
 }
