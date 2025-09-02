@@ -9,7 +9,6 @@ import SwiftUI
 
 struct WhisperModelsList: View {
     var appState: AppState
-    @State private var downloadManager = WhisperModelDownloadManager()
     
     var body: some View {
         List {
@@ -17,7 +16,7 @@ struct WhisperModelsList: View {
                 ForEach(WhisperModel.allCases) { model in
                     WhisperModelView(
                         model: model, 
-                        downloadManager: downloadManager
+                        downloadManager: appState.modelManager.modelDownloadManager
                     ) { model in
                         loadModel(whisperModel: model)
                     }

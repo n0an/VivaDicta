@@ -11,43 +11,66 @@ import SwiftUI
 
 @Observable
 class AppState {
+    
+    // MARK: - UI State
     var selectedTab: TabTag = .record
-    var transcriptionService: TranscriptionService?
+    
+    // MARK: - Managers
+    let settingsManager: SettingsManager
+    let modelManager: ModelManager
+    let transcriptionManager: TranscriptionManager
+    
+    // MARK: - Computed Properties
     
     var canTranscribe: Bool {
-        transcriptionService != nil
+        transcriptionManager.canTranscribe && modelManager.hasSelectedModel
     }
     
-    var selectedLocalWhisperModel: WhisperModel?
-    
-    var selectedLanguage: Language = .auto {
-        didSet {
-            setLanguage(selectedLanguage)
-        }
+    var selectedLanguage: Language {
+        get { transcriptionManager.selectedLanguage }
+        set { transcriptionManager.setLanguage(newValue) }
     }
     
-    init() {
-        if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
-           let selectedModel = WhisperModel(rawValue: selectedModelKey) {
-            self.selectedLocalWhisperModel = selectedModel
-            self.createTranscriber(model: selectedModel)
-        }
+    var selectedLocalWhisperModel: WhisperModel? {
+        modelManager.selectedModel
+    }
+    
+    // MARK: - Initialization
+    
+    init(settingsManager: SettingsManager? = nil,
+         modelManager: ModelManager? = nil,
+         transcriptionManager: TranscriptionManager? = nil) {
         
-        if let selectedLanguageKey = UserDefaults.standard.string(forKey: "selectedLanguageKey"),
-           let savedSelectedLanguage = Language(rawValue: selectedLanguageKey) {
-            self.selectedLanguage = savedSelectedLanguage
+        // Create or use provided managers
+        let settings = settingsManager ?? SettingsManager()
+        let models = modelManager ?? ModelManager(settingsManager: settings)
+        let transcription = transcriptionManager ?? TranscriptionManager(settingsManager: settings)
+        
+        self.settingsManager = settings
+        self.modelManager = models
+        self.transcriptionManager = transcription
+        
+        // Initialize transcriber if model is available
+        if let selectedModel = models.selectedModel, selectedModel.fileExists {
+            transcription.createLocalTranscriber(with: selectedModel)
         }
+    }
+    
+    // MARK: - Convenience Methods
+    
+    func createTranscriber(model: WhisperModel) {
+        guard modelManager.selectModel(model) else { return }
+        transcriptionManager.createLocalTranscriber(with: model)
     }
     
     func setLanguage(_ language: Language) {
-        self.transcriptionService?.selectedLanguage = language
-        UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
+        transcriptionManager.setLanguage(language)
     }
     
-    func createTranscriber(model: WhisperModel) {
-        selectedLocalWhisperModel = model
-        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
-        UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
+    // MARK: - Transcription Access
+    
+    var transcriptionService: (any TranscriptionService)? {
+        transcriptionManager.transcriptionService
     }
 }
 
