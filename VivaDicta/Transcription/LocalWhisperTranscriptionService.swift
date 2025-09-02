@@ -21,6 +21,7 @@ struct LocalWhisperTranscriptionService: TranscriptionService {
         
         do {
             whisperContext = try WhisperContext.createContext(path: selectedModel.fileURL.path())
+            
         } catch {
             print(error.localizedDescription)
         }
