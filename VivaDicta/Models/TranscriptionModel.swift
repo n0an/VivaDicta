@@ -283,3 +283,13 @@ protocol TranscriptionModel: Sendable {
     var supportManyLanguages: Bool { get }
     var supportedLanguages: [String: String] { get }
 }
+
+extension TranscriptionModel {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    var language: String {
+        supportManyLanguages ? "Multilingual" : "English-only"
+    }
+}

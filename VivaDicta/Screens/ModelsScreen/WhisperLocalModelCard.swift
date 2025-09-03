@@ -32,7 +32,7 @@ struct WhisperLocalModelCard: View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 header
-//                metadataSection
+                metadataSection
 //                descriptionSection
 //                progressSection
             }
@@ -56,6 +56,34 @@ struct WhisperLocalModelCard: View {
             statusBadge
             
             Spacer()
+        }
+    }
+    
+    private var metadataSection: some View {
+        
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Label(model.language, systemImage: "globe")
+                    .foregroundStyle(.secondary)
+                Label(model.size, systemImage: "internaldrive")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.system(size: 11))
+            
+            HStack(spacing: 3) {
+                Text("Speed")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                ModelPerformanceStatsDots(value: model.speed * 10)
+            }
+            
+            HStack(spacing: 3) {
+                Text("Accuracy")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                ModelPerformanceStatsDots(value: model.accuracy * 10)
+            }
+            
         }
     }
     
@@ -102,70 +130,6 @@ struct WhisperLocalModelCard: View {
         
         
         
-//        HStack(spacing: 8) {
-//            if isSelected {
-//                HStack {
-//                    Image(systemName: "checkmark.circle.fill")
-//                    Text("Selected")
-//                }
-//                .foregroundStyle(.green)
-//                
-//            } else if isDownloaded {
-//                selectButton
-//                
-//            } else {
-//                
-//                switch downloadStatus {
-//                case .download:
-//                    downloadButton
-//                case .downloading:
-//                    progressView
-//                case .downloaded:
-//                    selectButton
-//                }
-//                
-//                Button(action: downloadAction) {
-//                    HStack(spacing: 4) {
-//                        Text(isDownloading ? "Downloading..." : "Download")
-//                            .font(.system(size: 12, weight: .medium))
-//                        Image(systemName: "arrow.down.circle")
-//                            .font(.system(size: 12, weight: .medium))
-//                    }
-//                    .foregroundColor(.white)
-//                    .padding(.horizontal, 12)
-//                    .padding(.vertical, 6)
-//                    .background(
-//                        Capsule()
-//                            .fill(Color(.controlAccentColor))
-//                            .shadow(color: Color(.controlAccentColor).opacity(0.2), radius: 2, x: 0, y: 1)
-//                    )
-//                }
-//                .buttonStyle(.plain)
-//                .disabled(isDownloading)
-//            }
-            
-//            if isDownloaded {
-//                Menu {
-//                    Button(action: deleteAction) {
-//                        Label("Delete Model", systemImage: "trash")
-//                    }
-//                    
-//                    Button {
-//                        if let modelURL = modelURL {
-//                            NSWorkspace.shared.selectFile(modelURL.path, inFileViewerRootedAtPath: "")
-//                        }
-//                    } label: {
-//                        Label("Show in Finder", systemImage: "folder")
-//                    }
-//                } label: {
-//                    Image(systemName: "ellipsis.circle")
-//                        .font(.system(size: 14))
-//                }
-//                .menuStyle(.borderlessButton)
-//                .menuIndicator(.hidden)
-//                .frame(width: 20, height: 20)
-//            }
-//        }
     }
     
     var progressView: some View {
@@ -220,6 +184,39 @@ struct WhisperLocalModelCard: View {
             } catch {
                 await downloadManager.handleModelDownloadError(model, error)
             }
+        }
+    }
+}
+
+
+struct ModelPerformanceStatsDots: View {
+    var value: Double
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            progressDots(value: value)
+            Text(String(format: "%.1f", value))
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.secondary)
+        }
+    }
+    
+    func progressDots(value: Double) -> some View {
+        HStack(spacing: 2) {
+            ForEach(0 ..< 5) { index in
+                Circle()
+                    .fill(index < Int(value / 2) ? performanceColor(value: value / 10) : .gray)
+                    .frame(width: 6, height: 6)
+            }
+        }
+    }
+    
+    func performanceColor(value: Double) -> Color {
+        switch value {
+        case 0.8...1.0: return .green
+        case 0.6..<0.8: return .yellow
+        case 0.4..<0.6: return .orange
+        default: return .red
         }
     }
 }

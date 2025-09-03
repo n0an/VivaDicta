@@ -76,7 +76,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             try recordingSession.setActive(true)
             
             AVAudioApplication.requestRecordPermission { [weak self] allowed in
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
                     if !allowed {
                         self?.recordingState = .error(.userDenied)
                     }
@@ -109,7 +109,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             audioRecorder.record()
             
             animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
-                Task { @MainActor in
+                Task { @MainActor [unowned self] in
                     guard self.audioRecorder != nil else { return }
                     self.audioRecorder.updateMeters()
                     let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
@@ -231,7 +231,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         audioPlayer.play()
         
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
-            Task { @MainActor in
+            Task { @MainActor [unowned self] in
                 guard self.audioPlayer != nil else { return }
                 self.audioPlayer.updateMeters()
                 let power = min(1, max(0, 1 - abs(Double(self.audioPlayer.averagePower(forChannel: 0)) / 160) ))
@@ -266,7 +266,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-        Task { @MainActor in
+        Task { @MainActor [unowned self] in
             if !flag {
                 resetValues()
                 recordingState = .idle
@@ -275,7 +275,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in
+        Task { @MainActor [unowned self] in
             resetValues()
             recordingState = .idle
         }
