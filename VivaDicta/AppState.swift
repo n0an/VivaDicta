@@ -12,13 +12,13 @@ import SwiftUI
 @Observable
 class AppState {
     var selectedTab: TabTag = .record
-    var transcriptionService: TranscriptionService?
+    var transcriptionService: (any TranscriptionService)?
     
     var canTranscribe: Bool {
         transcriptionService != nil
     }
     
-    var selectedLocalWhisperModel: WhisperModel?
+    var selectedLocalWhisperModel: WhisperLocalModel?
     
     var selectedLanguage: Language = .auto {
         didSet {
@@ -27,8 +27,10 @@ class AppState {
     }
     
     init() {
-        if let selectedModelKey = UserDefaults.standard.string(forKey: "selectedLocalWhisperModel"),
-           let selectedModel = WhisperModel(rawValue: selectedModelKey) {
+//        if let selectedModelName = UserDefaults.standard.string(forKey: "selectedWhisperLocalModel"),
+//           let selectedModel = WhisperModel(rawValue: selectedModelKey) {
+        if let selectedModelName = UserDefaults.standard.string(forKey: "selectedWhisperLocalModel"),
+           let selectedModel = TranscriptionModelType.allLocalModels.first(where: {$0.name == selectedModelName}) {
             self.selectedLocalWhisperModel = selectedModel
             self.createTranscriber(model: selectedModel)
         }
@@ -44,10 +46,10 @@ class AppState {
         UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
     }
     
-    func createTranscriber(model: WhisperModel) {
+    func createTranscriber(model: WhisperLocalModel) {
         selectedLocalWhisperModel = model
         transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
-        UserDefaults.standard.set(model.rawValue, forKey: "selectedLocalWhisperModel")
+        UserDefaults.standard.set(model.name, forKey: "selectedWhisperLocalModel")
     }
 }
 

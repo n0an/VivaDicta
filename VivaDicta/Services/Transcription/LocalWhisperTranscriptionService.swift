@@ -10,12 +10,12 @@ import whisper
 
 struct LocalWhisperTranscriptionService: TranscriptionService {
     
-    var selectedModel: WhisperModel
+    var selectedModel: WhisperLocalModel
     var selectedLanguage: Language
     
     private var whisperContext: WhisperContext?
     
-    init(selectedModel: WhisperModel, selectedLanguage: Language) {
+    init(selectedModel: WhisperLocalModel, selectedLanguage: Language) {
         self.selectedModel = selectedModel
         self.selectedLanguage = selectedLanguage
         

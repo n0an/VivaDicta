@@ -28,24 +28,6 @@ protocol TranscriptionModel: Identifiable, Hashable {
     var supportedLanguages: [String: String] { get }
 }
 
-struct WhisperLocalModel: @MainActor TranscriptionModel {
-    var id: UUID = .init()
-    var name: String
-    var displayName: String
-    var description: String
-    var provider: TranscriptionModelProvider = .local
-    
-    let size: String
-    let speed: Double
-    let accuracy: Double
-    let ramUsage: Double
-    
-    var supportManyLanguages: Bool {
-        supportedLanguages.count > 1
-    }
-    
-    var supportedLanguages: [String: String]
-}
 
 struct CloudModel: @MainActor TranscriptionModel {
     let id: UUID

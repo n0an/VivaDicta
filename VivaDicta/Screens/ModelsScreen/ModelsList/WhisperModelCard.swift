@@ -1,5 +1,5 @@
 //
-//  WhisperModelView.swift
+//  WhisperModelCard.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.12
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct WhisperModelView: View {
-    private var model: WhisperModel
+struct WhisperModelCard: View {
+    private var model: WhisperLocalModel
     private let downloadManager: WhisperModelDownloadManager
     
     private var currentProgress: Double {
@@ -19,12 +19,12 @@ struct WhisperModelView: View {
         downloadManager.downloadStatus(for: model)
     }
     
-    private var onSelect: (WhisperModel) -> Void
+    private var onSelect: (WhisperLocalModel) -> Void
     
     var body: some View {
         
         HStack {
-            Text("\(model.rawValue) \(model.info)")
+            Text("\(model.name)")
             Spacer()
             switch downloadStatus {
             case .download:
@@ -74,15 +74,15 @@ struct WhisperModelView: View {
     }
     
     
-    init(model: WhisperModel,
+    init(model: WhisperLocalModel,
          downloadManager: WhisperModelDownloadManager,
-         onSelect: @escaping (WhisperModel) -> Void) {
+         onSelect: @escaping (WhisperLocalModel) -> Void) {
         self.model = model
         self.downloadManager = downloadManager
         self.onSelect = onSelect
     }
     
-    func downloadModel(_ model: WhisperModel) {
+    func downloadModel(_ model: WhisperLocalModel) {
         Task {
             do {
                 try await downloadManager.downloadModel(model)
@@ -94,9 +94,9 @@ struct WhisperModelView: View {
 }
 
 #Preview {
-    WhisperModelView(
-        model: WhisperModel.tiny, 
-        downloadManager: WhisperModelDownloadManager(), 
+    WhisperModelCard(
+        model: TranscriptionModelType.allLocalModels[0],
+        downloadManager: WhisperModelDownloadManager(),
         onSelect: {_ in print("select") }
     )
 }
