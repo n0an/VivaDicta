@@ -41,7 +41,7 @@ struct WhisperLocalModelCard: View {
             actionSection
         }
         .padding(16)
-        .background(isSelected ? .green : .white)
+        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white)
         
         
         
