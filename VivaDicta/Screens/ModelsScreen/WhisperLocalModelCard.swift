@@ -1,5 +1,5 @@
 //
-//  WhisperModelCard.swift
+//  WhisperLocalModelCard.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.12
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct WhisperModelCard: View {
+struct WhisperLocalModelCard: View {
     private var model: WhisperLocalModel
     private let downloadManager: WhisperModelDownloadManager
     
@@ -94,7 +94,7 @@ struct WhisperModelCard: View {
 }
 
 #Preview {
-    WhisperModelCard(
+    WhisperLocalModelCard(
         model: TranscriptionModelProvider.allLocalModels[0],
         downloadManager: WhisperModelDownloadManager(),
         onSelect: {_ in print("select") }
