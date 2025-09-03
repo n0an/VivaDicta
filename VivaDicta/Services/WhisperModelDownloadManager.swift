@@ -20,19 +20,19 @@ class WhisperModelDownloadManager {
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
     
-    public func downloadModel(_ model: WhisperModel) async throws {
+    public func downloadModel(_ model: WhisperLocalModel) async throws {
         guard let url = model.downloadURL else {
             throw WhisperDownloadError.invalidURL 
         }
         
         await MainActor.run {
-            downloadStatuses[model.rawValue] = .downloading
+            downloadStatuses[model.name] = .downloading
         }
         
         try await performModelDownload(model, url)
     }
     
-    private func performModelDownload(_ model: WhisperModel, _ url: URL) async throws {
+    private func performModelDownload(_ model: WhisperLocalModel, _ url: URL) async throws {
         try await downloadMainModel(model, from: url)
         
         if let coreMLDownloadURL = model.coreMLDownloadURL {
@@ -40,37 +40,37 @@ class WhisperModelDownloadManager {
         }
         
         await MainActor.run {
-            downloadStatuses[model.rawValue] = .downloaded
-            downloadProgress.removeValue(forKey: model.rawValue + "_main")
-            downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
+            downloadStatuses[model.name] = .downloaded
+            downloadProgress.removeValue(forKey: model.name + "_main")
+            downloadProgress.removeValue(forKey: model.name + "_coreml")
         }
     }
     
-    private func downloadMainModel(_ model: WhisperModel, from url: URL) async throws {
-        let progressKeyMain = model.rawValue + "_main"
+    private func downloadMainModel(_ model: WhisperLocalModel, from url: URL) async throws {
+        let progressKeyMain = model.name + "_main"
         let data = try await downloadFileWithProgress(from: url, progressKey: progressKeyMain)
         try data.write(to: model.fileURL)
     }
     
-    private func downloadAndSetupCoreMLModel(for model: WhisperModel, from url: URL) async throws {
-        let progressKeyCoreML = model.rawValue + "_coreml"
+    private func downloadAndSetupCoreMLModel(for model: WhisperLocalModel, from url: URL) async throws {
+        let progressKeyCoreML = model.name + "_coreml"
         let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
         
-        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc.zip")
+        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("\(model.name)-encoder.mlmodelc.zip")
         try coreMLData.write(to: coreMLZipPath)
         
         try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
     }
     
-    private func unzipAndSetupCoreMLModel(for model: WhisperModel, zipPath: URL, progressKey: String) async throws {
-        let coreMLDestination = URL.documentsDirectory.appendingPathComponent("\(model.rawValue)-encoder.mlmodelc")
+    private func unzipAndSetupCoreMLModel(for model: WhisperLocalModel, zipPath: URL, progressKey: String) async throws {
+        let coreMLDestination = URL.documentsDirectory.appendingPathComponent("\(model.name)-encoder.mlmodelc")
         
         try? FileManager.default.removeItem(at: coreMLDestination)
         try Zip.unzipFile(zipPath, destination: URL.documentsDirectory, overwrite: true, password: nil)
         try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
     }
     
-    private func verifyAndCleanupCoreMLFiles(_ model: WhisperModel, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
+    private func verifyAndCleanupCoreMLFiles(_ model: WhisperLocalModel, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory), isDirectory.boolValue else {
             try? FileManager.default.removeItem(at: zipPath)
@@ -122,18 +122,18 @@ class WhisperModelDownloadManager {
         }
     }
     
-    func handleModelDownloadError(_ model: WhisperModel, _ error: any Error) async {
+    func handleModelDownloadError(_ model: WhisperLocalModel, _ error: any Error) async {
         await MainActor.run {
-            downloadStatuses[model.rawValue] = .download
-            downloadProgress.removeValue(forKey: model.rawValue + "_main")
-            downloadProgress.removeValue(forKey: model.rawValue + "_coreml")
+            downloadStatuses[model.name] = .download
+            downloadProgress.removeValue(forKey: model.name + "_main")
+            downloadProgress.removeValue(forKey: model.name + "_coreml")
         }
-        print("Error downloading model \(model.rawValue): \(error.localizedDescription)")
+        print("Error downloading model \(model.name): \(error.localizedDescription)")
     }
     
-    func currentProgress(for model: WhisperModel) -> Double {
-        let mainKey = model.rawValue + "_main"
-        let coreMLKey = model.rawValue + "_coreml"
+    func currentProgress(for model: WhisperLocalModel) -> Double {
+        let mainKey = model.name + "_main"
+        let coreMLKey = model.name + "_coreml"
         
         let mainProgress = downloadProgress[mainKey] ?? 0.0
         let coreMLProgress = downloadProgress[coreMLKey] ?? 0.0
@@ -145,8 +145,8 @@ class WhisperModelDownloadManager {
         }
     }
     
-    func downloadStatus(for model: WhisperModel) -> DownloadStatus {
-        return downloadStatuses[model.rawValue] ?? (model.fileExists ? .downloaded : .download)
+    func downloadStatus(for model: WhisperLocalModel) -> DownloadStatus {
+        return downloadStatuses[model.name] ?? (model.fileExists ? .downloaded : .download)
     }
 }
 
