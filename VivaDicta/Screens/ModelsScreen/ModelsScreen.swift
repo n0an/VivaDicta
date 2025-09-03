@@ -1,5 +1,5 @@
 //
-//  ModelsView.swift
+//  ModelsScreen.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.12
@@ -15,7 +15,7 @@ enum ModelType: String, CaseIterable, Identifiable {
     
 }
 
-struct ModelsView: View {
+struct ModelsScreen: View {
     @Bindable var appState: AppState
     var modelTypes = ModelType.allCases
     @State var modelType: ModelType = .local
@@ -103,5 +103,5 @@ struct ModelsView: View {
 
 #Preview {
     @Previewable @State var appState = AppState()
-    ModelsView(appState: appState)
+    ModelsScreen(appState: appState)
 }

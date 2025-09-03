@@ -26,7 +26,7 @@ struct TabBarView: View {
             }
             
             Tab("Models", systemImage: "sparkles", value: TabTag.models) {
-                ModelsView(appState: appState)
+                ModelsScreen(appState: appState)
             }
             
             Tab("Settings", systemImage: "gear", value: TabTag.settings) {
