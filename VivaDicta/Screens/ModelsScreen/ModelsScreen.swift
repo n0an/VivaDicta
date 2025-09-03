@@ -9,8 +9,8 @@ import SwiftUI
 
 struct ModelsScreen: View {
     @Bindable var appState: AppState
-    var modelTypes = ModelType.allCases
-    @State var modelType: ModelType = .local
+    var modelTypes = TranscriptionModelType.allCases
+    @State var modelType: TranscriptionModelType = .local
     
     @State private var downloadManager = WhisperModelDownloadManager()
     
