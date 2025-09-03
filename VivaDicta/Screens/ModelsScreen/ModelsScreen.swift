@@ -17,7 +17,7 @@ struct ModelsScreen: View {
     var localModelsView: some View {
         List {
             Section(header: Text("Local Whisper Transcription Models")) {
-                ForEach(TranscriptionModelType.allLocalModels) { model in
+                ForEach(TranscriptionModelProvider.allLocalModels) { model in
                     WhisperModelCard(
                         model: model,
                         downloadManager: downloadManager
@@ -33,7 +33,7 @@ struct ModelsScreen: View {
     var cloudModelsView: some View {
         List {
             Section(header: Text("Cloud Transcription Models")) {
-                ForEach(TranscriptionModelType.allCloudModels) { model in
+                ForEach(TranscriptionModelProvider.allCloudModels) { model in
                     Text(model.displayName)
                     
                 }

@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-
 @Observable
 class AppState {
     var selectedTab: TabTag = .record
@@ -27,10 +26,8 @@ class AppState {
     }
     
     init() {
-//        if let selectedModelName = UserDefaults.standard.string(forKey: "selectedWhisperLocalModel"),
-//           let selectedModel = WhisperModel(rawValue: selectedModelKey) {
         if let selectedModelName = UserDefaults.standard.string(forKey: "selectedWhisperLocalModel"),
-           let selectedModel = TranscriptionModelType.allLocalModels.first(where: {$0.name == selectedModelName}) {
+           let selectedModel = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == selectedModelName}) {
             self.selectedLocalWhisperModel = selectedModel
             self.createTranscriber(model: selectedModel)
         }

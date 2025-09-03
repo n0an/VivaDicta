@@ -95,7 +95,7 @@ struct WhisperModelCard: View {
 
 #Preview {
     WhisperModelCard(
-        model: TranscriptionModelType.allLocalModels[0],
+        model: TranscriptionModelProvider.allLocalModels[0],
         downloadManager: WhisperModelDownloadManager(),
         onSelect: {_ in print("select") }
     )

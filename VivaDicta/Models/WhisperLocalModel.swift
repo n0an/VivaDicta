@@ -53,6 +53,6 @@ extension WhisperLocalModel {
     }
     
     static var downloadedModels: [WhisperLocalModel] {
-        TranscriptionModelType.allLocalModels.filter { $0.fileExists }
+        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
 }
