@@ -63,11 +63,18 @@ struct WhisperLocalModelCard: View {
         
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                Label(model.language, systemImage: "globe")
-                    .foregroundStyle(.secondary)
-                Label(model.size, systemImage: "internaldrive")
-                    .foregroundStyle(.secondary)
+                
+                HStack(spacing: 4) {
+                    Text(model.language)
+                    Image(systemName: "globe")
+                }
+                
+                HStack(spacing: 4) {
+                    Text(model.size)
+                    Image(systemName: "internaldrive")
+                }
             }
+            .foregroundStyle(.secondary)
             .font(.system(size: 11))
             
             HStack(spacing: 3) {
