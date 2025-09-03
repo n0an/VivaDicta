@@ -12,6 +12,8 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
     case local
     case cloud
     
+    static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
+
     static let allLocalModels: [WhisperLocalModel] = [
         WhisperLocalModel(
             name: "ggml-tiny",
@@ -157,8 +159,6 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
             supportedLanguages: allLanguages
         ),
     ]
-    
-    static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
     
     static func getLanguageDictionary(supportManyLanguages: Bool) -> [String: String] {
         supportManyLanguages ? allLanguages : ["en": "English"]

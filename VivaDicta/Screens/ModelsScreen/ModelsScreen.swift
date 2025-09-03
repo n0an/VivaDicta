@@ -16,25 +16,56 @@ struct ModelsScreen: View {
     
     var localModelsView: some View {
         List {
-            Section(header: Text("Local Whisper Models")) {
-                ForEach(WhisperModel.allCases) { model in
-                    WhisperModelView(
-                        model: model,
-                        downloadManager: downloadManager
-                    ) { model in
-                        loadModel(whisperModel: model)
-                    }
+            Section(header: Text("Local Whisper Transcription Models")) {
+                
+                ForEach(TranscriptionModelType.allLocalModels) { model in
+                    
+                    Text(model.displayName)
+                    
                 }
+                
+                
+//                ForEach(WhisperModel.allCases) { model in
+//                    
+//                    
+//                    
+//                    WhisperModelView(
+//                        model: model,
+//                        downloadManager: downloadManager
+//                    ) { model in
+//                        loadModel(whisperModel: model)
+//                    }
+//                }
             }
         }
         .listStyle(.grouped)
     }
     
     var cloudModelsView: some View {
-        VStack {
-            Text("Cloud")
-            Spacer()
+        List {
+            Section(header: Text("Cloud Transcription Models")) {
+                
+                ForEach(TranscriptionModelType.allCloudModels) { model in
+                    
+                    Text(model.displayName)
+                    
+                }
+                
+                
+//                ForEach(WhisperModel.allCases) { model in
+//
+//
+//
+//                    WhisperModelView(
+//                        model: model,
+//                        downloadManager: downloadManager
+//                    ) { model in
+//                        loadModel(whisperModel: model)
+//                    }
+//                }
+            }
         }
+        .listStyle(.grouped)
     }
     
     func loadModel(whisperModel: WhisperModel) {
