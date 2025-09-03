@@ -13,7 +13,6 @@ enum ModelType: String, CaseIterable, Identifiable {
     case cloud
 
     static let allLocalModels: [WhisperLocalModel] = [
-        // Local Models
         WhisperLocalModel(
             name: "ggml-tiny",
             displayName: "Tiny",
@@ -23,7 +22,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.95,
             accuracy: 0.6,
             ramUsage: 0.3,
-            supportedLanguages: getLanguageDictionary(isMultilingual: true),
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: true),
         ),
         WhisperLocalModel(
             name: "ggml-tiny.en",
@@ -34,7 +33,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.95,
             accuracy: 0.65,
             ramUsage: 0.3,
-            supportedLanguages: getLanguageDictionary(isMultilingual: false)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
         ),
         WhisperLocalModel(
             name: "ggml-base",
@@ -45,7 +44,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.85,
             accuracy: 0.72,
             ramUsage: 0.5,
-            supportedLanguages: getLanguageDictionary(isMultilingual: true)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
         ),
         WhisperLocalModel(
             name: "ggml-base.en",
@@ -56,7 +55,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.85,
             accuracy: 0.75,
             ramUsage: 0.5,
-            supportedLanguages: getLanguageDictionary(isMultilingual: false)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
         ),
         WhisperLocalModel(
             name: "ggml-large-v2",
@@ -67,7 +66,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.3,
             accuracy: 0.96,
             ramUsage: 3.8,
-            supportedLanguages: getLanguageDictionary(isMultilingual: true)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
         ),
         WhisperLocalModel(
             name: "ggml-large-v3",
@@ -78,7 +77,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.3,
             accuracy: 0.98,
             ramUsage: 3.9,
-            supportedLanguages: getLanguageDictionary(isMultilingual: true)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
         ),
         WhisperLocalModel(
             name: "ggml-large-v3-turbo",
@@ -89,7 +88,7 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.75,
             accuracy: 0.97,
             ramUsage: 1.8,
-            supportedLanguages: getLanguageDictionary(isMultilingual: true)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
         ),
         WhisperLocalModel(
             name: "ggml-large-v3-turbo-q5_0",
@@ -100,77 +99,69 @@ enum ModelType: String, CaseIterable, Identifiable {
             speed: 0.75,
             accuracy: 0.95,
             ramUsage: 1.0,
-            supportedLanguages: getLanguageDictionary(isMultilingual: true)
+            supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
         ),
     ]
     
-
-//    // Cloud Models
-//    CloudModel(
-//        name: "whisper-large-v3-turbo",
-//        displayName: "Whisper Large v3 Turbo (Groq)",
-//        description: "Whisper Large v3 Turbo model with Groq's lightning-speed inference",
-//        provider: .groq,
-//        speed: 0.65,
-//        accuracy: 0.96,
-//        isMultilingual: true,
-//        supportedLanguages: getLanguageDictionary(isMultilingual: true, provider: .groq)
-//    ),
-//    CloudModel(
-//        name: "scribe_v1",
-//        displayName: "Scribe v1 (ElevenLabs)",
-//        description: "ElevenLabs' Scribe model for fast and accurate transcription.",
-//        provider: .elevenLabs,
-//        speed: 0.7,
-//        accuracy: 0.98,
-//        isMultilingual: true,
-//        supportedLanguages: getLanguageDictionary(isMultilingual: true, provider: .elevenLabs)
-//    ),
-//    CloudModel(
-//        name: "nova-2",
-//        displayName: "Nova (Deepgram)",
-//        description: "Deepgram's Nova model for fast, accurate, and cost-effective transcription.",
-//        provider: .deepgram,
-//        speed: 0.9,
-//        accuracy: 0.95,
-//        isMultilingual: true,
-//        supportedLanguages: getLanguageDictionary(isMultilingual: true, provider: .deepgram)
-//    ),
-//    CloudModel(
-//        name: "nova-3-medical",
-//        displayName: "Nova-3 Medical (Deepgram)",
-//        description: "Specialized medical transcription model optimized for clinical environments.",
-//        provider: .deepgram,
-//        speed: 0.9,
-//        accuracy: 0.96,
-//        isMultilingual: false,
-//        supportedLanguages: getLanguageDictionary(isMultilingual: false, provider: .deepgram)
-//    ),
-//
-//    // Gemini Models
-//    CloudModel(
-//        name: "gemini-2.5-pro",
-//        displayName: "Gemini 2.5 Pro",
-//        description: "Google's advanced multimodal model with high-quality transcription capabilities.",
-//        provider: .gemini,
-//        speed: 0.7,
-//        accuracy: 0.96,
-//        isMultilingual: true,
-//        supportedLanguages: getLanguageDictionary(isMultilingual: true, provider: .gemini)
-//    ),
-//    CloudModel(
-//        name: "gemini-2.5-flash",
-//        displayName: "Gemini 2.5 Flash",
-//        description: "Google's optimized model for low-latency transcription with multimodal support.",
-//        provider: .gemini,
-//        speed: 0.9,
-//        accuracy: 0.94,
-//        isMultilingual: true,
-//        supportedLanguages: getLanguageDictionary(isMultilingual: true, provider: .gemini)
-//    ),
-
-    static func getLanguageDictionary(isMultilingual: Bool) -> [String: String] {
-        isMultilingual ? allLanguages : ["en": "English"]
+    static let allCloudModels: [CloudModel] = [
+        CloudModel(
+            name: "whisper-large-v3-turbo",
+            displayName: "Whisper Large v3 Turbo (Groq)",
+            description: "Whisper Large v3 Turbo model with Groq's lightning-speed inference",
+            provider: .groq,
+            speed: 0.65,
+            accuracy: 0.96,
+            isMultilingual: true,
+            supportedLanguages: allLanguages
+        ),
+        CloudModel(
+            name: "scribe_v1",
+            displayName: "Scribe v1 (ElevenLabs)",
+            description: "ElevenLabs' Scribe model for fast and accurate transcription.",
+            provider: .elevenLabs,
+            speed: 0.7,
+            accuracy: 0.98,
+            isMultilingual: true,
+            supportedLanguages: allLanguages
+        ),
+        CloudModel(
+            name: "nova-2",
+            displayName: "Nova (Deepgram)",
+            description: "Deepgram's Nova model for fast, accurate, and cost-effective transcription.",
+            provider: .deepgram,
+            speed: 0.9,
+            accuracy: 0.95,
+            isMultilingual: true,
+            supportedLanguages: allLanguages
+        ),
+        
+        // Gemini Models
+        CloudModel(
+            name: "gemini-2.5-pro",
+            displayName: "Gemini 2.5 Pro",
+            description: "Google's advanced multimodal model with high-quality transcription capabilities.",
+            provider: .gemini,
+            speed: 0.7,
+            accuracy: 0.96,
+            isMultilingual: true,
+            supportedLanguages: allLanguages
+        ),
+        CloudModel(
+            name: "gemini-2.5-flash",
+            displayName: "Gemini 2.5 Flash",
+            description: "Google's optimized model for low-latency transcription with multimodal support.",
+            provider: .gemini,
+            speed: 0.9,
+            accuracy: 0.94,
+            isMultilingual: true,
+            supportedLanguages: allLanguages
+        ),
+    ]
+    
+    static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
+    
+    static func getLanguageDictionary(supportManyLanguages: Bool) -> [String: String] {
+        supportManyLanguages ? allLanguages : ["en": "English"]
     }
 
     static let allLanguages = [
