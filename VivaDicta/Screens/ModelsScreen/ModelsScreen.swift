@@ -49,32 +49,33 @@ struct ModelsScreen: View {
     }
     
     var localModelsView: some View {
-        List {
-            Section(header: Text("Local Whisper Transcription Models")) {
-                ForEach(TranscriptionModelProvider.allLocalModels) { model in
-                    WhisperLocalModelCard(
-                        model: model,
-                        isSelected: model == appState.selectedLocalWhisperModel,
-                        downloadManager: downloadManager,
-                        onSelect: { model in
-                            loadModel(whisperLocalModel: model)
-                        })
-                }
+        ScrollView {
+            ForEach(TranscriptionModelProvider.allLocalModels) { model in
+                WhisperLocalModelCard(
+                    model: model,
+                    isSelected: model == appState.selectedLocalWhisperModel,
+                    downloadManager: downloadManager,
+                    onSelect: { model in
+                        loadModel(whisperLocalModel: model)
+                    })
             }
         }
-        .listStyle(.grouped)
     }
     
     var cloudModelsView: some View {
-        List {
-            Section(header: Text("Cloud Transcription Models")) {
-                ForEach(TranscriptionModelProvider.allCloudModels) { model in
-                    Text(model.displayName)
-                    
-                }
+        ScrollView {
+            ForEach(TranscriptionModelProvider.allCloudModels) { model in
+                CloudModelCard(
+                    model: model,
+                    isSelected: model == appState.selectedCloudModel,
+                    onConfigure: { model in
+                        
+                    },
+                    onSelect: { model in
+                        
+                    })
             }
         }
-        .listStyle(.grouped)
     }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {

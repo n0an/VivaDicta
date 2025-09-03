@@ -17,7 +17,29 @@ class AppState {
         transcriptionService != nil
     }
     
-    var selectedLocalWhisperModel: WhisperLocalModel?
+//    var selectedTranscriptionModel: (any TranscriptionModel)?
+    
+    var transcriptionModelSelected = false
+    
+    var selectedLocalWhisperModel: WhisperLocalModel? {
+        didSet {
+            if selectedLocalWhisperModel != nil {
+                transcriptionModelSelected = true
+            } else {
+                transcriptionModelSelected = selectedCloudModel != nil
+            }
+        }
+    }
+    
+    var selectedCloudModel: CloudModel? {
+        didSet {
+            if selectedCloudModel != nil {
+                transcriptionModelSelected = true
+            } else {
+                transcriptionModelSelected = selectedLocalWhisperModel != nil
+            }
+        }
+    }
     
     var selectedLanguage: Language = .auto {
         didSet {

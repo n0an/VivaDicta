@@ -10,6 +10,7 @@ import SwiftUI
 struct CloudModelCard: View {
     private var model: CloudModel
     private var onSelect: (CloudModel) -> Void
+    private var onConfigure: (CloudModel) -> Void
     private var isSelected: Bool
     
     private var isAPIConfigured: Bool {
@@ -18,9 +19,11 @@ struct CloudModelCard: View {
     
     init(model: CloudModel,
          isSelected: Bool,
+         onConfigure: @escaping (CloudModel) -> Void,
          onSelect: @escaping (CloudModel) -> Void) {
         self.model = model
         self.isSelected = isSelected
+        self.onConfigure = onConfigure
         self.onSelect = onSelect
     }
     
@@ -53,6 +56,10 @@ struct CloudModelCard: View {
     private var metadataSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Text(model.provider.rawValue.capitalized)
+                    Image(systemName: "cloud")
+                }
                 
                 HStack(spacing: 4) {
                     Text(model.language)
@@ -61,13 +68,6 @@ struct CloudModelCard: View {
             }
             .foregroundStyle(.secondary)
             .font(.system(size: 11))
-            
-            HStack(spacing: 3) {
-                Text("Speed")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-                ModelPerformanceStatsDots(value: model.speed * 10)
-            }
             
             HStack(spacing: 3) {
                 Text("Accuracy")
@@ -80,14 +80,7 @@ struct CloudModelCard: View {
     
     private var statusBadge: some View {
         Group {
-            if isSelected {
-                Text("Default")
-                    .font(.system(size: 11, weight: .medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.accentColor))
-                    .foregroundColor(.white)
-            } else if !isAPIConfigured {
+            if !isAPIConfigured {
                 Text("Add API key")
                     .font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 6)
@@ -109,7 +102,6 @@ struct CloudModelCard: View {
     
     private var actionSection: some View {
         VStack {
-            
             if isAPIConfigured {
                 if isSelected {
                     HStack {
@@ -124,40 +116,41 @@ struct CloudModelCard: View {
             } else {
                 configureButton
             }
-            
-            
         }
     }
-    
     
     var selectButton: some View {
         Button("Select") {
             onSelect(model)
         }
-        .buttonStyle(.plain)
         .foregroundStyle(.white)
-        .padding(8)
-        .background(.green, in: .rect(cornerRadius: 8))
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .background(.blue, in: .capsule)
     }
     
     var configureButton: some View {
-        Button("Configure") {
-//            downloadModel(self.model)
-            print("configure")
-            
+        Button {
+            onConfigure(model)
+        } label: {
+            HStack(spacing: 4) {
+                Text("Configure")
+                Image(systemName: "gear")
+            }
+            .font(.system(size: 12, weight: .semibold))
         }
-        .buttonStyle(.plain)
         .foregroundStyle(.white)
-        .padding(8)
-        .background(.blue, in: .rect(cornerRadius: 8))
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .background(.blue, in: .capsule)
     }
-    
 }
 
 #Preview {
     CloudModelCard(
         model: TranscriptionModelProvider.allCloudModels[0],
         isSelected: false,
+        onConfigure: {_ in print("configure") },
         onSelect: {_ in print("select") }
     )
 }
