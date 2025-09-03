@@ -11,6 +11,7 @@ struct ModelsScreen: View {
     @Bindable var appState: AppState
     var modelTypes = TranscriptionModelType.allCases
     @State var modelType: TranscriptionModelType = .local
+    @State var cloudModelToConfigure: CloudModel?
     
     @State private var downloadManager = WhisperModelDownloadManager()
     
@@ -69,13 +70,20 @@ struct ModelsScreen: View {
                     model: model,
                     isSelected: model == appState.selectedCloudModel,
                     onConfigure: { model in
-                        
+                        configureCloudModel(model: model)
                     },
                     onSelect: { model in
                         loadModel(cloudModel: model)
                     })
             }
         }
+        .navigationDestination(item: $cloudModelToConfigure, destination: { model in
+            CloudModelConfigurationView(
+                model: model,
+                onSave: { model in
+                    cloudModelConfigured(model: model)
+                })
+        })
     }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {
@@ -85,9 +93,20 @@ struct ModelsScreen: View {
     func loadModel(cloudModel: CloudModel) {
         appState.createCloudTranscriber(model: cloudModel)
     }
+    
+    func configureCloudModel(model: CloudModel) {
+        cloudModelToConfigure = model
+    }
+    
+    func cloudModelConfigured(model: CloudModel) {
+        print("=== save")
+        cloudModelToConfigure = nil
+    }
 }
 
 #Preview {
     @Previewable @State var appState = AppState()
     ModelsScreen(appState: appState)
 }
+
+
