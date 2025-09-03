@@ -51,7 +51,11 @@ class AppState {
         if let selectedModelName = UserDefaults.standard.string(forKey: kSelectedWhisperLocalModel),
            let selectedModel = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == selectedModelName}) {
             self.selectedLocalWhisperModel = selectedModel
-            self.createTranscriber(model: selectedModel)
+            self.createLocalTranscriber(model: selectedModel)
+        } else if let selectedModelName = UserDefaults.standard.string(forKey: kSelectedCloudModel),
+                  let selectedModel = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == selectedModelName}) {
+            self.selectedCloudModel = selectedModel
+            self.createCloudTranscriber(model: selectedModel)
         }
         
         if let selectedLanguageKey = UserDefaults.standard.string(forKey: kSelectedLanguageKey),
@@ -65,10 +69,18 @@ class AppState {
         UserDefaults.standard.set(language.rawValue, forKey: kSelectedLanguageKey)
     }
     
-    func createTranscriber(model: WhisperLocalModel) {
+    func createLocalTranscriber(model: WhisperLocalModel) {
         selectedLocalWhisperModel = model
         transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
         UserDefaults.standard.set(model.name, forKey: kSelectedWhisperLocalModel)
+        UserDefaults.standard.set(nil, forKey: kSelectedCloudModel)
+    }
+    
+    func createCloudTranscriber(model: CloudModel) {
+        selectedCloudModel = model
+//        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
+        UserDefaults.standard.set(model.name, forKey: kSelectedCloudModel)
+        UserDefaults.standard.set(nil, forKey: kSelectedWhisperLocalModel)
     }
 }
 

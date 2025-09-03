@@ -72,14 +72,18 @@ struct ModelsScreen: View {
                         
                     },
                     onSelect: { model in
-                        
+                        loadModel(cloudModel: model)
                     })
             }
         }
     }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {
-        appState.createTranscriber(model: whisperLocalModel)
+        appState.createLocalTranscriber(model: whisperLocalModel)
+    }
+    
+    func loadModel(cloudModel: CloudModel) {
+        appState.createCloudTranscriber(model: cloudModel)
     }
 }
 

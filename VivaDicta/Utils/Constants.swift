@@ -9,5 +9,6 @@ import Foundation
 
 // UserDefaults keys
 let kSelectedWhisperLocalModel = "selectedWhisperLocalModel"
+let kSelectedCloudModel = "selectedCloudModel"
 let kSelectedLanguageKey = "selectedLanguageKey"
 let kAPIKeyTemplate = "apiKeyTemplate"
