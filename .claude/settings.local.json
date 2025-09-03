@@ -12,7 +12,11 @@
       "Bash(xcrun simctl list:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm run tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsx:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": [],

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranscriptionModelProvider {
+enum TranscriptionModelProvider: Sendable {
     case local
     case parakeet
     case groq
@@ -272,7 +272,7 @@ enum TranscriptionModelProvider {
     ]
 }
 
-protocol TranscriptionModel: Identifiable, Hashable {
+protocol TranscriptionModel: Sendable {
     var id: UUID { get }
     var name: String { get }
     var displayName: String { get }
@@ -282,4 +282,14 @@ protocol TranscriptionModel: Identifiable, Hashable {
     // Language capabilities
     var supportManyLanguages: Bool { get }
     var supportedLanguages: [String: String] { get }
+}
+
+extension TranscriptionModel {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    var language: String {
+        supportManyLanguages ? "Multilingual" : "English-only"
+    }
 }

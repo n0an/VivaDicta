@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CloudModel: @MainActor TranscriptionModel {
+struct CloudModel: TranscriptionModel, Identifiable {
     let id: UUID
     let name: String
     let displayName: String
@@ -38,5 +38,15 @@ struct CloudModel: @MainActor TranscriptionModel {
         self.accuracy = accuracy
         self.supportManyLanguages = supportManyLanguages
         self.supportedLanguages = supportedLanguages
+    }
+}
+
+extension CloudModel: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: CloudModel, rhs: CloudModel) -> Bool {
+        lhs.id == rhs.id
     }
 }

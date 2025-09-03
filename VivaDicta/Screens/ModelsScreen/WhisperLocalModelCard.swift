@@ -10,6 +10,8 @@ import SwiftUI
 struct WhisperLocalModelCard: View {
     private var model: WhisperLocalModel
     private let downloadManager: WhisperModelDownloadManager
+    private var onSelect: (WhisperLocalModel) -> Void
+    private var isSelected: Bool
     
     private var currentProgress: Double {
         downloadManager.currentProgress(for: model)
@@ -23,39 +25,72 @@ struct WhisperLocalModelCard: View {
         downloadStatus == .downloaded
     }
     
-    private var onSelect: (WhisperLocalModel) -> Void
-    
-    private var isSelected: Bool
+    init(model: WhisperLocalModel,
+         isSelected: Bool,
+         downloadManager: WhisperModelDownloadManager,
+         onSelect: @escaping (WhisperLocalModel) -> Void) {
+        self.model = model
+        self.isSelected = isSelected
+        self.downloadManager = downloadManager
+        self.onSelect = onSelect
+    }
     
     var body: some View {
-        
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                header
-//                metadataSection
-//                descriptionSection
-//                progressSection
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    header
+                    metadataSection
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                actionSection
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            actionSection
+            descriptionSection
         }
         .padding(16)
-        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white)
-        
-        
-        
-        
+        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white, in: .rect(cornerRadius: 16))
     }
     
     private var header: some View {
         HStack {
             Text(model.displayName)
-                .font(.system(size: 13, weight: .semibold))
-            
+                .font(.system(size: 16, weight: .semibold))
             statusBadge
-            
             Spacer()
+        }
+    }
+    
+    private var metadataSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                
+                HStack(spacing: 4) {
+                    Text(model.language)
+                    Image(systemName: "globe")
+                }
+                
+                HStack(spacing: 4) {
+                    Text(model.size)
+                    Image(systemName: "internaldrive")
+                }
+            }
+            .foregroundStyle(.secondary)
+            .font(.system(size: 11))
+            
+            HStack(spacing: 3) {
+                Text("Speed")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                ModelPerformanceStatsDots(value: model.speed * 10)
+            }
+            
+            HStack(spacing: 3) {
+                Text("Accuracy")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                ModelPerformanceStatsDots(value: model.accuracy * 10)
+            }
         }
     }
     
@@ -76,6 +111,16 @@ struct WhisperLocalModelCard: View {
                     .background(Color(.lightGray.withAlphaComponent(0.5)), in: .rect(cornerRadius: 16))
             }
         }
+    }
+    
+    private var descriptionSection: some View {
+        Text(model.description)
+            .multilineTextAlignment(.leading)
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 4)
     }
     
     private var actionSection: some View {
@@ -99,73 +144,6 @@ struct WhisperLocalModelCard: View {
                 }
             }
         }
-        
-        
-        
-//        HStack(spacing: 8) {
-//            if isSelected {
-//                HStack {
-//                    Image(systemName: "checkmark.circle.fill")
-//                    Text("Selected")
-//                }
-//                .foregroundStyle(.green)
-//                
-//            } else if isDownloaded {
-//                selectButton
-//                
-//            } else {
-//                
-//                switch downloadStatus {
-//                case .download:
-//                    downloadButton
-//                case .downloading:
-//                    progressView
-//                case .downloaded:
-//                    selectButton
-//                }
-//                
-//                Button(action: downloadAction) {
-//                    HStack(spacing: 4) {
-//                        Text(isDownloading ? "Downloading..." : "Download")
-//                            .font(.system(size: 12, weight: .medium))
-//                        Image(systemName: "arrow.down.circle")
-//                            .font(.system(size: 12, weight: .medium))
-//                    }
-//                    .foregroundColor(.white)
-//                    .padding(.horizontal, 12)
-//                    .padding(.vertical, 6)
-//                    .background(
-//                        Capsule()
-//                            .fill(Color(.controlAccentColor))
-//                            .shadow(color: Color(.controlAccentColor).opacity(0.2), radius: 2, x: 0, y: 1)
-//                    )
-//                }
-//                .buttonStyle(.plain)
-//                .disabled(isDownloading)
-//            }
-            
-//            if isDownloaded {
-//                Menu {
-//                    Button(action: deleteAction) {
-//                        Label("Delete Model", systemImage: "trash")
-//                    }
-//                    
-//                    Button {
-//                        if let modelURL = modelURL {
-//                            NSWorkspace.shared.selectFile(modelURL.path, inFileViewerRootedAtPath: "")
-//                        }
-//                    } label: {
-//                        Label("Show in Finder", systemImage: "folder")
-//                    }
-//                } label: {
-//                    Image(systemName: "ellipsis.circle")
-//                        .font(.system(size: 14))
-//                }
-//                .menuStyle(.borderlessButton)
-//                .menuIndicator(.hidden)
-//                .frame(width: 20, height: 20)
-//            }
-//        }
     }
     
     var progressView: some View {
@@ -199,18 +177,6 @@ struct WhisperLocalModelCard: View {
         .foregroundStyle(.white)
         .padding(8)
         .background(.green, in: .rect(cornerRadius: 8))
-
-    }
-    
-    
-    init(model: WhisperLocalModel,
-         isSelected: Bool,
-         downloadManager: WhisperModelDownloadManager,
-         onSelect: @escaping (WhisperLocalModel) -> Void) {
-        self.model = model
-        self.isSelected = isSelected
-        self.downloadManager = downloadManager
-        self.onSelect = onSelect
     }
     
     func downloadModel(_ model: WhisperLocalModel) {
