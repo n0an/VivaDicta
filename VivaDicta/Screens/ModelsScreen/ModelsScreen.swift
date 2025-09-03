@@ -54,10 +54,11 @@ struct ModelsScreen: View {
                 ForEach(TranscriptionModelProvider.allLocalModels) { model in
                     WhisperLocalModelCard(
                         model: model,
-                        downloadManager: downloadManager
-                    ) { model in
-                        loadModel(whisperLocalModel: model)
-                    }
+                        isSelected: model == appState.selectedLocalWhisperModel,
+                        downloadManager: downloadManager,
+                        onSelect: { model in
+                            loadModel(whisperLocalModel: model)
+                        })
                 }
             }
         }

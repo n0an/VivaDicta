@@ -25,7 +25,7 @@ struct WhisperLocalModelCard: View {
     
     private var onSelect: (WhisperLocalModel) -> Void
     
-    @State private var isSelected: Bool
+    private var isSelected: Bool
     
     var body: some View {
         
@@ -73,7 +73,7 @@ struct WhisperLocalModelCard: View {
                     .font(.system(size: 11, weight: .medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(.gray, in: .rect(cornerRadius: 16))
+                    .background(Color(.lightGray.withAlphaComponent(0.5)), in: .rect(cornerRadius: 16))
             }
         }
     }
@@ -204,12 +204,13 @@ struct WhisperLocalModelCard: View {
     
     
     init(model: WhisperLocalModel,
+         isSelected: Bool,
          downloadManager: WhisperModelDownloadManager,
          onSelect: @escaping (WhisperLocalModel) -> Void) {
         self.model = model
+        self.isSelected = isSelected
         self.downloadManager = downloadManager
         self.onSelect = onSelect
-        self.isSelected = false
     }
     
     func downloadModel(_ model: WhisperLocalModel) {
@@ -226,6 +227,7 @@ struct WhisperLocalModelCard: View {
 #Preview {
     WhisperLocalModelCard(
         model: TranscriptionModelProvider.allLocalModels[0],
+        isSelected: false,
         downloadManager: WhisperModelDownloadManager(),
         onSelect: {_ in print("select") }
     )
