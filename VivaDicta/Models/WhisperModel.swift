@@ -7,17 +7,21 @@
 
 import Foundation
 
-enum TranscriptionModel: Hashable {
-    case local
-    case cloud
-}
+//enum TranscriptionModel: Hashable {
+//    case local
+//    case cloud
+//}
+//
+//enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
+//    var id: Self { self }
+//    case openAI
+//    case elevenlabs
+//    case groq
+//}
 
-enum CloudTranscriptionModel: String, CaseIterable, Identifiable {
-    var id: Self { self }
-    case openAI
-    case elevenlabs
-    case groq
-}
+
+
+
 
 enum WhisperModel: String, Hashable, CaseIterable, Identifiable {
     var id: Self { self }

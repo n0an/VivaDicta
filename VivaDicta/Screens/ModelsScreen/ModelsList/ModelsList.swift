@@ -8,21 +8,31 @@
 import SwiftUI
 
 struct ModelsList: View {
+    
     var appState: AppState
-    var modelType: TranscriptionModel
     
     var body: some View {
-        switch modelType {
-        case .local:
-            WhisperModelsList(appState: appState)
-        case .cloud:
-            CloudModelsList()
-        }
+        
+        
+//        switch modelType {
+//        case .local:
+//            WhisperModelsList(appState: appState)
+//        case .cloud:
+//            CloudModelsList()
+//        }
     }
+    
+//    var localModelsView: some View {
+//        
+//    }
+//    
+//    var cloudModelsView: some View {
+//        
+//    }
 }
 
-#Preview {
-    @State @Previewable var appState = AppState()
-    ModelsList(appState: appState,
-               modelType: .cloud)
-}
+//#Preview {
+//    @State @Previewable var appState = AppState()
+//    ModelsList(appState: appState,
+//               modelType: .cloud)
+//}
