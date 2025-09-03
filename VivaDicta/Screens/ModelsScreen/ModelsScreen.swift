@@ -48,54 +48,37 @@ struct ModelsScreen: View {
     
     var body: some View {
         
-        VStack {
-            Picker("Model type", selection: $modelType) {
-                ForEach(modelTypes, id: \.self) {
-                    Text($0.rawValue)
+        NavigationStack {
+            VStack {
+                Picker("Model type", selection: $modelType) {
+                    ForEach(modelTypes, id: \.self) {
+                        Text($0.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                
+                switch modelType {
+                case .local:
+                    localModelsView
+                case .cloud:
+                    cloudModelsView
                 }
             }
-            .pickerStyle(.segmented)
-            
-            switch modelType {
-            case .local:
-                localModelsView
-            case .cloud:
-                cloudModelsView
+            .navigationBarTitle("Transcription Models")
+            .toolbar {
+                ToolbarItem {
+                    Menu("Language", systemImage: "globe") {
+                        Picker("Language", selection: $appState.selectedLanguage) {
+                            ForEach(Language.allCases, id: \.self) { language in
+                                Text(language.fullName)
+                                    .tag(language)
+                            }
+                        }
+                    }
+                }
             }
         }
-        
-        
-//        NavigationStack {
-//            List {
-//                NavigationLink(value: TranscriptionModel.cloud) {
-//                    Label("Cloud", systemImage: "cloud.circle")
-//                }
-//                NavigationLink(value: TranscriptionModel.local) {
-//                    Label("Local", systemImage: "cpu")
-//                }
-//            }
-//            .navigationBarTitle("Models")
-//            .navigationDestination(for: TranscriptionModel.self) { modelType in
-//                ModelsList(appState: appState, modelType: modelType)
-//            }
-//            .toolbar {
-//                ToolbarItem {
-//                    Menu("Language", systemImage: "globe") {
-//                        Picker("Language", selection: $appState.selectedLanguage) {
-//                            ForEach(Language.allCases, id: \.self) { language in
-//                                Text(language.fullName)
-//                                    .tag(language)
-//                            }
-//                        }
-//                    }
-//                }
-//                
-//            }
-//        }
     }
-    
-    
-    
 }
 
 #Preview {
