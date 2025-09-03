@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranscriptionModelProvider {
+enum TranscriptionModelProvider: Sendable {
     case local
     case parakeet
     case groq
@@ -272,7 +272,7 @@ enum TranscriptionModelProvider {
     ]
 }
 
-protocol TranscriptionModel: Identifiable, Hashable {
+protocol TranscriptionModel: Sendable {
     var id: UUID { get }
     var name: String { get }
     var displayName: String { get }

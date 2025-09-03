@@ -25,15 +25,13 @@ async function findBestSimulatorDestination(): Promise<string> {
     
     // Preferred simulator patterns in order of preference
     const preferredPatterns = [
-      /iPhone 16 Pro.*OS:18\.1/,   // iPhone 16 Pro with iOS 18.1
       /iPhone 16 Pro.*OS:18\./,    // iPhone 16 Pro with any iOS 18.x
-      /iPhone 16.*OS:18\.1/,       // iPhone 16 with iOS 18.1
       /iPhone 16.*OS:18\./,        // iPhone 16 with any iOS 18.x
       /iPhone 15 Pro.*OS:18\./,    // iPhone 15 Pro with iOS 18.x
       /iPhone 15.*OS:18\./,        // iPhone 15 with iOS 18.x
       /iPhone 14.*OS:18\./,        // iPhone 14 with iOS 18.x
       /iPhone 13.*OS:18\./,        // iPhone 13 with iOS 18.x
-      /iPhone.*OS:18\./,           // Any iPhone with iOS 18.x
+      /iPhone.*OS:1[78]\./,        // Any iPhone with iOS 17.x or 18.x
       /iPhone/                     // Any iPhone (fallback)
     ]
     
