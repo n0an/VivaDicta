@@ -10,6 +10,8 @@ import SwiftUI
 struct WhisperLocalModelCard: View {
     private var model: WhisperLocalModel
     private let downloadManager: WhisperModelDownloadManager
+    private var onSelect: (WhisperLocalModel) -> Void
+    private var isSelected: Bool
     
     private var currentProgress: Double {
         downloadManager.currentProgress(for: model)
@@ -23,44 +25,43 @@ struct WhisperLocalModelCard: View {
         downloadStatus == .downloaded
     }
     
-    private var onSelect: (WhisperLocalModel) -> Void
-    
-    private var isSelected: Bool
+    init(model: WhisperLocalModel,
+         isSelected: Bool,
+         downloadManager: WhisperModelDownloadManager,
+         onSelect: @escaping (WhisperLocalModel) -> Void) {
+        self.model = model
+        self.isSelected = isSelected
+        self.downloadManager = downloadManager
+        self.onSelect = onSelect
+    }
     
     var body: some View {
-        
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                header
-                metadataSection
-//                descriptionSection
-//                progressSection
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    header
+                    metadataSection
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                actionSection
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            actionSection
+            descriptionSection
         }
         .padding(16)
-        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white)
-        
-        
-        
-        
+        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white, in: .rect(cornerRadius: 16))
     }
     
     private var header: some View {
         HStack {
             Text(model.displayName)
-                .font(.system(size: 13, weight: .semibold))
-            
+                .font(.system(size: 16, weight: .semibold))
             statusBadge
-            
             Spacer()
         }
     }
     
     private var metadataSection: some View {
-        
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 
@@ -90,7 +91,6 @@ struct WhisperLocalModelCard: View {
                     .foregroundStyle(.secondary)
                 ModelPerformanceStatsDots(value: model.accuracy * 10)
             }
-            
         }
     }
     
@@ -111,6 +111,16 @@ struct WhisperLocalModelCard: View {
                     .background(Color(.lightGray.withAlphaComponent(0.5)), in: .rect(cornerRadius: 16))
             }
         }
+    }
+    
+    private var descriptionSection: some View {
+        Text(model.description)
+            .multilineTextAlignment(.leading)
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 4)
     }
     
     private var actionSection: some View {
@@ -134,9 +144,6 @@ struct WhisperLocalModelCard: View {
                 }
             }
         }
-        
-        
-        
     }
     
     var progressView: some View {
@@ -170,18 +177,6 @@ struct WhisperLocalModelCard: View {
         .foregroundStyle(.white)
         .padding(8)
         .background(.green, in: .rect(cornerRadius: 8))
-
-    }
-    
-    
-    init(model: WhisperLocalModel,
-         isSelected: Bool,
-         downloadManager: WhisperModelDownloadManager,
-         onSelect: @escaping (WhisperLocalModel) -> Void) {
-        self.model = model
-        self.isSelected = isSelected
-        self.downloadManager = downloadManager
-        self.onSelect = onSelect
     }
     
     func downloadModel(_ model: WhisperLocalModel) {
@@ -191,39 +186,6 @@ struct WhisperLocalModelCard: View {
             } catch {
                 await downloadManager.handleModelDownloadError(model, error)
             }
-        }
-    }
-}
-
-
-struct ModelPerformanceStatsDots: View {
-    var value: Double
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            progressDots(value: value)
-            Text(String(format: "%.1f", value))
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
-        }
-    }
-    
-    func progressDots(value: Double) -> some View {
-        HStack(spacing: 2) {
-            ForEach(0 ..< 5) { index in
-                Circle()
-                    .fill(index < Int(value / 2) ? performanceColor(value: value / 10) : .gray)
-                    .frame(width: 6, height: 6)
-            }
-        }
-    }
-    
-    func performanceColor(value: Double) -> Color {
-        switch value {
-        case 0.8...1.0: return .green
-        case 0.6..<0.8: return .yellow
-        case 0.4..<0.6: return .orange
-        default: return .red
         }
     }
 }
