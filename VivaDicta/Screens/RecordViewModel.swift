@@ -68,6 +68,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     override init() {
         super.init()
+        
+        // Skip audio session setup during testing
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return
+        }
+        
         #if !os(macOS)
         do {
             #if os(iOS)
