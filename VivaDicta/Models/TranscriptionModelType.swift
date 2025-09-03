@@ -111,7 +111,7 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
             provider: .groq,
             speed: 0.65,
             accuracy: 0.96,
-            isMultilingual: true,
+            supportManyLanguages: true,
             supportedLanguages: allLanguages
         ),
         CloudModel(
@@ -121,7 +121,7 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
             provider: .elevenLabs,
             speed: 0.7,
             accuracy: 0.98,
-            isMultilingual: true,
+            supportManyLanguages: true,
             supportedLanguages: allLanguages
         ),
         CloudModel(
@@ -131,7 +131,7 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
             provider: .deepgram,
             speed: 0.9,
             accuracy: 0.95,
-            isMultilingual: true,
+            supportManyLanguages: true,
             supportedLanguages: allLanguages
         ),
         
@@ -143,7 +143,7 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
             provider: .gemini,
             speed: 0.7,
             accuracy: 0.96,
-            isMultilingual: true,
+            supportManyLanguages: true,
             supportedLanguages: allLanguages
         ),
         CloudModel(
@@ -153,7 +153,7 @@ enum TranscriptionModelType: String, CaseIterable, Identifiable {
             provider: .gemini,
             speed: 0.9,
             accuracy: 0.94,
-            isMultilingual: true,
+            supportManyLanguages: true,
             supportedLanguages: allLanguages
         ),
     ]

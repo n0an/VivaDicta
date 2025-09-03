@@ -24,7 +24,7 @@ protocol TranscriptionModel: Identifiable, Hashable {
     var provider: TranscriptionModelProvider { get }
     
     // Language capabilities
-    var isMultilingualModel: Bool { get }
+    var supportManyLanguages: Bool { get }
     var supportedLanguages: [String: String] { get }
 }
 
@@ -40,7 +40,7 @@ struct WhisperLocalModel: @MainActor TranscriptionModel {
     let accuracy: Double
     let ramUsage: Double
     
-    var isMultilingualModel: Bool {
+    var supportManyLanguages: Bool {
         supportedLanguages.count > 1
     }
     
@@ -56,7 +56,7 @@ struct CloudModel: @MainActor TranscriptionModel {
     
     let speed: Double
     let accuracy: Double
-    let isMultilingualModel: Bool
+    let supportManyLanguages: Bool
     let supportedLanguages: [String: String]
     
     init(id: UUID = UUID(),
@@ -66,7 +66,7 @@ struct CloudModel: @MainActor TranscriptionModel {
          provider: TranscriptionModelProvider,
          speed: Double,
          accuracy: Double,
-         isMultilingual: Bool,
+         supportManyLanguages: Bool,
          supportedLanguages: [String: String])
     {
         self.id = id
@@ -76,7 +76,7 @@ struct CloudModel: @MainActor TranscriptionModel {
         self.provider = provider
         self.speed = speed
         self.accuracy = accuracy
-        isMultilingualModel = isMultilingual
+        self.supportManyLanguages = supportManyLanguages
         self.supportedLanguages = supportedLanguages
     }
 }
