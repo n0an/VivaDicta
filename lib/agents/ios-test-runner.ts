@@ -88,7 +88,7 @@ export async function runIOSTests(): Promise<TestResult> {
   const destination = await findBestSimulatorDestination()
   console.log(`📱 Using destination: ${destination}`)
   
-  const testCommand = `xcodebuild test -scheme VivaDicta -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination "${destination}" CODE_SIGNING_ALLOWED=NO`
+  const testCommand = `xcodebuild test -scheme VivaDicta -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination "${destination}" CODE_SIGNING_ALLOWED=NO SWIFT_STRICT_CONCURRENCY=minimal`
   
   try {
     const startTime = Date.now()

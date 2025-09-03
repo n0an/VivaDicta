@@ -69,8 +69,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     override init() {
         super.init()
         
-        // Skip audio session setup during testing
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+        // Skip audio session setup during testing or CI
+        let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+                            ProcessInfo.processInfo.environment["CI"] != nil ||
+                            ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != nil ||
+                            NSClassFromString("XCTestCase") != nil
+        
+        if isRunningTests {
+            print("RecordViewModel: Skipping audio setup - detected test/CI environment")
             return
         }
         
