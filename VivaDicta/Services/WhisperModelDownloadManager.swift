@@ -112,7 +112,7 @@ class WhisperModelDownloadManager {
             
             let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
                 let currentProgress = round(progress.fractionCompleted * 100) / 100
-                Task { @MainActor [weak self] in
+                Task { @MainActor in
                     self?.downloadProgress[progressKey] = currentProgress
                 }
             }
