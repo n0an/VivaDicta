@@ -11,7 +11,7 @@ import SwiftUI
 struct CloudModelConfigurationView: View {
     @Environment(\.dismiss) var dismiss
     var model: CloudModel
-    var onSave: (CloudModel) -> Void
+    var onSave: (CloudModel, String) -> Void
     
     @State var apiKey: String = ""
     
@@ -46,7 +46,7 @@ struct CloudModelConfigurationView: View {
     
     
     func saveKey() {
-        onSave(model)
+        onSave(model, apiKey)
 //        dismiss()
     }
     
@@ -55,6 +55,6 @@ struct CloudModelConfigurationView: View {
 #Preview {
     CloudModelConfigurationView(
         model: TranscriptionModelProvider.allCloudModels[0],
-        onSave: {_ in }
+        onSave: {_, _ in }
         )
 }

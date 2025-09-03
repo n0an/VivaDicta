@@ -77,11 +77,14 @@ struct ModelsScreen: View {
                     })
             }
         }
+        .onChange(of: cloudModelToConfigure) { _, _ in
+            // Force view refresh when a model is configured
+        }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(
                 model: model,
-                onSave: { model in
-                    cloudModelConfigured(model: model)
+                onSave: { (model, apiKey) in
+                    cloudModelConfigured(model: model, apiKey: apiKey)
                 })
         })
     }
@@ -98,8 +101,8 @@ struct ModelsScreen: View {
         cloudModelToConfigure = model
     }
     
-    func cloudModelConfigured(model: CloudModel) {
-        print("=== save")
+    func cloudModelConfigured(model: CloudModel, apiKey: String) {
+        cloudModelToConfigure?.apiKey = apiKey
         cloudModelToConfigure = nil
     }
 }

@@ -139,6 +139,7 @@ struct CloudModelCard: View {
             }
             .font(.system(size: 12, weight: .semibold))
         }
+
         .foregroundStyle(.white)
         .padding(.vertical, 4)
         .padding(.horizontal, 6)
