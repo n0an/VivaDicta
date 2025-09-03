@@ -26,13 +26,13 @@ class AppState {
     }
     
     init() {
-        if let selectedModelName = UserDefaults.standard.string(forKey: "selectedWhisperLocalModel"),
+        if let selectedModelName = UserDefaults.standard.string(forKey: kSelectedWhisperLocalModel),
            let selectedModel = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == selectedModelName}) {
             self.selectedLocalWhisperModel = selectedModel
             self.createTranscriber(model: selectedModel)
         }
         
-        if let selectedLanguageKey = UserDefaults.standard.string(forKey: "selectedLanguageKey"),
+        if let selectedLanguageKey = UserDefaults.standard.string(forKey: kSelectedLanguageKey),
            let savedSelectedLanguage = Language(rawValue: selectedLanguageKey) {
             self.selectedLanguage = savedSelectedLanguage
         }
@@ -40,13 +40,13 @@ class AppState {
     
     func setLanguage(_ language: Language) {
         self.transcriptionService?.selectedLanguage = language
-        UserDefaults.standard.set(language.rawValue, forKey: "selectedLanguageKey")
+        UserDefaults.standard.set(language.rawValue, forKey: kSelectedLanguageKey)
     }
     
     func createTranscriber(model: WhisperLocalModel) {
         selectedLocalWhisperModel = model
         transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
-        UserDefaults.standard.set(model.name, forKey: "selectedWhisperLocalModel")
+        UserDefaults.standard.set(model.name, forKey: kSelectedWhisperLocalModel)
     }
 }
 
