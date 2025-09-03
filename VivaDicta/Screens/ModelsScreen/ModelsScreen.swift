@@ -7,14 +7,6 @@
 
 import SwiftUI
 
-
-enum ModelType: String, CaseIterable, Identifiable {
-    var id: Self { self }
-    case local
-    case cloud
-    
-}
-
 struct ModelsScreen: View {
     @Bindable var appState: AppState
     var modelTypes = ModelType.allCases
