@@ -53,7 +53,7 @@ struct ModelsScreen: View {
             ForEach(appState.allLocalModels) { model in
                 WhisperLocalModelCard(
                     model: model,
-                    isSelected: model == appState.selectedLocalWhisperModel,
+                    isSelected: model.name == (appState.currentTranscriptionModel as? WhisperLocalModel)?.name,
                     downloadManager: downloadManager,
                     onSelect: { model in
                         loadModel(whisperLocalModel: model)
@@ -67,7 +67,7 @@ struct ModelsScreen: View {
             ForEach(appState.allCloudModels) { model in
                 CloudModelCard(
                     model: model,
-                    isSelected: model == appState.selectedCloudModel,
+                    isSelected: model.name == (appState.currentTranscriptionModel as? CloudModel)?.name,
                     onConfigure: { model in
                         configureCloudModel(model: model)
                     },
