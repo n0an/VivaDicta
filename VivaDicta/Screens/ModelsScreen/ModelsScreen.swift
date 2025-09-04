@@ -25,11 +25,30 @@ struct ModelsScreen: View {
                 }
                 .pickerStyle(.segmented)
                 
-                switch modelType {
-                case .local:
-                    localModelsView
-                case .cloud:
-                    cloudModelsView
+                
+                ScrollView {
+                    ForEach(filteredModels, id: \.id) { model in
+                        if let model = model as? WhisperLocalModel {
+                            WhisperLocalModelCard(
+                                model: model,
+                                isSelected: model.name == appState.currentTranscriptionModel?.name,
+                                downloadManager: downloadManager,
+                                onSelect: { model in
+                                    loadModel(whisperLocalModel: model)
+                                })
+                        } else if let model = model as? CloudModel {
+                            CloudModelCard(
+                                model: model,
+                                isSelected: model.name == appState.currentTranscriptionModel?.name,
+                                onConfigure: { model in
+                                    configureCloudModel(model: model)
+                                },
+                                onSelect: { model in
+                                    loadModel(cloudModel: model)
+                                })
+                        }
+                        
+                    }
                 }
             }
             .navigationBarTitle("Transcription Models")
@@ -57,48 +76,48 @@ struct ModelsScreen: View {
         }
     }
     
-    var localModelsView: some View {
-        ScrollView {
-            ForEach(filteredModels, id: \.id) { model in
-                if let model = model as? WhisperLocalModel {
-                    WhisperLocalModelCard(
-                        model: model,
-                        isSelected: model.name == appState.currentTranscriptionModel?.name,
-                        downloadManager: downloadManager,
-                        onSelect: { model in
-                            loadModel(whisperLocalModel: model)
-                        })
-                }
-                
-            }
-        }
-    }
+//    var localModelsView: some View {
+//        ScrollView {
+//            ForEach(filteredModels, id: \.id) { model in
+//                if let model = model as? WhisperLocalModel {
+//                    WhisperLocalModelCard(
+//                        model: model,
+//                        isSelected: model.name == appState.currentTranscriptionModel?.name,
+//                        downloadManager: downloadManager,
+//                        onSelect: { model in
+//                            loadModel(whisperLocalModel: model)
+//                        })
+//                }
+//                
+//            }
+//        }
+//    }
     
-    var cloudModelsView: some View {
-        ScrollView {
-            ForEach(filteredModels, id: \.id) { model in
-                if let model = model as? CloudModel {
-                    CloudModelCard(
-                        model: model,
-                        isSelected: model.name == appState.currentTranscriptionModel?.name,
-                        onConfigure: { model in
-                            configureCloudModel(model: model)
-                        },
-                        onSelect: { model in
-                            loadModel(cloudModel: model)
-                        })
-                }
-                
-            }
-        }
-        .navigationDestination(item: $cloudModelToConfigure, destination: { model in
-            CloudModelConfigurationView(
-                model: model,
-                onSave: { (model, apiKey) in
-                    cloudModelConfigured(model: model, apiKey: apiKey)
-                })
-        })
-    }
+//    var cloudModelsView: some View {
+//        ScrollView {
+//            ForEach(filteredModels, id: \.id) { model in
+//                if let model = model as? CloudModel {
+//                    CloudModelCard(
+//                        model: model,
+//                        isSelected: model.name == appState.currentTranscriptionModel?.name,
+//                        onConfigure: { model in
+//                            configureCloudModel(model: model)
+//                        },
+//                        onSelect: { model in
+//                            loadModel(cloudModel: model)
+//                        })
+//                }
+//                
+//            }
+//        }
+//        .navigationDestination(item: $cloudModelToConfigure, destination: { model in
+//            CloudModelConfigurationView(
+//                model: model,
+//                onSave: { (model, apiKey) in
+//                    cloudModelConfigured(model: model, apiKey: apiKey)
+//                })
+//        })
+//    }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {
         appState.setDefaultTranscriptionModel(whisperLocalModel)
