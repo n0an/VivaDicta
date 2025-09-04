@@ -48,32 +48,47 @@ struct ModelsScreen: View {
         }
     }
     
+    var filteredModels: [any TranscriptionModel] {
+        switch modelType {
+        case .local:
+            appState.allAvailableModels.filter { $0.provider == .local }
+        case .cloud:
+            appState.allAvailableModels.filter { $0.provider != .local }
+        }
+    }
+    
     var localModelsView: some View {
         ScrollView {
-            ForEach(appState.allLocalModels) { model in
-                WhisperLocalModelCard(
-                    model: model,
-                    isSelected: model.name == (appState.currentTranscriptionModel as? WhisperLocalModel)?.name,
-                    downloadManager: downloadManager,
-                    onSelect: { model in
-                        loadModel(whisperLocalModel: model)
-                    })
+            ForEach(filteredModels, id: \.id) { model in
+                if let model = model as? WhisperLocalModel {
+                    WhisperLocalModelCard(
+                        model: model,
+                        isSelected: model.name == appState.currentTranscriptionModel?.name,
+                        downloadManager: downloadManager,
+                        onSelect: { model in
+                            loadModel(whisperLocalModel: model)
+                        })
+                }
+                
             }
         }
     }
     
     var cloudModelsView: some View {
         ScrollView {
-            ForEach(appState.allCloudModels) { model in
-                CloudModelCard(
-                    model: model,
-                    isSelected: model.name == (appState.currentTranscriptionModel as? CloudModel)?.name,
-                    onConfigure: { model in
-                        configureCloudModel(model: model)
-                    },
-                    onSelect: { model in
-                        loadModel(cloudModel: model)
-                    })
+            ForEach(filteredModels, id: \.id) { model in
+                if let model = model as? CloudModel {
+                    CloudModelCard(
+                        model: model,
+                        isSelected: model.name == appState.currentTranscriptionModel?.name,
+                        onConfigure: { model in
+                            configureCloudModel(model: model)
+                        },
+                        onSelect: { model in
+                            loadModel(cloudModel: model)
+                        })
+                }
+                
             }
         }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in

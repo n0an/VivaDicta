@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CloudModel: TranscriptionModel, Identifiable {
+struct CloudModel: @MainActor TranscriptionModel {
     let id: UUID
     let name: String
     let displayName: String
@@ -41,15 +41,15 @@ struct CloudModel: TranscriptionModel, Identifiable {
     }
 }
 
-extension CloudModel: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func == (lhs: CloudModel, rhs: CloudModel) -> Bool {
-        lhs.id == rhs.id
-    }
-}
+//extension CloudModel: Hashable {
+//    func hash(into hasher: inout Hasher) {
+//        hasher.combine(id)
+//    }
+//    
+//    static func == (lhs: CloudModel, rhs: CloudModel) -> Bool {
+//        lhs.id == rhs.id
+//    }
+//}
 
 extension CloudModel {
     static func saveApiKey(_ apiKey: String, modelName: String) {

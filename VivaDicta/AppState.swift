@@ -51,8 +51,8 @@ class AppState {
 //    }
     
     
-    var allLocalModels = TranscriptionModelProvider.allLocalModels
-    var allCloudModels = TranscriptionModelProvider.allCloudModels
+//    var allLocalModels = TranscriptionModelProvider.allLocalModels
+//    var allCloudModels = TranscriptionModelProvider.allCloudModels
     
     var transcriptionModelSelected = false
     
@@ -179,7 +179,8 @@ class AppState {
     
     func updateCloudModels(with model: CloudModel, apiKey: String) {
         CloudModel.saveApiKey(apiKey, modelName: model.name)
-        allCloudModels = TranscriptionModelProvider.allCloudModels
+//        allCloudModels = TranscriptionModelProvider.allCloudModels
+        allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
     }
     
     func createLocalTranscriber(model: WhisperLocalModel) {
@@ -276,6 +277,7 @@ extension AppState {
     func loadCurrentTranscriptionModel() {
         if let savedModelName = UserDefaults.standard.string(forKey: "CurrentTranscriptionModel"),
            let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
+            print("=== \(savedModel.name)")
             currentTranscriptionModel = savedModel
         }
     }
@@ -283,7 +285,10 @@ extension AppState {
     // Function to set any transcription model as default
     func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
         self.currentTranscriptionModel = model
+        print("=== \(model.name)")
+
         UserDefaults.standard.set(model.name, forKey: "CurrentTranscriptionModel")
+        UserDefaults.standard.synchronize()
         
         if model.provider == .local, let localWhipserModel = model as? WhisperLocalModel {
             Task { try await loadModel(localWhipserModel) }

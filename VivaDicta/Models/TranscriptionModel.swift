@@ -277,7 +277,7 @@ enum TranscriptionModelProvider: String, Sendable {
     ]
 }
 
-protocol TranscriptionModel: Sendable {
+protocol TranscriptionModel: Identifiable, Hashable {
     var id: UUID { get }
     var name: String { get }
     var displayName: String { get }

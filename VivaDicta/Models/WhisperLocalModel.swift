@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct WhisperLocalModel: TranscriptionModel, Identifiable {
+struct WhisperLocalModel: @MainActor TranscriptionModel {
     var id: UUID = .init()
     var name: String
     var displayName: String
@@ -53,12 +53,12 @@ extension WhisperLocalModel {
     }
 }
 
-extension WhisperLocalModel: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func == (lhs: WhisperLocalModel, rhs: WhisperLocalModel) -> Bool {
-        lhs.id == rhs.id
-    }
-}
+//extension WhisperLocalModel: Hashable {
+//    func hash(into hasher: inout Hasher) {
+//        hasher.combine(id)
+//    }
+//    
+//    static func == (lhs: WhisperLocalModel, rhs: WhisperLocalModel) -> Bool {
+//        lhs.id == rhs.id
+//    }
+//}
