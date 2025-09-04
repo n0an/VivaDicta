@@ -8,6 +8,6 @@
 import Foundation
 
 protocol TranscriptionService {
-    var selectedLanguage: Language { get set }
-    func generateAudioTransciptions(fileURL: URL) async throws ->  String
+//    var selectedLanguage: Language { get set }
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String
 }

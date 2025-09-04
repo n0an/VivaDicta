@@ -10,6 +10,7 @@ import Foundation
 enum TranscriptionModelProvider: String, Sendable {
     case local
     case parakeet
+    case openAI
     case groq
     case elevenLabs
     case deepgram

@@ -10,6 +10,22 @@ import SwiftUI
 
 @Observable
 class AppState {
+    
+    var isModelLoaded = false
+    var loadedLocalModel: WhisperLocalModel?
+    var whisperContext: WhisperContext?
+    var currentTranscriptionModel: (any TranscriptionModel)?
+
+    var availableModels: [WhisperLocalModel] {
+        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
+    }
+    
+    var localTranscriptionService: LocalTranscriptionService!
+    
+    
+    
+    
+    
     var selectedTab: TabTag = .record
     var transcriptionService: (any TranscriptionService)?
     
@@ -17,7 +33,6 @@ class AppState {
         transcriptionService != nil
     }
     
-    var selectedTranscriptionModel: (any TranscriptionModel)?
     
     var allLocalModels = TranscriptionModelProvider.allLocalModels
     var allCloudModels = TranscriptionModelProvider.allCloudModels
@@ -65,10 +80,37 @@ class AppState {
            let savedSelectedLanguage = Language(rawValue: selectedLanguageKey) {
             self.selectedLanguage = savedSelectedLanguage
         }
+        
+        
+        localTranscriptionService = LocalTranscriptionService(appState: self)
+
+        
     }
     
+    
+    
+    
+    func transcribe(audioURL: URL) async -> String {
+        return ""
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     func setLanguage(_ language: Language) {
-        self.transcriptionService?.selectedLanguage = language
+//        self.transcriptionService?.selectedLanguage = language
         UserDefaults.standard.set(language.rawValue, forKey: kSelectedLanguageKey)
     }
     
@@ -79,13 +121,15 @@ class AppState {
     
     func createLocalTranscriber(model: WhisperLocalModel) {
         selectedLocalWhisperModel = model
-        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
+        selectedCloudModel = nil
+//        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
         UserDefaults.standard.set(model.name, forKey: kSelectedWhisperLocalModel)
         UserDefaults.standard.set(nil, forKey: kSelectedCloudModel)
     }
     
     func createCloudTranscriber(model: CloudModel) {
         selectedCloudModel = model
+        selectedLocalWhisperModel = nil
 //        transcriptionService = LocalWhisperTranscriptionService(selectedModel: model, selectedLanguage: self.selectedLanguage)
         UserDefaults.standard.set(model.name, forKey: kSelectedCloudModel)
         UserDefaults.standard.set(nil, forKey: kSelectedWhisperLocalModel)

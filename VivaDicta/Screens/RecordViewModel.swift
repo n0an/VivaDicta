@@ -156,28 +156,35 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             do {
                 self.recordingState = .transcribing
                 
-                if let transcriptionService = appState?.transcriptionService {
-                    let transcribedText = try await transcriptionService.generateAudioTransciptions(fileURL: recordURL)
-                    print(transcribedText)
-                    
-                    
-                    let transcribedTextArr = transcribedText.components(separatedBy: CharacterSet.alphanumerics.inverted)
-                    let maxTitleWords = min(transcribedTextArr.count, 3)
-                    
-                    let title = Array(transcribedTextArr[0..<maxTitleWords]).joined(separator: " ")
-                    
-                    let transcription = Transcription(
-                        title: title,
-                        text: transcribedText,
-                        timestamp: .now,
-                        enhancedText: "mock",
-                        audioFileURL: recordURL.absoluteString,
-                        transcriptionModelName: "whisper",
-                        enhancementModelName: "none")
-                    
-                    modelContext.insert(transcription)
-                    try modelContext.save()
-                }
+                let transcribedText = try await appState?.transcribe(audioURL: recordURL)
+                print(transcribedText)
+                
+//                if let transcriptionService = appState?.transcriptionService {
+////                    let transcribedText = try await transcriptionService.generateAudioTransciptions(fileURL: recordURL)
+//                    let transcribedText = try await appState.transcribe(audioURL: recordURL)
+//                    print(transcribedText)
+//                    
+//                    
+//                    let transcribedTextArr = transcribedText.components(separatedBy: CharacterSet.alphanumerics.inverted)
+//                    let maxTitleWords = min(transcribedTextArr.count, 3)
+//                    
+//                    let title = Array(transcribedTextArr[0..<maxTitleWords]).joined(separator: " ")
+//                    
+//                    let transcription = Transcription(
+//                        title: title,
+//                        text: transcribedText,
+//                        timestamp: .now,
+//                        enhancedText: "mock",
+//                        audioFileURL: recordURL.absoluteString,
+//                        transcriptionModelName: "whisper",
+//                        enhancementModelName: "none")
+//                    
+//                    modelContext.insert(transcription)
+//                    try modelContext.save()
+//                }
+                
+                
+                
                 
 //                let whisperCPPTranscriptionService = LocalWhisperTranscriptionService()
 //                let transcribedText = try await whisperCPPTranscriptionService.generateAudioTransciptions(fileURL: recordURL)
