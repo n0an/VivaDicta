@@ -21,7 +21,7 @@ class AppState {
     }
     
     var localTranscriptionService: LocalTranscriptionService!
-    
+    private var cloudTranscriptionService = CloudTranscriptionService()
     
     
     
@@ -90,8 +90,28 @@ class AppState {
     
     
     
-    func transcribe(audioURL: URL) async -> String {
-        return ""
+    func transcribe(audioURL: URL) async throws -> String {
+        guard let model = currentTranscriptionModel else {
+            throw WhisperStateError.transcriptionFailed
+        }
+
+        let transcriptionService: any TranscriptionService
+        switch model.provider {
+        case .local:
+            transcriptionService = localTranscriptionService
+        case .parakeet:
+            transcriptionService = localTranscriptionService
+
+//            transcriptionService = parakeetTranscriptionService
+//            transcriptionService = nativeAppleTranscriptionService
+        default:
+            transcriptionService = cloudTranscriptionService
+        }
+
+        let transcriptionStart = Date()
+        var text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
+        let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+        return text
     }
     
     
