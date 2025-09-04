@@ -17,7 +17,10 @@ class AppState {
         transcriptionService != nil
     }
     
-//    var selectedTranscriptionModel: (any TranscriptionModel)?
+    var selectedTranscriptionModel: (any TranscriptionModel)?
+    
+    var allLocalModels = TranscriptionModelProvider.allLocalModels
+    var allCloudModels = TranscriptionModelProvider.allCloudModels
     
     var transcriptionModelSelected = false
     
@@ -49,11 +52,11 @@ class AppState {
     
     init() {
         if let selectedModelName = UserDefaults.standard.string(forKey: kSelectedWhisperLocalModel),
-           let selectedModel = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == selectedModelName}) {
+           let selectedModel = allLocalModels.first(where: {$0.name == selectedModelName}) {
             self.selectedLocalWhisperModel = selectedModel
             self.createLocalTranscriber(model: selectedModel)
         } else if let selectedModelName = UserDefaults.standard.string(forKey: kSelectedCloudModel),
-                  let selectedModel = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == selectedModelName}) {
+                  let selectedModel = allCloudModels.first(where: {$0.name == selectedModelName}) {
             self.selectedCloudModel = selectedModel
             self.createCloudTranscriber(model: selectedModel)
         }
@@ -67,6 +70,11 @@ class AppState {
     func setLanguage(_ language: Language) {
         self.transcriptionService?.selectedLanguage = language
         UserDefaults.standard.set(language.rawValue, forKey: kSelectedLanguageKey)
+    }
+    
+    func udateCloudModels(with model: CloudModel, apiKey: String) {
+        guard let modelIndex = allCloudModels.firstIndex(where: { $0.name == model.name }) else { return }
+        allCloudModels[modelIndex].apiKey = apiKey
     }
     
     func createLocalTranscriber(model: WhisperLocalModel) {

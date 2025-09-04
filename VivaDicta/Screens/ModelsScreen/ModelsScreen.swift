@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ModelsScreen: View {
     @Bindable var appState: AppState
-    var modelTypes = TranscriptionModelType.allCases
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
     
@@ -20,7 +19,7 @@ struct ModelsScreen: View {
         NavigationStack {
             VStack {
                 Picker("Model type", selection: $modelType) {
-                    ForEach(modelTypes, id: \.self) {
+                    ForEach(TranscriptionModelType.allCases, id: \.self) {
                         Text($0.rawValue.capitalized)
                     }
                 }
@@ -51,7 +50,7 @@ struct ModelsScreen: View {
     
     var localModelsView: some View {
         ScrollView {
-            ForEach(TranscriptionModelProvider.allLocalModels) { model in
+            ForEach(appState.allLocalModels) { model in
                 WhisperLocalModelCard(
                     model: model,
                     isSelected: model == appState.selectedLocalWhisperModel,
@@ -65,7 +64,7 @@ struct ModelsScreen: View {
     
     var cloudModelsView: some View {
         ScrollView {
-            ForEach(TranscriptionModelProvider.allCloudModels) { model in
+            ForEach(appState.allCloudModels) { model in
                 CloudModelCard(
                     model: model,
                     isSelected: model == appState.selectedCloudModel,
@@ -76,9 +75,6 @@ struct ModelsScreen: View {
                         loadModel(cloudModel: model)
                     })
             }
-        }
-        .onChange(of: cloudModelToConfigure) { _, _ in
-            // Force view refresh when a model is configured
         }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(
@@ -102,7 +98,7 @@ struct ModelsScreen: View {
     }
     
     func cloudModelConfigured(model: CloudModel, apiKey: String) {
-        cloudModelToConfigure?.apiKey = apiKey
+        appState.udateCloudModels(with: model, apiKey: apiKey)
         cloudModelToConfigure = nil
     }
 }
