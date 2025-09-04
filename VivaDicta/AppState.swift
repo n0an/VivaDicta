@@ -144,12 +144,9 @@ class AppState {
     
     
     func loadModel(_ model: WhisperLocalModel) async throws {
-        guard whisperContext == nil else { return }
-
+        // TODO: - Add whisperContext release after transcribing?
         do {
             whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-
-            // Set the prompt from UserDefaults to ensure we have the latest
             let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? whisperPrompt.transcriptionPrompt
             await whisperContext?.setPrompt(currentPrompt)
 

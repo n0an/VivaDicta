@@ -10,6 +10,7 @@ import Combine
 
 //@Observable
 class WhisperPrompt {
+    // TODO: Handle Language change
     var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
     
     private let customPromptsKey = "CustomLanguagePrompts"
@@ -63,17 +64,6 @@ class WhisperPrompt {
         loadCustomPrompts()
         updateTranscriptionPrompt()
         
-        // Setup notification observer
-//        NotificationCenter.default.addObserver(
-//            self,
-//            selector: #selector(handleLanguageChange),
-//            name: .languageDidChange,
-//            object: nil
-//        )
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
     
     @objc private func handleLanguageChange() {
@@ -101,10 +91,8 @@ class WhisperPrompt {
         
         transcriptionPrompt = prompt
         UserDefaults.standard.set(prompt, forKey: "TranscriptionPrompt")
-        UserDefaults.standard.synchronize() // Force immediate synchronization
+        UserDefaults.standard.synchronize()
         
-//        // Notify that the prompt has changed
-//        NotificationCenter.default.post(name: .promptDidChange, object: nil)
     }
     
     func getLanguagePrompt(for language: String) -> String {
