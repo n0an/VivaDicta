@@ -9,8 +9,8 @@ import SwiftUI
 
 struct ModelsScreen: View {
     @Bindable var appState: AppState
-    var modelTypes = TranscriptionModelType.allCases
     @State var modelType: TranscriptionModelType = .local
+    @State var cloudModelToConfigure: CloudModel?
     
     @State private var downloadManager = WhisperModelDownloadManager()
     
@@ -19,7 +19,7 @@ struct ModelsScreen: View {
         NavigationStack {
             VStack {
                 Picker("Model type", selection: $modelType) {
-                    ForEach(modelTypes, id: \.self) {
+                    ForEach(TranscriptionModelType.allCases, id: \.self) {
                         Text($0.rawValue.capitalized)
                     }
                 }
@@ -49,36 +49,57 @@ struct ModelsScreen: View {
     }
     
     var localModelsView: some View {
-        List {
-            Section(header: Text("Local Whisper Transcription Models")) {
-                ForEach(TranscriptionModelProvider.allLocalModels) { model in
-                    WhisperLocalModelCard(
-                        model: model,
-                        isSelected: model == appState.selectedLocalWhisperModel,
-                        downloadManager: downloadManager,
-                        onSelect: { model in
-                            loadModel(whisperLocalModel: model)
-                        })
-                }
+        ScrollView {
+            ForEach(appState.allLocalModels) { model in
+                WhisperLocalModelCard(
+                    model: model,
+                    isSelected: model == appState.selectedLocalWhisperModel,
+                    downloadManager: downloadManager,
+                    onSelect: { model in
+                        loadModel(whisperLocalModel: model)
+                    })
             }
         }
-        .listStyle(.grouped)
     }
     
     var cloudModelsView: some View {
-        List {
-            Section(header: Text("Cloud Transcription Models")) {
-                ForEach(TranscriptionModelProvider.allCloudModels) { model in
-                    Text(model.displayName)
-                    
-                }
+        ScrollView {
+            ForEach(appState.allCloudModels) { model in
+                CloudModelCard(
+                    model: model,
+                    isSelected: model == appState.selectedCloudModel,
+                    onConfigure: { model in
+                        configureCloudModel(model: model)
+                    },
+                    onSelect: { model in
+                        loadModel(cloudModel: model)
+                    })
             }
         }
-        .listStyle(.grouped)
+        .navigationDestination(item: $cloudModelToConfigure, destination: { model in
+            CloudModelConfigurationView(
+                model: model,
+                onSave: { (model, apiKey) in
+                    cloudModelConfigured(model: model, apiKey: apiKey)
+                })
+        })
     }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {
-        appState.createTranscriber(model: whisperLocalModel)
+        appState.createLocalTranscriber(model: whisperLocalModel)
+    }
+    
+    func loadModel(cloudModel: CloudModel) {
+        appState.createCloudTranscriber(model: cloudModel)
+    }
+    
+    func configureCloudModel(model: CloudModel) {
+        cloudModelToConfigure = model
+    }
+    
+    func cloudModelConfigured(model: CloudModel, apiKey: String) {
+        appState.updateCloudModels(with: model, apiKey: apiKey)
+        cloudModelToConfigure = nil
     }
 }
 
@@ -86,3 +107,5 @@ struct ModelsScreen: View {
     @Previewable @State var appState = AppState()
     ModelsScreen(appState: appState)
 }
+
+

@@ -50,3 +50,16 @@ extension CloudModel: Hashable {
         lhs.id == rhs.id
     }
 }
+
+extension CloudModel {
+    var apiKey: String? {
+        get {
+            UserDefaults.standard.string(forKey: kAPIKeyTemplate + self.name)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: kAPIKeyTemplate + self.name)
+        }
+    }
+    
+    
+}

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranscriptionModelProvider: Sendable {
+enum TranscriptionModelProvider: String, Sendable {
     case local
     case parakeet
     case groq

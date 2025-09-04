@@ -163,7 +163,6 @@ struct WhisperLocalModelCard: View {
             downloadModel(self.model)
             
         }
-        .buttonStyle(.plain)
         .foregroundStyle(.white)
         .padding(8)
         .background(.blue, in: .rect(cornerRadius: 8))
@@ -173,7 +172,6 @@ struct WhisperLocalModelCard: View {
         Button("Select") {
             onSelect(model)
         }
-        .buttonStyle(.plain)
         .foregroundStyle(.white)
         .padding(8)
         .background(.green, in: .rect(cornerRadius: 8))

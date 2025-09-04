@@ -51,10 +51,6 @@ extension WhisperLocalModel {
     var fileExists: Bool {
         FileManager.default.fileExists(atPath: fileURL.path)
     }
-    
-    static var downloadedModels: [WhisperLocalModel] {
-        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
-    }
 }
 
 extension WhisperLocalModel: Hashable {
