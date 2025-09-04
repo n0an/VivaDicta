@@ -40,7 +40,7 @@ enum CloudTranscriptionError: Error, LocalizedError {
 }
 
 class CloudTranscriptionService: TranscriptionService {
-    private lazy var openAIService = OpenAITranscriptionService(selectedLanguage: .en)
+//    private lazy var openAIService = OpenAITranscriptionService(selectedLanguage: .en)
     private lazy var groqService = GroqTranscriptionService()
 //    private lazy var elevenLabsService = ElevenLabsTranscriptionService()
 //    private lazy var deepgramService = DeepgramTranscriptionService()

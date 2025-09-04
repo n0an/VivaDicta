@@ -34,16 +34,16 @@ struct ModelsScreen: View {
             }
             .navigationBarTitle("Transcription Models")
             .toolbar {
-                ToolbarItem {
-                    Menu("Language", systemImage: "globe") {
-                        Picker("Language", selection: $appState.selectedLanguage) {
-                            ForEach(Language.allCases, id: \.self) { language in
-                                Text(language.fullName)
-                                    .tag(language)
-                            }
-                        }
-                    }
-                }
+//                ToolbarItem {
+//                    Menu("Language", systemImage: "globe") {
+//                        Picker("Language", selection: $appState.selectedLanguage) {
+//                            ForEach(Language.allCases, id: \.self) { language in
+//                                Text(language.fullName)
+//                                    .tag(language)
+//                            }
+//                        }
+//                    }
+//                }
             }
         }
     }

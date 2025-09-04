@@ -50,7 +50,7 @@ struct OpenAITranscriptionService: TranscriptionService {
 
     }
     
-    var selectedLanguage: Language
+//    var selectedLanguage: Language
     
     let apiKey = "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"
     

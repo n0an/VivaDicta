@@ -64,7 +64,7 @@ class LocalTranscriptionService: TranscriptionService {
         let data = try readAudioSamples(audioURL)
         
         // Set prompt
-        let currentPrompt = UserDefaults.standard.string(forKey: "TranscriptionPrompt") ?? ""
+        let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
         await whisperContext.setPrompt(currentPrompt)
         
         // Transcribe
