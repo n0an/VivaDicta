@@ -7,7 +7,7 @@
 
 import Foundation
 
-// UserDefaults keys
+// MARK: - UserDefaults keys
 let kSelectedWhisperLocalModel = "selectedWhisperLocalModel"
 let kSelectedCloudModel = "selectedCloudModel"
 let kSelectedLanguageKey = "selectedLanguageKey"

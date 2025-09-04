@@ -63,6 +63,7 @@ class LocalTranscriptionService: TranscriptionService {
         let data = try readAudioSamples(audioURL)
         
         // Set prompt
+        // TODO: - check prompt setting
         let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
         await whisperContext.setPrompt(currentPrompt)
         
@@ -76,6 +77,7 @@ class LocalTranscriptionService: TranscriptionService {
         
         var text = await whisperContext.getTranscription()
         
+        // TODO: - check text formatting - do I need this?
         if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
 //            text = WhisperTextFormatter.format(text)
         }

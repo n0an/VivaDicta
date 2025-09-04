@@ -10,7 +10,6 @@ import SwiftUI
 
 @Observable
 class AppState {
-    
     var whisperContext: WhisperContext?
     var currentTranscriptionModel: (any TranscriptionModel)?
 

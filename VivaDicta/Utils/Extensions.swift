@@ -161,13 +161,16 @@ extension BadgeStyle where Self == FancyBadgeStyle {
 extension View {
     @ViewBuilder
     func debugBorder() -> some View {
-        #if DEBUG
-            border(Color.random())
-        #else
-            self
-        #endif
+#if DEBUG
+        border(Color.random())
+#else
+        self
+#endif
     }
+}
 
+// MARK: - iflet
+extension View {
     @ViewBuilder
     func iflet<Value>(_ value: Value?, @ViewBuilder transform: (Value, Self) -> some View) -> some View {
         if let value {

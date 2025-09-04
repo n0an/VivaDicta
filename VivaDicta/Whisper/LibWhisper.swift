@@ -6,7 +6,7 @@ import whisper
 #endif
 import os
 
-extension OpaquePointer: @unchecked Sendable {}
+extension OpaquePointer: @unchecked @retroactive Sendable {}
 
 // Meet Whisper C++ constraint: Don't access from more than one thread at a time.
 actor WhisperContext {
@@ -39,7 +39,7 @@ actor WhisperContext {
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         
         // Read language directly from UserDefaults
-        let selectedLanguage = UserDefaults.standard.string(forKey: "SelectedLanguage") ?? "auto"
+        let selectedLanguage = UserDefaults.standard.string(forKey: "selectedLanguageKey") ?? "auto"
         if selectedLanguage != "auto" {
             languageCString = Array(selectedLanguage.utf8CString)
             params.language = languageCString?.withUnsafeBufferPointer { ptr in
