@@ -48,12 +48,8 @@ extension WhisperLocalModel {
         URL.documentsDirectory.appendingPathComponent(filename)
     }
     
-    var fileExists: Bool {
+    var fileExists1: Bool {
         FileManager.default.fileExists(atPath: fileURL.path)
-    }
-    
-    static var downloadedModels: [WhisperLocalModel] {
-        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
 }
 
