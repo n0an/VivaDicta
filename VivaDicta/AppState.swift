@@ -16,6 +16,11 @@ class AppState {
     var whisperContext: WhisperContext?
     var currentTranscriptionModel: (any TranscriptionModel)?
 
+    
+    var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+    
+    
+    
     var availableModels: [WhisperLocalModel] {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
@@ -265,3 +270,33 @@ enum TabTag {
 //        return languagePrompts[self.rawValue] ?? "Hello, how are you doing? Nice to meet you."
 //    }
 //}
+
+
+
+extension AppState {
+    func loadCurrentTranscriptionModel() {
+        if let savedModelName = UserDefaults.standard.string(forKey: "CurrentTranscriptionModel"),
+           let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
+            currentTranscriptionModel = savedModel
+        }
+    }
+
+    // Function to set any transcription model as default
+    func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
+        self.currentTranscriptionModel = model
+        UserDefaults.standard.set(model.name, forKey: "CurrentTranscriptionModel")
+        
+        // For cloud models, clear the old loadedLocalModel
+        if model.provider != .local {
+            self.loadedLocalModel = nil
+        }
+        
+        // Enable transcription for cloud models immediately since they don't need loading
+        if model.provider != .local {
+            self.isModelLoaded = true
+        }
+        // Post notification about the model change
+//        NotificationCenter.default.post(name: .didChangeModel, object: nil, userInfo: ["modelName": model.name])
+//        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)
+    }
+}

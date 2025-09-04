@@ -86,7 +86,8 @@ struct ModelsScreen: View {
     }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {
-        appState.createLocalTranscriber(model: whisperLocalModel)
+        appState.setDefaultTranscriptionModel(whisperLocalModel)
+//        appState.createLocalTranscriber(model: whisperLocalModel)
     }
     
     func loadModel(cloudModel: CloudModel) {

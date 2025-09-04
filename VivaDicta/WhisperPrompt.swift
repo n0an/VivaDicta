@@ -10,7 +10,7 @@ import Combine
 
 //@Observable
 class WhisperPrompt {
-    @Published var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
+    var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
     
     private let customPromptsKey = "CustomLanguagePrompts"
     
