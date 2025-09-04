@@ -48,7 +48,7 @@ extension WhisperLocalModel {
         URL.documentsDirectory.appendingPathComponent(filename)
     }
     
-    var fileExists1: Bool {
+    var fileExists: Bool {
         FileManager.default.fileExists(atPath: fileURL.path)
     }
 }

@@ -98,7 +98,7 @@ struct ModelsScreen: View {
     }
     
     func cloudModelConfigured(model: CloudModel, apiKey: String) {
-        appState.udateCloudModels(with: model, apiKey: apiKey)
+        appState.updateCloudModels(with: model, apiKey: apiKey)
         cloudModelToConfigure = nil
     }
 }

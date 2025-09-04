@@ -72,7 +72,7 @@ class AppState {
         UserDefaults.standard.set(language.rawValue, forKey: kSelectedLanguageKey)
     }
     
-    func udateCloudModels(with model: CloudModel, apiKey: String) {
+    func updateCloudModels(with model: CloudModel, apiKey: String) {
         guard let modelIndex = allCloudModels.firstIndex(where: { $0.name == model.name }) else { return }
         allCloudModels[modelIndex].apiKey = apiKey
     }
