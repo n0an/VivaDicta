@@ -19,7 +19,7 @@ class AppState {
     
     
     
-    var availableModels: [WhisperLocalModel] {
+    var availableWhisperLocalModels: [WhisperLocalModel] {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
     
