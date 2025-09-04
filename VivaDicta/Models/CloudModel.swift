@@ -52,6 +52,12 @@ extension CloudModel: Hashable {
 }
 
 extension CloudModel {
+    static func saveApiKey(_ apiKey: String, modelName: String) {
+        UserDefaults.standard.set(apiKey, forKey: kAPIKeyTemplate + modelName)
+    }
+}
+
+extension CloudModel {
     var apiKey: String? {
         get {
             UserDefaults.standard.string(forKey: kAPIKeyTemplate + self.name)
