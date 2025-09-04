@@ -73,8 +73,8 @@ class AppState {
     }
     
     func updateCloudModels(with model: CloudModel, apiKey: String) {
-        guard let modelIndex = allCloudModels.firstIndex(where: { $0.name == model.name }) else { return }
-        allCloudModels[modelIndex].apiKey = apiKey
+        CloudModel.saveApiKey(apiKey, modelName: model.name)
+        allCloudModels = TranscriptionModelProvider.allCloudModels
     }
     
     func createLocalTranscriber(model: WhisperLocalModel) {
