@@ -42,12 +42,15 @@ class AppState {
     
     
     
+    
+    
+    
     var selectedTab: TabTag = .record
     var transcriptionService: (any TranscriptionService)?
     
-    var canTranscribe: Bool {
-        transcriptionService != nil
-    }
+//    var canTranscribe: Bool {
+//        transcriptionService != nil
+//    }
     
     
     var allLocalModels = TranscriptionModelProvider.allLocalModels
@@ -295,6 +298,11 @@ extension AppState {
         if model.provider != .local {
             self.isModelLoaded = true
         }
+        
+        if model.provider == .local, let localWhipserModel = model as? WhisperLocalModel {
+            Task { try await loadModel(localWhipserModel) }
+        }
+        
         // Post notification about the model change
 //        NotificationCenter.default.post(name: .didChangeModel, object: nil, userInfo: ["modelName": model.name])
 //        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)

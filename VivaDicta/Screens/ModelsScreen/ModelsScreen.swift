@@ -91,7 +91,9 @@ struct ModelsScreen: View {
     }
     
     func loadModel(cloudModel: CloudModel) {
-        appState.createCloudTranscriber(model: cloudModel)
+        appState.setDefaultTranscriptionModel(cloudModel)
+
+//        appState.createCloudTranscriber(model: cloudModel)
     }
     
     func configureCloudModel(model: CloudModel) {
