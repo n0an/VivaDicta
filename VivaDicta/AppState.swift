@@ -11,8 +11,6 @@ import SwiftUI
 @Observable
 class AppState {
     
-    var isModelLoaded = false
-    var loadedLocalModel: WhisperLocalModel?
     var whisperContext: WhisperContext?
     var currentTranscriptionModel: (any TranscriptionModel)?
 
@@ -142,9 +140,6 @@ class AppState {
     func loadModel(_ model: WhisperLocalModel) async throws {
         guard whisperContext == nil else { return }
 
-//        isModelLoading = true
-//        defer { isModelLoading = false }
-
         do {
             whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
 
@@ -152,8 +147,6 @@ class AppState {
             let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? whisperPrompt.transcriptionPrompt
             await whisperContext?.setPrompt(currentPrompt)
 
-            isModelLoaded = true
-            loadedLocalModel = model
         } catch {
             throw WhisperStateError.modelLoadFailed
         }
@@ -288,16 +281,6 @@ extension AppState {
     func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
         self.currentTranscriptionModel = model
         UserDefaults.standard.set(model.name, forKey: "CurrentTranscriptionModel")
-        
-        // For cloud models, clear the old loadedLocalModel
-        if model.provider != .local {
-            self.loadedLocalModel = nil
-        }
-        
-        // Enable transcription for cloud models immediately since they don't need loading
-        if model.provider != .local {
-            self.isModelLoaded = true
-        }
         
         if model.provider == .local, let localWhipserModel = model as? WhisperLocalModel {
             Task { try await loadModel(localWhipserModel) }

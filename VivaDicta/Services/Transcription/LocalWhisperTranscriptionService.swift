@@ -28,7 +28,6 @@ class LocalTranscriptionService: TranscriptionService {
         
         // Check if the required model is already loaded in AppState
         if let appState = appState,
-           await appState.isModelLoaded,
            let loadedContext = await appState.whisperContext,
             let currentModel = await appState.currentTranscriptionModel,
             currentModel.provider == .local,
