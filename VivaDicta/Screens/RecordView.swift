@@ -16,7 +16,7 @@ struct RecordView: View {
     var appState: AppState
     
     var body: some View {
-        if appState.canTranscribe {
+        if appState.currentTranscriptionModel != nil {
             modelSelectedView
             
         } else {

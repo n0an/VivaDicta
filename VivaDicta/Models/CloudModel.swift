@@ -7,18 +7,18 @@
 
 import Foundation
 
-struct CloudModel: TranscriptionModel, Identifiable {
+struct CloudModel: @MainActor TranscriptionModel {
     let id: UUID
     let name: String
     let displayName: String
     let description: String
     let provider: TranscriptionModelProvider
-    
+
     let speed: Double
     let accuracy: Double
     let supportManyLanguages: Bool
     let supportedLanguages: [String: String]
-    
+
     init(id: UUID = UUID(),
          name: String,
          displayName: String,
@@ -41,16 +41,6 @@ struct CloudModel: TranscriptionModel, Identifiable {
     }
 }
 
-extension CloudModel: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func == (lhs: CloudModel, rhs: CloudModel) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
 extension CloudModel {
     static func saveApiKey(_ apiKey: String, modelName: String) {
         UserDefaults.standard.set(apiKey, forKey: kAPIKeyTemplate + modelName)
@@ -60,12 +50,10 @@ extension CloudModel {
 extension CloudModel {
     var apiKey: String? {
         get {
-            UserDefaults.standard.string(forKey: kAPIKeyTemplate + self.name)
+            UserDefaults.standard.string(forKey: kAPIKeyTemplate + name)
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: kAPIKeyTemplate + self.name)
+            UserDefaults.standard.set(newValue, forKey: kAPIKeyTemplate + name)
         }
     }
-    
-    
 }

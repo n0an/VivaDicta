@@ -11,7 +11,6 @@ struct ModelsScreen: View {
     @Bindable var appState: AppState
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
-    
     @State private var downloadManager = WhisperModelDownloadManager()
     
     var body: some View {
@@ -25,72 +24,69 @@ struct ModelsScreen: View {
                 }
                 .pickerStyle(.segmented)
                 
-                switch modelType {
-                case .local:
-                    localModelsView
-                case .cloud:
-                    cloudModelsView
-                }
-            }
-            .navigationBarTitle("Transcription Models")
-            .toolbar {
-                ToolbarItem {
-                    Menu("Language", systemImage: "globe") {
-                        Picker("Language", selection: $appState.selectedLanguage) {
-                            ForEach(Language.allCases, id: \.self) { language in
-                                Text(language.fullName)
-                                    .tag(language)
-                            }
+                
+                ScrollView {
+                    ForEach(filteredModels, id: \.id) { model in
+                        if let model = model as? WhisperLocalModel {
+                            WhisperLocalModelCard(
+                                model: model,
+                                isSelected: model.name == appState.currentTranscriptionModel?.name,
+                                downloadManager: downloadManager,
+                                onSelect: { model in
+                                    loadModel(whisperLocalModel: model)
+                                })
+                        } else if let model = model as? CloudModel {
+                            CloudModelCard(
+                                model: model,
+                                isSelected: model.name == appState.currentTranscriptionModel?.name,
+                                onConfigure: { model in
+                                    configureCloudModel(model: model)
+                                },
+                                onSelect: { model in
+                                    loadModel(cloudModel: model)
+                                })
                         }
                     }
                 }
             }
-        }
-    }
-    
-    var localModelsView: some View {
-        ScrollView {
-            ForEach(appState.allLocalModels) { model in
-                WhisperLocalModelCard(
+            .navigationDestination(item: $cloudModelToConfigure, destination: { model in
+                CloudModelConfigurationView(
                     model: model,
-                    isSelected: model == appState.selectedLocalWhisperModel,
-                    downloadManager: downloadManager,
-                    onSelect: { model in
-                        loadModel(whisperLocalModel: model)
+                    onSave: { (model, apiKey) in
+                        cloudModelConfigured(model: model, apiKey: apiKey)
                     })
+            })
+            .navigationBarTitle("Transcription Models")
+            .toolbar {
+//                ToolbarItem {
+//                    Menu("Language", systemImage: "globe") {
+//                        Picker("Language", selection: $appState.selectedLanguage) {
+//                            ForEach(Language.allCases, id: \.self) { language in
+//                                Text(language.fullName)
+//                                    .tag(language)
+//                            }
+//                        }
+//                    }
+//                }
             }
         }
     }
     
-    var cloudModelsView: some View {
-        ScrollView {
-            ForEach(appState.allCloudModels) { model in
-                CloudModelCard(
-                    model: model,
-                    isSelected: model == appState.selectedCloudModel,
-                    onConfigure: { model in
-                        configureCloudModel(model: model)
-                    },
-                    onSelect: { model in
-                        loadModel(cloudModel: model)
-                    })
-            }
+    var filteredModels: [any TranscriptionModel] {
+        switch modelType {
+        case .local:
+            appState.allAvailableModels.filter { $0.provider == .local }
+        case .cloud:
+            appState.allAvailableModels.filter { $0.provider != .local }
         }
-        .navigationDestination(item: $cloudModelToConfigure, destination: { model in
-            CloudModelConfigurationView(
-                model: model,
-                onSave: { (model, apiKey) in
-                    cloudModelConfigured(model: model, apiKey: apiKey)
-                })
-        })
     }
     
     func loadModel(whisperLocalModel: WhisperLocalModel) {
-        appState.createLocalTranscriber(model: whisperLocalModel)
+        appState.setDefaultTranscriptionModel(whisperLocalModel)
     }
     
     func loadModel(cloudModel: CloudModel) {
-        appState.createCloudTranscriber(model: cloudModel)
+        appState.setDefaultTranscriptionModel(cloudModel)
     }
     
     func configureCloudModel(model: CloudModel) {

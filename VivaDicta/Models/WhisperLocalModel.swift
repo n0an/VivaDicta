@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct WhisperLocalModel: TranscriptionModel, Identifiable {
+struct WhisperLocalModel: @MainActor TranscriptionModel {
     var id: UUID = .init()
     var name: String
     var displayName: String
@@ -50,15 +50,5 @@ extension WhisperLocalModel {
     
     var fileExists: Bool {
         FileManager.default.fileExists(atPath: fileURL.path)
-    }
-}
-
-extension WhisperLocalModel: Hashable {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func == (lhs: WhisperLocalModel, rhs: WhisperLocalModel) -> Bool {
-        lhs.id == rhs.id
     }
 }

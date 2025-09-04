@@ -103,20 +103,25 @@ struct CloudModelCard: View {
     private var actionSection: some View {
         VStack {
             if isAPIConfigured {
-                if isSelected {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Selected")
+                VStack(spacing: 12) {
+                    if isSelected {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Selected")
+                        }
+                        .foregroundStyle(.green)
+                    } else {
+                        selectButton
                     }
-                    .foregroundStyle(.green)
                     
-                } else {
-                    selectButton
+                    configureButton
                 }
+                
             } else {
                 configureButton
             }
         }
+        .font(.system(size: 12, weight: .semibold))
     }
     
     var selectButton: some View {
@@ -126,7 +131,7 @@ struct CloudModelCard: View {
         .foregroundStyle(.white)
         .padding(.vertical, 4)
         .padding(.horizontal, 6)
-        .background(.blue, in: .capsule)
+        .background(.green, in: .capsule)
     }
     
     var configureButton: some View {
@@ -137,7 +142,6 @@ struct CloudModelCard: View {
                 Text("Configure")
                 Image(systemName: "gear")
             }
-            .font(.system(size: 12, weight: .semibold))
         }
 
         .foregroundStyle(.white)

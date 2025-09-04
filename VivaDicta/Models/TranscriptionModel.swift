@@ -10,6 +10,7 @@ import Foundation
 enum TranscriptionModelProvider: String, Sendable {
     case local
     case parakeet
+    case openAI
     case groq
     case elevenLabs
     case deepgram
@@ -276,7 +277,7 @@ enum TranscriptionModelProvider: String, Sendable {
     ]
 }
 
-protocol TranscriptionModel: Sendable {
+protocol TranscriptionModel: Identifiable, Hashable {
     var id: UUID { get }
     var name: String { get }
     var displayName: String { get }
