@@ -15,7 +15,7 @@ enum DownloadStatus: String {
 }
 
 @Observable
-final class WhisperModelDownloadManager {
+class WhisperModelDownloadManager: @unchecked Sendable {
     public var downloadProgress: [String: Double] = [:]
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
