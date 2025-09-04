@@ -90,7 +90,7 @@ class WhisperPrompt {
         let prompt = basePrompt.isEmpty ? "" : basePrompt
         
         transcriptionPrompt = prompt
-        UserDefaults.standard.set(prompt, forKey: "TranscriptionPrompt")
+        UserDefaults.standard.set(prompt, forKey: kTranscriptionPrompt)
         UserDefaults.standard.synchronize()
         
     }

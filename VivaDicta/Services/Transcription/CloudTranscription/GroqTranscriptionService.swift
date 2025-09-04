@@ -40,7 +40,9 @@ struct GroqTranscriptionService {
     }
     
     private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let apiKey = UserDefaults.standard.string(forKey: "GROQAPIKey"), !apiKey.isEmpty else {
+        guard let cloudModel = model as? CloudModel,
+              let apiKey = cloudModel.apiKey,
+              !apiKey.isEmpty else {
             throw CloudTranscriptionError.missingAPIKey
         }
         
@@ -58,7 +60,7 @@ struct GroqTranscriptionService {
         
         let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "auto"
         // TODO: - handle prompts
-        let prompt = UserDefaults.standard.string(forKey: "TranscriptionPrompt") ?? ""
+        let prompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
         
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)

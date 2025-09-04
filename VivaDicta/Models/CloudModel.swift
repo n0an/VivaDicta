@@ -13,12 +13,12 @@ struct CloudModel: @MainActor TranscriptionModel {
     let displayName: String
     let description: String
     let provider: TranscriptionModelProvider
-    
+
     let speed: Double
     let accuracy: Double
     let supportManyLanguages: Bool
     let supportedLanguages: [String: String]
-    
+
     init(id: UUID = UUID(),
          name: String,
          displayName: String,
@@ -50,10 +50,10 @@ extension CloudModel {
 extension CloudModel {
     var apiKey: String? {
         get {
-            UserDefaults.standard.string(forKey: kAPIKeyTemplate + self.name)
+            UserDefaults.standard.string(forKey: kAPIKeyTemplate + name)
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: kAPIKeyTemplate + self.name)
+            UserDefaults.standard.set(newValue, forKey: kAPIKeyTemplate + name)
         }
     }
 }
