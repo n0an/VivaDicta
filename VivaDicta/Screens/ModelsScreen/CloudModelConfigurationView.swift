@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 struct CloudModelConfigurationView: View {
     @Environment(\.dismiss) var dismiss
     var model: CloudModel
@@ -31,6 +30,7 @@ struct CloudModelConfigurationView: View {
              
             Button(action: saveKey) {
                 Text("Save")
+                    .font(.system(size: 16, weight: .semibold))
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
@@ -40,6 +40,9 @@ struct CloudModelConfigurationView: View {
             .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 Spacer()
         }
+        .onAppear {
+            apiKey = model.apiKey ?? ""
+        }
         .padding(.top, 32)
         .padding()
     }
@@ -47,9 +50,7 @@ struct CloudModelConfigurationView: View {
     
     func saveKey() {
         onSave(model, apiKey)
-//        dismiss()
     }
-    
 }
 
 #Preview {

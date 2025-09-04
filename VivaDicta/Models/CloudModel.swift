@@ -41,16 +41,6 @@ struct CloudModel: @MainActor TranscriptionModel {
     }
 }
 
-//extension CloudModel: Hashable {
-//    func hash(into hasher: inout Hasher) {
-//        hasher.combine(id)
-//    }
-//    
-//    static func == (lhs: CloudModel, rhs: CloudModel) -> Bool {
-//        lhs.id == rhs.id
-//    }
-//}
-
 extension CloudModel {
     static func saveApiKey(_ apiKey: String, modelName: String) {
         UserDefaults.standard.set(apiKey, forKey: kAPIKeyTemplate + modelName)
@@ -66,6 +56,4 @@ extension CloudModel {
             UserDefaults.standard.set(newValue, forKey: kAPIKeyTemplate + self.name)
         }
     }
-    
-    
 }
