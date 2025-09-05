@@ -43,7 +43,7 @@ class CloudTranscriptionService: TranscriptionService {
     private lazy var openAIService = OpenAITranscriptionService()
     private lazy var groqService = GroqTranscriptionService()
     private lazy var elevenLabsService = ElevenLabsTranscriptionService()
-//    private lazy var deepgramService = DeepgramTranscriptionService()
+    private lazy var deepgramService = DeepgramTranscriptionService()
     private lazy var geminiService = GeminiTranscriptionService()
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
@@ -57,7 +57,7 @@ class CloudTranscriptionService: TranscriptionService {
         case .elevenLabs:
             text = try await elevenLabsService.transcribe(audioURL: audioURL, model: model)
         case .deepgram:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            text = try await deepgramService.transcribe(audioURL: audioURL, model: model)
         case .gemini:
             text = try await geminiService.transcribe(audioURL: audioURL, model: model)
         default:
