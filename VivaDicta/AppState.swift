@@ -51,7 +51,8 @@ class AppState {
         return text
     }
     
-    func loadModel(_ model: WhisperLocalModel) async throws {
+    // TODO: - Load model when tap Record button, and load model only if it's a local model and not already loaded
+    func loadLocalModel(_ model: WhisperLocalModel) async throws {
         // TODO: - Add whisperContext release after transcribing?
         do {
             whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
@@ -96,7 +97,7 @@ extension AppState {
         
         if model.provider == .local,
            let localWhipserModel = model as? WhisperLocalModel {
-            Task { try await loadModel(localWhipserModel) }
+            Task { try await loadLocalModel(localWhipserModel) }
         }
         
         // Post notification about the model change
