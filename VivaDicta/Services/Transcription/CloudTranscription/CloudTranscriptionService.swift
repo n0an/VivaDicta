@@ -40,30 +40,31 @@ enum CloudTranscriptionError: Error, LocalizedError {
 }
 
 class CloudTranscriptionService: TranscriptionService {
-//    private lazy var openAIService = OpenAITranscriptionService(selectedLanguage: .en)
+    private lazy var openAIService = OpenAITranscriptionService()
     private lazy var groqService = GroqTranscriptionService()
-//    private lazy var elevenLabsService = ElevenLabsTranscriptionService()
-//    private lazy var deepgramService = DeepgramTranscriptionService()
-//    private lazy var geminiService = GeminiTranscriptionService()
+    private lazy var elevenLabsService = ElevenLabsTranscriptionService()
+    private lazy var deepgramService = DeepgramTranscriptionService()
+    private lazy var geminiService = GeminiTranscriptionService()
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         var text: String
         
         switch model.provider {
         case .openAI:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            text = try await openAIService.transcribe(audioURL: audioURL, model: model)
         case .groq:
             text = try await groqService.transcribe(audioURL: audioURL, model: model)
         case .elevenLabs:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            text = try await elevenLabsService.transcribe(audioURL: audioURL, model: model)
         case .deepgram:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            text = try await deepgramService.transcribe(audioURL: audioURL, model: model)
         case .gemini:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            text = try await geminiService.transcribe(audioURL: audioURL, model: model)
         default:
             throw CloudTranscriptionError.unsupportedProvider
         }
         
+        // TODO: - add text formatter?
 //        if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
 //            text = WhisperTextFormatter.format(text)
 //        }

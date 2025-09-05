@@ -114,6 +114,16 @@ enum TranscriptionModelProvider: String, Sendable {
     static var allCloudModels: [CloudModel] {
         [
             CloudModel(
+                name: "openai-gpt-4o",
+                displayName: "OpenAI GPT-4o Transcribe",
+                description: "OpenAI Speech-to-text model powered by GPT-4o",
+                provider: .openAI,
+                speed: 0.7,
+                accuracy: 0.96,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "whisper-large-v3-turbo",
                 displayName: "Whisper Large v3 Turbo (Groq)",
                 description: "Whisper Large v3 Turbo model with Groq's lightning-speed inference",
