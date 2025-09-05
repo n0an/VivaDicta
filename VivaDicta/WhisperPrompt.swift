@@ -66,10 +66,6 @@ class WhisperPrompt {
         
     }
     
-    @objc private func handleLanguageChange() {
-        updateTranscriptionPrompt()
-    }
-    
     private func loadCustomPrompts() {
         if let savedPrompts = UserDefaults.standard.dictionary(forKey: customPromptsKey) as? [String: String] {
             customPrompts = savedPrompts

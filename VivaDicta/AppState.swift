@@ -68,6 +68,10 @@ class AppState {
         CloudModel.saveApiKey(apiKey, modelName: model.name)
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
     }
+    
+    func updateTranscriptionPrompt() {
+        whisperPrompt.updateTranscriptionPrompt()
+    }
 }
 
 // MARK: - Global

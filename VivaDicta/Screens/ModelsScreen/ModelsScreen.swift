@@ -58,6 +58,7 @@ struct ModelsScreen: View {
             })
             .navigationBarTitle("Transcription Models")
             .toolbar {
+                LanguageSelectionMenu(appState: appState)
 //                ToolbarItem {
 //                    Menu("Language", systemImage: "globe") {
 //                        Picker("Language", selection: $appState.selectedLanguage) {
