@@ -116,7 +116,7 @@ class GeminiTranscriptionService {
         case text(GeminiTextPart)
         case audio(GeminiAudioPart)
         
-        func encode(to encoder: Encoder) throws {
+        func encode(to encoder: any Encoder) throws {
             var container = encoder.singleValueContainer()
             switch self {
             case .text(let textPart):
@@ -126,7 +126,7 @@ class GeminiTranscriptionService {
             }
         }
         
-        init(from decoder: Decoder) throws {
+        init(from decoder: any Decoder) throws {
             let container = try decoder.singleValueContainer()
             if let textPart = try? container.decode(GeminiTextPart.self) {
                 self = .text(textPart)
