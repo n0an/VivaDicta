@@ -40,7 +40,7 @@ enum CloudTranscriptionError: Error, LocalizedError {
 }
 
 class CloudTranscriptionService: TranscriptionService {
-//    private lazy var openAIService = OpenAITranscriptionService(selectedLanguage: .en)
+    private lazy var openAIService = OpenAITranscriptionService()
     private lazy var groqService = GroqTranscriptionService()
 //    private lazy var elevenLabsService = ElevenLabsTranscriptionService()
 //    private lazy var deepgramService = DeepgramTranscriptionService()
@@ -51,7 +51,7 @@ class CloudTranscriptionService: TranscriptionService {
         
         switch model.provider {
         case .openAI:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            text = try await openAIService.transcribe(audioURL: audioURL, model: model)
         case .groq:
             text = try await groqService.transcribe(audioURL: audioURL, model: model)
         case .elevenLabs:
@@ -64,6 +64,7 @@ class CloudTranscriptionService: TranscriptionService {
             throw CloudTranscriptionError.unsupportedProvider
         }
         
+        // TODO: - add text formatter?
 //        if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
 //            text = WhisperTextFormatter.format(text)
 //        }

@@ -13,18 +13,20 @@ enum OpenAITranscriptionServiceError: Error {
     case statusCode(Int)
 }
 
-struct OpenAITranscriptionService: TranscriptionService {
+struct OpenAITranscriptionService {
     //    var selectedLanguage: Language
         
-        let apiKey = ""
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+        
+        let config = try getAPIConfig(for: model)
+        
         let audioData = try Data(contentsOf: audioURL)
         var request = URLRequest(url: URL(string: "https://api.openai.com/v1/audio/transcriptions")!)
         let boundary: String = UUID().uuidString
         request.timeoutInterval = 30
         request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         
         let bodyBuilder = MultipartFormDataBodyBuilder(
@@ -53,6 +55,26 @@ struct OpenAITranscriptionService: TranscriptionService {
         return text
 
     }
+    
+    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
+        guard let cloudModel = model as? CloudModel,
+              let apiKey = cloudModel.apiKey,
+              !apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        
+        let apiURL = URL(string: "https://api.openai.com/v1/audio/transcriptions")!
+        return APIConfig(url: apiURL, apiKey: apiKey, modelName: model.name)
+    }
+    
+    
+    private struct APIConfig {
+        let url: URL
+        let apiKey: String
+        let modelName: String
+    }
+    
+    
     
 
     
