@@ -12,7 +12,7 @@ import whisper
 class LocalTranscriptionService: TranscriptionService {
     
     private var whisperContext: WhisperContext?
-//    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "LocalTranscriptionService")
+//    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "LocalTranscriptionService")
     private weak var appState: AppState?
     
     init(appState: AppState? = nil) {
