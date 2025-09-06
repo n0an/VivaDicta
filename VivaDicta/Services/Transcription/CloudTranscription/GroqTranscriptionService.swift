@@ -59,7 +59,6 @@ struct GroqTranscriptionService {
         }
         
         let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "auto"
-        // TODO: - handle prompts
         let prompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
         
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)

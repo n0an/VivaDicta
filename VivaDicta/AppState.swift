@@ -19,10 +19,9 @@ class AppState {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
     
-    var localTranscriptionService: LocalTranscriptionService!
+    private var localTranscriptionService: LocalTranscriptionService!
     private var cloudTranscriptionService = CloudTranscriptionService()
     
-    // TODO: - Handle prompt
     let whisperPrompt = WhisperPrompt()
     
     var selectedTab: TabTag = .record
@@ -56,8 +55,6 @@ class AppState {
         // TODO: - Add whisperContext release after transcribing?
         do {
             whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-            let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? whisperPrompt.transcriptionPrompt
-            await whisperContext?.setPrompt(currentPrompt)
 
         } catch {
             throw WhisperStateError.modelLoadFailed
@@ -67,6 +64,10 @@ class AppState {
     func updateCloudModels(with model: CloudModel, apiKey: String) {
         CloudModel.saveApiKey(apiKey, modelName: model.name)
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+    }
+    
+    func updateTranscriptionPrompt() {
+        whisperPrompt.updateTranscriptionPrompt()
     }
 }
 
@@ -84,6 +85,10 @@ extension AppState {
         if let savedModelName = UserDefaults.standard.string(forKey: kCurrentTranscriptionModel),
            let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
             print("=== \(savedModel.name)")
+            if savedModel.provider == .local,
+               let localWhipserModel = savedModel as? WhisperLocalModel {
+                Task { try await loadLocalModel(localWhipserModel) }
+            }
             currentTranscriptionModel = savedModel
         }
     }

@@ -12,7 +12,7 @@ import whisper
 class LocalTranscriptionService: TranscriptionService {
     
     private var whisperContext: WhisperContext?
-//    private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "LocalTranscriptionService")
+//    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "LocalTranscriptionService")
     private weak var appState: AppState?
     
     init(appState: AppState? = nil) {
@@ -63,7 +63,6 @@ class LocalTranscriptionService: TranscriptionService {
         let data = try readAudioSamples(audioURL)
         
         // Set prompt
-        // TODO: - check prompt setting
         let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
         await whisperContext.setPrompt(currentPrompt)
         
