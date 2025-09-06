@@ -112,9 +112,5 @@ struct LanguageSelectionMenu: View {
     private func updateLanguage(_ language: String) {
         // Force the prompt to update for the new language
         appState.updateTranscriptionPrompt()
-
-//        // Post notification for language change
-//        NotificationCenter.default.post(name: .languageDidChange, object: nil)
-//        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)
     }
 }

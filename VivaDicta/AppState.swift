@@ -62,7 +62,7 @@ class AppState {
     }
     
     func updateCloudModels(with model: CloudModel, apiKey: String) {
-        CloudModel.saveApiKey(apiKey, modelName: model.name)
+        CloudModel.saveApiKey(apiKey, model: model)
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
     }
     
@@ -104,9 +104,5 @@ extension AppState {
            let localWhipserModel = model as? WhisperLocalModel {
             Task { try await loadLocalModel(localWhipserModel) }
         }
-        
-        // Post notification about the model change
-//        NotificationCenter.default.post(name: .didChangeModel, object: nil, userInfo: ["modelName": model.name])
-//        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)
     }
 }
