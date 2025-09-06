@@ -11,7 +11,7 @@ import SwiftUI
 struct LanguageSelectionMenu: View {
     var appState: AppState
     
-    @AppStorage(kSelectedLanguageKey) private var selectedLanguage: String = "en"
+    @AppStorage(Constants.kSelectedLanguageKey) private var selectedLanguage: String = "en"
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

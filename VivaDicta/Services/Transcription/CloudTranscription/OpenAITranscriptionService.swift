@@ -64,8 +64,8 @@ struct OpenAITranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
         
-        let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "auto"
-        let prompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
+        let selectedLanguage = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
+        let prompt = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
         
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)

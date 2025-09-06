@@ -8,10 +8,12 @@
 import Foundation
 
 // MARK: - UserDefaults keys
-let kSelectedWhisperLocalModel = "selectedWhisperLocalModel"
-let kSelectedCloudModel = "selectedCloudModel"
-let kSelectedLanguageKey = "selectedLanguageKey"
-let kAPIKeyTemplate = "apiKeyTemplate"
-let kTranscriptionPrompt = "TranscriptionPrompt"
-let kCurrentTranscriptionModel = "CurrentTranscriptionModel"
-let customPromptsKey = "CustomLanguagePrompts"
+actor Constants {
+    static let kSelectedWhisperLocalModel = "selectedWhisperLocalModel"
+    static let kSelectedCloudModel = "selectedCloudModel"
+    static let kSelectedLanguageKey = "selectedLanguageKey"
+    static let kAPIKeyTemplate = "apiKeyTemplate"
+    static let kTranscriptionPrompt = "TranscriptionPrompt"
+    static let kCurrentTranscriptionModel = "CurrentTranscriptionModel"
+    static let customPromptsKey = "CustomLanguagePrompts"
+}
