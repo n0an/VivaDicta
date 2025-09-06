@@ -6,12 +6,10 @@
 //
 
 import Foundation
-import Combine
 
 class WhisperPrompt {
-    var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
+    private var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
     
-    // Store user-customized prompts
     private var customPrompts: [String: String] = [:]
     
     init() {
@@ -19,31 +17,24 @@ class WhisperPrompt {
         updateTranscriptionPrompt()
     }
     
-    func updateTranscriptionPrompt() {
-        // Get the currently selected language from UserDefaults
+    public func updateTranscriptionPrompt() {
         let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "en"
-        
-        // Get the prompt for the selected language (custom if available, otherwise default)
-        let basePrompt = getLanguagePrompt(for: selectedLanguage)
-        let prompt = basePrompt.isEmpty ? "" : basePrompt
-        
+        let prompt = getLanguagePrompt(for: selectedLanguage)
         transcriptionPrompt = prompt
         UserDefaults.standard.set(prompt, forKey: kTranscriptionPrompt)
         UserDefaults.standard.synchronize()
     }
     
-    func getLanguagePrompt(for language: String) -> String {
-        // First check if there's a custom prompt for this language
+    private func getLanguagePrompt(for language: String) -> String {
         if let customPrompt = customPrompts[language], !customPrompt.isEmpty {
             return customPrompt
         }
         
-        // Otherwise return the default prompt
-        return defaultLanguagePrompts[language] ?? defaultLanguagePrompts["default"]!
+        return defaultLanguagePrompts[language] ?? ""
     }
     
     // MARK: - Custom Prompts
-    func setCustomPrompt(_ prompt: String, for language: String) {
+    public func setCustomPrompt(_ prompt: String, for language: String) {
         customPrompts[language] = prompt
         saveCustomPrompts()
         updateTranscriptionPrompt()
