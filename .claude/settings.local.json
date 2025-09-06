@@ -16,7 +16,8 @@
       "Bash(npm run tsc:*)",
       "Bash(npm run:*)",
       "Bash(npx tsx:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Read(//Users/antonnovoselov/Desktop/**)"
     ],
     "deny": [],
     "ask": [],
