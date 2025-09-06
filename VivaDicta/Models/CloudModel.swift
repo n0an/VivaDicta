@@ -42,18 +42,18 @@ struct CloudModel: @MainActor TranscriptionModel {
 }
 
 extension CloudModel {
-    static func saveApiKey(_ apiKey: String, modelName: String) {
-        UserDefaults.standard.set(apiKey, forKey: Constants.kAPIKeyTemplate + modelName)
+    static func saveApiKey(_ apiKey: String, model: TranscriptionModel) {
+        UserDefaults.standard.set(apiKey, forKey: Constants.kAPIKeyTemplate + model.provider.rawValue)
     }
 }
 
 extension CloudModel {
     var apiKey: String? {
         get {
-            UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + name)
+            UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: Constants.kAPIKeyTemplate + name)
+            UserDefaults.standard.set(newValue, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
         }
     }
 }

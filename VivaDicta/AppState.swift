@@ -62,7 +62,7 @@ class AppState {
     }
     
     func updateCloudModels(with model: CloudModel, apiKey: String) {
-        CloudModel.saveApiKey(apiKey, modelName: model.name)
+        CloudModel.saveApiKey(apiKey, model: model)
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
     }
     
