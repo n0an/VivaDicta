@@ -22,7 +22,6 @@ class AppState {
     var localTranscriptionService: LocalTranscriptionService!
     private var cloudTranscriptionService = CloudTranscriptionService()
     
-    // TODO: - Handle prompt
     let whisperPrompt = WhisperPrompt()
     
     var selectedTab: TabTag = .record
@@ -56,8 +55,8 @@ class AppState {
         // TODO: - Add whisperContext release after transcribing?
         do {
             whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-            let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? whisperPrompt.transcriptionPrompt
-            await whisperContext?.setPrompt(currentPrompt)
+//            let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? whisperPrompt.transcriptionPrompt
+//            await whisperContext?.setPrompt(currentPrompt)
 
         } catch {
             throw WhisperStateError.modelLoadFailed
