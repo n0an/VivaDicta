@@ -11,49 +11,48 @@ import os
 actor WhisperHallucinationFilter {
     private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "WhisperHallucinationFilter")
     
-    // Pattern-based approach for detecting hallucinations - focusing on format indicators
     private static let hallucinationPatterns = [
-        // Text in various types of brackets - the most reliable hallucination indicators
-        #"\[.*?\]"#,                  // [Text in square brackets]
-        #"\(.*?\)"#,                  // (Text in parentheses)
-        #"\{.*?\}"#,                  // {Text in curly braces}
-        #"<.*?>"#,                    // <Text in angle brackets>
-        
-        // Text with special formatting
-        #"\*.*?\*"#,                  // *Text with asterisks*
-        #"_.*?_"#,                    // _Text with underscores_
-        
-        // Time indicators often added by Whisper
-        #"(?i)\d{1,2}:\d{2}(:\d{2})?\s*-\s*\d{1,2}:\d{2}(:\d{2})?"#  // 00:00 - 00:00 format
+        #"\[.*?\]"#,     // Square brackets
+        #"\(.*?\)"#,     // Parentheses
+        #"\{.*?\}"#      // Curly braces
     ]
-    
-    /// Removes hallucinations from transcription text using pattern matching
-    /// - Parameter text: Original transcription text from Whisper
-    /// - Returns: Filtered text with hallucinations removed
+
+    private static let fillerWords = [
+        "uh", "um", "uhm", "umm", "uhh", "uhhh", "er", "ah", "eh",
+        "hmm", "hm", "h", "m", "mmm", "mm", "mh", "ha", "ehh"
+    ]
     static func filter(_ text: String) -> String {
-        logger.notice("🧹 Applying pattern-based hallucination filter to transcription")
-        print("=== unfiltered text = \(text)")
+        logger.notice("🧹 Filtering hallucinations and filler words")
         var filteredText = text
-        
-        // Remove pattern-based hallucinations
+
+        // Remove bracketed hallucinations
         for pattern in hallucinationPatterns {
             if let regex = try? NSRegularExpression(pattern: pattern) {
                 let range = NSRange(filteredText.startIndex..., in: filteredText)
                 filteredText = regex.stringByReplacingMatches(in: filteredText, options: [], range: range, withTemplate: "")
             }
         }
-        
-        // Clean up extra whitespace and newlines that might be left after removing hallucinations
+
+        // Remove filler words
+        for fillerWord in fillerWords {
+            let pattern = "\\b\(NSRegularExpression.escapedPattern(for: fillerWord))\\b[,.]?"
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                let range = NSRange(filteredText.startIndex..., in: filteredText)
+                filteredText = regex.stringByReplacingMatches(in: filteredText, options: [], range: range, withTemplate: "")
+            }
+        }
+
+        // Clean whitespace
         filteredText = filteredText.replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
         filteredText = filteredText.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Add logging to track effectiveness
+
+        // Log results
         if filteredText != text {
-            logger.notice("✅ Removed hallucinations using pattern matching")
+            logger.notice("✅ Removed hallucinations and filler words")
         } else {
-            logger.notice("✅ No hallucinations detected with pattern matching")
+            logger.notice("✅ No hallucinations or filler words found")
         }
-        
+
         return filteredText
     }
 }
