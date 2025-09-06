@@ -18,7 +18,7 @@ struct LanguageSelectionMenu: View {
     
     var body: some View {
         Menu("Language", systemImage: "globe") {
-            Picker("Language", selection: $selectedLanguagePicker) {
+//            Picker("Language", selection: $selectedLanguagePicker) {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Transcription Language")
                         .font(.headline)
@@ -99,7 +99,7 @@ struct LanguageSelectionMenu: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.gray)
                 .cornerRadius(10)
-            }
+//            }
         }
     }
     

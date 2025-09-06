@@ -39,7 +39,7 @@ actor WhisperContext {
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         
         // Read language directly from UserDefaults
-        let selectedLanguage = UserDefaults.standard.string(forKey: "selectedLanguageKey") ?? "auto"
+        let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto" {
             languageCString = Array(selectedLanguage.utf8CString)
             params.language = languageCString?.withUnsafeBufferPointer { ptr in

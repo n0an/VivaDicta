@@ -83,7 +83,7 @@ class ElevenLabsTranscriptionService {
         body.append("0".data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
         
-        let selectedLanguage = UserDefaults.standard.string(forKey: "SelectedLanguage") ?? "auto"
+        let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"language_code\"\(crlf)\(crlf)".data(using: .utf8)!)

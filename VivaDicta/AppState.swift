@@ -88,6 +88,10 @@ extension AppState {
         if let savedModelName = UserDefaults.standard.string(forKey: kCurrentTranscriptionModel),
            let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
             print("=== \(savedModel.name)")
+            if savedModel.provider == .local,
+               let localWhipserModel = savedModel as? WhisperLocalModel {
+                Task { try await loadLocalModel(localWhipserModel) }
+            }
             currentTranscriptionModel = savedModel
         }
     }
