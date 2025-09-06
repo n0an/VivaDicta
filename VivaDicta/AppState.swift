@@ -19,7 +19,7 @@ class AppState {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
     
-    var localTranscriptionService: LocalTranscriptionService!
+    private var localTranscriptionService: LocalTranscriptionService!
     private var cloudTranscriptionService = CloudTranscriptionService()
     
     let whisperPrompt = WhisperPrompt()
@@ -55,8 +55,6 @@ class AppState {
         // TODO: - Add whisperContext release after transcribing?
         do {
             whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-//            let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? whisperPrompt.transcriptionPrompt
-//            await whisperContext?.setPrompt(currentPrompt)
 
         } catch {
             throw WhisperStateError.modelLoadFailed

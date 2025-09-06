@@ -38,9 +38,6 @@ class WhisperPrompt {
         customPrompts[language] = prompt
         saveCustomPrompts()
         updateTranscriptionPrompt()
-        
-        // Force update the UI
-//        objectWillChange.send()
     }
     
     private func loadCustomPrompts() {
