@@ -40,7 +40,6 @@ struct LanguageSelectionMenu: View {
                                 currentModel.supportedLanguages
                                     .sorted(by: {
                                     if $0.key == "auto" { return true }
-                                    if $1.key == "auto" { return false }
                                     return $0.value < $1.value
                                 }), id: \.key
                             ) { key, value in
@@ -48,6 +47,8 @@ struct LanguageSelectionMenu: View {
                             }
                         }
                         .pickerStyle(.menu)
+                        .foregroundStyle(.black)
+                        .background(.gray.opacity(0.2), in: .rect(cornerRadius: 6))
                         .onChange(of: selectedLanguage) { _, newValue in
                             updateLanguage(newValue)
                         }
