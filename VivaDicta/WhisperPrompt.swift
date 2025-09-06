@@ -8,18 +8,64 @@
 import Foundation
 import Combine
 
-//@Observable
 class WhisperPrompt {
-    // TODO: Handle Language change
     var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
-    
-    private let customPromptsKey = "CustomLanguagePrompts"
     
     // Store user-customized prompts
     private var customPrompts: [String: String] = [:]
     
+    init() {
+        loadCustomPrompts()
+        updateTranscriptionPrompt()
+    }
+    
+    func updateTranscriptionPrompt() {
+        // Get the currently selected language from UserDefaults
+        let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "en"
+        
+        // Get the prompt for the selected language (custom if available, otherwise default)
+        let basePrompt = getLanguagePrompt(for: selectedLanguage)
+        let prompt = basePrompt.isEmpty ? "" : basePrompt
+        
+        transcriptionPrompt = prompt
+        UserDefaults.standard.set(prompt, forKey: kTranscriptionPrompt)
+        UserDefaults.standard.synchronize()
+    }
+    
+    func getLanguagePrompt(for language: String) -> String {
+        // First check if there's a custom prompt for this language
+        if let customPrompt = customPrompts[language], !customPrompt.isEmpty {
+            return customPrompt
+        }
+        
+        // Otherwise return the default prompt
+        return defaultLanguagePrompts[language] ?? defaultLanguagePrompts["default"]!
+    }
+    
+    // MARK: - Custom Prompts
+    func setCustomPrompt(_ prompt: String, for language: String) {
+        customPrompts[language] = prompt
+        saveCustomPrompts()
+        updateTranscriptionPrompt()
+        
+        // Force update the UI
+//        objectWillChange.send()
+    }
+    
+    private func loadCustomPrompts() {
+        if let savedPrompts = UserDefaults.standard.dictionary(forKey: customPromptsKey) as? [String: String] {
+            customPrompts = savedPrompts
+        }
+    }
+    
+    private func saveCustomPrompts() {
+        UserDefaults.standard.set(customPrompts, forKey: customPromptsKey)
+        UserDefaults.standard.synchronize()
+    }
+    
+    
     // Language-specific base prompts
-    private let languagePrompts: [String: String] = [
+    private let defaultLanguagePrompts: [String: String] = [
         // English
         "en": "Hello, how are you doing? Nice to meet you.",
         
@@ -59,54 +105,4 @@ class WhisperPrompt {
         // Default prompt for unsupported languages
         "default": ""
     ]
-    
-    init() {
-        loadCustomPrompts()
-        updateTranscriptionPrompt()
-        
-    }
-    
-    private func loadCustomPrompts() {
-        if let savedPrompts = UserDefaults.standard.dictionary(forKey: customPromptsKey) as? [String: String] {
-            customPrompts = savedPrompts
-        }
-    }
-    
-    private func saveCustomPrompts() {
-        UserDefaults.standard.set(customPrompts, forKey: customPromptsKey)
-        UserDefaults.standard.synchronize() // Force immediate synchronization
-    }
-    
-    func updateTranscriptionPrompt() {
-        // Get the currently selected language from UserDefaults
-        let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "en"
-        
-        // Get the prompt for the selected language (custom if available, otherwise default)
-        let basePrompt = getLanguagePrompt(for: selectedLanguage)
-        let prompt = basePrompt.isEmpty ? "" : basePrompt
-        
-        transcriptionPrompt = prompt
-        UserDefaults.standard.set(prompt, forKey: kTranscriptionPrompt)
-        UserDefaults.standard.synchronize()
-        
-    }
-    
-    func getLanguagePrompt(for language: String) -> String {
-        // First check if there's a custom prompt for this language
-        if let customPrompt = customPrompts[language], !customPrompt.isEmpty {
-            return customPrompt
-        }
-        
-        // Otherwise return the default prompt
-        return languagePrompts[language] ?? languagePrompts["default"]!
-    }
-    
-    func setCustomPrompt(_ prompt: String, for language: String) {
-        customPrompts[language] = prompt
-        saveCustomPrompts()
-        updateTranscriptionPrompt()
-        
-        // Force update the UI
-//        objectWillChange.send()
-    }
 }
