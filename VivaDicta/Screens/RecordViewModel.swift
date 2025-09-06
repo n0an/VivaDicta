@@ -156,73 +156,30 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             do {
                 self.recordingState = .transcribing
                 
-                let transcribedText = try await appState?.transcribe(audioURL: recordURL)
+                guard let transcribedText = try await appState?.transcribe(audioURL: recordURL) else { return }
                 print(transcribedText)
                 
-//                if let transcriptionService = appState?.transcriptionService {
-////                    let transcribedText = try await transcriptionService.generateAudioTransciptions(fileURL: recordURL)
-//                    let transcribedText = try await appState.transcribe(audioURL: recordURL)
-//                    print(transcribedText)
-//                    
-//                    
-//                    let transcribedTextArr = transcribedText.components(separatedBy: CharacterSet.alphanumerics.inverted)
-//                    let maxTitleWords = min(transcribedTextArr.count, 3)
-//                    
-//                    let title = Array(transcribedTextArr[0..<maxTitleWords]).joined(separator: " ")
-//                    
-//                    let transcription = Transcription(
-//                        title: title,
-//                        text: transcribedText,
-//                        timestamp: .now,
-//                        enhancedText: "mock",
-//                        audioFileURL: recordURL.absoluteString,
-//                        transcriptionModelName: "whisper",
-//                        enhancementModelName: "none")
-//                    
-//                    modelContext.insert(transcription)
-//                    try modelContext.save()
-//                }
+                let transcribedTextArr = transcribedText.components(separatedBy: CharacterSet.alphanumerics.inverted)
+                let maxTitleWords = min(transcribedTextArr.count, 3)
                 
+                let title = Array(transcribedTextArr[0..<maxTitleWords]).joined(separator: " ")
                 
+                let transcription = Transcription(
+                    title: title,
+                    text: transcribedText,
+                    timestamp: .now,
+                    enhancedText: "mock",
+                    audioFileURL: recordURL.absoluteString,
+                    transcriptionModelName: "whisper",
+                    enhancementModelName: "none")
                 
-                
-//                let whisperCPPTranscriptionService = LocalWhisperTranscriptionService()
-//                let transcribedText = try await whisperCPPTranscriptionService.generateAudioTransciptions(fileURL: recordURL)
-                
-//                let whisperCPPTranscriptionService = WhisperState()
-//                await whisperCPPTranscriptionService.loadAndTranscribe(recordURL)
-                
-//                let audioData = try Data(contentsOf: captureURL)
-//                
-//                let openAITranscriptionService = OpenAITranscriptionService()
-//                
-//                let transcribedText = try await openAITranscriptionService.generateAudioTransciptions(audioData: audioData)
+                modelContext.insert(transcription)
+                try modelContext.save()
                 
                 try Task.checkCancellation()
                 
-//                print(transcribedText)
                 self.recordingState = .idle
                 
-//                let transcription = Transcription(
-//                    title: "test",
-//                    text: transcribedText,
-//                    timestamp: .now,
-//                    enhancedText: "mock",
-//                    audioFileURL: "mock",
-//                    transcriptionModelName: "whisper",
-//                    enhancementModelName: "none")
-//                
-//                modelContext.insert(transcription)
-//                try modelContext.save()
-                //                try Task.checkCancellation()
-//                let responseText = try await client.promptChatGPT(prompt: prompt)
-                
-//                try Task.checkCancellation()
-//                let data = try await client.generateSpeechFrom(input: responseText, voice:
-//                        .init(rawValue: selectedVoice.rawValue) ?? .alloy)
-                
-//                try Task.checkCancellation()
-//                try self.playAudio(data: data)
             } catch {
                 if Task.isCancelled { return }
                 recordingState = .error(.transcribe)
