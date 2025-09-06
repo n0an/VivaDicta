@@ -17,6 +17,9 @@ struct ModelsScreen: View {
         
         NavigationStack {
             VStack {
+                
+                LanguageSelectionMenu(appState: appState)
+                
                 Picker("Model type", selection: $modelType) {
                     ForEach(TranscriptionModelType.allCases, id: \.self) {
                         Text($0.rawValue.capitalized)
@@ -58,7 +61,7 @@ struct ModelsScreen: View {
             })
             .navigationBarTitle("Transcription Models")
             .toolbar {
-                LanguageSelectionMenu(appState: appState)
+//                LanguageSelectionMenu(appState: appState)
 //                ToolbarItem {
 //                    Menu("Language", systemImage: "globe") {
 //                        Picker("Language", selection: $appState.selectedLanguage) {
