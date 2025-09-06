@@ -39,7 +39,7 @@ actor WhisperContext {
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
         
         // Read language directly from UserDefaults
-        let selectedLanguage = UserDefaults.standard.string(forKey: "selectedLanguageKey") ?? "auto"
+        let selectedLanguage = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto" {
             languageCString = Array(selectedLanguage.utf8CString)
             params.language = languageCString?.withUnsafeBufferPointer { ptr in
@@ -111,9 +111,7 @@ actor WhisperContext {
         for i in 0..<whisper_full_n_segments(context) {
             transcription += String(cString: whisper_full_get_segment_text(context, i))
         }
-        // TODO: Add hallucination filter
-//        let filteredTranscription = WhisperHallucinationFilter.filter(transcription)
-        return transcription
+        return WhisperHallucinationFilter.filter(transcription)
     }
 
     static func createContext(path: String) async throws -> WhisperContext {

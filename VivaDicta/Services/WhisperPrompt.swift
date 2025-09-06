@@ -8,7 +8,7 @@
 import Foundation
 
 class WhisperPrompt {
-    private var transcriptionPrompt: String = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
+    private var transcriptionPrompt: String = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
     
     private var customPrompts: [String: String] = [:]
     
@@ -18,10 +18,10 @@ class WhisperPrompt {
     }
     
     public func updateTranscriptionPrompt() {
-        let selectedLanguage = UserDefaults.standard.string(forKey: kSelectedLanguageKey) ?? "en"
+        let selectedLanguage = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
         let prompt = getLanguagePrompt(for: selectedLanguage)
         transcriptionPrompt = prompt
-        UserDefaults.standard.set(prompt, forKey: kTranscriptionPrompt)
+        UserDefaults.standard.set(prompt, forKey: Constants.kTranscriptionPrompt)
         UserDefaults.standard.synchronize()
     }
     
@@ -41,13 +41,13 @@ class WhisperPrompt {
     }
     
     private func loadCustomPrompts() {
-        if let savedPrompts = UserDefaults.standard.dictionary(forKey: customPromptsKey) as? [String: String] {
+        if let savedPrompts = UserDefaults.standard.dictionary(forKey: Constants.customPromptsKey) as? [String: String] {
             customPrompts = savedPrompts
         }
     }
     
     private func saveCustomPrompts() {
-        UserDefaults.standard.set(customPrompts, forKey: customPromptsKey)
+        UserDefaults.standard.set(customPrompts, forKey: Constants.customPromptsKey)
         UserDefaults.standard.synchronize()
     }
     

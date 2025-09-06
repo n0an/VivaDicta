@@ -63,7 +63,7 @@ class LocalTranscriptionService: TranscriptionService {
         let data = try readAudioSamples(audioURL)
         
         // Set prompt
-        let currentPrompt = UserDefaults.standard.string(forKey: kTranscriptionPrompt) ?? ""
+        let currentPrompt = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
         await whisperContext.setPrompt(currentPrompt)
         
         // Transcribe
@@ -75,11 +75,6 @@ class LocalTranscriptionService: TranscriptionService {
         }
         
         var text = await whisperContext.getTranscription()
-        
-        // TODO: - check text formatting - do I need this?
-        if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
-//            text = WhisperTextFormatter.format(text)
-        }
         
 //        logger.notice("✅ Local transcription completed successfully.")
         

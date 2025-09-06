@@ -64,11 +64,6 @@ class CloudTranscriptionService: TranscriptionService {
             throw CloudTranscriptionError.unsupportedProvider
         }
         
-        // TODO: - add text formatter?
-//        if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
-//            text = WhisperTextFormatter.format(text)
-//        }
-        
         return text
     }
 }

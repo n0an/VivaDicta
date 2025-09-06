@@ -82,7 +82,7 @@ enum TabTag {
 // MARK: - save / load local transcription model
 extension AppState {
     func loadCurrentTranscriptionModel() {
-        if let savedModelName = UserDefaults.standard.string(forKey: kCurrentTranscriptionModel),
+        if let savedModelName = UserDefaults.standard.string(forKey: Constants.kCurrentTranscriptionModel),
            let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
             print("=== \(savedModel.name)")
             if savedModel.provider == .local,
@@ -97,7 +97,7 @@ extension AppState {
         self.currentTranscriptionModel = model
         print("=== \(model.name)")
         
-        UserDefaults.standard.set(model.name, forKey: kCurrentTranscriptionModel)
+        UserDefaults.standard.set(model.name, forKey: Constants.kCurrentTranscriptionModel)
         UserDefaults.standard.synchronize()
         
         if model.provider == .local,
