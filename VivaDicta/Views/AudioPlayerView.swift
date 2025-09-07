@@ -8,7 +8,7 @@
 import SwiftUI
 import AVFoundation
 
-class WaveformGenerator {
+struct WaveformGenerator {
     static func generateWaveformSamples(from url: URL, sampleCount: Int = 100) async -> [Float] {
         print("🌊 WaveformGenerator: Attempting to read audio file at \(url)")
         guard let audioFile = try? AVAudioFile(forReading: url) else { 
