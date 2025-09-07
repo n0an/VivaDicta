@@ -2,7 +2,7 @@
 //  VivaDictaTests.swift
 //  VivaDictaTests
 //
-//  Created by Anton Novoselov on 30.08.2025.
+//  Created by Anton Novoselov on 2025.08.30
 //
 
 import Testing
