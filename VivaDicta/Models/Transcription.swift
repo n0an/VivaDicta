@@ -56,7 +56,7 @@ extension Transcription {
             enhancementModelName: ""),
         Transcription(
             text: "knock knock Neo",
-            timestamp: .now,
+            timestamp: .now.advanced(by: 1000),
             enhancedText: "enhanced 3",
             audioFileURL: "",
             audioDuration: 77,
