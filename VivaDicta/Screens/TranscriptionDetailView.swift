@@ -13,7 +13,7 @@ struct TranscriptionDetailView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            AudioPlayerView(audioFileURL: transcription.audioFileURL)
+            AudioPlayerView(audioFileName: transcription.audioFileName)
                 .padding(.bottom, 8)
             
             HStack {

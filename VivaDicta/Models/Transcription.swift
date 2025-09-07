@@ -13,7 +13,7 @@ class Transcription {
     var text: String
     var timestamp: Date
     var enhancedText: String
-    var audioFileURL: String
+    var audioFileName: String
     var audioDuration: TimeInterval
     var transcriptionModelName: String
     var enhancementModelName: String
@@ -21,14 +21,14 @@ class Transcription {
     init(text: String,
          timestamp: Date,
          enhancedText: String,
-         audioFileURL: String,
+         audioFileName: String,
          audioDuration: TimeInterval,
          transcriptionModelName: String,
          enhancementModelName: String) {
         self.text = text
         self.timestamp = timestamp
         self.enhancedText = enhancedText
-        self.audioFileURL = audioFileURL
+        self.audioFileName = audioFileName
         self.audioDuration = audioDuration
         self.transcriptionModelName = transcriptionModelName
         self.enhancementModelName = enhancementModelName
@@ -53,7 +53,7 @@ extension Transcription {
             text: "hello world",
             timestamp: .now,
             enhancedText: "enhanced 1",
-            audioFileURL: "",
+            audioFileName: "",
             audioDuration: 5,
             transcriptionModelName: "openai",
             enhancementModelName: ""),
@@ -61,7 +61,7 @@ extension Transcription {
             text: "how are you",
             timestamp: .now,
             enhancedText: "enhanced 2",
-            audioFileURL: "",
+            audioFileName: "",
             audioDuration: 42,
             transcriptionModelName: "whisper.cpp",
             enhancementModelName: ""),
@@ -69,7 +69,7 @@ extension Transcription {
             text: "knock knock Neo",
             timestamp: .now.advanced(by: 1000),
             enhancedText: "enhanced 3",
-            audioFileURL: "",
+            audioFileName: "",
             audioDuration: 77,
             transcriptionModelName: "elevellabs",
             enhancementModelName: "")

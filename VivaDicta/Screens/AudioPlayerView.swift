@@ -190,15 +190,15 @@ struct WaveformBar: View {
 }
 
 struct AudioPlayerView: View {
-    let audioFileURL: String
+    let audioFileName: String
     @State private var playerManager = AudioPlayerManager()
     
     private var audioURL: URL? {
-        URL(string: audioFileURL)
+        URL.documentsDirectory.appendingPathComponent(audioFileName)
     }
     
     private var hasMockWaveform: Bool {
-        audioFileURL.isEmpty
+        audioFileName.isEmpty
     }
     
     var body: some View {
@@ -224,7 +224,7 @@ struct AudioPlayerView: View {
             ).debugBorder()
         }
         .onAppear {
-            print("🎬 AudioPlayerView appeared with audioFileURL: '\(audioFileURL)'")
+            print("🎬 AudioPlayerView appeared with audioFileName: '\(audioFileName)'")
             if let url = audioURL {
                 print("🎬 Valid URL found, loading audio...")
                 playerManager.loadAudio(from: url)
@@ -232,7 +232,7 @@ struct AudioPlayerView: View {
                 print("🎬 No audio file, generating mock waveform...")
                 generateMockWaveform()
             } else {
-                print("❌ No valid URL found from audioFileURL: '\(audioFileURL)'")
+                print("❌ No valid URL found from audioFileName: '\(audioFileName)'")
             }
         }
         .onDisappear {
