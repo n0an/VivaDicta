@@ -14,6 +14,7 @@ class Transcription {
     var timestamp: Date
     var enhancedText: String
     var audioFileURL: String
+    var audioDuration: TimeInterval
     var transcriptionModelName: String
     var enhancementModelName: String
     
@@ -21,12 +22,14 @@ class Transcription {
          timestamp: Date,
          enhancedText: String,
          audioFileURL: String,
+         audioDuration: TimeInterval,
          transcriptionModelName: String,
          enhancementModelName: String) {
         self.text = text
         self.timestamp = timestamp
         self.enhancedText = enhancedText
         self.audioFileURL = audioFileURL
+        self.audioDuration = audioDuration
         self.transcriptionModelName = transcriptionModelName
         self.enhancementModelName = enhancementModelName
     }
@@ -40,6 +43,7 @@ extension Transcription {
             timestamp: .now,
             enhancedText: "enhanced 1",
             audioFileURL: "",
+            audioDuration: 5,
             transcriptionModelName: "openai",
             enhancementModelName: ""),
         Transcription(
@@ -47,6 +51,7 @@ extension Transcription {
             timestamp: .now,
             enhancedText: "enhanced 2",
             audioFileURL: "",
+            audioDuration: 42,
             transcriptionModelName: "whisper.cpp",
             enhancementModelName: ""),
         Transcription(
@@ -54,6 +59,7 @@ extension Transcription {
             timestamp: .now,
             enhancedText: "enhanced 3",
             audioFileURL: "",
+            audioDuration: 77,
             transcriptionModelName: "elevellabs",
             enhancementModelName: "")
         

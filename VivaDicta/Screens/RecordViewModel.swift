@@ -159,12 +159,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 guard let transcribedText = try await appState?.transcribe(audioURL: recordURL) else { return }
                 print(transcribedText)
                 
+                let audioAsset = AVURLAsset(url: recordURL)
+                let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
+                
                 let transcription = Transcription(
                     text: transcribedText,
                     timestamp: .now,
                     enhancedText: "mock",
                     audioFileURL: recordURL.absoluteString,
-                    transcriptionModelName: "whisper",
+                    audioDuration: audioDuration,
+                    transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
                     enhancementModelName: "none")
                 
                 modelContext.insert(transcription)
