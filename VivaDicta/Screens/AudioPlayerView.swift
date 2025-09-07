@@ -186,10 +186,6 @@ struct AudioPlayerView: View {
         URL.documentsDirectory.appendingPathComponent(audioFileName)
     }
     
-    private var hasMockWaveform: Bool {
-        audioFileName.isEmpty
-    }
-    
     var body: some View {
         HStack(spacing: 12) {
             Button(action: togglePlayback) {
@@ -213,15 +209,8 @@ struct AudioPlayerView: View {
             ).debugBorder()
         }
         .onAppear {
-            print("🎬 AudioPlayerView appeared with audioFileName: '\(audioFileName)'")
             if let url = audioURL {
-                print("🎬 Valid URL found, loading audio...")
                 playerManager.loadAudio(from: url)
-            } else if hasMockWaveform {
-                print("🎬 No audio file, generating mock waveform...")
-                generateMockWaveform()
-            } else {
-                print("❌ No valid URL found from audioFileName: '\(audioFileName)'")
             }
         }
         .onDisappear {
@@ -235,16 +224,5 @@ struct AudioPlayerView: View {
         } else {
             playerManager.play()
         }
-    }
-    
-    private func generateMockWaveform() {
-        // Generate mock waveform data for preview purposes
-        let mockSamples = (0..<100).map { i in
-            Float.random(in: 0.1...1.0) * sin(Float(i) * 0.1)
-        }
-        playerManager.waveformSamples = mockSamples.map { abs($0) }
-        playerManager.duration = 53.3 // Match the duration shown in screenshot
-        playerManager.isLoadingWaveform = false
-        print("🎬 Generated \(mockSamples.count) mock waveform samples")
     }
 }
