@@ -13,6 +13,9 @@ struct TranscriptionDetailView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            AudioPlayerView(audioFileURL: transcription.audioFileURL)
+                .padding(.bottom, 8)
+            
             HStack {
                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
                     .font(.system(size: 14, weight: .medium, design: .default))

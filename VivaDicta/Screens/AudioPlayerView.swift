@@ -1,0 +1,261 @@
+//
+//  AudioPlayerView.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2025.09.07
+//
+
+import SwiftUI
+import AVFoundation
+
+class WaveformGenerator {
+    static func generateWaveformSamples(from url: URL, sampleCount: Int = 100) async -> [Float] {
+        print("🌊 WaveformGenerator: Attempting to read audio file at \(url)")
+        guard let audioFile = try? AVAudioFile(forReading: url) else { 
+            print("❌ WaveformGenerator: Could not create AVAudioFile from \(url)")
+            return []
+        }
+        
+        let format = audioFile.processingFormat
+        let frameCount = UInt32(audioFile.length)
+        let stride = max(1, Int(frameCount) / sampleCount)
+        let bufferSize = min(UInt32(4096), frameCount)
+        
+        print("🌊 WaveformGenerator: frameCount=\(frameCount), stride=\(stride), bufferSize=\(bufferSize)")
+        
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: bufferSize) else { 
+            print("❌ WaveformGenerator: Could not create PCM buffer")
+            return []
+        }
+        
+        do {
+            var maxValues = [Float](repeating: 0.0, count: sampleCount)
+            var sampleIndex = 0
+            var framePosition: AVAudioFramePosition = 0
+            
+            while sampleIndex < sampleCount && framePosition < AVAudioFramePosition(frameCount) {
+                audioFile.framePosition = framePosition
+                try audioFile.read(into: buffer)
+                
+                if let channelData = buffer.floatChannelData?[0], buffer.frameLength > 0 {
+                    maxValues[sampleIndex] = abs(channelData[0])
+                    sampleIndex += 1
+                }
+                
+                framePosition += AVAudioFramePosition(stride)
+            }
+            
+            if let maxSample = maxValues.max(), maxSample > 0 {
+                let normalizedValues = maxValues.map { $0 / maxSample }
+                print("🌊 WaveformGenerator: Successfully generated \(normalizedValues.count) normalized samples")
+                return normalizedValues
+            }
+            print("🌊 WaveformGenerator: Generated \(maxValues.count) raw samples (no normalization)")
+            return maxValues
+        } catch {
+            print("❌ WaveformGenerator: Error reading audio file: \(error)")
+            return []
+        }
+    }
+}
+
+@Observable
+class AudioPlayerManager {
+    private var audioPlayer: AVAudioPlayer?
+    private var timer: Timer?
+    var isPlaying = false
+    var currentTime: TimeInterval = 0
+    var duration: TimeInterval = 0
+    var waveformSamples: [Float] = []
+    var isLoadingWaveform = false
+    
+    func loadAudio(from url: URL) {
+        print("🎵 Loading audio from URL: \(url)")
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.prepareToPlay()
+            duration = audioPlayer?.duration ?? 0
+            isLoadingWaveform = true
+            print("🎵 Audio loaded successfully, duration: \(duration)")
+            
+            Task {
+                print("🌊 Starting waveform generation...")
+                let samples = await WaveformGenerator.generateWaveformSamples(from: url)
+                print("🌊 Generated \(samples.count) waveform samples")
+                await MainActor.run {
+                    self.waveformSamples = samples
+                    self.isLoadingWaveform = false
+                    print("🌊 Waveform samples updated in UI")
+                }
+            }
+        } catch {
+            print("❌ Error loading audio: \(error.localizedDescription)")
+        }
+    }
+    
+    func play() {
+        audioPlayer?.play()
+        isPlaying = true
+        startTimer()
+    }
+    
+    func pause() {
+        audioPlayer?.pause()
+        isPlaying = false
+        stopTimer()
+    }
+    
+    func seek(to time: TimeInterval) {
+        audioPlayer?.currentTime = time
+        currentTime = time
+    }
+    
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.currentTime = self.audioPlayer?.currentTime ?? 0
+                if self.currentTime >= self.duration {
+                    self.pause()
+                    self.seek(to: 0)
+                }
+            }
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+}
+
+struct WaveformView: View {
+    let samples: [Float]
+    let currentTime: TimeInterval
+    let duration: TimeInterval
+    let isLoading: Bool
+    var onSeek: (Double) -> Void
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    HStack(spacing: 1) {
+                        ForEach(0..<samples.count, id: \.self) { index in
+                            WaveformBar(
+                                sample: samples[index],
+                                isPlayed: CGFloat(index) / CGFloat(samples.count) <= CGFloat(currentTime / duration),
+                                totalBars: samples.count,
+                                geometryWidth: geometry.size.width
+                            )
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                if !isLoading {
+                    let progress = location.x / geometry.size.width
+                    onSeek(Double(progress) * duration)
+                }
+            }
+        }
+        .frame(height: 40)
+        .onAppear {
+            print("📊 WaveformView appeared with \(samples.count) samples, isLoading: \(isLoading)")
+        }
+    }
+}
+
+struct WaveformBar: View {
+    let sample: Float
+    let isPlayed: Bool
+    let totalBars: Int
+    let geometryWidth: CGFloat
+    
+    var body: some View {
+        Capsule()
+            .fill(isPlayed ? Color.blue : Color.blue.opacity(0.3))
+            .frame(
+                width: max((geometryWidth / CGFloat(totalBars)) - 1, 1),
+                height: max(CGFloat(sample) * 32, 3)
+            )
+    }
+}
+
+struct AudioPlayerView: View {
+    let audioFileURL: String
+    @State private var playerManager = AudioPlayerManager()
+    
+    private var audioURL: URL? {
+        URL(string: audioFileURL)
+    }
+    
+    private var hasMockWaveform: Bool {
+        audioFileURL.isEmpty
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: togglePlayback) {
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: playerManager.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.blue)
+                    )
+            }
+            .disabled(audioURL == nil)
+            
+            WaveformView(
+                samples: playerManager.waveformSamples,
+                currentTime: playerManager.currentTime,
+                duration: playerManager.duration,
+                isLoading: playerManager.isLoadingWaveform,
+                onSeek: { playerManager.seek(to: $0) }
+            ).debugBorder()
+        }
+        .onAppear {
+            print("🎬 AudioPlayerView appeared with audioFileURL: '\(audioFileURL)'")
+            if let url = audioURL {
+                print("🎬 Valid URL found, loading audio...")
+                playerManager.loadAudio(from: url)
+            } else if hasMockWaveform {
+                print("🎬 No audio file, generating mock waveform...")
+                generateMockWaveform()
+            } else {
+                print("❌ No valid URL found from audioFileURL: '\(audioFileURL)'")
+            }
+        }
+        .onDisappear {
+            playerManager.pause()
+        }
+    }
+    
+    private func togglePlayback() {
+        if playerManager.isPlaying {
+            playerManager.pause()
+        } else {
+            playerManager.play()
+        }
+    }
+    
+    private func generateMockWaveform() {
+        // Generate mock waveform data for preview purposes
+        let mockSamples = (0..<100).map { i in
+            Float.random(in: 0.1...1.0) * sin(Float(i) * 0.1)
+        }
+        playerManager.waveformSamples = mockSamples.map { abs($0) }
+        playerManager.duration = 53.3 // Match the duration shown in screenshot
+        playerManager.isLoadingWaveform = false
+        print("🎬 Generated \(mockSamples.count) mock waveform samples")
+    }
+}
