@@ -12,7 +12,6 @@ class WaveformGenerator {
     static func generateWaveformSamples(from url: URL, sampleCount: Int = 100) async -> [Float] {
         print("🌊 WaveformGenerator: Attempting to read audio file at \(url)")
         guard let audioFile = try? AVAudioFile(forReading: url) else { 
-            print("❌ WaveformGenerator: Could not create AVAudioFile from \(url)")
             return []
         }
         
@@ -20,11 +19,8 @@ class WaveformGenerator {
         let frameCount = UInt32(audioFile.length)
         let stride = max(1, Int(frameCount) / sampleCount)
         let bufferSize = min(UInt32(4096), frameCount)
-        
-        print("🌊 WaveformGenerator: frameCount=\(frameCount), stride=\(stride), bufferSize=\(bufferSize)")
-        
+                
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: bufferSize) else { 
-            print("❌ WaveformGenerator: Could not create PCM buffer")
             return []
         }
         
@@ -47,13 +43,10 @@ class WaveformGenerator {
             
             if let maxSample = maxValues.max(), maxSample > 0 {
                 let normalizedValues = maxValues.map { $0 / maxSample }
-                print("🌊 WaveformGenerator: Successfully generated \(normalizedValues.count) normalized samples")
                 return normalizedValues
             }
-            print("🌊 WaveformGenerator: Generated \(maxValues.count) raw samples (no normalization)")
             return maxValues
         } catch {
-            print("❌ WaveformGenerator: Error reading audio file: \(error)")
             return []
         }
     }
@@ -70,23 +63,18 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     var isLoadingWaveform = false
     
     func loadAudio(from url: URL) {
-        print("🎵 Loading audio from URL: \(url)")
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayer?.delegate = self
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0
             isLoadingWaveform = true
-            print("🎵 Audio loaded successfully, duration: \(duration)")
             
             Task {
-                print("🌊 Starting waveform generation...")
                 let samples = await WaveformGenerator.generateWaveformSamples(from: url)
-                print("🌊 Generated \(samples.count) waveform samples")
                 await MainActor.run {
                     self.waveformSamples = samples
                     self.isLoadingWaveform = false
-                    print("🌊 Waveform samples updated in UI")
                 }
             }
         } catch {
@@ -128,12 +116,10 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     // MARK: - AVAudioPlayerDelegate
     
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        print("🎵 Audio finished playing successfully: \(flag)")
         isPlaying = false
         stopTimer()
         seek(to: 0)
     }
-    
 }
 
 struct WaveformView: View {
@@ -173,9 +159,6 @@ struct WaveformView: View {
             }
         }
         .frame(height: 40)
-        .onAppear {
-            print("📊 WaveformView appeared with \(samples.count) samples, isLoading: \(isLoading)")
-        }
     }
 }
 
