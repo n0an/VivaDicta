@@ -33,6 +33,17 @@ class Transcription {
         self.transcriptionModelName = transcriptionModelName
         self.enhancementModelName = enhancementModelName
     }
+    
+    var audioDurationFormatted: String {
+        if audioDuration < 1 {
+            return (audioDuration * 1000).formatted(.number.precision(.fractionLength(0))) + "ms"
+        }
+        if audioDuration < 60 {
+            return audioDuration.formatted(.number.precision(.fractionLength(1))) + "s"
+        }
+        return Duration.seconds(round(audioDuration))
+            .formatted(.units(allowed: [.minutes, .seconds], width: .narrow))
+    }
 }
 
 extension Transcription {
