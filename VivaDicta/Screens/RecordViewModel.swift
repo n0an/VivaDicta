@@ -159,13 +159,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 guard let transcribedText = try await appState?.transcribe(audioURL: recordURL) else { return }
                 print(transcribedText)
                 
-                let transcribedTextArr = transcribedText.components(separatedBy: CharacterSet.alphanumerics.inverted)
-                let maxTitleWords = min(transcribedTextArr.count, 3)
-                
-                let title = Array(transcribedTextArr[0..<maxTitleWords]).joined(separator: " ")
-                
                 let transcription = Transcription(
-                    title: title,
                     text: transcribedText,
                     timestamp: .now,
                     enhancedText: "mock",

@@ -10,7 +10,6 @@ import SwiftData
 
 @Model
 class Transcription {
-    var title: String
     var text: String
     var timestamp: Date
     var enhancedText: String
@@ -18,8 +17,12 @@ class Transcription {
     var transcriptionModelName: String
     var enhancementModelName: String
     
-    init(title: String, text: String, timestamp: Date, enhancedText: String, audioFileURL: String, transcriptionModelName: String, enhancementModelName: String) {
-        self.title = title
+    init(text: String,
+         timestamp: Date,
+         enhancedText: String,
+         audioFileURL: String,
+         transcriptionModelName: String,
+         enhancementModelName: String) {
         self.text = text
         self.timestamp = timestamp
         self.enhancedText = enhancedText
@@ -33,7 +36,6 @@ extension Transcription {
     nonisolated(unsafe) static let mockData: [Transcription] =
     [
         Transcription(
-            title: "mock1",
             text: "hello world",
             timestamp: .now,
             enhancedText: "enhanced 1",
@@ -41,7 +43,6 @@ extension Transcription {
             transcriptionModelName: "openai",
             enhancementModelName: ""),
         Transcription(
-            title: "mock2",
             text: "how are you",
             timestamp: .now,
             enhancedText: "enhanced 2",
@@ -49,7 +50,6 @@ extension Transcription {
             transcriptionModelName: "whisper.cpp",
             enhancementModelName: ""),
         Transcription(
-            title: "mock3",
             text: "knock knock Neo",
             timestamp: .now,
             enhancedText: "enhanced 3",
