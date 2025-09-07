@@ -157,6 +157,15 @@ struct WaveformView: View {
                     onSeek(Double(progress) * duration)
                 }
             }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if !isLoading {
+                            let progress = max(0, min(1, value.location.x / geometry.size.width))
+                            onSeek(Double(progress) * duration)
+                        }
+                    }
+            )
         }
         .frame(height: 40)
     }
@@ -206,7 +215,7 @@ struct AudioPlayerView: View {
                 duration: playerManager.duration,
                 isLoading: playerManager.isLoadingWaveform,
                 onSeek: { playerManager.seek(to: $0) }
-            ).debugBorder()
+            )
         }
         .onAppear {
             if let url = audioURL {
