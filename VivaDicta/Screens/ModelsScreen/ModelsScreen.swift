@@ -59,7 +59,7 @@ struct ModelsScreen: View {
                         cloudModelConfigured(model: model, apiKey: apiKey)
                     })
             })
-            .navigationBarTitle("Transcription Models")
+            .navigationTitle("Transcription Models")
             .toolbar {
 //                LanguageSelectionMenu(appState: appState)
 //                ToolbarItem {
