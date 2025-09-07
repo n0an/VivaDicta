@@ -59,8 +59,8 @@ class WaveformGenerator {
     }
 }
 
-@Observable
-class AudioPlayerManager {
+@Observable @MainActor
+class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?
     var isPlaying = false
@@ -73,6 +73,7 @@ class AudioPlayerManager {
         print("🎵 Loading audio from URL: \(url)")
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.delegate = self
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0
             isLoadingWaveform = true
@@ -112,13 +113,9 @@ class AudioPlayerManager {
     
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 self.currentTime = self.audioPlayer?.currentTime ?? 0
-                if self.currentTime >= self.duration {
-                    self.pause()
-                    self.seek(to: 0)
-                }
             }
         }
     }
@@ -126,6 +123,15 @@ class AudioPlayerManager {
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+    }
+    
+    // MARK: - AVAudioPlayerDelegate
+    
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        print("🎵 Audio finished playing successfully: \(flag)")
+        isPlaying = false
+        stopTimer()
+        seek(to: 0)
     }
     
 }
