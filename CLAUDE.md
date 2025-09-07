@@ -20,7 +20,7 @@ Use the following commands to build, run and test the app:
 ### Core Components
 
 - **AppState**: Observable app-wide state management using Swift's `@Observable` macro. Manages selected transcription service, language, and Whisper model configuration.
-- **Transcription Model**: SwiftData model for persistent storage of transcriptions with metadata including title, text, timestamps, and model information.
+- **Transcription Model**: SwiftData model for persistent storage of transcriptions with metadata including text, timestamps, enhanced text, audio file URL, duration, and transcription/enhancement model names.
 - **TranscriptionService Protocol**: Abstraction for different transcription backends (local Whisper.cpp, OpenAI, etc.)
 
 ### App Structure
@@ -32,8 +32,13 @@ Use the following commands to build, run and test the app:
 
 ### Transcription Services
 
-- **LocalWhisperTranscriptionService**: Uses the bundled whisper.xcframework for on-device transcription
-- **OpenAITranscriptionService**: Cloud-based transcription via OpenAI API
+- **LocalTranscriptionService/LocalWhisperTranscriptionService**: Uses the bundled whisper.xcframework for on-device transcription
+- **CloudTranscriptionService**: Unified service managing multiple cloud providers:
+  - **OpenAITranscriptionService**: OpenAI Whisper API
+  - **ElevenLabsTranscriptionService**: ElevenLabs speech-to-text
+  - **GroqTranscriptionService**: Groq API transcription
+  - **DeepgramTranscriptionService**: Deepgram Nova API
+  - **GeminiTranscriptionService**: Google Gemini API
 - **WhisperContext**: Actor-based wrapper around whisper.cpp C library ensuring thread-safe access
 
 ### Key Technologies
@@ -43,11 +48,18 @@ Use the following commands to build, run and test the app:
 - **AVFoundation** for audio recording/playback
 - **whisper.xcframework** - Local Whisper.cpp integration
 - **SiriWaveView** package for audio visualization
+- **TipKit** for user onboarding and feature discovery
 - **iOS 18+ deployment target**
 
 ### Language Support
 
 The app currently supports Auto Detect, English, and Russian languages. The codebase includes infrastructure for 20+ additional languages with localized prompts prepared for future expansion.
+
+### Enhanced Transcription Features
+
+- **Text Enhancement**: The app supports enhanced transcription processing with separate enhancement models
+- **Audio Duration Tracking**: Transcriptions include audio duration metadata for better file management  
+- **Multiple Transcription Providers**: Users can choose from various cloud providers based on their needs and preferences
 
 ## Documentation
 

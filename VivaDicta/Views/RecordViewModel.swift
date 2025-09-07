@@ -166,7 +166,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     text: transcribedText,
                     timestamp: .now,
                     enhancedText: "mock",
-                    audioFileURL: recordURL.absoluteString,
+                    audioFileName: recordURL.lastPathComponent,
                     audioDuration: audioDuration,
                     transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
                     enhancementModelName: "none")
