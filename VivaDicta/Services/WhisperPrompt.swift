@@ -55,28 +55,28 @@ class WhisperPrompt {
     // Language-specific base prompts
     private let defaultLanguagePrompts: [String: String] = [
         // English
-        "en": "Hello, how are you doing? Nice to meet you.",
+        "en": "I wanted to follow up on our meeting from yesterday and discuss the project timeline. The key points we covered include the budget allocation and resource planning. Please let me know if you need any additional information or have questions about the next steps.",
         
         // Asian Languages
-        "hi": "नमस्ते, कैसे हैं आप? आपसे मिलकर अच्छा लगा।",
-        "bn": "নমস্কার, কেমন আছেন? আপনার সাথে দেখা হয়ে ভালো লাগলো।",
-        "ja": "こんにちは、お元気ですか？お会いできて嬉しいです。",
-        "ko": "안녕하세요, 잘 지내시나요? 만나서 반갑습니다.",
-        "zh": "你好，最近好吗？见到你很高兴。",
-        "th": "สวัสดีครับ/ค่ะ, สบายดีไหม? ยินดีที่ได้พบคุณ",
-        "vi": "Xin chào, bạn khỏe không? Rất vui được gặp bạn.",
-        "yue": "你好，最近點呀？見到你好開心。",
+        "hi": "मैं कल की बैठक के बारे में बात करना चाहता था। हमने प्रोजेक्ट की समयसीमा और बजट के बारे में चर्चा की थी। कृपया बताएं कि क्या आपको कोई अतिरिक्त जानकारी चाहिए।",
+        "bn": "আমি গতকালের মিটিং সম্পর্কে কথা বলতে চাইছিলাম। আমরা প্রকল্পের সময়সূচী এবং বাজেট নিয়ে আলোচনা করেছিলাম। দয়া করে জানান যদি আপনার কোনো অতিরিক্ত তথ্যের প্রয়োজন হয়।",
+        "ja": "昨日の会議について話したいと思います。プロジェクトのスケジュールと予算について話し合いました。追加情報が必要でしたら教えてください。",
+        "ko": "어제 회의에 대해 이야기하고 싶었습니다. 프로젝트 일정과 예산에 대해 논의했습니다. 추가 정보가 필요하시면 알려주세요.",
+        "zh": "我想谈谈昨天的会议内容。我们讨论了项目时间表和预算分配。如果您需要任何额外信息，请告诉我。",
+        "th": "ผมอยากพูดเรื่องการประชุมเมื่อวานนี้ เราได้หารือเกี่ยวกับกำหนดเวลาโครงการและง예算 กรุณาแจ้งหากต้องการข้อมูลเพิ่มเติม",
+        "vi": "Tôi muốn thảo luận về cuộc họp hôm qua. Chúng ta đã bàn về tiến độ dự án và ngân sách. Xin cho biết nếu cần thêm thông tin.",
+        "yue": "我想講吓昨日嘅會議。我哋討論咗項目時間表同預算分配。如果你需要額外資訊，請話俾我知。",
         
         // European Languages
-        "es": "¡Hola, ¿cómo estás? Encantado de conocerte.",
-        "fr": "Bonjour, comment allez-vous? Ravi de vous rencontrer.",
-        "de": "Hallo, wie geht es dir? Schön dich kennenzulernen.",
-        "it": "Ciao, come stai? Piacere di conoscerti.",
-        "pt": "Olá, como você está? Prazer em conhecê-lo.",
-        "ru": "Здравствуйте, как ваши дела? Приятно познакомиться.",
-        "pl": "Cześć, jak się masz? Miło cię poznać.",
-        "nl": "Hallo, hoe gaat het? Aangenaam kennis te maken.",
-        "tr": "Merhaba, nasılsın? Tanıştığımıza memnun oldum.",
+        "es": "Quería hacer un seguimiento de nuestra reunión de ayer sobre el proyecto. Discutimos los plazos y la asignación del presupuesto. Por favor avísame si necesitas información adicional.",
+        "fr": "Je voulais faire le point sur notre réunion d'hier concernant le projet. Nous avons discuté des délais et de l'allocation budgétaire. Merci de me faire savoir si vous avez besoin d'informations supplémentaires.",
+        "de": "Ich wollte unser gestriges Meeting zum Projekt nachbereiten. Wir haben über Zeitpläne und Budgetzuteilung gesprochen. Bitte lassen Sie mich wissen, wenn Sie zusätzliche Informationen benötigen.",
+        "it": "Volevo fare il punto sulla nostra riunione di ieri riguardo al progetto. Abbiamo discusso delle tempistiche e dell'allocazione del budget. Per favore fatemi sapere se avete bisogno di informazioni aggiuntive.",
+        "pt": "Queria fazer um acompanhamento da nossa reunião de ontem sobre o projeto. Discutimos os prazos e a alocação do orçamento. Por favor me avisem se precisarem de informações adicionais.",
+        "ru": "Я хотел обсудить вчерашнее совещание по проекту. Мы говорили о временных рамках и распределении бюджета. Пожалуйста, сообщите, если вам нужна дополнительная информация.",
+        "pl": "Chciałem omówić wczorajsze spotkanie dotyczące projektu. Rozmawialiśmy o harmonogramie i alokacji budżetu. Proszę daj mi znać, jeśli potrzebujesz dodatkowych informacji.",
+        "nl": "Ik wilde onze gisteren vergadering over het project bespreken. We hebben gepraat over tijdschema's en budgetallocatie. Laat me weten als je aanvullende informatie nodig hebt.",
+        "tr": "Dünkü proje toplantımızı takip etmek istiyordum. Zaman çizelgesi ve bütçe dağılımı hakkında konuştuk. Ek bilgiye ihtiyacın varsa lütfen bana haber ver.",
         
         // Middle Eastern Languages
         "ar": "مرحباً، كيف حالك؟ سعيد بلقائك.",
@@ -84,11 +84,11 @@ class WhisperPrompt {
         "he": ",שלום, מה שלומך? נעים להכיר",
         
         // South Asian Languages
-        "ta": "வணக்கம், எப்படி இருக்கிறீர்கள்? உங்களை சந்தித்ததில் மகிழ்ச்சி.",
-        "te": "నమస్కారం, ఎలా ఉన్నారు? కలవడం చాలా సంతోషం.",
-        "ml": "നമസ്കാരം, സുഖമാണോ? കണ്ടതിൽ സന്തോഷം.",
-        "kn": "ನಮಸ್ಕಾರ, ಹೇಗಿದ್ದೀರಾ? ನಿಮ್ಮನ್ನು ಭೇಟಿಯಾಗಿ ಸಂತೋಷವಾಗಿದೆ.",
-        "ur": "السلام علیکم، کیسے ہیں آپ؟ آپ سے مل کر خوشی ہوئی۔",
+        "ta": "நேற்றைய படையை பற்றி நமைட விளக்கத்தில் பேச விரும்புகிறேன். நாங்கள் காலஅளவை மற்றும் நிதி வினியேகத்தை பற்றி பேசினோம். கூடுதலாக எதிர்க்கீரைச் சொல்லுங்கள்.",
+        "te": "నిన్న ప్రాజెక్ట్ మీటింగ్ గురించి విషయం మాట్లాడాలి అనిపించింది. సమయ పరిధి మరియు బడ్జెట్ విభజన గురించి మాట్లాడడం. కూడా వివరాలు కావాలన్నా తెలుపుకోండి.",
+        "ml": "ഇന്നലെ പ്രൊജക്റ്റ് മീറ്റിംഗിനെക്കുറിച്ച് സംസാരിക്കാനുണ്ടായിരുന്നു. സമയത്തെക്കുറിച്ചും ബജറ്റ് വിനിയോഗത്തിനെക്കുറിച്ചും കുറിവില്ലര് എങ്ങനെ പചരു. അതിരിക്ത വിവരങ്ങളുണ്ടാകില് അറിയിക്കണം.",
+        "kn": "ನಿನ್ನೆಯ ಪ್ರಾಜೆಕ್ಟ್ ಮೀಟಿಂಗ್‌ನ ಗುರಿಂಚಿ ಮಾತನಾಡಲು ಅನಿಸುತ್ತಿದೆ. ಮೈ ಸಮಯಸೂಚಿ ಮತ್ತು ಬಜೆಟ್ ನಿಕ್ಷೇಪನ ಬೇಸೆ ವಿಚಾರಿಸಿದ್ದೇವೆ. ನಿಮಗೆ ಇನ್ನೂ ಏತವಲ್ಲಹ್ ಮಾಹಿತಿ ಬೇಕಲ್ಲವು ತಿಲಿಸಿ.",
+        "ur": "میں کل کی پروجیکٹ میٹنگ کے بارے میں بات کرنا چاہتا ایک. ہم نے وقت کی فہرست اور بجٹ سی گفتگو کی ایک. اگر آپ کو لہور کو ازے ترنک میٹ کر کمہیں دستیاب ہے.",
         
         // Default prompt for unsupported languages
         "default": ""
