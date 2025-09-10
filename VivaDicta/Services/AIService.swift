@@ -204,39 +204,39 @@ class AIService {
 //        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)
     }
     
-    func saveAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
-        verifyAPIKey(key) { [weak self] isValid in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                if isValid {
-                    self.apiKey = key
-                    self.isAPIKeyValid = true
-                    self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
-//                    NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
-                } else {
-                    self.isAPIKeyValid = false
-                }
-                completion(isValid)
+    func saveAPIKey(_ key: String) async -> Bool {
+        let isValid = await verifyAPIKey(key)
+        
+        await MainActor.run {
+            if isValid {
+                self.apiKey = key
+                self.isAPIKeyValid = true
+                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
+//                NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
+            } else {
+                self.isAPIKeyValid = false
             }
         }
+        
+        return isValid
     }
     
-    func verifyAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+    func verifyAPIKey(_ key: String) async -> Bool {
         switch selectedProvider {
         case .anthropic:
-            verifyAnthropicAPIKey(key, completion: completion)
+            return await verifyAnthropicAPIKey(key)
         case .grok:
-            verifyGrokAPIKey(key, completion: completion)
+            return await verifyGrokAPIKey(key)
         case .elevenLabs:
-            verifyElevenLabsAPIKey(key, completion: completion)
+            return await verifyElevenLabsAPIKey(key)
         case .deepgram:
-            verifyDeepgramAPIKey(key, completion: completion)
+            return await verifyDeepgramAPIKey(key)
         default:
-            verifyOpenAICompatibleAPIKey(key, completion: completion)
+            return await verifyOpenAICompatibleAPIKey(key)
         }
     }
     
-    private func verifyOpenAICompatibleAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+    private func verifyOpenAICompatibleAPIKey(_ key: String) async -> Bool {
         let url = URL(string: selectedProvider.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -254,35 +254,34 @@ class AIService {
         
         logger.notice("🔑 Verifying API key for \(self.selectedProvider.rawValue, privacy: .public) provider at \(url.absoluteString, privacy: .public)")
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                completion(false)
-                return
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public): Invalid response")
+                return false
             }
             
-            if let httpResponse = response as? HTTPURLResponse {
-                let isValid = httpResponse.statusCode == 200
-                
-                if !isValid {
-                    // Log the exact API error response
-                    if let data = data, let exactAPIError = String(data: data, encoding: .utf8) {
-                        self.logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
-                    } else {
-                        self.logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode)")
-                    }
+            let isValid = httpResponse.statusCode == 200
+            
+            if !isValid {
+                // Log the exact API error response
+                if let exactAPIError = String(data: data, encoding: .utf8) {
+                    logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
+                } else {
+                    logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode)")
                 }
-                
-                completion(isValid)
-            } else {
-                self.logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public): Invalid response")
-                completion(false)
             }
+            
+            return isValid
+            
+        } catch {
+            logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return false
         }
-        .resume()
     }
     
-    private func verifyAnthropicAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+    private func verifyAnthropicAPIKey(_ key: String) async -> Bool {
         let url = URL(string: selectedProvider.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -301,22 +300,21 @@ class AIService {
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(false)
-                return
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
             }
             
-            if let httpResponse = response as? HTTPURLResponse {
-                completion(httpResponse.statusCode == 200)
-            } else {
-                completion(false)
-            }
+            return httpResponse.statusCode == 200
+            
+        } catch {
+            return false
         }
-        .resume()
     }
     
-    private func verifyElevenLabsAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+    private func verifyElevenLabsAPIKey(_ key: String) async -> Bool {
         let url = URL(string: "https://api.elevenlabs.io/v1/user")!
 
         var request = URLRequest(url: url)
@@ -324,41 +322,43 @@ class AIService {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue(key, forHTTPHeaderField: "xi-api-key")
 
-        URLSession.shared.dataTask(with: request) { data, response, _ in
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
             let isValid = (response as? HTTPURLResponse)?.statusCode == 200
 
-            if let data = data, let body = String(data: data, encoding: .utf8) {
-                self.logger.info("ElevenLabs verification response: \(body)")
+            if let body = String(data: data, encoding: .utf8) {
+                logger.info("ElevenLabs verification response: \(body)")
             }
 
-            completion(isValid)
+            return isValid
+            
+        } catch {
+            return false
         }
-        .resume()
     }
     
-    private func verifyDeepgramAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+    private func verifyDeepgramAPIKey(_ key: String) async -> Bool {
         let url = URL(string: "https://api.deepgram.com/v1/auth/token")!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.addValue("Token \(key)", forHTTPHeaderField: "Authorization")
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logger.error("Deepgram API key verification failed: \(error.localizedDescription)")
-                completion(false)
-                return
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
             }
             
-            if let httpResponse = response as? HTTPURLResponse {
-                completion(httpResponse.statusCode == 200)
-            } else {
-                completion(false)
-            }
+            return httpResponse.statusCode == 200
+            
+        } catch {
+            logger.error("Deepgram API key verification failed: \(error.localizedDescription)")
+            return false
         }
-        .resume()
     }
     
-    private func verifyGrokAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+    private func verifyGrokAPIKey(_ key: String) async -> Bool {
         let url = URL(string: selectedProvider.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -377,31 +377,30 @@ class AIService {
         
         logger.notice("🔑 Verifying Grok API key at \(url.absoluteString, privacy: .public)")
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logger.notice("🔑 Grok API key verification failed: \(error.localizedDescription, privacy: .public)")
-                completion(false)
-                return
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.notice("🔑 Grok API key verification failed: Invalid response")
+                return false
             }
             
-            if let httpResponse = response as? HTTPURLResponse {
-                let isValid = httpResponse.statusCode == 200
-                
-                if !isValid {
-                    if let data = data, let exactAPIError = String(data: data, encoding: .utf8) {
-                        self.logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
-                    } else {
-                        self.logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode)")
-                    }
+            let isValid = httpResponse.statusCode == 200
+            
+            if !isValid {
+                if let exactAPIError = String(data: data, encoding: .utf8) {
+                    logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
+                } else {
+                    logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode)")
                 }
-                
-                completion(isValid)
-            } else {
-                self.logger.notice("🔑 Grok API key verification failed: Invalid response")
-                completion(false)
             }
+            
+            return isValid
+            
+        } catch {
+            logger.notice("🔑 Grok API key verification failed: \(error.localizedDescription, privacy: .public)")
+            return false
         }
-        .resume()
     }
     
     func clearAPIKey() {
