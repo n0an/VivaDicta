@@ -326,38 +326,6 @@ class AIService {
         .resume()
     }
     
-    private func verifyMistralAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
-        let url = URL(string: "https://api.mistral.ai/v1/models")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                self.logger.error("Mistral API key verification failed: \(error.localizedDescription)")
-                completion(false)
-                return
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200 {
-                    completion(true)
-                } else {
-                    if let data = data, let body = String(data: data, encoding: .utf8) {
-                        self.logger.error("Mistral API key verification failed with status code \(httpResponse.statusCode): \(body)")
-                    } else {
-                        self.logger.error("Mistral API key verification failed with status code \(httpResponse.statusCode) and no response body.")
-                    }
-                    completion(false)
-                }
-            } else {
-                self.logger.error("Mistral API key verification failed: Invalid response from server.")
-                completion(false)
-            }
-        }
-        .resume()
-    }
-
     private func verifyDeepgramAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
         let url = URL(string: "https://api.deepgram.com/v1/auth/token")!
         var request = URLRequest(url: url)
