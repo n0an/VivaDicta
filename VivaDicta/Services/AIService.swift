@@ -9,13 +9,14 @@ import SwiftUI
 import os
 
 enum AIProvider: String, CaseIterable {
-    case groq = "GROQ"
-    case gemini = "Gemini"
-    case anthropic = "Anthropic"
-    case openAI = "OpenAI"
-    case openRouter = "OpenRouter"
-    case elevenLabs = "ElevenLabs"
-    case deepgram = "Deepgram"
+    case groq
+    case gemini
+    case anthropic
+    case openAI
+    case openRouter
+    case grok
+    case elevenLabs
+    case deepgram
     
     var baseURL: String {
         switch self {
@@ -29,6 +30,8 @@ enum AIProvider: String, CaseIterable {
             return "https://api.openai.com/v1/chat/completions"
         case .openRouter:
             return "https://openrouter.ai/api/v1/chat/completions"
+        case .grok:
+            return "https://api.x.ai/v1/chat/completions"
         case .elevenLabs:
             return "https://api.elevenlabs.io/v1/speech-to-text"
         case .deepgram:
@@ -46,6 +49,8 @@ enum AIProvider: String, CaseIterable {
             return "claude-sonnet-4-0"
         case .openAI:
             return "gpt-5-mini"
+        case .grok:
+            return "grok-4"
         case .elevenLabs:
             return "scribe_v1"
         case .deepgram:
@@ -88,6 +93,12 @@ enum AIProvider: String, CaseIterable {
                 "gpt-5-nano",
                 "gpt-4.1",
                 "gpt-4.1-mini"
+            ]
+        case .grok:
+            return [
+                "grok-4",
+                "grok-4-heavy",
+                "grok-code-fast-1"
             ]
         case .elevenLabs:
             return ["scribe_v1", "scribe_v1_experimental"]
