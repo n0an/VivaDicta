@@ -120,8 +120,8 @@ class AIService {
     var selectedProvider: AIProvider {
         didSet {
             userDefaults.set(selectedProvider.rawValue, forKey: Constants.kSelectedAIProvider)
-            if let savedKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
-                self.apiKey = savedKey
+            if let savedAPIKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
+                self.apiKey = savedAPIKey
                 self.isAPIKeyValid = true
             } else {
                 self.apiKey = ""
