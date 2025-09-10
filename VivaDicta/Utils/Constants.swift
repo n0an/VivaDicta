@@ -20,4 +20,6 @@ actor Constants {
     
     // AI enhance module
     static let kSelectedAIProvider = "selectedAIProvider"
+    static let kSelectedAIModel = "selectedAIModel"
+    static let kOpenRouterModels = "openRouterModels"
 }

@@ -120,7 +120,6 @@ class AIService {
     var selectedProvider: AIProvider {
         didSet {
             userDefaults.set(selectedProvider.rawValue, forKey: Constants.kSelectedAIProvider)
-            
             if let savedKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
                 self.apiKey = savedKey
                 self.isAPIKeyValid = true
@@ -128,7 +127,6 @@ class AIService {
                 self.apiKey = ""
                 self.isAPIKeyValid = false
             }
-            
         }
     }
     
@@ -139,7 +137,7 @@ class AIService {
     
     var connectedProviders: [AIProvider] {
         AIProvider.allCases.filter { provider in
-            return userDefaults.string(forKey: "\(provider.rawValue)APIKey") != nil
+            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
         }
     }
     
@@ -160,14 +158,14 @@ class AIService {
     }
     
     init() {
-        if let savedProvider = userDefaults.string(forKey: "selectedAIProvider"),
-           let provider = AIProvider(rawValue: savedProvider) {
+        if let savedProviderKey = userDefaults.string(forKey: Constants.kSelectedAIProvider),
+           let provider = AIProvider(rawValue: savedProviderKey) {
             self.selectedProvider = provider
         } else {
             self.selectedProvider = .gemini
         }
         
-        if let savedKey = userDefaults.string(forKey: "\(selectedProvider.rawValue)APIKey") {
+        if let savedKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
             self.apiKey = savedKey
             self.isAPIKeyValid = true
         }
@@ -178,29 +176,28 @@ class AIService {
     
     private func loadSavedModelSelections() {
         for provider in AIProvider.allCases {
-            let key = "\(provider.rawValue)SelectedModel"
-            if let savedModel = userDefaults.string(forKey: key), !savedModel.isEmpty {
+            if let savedModel = userDefaults.string(forKey: provider.rawValue + Constants.kSelectedAIModel),
+               !savedModel.isEmpty {
                 selectedModels[provider] = savedModel
             }
         }
     }
     
     private func loadSavedOpenRouterModels() {
-        if let savedModels = userDefaults.array(forKey: "openRouterModels") as? [String] {
+        if let savedModels = userDefaults.array(forKey: Constants.kOpenRouterModels) as? [String] {
             openRouterModels = savedModels
         }
     }
     
     private func saveOpenRouterModels() {
-        userDefaults.set(openRouterModels, forKey: "openRouterModels")
+        userDefaults.set(openRouterModels, forKey: Constants.kOpenRouterModels)
     }
     
     func selectModel(_ model: String) {
         guard !model.isEmpty else { return }
         
         selectedModels[selectedProvider] = model
-        let key = "\(selectedProvider.rawValue)SelectedModel"
-        userDefaults.set(model, forKey: key)
+        userDefaults.set(model, forKey: selectedProvider.rawValue + Constants.kSelectedAIModel)
         
         
 //        objectWillChange.send()
@@ -214,7 +211,7 @@ class AIService {
                 if isValid {
                     self.apiKey = key
                     self.isAPIKeyValid = true
-                    self.userDefaults.set(key, forKey: "\(self.selectedProvider.rawValue)APIKey")
+                    self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
 //                    NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
                 } else {
                     self.isAPIKeyValid = false
@@ -363,7 +360,7 @@ class AIService {
         
         apiKey = ""
         isAPIKeyValid = false
-        userDefaults.removeObject(forKey: "\(selectedProvider.rawValue)APIKey")
+        userDefaults.removeObject(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue)
 //        NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
     }
     
@@ -400,7 +397,7 @@ class AIService {
             let models = dataArray.compactMap { $0["id"] as? String }
             await MainActor.run {
                 self.openRouterModels = models.sorted()
-                self.saveOpenRouterModels() // Save to UserDefaults
+                self.saveOpenRouterModels()
                 if self.selectedProvider == .openRouter && self.currentModel == self.selectedProvider.defaultModel && !models.isEmpty {
                     self.selectModel(models.sorted().first!)
                 }
