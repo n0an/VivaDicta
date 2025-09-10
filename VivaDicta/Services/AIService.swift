@@ -225,6 +225,8 @@ class AIService {
         switch selectedProvider {
         case .anthropic:
             verifyAnthropicAPIKey(key, completion: completion)
+        case .grok:
+            verifyGrokAPIKey(key, completion: completion)
         case .elevenLabs:
             verifyElevenLabsAPIKey(key, completion: completion)
         case .deepgram:
@@ -350,6 +352,52 @@ class AIService {
             if let httpResponse = response as? HTTPURLResponse {
                 completion(httpResponse.statusCode == 200)
             } else {
+                completion(false)
+            }
+        }
+        .resume()
+    }
+    
+    private func verifyGrokAPIKey(_ key: String, completion: @escaping (Bool) -> Void) {
+        let url = URL(string: selectedProvider.baseURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        
+        let testBody: [String: Any] = [
+            "model": currentModel,
+            "messages": [
+                ["role": "user", "content": "test"]
+            ],
+            "max_tokens": 1
+        ]
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
+        
+        logger.notice("🔑 Verifying Grok API key at \(url.absoluteString, privacy: .public)")
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                self.logger.notice("🔑 Grok API key verification failed: \(error.localizedDescription, privacy: .public)")
+                completion(false)
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                let isValid = httpResponse.statusCode == 200
+                
+                if !isValid {
+                    if let data = data, let exactAPIError = String(data: data, encoding: .utf8) {
+                        self.logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
+                    } else {
+                        self.logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode)")
+                    }
+                }
+                
+                completion(isValid)
+            } else {
+                self.logger.notice("🔑 Grok API key verification failed: Invalid response")
                 completion(false)
             }
         }
