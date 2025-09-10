@@ -100,12 +100,7 @@ struct CloudModelConfigurationView: View {
                 verificationError = nil
             }
             
-            // Set the provider for verification
-            await MainActor.run {
-                aiService.selectedProvider = aiProvider
-            }
-            
-            let isValid = await aiService.saveAPIKey(apiKey)
+            let isValid = await aiService.saveAPIKey(apiKey, for: aiProvider)
             
             await MainActor.run {
                 isVerifying = false

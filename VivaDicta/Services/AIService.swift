@@ -205,7 +205,7 @@ class AIService {
     }
     
     func saveAPIKey(_ key: String) async -> Bool {
-        let isValid = await verifyAPIKey(key)
+        let isValid = await verifyAPIKey(key, provider: self.selectedProvider)
         
         await MainActor.run {
             if isValid {
@@ -221,8 +221,25 @@ class AIService {
         return isValid
     }
     
-    func verifyAPIKey(_ key: String) async -> Bool {
-        switch selectedProvider {
+    func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
+        let isValid = await verifyAPIKey(key, provider: provider)
+        
+        await MainActor.run {
+            if isValid {
+                self.apiKey = key
+                self.isAPIKeyValid = true
+                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
+//                NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
+            } else {
+                self.isAPIKeyValid = false
+            }
+        }
+        
+        return isValid
+    }
+    
+    func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
+        switch provider {
         case .anthropic:
             return await verifyAnthropicAPIKey(key)
         case .grok:
@@ -232,19 +249,19 @@ class AIService {
         case .deepgram:
             return await verifyDeepgramAPIKey(key)
         default:
-            return await verifyOpenAICompatibleAPIKey(key)
+            return await verifyOpenAICompatibleAPIKey(key, provider: provider)
         }
     }
     
-    private func verifyOpenAICompatibleAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: selectedProvider.baseURL)!
+    private func verifyOpenAICompatibleAPIKey(_ key: String, provider: AIProvider) async -> Bool {
+        let url = URL(string: provider.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         
         let testBody: [String: Any] = [
-            "model": currentModel,
+            "model": provider.defaultModel,
             "messages": [
                 ["role": "user", "content": "test"]
             ]
@@ -252,13 +269,13 @@ class AIService {
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
         
-        logger.notice("🔑 Verifying API key for \(self.selectedProvider.rawValue, privacy: .public) provider at \(url.absoluteString, privacy: .public)")
+        logger.notice("🔑 Verifying API key for \(provider.rawValue, privacy: .public) provider at \(url.absoluteString, privacy: .public)")
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public): Invalid response")
+                logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public): Invalid response")
                 return false
             }
             
@@ -267,22 +284,22 @@ class AIService {
             if !isValid {
                 // Log the exact API error response
                 if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
+                    logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
                 } else {
-                    logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode)")
+                    logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode)")
                 }
             }
             
             return isValid
             
         } catch {
-            logger.notice("🔑 API key verification failed for \(self.selectedProvider.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
             return false
         }
     }
     
     private func verifyAnthropicAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: selectedProvider.baseURL)!
+        let url = URL(string: AIProvider.anthropic.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -290,7 +307,7 @@ class AIService {
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         
         let testBody: [String: Any] = [
-            "model": currentModel,
+            "model": AIProvider.anthropic.defaultModel,
             "max_tokens": 1024,
             "system": "You are a test system.",
             "messages": [
@@ -359,14 +376,14 @@ class AIService {
     }
     
     private func verifyGrokAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: selectedProvider.baseURL)!
+        let url = URL(string: AIProvider.grok.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         
         let testBody: [String: Any] = [
-            "model": currentModel,
+            "model": AIProvider.grok.defaultModel,
             "messages": [
                 ["role": "user", "content": "test"]
             ],
