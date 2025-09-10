@@ -17,7 +17,8 @@
       "Bash(npm run:*)",
       "Bash(npx tsx:*)",
       "Bash(grep:*)",
-      "Read(//Users/antonnovoselov/Desktop/**)"
+      "Read(//Users/antonnovoselov/Desktop/**)",
+      "Bash(xcbeautify:*)"
     ],
     "deny": [],
     "ask": [],
