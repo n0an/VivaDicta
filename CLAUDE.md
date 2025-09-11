@@ -77,3 +77,44 @@ Refer to these docs when working with Apple frameworks or implementing new featu
 ## AI-Powered PR Review
 
 The repository includes automated GitHub Actions workflow for AI-powered code review with iOS test execution. TypeScript scripts in `/lib/agents/` orchestrate code review generation and test running using either OpenAI or Anthropic APIs.
+
+
+
+## VibeTunnel Terminal Title Management
+
+When working in VibeTunnel sessions, actively use the `vt title` command to communicate your current actions and progress:
+
+### Usage
+vt title "Current action - project context"
+
+### Guidelines
+- **Update frequently**: Set the title whenever you start a new task, change focus, or make significant progress
+- **Be descriptive**: Use the title to explain what you're currently doing (e.g., "Analyzing test failures", "Refactoring auth module", "Writing documentation")
+- **Include context**: Add PR numbers, file names, or feature names when relevant
+- **Think of it as a status indicator**: The title helps users understand what you're working on at a glance
+- If `vt` command fails (only works inside VibeTunnel), simply ignore the error and continue
+
+### Examples
+# When starting a task
+vt title "Setting up Git app integration"
+
+# When debugging
+vt title "Debugging CI failures - playwright tests"
+
+# When working on a PR
+vt title "Implementing unique session names - github.com/amantus-ai/vibetunnel/pull/456"
+
+# When analyzing code
+vt title "Analyzing session-manager.ts for race conditions"
+
+# When writing tests
+vt title "Adding tests for GitAppLauncher"
+
+### When to Update
+- At the start of each new task or subtask
+- When switching between different files or modules
+- When changing from coding to testing/debugging
+- When waiting for long-running operations (builds, tests)
+- Whenever the user might wonder "what is Claude doing right now?"
+
+This helps users track your progress across multiple VibeTunnel sessions and understand your current focus.
