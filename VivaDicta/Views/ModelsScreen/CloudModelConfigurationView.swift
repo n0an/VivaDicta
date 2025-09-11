@@ -50,7 +50,7 @@ struct CloudModelConfigurationView: View {
                             .scaleEffect(0.8)
                     }
                     Text(isVerifying ? "Verifying..." : "Save")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.headline.weight(.semibold))
                 }
             }
             .padding(.vertical, 8)

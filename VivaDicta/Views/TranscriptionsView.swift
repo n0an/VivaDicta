@@ -23,12 +23,12 @@ struct TranscriptionsView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                                    .font(.system(size: 14, weight: .medium, design: .default))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundColor(.secondary)
                                 Spacer()
                                 
                                 Text(transcription.audioDurationFormatted)
-                                    .font(.system(size: 14, weight: .medium, design: .default))
+                                    .font(.subheadline.weight(.medium))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(.blue.opacity(0.1))
@@ -37,8 +37,7 @@ struct TranscriptionsView: View {
                             }
                             
                             Text(transcription.text)
-                                .font(.system(size: 15, weight: .regular, design: .default))
-                                .lineLimit(2)
+                                .font(.body)                                .lineLimit(2)
                                 .lineSpacing(2)
                         }
                     }

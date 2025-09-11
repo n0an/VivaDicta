@@ -18,12 +18,12 @@ struct TranscriptionDetailView: View {
             
             HStack {
                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                    .font(.system(size: 14, weight: .medium, design: .default))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(.secondary)
                 Spacer()
                 
                 Text(transcription.audioDurationFormatted)
-                    .font(.system(size: 14, weight: .medium, design: .default))
+                    .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.blue.opacity(0.1))
@@ -32,8 +32,8 @@ struct TranscriptionDetailView: View {
             }
             
             Text(transcription.text)
-                .font(.system(size: 15, weight: .regular, design: .default))
-            
+                .font(.body)
+
             
             Divider()
                 .padding(.vertical, 8)
@@ -65,16 +65,16 @@ struct TranscriptionDetailView: View {
     private func metadataRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .foregroundColor(.secondary)
                 .frame(width: 20, alignment: .center)
 
             Text(label)
-                .font(.system(size: 13, weight: .medium))
+                .font(.footnote.weight(.medium))
                 .foregroundColor(.primary)
             Spacer()
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.medium))
                 .foregroundColor(.secondary)
         }
     }
