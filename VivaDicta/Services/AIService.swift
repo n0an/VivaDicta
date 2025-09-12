@@ -132,6 +132,12 @@ class AIService {
         }
     }
     
+    var selectedMode: AIEnhanceMode {
+        didSet {
+            saveMode(selectedMode)
+        }
+    }
+    
     private var selectedModels: [AIProvider: String] = [:]
     private let userDefaults = UserDefaults.standard
     
@@ -165,6 +171,14 @@ class AIService {
             self.selectedProvider = provider
         } else {
             self.selectedProvider = .gemini
+        }
+        
+        // Load saved mode
+        if let savedModeData = userDefaults.data(forKey: Constants.kSelectedAIMode),
+           let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
+            self.selectedMode = savedMode
+        } else {
+            self.selectedMode = AIEnhanceMode.predefinedModes[0]
         }
         
         if let savedKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
@@ -204,6 +218,15 @@ class AIService {
         
 //        objectWillChange.send()
 //        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)
+    }
+    
+    func saveMode(_ mode: AIEnhanceMode) {
+        if let encoded = try? JSONEncoder().encode(mode) {
+            userDefaults.set(encoded, forKey: Constants.kSelectedAIMode)
+            logger.info("Saved AI enhance mode: \(mode.name)")
+        } else {
+            logger.error("Failed to encode AI enhance mode: \(mode.name)")
+        }
     }
     
     func saveAPIKey(_ key: String) async -> Bool {

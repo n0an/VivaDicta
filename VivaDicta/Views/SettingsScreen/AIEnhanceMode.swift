@@ -30,14 +30,15 @@ import SwiftUI
 //    }
 //}
 
-struct AIEnhanceMode: Identifiable, Hashable {
-    let id: UUID = UUID()
+struct AIEnhanceMode: Identifiable, Hashable, Codable {
     let name: String
     let prompt: String
     let aiProvider: String
     let aiModel: String
     
     let aiEnhanceEnabled: Bool
+    
+    var id: String { name }
     
     static let predefinedModes: [AIEnhanceMode] = [
         AIEnhanceMode(

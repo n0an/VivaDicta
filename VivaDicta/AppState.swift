@@ -23,6 +23,7 @@ class AppState {
     private var cloudTranscriptionService = CloudTranscriptionService()
     
     let whisperPrompt = WhisperPrompt()
+    var aiService = AIService()
     
     var selectedTab: TabTag = .record
 

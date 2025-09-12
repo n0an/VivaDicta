@@ -9,10 +9,26 @@ import SwiftUI
 
 struct SettingsView: View {
     
+    @Bindable var appState: AppState
+    
     var body: some View {
         NavigationStack {
             Form {
-                Section("Modes") {
+                
+                Section("Current Mode") {
+                    Picker(selection: $appState.aiService.selectedMode) {
+                        ForEach(AIEnhanceMode.predefinedModes) { mode in
+                            Text(mode.name).tag(mode)
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "gear")
+                            Text("Active Mode")
+                        }
+                    }
+                }
+                
+                Section("Configure Modes") {
                     
                     ForEach(AIEnhanceMode.predefinedModes) { mode in
                         NavigationLink(value: mode) {
@@ -31,5 +47,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
+    @Previewable @State var appState = AppState()
+    SettingsView(appState: appState)
 }
