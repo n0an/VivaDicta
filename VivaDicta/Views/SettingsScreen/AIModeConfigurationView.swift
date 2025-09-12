@@ -53,7 +53,7 @@ struct AIModeConfigurationView: View {
                     } label: {
                         HStack {
                             Image(systemName: "sparkles")
-                            Text("AI Provider")
+                            Text("AI Model")
                         }
                     }
 
