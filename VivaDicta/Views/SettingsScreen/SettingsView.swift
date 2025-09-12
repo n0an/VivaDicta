@@ -40,7 +40,7 @@ struct SettingsView: View {
                 }
             }
             .navigationDestination(for: AIEnhanceMode.self) { mode in
-                AIModeConfigurationView(mode: mode)
+                AIModeConfigurationView(mode: mode, aiService: appState.aiService)
             }
         }
     }

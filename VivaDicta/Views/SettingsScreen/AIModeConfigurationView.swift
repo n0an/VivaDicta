@@ -12,9 +12,11 @@ struct AIModeConfigurationView: View {
     @State private var viewModel: AIModeConfigurationViewModel
     
     var mode: AIEnhanceMode
+    let aiService: AIService
     
-    init(mode: AIEnhanceMode) {
+    init(mode: AIEnhanceMode, aiService: AIService) {
         self.mode = mode
+        self.aiService = aiService
         self._viewModel = State(initialValue: AIModeConfigurationViewModel(mode: mode))
     }
     
@@ -64,14 +66,10 @@ struct AIModeConfigurationView: View {
                             viewModel.updateModel(newModel)
                         }
                     } else {
-                        NavigationLink(destination: AddAPIKeyView(provider: provider)) {
+                        NavigationLink(destination: AddAPIKeyView(provider: provider, aiService: aiService)) {
                             HStack {
                                 Image(systemName: "key")
                                 Text("Add API Key")
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
                             }
                         }
                     }
@@ -90,5 +88,5 @@ struct AIProviderDetails: View {
 }
 
 #Preview {
-    AIModeConfigurationView(mode: AIEnhanceMode.predefinedModes[0])
+    AIModeConfigurationView(mode: AIEnhanceMode.predefinedModes[0], aiService: AIService())
 }
