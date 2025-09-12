@@ -1,3 +1,2 @@
-Create commit message for current changes, stage all changes, make commit and push the commit.
-
+commit everything in logical chunks and push
 don't mention Claude or Anthropic in commit message.
