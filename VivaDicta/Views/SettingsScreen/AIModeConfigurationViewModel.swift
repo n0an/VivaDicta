@@ -10,7 +10,7 @@ import os
 
 @Observable
 class AIModeConfigurationViewModel {
-    private let logger = Logger(subsystem: "com.antonnovoselov.voiceink", category: "AIModeConfigurationViewModel")
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIModeConfigurationViewModel")
     private let userDefaults = UserDefaults.standard
     
     var aiProvider: AIProvider?
@@ -28,7 +28,27 @@ class AIModeConfigurationViewModel {
         self.aiModel = config.model
     }
     
-    func saveConfiguration() {
+    func updateProvider(_ newProvider: AIProvider?) {
+        aiProvider = newProvider
+        
+        if let provider = newProvider {
+            aiModel = provider.defaultModel
+        } else {
+            aiModel = nil
+        }
+        saveConfiguration()
+    }
+    
+    func updateModel(_ newModel: String?) {
+        aiModel = newModel
+        saveConfiguration()
+    }
+    
+    func hasAPIKey(for provider: AIProvider) -> Bool {
+        return aiService.connectedProviders.contains(provider)
+    }
+    
+    private func saveConfiguration() {
         let providerKey = "aiMode_\(mode.name)_provider"
         let modelKey = "aiMode_\(mode.name)_model"
         
@@ -47,27 +67,7 @@ class AIModeConfigurationViewModel {
         logger.info("Saved AI configuration for mode '\(self.mode.name)': provider=\(self.aiProvider?.rawValue ?? "none"), model=\(self.aiModel ?? "none")")
     }
     
-    func updateProvider(_ newProvider: AIProvider?) {
-        aiProvider = newProvider
-        // Reset model when provider changes
-        if let provider = newProvider {
-            aiModel = provider.defaultModel
-        } else {
-            aiModel = nil
-        }
-        saveConfiguration()
-    }
-    
-    func updateModel(_ newModel: String?) {
-        aiModel = newModel
-        saveConfiguration()
-    }
-    
-    func hasAPIKey(for provider: AIProvider) -> Bool {
-        return aiService.connectedProviders.contains(provider)
-    }
-    
-    static func getConfiguration(for mode: AIEnhanceMode) -> (provider: AIProvider?, model: String?) {
+    private static func getConfiguration(for mode: AIEnhanceMode) -> (provider: AIProvider?, model: String?) {
         let userDefaults = UserDefaults.standard
         
         let providerKey = "aiMode_\(mode.name)_provider"

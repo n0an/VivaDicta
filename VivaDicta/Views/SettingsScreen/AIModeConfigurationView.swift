@@ -21,8 +21,6 @@ struct AIModeConfigurationView: View {
     }
     
     var body: some View {
-        let _ = Self._printChanges()
-        let _ = print("=== Executing <AIModeConfigurationView> body")
         Form {
             Section("Name") {
                 Text(mode.name)
@@ -53,7 +51,6 @@ struct AIModeConfigurationView: View {
                 
                 if let provider = viewModel.aiProvider {
                     let hasKey = viewModel.hasAPIKey(for: provider)
-                    let _ = print("=== hasKey = \(hasKey)")
                     if hasKey {
                         
                         Picker(selection: $viewModel.aiModel) {
@@ -85,13 +82,6 @@ struct AIModeConfigurationView: View {
                 }
             }
         }
-    }
-}
-
-struct AIProviderDetails: View {
-    
-    var body: some View {
-        
     }
 }
 

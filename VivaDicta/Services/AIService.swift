@@ -114,7 +114,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
 
 @Observable
 class AIService {
-    private let logger = Logger(subsystem: "com.antonnovoselov.voiceink", category: "AIService")
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
     
     var apiKey: String = ""
     var isAPIKeyValid: Bool = false
