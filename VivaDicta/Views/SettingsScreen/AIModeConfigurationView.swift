@@ -9,12 +9,14 @@ import SwiftUI
 
 struct AIModeConfigurationView: View {
     
-    @State var aiProvider: AIProvider = .openAI
-    @State var aiModel: String = ""
-    
-    var aiModels: [String] = []
+    @State private var viewModel: AIModeConfigurationViewModel
     
     var mode: AIEnhanceMode
+    
+    init(mode: AIEnhanceMode) {
+        self.mode = mode
+        self._viewModel = State(initialValue: AIModeConfigurationViewModel(mode: mode))
+    }
     
     var body: some View {
         Form {
@@ -29,7 +31,7 @@ struct AIModeConfigurationView: View {
             
             Section("AI Enhance") {
                 
-                Picker(selection: $aiProvider) {
+                Picker(selection: $viewModel.aiProvider) {
                     ForEach(AIProvider.allCases) { provider in
                         Text(provider.rawValue.capitalized)
                     }
@@ -40,9 +42,12 @@ struct AIModeConfigurationView: View {
                         Text("AI Provider")
                     }
                 }
+                .onChange(of: viewModel.aiProvider) { _, newProvider in
+                    viewModel.updateProvider(newProvider)
+                }
                 
-                Picker(selection: $aiModel) {
-                    ForEach(aiProvider.availableModels, id: \.self) { model in
+                Picker(selection: $viewModel.aiModel) {
+                    ForEach(viewModel.aiProvider.availableModels, id: \.self) { model in
                         Text(model)
                     }
                     
@@ -52,11 +57,10 @@ struct AIModeConfigurationView: View {
                         Text("AI Model")
                     }
                 }
+                .onChange(of: viewModel.aiModel) { _, newModel in
+                    viewModel.updateModel(newModel)
+                }
             }
-        }
-        .task {
-            
-            aiModel = aiProvider.defaultModel
         }
         
     }
