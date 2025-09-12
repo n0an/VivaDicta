@@ -12,6 +12,7 @@ import os
 class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
     
+    private let baseTimeout: TimeInterval = 30
     var connectedProviders: [AIProvider] = []
     
     var selectedMode: AIEnhanceMode {
@@ -41,6 +42,10 @@ class AIService {
         }
     }
     
+    func getAPIKey(for provider: AIProvider) -> String? {
+        return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+    }
+    
     func saveMode(_ mode: AIEnhanceMode) {
         if let encoded = try? JSONEncoder().encode(mode) {
             userDefaults.set(encoded, forKey: Constants.kSelectedAIMode)
@@ -49,6 +54,168 @@ class AIService {
             logger.error("Failed to encode AI enhance mode: \(mode.name)")
         }
     }
+    
+    public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
+        let startTime = Date()
+        
+        let modeName = selectedMode.name
+        
+        do {
+            let result = try await makeRequest(text: text)
+            let endTime = Date()
+            let duration = endTime.timeIntervalSince(startTime)
+            return (result, duration, modeName)
+        } catch {
+            throw error
+        }
+    }
+    
+    private func getSystemMessage() -> String {
+        return String(format: DefaultPrompts.system.prompt, selectedMode.prompt)
+    }
+    
+//    var isConfigured: Bool {
+//        guard let aiProvider = self.selectedMode.aiProvider else { return false }
+//        return self.connectedProviders.contains(aiProvider)
+//    }
+    
+    private func makeRequest(text: String) async throws -> String {
+        guard let aiProvider = self.selectedMode.aiProvider,
+              let apiKey = self.getAPIKey(for: aiProvider) else {
+            throw EnhancementError.notConfigured
+        }
+        
+        
+        
+//        guard isConfigured else {
+//            throw EnhancementError.notConfigured
+//        }
+        
+        guard !text.isEmpty else {
+            return "" // Silently return empty string instead of throwing error
+        }
+        
+        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        let systemMessage = getSystemMessage()
+        
+        // Log the message being sent to AI enhancement
+        logger.notice("AI Enhancement - System Message: \(systemMessage, privacy: .public)")
+        logger.notice("AI Enhancement - User Message: \(formattedText, privacy: .public)")
+        
+        switch aiProvider {
+        case .anthropic:
+            let requestBody: [String: Any] = [
+                "model": selectedMode.aiModel,
+                "max_tokens": 8192,
+                "system": systemMessage,
+                "messages": [
+                    ["role": "user", "content": formattedText]
+                ]
+            ]
+            
+            var request = URLRequest(url: URL(string: aiProvider.baseURL)!)
+            request.httpMethod = "POST"
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+            request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            request.timeoutInterval = baseTimeout
+            request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw EnhancementError.invalidResponse
+                }
+                
+                if httpResponse.statusCode == 200 {
+                    guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let content = jsonResponse["content"] as? [[String: Any]],
+                          let firstContent = content.first,
+                          let enhancedText = firstContent["text"] as? String else {
+                        throw EnhancementError.enhancementFailed
+                    }
+                    
+                    let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
+                    return filteredText
+                } else if httpResponse.statusCode == 429 {
+                    throw EnhancementError.rateLimitExceeded
+                } else if (500...599).contains(httpResponse.statusCode) {
+                    throw EnhancementError.serverError
+                } else {
+                    let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
+                    throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
+                }
+                
+            } catch let error as EnhancementError {
+                throw error
+            } catch let error as URLError {
+                throw error
+            } catch {
+                throw EnhancementError.customError(error.localizedDescription)
+            }
+            
+        default:
+            let url = URL(string: aiProvider.baseURL)!
+            var request = URLRequest(url: url)
+            
+            
+            request.httpMethod = "POST"
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.timeoutInterval = baseTimeout
+
+            let messages: [[String: Any]] = [
+                ["role": "system", "content": systemMessage],
+                ["role": "user", "content": formattedText]
+            ]
+
+            let requestBody: [String: Any] = [
+                "model": selectedMode.aiModel,
+                "messages": messages,
+                "temperature": selectedMode.aiModel.lowercased().hasPrefix("gpt-5") ? 1.0 : 0.3,
+                "stream": false
+            ]
+
+            request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw EnhancementError.invalidResponse
+                }
+
+                if httpResponse.statusCode == 200 {
+                    guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                          let choices = jsonResponse["choices"] as? [[String: Any]],
+                          let firstChoice = choices.first,
+                          let message = firstChoice["message"] as? [String: Any],
+                          let enhancedText = message["content"] as? String else {
+                        throw EnhancementError.enhancementFailed
+                    }
+
+                    let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
+                    return filteredText
+                } else if httpResponse.statusCode == 429 {
+                    throw EnhancementError.rateLimitExceeded
+                } else if (500...599).contains(httpResponse.statusCode) {
+                    throw EnhancementError.serverError
+                } else {
+                    let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
+                    throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
+                }
+
+            } catch let error as EnhancementError {
+                throw error
+            } catch let error as URLError {
+                throw error
+            } catch {
+                throw EnhancementError.customError(error.localizedDescription)
+            }
+        }
+    }
+    
     
     func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
         let isValid = await verifyAPIKey(key, provider: provider)
@@ -254,3 +421,34 @@ class AIService {
 }
 
 
+
+enum EnhancementError: Error {
+    case notConfigured
+    case invalidResponse
+    case enhancementFailed
+    case networkError
+    case serverError
+    case rateLimitExceeded
+    case customError(String)
+}
+
+extension EnhancementError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .notConfigured:
+            return "AI provider not configured. Please check your API key."
+        case .invalidResponse:
+            return "Invalid response from AI provider."
+        case .enhancementFailed:
+            return "AI enhancement failed to process the text."
+        case .networkError:
+            return "Network connection failed. Check your internet."
+        case .serverError:
+            return "The AI provider's server encountered an error. Please try again later."
+        case .rateLimitExceeded:
+            return "Rate limit exceeded. Please try again later."
+        case .customError(let message):
+            return message
+        }
+    }
+}

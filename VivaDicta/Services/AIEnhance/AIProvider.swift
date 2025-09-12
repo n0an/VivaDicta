@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AIProvider: String, CaseIterable, Identifiable {
+enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var id: Self { self }
     
     case groq
