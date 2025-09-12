@@ -35,7 +35,7 @@ class AIService {
         refreshConnectedProviders()
     }
     
-    private func refreshConnectedProviders() {
+    public func refreshConnectedProviders() {
         connectedProviders = AIProvider.allCases.filter { provider in
             return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
         }

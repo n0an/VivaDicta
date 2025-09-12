@@ -55,8 +55,8 @@ struct ModelsScreen: View {
             .navigationDestination(item: $cloudModelToConfigure, destination: { model in
                 CloudModelConfigurationView(
                     model: model,
-                    onSave: { (model, apiKey) in
-                        cloudModelConfigured(model: model, apiKey: apiKey)
+                    onSave: {
+                        cloudModelConfigured()
                     })
             })
             .navigationTitle("Transcription Models")
@@ -97,8 +97,8 @@ struct ModelsScreen: View {
         cloudModelToConfigure = model
     }
     
-    func cloudModelConfigured(model: CloudModel, apiKey: String) {
-        appState.updateCloudModels(with: model, apiKey: apiKey)
+    func cloudModelConfigured() {
+        appState.updateCloudModels()
         cloudModelToConfigure = nil
     }
 }
