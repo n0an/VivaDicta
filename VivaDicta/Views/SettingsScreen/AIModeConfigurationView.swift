@@ -48,7 +48,6 @@ struct AIModeConfigurationView: View {
                 }
                 
                 Picker(selection: $viewModel.aiModel) {
-                    Text("None").tag(nil as String?)
                     if let provider = viewModel.aiProvider {
                         ForEach(provider.availableModels, id: \.self) { model in
                             Text(model).tag(model as String?)
