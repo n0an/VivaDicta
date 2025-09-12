@@ -21,25 +21,9 @@ class AIModeConfigurationViewModel {
     init(mode: AIEnhanceMode) {
         self.mode = mode
         
-        // Load saved provider for this mode, default to OpenAI
-        let providerKey = "aiMode_\(mode.name)_provider"
-        let savedProvider: AIProvider
-        if let savedProviderRaw = userDefaults.string(forKey: providerKey),
-           let provider = AIProvider(rawValue: savedProviderRaw) {
-            savedProvider = provider
-        } else {
-            savedProvider = .openAI
-        }
-        self.aiProvider = savedProvider
-        
-        // Load saved model for this mode, default to provider's default
-        let modelKey = "aiMode_\(mode.name)_model"
-        if let savedModel = userDefaults.string(forKey: modelKey),
-           !savedModel.isEmpty {
-            self.aiModel = savedModel
-        } else {
-            self.aiModel = savedProvider.defaultModel
-        }
+        let config = Self.getConfiguration(for: mode)
+        self.aiProvider = config.provider
+        self.aiModel = config.model
     }
     
     func saveConfiguration() {
