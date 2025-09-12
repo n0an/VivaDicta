@@ -13,21 +13,10 @@ class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
     
     var connectedProviders: [AIProvider] = []
-
-    
-    var apiKey: String = ""
-    var isAPIKeyValid: Bool = false
     
     var selectedProvider: AIProvider {
         didSet {
             userDefaults.set(selectedProvider.rawValue, forKey: Constants.kSelectedAIProvider)
-            if let savedAPIKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
-                self.apiKey = savedAPIKey
-                self.isAPIKeyValid = true
-            } else {
-                self.apiKey = ""
-                self.isAPIKeyValid = false
-            }
         }
     }
     
@@ -74,10 +63,6 @@ class AIService {
             self.selectedMode = AIEnhanceMode.predefinedModes[0]
         }
         
-        if let savedKey = userDefaults.string(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue) {
-            self.apiKey = savedKey
-            self.isAPIKeyValid = true
-        }
         
         loadSavedModelSelections()
         loadSavedOpenRouterModels()
@@ -134,12 +119,7 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                self.apiKey = key
-                self.isAPIKeyValid = true
                 self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
-//                NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
-            } else {
-                self.isAPIKeyValid = false
             }
         }
         
@@ -151,20 +131,13 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                // Only update the current apiKey if this is for the currently selected provider
-                if provider == self.selectedProvider {
-                    self.apiKey = key
-                    self.isAPIKeyValid = true
-                }
+                
                 // Always save the key for the correct provider
                 self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+                
                 // Refresh connected providers to trigger UI update
                 self.refreshConnectedProviders()
-//                NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
-            } else {
-                if provider == self.selectedProvider {
-                    self.isAPIKeyValid = false
-                }
+                
             }
         }
         
@@ -355,11 +328,8 @@ class AIService {
     
     func clearAPIKey() {
         
-        apiKey = ""
-        isAPIKeyValid = false
         userDefaults.removeObject(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue)
         refreshConnectedProviders()
-//        NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
     }
     
     func fetchOpenRouterModels() async {
@@ -376,7 +346,6 @@ class AIService {
                 await MainActor.run {
                     self.openRouterModels = []
                     self.saveOpenRouterModels()
-//                    self.objectWillChange.send()
                 }
                 return
             }
@@ -387,7 +356,6 @@ class AIService {
                 await MainActor.run {
                     self.openRouterModels = []
                     self.saveOpenRouterModels()
-//                    self.objectWillChange.send()
                 }
                 return
             }
