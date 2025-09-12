@@ -12,6 +12,9 @@ import os
 class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
     
+    var connectedProviders: [AIProvider] = []
+
+    
     var apiKey: String = ""
     var isAPIKeyValid: Bool = false
     
@@ -38,13 +41,6 @@ class AIService {
     private let userDefaults = UserDefaults.standard
     
     private var openRouterModels: [String] = []
-    
-    // Reactive property for connected providers
-    private var _connectedProviders: [AIProvider] = []
-    
-    var connectedProviders: [AIProvider] {
-        return _connectedProviders
-    }
     
     var currentModel: String {
         if let selectedModel = selectedModels[selectedProvider],
@@ -89,7 +85,7 @@ class AIService {
     }
     
     private func refreshConnectedProviders() {
-        _connectedProviders = AIProvider.allCases.filter { provider in
+        connectedProviders = AIProvider.allCases.filter { provider in
             return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
         }
     }
