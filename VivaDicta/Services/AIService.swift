@@ -8,7 +8,9 @@
 import SwiftUI
 import os
 
-enum AIProvider: String, CaseIterable {
+enum AIProvider: String, CaseIterable, Identifiable {
+    var id: Self { self }
+    
     case groq
     case gemini
     case anthropic

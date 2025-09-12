@@ -9,9 +9,52 @@ import SwiftUI
 
 struct AIModeConfigurationView: View {
     
-    var mode: AIEnhanceModeType
+    @State var aiEnhanceEnabled: Bool = false
+    @State var aiProvider: AIProvider = .openAI
+    
+    var mode: AIEnhanceMode
     
     var body: some View {
-        Text(mode.name)
+        Form {
+            Section("Name") {
+                Text(mode.name)
+            }
+            
+            Section("Prompt") {
+                Text(mode.prompt)
+                    .lineLimit(3)
+            }
+            
+            Section("AI Enhance") {
+                
+                Toggle("Enabled", isOn: $aiEnhanceEnabled)
+                if aiEnhanceEnabled {
+                    
+                    Picker(selection: $aiProvider) {
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.rawValue.capitalized)
+                        }
+                        
+                    } label: {
+                        HStack {
+                            Image(systemName: "cpu")
+                            Text("AI Provider")
+                        }
+                    }
+
+                }
+            }
+            
+            
+            
+        }
+        .onChange(of: aiEnhanceEnabled) { _ in
+            print(aiEnhanceEnabled)
+        }
+        
     }
+}
+
+#Preview {
+    AIModeConfigurationView(aiEnhanceEnabled: true, mode: AIEnhanceMode.predefinedModes[0])
 }

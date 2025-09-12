@@ -9,14 +9,12 @@ import SwiftUI
 
 struct SettingsView: View {
     
-    
-    
     var body: some View {
         NavigationStack {
             Form {
                 Section("Modes") {
                     
-                    ForEach(AIEnhanceModeType.allCases) { mode in
+                    ForEach(AIEnhanceMode.predefinedModes) { mode in
                         NavigationLink(value: mode) {
                             Text(mode.name)
                                 .font(.body)
@@ -25,7 +23,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationDestination(for: AIEnhanceModeType.self) { mode in
+            .navigationDestination(for: AIEnhanceMode.self) { mode in
                 AIModeConfigurationView(mode: mode)
             }
         }
