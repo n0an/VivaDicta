@@ -143,10 +143,11 @@ class AIService {
     
     private var openRouterModels: [String] = []
     
+    // Reactive property for connected providers
+    private var _connectedProviders: [AIProvider] = []
+    
     var connectedProviders: [AIProvider] {
-        AIProvider.allCases.filter { provider in
-            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
-        }
+        return _connectedProviders
     }
     
     var currentModel: String {
@@ -188,6 +189,13 @@ class AIService {
         
         loadSavedModelSelections()
         loadSavedOpenRouterModels()
+        refreshConnectedProviders()
+    }
+    
+    private func refreshConnectedProviders() {
+        _connectedProviders = AIProvider.allCases.filter { provider in
+            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
+        }
     }
     
     private func loadSavedModelSelections() {
@@ -251,12 +259,20 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                self.apiKey = key
-                self.isAPIKeyValid = true
-                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
+                // Only update the current apiKey if this is for the currently selected provider
+                if provider == self.selectedProvider {
+                    self.apiKey = key
+                    self.isAPIKeyValid = true
+                }
+                // Always save the key for the correct provider
+                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+                // Refresh connected providers to trigger UI update
+                self.refreshConnectedProviders()
 //                NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
             } else {
-                self.isAPIKeyValid = false
+                if provider == self.selectedProvider {
+                    self.isAPIKeyValid = false
+                }
             }
         }
         
@@ -450,6 +466,7 @@ class AIService {
         apiKey = ""
         isAPIKeyValid = false
         userDefaults.removeObject(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue)
+        refreshConnectedProviders()
 //        NotificationCenter.default.post(name: .aiProviderKeyChanged, object: nil)
     }
     
