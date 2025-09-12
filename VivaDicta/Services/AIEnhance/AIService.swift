@@ -14,46 +14,15 @@ class AIService {
     
     var connectedProviders: [AIProvider] = []
     
-    var selectedProvider: AIProvider {
-        didSet {
-            userDefaults.set(selectedProvider.rawValue, forKey: Constants.kSelectedAIProvider)
-        }
-    }
-    
     var selectedMode: AIEnhanceMode {
         didSet {
             saveMode(selectedMode)
         }
     }
     
-    private var selectedModels: [AIProvider: String] = [:]
     private let userDefaults = UserDefaults.standard
     
-    private var openRouterModels: [String] = []
-    
-    var currentModel: String {
-        if let selectedModel = selectedModels[selectedProvider],
-           !selectedModel.isEmpty,
-           availableModels.contains(selectedModel) {
-            return selectedModel
-        }
-        return selectedProvider.defaultModel
-    }
-    
-    var availableModels: [String] {
-        if selectedProvider == .openRouter {
-            return openRouterModels
-        }
-        return selectedProvider.availableModels
-    }
-    
     init() {
-        if let savedProviderKey = userDefaults.string(forKey: Constants.kSelectedAIProvider),
-           let provider = AIProvider(rawValue: savedProviderKey) {
-            self.selectedProvider = provider
-        } else {
-            self.selectedProvider = .gemini
-        }
         
         // Load saved mode
         if let savedModeData = userDefaults.data(forKey: Constants.kSelectedAIMode),
@@ -63,9 +32,6 @@ class AIService {
             self.selectedMode = AIEnhanceMode.predefinedModes[0]
         }
         
-        
-        loadSavedModelSelections()
-        loadSavedOpenRouterModels()
         refreshConnectedProviders()
     }
     
@@ -75,36 +41,6 @@ class AIService {
         }
     }
     
-    private func loadSavedModelSelections() {
-        for provider in AIProvider.allCases {
-            if let savedModel = userDefaults.string(forKey: provider.rawValue + Constants.kSelectedAIModel),
-               !savedModel.isEmpty {
-                selectedModels[provider] = savedModel
-            }
-        }
-    }
-    
-    private func loadSavedOpenRouterModels() {
-        if let savedModels = userDefaults.array(forKey: Constants.kOpenRouterModels) as? [String] {
-            openRouterModels = savedModels
-        }
-    }
-    
-    private func saveOpenRouterModels() {
-        userDefaults.set(openRouterModels, forKey: Constants.kOpenRouterModels)
-    }
-    
-    func selectModel(_ model: String) {
-        guard !model.isEmpty else { return }
-        
-        selectedModels[selectedProvider] = model
-        userDefaults.set(model, forKey: selectedProvider.rawValue + Constants.kSelectedAIModel)
-        
-        
-//        objectWillChange.send()
-//        NotificationCenter.default.post(name: .AppSettingsDidChange, object: nil)
-    }
-    
     func saveMode(_ mode: AIEnhanceMode) {
         if let encoded = try? JSONEncoder().encode(mode) {
             userDefaults.set(encoded, forKey: Constants.kSelectedAIMode)
@@ -112,18 +48,6 @@ class AIService {
         } else {
             logger.error("Failed to encode AI enhance mode: \(mode.name)")
         }
-    }
-    
-    func saveAPIKey(_ key: String) async -> Bool {
-        let isValid = await verifyAPIKey(key, provider: self.selectedProvider)
-        
-        await MainActor.run {
-            if isValid {
-                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + self.selectedProvider.rawValue)
-            }
-        }
-        
-        return isValid
     }
     
     func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
@@ -326,61 +250,7 @@ class AIService {
         }
     }
     
-    func clearAPIKey() {
-        
-        userDefaults.removeObject(forKey: Constants.kAPIKeyTemplate + selectedProvider.rawValue)
-        refreshConnectedProviders()
-    }
     
-    func fetchOpenRouterModels() async {
-        let url = URL(string: "https://openrouter.ai/api/v1/models")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                logger.error("Failed to fetch OpenRouter models: Invalid HTTP response")
-                await MainActor.run {
-                    self.openRouterModels = []
-                    self.saveOpenRouterModels()
-                }
-                return
-            }
-            
-            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
-                logger.error("Failed to parse OpenRouter models JSON")
-                await MainActor.run {
-                    self.openRouterModels = []
-                    self.saveOpenRouterModels()
-                }
-                return
-            }
-            
-            let models = dataArray.compactMap { $0["id"] as? String }
-            await MainActor.run {
-                self.openRouterModels = models.sorted()
-                self.saveOpenRouterModels()
-                if self.selectedProvider == .openRouter && self.currentModel == self.selectedProvider.defaultModel && !models.isEmpty {
-                    self.selectModel(models.sorted().first!)
-                }
-//                self.objectWillChange.send()
-            }
-            logger.info("Successfully fetched \(models.count) OpenRouter models.")
-            
-        } catch {
-            logger.error("Error fetching OpenRouter models: \(error.localizedDescription)")
-            await MainActor.run {
-                self.openRouterModels = []
-                self.saveOpenRouterModels()
-//                self.objectWillChange.send()
-            }
-        }
-
-    }
 }
 
 
