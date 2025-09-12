@@ -47,23 +47,24 @@ struct AIModeConfigurationView: View {
                     viewModel.updateProvider(newProvider)
                 }
                 
-                Picker(selection: $viewModel.aiModel) {
-                    if let provider = viewModel.aiProvider {
-                        ForEach(provider.availableModels, id: \.self) { model in
-                            Text(model).tag(model as String?)
+                if viewModel.aiProvider != nil {
+                    Picker(selection: $viewModel.aiModel) {
+                        if let provider = viewModel.aiProvider {
+                            ForEach(provider.availableModels, id: \.self) { model in
+                                Text(model).tag(model as String?)
+                            }
+                        }
+                        
+                    } label: {
+                        HStack {
+                            Image(systemName: "sparkles")
+                            Text("AI Model")
                         }
                     }
-                    
-                } label: {
-                    HStack {
-                        Image(systemName: "sparkles")
-                        Text("AI Model")
+                    .onChange(of: viewModel.aiModel) { _, newModel in
+                        viewModel.updateModel(newModel)
                     }
                 }
-                .onChange(of: viewModel.aiModel) { _, newModel in
-                    viewModel.updateModel(newModel)
-                }
-                .disabled(viewModel.aiProvider == nil)
             }
         }
         
