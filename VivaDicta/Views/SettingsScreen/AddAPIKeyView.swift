@@ -16,6 +16,8 @@ struct AddAPIKeyView: View {
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
     
+    var onSave: (AIProvider) -> Void
+    
     var body: some View {
         VStack(spacing: 10) {
             Text("\(provider.rawValue.capitalized) API Key")
@@ -84,6 +86,7 @@ struct AddAPIKeyView: View {
                 isVerifying = false
                 
                 if isValid {
+                    onSave(provider)
                     dismiss()
                 } else {
                     verificationError = "Invalid API key. Please check your key and try again."
@@ -95,6 +98,9 @@ struct AddAPIKeyView: View {
 
 #Preview {
     NavigationStack {
-        AddAPIKeyView(provider: .openAI, aiService: AIService())
+        AddAPIKeyView(
+            provider: .openAI,
+            aiService: AIService(),
+            onSave: {_ in })
     }
 }
