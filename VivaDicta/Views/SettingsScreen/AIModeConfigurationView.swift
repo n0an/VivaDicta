@@ -17,10 +17,12 @@ struct AIModeConfigurationView: View {
     init(mode: AIEnhanceMode, aiService: AIService) {
         self.mode = mode
         self.aiService = aiService
-        self._viewModel = State(initialValue: AIModeConfigurationViewModel(mode: mode))
+        self._viewModel = State(initialValue: AIModeConfigurationViewModel(mode: mode, aiService: aiService))
     }
     
     var body: some View {
+        let _ = Self._printChanges()
+        let _ = print("=== Executing <AIModeConfigurationView> body")
         Form {
             Section("Name") {
                 Text(mode.name)
@@ -50,7 +52,10 @@ struct AIModeConfigurationView: View {
                 }
                 
                 if let provider = viewModel.aiProvider {
-                    if viewModel.hasAPIKey(for: provider) {
+                    let hasKey = viewModel.hasAPIKey(for: provider)
+                    let _ = print("=== hasKey = \(hasKey)")
+                    if hasKey {
+                        
                         Picker(selection: $viewModel.aiModel) {
                             ForEach(provider.availableModels, id: \.self) { model in
                                 Text(model).tag(model as String?)
@@ -66,7 +71,11 @@ struct AIModeConfigurationView: View {
                             viewModel.updateModel(newModel)
                         }
                     } else {
-                        NavigationLink(destination: AddAPIKeyView(provider: provider, aiService: aiService)) {
+                        NavigationLink(destination: AddAPIKeyView(
+                            provider: provider,
+                            aiService: aiService, onSave: { provider in
+                                viewModel.updateModel(provider.defaultModel)
+                            })) {
                             HStack {
                                 Image(systemName: "key")
                                 Text("Add API Key")
@@ -76,7 +85,6 @@ struct AIModeConfigurationView: View {
                 }
             }
         }
-        
     }
 }
 
@@ -88,5 +96,7 @@ struct AIProviderDetails: View {
 }
 
 #Preview {
-    AIModeConfigurationView(mode: AIEnhanceMode.predefinedModes[0], aiService: AIService())
+    NavigationStack {
+        AIModeConfigurationView(mode: AIEnhanceMode.predefinedModes[0], aiService: AIService())
+    }
 }
