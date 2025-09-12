@@ -11,6 +11,9 @@ struct AIModeConfigurationView: View {
     
     @State var aiEnhanceEnabled: Bool = false
     @State var aiProvider: AIProvider = .openAI
+    @State var aiModel: String = ""
+    
+    var aiModels: [String] = []
     
     var mode: AIEnhanceMode
     
@@ -41,6 +44,18 @@ struct AIModeConfigurationView: View {
                             Text("AI Provider")
                         }
                     }
+                    
+                    Picker(selection: $aiModel) {
+                        ForEach(aiProvider.availableModels, id: \.self) { model in
+                            Text(model)
+                        }
+                        
+                    } label: {
+                        HStack {
+                            Image(systemName: "sparkles")
+                            Text("AI Provider")
+                        }
+                    }
 
                 }
             }
@@ -48,9 +63,22 @@ struct AIModeConfigurationView: View {
             
             
         }
-        .onChange(of: aiEnhanceEnabled) { _ in
-            print(aiEnhanceEnabled)
+        .task {
+            
+            aiModel = aiProvider.defaultModel
         }
+        
+        .onChange(of: aiEnhanceEnabled, { _, _ in
+            print(aiEnhanceEnabled)
+            aiModel = aiProvider.defaultModel
+        })
+        
+    }
+}
+
+struct AIProviderDetails: View {
+    
+    var body: some View {
         
     }
 }
