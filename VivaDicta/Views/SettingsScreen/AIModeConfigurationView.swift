@@ -32,8 +32,9 @@ struct AIModeConfigurationView: View {
             Section("AI Enhance") {
                 
                 Picker(selection: $viewModel.aiProvider) {
+                    Text("None").tag(nil as AIProvider?)
                     ForEach(AIProvider.allCases) { provider in
-                        Text(provider.rawValue.capitalized)
+                        Text(provider.rawValue.capitalized).tag(provider as AIProvider?)
                     }
                     
                 } label: {
@@ -47,8 +48,11 @@ struct AIModeConfigurationView: View {
                 }
                 
                 Picker(selection: $viewModel.aiModel) {
-                    ForEach(viewModel.aiProvider.availableModels, id: \.self) { model in
-                        Text(model)
+                    Text("None").tag(nil as String?)
+                    if let provider = viewModel.aiProvider {
+                        ForEach(provider.availableModels, id: \.self) { model in
+                            Text(model).tag(model as String?)
+                        }
                     }
                     
                 } label: {
@@ -60,6 +64,7 @@ struct AIModeConfigurationView: View {
                 .onChange(of: viewModel.aiModel) { _, newModel in
                     viewModel.updateModel(newModel)
                 }
+                .disabled(viewModel.aiProvider == nil)
             }
         }
         
