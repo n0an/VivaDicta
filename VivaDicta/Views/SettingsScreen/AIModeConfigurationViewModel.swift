@@ -17,9 +17,11 @@ class AIModeConfigurationViewModel {
     var aiModel: String?
     
     private let mode: AIEnhanceMode
+    private let aiService: AIService
     
-    init(mode: AIEnhanceMode) {
+    init(mode: AIEnhanceMode, aiService: AIService) {
         self.mode = mode
+        self.aiService = aiService
         
         let config = Self.getConfiguration(for: mode)
         self.aiProvider = config.provider
@@ -62,8 +64,7 @@ class AIModeConfigurationViewModel {
     }
     
     func hasAPIKey(for provider: AIProvider) -> Bool {
-        let apiKeyKey = Constants.kAPIKeyTemplate + provider.rawValue
-        return userDefaults.string(forKey: apiKeyKey) != nil
+        return aiService.connectedProviders.contains(provider)
     }
     
     static func getConfiguration(for mode: AIEnhanceMode) -> (provider: AIProvider?, model: String?) {
