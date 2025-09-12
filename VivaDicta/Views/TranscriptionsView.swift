@@ -37,7 +37,8 @@ struct TranscriptionsView: View {
                             }
                             
                             Text(transcription.text)
-                                .font(.body)                                .lineLimit(2)
+                                .font(.body)
+                                .lineLimit(2)
                                 .lineSpacing(2)
                         }
                     }
