@@ -47,22 +47,33 @@ struct AIModeConfigurationView: View {
                     viewModel.updateProvider(newProvider)
                 }
                 
-                if viewModel.aiProvider != nil {
-                    Picker(selection: $viewModel.aiModel) {
-                        if let provider = viewModel.aiProvider {
+                if let provider = viewModel.aiProvider {
+                    if viewModel.hasAPIKey(for: provider) {
+                        Picker(selection: $viewModel.aiModel) {
                             ForEach(provider.availableModels, id: \.self) { model in
                                 Text(model).tag(model as String?)
                             }
+                            
+                        } label: {
+                            HStack {
+                                Image(systemName: "sparkles")
+                                Text("AI Model")
+                            }
                         }
-                        
-                    } label: {
-                        HStack {
-                            Image(systemName: "sparkles")
-                            Text("AI Model")
+                        .onChange(of: viewModel.aiModel) { _, newModel in
+                            viewModel.updateModel(newModel)
                         }
-                    }
-                    .onChange(of: viewModel.aiModel) { _, newModel in
-                        viewModel.updateModel(newModel)
+                    } else {
+                        NavigationLink(destination: AddAPIKeyView(provider: provider)) {
+                            HStack {
+                                Image(systemName: "key")
+                                Text("Add API Key")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                        }
                     }
                 }
             }

@@ -61,6 +61,11 @@ class AIModeConfigurationViewModel {
         saveConfiguration()
     }
     
+    func hasAPIKey(for provider: AIProvider) -> Bool {
+        let apiKeyKey = Constants.kAPIKeyTemplate + provider.rawValue
+        return userDefaults.string(forKey: apiKeyKey) != nil
+    }
+    
     static func getConfiguration(for mode: AIEnhanceMode) -> (provider: AIProvider?, model: String?) {
         let userDefaults = UserDefaults.standard
         
