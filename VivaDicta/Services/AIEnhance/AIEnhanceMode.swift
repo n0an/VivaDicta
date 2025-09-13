@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct AIEnhanceMode: Identifiable, Hashable, Codable {
+    var id: String { name }
+    
     let name: String
     let prompt: String
     var aiProvider: AIProvider?
@@ -15,15 +17,6 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
     
     let aiEnhanceEnabled: Bool
     
-    var id: String { name }
-    
-    
-    static let predefinedModes: [AIEnhanceMode] = [
-        DefaultPrompts.email.aiEnhanceMode,
-        DefaultPrompts.chat.aiEnhanceMode,
-        DefaultPrompts.note.aiEnhanceMode,
-        DefaultPrompts.regular.aiEnhanceMode        
-    ]
-    
+    static let predefinedModes: [AIEnhanceMode] = DefaultPrompts.allCases.map { $0.aiEnhanceMode }
     
 }

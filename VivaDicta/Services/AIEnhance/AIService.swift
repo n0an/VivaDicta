@@ -29,6 +29,7 @@ class AIService {
     
     init() {
         self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? DefaultPrompts.regular.aiEnhanceMode.name
+        self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
     }
     
@@ -76,7 +77,7 @@ class AIService {
     }
     
     private func getSystemMessage() -> String {
-        return String(format: DefaultPrompts.system.prompt, selectedMode.prompt)
+        return String(format: DefaultPrompts.systemPrompt, selectedMode.prompt)
     }
     
     private func makeRequest(text: String) async throws -> String {
