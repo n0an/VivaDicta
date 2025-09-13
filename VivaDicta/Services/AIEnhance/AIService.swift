@@ -33,6 +33,13 @@ class AIService {
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
         loadSavedOpenRouterModels()
+        
+        // Fetch OpenRouter models on startup if API key exists
+        Task {
+            if connectedProviders.contains(.openRouter) {
+                await fetchOpenRouterModels()
+            }
+        }
     }
     
     public func getMode(name: String) -> AIEnhanceMode {
