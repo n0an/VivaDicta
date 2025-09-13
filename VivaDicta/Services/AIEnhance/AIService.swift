@@ -12,18 +12,18 @@ import os
 class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
     
-    private let baseTimeout: TimeInterval = 30
-    var connectedProviders: [AIProvider] = []
+    public var connectedProviders: [AIProvider] = []
     
-    var selectedModeName: String {
+    public var selectedModeName: String {
         didSet {
             saveSelectedModeName(selectedModeName)
         }
     }
     
     private var selectedMode: AIEnhanceMode = AIEnhanceMode.predefinedModes[0]
-    
     private let userDefaults = UserDefaults.standard
+    private let baseTimeout: TimeInterval = 30
+
     
     init() {
         self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? ""
@@ -31,10 +31,10 @@ class AIService {
     }
     
     public func getMode(name: String) -> AIEnhanceMode {
-        return Self.loadMode(withUserDefaultsKey: "SavedAIMode\(name)")
+        return loadMode(withUserDefaultsKey: "SavedAIMode\(name)")
     }
     
-    func saveMode(_ mode: AIEnhanceMode) {
+    public func saveMode(_ mode: AIEnhanceMode) {
         if let encoded = try? JSONEncoder().encode(mode) {
             userDefaults.set(encoded, forKey: "SavedAIMode\(mode.name)")
             logger.info("Saved AI enhance mode: \(mode.name)")
@@ -43,11 +43,7 @@ class AIService {
         }
     }
     
-    private static func loadSelectedMode() -> AIEnhanceMode {
-        return Self.loadMode(withUserDefaultsKey: Constants.kSelectedAIMode)
-    }
-    
-    private static func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {
+    private func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {
         if let savedModeData = UserDefaults.standard.data(forKey: key),
            let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
             return savedMode
@@ -56,34 +52,16 @@ class AIService {
         }
     }
     
-    public func refreshConnectedProviders() {
-        connectedProviders = AIProvider.allCases.filter { provider in
-            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
-        }
-    }
-    
-    func getAPIKey(for provider: AIProvider) -> String? {
-        return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
-    }
-    
-    func saveSelectedModeName(_ modeName: String) {
+    private func saveSelectedModeName(_ modeName: String) {
         userDefaults.setValue(modeName, forKey: Constants.kSelectedAIMode)
         logger.info("Saved AI enhance mode: \(modeName)")
-        
-//        if let encoded = try? JSONEncoder().encode(mode) {
-//            userDefaults.set(encoded, forKey: Constants.kSelectedAIMode)
-//            logger.info("Saved AI enhance mode: \(mode.name)")
-//        } else {
-//            logger.error("Failed to encode AI enhance mode: \(mode.name)")
-//        }
     }
     
+    // MARK: - Enhance methods
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
         
         self.selectedMode = getMode(name: selectedModeName)
-        
-//        let modeName = selectedModeName
         let modeName = selectedMode.name
         
         do {
@@ -231,8 +209,14 @@ class AIService {
         }
     }
     
+    // MARK: - API Keys methods
+    public func refreshConnectedProviders() {
+        connectedProviders = AIProvider.allCases.filter { provider in
+            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
+        }
+    }
     
-    func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
+    public func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
         let isValid = await verifyAPIKey(key, provider: provider)
         
         await MainActor.run {
@@ -250,7 +234,11 @@ class AIService {
         return isValid
     }
     
-    func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
+    private func getAPIKey(for provider: AIProvider) -> String? {
+        return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+    }
+    
+    private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
         switch provider {
         case .anthropic:
             return await verifyAnthropicAPIKey(key)
@@ -431,11 +419,7 @@ class AIService {
             return false
         }
     }
-    
-    
 }
-
-
 
 enum EnhancementError: Error {
     case notConfigured
