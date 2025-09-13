@@ -17,34 +17,13 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
     
     var id: String { name }
     
+    
     static let predefinedModes: [AIEnhanceMode] = [
-        AIEnhanceMode(
-            name: "Email",
-            prompt: DefaultPrompts.email.prompt,
-            aiProvider: nil,
-            aiModel: "",
-            aiEnhanceEnabled: false
-        ),
-        AIEnhanceMode(
-            name: "Chat",
-            prompt: DefaultPrompts.chat.prompt,
-            aiProvider: nil,
-            aiModel: "",
-            aiEnhanceEnabled: false
-        ),
-        AIEnhanceMode(
-            name: "Note",
-            prompt: DefaultPrompts.note.prompt,
-            aiProvider: nil,
-            aiModel: "",
-            aiEnhanceEnabled: false
-        ),
-        AIEnhanceMode(
-            name: "Regular",
-            prompt: DefaultPrompts.regular.prompt,
-            aiProvider: nil,
-            aiModel: "",
-            aiEnhanceEnabled: false
-        )
+        DefaultPrompts.email.aiEnhanceMode,
+        DefaultPrompts.chat.aiEnhanceMode,
+        DefaultPrompts.note.aiEnhanceMode,
+        DefaultPrompts.regular.aiEnhanceMode        
     ]
+    
+    
 }

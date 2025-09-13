@@ -7,12 +7,22 @@
 
 import Foundation
 
-enum DefaultPrompts {
+enum DefaultPrompts: String {
     case system
     case email
     case chat
     case note
     case regular
+    
+    var aiEnhanceMode: AIEnhanceMode {
+        AIEnhanceMode(
+            name: self.rawValue.capitalized,
+            prompt: self.prompt,
+            aiProvider: nil,
+            aiModel: "",
+            aiEnhanceEnabled: false
+        )
+    }
     
     var prompt: String {
         switch self {

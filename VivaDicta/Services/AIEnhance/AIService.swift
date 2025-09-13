@@ -21,14 +21,14 @@ class AIService {
         }
     }
     
-    private var selectedMode: AIEnhanceMode = AIEnhanceMode.predefinedModes[0]
+    private var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? AIEnhanceMode.predefinedModes[0].name
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? DefaultPrompts.regular.aiEnhanceMode.name
         refreshConnectedProviders()
     }
     
@@ -50,7 +50,7 @@ class AIService {
            let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
             return savedMode
         } else {
-            return AIEnhanceMode.predefinedModes[0]
+            return DefaultPrompts.regular.aiEnhanceMode
         }
     }
     
