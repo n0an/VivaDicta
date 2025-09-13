@@ -16,7 +16,7 @@ struct SettingsView: View {
             Form {
                 
                 Section("Current Mode") {
-                    Picker(selection: $appState.aiService.selectedMode) {
+                    Picker(selection: $appState.aiService.selectedModeName) {
                         ForEach(AIEnhanceMode.predefinedModes) { mode in
                             Text(mode.name).tag(mode)
                         }

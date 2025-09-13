@@ -15,25 +15,45 @@ class AIService {
     private let baseTimeout: TimeInterval = 30
     var connectedProviders: [AIProvider] = []
     
-    var selectedMode: AIEnhanceMode {
+    var selectedModeName: String {
         didSet {
-            saveMode(selectedMode)
+            saveSelectedModeName(selectedModeName)
         }
     }
+    
+    private var selectedMode: AIEnhanceMode = AIEnhanceMode.predefinedModes[0]
     
     private let userDefaults = UserDefaults.standard
     
     init() {
-        
-        // Load saved mode
-        if let savedModeData = userDefaults.data(forKey: Constants.kSelectedAIMode),
-           let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
-            self.selectedMode = savedMode
-        } else {
-            self.selectedMode = AIEnhanceMode.predefinedModes[0]
-        }
-        
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? ""
         refreshConnectedProviders()
+    }
+    
+    public func getMode(name: String) -> AIEnhanceMode {
+        return Self.loadMode(withUserDefaultsKey: "SavedAIMode\(name)")
+    }
+    
+    func saveMode(_ mode: AIEnhanceMode) {
+        if let encoded = try? JSONEncoder().encode(mode) {
+            userDefaults.set(encoded, forKey: "SavedAIMode\(mode.name)")
+            logger.info("Saved AI enhance mode: \(mode.name)")
+        } else {
+            logger.error("Failed to encode AI enhance mode: \(mode.name)")
+        }
+    }
+    
+    private static func loadSelectedMode() -> AIEnhanceMode {
+        return Self.loadMode(withUserDefaultsKey: Constants.kSelectedAIMode)
+    }
+    
+    private static func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {
+        if let savedModeData = UserDefaults.standard.data(forKey: key),
+           let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
+            return savedMode
+        } else {
+            return AIEnhanceMode.predefinedModes[0]
+        }
     }
     
     public func refreshConnectedProviders() {
@@ -46,18 +66,24 @@ class AIService {
         return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
     }
     
-    func saveMode(_ mode: AIEnhanceMode) {
-        if let encoded = try? JSONEncoder().encode(mode) {
-            userDefaults.set(encoded, forKey: Constants.kSelectedAIMode)
-            logger.info("Saved AI enhance mode: \(mode.name)")
-        } else {
-            logger.error("Failed to encode AI enhance mode: \(mode.name)")
-        }
+    func saveSelectedModeName(_ modeName: String) {
+        userDefaults.setValue(modeName, forKey: Constants.kSelectedAIMode)
+        logger.info("Saved AI enhance mode: \(modeName)")
+        
+//        if let encoded = try? JSONEncoder().encode(mode) {
+//            userDefaults.set(encoded, forKey: Constants.kSelectedAIMode)
+//            logger.info("Saved AI enhance mode: \(mode.name)")
+//        } else {
+//            logger.error("Failed to encode AI enhance mode: \(mode.name)")
+//        }
     }
     
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
         
+        self.selectedMode = getMode(name: selectedModeName)
+        
+//        let modeName = selectedModeName
         let modeName = selectedMode.name
         
         do {
