@@ -22,7 +22,7 @@ class AIService {
         }
     }
     
-    private var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
+    public var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30

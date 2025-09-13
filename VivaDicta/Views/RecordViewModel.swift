@@ -156,8 +156,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             do {
                 self.recordingState = .transcribing
                 
+                let transcriptionStart = Date()
                 guard let transcribedText = try await appState?.transcribe(audioURL: recordURL) else { return }
-                print(transcribedText)
+                let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
                 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
@@ -166,12 +167,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     
                     let transcription = Transcription(
                         text: transcribedText,
-                        timestamp: .now,
                         enhancedText: enhancedText,
-                        audioFileName: recordURL.lastPathComponent,
                         audioDuration: audioDuration,
-                        transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
-                        enhancementModelName: modeName ?? "")
+                        audioFileName: recordURL.lastPathComponent,
+                        transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                        aiEnhancementModelName: appState?.aiService.selectedMode.aiModel,
+                        promptName: appState?.aiService.selectedMode.name,
+                        transcriptionDuration: transcriptionDuration,
+                        enhancementDuration: enhancementDuration)
                     
                     modelContext.insert(transcription)
                     try modelContext.save()
@@ -181,14 +184,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     self.recordingState = .idle
                     
                 } else {
+                    
                     let transcription = Transcription(
                         text: transcribedText,
-                        timestamp: .now,
-                        enhancedText: "",
-                        audioFileName: recordURL.lastPathComponent,
                         audioDuration: audioDuration,
-                        transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
-                        enhancementModelName: "")
+                        audioFileName: recordURL.lastPathComponent,
+                        transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                        transcriptionDuration: transcriptionDuration)
                     
                     modelContext.insert(transcription)
                     try modelContext.save()
