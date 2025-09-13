@@ -13,6 +13,7 @@ class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
     
     public var connectedProviders: [AIProvider] = []
+    public var openRouterModels: [String] = []
     
     public var selectedModeName: String {
         didSet {
@@ -31,6 +32,7 @@ class AIService {
         self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? DefaultPrompts.regular.aiEnhanceMode.name
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
+        loadSavedOpenRouterModels()
     }
     
     public func getMode(name: String) -> AIEnhanceMode {
@@ -58,6 +60,16 @@ class AIService {
     private func saveSelectedModeName(_ modeName: String) {
         userDefaults.setValue(modeName, forKey: Constants.kSelectedAIMode)
         logger.info("Saved AI enhance mode: \(modeName)")
+    }
+    
+    private func loadSavedOpenRouterModels() {
+        if let savedModels = userDefaults.array(forKey: "openRouterModels") as? [String] {
+            openRouterModels = savedModels
+        }
+    }
+    
+    private func saveOpenRouterModels() {
+        userDefaults.set(openRouterModels, forKey: "openRouterModels")
     }
     
     // MARK: - Enhance methods
@@ -231,6 +243,11 @@ class AIService {
                 self.refreshConnectedProviders()
                 
             }
+        }
+        
+        // Fetch OpenRouter models if this is an OpenRouter key
+        if isValid && provider == .openRouter {
+            await fetchOpenRouterModels()
         }
         
         return isValid
@@ -419,6 +436,58 @@ class AIService {
         } catch {
             logger.notice("🔑 Grok API key verification failed: \(error.localizedDescription, privacy: .public)")
             return false
+        }
+    }
+    
+    // MARK: - OpenRouter Models methods
+    public func getAvailableModels(for provider: AIProvider) -> [String] {
+        if provider == .openRouter {
+            return openRouterModels
+        }
+        return provider.availableModels
+    }
+    
+    public func fetchOpenRouterModels() async {
+        let url = URL(string: "https://openrouter.ai/api/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                logger.error("Failed to fetch OpenRouter models: Invalid HTTP response")
+                await MainActor.run { 
+                    self.openRouterModels = []
+                    self.saveOpenRouterModels()
+                }
+                return
+            }
+            
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any], 
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.error("Failed to parse OpenRouter models JSON")
+                await MainActor.run { 
+                    self.openRouterModels = []
+                    self.saveOpenRouterModels()
+                }
+                return
+            }
+            
+            let models = dataArray.compactMap { $0["id"] as? String }
+            await MainActor.run { 
+                self.openRouterModels = models.sorted()
+                self.saveOpenRouterModels()
+            }
+            logger.info("Successfully fetched \(models.count) OpenRouter models.")
+            
+        } catch {
+            logger.error("Error fetching OpenRouter models: \(error.localizedDescription)")
+            await MainActor.run { 
+                self.openRouterModels = []
+                self.saveOpenRouterModels()
+            }
         }
     }
 }

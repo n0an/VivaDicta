@@ -54,7 +54,7 @@ struct AIModeConfigurationView: View {
                     if hasKey {
                         
                         Picker(selection: $viewModel.aiModel) {
-                            ForEach(provider.availableModels, id: \.self) { model in
+                            ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
                                 Text(model).tag(model as String?)
                             }
                             
