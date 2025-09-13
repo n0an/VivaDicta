@@ -16,17 +16,19 @@ class AIService {
     
     public var selectedModeName: String {
         didSet {
-            saveSelectedModeName(selectedModeName)
+            self.saveSelectedModeName(selectedModeName)
+            self.selectedMode = getMode(name: selectedModeName)
         }
     }
     
     private var selectedMode: AIEnhanceMode = AIEnhanceMode.predefinedModes[0]
+    
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? ""
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? AIEnhanceMode.predefinedModes[0].name
         refreshConnectedProviders()
     }
     
@@ -61,7 +63,6 @@ class AIService {
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
         
-        self.selectedMode = getMode(name: selectedModeName)
         let modeName = selectedMode.name
         
         do {
