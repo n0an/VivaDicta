@@ -162,21 +162,41 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
                 
-                let transcription = Transcription(
-                    text: transcribedText,
-                    timestamp: .now,
-                    enhancedText: "mock",
-                    audioFileName: recordURL.lastPathComponent,
-                    audioDuration: audioDuration,
-                    transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
-                    enhancementModelName: "none")
-                
-                modelContext.insert(transcription)
-                try modelContext.save()
-                
-                try Task.checkCancellation()
-                
-                self.recordingState = .idle
+                if let (enhancedText, enhancementDuration, modeName) = try await appState?.aiService.enhance(transcribedText) {
+                    
+                    let transcription = Transcription(
+                        text: transcribedText,
+                        timestamp: .now,
+                        enhancedText: enhancedText,
+                        audioFileName: recordURL.lastPathComponent,
+                        audioDuration: audioDuration,
+                        transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
+                        enhancementModelName: modeName ?? "")
+                    
+                    modelContext.insert(transcription)
+                    try modelContext.save()
+                    
+                    try Task.checkCancellation()
+                    
+                    self.recordingState = .idle
+                    
+                } else {
+                    let transcription = Transcription(
+                        text: transcribedText,
+                        timestamp: .now,
+                        enhancedText: "",
+                        audioFileName: recordURL.lastPathComponent,
+                        audioDuration: audioDuration,
+                        transcriptionModelName: appState?.currentTranscriptionModel?.name ?? "",
+                        enhancementModelName: "")
+                    
+                    modelContext.insert(transcription)
+                    try modelContext.save()
+                    
+                    try Task.checkCancellation()
+                    
+                    self.recordingState = .idle
+                }
                 
             } catch {
                 if Task.isCancelled { return }

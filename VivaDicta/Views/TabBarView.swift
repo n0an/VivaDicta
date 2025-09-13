@@ -30,7 +30,7 @@ struct TabBarView: View {
             }
             
             Tab("Settings", systemImage: "gear", value: TabTag.settings) {
-                Text("Models")
+                SettingsView(appState: appState)
             }
         }
         .task {

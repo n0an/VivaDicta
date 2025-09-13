@@ -55,7 +55,7 @@ struct WhisperLocalModelCard: View {
     private var header: some View {
         HStack {
             Text(model.displayName)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.headline.weight(.semibold))
             statusBadge
             Spacer()
         }
@@ -76,18 +76,18 @@ struct WhisperLocalModelCard: View {
                 }
             }
             .foregroundStyle(.secondary)
-            .font(.system(size: 11))
+            .font(.caption)
             
             HStack(spacing: 3) {
                 Text("Speed")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 ModelPerformanceStatsDots(value: model.speed * 10)
             }
             
             HStack(spacing: 3) {
                 Text("Accuracy")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 ModelPerformanceStatsDots(value: model.accuracy * 10)
             }
@@ -98,14 +98,14 @@ struct WhisperLocalModelCard: View {
         Group {
             if isSelected {
                 Text("Default")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Capsule().fill(Color.accentColor))
                     .foregroundColor(.white)
             } else if isDownloaded {
                 Text("Downloaded")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color(.lightGray.withAlphaComponent(0.5)), in: .rect(cornerRadius: 16))
@@ -116,7 +116,7 @@ struct WhisperLocalModelCard: View {
     private var descriptionSection: some View {
         Text(model.description)
             .multilineTextAlignment(.leading)
-            .font(.system(size: 11))
+            .font(.caption)
             .foregroundStyle(.secondary)
             .lineLimit(2)
             .fixedSize(horizontal: false, vertical: true)

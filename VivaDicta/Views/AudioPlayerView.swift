@@ -203,7 +203,7 @@ struct AudioPlayerView: View {
                     .frame(width: 40, height: 40)
                     .overlay(
                         Image(systemName: playerManager.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(Color.blue)
                     )
             }

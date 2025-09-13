@@ -1,27 +1,28 @@
 //
-//  CloudModelConfigurationView.swift
+//  AddAPIKeyView.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2025.09.03
+//  Created by Anton Novoselov on 2025.09.12
 //
 
 import SwiftUI
 
-struct CloudModelConfigurationView: View {
+struct AddAPIKeyView: View {
     @Environment(\.dismiss) var dismiss
-    var model: CloudModel
-    var onSave: () -> Void
+    let provider: AIProvider
+    let aiService: AIService
     
-    @State var apiKey: String = ""
+    @State private var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
-    @State private var aiService = AIService()
+    
+    var onSave: (AIProvider) -> Void
     
     var body: some View {
-        
         VStack(spacing: 10) {
-            Text("\(model.provider.rawValue.capitalized) API Key")
+            Text("\(provider.rawValue.capitalized) API Key")
                 .font(.title2)
+            
             TextField("API Key", text: $apiKey)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -59,54 +60,34 @@ struct CloudModelConfigurationView: View {
             .background(.blue, in: .capsule)
             .padding(.top, 16)
             .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
-                Spacer()
+            
+            Spacer()
         }
         .onAppear {
-            apiKey = model.apiKey ?? ""
+            // Load existing API key if available
+            let apiKeyKey = Constants.kAPIKeyTemplate + provider.rawValue
+            apiKey = UserDefaults.standard.string(forKey: apiKeyKey) ?? ""
         }
         .padding(.top, 32)
         .padding()
-    }
-    
-    
-    private func mapToAIProvider(_ transcriptionProvider: TranscriptionModelProvider) -> AIProvider? {
-        switch transcriptionProvider {
-        case .openAI:
-            return .openAI
-        case .groq:
-            return .groq
-        case .elevenLabs:
-            return .elevenLabs
-        case .deepgram:
-            return .deepgram
-        case .gemini:
-            return .gemini
-        default:
-            return nil
-        }
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     func saveKey() {
         Task {
-            guard let aiProvider = mapToAIProvider(model.provider) else {
-                await MainActor.run {
-                    verificationError = "API verification not supported for this provider"
-                }
-                return
-            }
-            
             await MainActor.run {
                 isVerifying = true
                 verificationError = nil
             }
             
-            let isValid = await aiService.saveAPIKey(apiKey, for: aiProvider)
+            let isValid = await aiService.saveAPIKey(apiKey, for: provider)
             
             await MainActor.run {
                 isVerifying = false
                 
                 if isValid {
-                    onSave()
+                    onSave(provider)
+                    dismiss()
                 } else {
                     verificationError = "Invalid API key. Please check your key and try again."
                 }
@@ -116,8 +97,10 @@ struct CloudModelConfigurationView: View {
 }
 
 #Preview {
-    CloudModelConfigurationView(
-        model: TranscriptionModelProvider.allCloudModels[0],
-        onSave: {}
-        )
+    NavigationStack {
+        AddAPIKeyView(
+            provider: .openAI,
+            aiService: AIService(),
+            onSave: {_ in })
+    }
 }

@@ -47,7 +47,7 @@ struct CloudModelCard: View {
     private var header: some View {
         HStack {
             Text(model.displayName)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.headline.weight(.semibold))
             statusBadge
             Spacer()
         }
@@ -67,11 +67,11 @@ struct CloudModelCard: View {
                 }
             }
             .foregroundStyle(.secondary)
-            .font(.system(size: 11))
+            .font(.caption)
             
             HStack(spacing: 3) {
                 Text("Accuracy")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 ModelPerformanceStatsDots(value: model.accuracy * 10)
             }
@@ -82,7 +82,7 @@ struct CloudModelCard: View {
         Group {
             if !isAPIConfigured {
                 Text("Add API key")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(.orange, in: .rect(cornerRadius: 16))
@@ -93,7 +93,7 @@ struct CloudModelCard: View {
     private var descriptionSection: some View {
         Text(model.description)
             .multilineTextAlignment(.leading)
-            .font(.system(size: 11))
+            .font(.caption)
             .foregroundStyle(.secondary)
             .lineLimit(2)
             .fixedSize(horizontal: false, vertical: true)
@@ -121,7 +121,7 @@ struct CloudModelCard: View {
                 configureButton
             }
         }
-        .font(.system(size: 12, weight: .semibold))
+        .font(.callout.weight(.semibold))
     }
     
     var selectButton: some View {

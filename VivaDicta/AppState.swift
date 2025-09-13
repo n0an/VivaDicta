@@ -23,6 +23,7 @@ class AppState {
     private var cloudTranscriptionService = CloudTranscriptionService()
     
     let whisperPrompt = WhisperPrompt()
+    var aiService = AIService()
     
     var selectedTab: TabTag = .record
 
@@ -61,9 +62,9 @@ class AppState {
         }
     }
     
-    func updateCloudModels(with model: CloudModel, apiKey: String) {
-        CloudModel.saveApiKey(apiKey, model: model)
+    func updateCloudModels() {
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+        aiService.refreshConnectedProviders()
     }
     
     func updateTranscriptionPrompt() {
@@ -84,7 +85,6 @@ extension AppState {
     func loadCurrentTranscriptionModel() {
         if let savedModelName = UserDefaults.standard.string(forKey: Constants.kCurrentTranscriptionModel),
            let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
-            print("=== \(savedModel.name)")
             if savedModel.provider == .local,
                let localWhipserModel = savedModel as? WhisperLocalModel {
                 Task { try await loadLocalModel(localWhipserModel) }
@@ -95,7 +95,6 @@ extension AppState {
     
     func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
         self.currentTranscriptionModel = model
-        print("=== \(model.name)")
         
         UserDefaults.standard.set(model.name, forKey: Constants.kCurrentTranscriptionModel)
         UserDefaults.standard.synchronize()

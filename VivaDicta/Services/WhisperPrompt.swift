@@ -41,13 +41,13 @@ class WhisperPrompt {
     }
     
     private func loadCustomPrompts() {
-        if let savedPrompts = UserDefaults.standard.dictionary(forKey: Constants.customPromptsKey) as? [String: String] {
+        if let savedPrompts = UserDefaults.standard.dictionary(forKey: Constants.kCustomPromptsKey) as? [String: String] {
             customPrompts = savedPrompts
         }
     }
     
     private func saveCustomPrompts() {
-        UserDefaults.standard.set(customPrompts, forKey: Constants.customPromptsKey)
+        UserDefaults.standard.set(customPrompts, forKey: Constants.kCustomPromptsKey)
         UserDefaults.standard.synchronize()
     }
     
