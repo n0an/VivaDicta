@@ -74,25 +74,14 @@ class AIService {
         return String(format: DefaultPrompts.system.prompt, selectedMode.prompt)
     }
     
-//    var isConfigured: Bool {
-//        guard let aiProvider = self.selectedMode.aiProvider else { return false }
-//        return self.connectedProviders.contains(aiProvider)
-//    }
-    
     private func makeRequest(text: String) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider,
               let apiKey = self.getAPIKey(for: aiProvider) else {
             throw EnhancementError.notConfigured
         }
         
-        
-        
-//        guard isConfigured else {
-//            throw EnhancementError.notConfigured
-//        }
-        
         guard !text.isEmpty else {
-            return "" // Silently return empty string instead of throwing error
+            return ""
         }
         
         let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"

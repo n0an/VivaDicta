@@ -162,9 +162,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
                 
-                
-                
-                
                 if let (enhancedText, enhancementDuration, modeName) = try await appState?.aiService.enhance(transcribedText) {
                     
                     let transcription = Transcription(
@@ -184,7 +181,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     self.recordingState = .idle
                     
                 } else {
-                    
                     let transcription = Transcription(
                         text: transcribedText,
                         timestamp: .now,
@@ -201,8 +197,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     
                     self.recordingState = .idle
                 }
-
-                
                 
             } catch {
                 if Task.isCancelled { return }
