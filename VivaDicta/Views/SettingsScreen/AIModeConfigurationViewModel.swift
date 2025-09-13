@@ -16,7 +16,7 @@ class AIModeConfigurationViewModel {
     var aiProvider: AIProvider?
     var aiModel: String?
     
-    private let mode: AIEnhanceMode
+    private var mode: AIEnhanceMode
     private let aiService: AIService
     
     init(mode: AIEnhanceMode, aiService: AIService) {
@@ -29,6 +29,7 @@ class AIModeConfigurationViewModel {
     }
     
     func updateProvider(_ newProvider: AIProvider?) {
+//        self.mode.aiProvider = newProvider
         aiProvider = newProvider
         
         if let provider = newProvider {
@@ -40,6 +41,7 @@ class AIModeConfigurationViewModel {
     }
     
     func updateModel(_ newModel: String?) {
+//        mode.aiModel = newModel ?? ""
         aiModel = newModel
         saveConfiguration()
     }
@@ -63,6 +65,11 @@ class AIModeConfigurationViewModel {
         } else {
             userDefaults.removeObject(forKey: modelKey)
         }
+        
+        mode.aiProvider = aiProvider
+        mode.aiModel = aiModel ?? ""
+        
+        aiService.selectedMode = mode
         
         logger.info("Saved AI configuration for mode '\(self.mode.name)': provider=\(self.aiProvider?.rawValue ?? "none"), model=\(self.aiModel ?? "none")")
     }

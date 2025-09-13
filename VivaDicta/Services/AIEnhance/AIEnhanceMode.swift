@@ -8,33 +8,12 @@
 import SwiftUI
 
 
-//enum AIEnhanceModeType: Identifiable, CaseIterable {
-//    var id: Self { self }
-//    
-//    case email
-//    case chat
-//    case note
-//    case regular
-//    
-//    var name: String {
-//        switch self {
-//        case .email:
-//            "Email"
-//        case .chat:
-//            "Chat"
-//        case .note:
-//            "Note"
-//        case .regular:
-//            "Regular"
-//        }
-//    }
-//}
 
 struct AIEnhanceMode: Identifiable, Hashable, Codable {
     let name: String
     let prompt: String
-    let aiProvider: AIProvider?
-    let aiModel: String
+    var aiProvider: AIProvider?
+    var aiModel: String
     
     let aiEnhanceEnabled: Bool
     
