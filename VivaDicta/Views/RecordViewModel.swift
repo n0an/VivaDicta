@@ -163,28 +163,50 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
                 
-                if let (enhancedText, enhancementDuration, modeName) = try await appState?.aiService.enhance(transcribedText) {
+                // TODO: - check if AI Enhance ready and configured
+                if let aiService = appState?.aiService {
                     
-                    let transcription = Transcription(
-                        text: transcribedText,
-                        enhancedText: enhancedText,
-                        audioDuration: audioDuration,
-                        audioFileName: recordURL.lastPathComponent,
-                        transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
-                        aiEnhancementModelName: appState?.aiService.selectedMode.aiModel,
-                        promptName: appState?.aiService.selectedMode.name,
-                        transcriptionDuration: transcriptionDuration,
-                        enhancementDuration: enhancementDuration)
-                    
-                    modelContext.insert(transcription)
-                    try modelContext.save()
-                    
-                    try Task.checkCancellation()
-                    
-                    self.recordingState = .idle
+                    do {
+                        let (enhancedText, enhancementDuration, modeName) = try await aiService.enhance(transcribedText)
+                        
+                        let transcription = Transcription(
+                            text: transcribedText,
+                            enhancedText: enhancedText,
+                            audioDuration: audioDuration,
+                            audioFileName: recordURL.lastPathComponent,
+                            transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                            aiEnhancementModelName: appState?.aiService.selectedMode.aiModel,
+                            promptName: appState?.aiService.selectedMode.name,
+                            transcriptionDuration: transcriptionDuration,
+                            enhancementDuration: enhancementDuration)
+                        
+                        modelContext.insert(transcription)
+                        try modelContext.save()
+                        
+                        try Task.checkCancellation()
+                        
+                        self.recordingState = .idle
+                        
+                    } catch {
+                        // Enhancement failed
+                        let transcription = Transcription(
+                            text: transcribedText,
+                            enhancedText: "Enhancement failed: \(error)",
+                            audioDuration: audioDuration,
+                            audioFileName: recordURL.lastPathComponent,
+                            transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                            transcriptionDuration: transcriptionDuration)
+                        
+                        modelContext.insert(transcription)
+                        try modelContext.save()
+                        
+                        try Task.checkCancellation()
+                        
+                        self.recordingState = .idle
+                    }
                     
                 } else {
-                    
+                    // NO AI Enhance applied
                     let transcription = Transcription(
                         text: transcribedText,
                         audioDuration: audioDuration,
