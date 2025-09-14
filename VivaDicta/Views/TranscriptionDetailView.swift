@@ -13,8 +13,10 @@ struct TranscriptionDetailView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            AudioPlayerView(audioFileName: transcription.audioFileName)
-                .padding(.bottom, 8)
+            if let audioFileName = transcription.audioFileName {
+                AudioPlayerView(audioFileName: audioFileName)
+                    .padding(.bottom, 8)
+            }
             
             HStack {
                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
@@ -22,7 +24,7 @@ struct TranscriptionDetailView: View {
                     .foregroundColor(.secondary)
                 Spacer()
                 
-                Text(transcription.audioDurationFormatted)
+                Text(transcription.getDurationFormatted(transcription.audioDuration))
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -31,29 +33,64 @@ struct TranscriptionDetailView: View {
                     .cornerRadius(6)
             }
             
-            Text(transcription.text)
-                .font(.body)
-
+            // Original text section
+            VStack(alignment: .leading, spacing: 8) {
+                Text(transcription.text)
+                    .font(.system(size: 15, weight: .regular, design: .default))
+                    .lineSpacing(2)
+                
+                HStack {
+                    Text("Original")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    AnimatedCopyButton(textToCopy: transcription.text)
+                }
+            }
+            
+            if let enhancedText = transcription.enhancedText {
+                Divider()
+                    .padding(.vertical, 8)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(enhancedText)
+                        .font(.system(size: 15, weight: .regular, design: .default))
+                        .lineSpacing(2)
+                    
+                    HStack {
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.blue)
+                            Text("Enhanced")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.blue)
+                        }
+                        Spacer()
+                        AnimatedCopyButton(textToCopy: enhancedText)
+                    }
+                }
+            }
             
             Divider()
                 .padding(.vertical, 8)
-
+            
             VStack(alignment: .leading, spacing: 10) {
-                metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.audioDurationFormatted)
-                metadataRow(icon: "cpu.fill", label: "Transcription Model", value: transcription.transcriptionModelName)
-                
-//                if let aiModel = transcription.aiEnhancementModelName {
-//                    metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
-//                }
-//                if let promptName = transcription.promptName {
-//                    metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
-//                }
-//                if let duration = transcription.transcriptionDuration {
-//                    metadataRow(icon: "clock.fill", label: "Transcription Time", value: formatTiming(duration))
-//                }
-//                if let duration = transcription.enhancementDuration {
-//                    metadataRow(icon: "clock.fill", label: "Enhancement Time", value: formatTiming(duration))
-//                }
+                metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
+                if let modelName = transcription.transcriptionModelName {
+                    metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
+                }
+                if let aiModel = transcription.aiEnhancementModelName {
+                    metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
+                }
+                if let promptName = transcription.promptName {
+                    metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
+                }
+                if let duration = transcription.transcriptionDuration {
+                    metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
+                }
+                if let duration = transcription.enhancementDuration {
+                    metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
+                }
             }
 
             

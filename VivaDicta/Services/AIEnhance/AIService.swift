@@ -22,7 +22,7 @@ class AIService {
         }
     }
     
-    private var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
+    public var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
@@ -53,6 +53,12 @@ class AIService {
         } else {
             logger.error("Failed to encode AI enhance mode: \(mode.name)")
         }
+        
+        updateSelectedMode()
+    }
+    
+    private func updateSelectedMode() {
+        self.selectedMode = getMode(name: selectedModeName)
     }
     
     private func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {

@@ -27,7 +27,7 @@ struct TranscriptionsView: View {
                                     .foregroundColor(.secondary)
                                 Spacer()
                                 
-                                Text(transcription.audioDurationFormatted)
+                                Text(transcription.getDurationFormatted(transcription.audioDuration))
                                     .font(.subheadline.weight(.medium))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)

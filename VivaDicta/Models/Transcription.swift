@@ -11,37 +11,46 @@ import SwiftData
 @Model
 class Transcription {
     var text: String
+    var enhancedText: String?
     var timestamp: Date
-    var enhancedText: String
-    var audioFileName: String
     var audioDuration: TimeInterval
-    var transcriptionModelName: String
-    var enhancementModelName: String
+    var audioFileName: String?
+    var transcriptionModelName: String?
+    var aiEnhancementModelName: String?
+    var promptName: String?
+    var transcriptionDuration: TimeInterval?
+    var enhancementDuration: TimeInterval?
     
     init(text: String,
-         timestamp: Date,
-         enhancedText: String,
-         audioFileName: String,
+         enhancedText: String? = nil,
          audioDuration: TimeInterval,
-         transcriptionModelName: String,
-         enhancementModelName: String) {
+         audioFileName: String? = nil,
+         transcriptionModelName: String? = nil,
+         aiEnhancementModelName: String? = nil,
+         promptName: String? = nil,
+         transcriptionDuration: TimeInterval? = nil,
+         enhancementDuration: TimeInterval? = nil) {
         self.text = text
-        self.timestamp = timestamp
         self.enhancedText = enhancedText
-        self.audioFileName = audioFileName
+        self.timestamp = Date()
         self.audioDuration = audioDuration
+        self.audioFileName = audioFileName
         self.transcriptionModelName = transcriptionModelName
-        self.enhancementModelName = enhancementModelName
+        self.aiEnhancementModelName = aiEnhancementModelName
+        self.promptName = promptName
+        self.transcriptionDuration = transcriptionDuration
+        self.enhancementDuration = enhancementDuration
     }
+
     
-    var audioDurationFormatted: String {
-        if audioDuration < 1 {
-            return (audioDuration * 1000).formatted(.number.precision(.fractionLength(0))) + "ms"
+    func getDurationFormatted(_ duration: Double) -> String {
+        if duration < 1 {
+            return (duration * 1000).formatted(.number.precision(.fractionLength(0))) + "ms"
         }
-        if audioDuration < 60 {
-            return audioDuration.formatted(.number.precision(.fractionLength(1))) + "s"
+        if duration < 60 {
+            return duration.formatted(.number.precision(.fractionLength(1))) + "s"
         }
-        return Duration.seconds(round(audioDuration))
+        return Duration.seconds(round(duration))
             .formatted(.units(allowed: [.minutes, .seconds], width: .narrow))
     }
 }
@@ -49,30 +58,31 @@ class Transcription {
 extension Transcription {
     nonisolated(unsafe) static let mockData: [Transcription] =
     [
+        
         Transcription(
             text: "hello world",
-            timestamp: .now,
-            enhancedText: "enhanced 1",
-            audioFileName: "",
-            audioDuration: 5,
-            transcriptionModelName: "openai",
-            enhancementModelName: ""),
+            audioDuration: 5),
+        
         Transcription(
-            text: "how are you",
-            timestamp: .now,
-            enhancedText: "enhanced 2",
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
             audioFileName: "",
-            audioDuration: 42,
-            transcriptionModelName: "whisper.cpp",
-            enhancementModelName: ""),
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
         Transcription(
             text: "knock knock Neo",
-            timestamp: .now.advanced(by: 1000),
-            enhancedText: "enhanced 3",
-            audioFileName: "",
+            enhancedText: "Knock-knock Neo!" ,
             audioDuration: 77,
-            transcriptionModelName: "elevellabs",
-            enhancementModelName: "")
-        
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8)
     ]
 }
