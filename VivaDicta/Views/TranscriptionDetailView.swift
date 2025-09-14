@@ -33,9 +33,43 @@ struct TranscriptionDetailView: View {
                     .cornerRadius(6)
             }
             
-            Text(transcription.text)
-                .font(.body)
-
+            // Original text section
+            VStack(alignment: .leading, spacing: 8) {
+                Text(transcription.text)
+                    .font(.system(size: 15, weight: .regular, design: .default))
+                    .lineSpacing(2)
+                
+                HStack {
+                    Text("Original")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    AnimatedCopyButton(textToCopy: transcription.text)
+                }
+            }
+            
+            if let enhancedText = transcription.enhancedText {
+                Divider()
+                    .padding(.vertical, 8)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(enhancedText)
+                        .font(.system(size: 15, weight: .regular, design: .default))
+                        .lineSpacing(2)
+                    
+                    HStack {
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.blue)
+                            Text("Enhanced")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.blue)
+                        }
+                        Spacer()
+                        AnimatedCopyButton(textToCopy: enhancedText)
+                    }
+                }
+            }
             
             Divider()
                 .padding(.vertical, 8)
