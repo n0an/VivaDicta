@@ -68,13 +68,18 @@ The app currently supports Auto Detect, English, and Russian languages. The code
 ## Documentation
 
 The `/docs/` directory contains comprehensive reference documentation for Apple technologies:
+- `swift.md` - Complete Swift language reference and patterns
 - `swift6-migration.mdc` - Swift 6 migration guide and concurrency best practices
 - `swift-concurrency.md` - Detailed Swift concurrency patterns and async/await usage
 - `swift-observable.mdc` - Swift Observation framework (@Observable macro)
-- `swift-testing-*.mdc` - Swift Testing framework API and best practices
+- `swift-argument-parser.mdc` - Swift Argument Parser for command-line tools
+- `swift-testing-api.mdc` - Swift Testing framework API reference
+- `swift-testing-playbook.mdc` - Swift Testing best practices and patterns
 - `swiftdata.md` - SwiftData persistence patterns and model definitions
 - `swiftui.md` - SwiftUI patterns, view composition, and state management
 - `uikit.md` - UIKit integration and interoperability
+- `xcode.md` - Xcode development environment and tools
+- `xcode26docs.mdc` - Xcode 26 specific features and documentation
 
 Refer to these docs when working with Apple frameworks or implementing new features.
 
