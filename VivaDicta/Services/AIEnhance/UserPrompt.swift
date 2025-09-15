@@ -14,7 +14,6 @@ struct UserPrompt: Identifiable, Codable, Equatable {
     let promptInstructions: String
     let templateType: PromptsTemplates
     let createdAt: Date
-    var isActive: Bool
     
     init(
         id: UUID = UUID(),
@@ -22,8 +21,7 @@ struct UserPrompt: Identifiable, Codable, Equatable {
         description: String,
         promptInstructions: String,
         templateType: PromptsTemplates,
-        createdAt: Date = Date(),
-        isActive: Bool = false
+        createdAt: Date = Date()
     ) {
         self.id = id
         self.title = title
@@ -31,6 +29,5 @@ struct UserPrompt: Identifiable, Codable, Equatable {
         self.promptInstructions = promptInstructions
         self.templateType = templateType
         self.createdAt = createdAt
-        self.isActive = isActive
     }
 }

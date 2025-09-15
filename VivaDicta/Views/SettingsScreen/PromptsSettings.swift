@@ -70,13 +70,7 @@ struct PromptsSettings: View {
     private var promptsList: some View {
         List {
             ForEach(appState.promptsManager.userPrompts) { prompt in
-                PromptRowView(
-                    prompt: prompt,
-                    isActive: appState.promptsManager.activePrompt?.id == prompt.id,
-                    onActivate: {
-                        appState.promptsManager.setActivePrompt(prompt)
-                    }
-                )
+                PromptRowView(prompt: prompt)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
                         appState.promptsManager.deletePrompt(prompt)
@@ -120,8 +114,6 @@ struct PromptsSettings: View {
 
 struct PromptRowView: View {
     let prompt: UserPrompt
-    let isActive: Bool
-    let onActivate: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -139,35 +131,17 @@ struct PromptRowView: View {
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 4) {
-                    if isActive {
-                        Text("Active")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.green)
-                            .cornerRadius(8)
-                    }
-                    
-                    Text(prompt.templateType.displayName)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.1))
-                        .cornerRadius(6)
-                }
+                Text(prompt.templateType.displayName)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.1))
+                    .cornerRadius(6)
             }
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
-        .onTapGesture {
-            if !isActive {
-                onActivate()
-            }
-        }
     }
 }
 
