@@ -15,6 +15,12 @@ struct TranscriptionsView: View {
     
     @State var searchText: String = ""
     
+    var appState: AppState
+    
+    init(appState: AppState) {
+        self.appState = appState
+    }
+    
     var filteredTranscriptions: [Transcription] {
         transcriptions.filter { transcription in
             searchText.isEmpty ||
@@ -83,11 +89,14 @@ struct TranscriptionsView: View {
         } description: {
             Text("Tap Start Recording to capture your first transcription.")
         } actions: {
-            Button("Start recording") { print("test") }
+            Button("Start recording") {
+                appState.selectedTab = .record
+            }
         }
     }
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    TranscriptionsView()
+    @Previewable @State var appState = AppState()
+    TranscriptionsView(appState: appState)
 }
