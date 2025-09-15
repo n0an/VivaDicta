@@ -27,8 +27,11 @@ struct TranscriptionsView: View {
         
         NavigationStack {
             VStack {
-                if filteredTranscriptions.isEmpty {
-                    emptyStateView
+                if transcriptions.isEmpty {
+                    emptyAllStateView
+                }
+                else if filteredTranscriptions.isEmpty {
+                    emptyFilteredStateView
                 } else {
                     List {
                         ForEach(filteredTranscriptions) { transcription in
@@ -68,18 +71,21 @@ struct TranscriptionsView: View {
         }
     }
     
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "waveform")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary)
-            Text("No Transcriptions")
-                .font(.title2)
-                .fontWeight(.semibold)
+    private var emptyFilteredStateView: some View {
+        ContentUnavailableView {
+            Label("No Transcriptions found", systemImage: "doc.text.magnifyingglass")
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
+    private var emptyAllStateView: some View {
+        ContentUnavailableView {
+            Label("No Transcriptions yet", systemImage: "waveform")
+        } description: {
+            Text("Tap Start Recording to capture your first transcription.")
+        } actions: {
+            Button("Start recording") { print("test") }
+        }
+    }
 }
 
 #Preview(traits: .transcriptionsMockData) {
