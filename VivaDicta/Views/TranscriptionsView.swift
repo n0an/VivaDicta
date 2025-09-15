@@ -11,6 +11,8 @@ import SwiftData
 struct TranscriptionsView: View {
     @State var selectedTranscription: Transcription?
     @State var searchText: String = ""
+    @State private var debouncedSearchText: String = ""
+    @State private var searchTask: Task<Void, Never>?
     
     var appState: AppState
     
@@ -20,9 +22,25 @@ struct TranscriptionsView: View {
     
     var body: some View {
         NavigationStack {
-            TranscriptionsList(searchText: searchText, appState: appState)
+            TranscriptionsList(searchText: debouncedSearchText, appState: appState)
                 .navigationTitle("Transcriptions")
                 .searchable(text: $searchText, placement: .navigationBarDrawer)
+                .onChange(of: searchText) { _, newValue in
+                    // Cancel previous search task
+                    searchTask?.cancel()
+                    
+                    // Create new debounced search task
+                    searchTask = Task {
+                        try? await Task.sleep(for: .milliseconds(200))
+                        
+                        // Only update if task wasn't cancelled
+                        if !Task.isCancelled {
+                            await MainActor.run {
+                                debouncedSearchText = newValue
+                            }
+                        }
+                    }
+                }
         }
     }
 }
