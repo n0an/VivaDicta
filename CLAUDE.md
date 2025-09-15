@@ -96,6 +96,39 @@ When reviewing code for this project, keep in mind:
 - Extract reusable components for better code organization
 - Optimize performance by using @State with onChange for expensive operations instead of computed properties
 
+## SwiftData #Predicate Best Practices
+
+When filtering optional fields in SwiftData predicates, use this proven pattern:
+
+```swift
+#Predicate<Model> { item in
+    if searchText.isEmpty {
+        true
+    } else {
+        item.requiredField.localizedStandardContains(searchText) ||
+        (item.optionalField?.localizedStandardContains(searchText) ?? false)
+    }
+}
+```
+
+**✅ WORKS:**
+- Optional chaining with nil coalescing: `optionalField?.method() ?? false`
+- Simple boolean logic with `||` and `&&`
+- Basic comparisons: `==`, `!=`, `<`, `>`
+- `localizedStandardContains()` for text search
+
+**❌ AVOID (causes crashes or failures):**
+- Force unwrapping: `optionalField!.method()`
+- Explicit nil checking: `optionalField != nil && optionalField!.method()`
+- Ternary operators: `(optionalField ?? "").method()`
+- Complex Swift expressions that don't translate to SQL
+
+**Key principles:**
+- Keep predicates simple - SwiftData has limited Swift-to-SQL translation
+- Use `localizedStandardContains` for text search (handles case, diacritics)
+- Follow patterns from working examples (VoiceInk, FaceFacts, iExpense)
+- Test thoroughly - predicate errors often appear at runtime, not compile time
+
 ## AI-Powered PR Review
 
 The repository includes automated GitHub Actions workflow for AI-powered code review with iOS test execution. TypeScript scripts in `/lib/agents/` orchestrate code review generation and test running using either OpenAI or Anthropic APIs.

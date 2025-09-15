@@ -9,12 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct TranscriptionsView: View {
-    @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
-    
     @State var selectedTranscription: Transcription?
-    
     @State var searchText: String = ""
-    @State private var filteredTranscriptions: [Transcription] = []
     
     var appState: AppState
     
@@ -23,46 +19,52 @@ struct TranscriptionsView: View {
     }
     
     var body: some View {
-        
         NavigationStack {
-            VStack {
-                if transcriptions.isEmpty {
-                    emptyAllStateView
-                }
-                else if filteredTranscriptions.isEmpty {
-                    emptyFilteredStateView
-                } else {
-                    List {
-                        ForEach(filteredTranscriptions) { transcription in
-                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
-                                TranscriptionRowView(transcription: transcription)
-                            }
-                        }
-                    }
-                    .listStyle(.plain)
-                    
-                }
-            }
-            .navigationTitle("Transcriptions")
-            .searchable(text: $searchText, placement: .navigationBarDrawer)
-            .onAppear {
-                updateFilteredTranscriptions()
-            }
-            .onChange(of: searchText) {
-                updateFilteredTranscriptions()
-            }
-            .onChange(of: transcriptions) {
-                updateFilteredTranscriptions()
-            }
-
+            TranscriptionsList(searchText: searchText, appState: appState)
+                .navigationTitle("Transcriptions")
+                .searchable(text: $searchText, placement: .navigationBarDrawer)
         }
     }
+}
+
+private struct TranscriptionsList: View {
+    let searchText: String
+    let appState: AppState
     
-    private func updateFilteredTranscriptions() {
-        filteredTranscriptions = transcriptions.filter { transcription in
-            searchText.isEmpty ||
-            transcription.text.localizedCaseInsensitiveContains(searchText) ||
-            (transcription.enhancedText ?? "").localizedCaseInsensitiveContains(searchText)
+    @Query private var transcriptions: [Transcription]
+    @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
+    
+    init(searchText: String, appState: AppState) {
+        self.searchText = searchText
+        self.appState = appState
+        
+        _transcriptions = Query(filter: #Predicate<Transcription> { transcription in
+            if searchText.isEmpty {
+                true
+            } else {
+                transcription.text.localizedStandardContains(searchText) ||
+                (transcription.enhancedText?.localizedStandardContains(searchText) ?? false)
+            }
+        }, sort: \Transcription.timestamp, order: .reverse)
+    }
+    
+    var body: some View {
+        VStack {
+            if allTranscriptions.isEmpty {
+                emptyAllStateView
+            }
+            else if transcriptions.isEmpty {
+                emptyFilteredStateView
+            } else {
+                List {
+                    ForEach(transcriptions) { transcription in
+                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
+                            TranscriptionRowView(transcription: transcription)
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
         }
     }
     
