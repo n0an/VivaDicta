@@ -15,27 +15,33 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 
-                Section("Current Mode") {
-                    Picker(selection: $appState.aiService.selectedModeName) {
-                        ForEach(AIEnhanceMode.predefinedModes) { mode in
-                            Text(mode.name).tag(mode)
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "gear")
-                            Text("Active Mode")
-                        }
-                    }
-                }
+//                Section("Current Mode") {
+//                    Picker(selection: $appState.aiService.selectedModeName) {
+//                        ForEach(AIEnhanceMode.predefinedModes) { mode in
+//                            Text(mode.name).tag(mode)
+//                        }
+//                    } label: {
+//                        HStack {
+//                            Image(systemName: "gear")
+//                            Text("Active Mode")
+//                        }
+//                    }
+//                }
                 
-                Section("Configure Modes") {
-                    
-                    ForEach(AIEnhanceMode.predefinedModes) { mode in
-                        NavigationLink(value: mode) {
-                            Text(mode.name)
-                                .font(.body)
-                        }
-                        
+//                Section("Configure Modes") {
+//                    
+//                    ForEach(AIEnhanceMode.predefinedModes) { mode in
+//                        NavigationLink(value: mode) {
+//                            Text(mode.name)
+//                                .font(.body)
+//                        }
+//                        
+//                    }
+//                }
+                
+                Section("AI Enhancement") {
+                    NavigationLink(destination: AIEnhancementSettings()) {
+                        Text("AI Enhancement Settings")
                     }
                 }
             }
