@@ -40,7 +40,7 @@ struct SettingsView: View {
 //                }
                 
                 Section("AI Enhancement") {
-                    NavigationLink(destination: AIEnhancementSettings()) {
+                    NavigationLink(destination: AIEnhancementSettings(appState: appState)) {
                         Text("AI Enhancement Settings")
                     }
                 }

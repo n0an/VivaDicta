@@ -24,6 +24,7 @@ class AppState {
     
     let whisperPrompt = WhisperPrompt()
     var aiService = AIService()
+    var promptsManager = PromptsManager()
     
     var selectedTab: TabTag = .record
 

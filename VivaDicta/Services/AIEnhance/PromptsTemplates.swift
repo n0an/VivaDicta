@@ -7,11 +7,34 @@
 
 import Foundation
 
-enum PromptsTemplates: String, CaseIterable {
+enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     case email
     case chat
     case note
     case regular
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        rawValue.capitalized
+    }
+    
+    var description: String {
+        switch self {
+        case .email:
+            return "Format text for professional email communication with proper structure and salutations"
+        case .chat:
+            return "Clean up text for casual messaging while maintaining Gen-Z chat style"
+        case .note:
+            return "Enhance text clarity and structure for notes and documentation"
+        case .regular:
+            return "General text cleanup that improves clarity while preserving personality"
+        }
+    }
+    
+    var defaultTitle: String {
+        return "My \(displayName) Prompt"
+    }
     
     var prompt: String {
         switch self {

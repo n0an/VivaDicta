@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct AIEnhancementSettings: View {
+    @Bindable var appState: AppState
+    
     var body: some View {
         Form {
             Section("Settings") {
-                NavigationLink(destination: PromptsSettings()) {
+                NavigationLink(destination: PromptsSettings(appState: appState)) {
                     Text("LLM Prompts")
                 }
             }
