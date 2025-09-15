@@ -9,79 +9,85 @@ import SwiftUI
 import SwiftData
 
 struct TranscriptionsView: View {
-    @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
-    
     @State var selectedTranscription: Transcription?
-    
     @State var searchText: String = ""
     
-    var filteredTranscriptions: [Transcription] {
-        transcriptions.filter { transcription in
-            searchText.isEmpty ||
-            transcription.text.localizedCaseInsensitiveContains(searchText) ||
-            (transcription.enhancedText ?? "").localizedCaseInsensitiveContains(searchText)
-        }
+    var appState: AppState
+    
+    init(appState: AppState) {
+        self.appState = appState
     }
     
     var body: some View {
-        
         NavigationStack {
-            VStack {
-                if filteredTranscriptions.isEmpty {
-                    emptyStateView
-                } else {
-                    List {
-                        ForEach(filteredTranscriptions) { transcription in
-                            
-                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundColor(.secondary)
-                                        Spacer()
-                                        
-                                        Text(transcription.getDurationFormatted(transcription.audioDuration))
-                                            .font(.subheadline.weight(.medium))
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(.blue.opacity(0.1))
-                                            .foregroundColor(.blue)
-                                            .cornerRadius(6)
-                                    }
-                                    
-                                    Text(transcription.text)
-                                        .font(.body)
-                                        .lineLimit(2)
-                                        .lineSpacing(2)
-                                }
-                            }
+            TranscriptionsList(searchText: searchText, appState: appState)
+                .navigationTitle("Transcriptions")
+                .searchable(text: $searchText, placement: .navigationBarDrawer)
+        }
+    }
+}
+
+private struct TranscriptionsList: View {
+    let searchText: String
+    let appState: AppState
+    
+    @Query private var transcriptions: [Transcription]
+    @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
+    
+    init(searchText: String, appState: AppState) {
+        self.searchText = searchText
+        self.appState = appState
+        
+        _transcriptions = Query(filter: #Predicate<Transcription> { transcription in
+            if searchText.isEmpty {
+                true
+            } else {
+                transcription.text.localizedStandardContains(searchText) ||
+                (transcription.enhancedText?.localizedStandardContains(searchText) ?? false)
+            }
+        }, sort: \Transcription.timestamp, order: .reverse)
+    }
+    
+    var body: some View {
+        VStack {
+            if allTranscriptions.isEmpty {
+                emptyAllStateView
+            }
+            else if transcriptions.isEmpty {
+                emptyFilteredStateView
+            } else {
+                List {
+                    ForEach(transcriptions) { transcription in
+                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
+                            TranscriptionRowView(transcription: transcription)
                         }
                     }
-                    .listStyle(.plain)
-                    
                 }
+                .listStyle(.plain)
             }
-            .navigationTitle("Transcriptions")
-            .searchable(text: $searchText, placement: .navigationBarDrawer)
-
         }
     }
     
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "waveform")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary)
-            Text("No Transcriptions")
-                .font(.title2)
-                .fontWeight(.semibold)
+    private var emptyFilteredStateView: some View {
+        ContentUnavailableView {
+            Label("No Transcriptions found", systemImage: "doc.text.magnifyingglass")
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
+    private var emptyAllStateView: some View {
+        ContentUnavailableView {
+            Label("No Transcriptions yet", systemImage: "waveform")
+        } description: {
+            Text("Tap Start Recording to capture your first transcription.")
+        } actions: {
+            Button("Start recording") {
+                appState.selectedTab = .record
+            }
+        }
+    }
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    TranscriptionsView()
+    @Previewable @State var appState = AppState()
+    TranscriptionsView(appState: appState)
 }

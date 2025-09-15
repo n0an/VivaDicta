@@ -2,6 +2,8 @@ import { z } from 'zod'
 import { generateObject } from 'ai'
 import { getLLMModel } from './llm'
 import { PRContext } from './pr-context'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 // Zod schema for type-safe LLM responses
 const reviewSchema = z.object({
@@ -51,9 +53,18 @@ export async function generateCodeReview(prContext: PRContext): Promise<CodeRevi
   }
 }
 
-
+function readClaudeGuidelines(): string {
+  try {
+    const claudemdPath = join(process.cwd(), 'CLAUDE.md')
+    return readFileSync(claudemdPath, 'utf-8')
+  } catch (error) {
+    console.warn('Could not read CLAUDE.md file:', error)
+    return 'CLAUDE.md not found - using default guidelines'
+  }
+}
 
 function buildCodeReviewPrompt(prContext: PRContext): string {
+  const claudeGuidelines = readClaudeGuidelines()
   const changedFilesPrompt = prContext.changedFiles.map(f => 
     `\n### File: ${f.filename}
 Status: ${f.status}
@@ -85,16 +96,22 @@ ${prContext.commits.map(c => `- ${c.message} (${c.author})`).join('\n')}
 Changed Files:
 ${changedFilesPrompt}
 
-Focus on:
-- Code quality and best practices
+## Project Guidelines and Context
+The following information is from the project's CLAUDE.md file which contains important context about the codebase, architecture, and coding standards:
+
+${claudeGuidelines}
+
+## Code Review Focus
+Based on the project context above, focus on:
+- Code quality and best practices specific to this iOS app
 - Potential bugs or issues
 - Performance considerations
 - Security concerns
 - Maintainability and readability
-- Swift/iOS specific best practices (since this is an iOS app)
-- Architecture and design patterns
+- Adherence to the project's architectural patterns and guidelines
+- Swift/iOS specific best practices as outlined in the project documentation
 
-Provide constructive, actionable feedback. Be thorough but concise.`
+Provide constructive, actionable feedback that aligns with the project's established patterns and modern iOS development practices. Be thorough but concise.`
 }
 
 function getFileExtension(filename: string): string {

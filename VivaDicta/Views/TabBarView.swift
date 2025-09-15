@@ -22,7 +22,7 @@ struct TabBarView: View {
             }
             
             Tab("Notes", systemImage: "text.document", value: TabTag.transcriptions) {
-                TranscriptionsView()
+                TranscriptionsView(appState: appState)
             }
             
             Tab("Models", systemImage: "sparkles", value: TabTag.models) {

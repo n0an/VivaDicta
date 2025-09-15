@@ -18,7 +18,8 @@
       "Bash(npx tsx:*)",
       "Bash(grep:*)",
       "Read(//Users/antonnovoselov/Desktop/**)",
-      "Bash(xcbeautify:*)"
+      "Bash(xcbeautify:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": [],
