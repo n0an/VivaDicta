@@ -28,7 +28,9 @@ Use the following commands to build, run and test the app:
 - **TabBarView**: Main navigation with tabs for recording, transcriptions, models, and settings
 - **RecordView/RecordViewModel**: Audio recording interface with AVAudioRecorder integration and real-time audio level monitoring
 - **ModelsView**: Management of local Whisper models with download/delete functionality
-- **TranscriptionsView**: Display and management of saved transcriptions
+- **TranscriptionsView**: Display and management of saved transcriptions with search functionality and performance-optimized filtering
+- **TranscriptionRowView**: Reusable component for transcription list items
+- **TranscriptionDetailView**: Detailed view showing both original and AI-enhanced transcription text
 
 ### Transcription Services
 
@@ -40,6 +42,7 @@ Use the following commands to build, run and test the app:
   - **DeepgramTranscriptionService**: Deepgram Nova API
   - **GeminiTranscriptionService**: Google Gemini API
 - **WhisperContext**: Actor-based wrapper around whisper.cpp C library ensuring thread-safe access
+- **AIService**: AI-powered text enhancement service for improving transcription quality
 
 ### Key Technologies
 
@@ -57,8 +60,9 @@ The app currently supports Auto Detect, English, and Russian languages. The code
 
 ### Enhanced Transcription Features
 
-- **Text Enhancement**: The app supports enhanced transcription processing with separate enhancement models
+- **AI Text Enhancement**: Dedicated AIService for improving transcription quality using cloud AI models
 - **Audio Duration Tracking**: Transcriptions include audio duration metadata for better file management  
+- **Search Functionality**: Full-text search across both original and enhanced transcription text
 - **Multiple Transcription Providers**: Users can choose from various cloud providers based on their needs and preferences
 
 ## Documentation
@@ -73,6 +77,24 @@ The `/docs/` directory contains comprehensive reference documentation for Apple 
 - `uikit.md` - UIKit integration and interoperability
 
 Refer to these docs when working with Apple frameworks or implementing new features.
+
+## Performance & Best Practices
+
+- **State Management**: Use `@State` with `onChange` modifiers instead of computed properties for expensive filtering operations
+- **Component Extraction**: Extract reusable UI components for better code organization and maintainability
+- **Concurrency**: All UI updates properly isolated to `@MainActor` with Swift 6 strict concurrency
+- **Memory Management**: Actor-based patterns for thread-safe access to heavy resources like Whisper models
+
+## Code Review Guidelines
+
+When reviewing code for this project, keep in mind:
+- Use Swift's **@Observable** macro, NOT @ObservableObject/@Published/Combine patterns
+- SwiftUI Views are implicitly @MainActor in Swift 6 - explicit annotation usually not needed
+- Use **SwiftData @Model**, NOT Core Data NSManagedObject
+- Prefer **async/await** over completion handlers
+- Use **@State/@Binding** for SwiftUI state, NOT @StateObject
+- Extract reusable components for better code organization
+- Optimize performance by using @State with onChange for expensive operations instead of computed properties
 
 ## AI-Powered PR Review
 
