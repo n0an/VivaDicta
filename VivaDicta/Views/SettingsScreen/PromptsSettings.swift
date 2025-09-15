@@ -11,6 +11,7 @@ struct PromptsSettings: View {
     @Bindable var appState: AppState
     @State private var showingTemplateSelection = false
     @State private var selectedTemplate: PromptsTemplates?
+    @State private var editingPrompt: UserPrompt?
     
     var body: some View {
         NavigationView {
@@ -36,10 +37,14 @@ struct PromptsSettings: View {
                 PromptEditView(
                     template: template,
                     promptsManager: appState.promptsManager,
-                    isPresented: Binding(
-                        get: { selectedTemplate != nil },
-                        set: { if !$0 { selectedTemplate = nil } }
-                    )
+                    isPresented: $selectedTemplate.isPresent()
+                )
+            }
+            .sheet(item: $editingPrompt) { prompt in
+                PromptEditView(
+                    editingPrompt: prompt,
+                    promptsManager: appState.promptsManager,
+                    isPresented: $editingPrompt.isPresent()
                 )
             }
         }
@@ -77,7 +82,7 @@ struct PromptsSettings: View {
                     }
                     
                     Button("Edit") {
-                        // TODO: Implement edit functionality
+                        editingPrompt = prompt
                     }
                     .tint(.blue)
                 }
@@ -184,13 +189,29 @@ struct TemplateSelectionView: View {
 }
 
 struct PromptEditView: View {
-    let template: PromptsTemplates
+    let template: PromptsTemplates?
+    let editingPrompt: UserPrompt?
     let promptsManager: PromptsManager
     @Binding var isPresented: Bool
     
     @State private var title: String = ""
     @State private var description: String = ""
     @State private var promptInstructions: String = ""
+    
+    private var isEditing: Bool {
+        editingPrompt != nil
+    }
+    
+    private var currentTemplate: PromptsTemplates {
+        return editingPrompt?.templateType ?? template ?? .regular
+    }
+    
+    init(template: PromptsTemplates? = nil, editingPrompt: UserPrompt? = nil, promptsManager: PromptsManager, isPresented: Binding<Bool>) {
+        self.template = template
+        self.editingPrompt = editingPrompt
+        self.promptsManager = promptsManager
+        self._isPresented = isPresented
+    }
     
     var body: some View {
         NavigationView {
@@ -217,12 +238,12 @@ struct PromptEditView: View {
                     HStack {
                         Text("Based on:")
                         Spacer()
-                        Text(template.displayName)
+                        Text(currentTemplate.displayName)
                             .foregroundColor(.secondary)
                     }
                 }
             }
-            .navigationTitle("New Prompt")
+            .navigationTitle(isEditing ? "Edit Prompt" : "New Prompt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -233,23 +254,37 @@ struct PromptEditView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        let prompt = promptsManager.createPromptFromTemplate(
-                            template,
-                            title: title,
-                            description: description
-                        )
-                        
-                        var finalPrompt = prompt
-                        if !promptInstructions.isEmpty {
-                            finalPrompt = UserPrompt(
-                                title: finalPrompt.title,
-                                description: finalPrompt.description,
+                        if isEditing, let existingPrompt = editingPrompt {
+                            // Update existing prompt
+                            let updatedPrompt = UserPrompt(
+                                id: existingPrompt.id,
+                                title: title,
+                                description: description,
                                 promptInstructions: promptInstructions,
-                                templateType: finalPrompt.templateType
+                                templateType: existingPrompt.templateType,
+                                createdAt: existingPrompt.createdAt
                             )
+                            promptsManager.updatePrompt(updatedPrompt)
+                        } else {
+                            // Create new prompt
+                            let prompt = promptsManager.createPromptFromTemplate(
+                                currentTemplate,
+                                title: title,
+                                description: description
+                            )
+                            
+                            var finalPrompt = prompt
+                            if !promptInstructions.isEmpty {
+                                finalPrompt = UserPrompt(
+                                    title: finalPrompt.title,
+                                    description: finalPrompt.description,
+                                    promptInstructions: promptInstructions,
+                                    templateType: finalPrompt.templateType
+                                )
+                            }
+                            
+                            promptsManager.addPrompt(finalPrompt)
                         }
-                        
-                        promptsManager.addPrompt(finalPrompt)
                         isPresented = false
                     }
                     .disabled(title.isEmpty)
@@ -257,10 +292,27 @@ struct PromptEditView: View {
             }
         }
         .onAppear {
-            title = template.defaultTitle
-            description = template.description
-            promptInstructions = template.prompt
+            if isEditing, let existingPrompt = editingPrompt {
+                // Pre-fill with existing prompt data
+                title = existingPrompt.title
+                description = existingPrompt.description
+                promptInstructions = existingPrompt.promptInstructions
+            } else {
+                // Pre-fill with template data
+                title = currentTemplate.defaultTitle
+                description = currentTemplate.description
+                promptInstructions = currentTemplate.prompt
+            }
         }
+    }
+}
+
+extension Binding {
+    func isPresent<T>() -> Binding<Bool> where Value == T? {
+        return Binding<Bool>(
+            get: { self.wrappedValue != nil },
+            set: { if !$0 { self.wrappedValue = nil } }
+        )
     }
 }
 
