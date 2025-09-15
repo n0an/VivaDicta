@@ -195,17 +195,17 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     }
 }
 
-extension PromptsTemplates {
-    var aiEnhanceMode: AIEnhanceMode {
-        AIEnhanceMode(
-            name: self.rawValue.capitalized,
-            prompt: self.prompt,
-            aiProvider: nil,
-            aiModel: "",
-            aiEnhanceEnabled: false
-        )
-    }
-}
+//extension PromptsTemplates {
+//    var aiEnhanceMode: AIEnhanceMode {
+//        AIEnhanceMode(
+//            name: self.rawValue.capitalized,
+//            prompt: self.prompt,
+//            aiProvider: nil,
+//            aiModel: "",
+//            aiEnhanceEnabled: false
+//        )
+//    }
+//}
 
 extension PromptsTemplates {
     static var systemPrompt =

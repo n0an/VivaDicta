@@ -14,30 +14,39 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // Modes section
+                Section("Modes") {
+                    
+                    ForEach(appState.aiService.modes) { mode in
+                        NavigationLink(value: mode) {
+                            Text(mode.name)
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    // Add New Mode button
+                    NavigationLink(destination: ModeEditView(mode: nil, aiService: appState.aiService)) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundColor(.blue)
+                                .font(.title2)
+                            
+                            Text("Add New Mode")
+                                .foregroundColor(.blue)
+                                .font(.body)
+                            
+                            Spacer()
+                            
+                        }
+//                        .padding()
+//                        .background(Color(.systemBackground))
+                    }
+                }
                 
-//                Section("Current Mode") {
-//                    Picker(selection: $appState.aiService.selectedModeName) {
-//                        ForEach(AIEnhanceMode.predefinedModes) { mode in
-//                            Text(mode.name).tag(mode)
-//                        }
-//                    } label: {
-//                        HStack {
-//                            Image(systemName: "gear")
-//                            Text("Active Mode")
-//                        }
-//                    }
-//                }
-                
-//                Section("Configure Modes") {
-//                    
-//                    ForEach(AIEnhanceMode.predefinedModes) { mode in
-//                        NavigationLink(value: mode) {
-//                            Text(mode.name)
-//                                .font(.body)
-//                        }
-//                        
-//                    }
-//                }
+                // Rest of settings in Form
                 
                 Section("AI Enhancement") {
                     NavigationLink(destination: AIEnhancementSettings(appState: appState)) {
@@ -45,12 +54,15 @@ struct SettingsView: View {
                     }
                 }
             }
+            
             .navigationDestination(for: AIEnhanceMode.self) { mode in
-                AIModeConfigurationView(mode: mode, aiService: appState.aiService)
+                ModeEditView(mode: mode, aiService: appState.aiService)
             }
         }
     }
+    
 }
+
 
 #Preview {
     @Previewable @State var appState = AppState()

@@ -14,6 +14,7 @@ class AIService {
     
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
+    public var modes: [AIEnhanceMode] = []
     
     public var selectedModeName: String {
         didSet {
@@ -22,14 +23,15 @@ class AIService {
         }
     }
     
-    public var selectedMode: AIEnhanceMode = PromptsTemplates.regular.aiEnhanceMode
+    public var selectedMode: AIEnhanceMode = AIEnhanceMode.defaultMode
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? PromptsTemplates.regular.aiEnhanceMode.name
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? AIEnhanceMode.defaultMode.name
+        loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
         loadSavedOpenRouterModels()
@@ -43,22 +45,79 @@ class AIService {
     }
     
     public func getMode(name: String) -> AIEnhanceMode {
-        return loadMode(withUserDefaultsKey: "SavedAIMode\(name)")
+        return modes.first { $0.name == name } ?? AIEnhanceMode.defaultMode
+    }
+    
+    public func addMode(_ mode: AIEnhanceMode) {
+        modes.append(mode)
+        saveModes()
+        logger.info("Added new mode: \(mode.name)")
+    }
+    
+    public func updateMode(_ mode: AIEnhanceMode) {
+        if let index = modes.firstIndex(where: { $0.name == mode.name }) {
+            modes[index] = mode
+            saveModes()
+            
+            // Update selected mode if it's the one being updated
+            if selectedMode.name == mode.name {
+                selectedMode = mode
+            }
+            
+            logger.info("Updated mode: \(mode.name)")
+        }
+    }
+    
+    public func deleteMode(_ mode: AIEnhanceMode) {
+        // Don't allow deleting the default mode
+        guard mode.name != AIEnhanceMode.defaultMode.name else {
+            logger.warning("Cannot delete default mode")
+            return
+        }
+        
+        modes.removeAll { $0.name == mode.name }
+        
+        // If deleted mode was selected, switch to default
+        if selectedMode.name == mode.name {
+            selectedModeName = AIEnhanceMode.defaultMode.name
+        }
+        
+        saveModes()
+        logger.info("Deleted mode: \(mode.name)")
     }
     
     public func saveMode(_ mode: AIEnhanceMode) {
-        if let encoded = try? JSONEncoder().encode(mode) {
-            userDefaults.set(encoded, forKey: "SavedAIMode\(mode.name)")
-            logger.info("Saved AI enhance mode: \(mode.name)")
-        } else {
-            logger.error("Failed to encode AI enhance mode: \(mode.name)")
-        }
-        
-        updateSelectedMode()
+        updateMode(mode)
     }
     
     private func updateSelectedMode() {
         self.selectedMode = getMode(name: selectedModeName)
+    }
+    
+    private func loadModes() {
+        if let savedModesData = userDefaults.data(forKey: "AIEnhanceModes"),
+           let savedModes = try? JSONDecoder().decode([AIEnhanceMode].self, from: savedModesData) {
+            modes = savedModes
+        } else {
+            // Initialize with default mode if no saved modes
+            modes = [AIEnhanceMode.defaultMode]
+        }
+        
+        // Ensure default mode is always present
+        if !modes.contains(where: { $0.name == AIEnhanceMode.defaultMode.name }) {
+            modes.insert(AIEnhanceMode.defaultMode, at: 0)
+        }
+        
+        logger.info("Loaded \(self.modes.count) AI enhance modes")
+    }
+    
+    private func saveModes() {
+        guard let encoded = try? JSONEncoder().encode(modes) else {
+            logger.error("Failed to encode AI enhance modes")
+            return
+        }
+        userDefaults.set(encoded, forKey: "AIEnhanceModes")
+        logger.info("Saved \(self.modes.count) AI enhance modes")
     }
     
     private func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {
@@ -66,7 +125,7 @@ class AIService {
            let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
             return savedMode
         } else {
-            return PromptsTemplates.regular.aiEnhanceMode
+            return AIEnhanceMode.defaultMode
         }
     }
     

@@ -87,6 +87,6 @@ struct AIModeConfigurationView: View {
 
 #Preview {
     NavigationStack {
-        AIModeConfigurationView(mode: AIEnhanceMode.predefinedModes[0], aiService: AIService())
+        AIModeConfigurationView(mode: AIEnhanceMode.defaultMode, aiService: AIService())
     }
 }

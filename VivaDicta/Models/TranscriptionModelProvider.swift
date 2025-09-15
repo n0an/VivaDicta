@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranscriptionModelProvider: String, Sendable {
+enum TranscriptionModelProvider: String, Sendable, Codable {
     case local
     case parakeet
     case openAI
