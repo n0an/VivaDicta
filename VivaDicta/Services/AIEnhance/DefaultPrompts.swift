@@ -1,5 +1,5 @@
 //
-//  DefaultPrompts.swift
+//  PromptsTemplates.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.09.13
@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum DefaultPrompts: String, CaseIterable {
+enum PromptsTemplates: String, CaseIterable {
     case email
     case chat
     case note
@@ -172,7 +172,7 @@ enum DefaultPrompts: String, CaseIterable {
     }
 }
 
-extension DefaultPrompts {
+extension PromptsTemplates {
     var aiEnhanceMode: AIEnhanceMode {
         AIEnhanceMode(
             name: self.rawValue.capitalized,
@@ -184,7 +184,7 @@ extension DefaultPrompts {
     }
 }
 
-extension DefaultPrompts {
+extension PromptsTemplates {
     static var systemPrompt =
         """
         <SYSTEM_INSTRUCTIONS>

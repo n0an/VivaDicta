@@ -22,14 +22,14 @@ class AIService {
         }
     }
     
-    public var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
+    public var selectedMode: AIEnhanceMode = PromptsTemplates.regular.aiEnhanceMode
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? DefaultPrompts.regular.aiEnhanceMode.name
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? PromptsTemplates.regular.aiEnhanceMode.name
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
         loadSavedOpenRouterModels()
@@ -66,7 +66,7 @@ class AIService {
            let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
             return savedMode
         } else {
-            return DefaultPrompts.regular.aiEnhanceMode
+            return PromptsTemplates.regular.aiEnhanceMode
         }
     }
     
@@ -102,7 +102,7 @@ class AIService {
     }
     
     private func getSystemMessage() -> String {
-        return String(format: DefaultPrompts.systemPrompt, selectedMode.prompt)
+        return String(format: PromptsTemplates.systemPrompt, selectedMode.prompt)
     }
     
     private func makeRequest(text: String) async throws -> String {

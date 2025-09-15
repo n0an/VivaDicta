@@ -17,6 +17,6 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
     
     let aiEnhanceEnabled: Bool
     
-    static let predefinedModes: [AIEnhanceMode] = DefaultPrompts.allCases.map { $0.aiEnhanceMode }
+    static let predefinedModes: [AIEnhanceMode] = PromptsTemplates.allCases.map { $0.aiEnhanceMode }
     
 }
