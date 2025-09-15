@@ -14,19 +14,12 @@ struct TranscriptionsView: View {
     @State var selectedTranscription: Transcription?
     
     @State var searchText: String = ""
+    @State private var filteredTranscriptions: [Transcription] = []
     
     var appState: AppState
     
     init(appState: AppState) {
         self.appState = appState
-    }
-    
-    var filteredTranscriptions: [Transcription] {
-        transcriptions.filter { transcription in
-            searchText.isEmpty ||
-            transcription.text.localizedCaseInsensitiveContains(searchText) ||
-            (transcription.enhancedText ?? "").localizedCaseInsensitiveContains(searchText)
-        }
     }
     
     var body: some View {
@@ -73,7 +66,24 @@ struct TranscriptionsView: View {
             }
             .navigationTitle("Transcriptions")
             .searchable(text: $searchText, placement: .navigationBarDrawer)
+            .onAppear {
+                updateFilteredTranscriptions()
+            }
+            .onChange(of: searchText) {
+                updateFilteredTranscriptions()
+            }
+            .onChange(of: transcriptions) {
+                updateFilteredTranscriptions()
+            }
 
+        }
+    }
+    
+    private func updateFilteredTranscriptions() {
+        filteredTranscriptions = transcriptions.filter { transcription in
+            searchText.isEmpty ||
+            transcription.text.localizedCaseInsensitiveContains(searchText) ||
+            (transcription.enhancedText ?? "").localizedCaseInsensitiveContains(searchText)
         }
     }
     
