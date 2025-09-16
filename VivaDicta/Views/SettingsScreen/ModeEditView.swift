@@ -95,67 +95,70 @@ struct ModeEditView: View {
                 }
             }
             
-            Section(header: Text("AI Enhancement"),
-                    footer: viewModel.aiEnhanceEnabled ? Text("Configure how the raw transcription should be processed and refined.") : nil) {
-                
-                Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
-                
-                if viewModel.aiEnhanceEnabled {
-                    Picker(selection: $viewModel.aiProvider) {
-                        ForEach(AIProvider.allCases) { provider in
-                            Text(provider.rawValue.capitalized).tag(provider)
+            if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
+                Section(header: Text("AI Enhancement"),
+                        footer: viewModel.aiEnhanceEnabled ? Text("Configure how the raw transcription should be processed and refined.") : nil) {
+                    
+                    Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
+                    
+                    if viewModel.aiEnhanceEnabled {
+                        Picker(selection: $viewModel.aiProvider) {
+                            ForEach(AIProvider.allCases) { provider in
+                                Text(provider.rawValue.capitalized).tag(provider)
+                            }
+                            
+                        } label: {
+                            HStack {
+                                Image(systemName: "cpu")
+                                Text("AI Provider")
+                            }
+                        }
+                        .onChange(of: viewModel.aiProvider) { _, newProvider in
+                            viewModel.updateProvider(newProvider)
                         }
                         
-                    } label: {
-                        HStack {
-                            Image(systemName: "cpu")
-                            Text("AI Provider")
-                        }
-                    }
-                    .onChange(of: viewModel.aiProvider) { _, newProvider in
-                        viewModel.updateProvider(newProvider)
-                    }
-                    
-                    if let provider = viewModel.aiProvider {
-                        let hasKey = viewModel.hasAPIKey(for: provider)
-                        if hasKey {
-                            
-                            Picker(selection: $viewModel.aiModel) {
-                                ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
-                                    Text(model).tag(model as String?)
-                                }
+                        if let provider = viewModel.aiProvider {
+                            let hasKey = viewModel.hasAPIKey(for: provider)
+                            if hasKey {
                                 
-                            } label: {
-                                HStack {
-                                    Image(systemName: "sparkles")
-                                    Text("AI Model")
-                                }
-                            }
-                            .onChange(of: viewModel.aiModel) { _, newModel in
-                                viewModel.updateModel(newModel)
-                            }
-                            
-                        } else {
-                            NavigationLink(destination: AddAPIKeyView(
-                                provider: provider,
-                                aiService: aiService, onSave: { provider in
-                                    viewModel.updateModel(provider.defaultModel)
-                                })) {
+                                Picker(selection: $viewModel.aiModel) {
+                                    ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
+                                        Text(model).tag(model as String?)
+                                    }
+                                    
+                                } label: {
                                     HStack {
-                                        Image(systemName: "key")
-                                        Text("Add API Key")
+                                        Image(systemName: "sparkles")
+                                        Text("AI Model")
                                     }
                                 }
+                                .onChange(of: viewModel.aiModel) { _, newModel in
+                                    viewModel.updateModel(newModel)
+                                }
+                                
+                            } else {
+                                NavigationLink(destination: AddAPIKeyView(
+                                    provider: provider,
+                                    aiService: aiService, onSave: { provider in
+                                        viewModel.updateModel(provider.defaultModel)
+                                    })) {
+                                        HStack {
+                                            Image(systemName: "key")
+                                            Text("Add API Key")
+                                        }
+                                    }
+                            }
                         }
-                    }
-                    
-                    Picker("Prompt", selection: $viewModel.selectedPromptID) {
-                        ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                            Text(prompt.title).tag(prompt.id)
+                        
+                        Picker("Prompt", selection: $viewModel.selectedPromptID) {
+                            ForEach(viewModel.promptsManager.userPrompts) { prompt in
+                                Text(prompt.title).tag(prompt.id)
+                            }
                         }
                     }
                 }
             }
+            
         }
         .navigationTitle(viewModel.isEditing ? "Edit Mode" : "New Mode")
         .toolbar {
