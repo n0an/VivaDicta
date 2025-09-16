@@ -23,13 +23,13 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     var description: String {
         switch self {
         case .email:
-            return "Format text for professional email communication with proper structure and salutations"
+            return "Template for converting casual messages into professional email format"
         case .chat:
-            return "Clean up text for casual messaging while maintaining Gen-Z chat style"
+            return "Casual chat-style formatting"
         case .note:
-            return "Enhance text clarity and structure for notes and documentation"
+            return "Rewrites transcriptions with enhanced clarity, improved sentence structure, and rhythmic flow while preserving original meaning."
         case .regular:
-            return "General text cleanup that improves clarity while preserving personality"
+            return "Default system prompt for improving clarity and accuracy of transcriptions"
         case .vibeCoding:
             return "For Vibe coders and AI chat. Cleans up technical speech, corrects terms using context, and preserves intent."
         }
