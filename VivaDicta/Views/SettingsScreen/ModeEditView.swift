@@ -10,19 +10,24 @@ import SwiftUI
 struct ModeEditView: View {
     let aiService: AIService
     @Environment(\.dismiss) private var dismiss
-    
+    @Binding var selectedTab: TabTag
+
     @State private var viewModel: ModeEditViewModel
-    
+
     init(mode: AIEnhanceMode?,
          aiService: AIService,
-         promptsManager: PromptsManager) {
+         promptsManager: PromptsManager,
+         appState: AppState,
+         selectedTab: Binding<TabTag>) {
         self.aiService = aiService
-        
+        self._selectedTab = selectedTab
+
         self._viewModel = State(
             initialValue: ModeEditViewModel(
                 mode: mode,
                 aiService: aiService,
-                promptsManager: promptsManager))
+                promptsManager: promptsManager,
+                appState: appState))
     }
     
     var body: some View {
@@ -32,20 +37,39 @@ struct ModeEditView: View {
             }
             
             Section("Transcription") {
-                Picker("Provider", selection: $viewModel.transcriptionProvider) {
-                    ForEach(TranscriptionModelProvider.allCases) { provider in
-                        Text(provider.rawValue.capitalized).tag(provider)
+                if viewModel.hasAvailableTranscriptionProviders() {
+                    Picker("Provider", selection: $viewModel.transcriptionProvider) {
+                        ForEach(viewModel.getAvailableProviders()) { provider in
+                            Text(provider.rawValue.capitalized).tag(provider)
+                        }
                     }
-                }
-                .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
-                    viewModel.updateTranscriptionProvider(newProvider)
-                }
+                    .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
+                        viewModel.updateTranscriptionProvider(newProvider)
+                    }
+                    .onAppear {
+                        viewModel.validateAndAutoSelectProvider()
+                    }
 
-                Picker("Model", selection: $viewModel.transcriptionModel) {
-                    ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
-                        Text(viewModel.getTranscriptionModelDisplayName(model, provider: viewModel.transcriptionProvider))
-                            .tag(model)
+                    Picker("Model", selection: $viewModel.transcriptionModel) {
+                        ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
+                            Text(viewModel.getTranscriptionModelDisplayName(model, provider: viewModel.transcriptionProvider))
+                                .tag(model)
+                        }
                     }
+                } else {
+                    Button {
+                        dismiss()
+                        selectedTab = .models
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.down.circle")
+                            Text("Select Model")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .foregroundColor(.blue)
                 }
             }
             
@@ -136,5 +160,12 @@ struct ModeEditView: View {
 #Preview {
     @Previewable @State var aiService = AIService()
     @Previewable @State var promptsManager = PromptsManager()
-    ModeEditView(mode: nil, aiService: aiService, promptsManager: promptsManager)
+    @Previewable @State var appState = AppState()
+    @Previewable @State var selectedTab: TabTag = .settings
+    ModeEditView(
+        mode: nil,
+        aiService: aiService,
+        promptsManager: promptsManager,
+        appState: appState,
+        selectedTab: $selectedTab)
 }
