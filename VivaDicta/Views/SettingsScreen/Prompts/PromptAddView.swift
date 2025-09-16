@@ -2,24 +2,19 @@
 //  PromptAddView.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 16.09.2025.
+//  Created by Anton Novoselov on 2025.09.16
 //
 
 import SwiftUI
 
 struct PromptAddView: View {
     let templateToCreateNewPrompt: PromptsTemplates?
-    let editingPrompt: UserPrompt?
     let promptsManager: PromptsManager
     @Binding var isPresented: Bool
     
     @State private var title: String = ""
     @State private var description: String = ""
     @State private var promptInstructions: String = ""
-    
-    private var isEditing: Bool {
-        editingPrompt != nil
-    }
     
     private var currentTemplate: PromptsTemplates {
         return templateToCreateNewPrompt ?? .regular
@@ -30,7 +25,6 @@ struct PromptAddView: View {
          promptsManager: PromptsManager,
          isPresented: Binding<Bool>) {
         self.templateToCreateNewPrompt = template
-        self.editingPrompt = editingPrompt
         self.promptsManager = promptsManager
         self._isPresented = isPresented
     }
@@ -55,17 +49,8 @@ struct PromptAddView: View {
                                 .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                         )
                 }
-                
-                Section(header: Text("Template")) {
-                    HStack {
-                        Text("Based on:")
-                        Spacer()
-                        Text(currentTemplate.displayName)
-                            .foregroundColor(.secondary)
-                    }
-                }
             }
-            .navigationTitle(isEditing ? "Edit Prompt" : "New Prompt")
+            .navigationTitle("New Prompt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -76,37 +61,12 @@ struct PromptAddView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        if isEditing, let existingPrompt = editingPrompt {
-                            // Update existing prompt
-                            let updatedPrompt = UserPrompt(
-                                id: existingPrompt.id,
-                                title: title,
-                                description: description,
-                                promptInstructions: promptInstructions,
-                                templateType: existingPrompt.templateType,
-                                createdAt: existingPrompt.createdAt
-                            )
-                            promptsManager.updatePrompt(updatedPrompt)
-                        } else {
-                            // Create new prompt
-                            let prompt = promptsManager.createPromptFromTemplate(
-                                currentTemplate,
-                                title: title,
-                                description: description
-                            )
-                            
-                            var finalPrompt = prompt
-                            if !promptInstructions.isEmpty {
-                                finalPrompt = UserPrompt(
-                                    title: finalPrompt.title,
-                                    description: finalPrompt.description,
-                                    promptInstructions: promptInstructions,
-                                    templateType: finalPrompt.templateType
-                                )
-                            }
-                            
-                            promptsManager.addPrompt(finalPrompt)
-                        }
+                        let prompt = UserPrompt(
+                            title: title,
+                            description: description,
+                            promptInstructions: promptInstructions, templateType: currentTemplate)
+                        
+                        promptsManager.addPrompt(prompt)
                         isPresented = false
                     }
                     .disabled(title.isEmpty)
@@ -114,17 +74,9 @@ struct PromptAddView: View {
             }
         }
         .onAppear {
-            if isEditing, let existingPrompt = editingPrompt {
-                // Pre-fill with existing prompt data
-                title = existingPrompt.title
-                description = existingPrompt.description
-                promptInstructions = existingPrompt.promptInstructions
-            } else {
-                // Pre-fill with template data
-                title = currentTemplate.defaultTitle
-                description = currentTemplate.description
-                promptInstructions = currentTemplate.prompt
-            }
+            title = currentTemplate.defaultTitle
+            description = currentTemplate.description
+            promptInstructions = currentTemplate.prompt
         }
     }
 }
