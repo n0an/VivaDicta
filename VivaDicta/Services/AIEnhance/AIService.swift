@@ -55,12 +55,12 @@ class AIService {
     }
     
     public func updateMode(_ mode: AIEnhanceMode) {
-        if let index = modes.firstIndex(where: { $0.name == mode.name }) {
+        if let index = modes.firstIndex(where: { $0.id == mode.id }) {
             modes[index] = mode
             saveModes()
             
             // Update selected mode if it's the one being updated
-            if selectedMode.name == mode.name {
+            if selectedMode.id == mode.id {
                 selectedMode = mode
             }
             

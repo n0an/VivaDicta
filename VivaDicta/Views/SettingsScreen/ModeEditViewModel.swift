@@ -97,15 +97,34 @@ class ModeEditViewModel {
     }
     
     func saveMode() -> AIEnhanceMode {
-        return AIEnhanceMode(
-            name: modeName.trimmingCharacters(in: .whitespacesAndNewlines),
-            transcriptionProvider: transcriptionProvider,
-            transcriptionModel: transcriptionModel,
-            prompt: getPromptForSelection(selectedPromptID),
-            aiProvider: aiEnhanceEnabled ? getCurrentProvider() : nil,
-            aiModel: getCurrentModel(),
-            aiEnhanceEnabled: aiEnhanceEnabled
-        )
+        let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        logger.info("Saving mode with name: '\(trimmedName)'")
+        
+        if let existingMode = mode {
+            // Preserve the ID when editing an existing mode
+            return AIEnhanceMode(
+                id: existingMode.id,
+                name: trimmedName,
+                transcriptionProvider: transcriptionProvider,
+                transcriptionModel: transcriptionModel,
+                prompt: getPromptForSelection(selectedPromptID),
+                aiProvider: aiEnhanceEnabled ? getCurrentProvider() : nil,
+                aiModel: getCurrentModel(),
+                aiEnhanceEnabled: aiEnhanceEnabled
+            )
+        } else {
+            // Create new mode with new ID
+            return AIEnhanceMode(
+                id: UUID(),
+                name: trimmedName,
+                transcriptionProvider: transcriptionProvider,
+                transcriptionModel: transcriptionModel,
+                prompt: getPromptForSelection(selectedPromptID),
+                aiProvider: aiEnhanceEnabled ? getCurrentProvider() : nil,
+                aiModel: getCurrentModel(),
+                aiEnhanceEnabled: aiEnhanceEnabled
+            )
+        }
     }
     
     private func getPromptForSelection(_ promptID: UUID?) -> String {

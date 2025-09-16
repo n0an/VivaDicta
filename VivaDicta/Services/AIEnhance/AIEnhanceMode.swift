@@ -20,8 +20,19 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
     
     let aiEnhanceEnabled: Bool
     
-    init(name: String, transcriptionProvider: TranscriptionModelProvider, transcriptionModel: String, prompt: String, aiProvider: AIProvider? = nil, aiModel: String, aiEnhanceEnabled: Bool) {
-        self.id = UUID()
+//    init(name: String, transcriptionProvider: TranscriptionModelProvider, transcriptionModel: String, prompt: String, aiProvider: AIProvider? = nil, aiModel: String, aiEnhanceEnabled: Bool) {
+//        self.id = UUID()
+//        self.name = name
+//        self.transcriptionProvider = transcriptionProvider
+//        self.transcriptionModel = transcriptionModel
+//        self.prompt = prompt
+//        self.aiProvider = aiProvider
+//        self.aiModel = aiModel
+//        self.aiEnhanceEnabled = aiEnhanceEnabled
+//    }
+    
+    init(id: UUID, name: String, transcriptionProvider: TranscriptionModelProvider, transcriptionModel: String, prompt: String, aiProvider: AIProvider? = nil, aiModel: String, aiEnhanceEnabled: Bool) {
+        self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
         self.transcriptionModel = transcriptionModel
@@ -32,6 +43,7 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
     }
     
     static let defaultMode = AIEnhanceMode(
+        id: UUID(),
         name: "Default",
         transcriptionProvider: .local,
         transcriptionModel: "base",
