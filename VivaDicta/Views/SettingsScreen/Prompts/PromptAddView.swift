@@ -64,7 +64,7 @@ struct PromptAddView: View {
                         let prompt = UserPrompt(
                             title: title,
                             description: description,
-                            promptInstructions: promptInstructions, templateType: currentTemplate)
+                            promptInstructions: promptInstructions)
                         
                         promptsManager.addPrompt(prompt)
                         isPresented = false

@@ -57,7 +57,6 @@ struct PromptEditView: View {
                                 title: title,
                                 description: description,
                                 promptInstructions: promptInstructions,
-                                templateType: existingPrompt.templateType,
                                 createdAt: existingPrompt.createdAt
                             )
                             promptsManager.updatePrompt(updatedPrompt)

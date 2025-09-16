@@ -116,29 +116,15 @@ struct PromptRowView: View {
     let prompt: UserPrompt
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(prompt.title)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text(prompt.description)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                }
-                
-                Spacer()
-                
-                Text(prompt.templateType.displayName)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.secondary.opacity(0.1))
-                    .cornerRadius(6)
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            Text(prompt.title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            Text(prompt.description)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .lineLimit(2)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
