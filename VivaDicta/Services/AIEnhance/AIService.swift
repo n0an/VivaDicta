@@ -74,26 +74,18 @@ class AIService {
             logger.warning("Cannot delete default mode")
             return
         }
-        
+
         modes.removeAll { $0.name == mode.name }
-        
+
         // If deleted mode was selected, switch to default
         if selectedMode.name == mode.name {
             selectedModeName = AIEnhanceMode.defaultMode.name
         }
-        
+
         saveModes()
         logger.info("Deleted mode: \(mode.name)")
     }
-    
-    public func saveMode(_ mode: AIEnhanceMode) {
-        updateMode(mode)
-    }
-    
-    private func updateSelectedMode() {
-        self.selectedMode = getMode(name: selectedModeName)
-    }
-    
+
     private func loadModes() {
         if let savedModesData = userDefaults.data(forKey: "AIEnhanceModes"),
            let savedModes = try? JSONDecoder().decode([AIEnhanceMode].self, from: savedModesData) {
