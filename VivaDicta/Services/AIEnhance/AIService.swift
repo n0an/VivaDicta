@@ -69,17 +69,16 @@ class AIService {
     }
     
     public func deleteMode(_ mode: AIEnhanceMode) {
-        // Don't allow deleting the default mode
-        guard mode.name != AIEnhanceMode.defaultMode.name else {
-            logger.warning("Cannot delete default mode")
+        guard modes.count > 1 else {
+            logger.warning("Cannot delete last mode")
             return
         }
-
+        
         modes.removeAll { $0.name == mode.name }
-
-        // If deleted mode was selected, switch to default
+        
+        // If deleted mode was selected, switch to first one
         if selectedMode.name == mode.name {
-            selectedModeName = AIEnhanceMode.defaultMode.name
+            selectedModeName = modes[0].name
         }
 
         saveModes()
