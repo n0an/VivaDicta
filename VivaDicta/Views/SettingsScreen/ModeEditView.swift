@@ -67,9 +67,8 @@ struct ModeEditView: View {
                 
                 if aiEnhanceEnabled {
                     Picker(selection: $viewModel.aiProvider) {
-                        Text("None").tag(nil as AIProvider?)
                         ForEach(AIProvider.allCases) { provider in
-                            Text(provider.rawValue.capitalized).tag(provider as AIProvider?)
+                            Text(provider.rawValue.capitalized).tag(provider)
                         }
                         
                     } label: {
