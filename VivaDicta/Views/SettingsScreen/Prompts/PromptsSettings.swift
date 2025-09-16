@@ -16,14 +16,12 @@ struct PromptsSettings: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Prompts list
                 if appState.promptsManager.userPrompts.isEmpty {
                     emptyStateView
                 } else {
                     promptsList
                 }
                 
-                // Add Prompt button
                 addPromptSection
             }
             .navigationTitle("Prompts")
@@ -87,7 +85,6 @@ struct PromptsSettings: View {
                 }
             }
         }
-        .listStyle(PlainListStyle())
     }
     
     private var addPromptSection: some View {
@@ -107,8 +104,7 @@ struct PromptsSettings: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
-                .background(Color.blue)
-                .cornerRadius(12)
+                .background(Color.blue, in: .capsule)
             }
             .padding()
             .background(Color(.systemBackground))
