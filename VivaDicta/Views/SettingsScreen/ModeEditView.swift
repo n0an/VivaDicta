@@ -36,127 +36,102 @@ struct ModeEditView: View {
     }
     
     var body: some View {
-            Form {
-                Section("Mode Details") {
-                    TextField("Mode Name", text: $modeName)
+        Form {
+            Section("Mode Details") {
+                TextField("Mode Name", text: $modeName)
+            }
+            
+            Section("Transcription") {
+                Picker("Provider", selection: $transcriptionProvider) {
+                    ForEach(TranscriptionModelProvider.allCases) { provider in
+                        Text(provider.rawValue.capitalized).tag(provider)
+                    }
                 }
                 
-                Section("Transcription") {
-                    Picker("Provider", selection: $transcriptionProvider) {
-                        ForEach(TranscriptionModelProvider.allCases) { provider in
-                            Text(provider.rawValue.capitalized).tag(provider)
-                        }
+                Picker("Model", selection: $transcriptionModel) {
+                    if transcriptionProvider == .local {
+                        Text("base").tag("base")
+                        Text("small").tag("small")
+                        Text("medium").tag("medium")
+                        Text("large").tag("large")
+                    } else {
+                        Text(transcriptionModel).tag(transcriptionModel)
                     }
-                    .pickerStyle(.menu)
-                    
-                    Picker("Model", selection: $transcriptionModel) {
-                        if transcriptionProvider == .local {
-                            Text("base").tag("base")
-                            Text("small").tag("small")
-                            Text("medium").tag("medium")
-                            Text("large").tag("large")
-                        } else {
-                            Text(transcriptionModel).tag(transcriptionModel)
-                        }
-                    }
-                    .pickerStyle(.menu)
-//                    .foregroundColor(.secondary)
                 }
+            }
+            
+            Section(header: Text("AI Enhancement"),
+                    footer: aiEnhanceEnabled ? Text("Configure how the raw transcription should be processed and refined.") : nil) {
                 
+                Toggle("Enable", isOn: $aiEnhanceEnabled)
                 
-                
-                
-                
-                
-                // Post-processing Section
-                Section("AI Enhancement") {
-                    HStack {
-                        Text("Enabled")
-                        Spacer()
-                        Toggle("", isOn: $aiEnhanceEnabled)
-                    }
-                    
-                    if aiEnhanceEnabled {
-                        Picker(selection: $viewModel.aiProvider) {
-                            Text("None").tag(nil as AIProvider?)
-                            ForEach(AIProvider.allCases) { provider in
-                                Text(provider.rawValue.capitalized).tag(provider as AIProvider?)
-                            }
-                            
-                        } label: {
-                            HStack {
-                                Image(systemName: "cpu")
-                                Text("AI Provider")
-                            }
-                        }
-                        .onChange(of: viewModel.aiProvider) { _, newProvider in
-                            viewModel.updateProvider(newProvider)
+                if aiEnhanceEnabled {
+                    Picker(selection: $viewModel.aiProvider) {
+                        Text("None").tag(nil as AIProvider?)
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.rawValue.capitalized).tag(provider as AIProvider?)
                         }
                         
-                        if let provider = viewModel.aiProvider {
-                            let hasKey = viewModel.hasAPIKey(for: provider)
-                            if hasKey {
+                    } label: {
+                        HStack {
+                            Image(systemName: "cpu")
+                            Text("AI Provider")
+                        }
+                    }
+                    .onChange(of: viewModel.aiProvider) { _, newProvider in
+                        viewModel.updateProvider(newProvider)
+                    }
+                    
+                    if let provider = viewModel.aiProvider {
+                        let hasKey = viewModel.hasAPIKey(for: provider)
+                        if hasKey {
+                            
+                            Picker(selection: $viewModel.aiModel) {
+                                ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
+                                    Text(model).tag(model as String?)
+                                }
                                 
-                                Picker(selection: $viewModel.aiModel) {
-                                    ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
-                                        Text(model).tag(model as String?)
-                                    }
-                                    
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "sparkles")
-                                        Text("AI Model")
-                                    }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "sparkles")
+                                    Text("AI Model")
                                 }
-                                .onChange(of: viewModel.aiModel) { _, newModel in
-                                    viewModel.updateModel(newModel)
-                                }
-                            } else {
-                                NavigationLink(destination: AddAPIKeyView(
-                                    provider: provider,
-                                    aiService: aiService, onSave: { provider in
-                                        viewModel.updateModel(provider.defaultModel)
-                                    })) {
+                            }
+                            .onChange(of: viewModel.aiModel) { _, newModel in
+                                viewModel.updateModel(newModel)
+                            }
+                            
+                        } else {
+                            NavigationLink(destination: AddAPIKeyView(
+                                provider: provider,
+                                aiService: aiService, onSave: { provider in
+                                    viewModel.updateModel(provider.defaultModel)
+                                })) {
                                     HStack {
                                         Image(systemName: "key")
                                         Text("Add API Key")
                                     }
                                 }
-                            }
                         }
-                        
-                        
-                        HStack {
-                            Text("Prompt")
-                            Spacer()
-                            Picker("Prompt", selection: $selectedPromptID) {
-                                Text("None").tag(nil as UUID?)
-                                ForEach(promptsManager.userPrompts) { prompt in
-                                    Text(prompt.title).tag(prompt.id as UUID?)
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .foregroundColor(.secondary)
+                    }
+                    
+                    Picker("Prompt", selection: $selectedPromptID) {
+                        ForEach(promptsManager.userPrompts) { prompt in
+                            Text(prompt.title).tag(prompt.id)
                         }
-                        
-                        Text("Configure how the raw transcription should be processed and refined.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.top, 4)
                     }
                 }
             }
-            .navigationTitle(isEditing ? "Edit Mode" : "New Mode")
-//            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveMode()
-                    }
-                    .disabled(!isValid)
+        }
+        .navigationTitle(isEditing ? "Edit Mode" : "New Mode")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    saveMode()
                 }
+                .disabled(!isValid)
             }
-//        }
+        }
         .onAppear {
             loadModeData()
         }
