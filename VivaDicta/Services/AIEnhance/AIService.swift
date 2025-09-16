@@ -103,11 +103,6 @@ class AIService {
             modes = [AIEnhanceMode.defaultMode]
         }
         
-        // Ensure default mode is always present
-        if !modes.contains(where: { $0.name == AIEnhanceMode.defaultMode.name }) {
-            modes.insert(AIEnhanceMode.defaultMode, at: 0)
-        }
-        
         logger.info("Loaded \(self.modes.count) AI enhance modes")
     }
     
@@ -118,15 +113,6 @@ class AIService {
         }
         userDefaults.set(encoded, forKey: "AIEnhanceModes")
         logger.info("Saved \(self.modes.count) AI enhance modes")
-    }
-    
-    private func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {
-        if let savedModeData = UserDefaults.standard.data(forKey: key),
-           let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
-            return savedMode
-        } else {
-            return AIEnhanceMode.defaultMode
-        }
     }
     
     private func saveSelectedModeName(_ modeName: String) {
