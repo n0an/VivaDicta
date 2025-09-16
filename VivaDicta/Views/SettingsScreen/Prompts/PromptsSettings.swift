@@ -32,7 +32,7 @@ struct PromptsSettings: View {
                 )
             }
             .sheet(item: $selectedTemplate) { template in
-                PromptEditView(
+                PromptAddView(
                     template: template,
                     promptsManager: appState.promptsManager,
                     isPresented: $selectedTemplate.isPresent()
