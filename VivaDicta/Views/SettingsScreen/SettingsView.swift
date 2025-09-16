@@ -29,7 +29,9 @@ struct SettingsView: View {
                         destination: ModeEditView(
                             mode: nil,
                             aiService: appState.aiService,
-                            promptsManager: appState.promptsManager)) {
+                            promptsManager: appState.promptsManager,
+                            appState: appState,
+                            selectedTab: $appState.selectedTab)) {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
                                         .foregroundColor(.blue)
@@ -53,7 +55,12 @@ struct SettingsView: View {
             }
             
             .navigationDestination(for: AIEnhanceMode.self) { mode in
-                ModeEditView(mode: mode, aiService: appState.aiService, promptsManager: appState.promptsManager)
+                ModeEditView(
+                    mode: mode,
+                    aiService: appState.aiService,
+                    promptsManager: appState.promptsManager,
+                    appState: appState,
+                    selectedTab: $appState.selectedTab)
             }
         }
     }
