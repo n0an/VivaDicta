@@ -36,7 +36,7 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     }
     
     var defaultTitle: String {
-        return "My \(displayName) Prompt"
+        return "\(displayName)"
     }
     
     var prompt: String {
