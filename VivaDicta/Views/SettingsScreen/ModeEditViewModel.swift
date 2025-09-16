@@ -46,12 +46,8 @@ class ModeEditViewModel {
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
             
-            // Find prompt by matching prompt text
-            if !existingMode.prompt.isEmpty {
-                selectedPromptID = promptsManager.userPrompts.first { prompt in
-                    prompt.promptInstructions == existingMode.prompt
-                }?.id
-            }
+            // Set the selected prompt ID directly from the mode
+            selectedPromptID = existingMode.promptID
         } else {
             modeName = ""
             transcriptionProvider = .local
@@ -88,6 +84,7 @@ class ModeEditViewModel {
             name: trimmedName,
             transcriptionProvider: transcriptionProvider,
             transcriptionModel: transcriptionModel,
+            promptID: selectedPromptID,
             prompt: getPromptForSelection(selectedPromptID),
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
