@@ -29,53 +29,45 @@ struct ModeEditView: View {
     }
     
     var body: some View {
-        NavigationView {
             Form {
-                // Mode Details Section
                 Section("Mode Details") {
                     TextField("Mode Name", text: $modeName)
-                        .textFieldStyle(PlainTextFieldStyle())
                 }
                 
-                // Transcription Section
                 Section("Transcription") {
-                    HStack {
-                        Text("Provider")
-                        Spacer()
-                        Picker("Provider", selection: $transcriptionProvider) {
-                            Text("Local (Whisper)").tag(TranscriptionModelProvider.local)
-                            Text("OpenAI").tag(TranscriptionModelProvider.openAI)
-                            Text("Groq").tag(TranscriptionModelProvider.groq)
-                            Text("Deepgram").tag(TranscriptionModelProvider.deepgram)
-                            Text("ElevenLabs").tag(TranscriptionModelProvider.elevenLabs)
-                            Text("Gemini").tag(TranscriptionModelProvider.gemini)
+                    Picker("Provider", selection: $transcriptionProvider) {
+                        ForEach(TranscriptionModelProvider.allCases) { provider in
+                            Text(provider.rawValue.capitalized).tag(provider)
                         }
-                        .pickerStyle(MenuPickerStyle())
-                        .foregroundColor(.secondary)
                     }
+                    .pickerStyle(.menu)
                     
-                    HStack {
-                        Text("Model")
-                        Spacer()
-                        Picker("Model", selection: $transcriptionModel) {
-                            if transcriptionProvider == .local {
-                                Text("base").tag("base")
-                                Text("small").tag("small")
-                                Text("medium").tag("medium")
-                                Text("large").tag("large")
-                            } else {
-                                Text(transcriptionModel).tag(transcriptionModel)
-                            }
+                    Picker("Model", selection: $transcriptionModel) {
+                        if transcriptionProvider == .local {
+                            Text("base").tag("base")
+                            Text("small").tag("small")
+                            Text("medium").tag("medium")
+                            Text("large").tag("large")
+                        } else {
+                            Text(transcriptionModel).tag(transcriptionModel)
                         }
-                        .pickerStyle(MenuPickerStyle())
-                        .foregroundColor(.secondary)
                     }
+                    .pickerStyle(.menu)
+//                    .foregroundColor(.secondary)
                 }
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 // Post-processing Section
-                Section("Post-processing") {
+                Section("AI Enhancement") {
                     HStack {
-                        Text("Enable Post-processing")
+                        Text("Enabled")
                         Spacer()
                         Toggle("", isOn: $aiEnhanceEnabled)
                     }
@@ -127,22 +119,16 @@ struct ModeEditView: View {
                 }
             }
             .navigationTitle(isEditing ? "Edit Mode" : "New Mode")
-            .navigationBarTitleDisplayMode(.inline)
+//            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         saveMode()
                     }
                     .disabled(!isValid)
                 }
             }
-        }
+//        }
         .onAppear {
             loadModeData()
         }

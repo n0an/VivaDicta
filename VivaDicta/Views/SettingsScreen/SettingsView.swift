@@ -41,12 +41,8 @@ struct SettingsView: View {
                             Spacer()
                             
                         }
-//                        .padding()
-//                        .background(Color(.systemBackground))
                     }
                 }
-                
-                // Rest of settings in Form
                 
                 Section("AI Enhancement") {
                     NavigationLink(destination: AIEnhancementSettings(appState: appState)) {

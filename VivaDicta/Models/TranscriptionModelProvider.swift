@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranscriptionModelProvider: String, Sendable, Codable {
+enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
     case local
     case parakeet
     case openAI
@@ -15,6 +15,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable {
     case elevenLabs
     case deepgram
     case gemini
+    
+    var id: Self { self }
     
     static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
 
