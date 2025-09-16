@@ -44,17 +44,7 @@ class PromptsManager {
     }
     
     
-//    func createPromptFromTemplate(_ template: PromptsTemplates, title: String, description: String) -> UserPrompt {
-//        return UserPrompt(
-//            title: title.isEmpty ? template.defaultTitle : title,
-//            description: description.isEmpty ? template.description : description,
-//            promptInstructions: template.prompt,
-//            templateType: template
-//        )
-//    }
-    
     // MARK: - Private Methods
-    
     private func loadUserPrompts() {
         guard let data = userDefaults.data(forKey: userPromptsKey),
               let prompts = try? JSONDecoder().decode([UserPrompt].self, from: data) else {
