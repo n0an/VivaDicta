@@ -18,8 +18,25 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     var id: Self { self }
     
+    public var mappedAIProvider: AIProvider? {
+        switch self {
+        case .openAI:
+            return .openAI
+        case .groq:
+            return .groq
+        case .elevenLabs:
+            return .elevenLabs
+        case .deepgram:
+            return .deepgram
+        case .gemini:
+            return .gemini
+        case .local, .parakeet:
+            return nil
+        }
+    }
+    
     static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
-
+    
     static var allLocalModels: [WhisperLocalModel] {
         [
             WhisperLocalModel(
