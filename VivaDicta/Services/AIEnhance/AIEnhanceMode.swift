@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AIEnhanceMode: Identifiable, Hashable, Codable {
-    var id: String { name }
+    let id: UUID
     
     let name: String
     let transcriptionProvider: TranscriptionModelProvider
@@ -19,6 +19,17 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
     var aiModel: String
     
     let aiEnhanceEnabled: Bool
+    
+    init(name: String, transcriptionProvider: TranscriptionModelProvider, transcriptionModel: String, prompt: String, aiProvider: AIProvider? = nil, aiModel: String, aiEnhanceEnabled: Bool) {
+        self.id = UUID()
+        self.name = name
+        self.transcriptionProvider = transcriptionProvider
+        self.transcriptionModel = transcriptionModel
+        self.prompt = prompt
+        self.aiProvider = aiProvider
+        self.aiModel = aiModel
+        self.aiEnhanceEnabled = aiEnhanceEnabled
+    }
     
     static let defaultMode = AIEnhanceMode(
         name: "Default",
