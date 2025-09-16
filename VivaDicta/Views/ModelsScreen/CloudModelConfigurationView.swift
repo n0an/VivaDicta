@@ -69,26 +69,9 @@ struct CloudModelConfigurationView: View {
     }
     
     
-    private func mapToAIProvider(_ transcriptionProvider: TranscriptionModelProvider) -> AIProvider? {
-        switch transcriptionProvider {
-        case .openAI:
-            return .openAI
-        case .groq:
-            return .groq
-        case .elevenLabs:
-            return .elevenLabs
-        case .deepgram:
-            return .deepgram
-        case .gemini:
-            return .gemini
-        default:
-            return nil
-        }
-    }
-    
     func saveKey() {
         Task {
-            guard let aiProvider = mapToAIProvider(model.provider) else {
+            guard let aiProvider = model.provider.mappedAIProvider else {
                 await MainActor.run {
                     verificationError = "API verification not supported for this provider"
                 }
