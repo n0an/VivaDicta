@@ -13,9 +13,16 @@ struct ModeEditView: View {
     
     @State private var viewModel: ModeEditViewModel
     
-    init(mode: AIEnhanceMode?, aiService: AIService, promptsManager: PromptsManager) {
+    init(mode: AIEnhanceMode?,
+         aiService: AIService,
+         promptsManager: PromptsManager) {
         self.aiService = aiService
-        self._viewModel = State(initialValue: ModeEditViewModel(mode: mode, aiService: aiService, promptsManager: promptsManager))
+        
+        self._viewModel = State(
+            initialValue: ModeEditViewModel(
+                mode: mode,
+                aiService: aiService,
+                promptsManager: promptsManager))
     }
     
     var body: some View {

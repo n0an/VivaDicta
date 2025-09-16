@@ -20,18 +20,19 @@ struct SettingsView: View {
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
                             Text(mode.name)
-                                .font(.body)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                                .font(.body.weight(.medium))
                         }
-                        .buttonStyle(.plain)
                     }
                     
                     // Add New Mode button
-                    NavigationLink(destination: ModeEditView(mode: nil, aiService: appState.aiService, promptsManager: appState.promptsManager)) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.blue)
+                    NavigationLink(
+                        destination: ModeEditView(
+                            mode: nil,
+                            aiService: appState.aiService,
+                            promptsManager: appState.promptsManager)) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.blue)
                                 .font(.title2)
                             
                             Text("Add New Mode")
@@ -56,7 +57,6 @@ struct SettingsView: View {
             }
         }
     }
-    
 }
 
 

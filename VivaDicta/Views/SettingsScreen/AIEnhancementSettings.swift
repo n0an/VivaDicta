@@ -20,3 +20,8 @@ struct AIEnhancementSettings: View {
         }
     }
 }
+
+#Preview {
+    @Previewable @State var appState = AppState()
+    AIEnhancementSettings(appState: appState)
+}
