@@ -28,7 +28,7 @@ struct SettingsView: View {
                     }
                     
                     // Add New Mode button
-                    NavigationLink(destination: ModeEditView(mode: nil, aiService: appState.aiService)) {
+                    NavigationLink(destination: ModeEditView(mode: nil, aiService: appState.aiService, promptsManager: appState.promptsManager)) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundColor(.blue)
@@ -52,7 +52,7 @@ struct SettingsView: View {
             }
             
             .navigationDestination(for: AIEnhanceMode.self) { mode in
-                ModeEditView(mode: mode, aiService: appState.aiService)
+                ModeEditView(mode: mode, aiService: appState.aiService, promptsManager: appState.promptsManager)
             }
         }
     }

@@ -10,15 +10,22 @@ import SwiftUI
 struct ModeEditView: View {
     let mode: AIEnhanceMode?
     let aiService: AIService
+    let promptsManager: PromptsManager
     @Environment(\.dismiss) private var dismiss
     
+    @State private var viewModel: ModeEditViewModel
     @State private var modeName: String = ""
     @State private var transcriptionProvider: TranscriptionModelProvider = .local
     @State private var transcriptionModel: String = "base"
     @State private var aiEnhanceEnabled: Bool = false
-    @State private var aiProvider: AIProvider = .openAI
-    @State private var aiModel: String = "gpt-4o-mini"
-    @State private var selectedPrompt: String = "Clean Transcript"
+    @State private var selectedPromptID: UUID?
+    
+    init(mode: AIEnhanceMode?, aiService: AIService, promptsManager: PromptsManager) {
+        self.mode = mode
+        self.aiService = aiService
+        self.promptsManager = promptsManager
+        self._viewModel = State(initialValue: ModeEditViewModel(aiService: aiService))
+    }
     
     private var isEditing: Bool {
         mode != nil
@@ -61,9 +68,6 @@ struct ModeEditView: View {
                 
                 
                 
-                
-                
-                
                 // Post-processing Section
                 Section("AI Enhancement") {
                     HStack {
@@ -73,39 +77,63 @@ struct ModeEditView: View {
                     }
                     
                     if aiEnhanceEnabled {
-                        HStack {
-                            Text("Provider")
-                            Spacer()
-                            Picker("AI Provider", selection: $aiProvider) {
-                                Text("OpenAI").tag(AIProvider.openAI)
-                                Text("Groq").tag(AIProvider.groq)
-                                Text("Gemini").tag(AIProvider.gemini)
-                                Text("OpenRouter").tag(AIProvider.openRouter)
+                        Picker(selection: $viewModel.aiProvider) {
+                            Text("None").tag(nil as AIProvider?)
+                            ForEach(AIProvider.allCases) { provider in
+                                Text(provider.rawValue.capitalized).tag(provider as AIProvider?)
                             }
-                            .pickerStyle(MenuPickerStyle())
-                            .foregroundColor(.secondary)
+                            
+                        } label: {
+                            HStack {
+                                Image(systemName: "cpu")
+                                Text("AI Provider")
+                            }
+                        }
+                        .onChange(of: viewModel.aiProvider) { _, newProvider in
+                            viewModel.updateProvider(newProvider)
                         }
                         
-                        HStack {
-                            Text("Model")
-                            Spacer()
-                            Picker("AI Model", selection: $aiModel) {
-                                Text("gpt-4o-mini").tag("gpt-4o-mini")
-                                Text("gpt-4o").tag("gpt-4o")
-                                Text("gpt-3.5-turbo").tag("gpt-3.5-turbo")
+                        if let provider = viewModel.aiProvider {
+                            let hasKey = viewModel.hasAPIKey(for: provider)
+                            if hasKey {
+                                
+                                Picker(selection: $viewModel.aiModel) {
+                                    ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
+                                        Text(model).tag(model as String?)
+                                    }
+                                    
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "sparkles")
+                                        Text("AI Model")
+                                    }
+                                }
+                                .onChange(of: viewModel.aiModel) { _, newModel in
+                                    viewModel.updateModel(newModel)
+                                }
+                            } else {
+                                NavigationLink(destination: AddAPIKeyView(
+                                    provider: provider,
+                                    aiService: aiService, onSave: { provider in
+                                        viewModel.updateModel(provider.defaultModel)
+                                    })) {
+                                    HStack {
+                                        Image(systemName: "key")
+                                        Text("Add API Key")
+                                    }
+                                }
                             }
-                            .pickerStyle(MenuPickerStyle())
-                            .foregroundColor(.secondary)
                         }
+                        
                         
                         HStack {
                             Text("Prompt")
                             Spacer()
-                            Picker("Prompt", selection: $selectedPrompt) {
-                                Text("Clean Transcript").tag("Clean Transcript")
-                                Text("Email Format").tag("Email Format")
-                                Text("Note Format").tag("Note Format")
-                                Text("Chat Format").tag("Chat Format")
+                            Picker("Prompt", selection: $selectedPromptID) {
+                                Text("None").tag(nil as UUID?)
+                                ForEach(promptsManager.userPrompts) { prompt in
+                                    Text(prompt.title).tag(prompt.id as UUID?)
+                                }
                             }
                             .pickerStyle(MenuPickerStyle())
                             .foregroundColor(.secondary)
@@ -140,17 +168,23 @@ struct ModeEditView: View {
             transcriptionProvider = existingMode.transcriptionProvider
             transcriptionModel = existingMode.transcriptionModel
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
-            aiProvider = existingMode.aiProvider ?? .openAI
-            aiModel = existingMode.aiModel
-            // TODO: Set selectedPrompt based on existingMode.prompt
+            viewModel.loadFromMode(existingMode)
+            
+            // Find prompt by matching prompt text
+            if !existingMode.prompt.isEmpty {
+                selectedPromptID = promptsManager.userPrompts.first { prompt in
+                    prompt.promptInstructions == existingMode.prompt
+                }?.id
+            } else {
+                selectedPromptID = nil
+            }
         } else {
             modeName = ""
             transcriptionProvider = .local
             transcriptionModel = "base"
             aiEnhanceEnabled = false
-            aiProvider = .openAI
-            aiModel = "gpt-4o-mini"
-            selectedPrompt = "Clean Transcript"
+            viewModel.updateProvider(.openAI)
+            selectedPromptID = nil
         }
     }
     
@@ -159,9 +193,9 @@ struct ModeEditView: View {
             name: modeName.trimmingCharacters(in: .whitespacesAndNewlines),
             transcriptionProvider: transcriptionProvider,
             transcriptionModel: transcriptionModel,
-            prompt: getPromptForSelection(selectedPrompt),
-            aiProvider: aiEnhanceEnabled ? aiProvider : nil,
-            aiModel: aiModel,
+            prompt: getPromptForSelection(selectedPromptID),
+            aiProvider: aiEnhanceEnabled ? viewModel.getCurrentProvider() : nil,
+            aiModel: viewModel.getCurrentModel(),
             aiEnhanceEnabled: aiEnhanceEnabled
         )
         
@@ -174,13 +208,17 @@ struct ModeEditView: View {
         dismiss()
     }
     
-    private func getPromptForSelection(_ selection: String) -> String {
-        // TODO: Return appropriate prompt based on selection
-        return ""
+    private func getPromptForSelection(_ promptID: UUID?) -> String {
+        guard let promptID = promptID,
+              let selectedPrompt = promptsManager.userPrompts.first(where: { $0.id == promptID }) else {
+            return ""
+        }
+        return selectedPrompt.promptInstructions
     }
 }
 
 #Preview {
     @Previewable @State var aiService = AIService()
-    ModeEditView(mode: nil, aiService: aiService)
+    @Previewable @State var promptsManager = PromptsManager()
+    ModeEditView(mode: nil, aiService: aiService, promptsManager: promptsManager)
 }
