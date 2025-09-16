@@ -12,9 +12,9 @@ actor WhisperHallucinationFilter {
     private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "WhisperHallucinationFilter")
     
     private static let hallucinationPatterns = [
-        #"\[.*?\]"#,     // Square brackets
-        #"\(.*?\)"#,     // Parentheses
-        #"\{.*?\}"#      // Curly braces
+        #"\[.*?\]"#,     // []
+        #"\(.*?\)"#,     // ()
+        #"\{.*?\}"#      // {}
     ]
 
     private static let fillerWords = [
@@ -24,6 +24,13 @@ actor WhisperHallucinationFilter {
     static func filter(_ text: String) -> String {
         logger.notice("🧹 Filtering hallucinations and filler words")
         var filteredText = text
+
+        // Remove <TAG>...</TAG> blocks
+        let tagBlockPattern = #"<([A-Za-z][A-Za-z0-9:_-]*)[^>]*>[\s\S]*?</\1>"#
+        if let regex = try? NSRegularExpression(pattern: tagBlockPattern) {
+            let range = NSRange(filteredText.startIndex..., in: filteredText)
+            filteredText = regex.stringByReplacingMatches(in: filteredText, options: [], range: range, withTemplate: "")
+        }
 
         // Remove bracketed hallucinations
         for pattern in hallucinationPatterns {
