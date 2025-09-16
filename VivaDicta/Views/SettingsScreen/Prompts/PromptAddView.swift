@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct PromptAddView: View {
+    @Environment(\.dismiss) var dismiss
     let templateToCreateNewPrompt: PromptsTemplates?
     let promptsManager: PromptsManager
-    @Binding var isPresented: Bool
     
     @State private var title: String = ""
     @State private var description: String = ""
@@ -22,11 +22,9 @@ struct PromptAddView: View {
     
     init(template: PromptsTemplates? = nil,
          editingPrompt: UserPrompt? = nil,
-         promptsManager: PromptsManager,
-         isPresented: Binding<Bool>) {
+         promptsManager: PromptsManager) {
         self.templateToCreateNewPrompt = template
         self.promptsManager = promptsManager
-        self._isPresented = isPresented
     }
     
     var body: some View {
@@ -55,7 +53,7 @@ struct PromptAddView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        isPresented = false
+                        dismiss()
                     }
                 }
                 
@@ -67,7 +65,7 @@ struct PromptAddView: View {
                             promptInstructions: promptInstructions)
                         
                         promptsManager.addPrompt(prompt)
-                        isPresented = false
+                        dismiss()
                     }
                     .disabled(title.isEmpty)
                 }

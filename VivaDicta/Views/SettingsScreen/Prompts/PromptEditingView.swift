@@ -8,20 +8,18 @@
 import SwiftUI
 
 struct PromptEditView: View {
+    @Environment(\.dismiss) var dismiss
     let editingPrompt: UserPrompt?
     let promptsManager: PromptsManager
-    @Binding var isPresented: Bool
     
     @State private var title: String = ""
     @State private var description: String = ""
     @State private var promptInstructions: String = ""
     
     init(editingPrompt: UserPrompt? = nil,
-         promptsManager: PromptsManager,
-         isPresented: Binding<Bool>) {
+         promptsManager: PromptsManager) {
         self.editingPrompt = editingPrompt
         self.promptsManager = promptsManager
-        self._isPresented = isPresented
     }
     
     var body: some View {
@@ -44,7 +42,7 @@ struct PromptEditView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        isPresented = false
+                        dismiss()
                     }
                 }
                 
@@ -61,7 +59,7 @@ struct PromptEditView: View {
                             )
                             promptsManager.updatePrompt(updatedPrompt)
                         }
-                        isPresented = false
+                        dismiss()
                     }
                     .disabled(title.isEmpty)
                 }

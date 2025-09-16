@@ -34,15 +34,13 @@ struct PromptsSettings: View {
             .sheet(item: $selectedTemplate) { template in
                 PromptAddView(
                     template: template,
-                    promptsManager: appState.promptsManager,
-                    isPresented: $selectedTemplate.isPresent()
+                    promptsManager: appState.promptsManager
                 )
             }
             .sheet(item: $editingPrompt) { prompt in
                 PromptEditView(
                     editingPrompt: prompt,
-                    promptsManager: appState.promptsManager,
-                    isPresented: $editingPrompt.isPresent()
+                    promptsManager: appState.promptsManager
                 )
             }
         }
@@ -128,16 +126,6 @@ struct PromptRowView: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
-    }
-}
-
-
-extension Binding {
-    func isPresent<T>() -> Binding<Bool> where Value == T? {
-        return Binding<Bool>(
-            get: { self.wrappedValue != nil },
-            set: { if !$0 { self.wrappedValue = nil } }
-        )
     }
 }
 
