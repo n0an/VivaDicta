@@ -14,7 +14,7 @@ struct ModeEditView: View {
 
     @State private var viewModel: ModeEditViewModel
 
-    init(mode: AIEnhanceMode?,
+    init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
          appState: AppState,

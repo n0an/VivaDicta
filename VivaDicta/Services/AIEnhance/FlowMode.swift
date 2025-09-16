@@ -1,5 +1,5 @@
 //
-//  AIEnhanceMode.swift
+//  FlowMode.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.09.12
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AIEnhanceMode: Identifiable, Hashable, Codable {
+struct FlowMode: Identifiable, Hashable, Codable {
     let id: UUID
 
     let name: String
@@ -21,7 +21,15 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
 
     let aiEnhanceEnabled: Bool
     
-    init(id: UUID, name: String, transcriptionProvider: TranscriptionModelProvider, transcriptionModel: String, promptID: UUID? = nil, prompt: String, aiProvider: AIProvider? = nil, aiModel: String, aiEnhanceEnabled: Bool) {
+    init(id: UUID,
+         name: String,
+         transcriptionProvider: TranscriptionModelProvider,
+         transcriptionModel: String,
+         promptID: UUID? = nil,
+         prompt: String,
+         aiProvider: AIProvider? = nil,
+         aiModel: String,
+         aiEnhanceEnabled: Bool) {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -33,7 +41,7 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
         self.aiEnhanceEnabled = aiEnhanceEnabled
     }
     
-    static let defaultMode = AIEnhanceMode(
+    static let defaultMode = FlowMode(
         id: UUID(),
         name: "Default",
         transcriptionProvider: .local,
@@ -41,7 +49,4 @@ struct AIEnhanceMode: Identifiable, Hashable, Codable {
         prompt: "",
         aiModel: "",
         aiEnhanceEnabled: false)
-    
-//    static let predefinedModes: [AIEnhanceMode] = PromptsTemplates.allCases.map { $0.aiEnhanceMode }
-    
 }

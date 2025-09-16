@@ -14,7 +14,7 @@ class AIService {
     
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
-    public var modes: [AIEnhanceMode] = []
+    public var modes: [FlowMode] = []
     
     public var selectedModeName: String {
         didSet {
@@ -23,14 +23,14 @@ class AIService {
         }
     }
     
-    public var selectedMode: AIEnhanceMode = AIEnhanceMode.defaultMode
+    public var selectedMode: FlowMode = FlowMode.defaultMode
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? AIEnhanceMode.defaultMode.name
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
@@ -44,17 +44,17 @@ class AIService {
         }
     }
     
-    public func getMode(name: String) -> AIEnhanceMode {
-        return modes.first { $0.name == name } ?? AIEnhanceMode.defaultMode
+    public func getMode(name: String) -> FlowMode {
+        return modes.first { $0.name == name } ?? FlowMode.defaultMode
     }
     
-    public func addMode(_ mode: AIEnhanceMode) {
+    public func addMode(_ mode: FlowMode) {
         modes.append(mode)
         saveModes()
         logger.info("Added new mode: \(mode.name)")
     }
     
-    public func updateMode(_ mode: AIEnhanceMode) {
+    public func updateMode(_ mode: FlowMode) {
         if let index = modes.firstIndex(where: { $0.id == mode.id }) {
             modes[index] = mode
             saveModes()
@@ -68,7 +68,7 @@ class AIService {
         }
     }
     
-    public func deleteMode(_ mode: AIEnhanceMode) {
+    public func deleteMode(_ mode: FlowMode) {
         guard modes.count > 1 else {
             logger.warning("Cannot delete last mode")
             return
@@ -87,11 +87,11 @@ class AIService {
 
     private func loadModes() {
         if let savedModesData = userDefaults.data(forKey: "AIEnhanceModes"),
-           let savedModes = try? JSONDecoder().decode([AIEnhanceMode].self, from: savedModesData) {
+           let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             modes = savedModes
         } else {
             // Initialize with default mode if no saved modes
-            modes = [AIEnhanceMode.defaultMode]
+            modes = [FlowMode.defaultMode]
         }
         
         logger.info("Loaded \(self.modes.count) AI enhance modes")

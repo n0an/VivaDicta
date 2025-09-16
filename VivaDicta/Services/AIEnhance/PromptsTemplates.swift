@@ -196,8 +196,8 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
 }
 
 //extension PromptsTemplates {
-//    var aiEnhanceMode: AIEnhanceMode {
-//        AIEnhanceMode(
+//    var aiEnhanceMode: FlowMode {
+//        FlowMode(
 //            name: self.rawValue.capitalized,
 //            prompt: self.prompt,
 //            aiProvider: nil,

@@ -54,7 +54,7 @@ struct SettingsView: View {
                 }
             }
             
-            .navigationDestination(for: AIEnhanceMode.self) { mode in
+            .navigationDestination(for: FlowMode.self) { mode in
                 ModeEditView(
                     mode: mode,
                     aiService: appState.aiService,

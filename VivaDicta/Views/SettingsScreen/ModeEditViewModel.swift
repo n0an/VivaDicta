@@ -24,7 +24,7 @@ class ModeEditViewModel {
     private let aiService: AIService
     let promptsManager: PromptsManager
     private let appState: AppState
-    private let originalMode: AIEnhanceMode?
+    private let originalMode: FlowMode?
     
     var isEditing: Bool {
         originalMode != nil
@@ -34,7 +34,7 @@ class ModeEditViewModel {
         !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    init(mode: AIEnhanceMode?,
+    init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
          appState: AppState) {
@@ -174,13 +174,13 @@ class ModeEditViewModel {
         }
     }
     
-    func saveMode() -> AIEnhanceMode {
+    func saveMode() -> FlowMode {
         let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
         logger.info("Saving mode with name: '\(trimmedName)'")
         
         let modeId = originalMode?.id ?? UUID()
         
-        return AIEnhanceMode(
+        return FlowMode(
             id: modeId,
             name: trimmedName,
             transcriptionProvider: transcriptionProvider,
