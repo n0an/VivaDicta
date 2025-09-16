@@ -36,7 +36,6 @@ class AIService {
         refreshConnectedProviders()
         loadSavedOpenRouterModels()
         
-        // Fetch OpenRouter models on startup if API key exists
         Task {
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
@@ -59,7 +58,6 @@ class AIService {
             modes[index] = mode
             saveModes()
             
-            // Update selected mode if it's the one being updated
             if selectedMode.id == mode.id {
                 selectedMode = mode
             }
@@ -90,7 +88,6 @@ class AIService {
            let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             modes = savedModes
         } else {
-            // Initialize with default mode if no saved modes
             modes = [FlowMode.defaultMode]
         }
         
@@ -137,10 +134,6 @@ class AIService {
         }
     }
     
-    private func getSystemMessage() -> String {
-        return String(format: PromptsTemplates.systemPrompt, selectedMode.prompt)
-    }
-    
     private func makeRequest(text: String) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider,
               let apiKey = self.getAPIKey(for: aiProvider) else {
@@ -154,7 +147,6 @@ class AIService {
         let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
         let systemMessage = getSystemMessage()
         
-        // Log the message being sent to AI enhancement
         logger.notice("AI Enhancement - System Message: \(systemMessage, privacy: .public)")
         logger.notice("AI Enhancement - User Message: \(formattedText, privacy: .public)")
         
@@ -272,6 +264,11 @@ class AIService {
         }
     }
     
+    private func getSystemMessage() -> String {
+        return String(format: PromptsTemplates.systemPrompt, selectedMode.prompt)
+    }
+    
+    
     // MARK: - API Keys methods
     public func refreshConnectedProviders() {
         connectedProviders = AIProvider.allCases.filter { provider in
@@ -284,13 +281,10 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                
-                // Always save the key for the correct provider
                 self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
                 
                 // Refresh connected providers to trigger UI update
                 self.refreshConnectedProviders()
-                
             }
         }
         
