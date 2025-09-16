@@ -37,39 +37,61 @@ struct ModeEditView: View {
             }
             
             Section("Transcription") {
-                if viewModel.hasAvailableTranscriptionProviders() {
-                    Picker("Provider", selection: $viewModel.transcriptionProvider) {
-                        ForEach(viewModel.getAvailableProviders()) { provider in
-                            Text(provider.rawValue.capitalized).tag(provider)
-                        }
+                Picker("Provider", selection: $viewModel.transcriptionProvider) {
+                    ForEach(TranscriptionModelProvider.allCases) { provider in
+                        Text(provider.rawValue.capitalized).tag(provider)
                     }
-                    .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
-                        viewModel.updateTranscriptionProvider(newProvider)
-                    }
-                    .onAppear {
-                        viewModel.validateAndAutoSelectProvider()
-                    }
+                }
+                .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
+                    viewModel.updateTranscriptionProvider(newProvider)
+                }
 
+                if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
                     Picker("Model", selection: $viewModel.transcriptionModel) {
                         ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
                             Text(viewModel.getTranscriptionModelDisplayName(model, provider: viewModel.transcriptionProvider))
                                 .tag(model)
                         }
                     }
-                } else {
-                    Button {
-                        dismiss()
-                        selectedTab = .models
-                    } label: {
-                        HStack {
-                            Image(systemName: "arrow.down.circle")
-                            Text("Select Model")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.secondary)
+                    .onAppear {
+                        let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
+                        if !availableModels.contains(viewModel.transcriptionModel) && !availableModels.isEmpty {
+                            viewModel.transcriptionModel = availableModels.first ?? ""
                         }
                     }
-                    .foregroundColor(.blue)
+                } else {
+                    if viewModel.transcriptionProvider == .local {
+                        Button {
+                            dismiss()
+                            selectedTab = .models
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.down.circle")
+                                Text("Download Local Model")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .foregroundColor(.blue)
+                    } else {
+                        if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
+                            NavigationLink(destination: AddAPIKeyView(
+                                provider: mappedProvider,
+                                aiService: aiService,
+                                onSave: { _ in
+                                    let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
+                                    if let firstModel = availableModels.first {
+                                        viewModel.transcriptionModel = firstModel
+                                    }
+                                })) {
+                                HStack {
+                                    Image(systemName: "key")
+                                    Text("Add API Key")
+                                }
+                            }
+                        }
+                    }
                 }
             }
             
