@@ -53,26 +53,9 @@ class ModeEditViewModel {
 
             // Set the selected prompt ID directly from the mode
             selectedPromptID = existingMode.promptID
-        }
-        
-        validateAndAutoSelectProvider()
-    }
-
-    func validateAndAutoSelectProvider() {
-        let availableProviders = getAvailableProviders()
-        
-        if !availableProviders.contains(transcriptionProvider) {
-            if let firstProvider = availableProviders.first {
-                transcriptionProvider = firstProvider
-                // Set model to first available for this provider
-                let availableModels = getAvailableTranscriptionModels(for: firstProvider)
-                transcriptionModel = availableModels.first ?? ""
-            }
         } else {
-            let availableModels = getAvailableTranscriptionModels(for: transcriptionProvider)
-            if !availableModels.contains(transcriptionModel) {
-                transcriptionModel = availableModels.first ?? ""
-            }
+            transcriptionProvider = .local
+            transcriptionModel = ""
         }
     }
     
@@ -97,25 +80,21 @@ class ModeEditViewModel {
         return aiService.connectedProviders.contains(provider)
     }
 
-    func hasAvailableTranscriptionProviders() -> Bool {
-        return !getAvailableProviders().isEmpty
-    }
-
-    func getAvailableProviders() -> [TranscriptionModelProvider] {
-        return TranscriptionModelProvider.allCases.filter { provider in
-            switch provider {
-            case .local:
-                return !appState.availableWhisperLocalModels.isEmpty
-            case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
-                let apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
-                return apiKey != nil && !apiKey!.isEmpty
-            case .parakeet:
-                // TODO: Add Parakeet
-                return false
-            }
+    // Check if transcription provider has configuration (models or API key)
+    func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
+        switch provider {
+        case .local:
+            return !appState.availableWhisperLocalModels.isEmpty
+        case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
+            // Cloud providers are configured if API key exists
+            let apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+            return apiKey != nil && !apiKey!.isEmpty
+        case .parakeet:
+            // TODO: - Add Parakeet
+            return false
         }
     }
-
+    
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
         case .local:
