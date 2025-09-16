@@ -15,7 +15,7 @@ class ModeEditViewModel {
     // Simple bindable properties
     var modeName: String = ""
     var transcriptionProvider: TranscriptionModelProvider = .local
-    var transcriptionModel: String = "base"
+    var transcriptionModel: String = ""
     var aiEnhanceEnabled: Bool = false
     var aiProvider: AIProvider?
     var aiModel: String?
@@ -23,6 +23,7 @@ class ModeEditViewModel {
     
     private let aiService: AIService
     let promptsManager: PromptsManager
+    private let appState: AppState
     private let originalMode: AIEnhanceMode?
     
     var isEditing: Bool {
@@ -33,10 +34,14 @@ class ModeEditViewModel {
         !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    init(mode: AIEnhanceMode?, aiService: AIService, promptsManager: PromptsManager) {
+    init(mode: AIEnhanceMode?,
+         aiService: AIService,
+         promptsManager: PromptsManager,
+         appState: AppState) {
         self.originalMode = mode
         self.aiService = aiService
         self.promptsManager = promptsManager
+        self.appState = appState
         
         if let existingMode = mode {
             modeName = existingMode.name
@@ -45,16 +50,29 @@ class ModeEditViewModel {
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
-            
+
             // Set the selected prompt ID directly from the mode
             selectedPromptID = existingMode.promptID
+        }
+        
+        validateAndAutoSelectProvider()
+    }
+
+    func validateAndAutoSelectProvider() {
+        let availableProviders = getAvailableProviders()
+        
+        if !availableProviders.contains(transcriptionProvider) {
+            if let firstProvider = availableProviders.first {
+                transcriptionProvider = firstProvider
+                // Set model to first available for this provider
+                let availableModels = getAvailableTranscriptionModels(for: firstProvider)
+                transcriptionModel = availableModels.first ?? ""
+            }
         } else {
-            modeName = ""
-            transcriptionProvider = .local
-            transcriptionModel = "base"
-            aiEnhanceEnabled = false
-            aiProvider = .openAI
-            aiModel = AIProvider.openAI.defaultModel
+            let availableModels = getAvailableTranscriptionModels(for: transcriptionProvider)
+            if !availableModels.contains(transcriptionModel) {
+                transcriptionModel = availableModels.first ?? ""
+            }
         }
     }
     
@@ -79,17 +97,34 @@ class ModeEditViewModel {
         return aiService.connectedProviders.contains(provider)
     }
 
+    func hasAvailableTranscriptionProviders() -> Bool {
+        return !getAvailableProviders().isEmpty
+    }
+
+    func getAvailableProviders() -> [TranscriptionModelProvider] {
+        return TranscriptionModelProvider.allCases.filter { provider in
+            switch provider {
+            case .local:
+                return !appState.availableWhisperLocalModels.isEmpty
+            case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
+                let apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+                return apiKey != nil && !apiKey!.isEmpty
+            case .parakeet:
+                // TODO: Add Parakeet
+                return false
+            }
+        }
+    }
+
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
         case .local:
-            return ["tiny",
-                    "tiny.en",
-                    "base",
-                    "base.en",
-                    "large-v2",
-                    "large-v3",
-                    "large-v3-turbo",
-                    "large-v3-turbo-q5_0"]
+            return appState.availableWhisperLocalModels.compactMap { model in
+                if model.name.hasPrefix("ggml-") {
+                    return String(model.name.dropFirst(5))
+                }
+                return nil
+            }
         case .openAI:
             return ["openai-gpt-4o"]
         case .groq:
@@ -101,6 +136,7 @@ class ModeEditViewModel {
         case .gemini:
             return ["gemini-2.5-pro", "gemini-2.5-flash"]
         case .parakeet:
+            // TODO: Add Parakeet
             return []
         }
     }
@@ -108,7 +144,6 @@ class ModeEditViewModel {
     func getTranscriptionModelDisplayName(_ model: String, provider: TranscriptionModelProvider) -> String {
         switch provider {
         case .local:
-            // Provide user-friendly names for local models
             switch model {
             case "tiny": return "Tiny"
             case "tiny.en": return "Tiny (English)"
