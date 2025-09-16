@@ -37,15 +37,14 @@ struct ModeEditView: View {
                         Text(provider.rawValue.capitalized).tag(provider)
                     }
                 }
-                
+                .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
+                    viewModel.updateTranscriptionProvider(newProvider)
+                }
+
                 Picker("Model", selection: $viewModel.transcriptionModel) {
-                    if viewModel.transcriptionProvider == .local {
-                        Text("base").tag("base")
-                        Text("small").tag("small")
-                        Text("medium").tag("medium")
-                        Text("large").tag("large")
-                    } else {
-                        Text(viewModel.transcriptionModel).tag(viewModel.transcriptionModel)
+                    ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
+                        Text(viewModel.getTranscriptionModelDisplayName(model, provider: viewModel.transcriptionProvider))
+                            .tag(model)
                     }
                 }
             }
@@ -125,13 +124,11 @@ struct ModeEditView: View {
     
     private func saveMode() {
         let newMode = viewModel.saveMode()
-        
         if viewModel.isEditing {
             aiService.updateMode(newMode)
         } else {
             aiService.addMode(newMode)
         }
-        
         dismiss()
     }
 }
