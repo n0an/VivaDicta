@@ -135,7 +135,8 @@ When filtering optional fields in SwiftData predicates, use this proven pattern:
 - Test thoroughly - predicate errors often appear at runtime, not compile time
 
 ## SwiftUI
-Don't use NavigationView {}, use modern NavigationStack instead
+- Don't use NavigationView {}, use modern NavigationStack instead
+- Use `foregroundStyle` instead of deprecated `foregroundColor` (iOS 17+)
 
 ## AI-Powered PR Review
 
