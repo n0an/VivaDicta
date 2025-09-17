@@ -16,6 +16,7 @@ class ModeEditViewModel {
     var modeName: String = ""
     var transcriptionProvider: TranscriptionModelProvider = .local
     var transcriptionModel: String = ""
+    var transcriptionLanguage: String = "auto"
     var aiEnhanceEnabled: Bool = false
     var aiProvider: AIProvider?
     var aiModel: String?
@@ -47,15 +48,17 @@ class ModeEditViewModel {
             modeName = existingMode.name
             transcriptionProvider = existingMode.transcriptionProvider
             transcriptionModel = existingMode.transcriptionModel
+            transcriptionLanguage = existingMode.transcriptionLanguage ?? "auto"
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
-            
+
             // Set the selected prompt ID directly from the mode
             selectedPromptID = existingMode.promptID
         } else {
             transcriptionProvider = .local
             transcriptionModel = ""
+            transcriptionLanguage = "auto"
         }
     }
     
@@ -156,14 +159,15 @@ class ModeEditViewModel {
     func saveMode() -> FlowMode {
         let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
         logger.info("Saving mode with name: '\(trimmedName)'")
-        
+
         let modeId = originalMode?.id ?? UUID()
-        
+
         return FlowMode(
             id: modeId,
             name: trimmedName,
             transcriptionProvider: transcriptionProvider,
             transcriptionModel: transcriptionModel,
+            transcriptionLanguage: transcriptionLanguage,
             promptID: selectedPromptID,
             prompt: getPromptForSelection(selectedPromptID),
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
@@ -172,6 +176,37 @@ class ModeEditViewModel {
         )
     }
     
+    public func isLanguageSelectionAvailable() -> Bool {
+        guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
+        return ![.parakeet, .gemini].contains(transcriptionProvider)
+
+    }
+    
+    public func getAvailableLanguages() -> [(key: String, value: String)] {
+        guard isLanguageSelectionAvailable() else { return [] }
+        
+        if transcriptionProvider == .local {
+            let fullModelName = "ggml-\(transcriptionModel)"
+            if let model = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
+                return model.supportedLanguages.sorted(by: {
+                    if $0.key == "auto" { return true }
+                    if $1.key == "auto" { return false }
+                    return $0.value < $1.value
+                })
+            }
+        } else {
+            if let model = TranscriptionModelProvider.allCloudModels.first(where: { $0.name == transcriptionModel }) {
+                return model.supportedLanguages.sorted(by: {
+                    if $0.key == "auto" { return true }
+                    if $1.key == "auto" { return false }
+                    return $0.value < $1.value
+                })
+            }
+        }
+        
+        return []
+    }
+
     private func getPromptForSelection(_ promptID: UUID?) -> String {
         guard let promptID = promptID,
               let selectedPrompt = promptsManager.userPrompts.first(where: { $0.id == promptID }) else {

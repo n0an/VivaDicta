@@ -63,6 +63,14 @@ struct ModeEditView: View {
                             viewModel.transcriptionModel = availableModels.first ?? ""
                         }
                     }
+                    
+                    if viewModel.isLanguageSelectionAvailable() {
+                        Picker("Language", selection: $viewModel.transcriptionLanguage) {
+                            ForEach(Array(viewModel.getAvailableLanguages()), id: \.key) { key, value in
+                                Text(value).tag(key)
+                            }
+                        }
+                    }
                 } else {
                     if viewModel.transcriptionProvider == .local {
                         Button {
