@@ -14,34 +14,34 @@ struct PromptsSettings: View {
     @State private var editingPrompt: UserPrompt?
     
     var body: some View {
-            VStack(spacing: 0) {
-                if appState.promptsManager.userPrompts.isEmpty {
-                    emptyStateView
-                } else {
-                    promptsList
-                }
-                
-                addPromptSection
+        VStack(spacing: 0) {
+            if appState.promptsManager.userPrompts.isEmpty {
+                emptyStateView
+            } else {
+                promptsList
             }
-            .navigationTitle("Prompts")
-            .sheet(isPresented: $showingTemplateSelection) {
-                TemplateSelectionView(
-                    selectedTemplate: $selectedTemplate,
-                    isPresented: $showingTemplateSelection
-                )
-            }
-            .sheet(item: $selectedTemplate) { template in
-                PromptAddView(
-                    template: template,
-                    promptsManager: appState.promptsManager
-                )
-            }
-            .sheet(item: $editingPrompt) { prompt in
-                PromptEditView(
-                    editingPrompt: prompt,
-                    promptsManager: appState.promptsManager
-                )
-            }
+            
+            addPromptSection
+        }
+        .navigationTitle("Prompts")
+        .sheet(isPresented: $showingTemplateSelection) {
+            TemplateSelectionView(
+                selectedTemplate: $selectedTemplate,
+                isPresented: $showingTemplateSelection
+            )
+        }
+        .sheet(item: $selectedTemplate) { template in
+            PromptAddView(
+                template: template,
+                promptsManager: appState.promptsManager
+            )
+        }
+        .sheet(item: $editingPrompt) { prompt in
+            PromptEditView(
+                editingPrompt: prompt,
+                promptsManager: appState.promptsManager
+            )
+        }
     }
     
     private var emptyStateView: some View {
@@ -109,14 +109,14 @@ struct PromptsSettings: View {
 
 struct PromptRowView: View {
     let prompt: UserPrompt
-
+    
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(prompt.title)
                     .font(.headline)
                     .foregroundStyle(.primary)
-
+                
                 if !prompt.description.isEmpty {
                     Text(prompt.description)
                         .font(.subheadline)

@@ -38,16 +38,16 @@ struct SettingsView: View {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
                                         .foregroundColor(.blue)
-                                .font(.title2)
-                            
-                            Text("Add New Mode")
-                                .foregroundColor(.blue)
-                                .font(.body)
-                            
-                            Spacer()
-                            
-                        }
-                    }
+                                        .font(.title2)
+                                    
+                                    Text("Add New Mode")
+                                        .foregroundColor(.blue)
+                                        .font(.body)
+                                    
+                                    Spacer()
+                                    
+                                }
+                            }
                 }
                 
                 Section("AI Enhancement") {
@@ -71,7 +71,7 @@ struct SettingsView: View {
                     PromptsSettings(appState: appState)
                 }
             }
-
+            
         }
     }
 }

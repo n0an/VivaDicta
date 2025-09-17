@@ -42,7 +42,7 @@ struct AddAPIKeyView: View {
                     .foregroundColor(.red)
                     .padding(.horizontal)
             }
-             
+            
             Button(action: saveKey) {
                 HStack {
                     if isVerifying {

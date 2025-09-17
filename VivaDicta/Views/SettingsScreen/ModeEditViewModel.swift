@@ -50,7 +50,7 @@ class ModeEditViewModel {
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
-
+            
             // Set the selected prompt ID directly from the mode
             selectedPromptID = existingMode.promptID
         } else {
@@ -64,12 +64,12 @@ class ModeEditViewModel {
         aiModel = newProvider?.defaultModel
         logger.info("Updated provider to: \(newProvider?.rawValue ?? "none")")
     }
-
+    
     func updateModel(_ newModel: String?) {
         aiModel = newModel
         logger.info("Updated model to: \(newModel ?? "none")")
     }
-
+    
     func updateTranscriptionProvider(_ newProvider: TranscriptionModelProvider) {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
@@ -79,7 +79,7 @@ class ModeEditViewModel {
     func hasAPIKey(for provider: AIProvider) -> Bool {
         return aiService.connectedProviders.contains(provider)
     }
-
+    
     // Check if transcription provider has configuration (models or API key)
     func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
         switch provider {
@@ -119,7 +119,7 @@ class ModeEditViewModel {
             return []
         }
     }
-
+    
     func getTranscriptionModelDisplayName(_ model: String, provider: TranscriptionModelProvider) -> String {
         switch provider {
         case .local:

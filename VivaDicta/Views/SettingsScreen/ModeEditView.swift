@@ -13,9 +13,9 @@ struct ModeEditView: View {
     @Binding var selectedTab: TabTag
     
     @Binding var navigationPath: NavigationPath
-
+    
     @State private var viewModel: ModeEditViewModel
-
+    
     init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
@@ -25,7 +25,7 @@ struct ModeEditView: View {
         self.aiService = aiService
         self._selectedTab = selectedTab
         self._navigationPath = navigationPath
-
+        
         self._viewModel = State(
             initialValue: ModeEditViewModel(
                 mode: mode,
@@ -49,7 +49,7 @@ struct ModeEditView: View {
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
                     viewModel.updateTranscriptionProvider(newProvider)
                 }
-
+                
                 if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
                     Picker("Model", selection: $viewModel.transcriptionModel) {
                         ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
@@ -89,11 +89,11 @@ struct ModeEditView: View {
                                         viewModel.transcriptionModel = firstModel
                                     }
                                 })) {
-                                HStack {
-                                    Image(systemName: "key")
-                                    Text("Add API Key")
+                                    HStack {
+                                        Image(systemName: "key")
+                                        Text("Add API Key")
+                                    }
                                 }
-                            }
                         }
                     }
                 }
