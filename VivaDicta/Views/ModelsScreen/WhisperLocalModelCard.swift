@@ -108,7 +108,7 @@ struct WhisperLocalModelCard: View {
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(.lightGray.withAlphaComponent(0.5)), in: .rect(cornerRadius: 16))
+                    .background(Color.gray.opacity(0.5), in: .rect(cornerRadius: 16))
             }
         }
     }

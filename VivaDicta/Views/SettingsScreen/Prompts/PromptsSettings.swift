@@ -14,7 +14,6 @@ struct PromptsSettings: View {
     @State private var editingPrompt: UserPrompt?
     
     var body: some View {
-        NavigationView {
             VStack(spacing: 0) {
                 if appState.promptsManager.userPrompts.isEmpty {
                     emptyStateView
@@ -43,7 +42,6 @@ struct PromptsSettings: View {
                     promptsManager: appState.promptsManager
                 )
             }
-        }
     }
     
     private var emptyStateView: some View {
@@ -75,6 +73,7 @@ struct PromptsSettings: View {
                 }) {
                     PromptRowView(prompt: prompt)
                 }
+                .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
                         appState.promptsManager.deletePrompt(prompt)
@@ -104,7 +103,6 @@ struct PromptsSettings: View {
                 .background(Color.blue, in: .capsule)
             }
             .padding()
-            .background(Color(.systemBackground))
         }
     }
 }
