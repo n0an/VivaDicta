@@ -19,7 +19,8 @@
       "Bash(grep:*)",
       "Read(//Users/antonnovoselov/Desktop/**)",
       "Bash(xcbeautify:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": [],
