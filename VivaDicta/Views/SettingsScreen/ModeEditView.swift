@@ -11,6 +11,8 @@ struct ModeEditView: View {
     let aiService: AIService
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedTab: TabTag
+    
+    @Binding var navigationPath: NavigationPath
 
     @State private var viewModel: ModeEditViewModel
 
@@ -18,9 +20,11 @@ struct ModeEditView: View {
          aiService: AIService,
          promptsManager: PromptsManager,
          appState: AppState,
-         selectedTab: Binding<TabTag>) {
+         selectedTab: Binding<TabTag>,
+         navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
         self.aiService = aiService
         self._selectedTab = selectedTab
+        self._navigationPath = navigationPath
 
         self._viewModel = State(
             initialValue: ModeEditViewModel(
@@ -151,9 +155,23 @@ struct ModeEditView: View {
                         }
                         
                         if let provider = viewModel.aiProvider, viewModel.hasAPIKey(for: provider) {
-                            Picker("Prompt", selection: $viewModel.selectedPromptID) {
-                                ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                                    Text(prompt.title).tag(prompt.id)
+                            if viewModel.promptsManager.userPrompts.isEmpty {
+                                Button(action: {
+                                    navigationPath.append(SettingsDestination.promptsSettings)
+                                }) {
+                                    HStack {
+                                        Image(systemName: "plus.circle")
+                                        Text("Add Prompt")
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            } else {
+                                Picker("Prompt", selection: $viewModel.selectedPromptID) {
+                                    ForEach(viewModel.promptsManager.userPrompts) { prompt in
+                                        Text(prompt.title).tag(prompt.id)
+                                    }
                                 }
                             }
                         }
@@ -189,10 +207,12 @@ struct ModeEditView: View {
     @Previewable @State var promptsManager = PromptsManager()
     @Previewable @State var appState = AppState()
     @Previewable @State var selectedTab: TabTag = .settings
+    @Previewable @State var navigationPath = NavigationPath()
     ModeEditView(
         mode: nil,
         aiService: aiService,
         promptsManager: promptsManager,
         appState: appState,
-        selectedTab: $selectedTab)
+        selectedTab: $selectedTab,
+        navigationPath: $navigationPath)
 }
