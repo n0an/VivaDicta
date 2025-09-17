@@ -70,16 +70,15 @@ struct PromptsSettings: View {
     private var promptsList: some View {
         List {
             ForEach(appState.promptsManager.userPrompts) { prompt in
-                PromptRowView(prompt: prompt)
+                Button(action: {
+                    editingPrompt = prompt
+                }) {
+                    PromptRowView(prompt: prompt)
+                }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
                         appState.promptsManager.deletePrompt(prompt)
                     }
-                    
-                    Button("Edit") {
-                        editingPrompt = prompt
-                    }
-                    .tint(.blue)
                 }
             }
         }
@@ -99,7 +98,7 @@ struct PromptsSettings: View {
                     Text("Add Prompt")
                         .font(.headline)
                 }
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.blue, in: .capsule)
@@ -112,19 +111,24 @@ struct PromptsSettings: View {
 
 struct PromptRowView: View {
     let prompt: UserPrompt
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(prompt.title)
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            Text(prompt.description)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(prompt.title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                if !prompt.description.isEmpty {
+                    Text(prompt.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
     }
 }
