@@ -11,8 +11,10 @@ struct SettingsView: View {
     
     @Bindable var appState: AppState
     
+    @State var navigationPath = NavigationPath()
+    
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Form {
                 // Modes section
                 Section("Modes") {
@@ -31,7 +33,8 @@ struct SettingsView: View {
                             aiService: appState.aiService,
                             promptsManager: appState.promptsManager,
                             appState: appState,
-                            selectedTab: $appState.selectedTab)) {
+                            selectedTab: $appState.selectedTab,
+                            navigationPath: $navigationPath)) {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
                                         .foregroundColor(.blue)
@@ -53,15 +56,22 @@ struct SettingsView: View {
                     }
                 }
             }
-            
             .navigationDestination(for: FlowMode.self) { mode in
                 ModeEditView(
                     mode: mode,
                     aiService: appState.aiService,
                     promptsManager: appState.promptsManager,
                     appState: appState,
-                    selectedTab: $appState.selectedTab)
+                    selectedTab: $appState.selectedTab,
+                    navigationPath: $navigationPath)
             }
+            .navigationDestination(for: SettingsDestination.self) { destination in
+                switch destination {
+                case .promptsSettings:
+                    PromptsSettings(appState: appState)
+                }
+            }
+
         }
     }
 }
