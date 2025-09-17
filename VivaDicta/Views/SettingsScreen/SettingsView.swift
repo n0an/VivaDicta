@@ -51,7 +51,7 @@ struct SettingsView: View {
                 }
                 
                 Section("AI Enhancement") {
-                    NavigationLink(destination: PromptsSettings(appState: appState)) {
+                    NavigationLink(value: SettingsDestination.promptsSettings) {
                         Text("LLM Prompts")
                     }
                 }
