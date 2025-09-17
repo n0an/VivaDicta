@@ -97,7 +97,7 @@ struct ModeEditView: View {
             
             if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
                 Section(header: Text("AI Enhancement"),
-                        footer: viewModel.aiEnhanceEnabled ? Text("Configure how the raw transcription should be processed and refined.") : nil) {
+                        footer: Text("Configure how the raw transcription should be processed and refined.")) {
                     
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
                     
@@ -150,9 +150,11 @@ struct ModeEditView: View {
                             }
                         }
                         
-                        Picker("Prompt", selection: $viewModel.selectedPromptID) {
-                            ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                                Text(prompt.title).tag(prompt.id)
+                        if let provider = viewModel.aiProvider, viewModel.hasAPIKey(for: provider) {
+                            Picker("Prompt", selection: $viewModel.selectedPromptID) {
+                                ForEach(viewModel.promptsManager.userPrompts) { prompt in
+                                    Text(prompt.title).tag(prompt.id)
+                                }
                             }
                         }
                     }
