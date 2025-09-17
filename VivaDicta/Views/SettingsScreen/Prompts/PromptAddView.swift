@@ -32,20 +32,14 @@ struct PromptAddView: View {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
                     
                     TextField("Description", text: $description, axis: .vertical)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
                         .lineLimit(3...6)
                 }
                 
                 Section(header: Text("Prompt Instructions")) {
                     TextEditor(text: $promptInstructions)
                         .frame(minHeight: 200)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                        )
                 }
             }
             .navigationTitle("New Prompt")

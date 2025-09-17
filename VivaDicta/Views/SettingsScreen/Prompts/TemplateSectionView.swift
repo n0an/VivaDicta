@@ -21,11 +21,10 @@ struct TemplateSelectionView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(template.displayName)
                             .font(.headline)
-                            .foregroundColor(.primary)
                         
                         Text(template.description)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                             .multilineTextAlignment(.leading)
                     }
                     .padding(.vertical, 4)
