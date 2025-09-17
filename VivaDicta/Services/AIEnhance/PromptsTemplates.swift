@@ -13,11 +13,15 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     case note
     case regular
     case vibeCoding
-    
+    case custom
+
     var id: String { rawValue }
-    
+
     var displayName: String {
-        rawValue.capitalized
+        if self == .custom {
+            return "Custom"
+        }
+        return rawValue.capitalized
     }
     
     var description: String {
@@ -32,10 +36,15 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
             return "Default system prompt for improving clarity and accuracy of transcriptions"
         case .vibeCoding:
             return "For Vibe coders and AI chat. Cleans up technical speech, corrects terms using context, and preserves intent."
+        case .custom:
+            return "Start with a blank prompt and write your own instructions"
         }
     }
     
     var defaultTitle: String {
+        if self == .custom {
+            return ""
+        }
         return "\(displayName)"
     }
     
@@ -218,6 +227,8 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
 
             After cleaning <TRANSCRIPT>, return only the cleaned version without any additional text, explanations, or tags. The output should be ready for direct use without further editing.
             """
+        case .custom:
+            ""
         }
     }
 }
