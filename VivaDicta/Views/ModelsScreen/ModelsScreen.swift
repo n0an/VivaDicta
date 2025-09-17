@@ -60,19 +60,6 @@ struct ModelsScreen: View {
                     })
             })
             .navigationTitle("Transcription Models")
-            .toolbar {
-//                LanguageSelectionMenu(appState: appState)
-//                ToolbarItem {
-//                    Menu("Language", systemImage: "globe") {
-//                        Picker("Language", selection: $appState.selectedLanguage) {
-//                            ForEach(Language.allCases, id: \.self) { language in
-//                                Text(language.fullName)
-//                                    .tag(language)
-//                            }
-//                        }
-//                    }
-//                }
-            }
         }
     }
     
