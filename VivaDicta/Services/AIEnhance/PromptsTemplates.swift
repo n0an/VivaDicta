@@ -18,9 +18,6 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
 
     var displayName: String {
-        if self == .custom {
-            return "Custom"
-        }
         return rawValue.capitalized
     }
     
