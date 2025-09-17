@@ -72,9 +72,15 @@ struct PromptAddView: View {
             }
         }
         .onAppear {
-            title = currentTemplate.defaultTitle
-            description = currentTemplate.description
-            promptInstructions = currentTemplate.prompt
+            if currentTemplate == .custom {
+                title = ""
+                description = ""
+                promptInstructions = ""
+            } else {
+                title = currentTemplate.defaultTitle
+                description = currentTemplate.description
+                promptInstructions = currentTemplate.prompt
+            }
         }
     }
 }
