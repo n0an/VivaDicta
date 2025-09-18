@@ -56,14 +56,14 @@ class WhisperModelDownloadManager: @unchecked Sendable {
         let progressKeyCoreML = model.name + "_coreml"
         let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
         
-        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("\(model.name)-encoder.mlmodelc.zip")
+        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc.zip")
         try coreMLData.write(to: coreMLZipPath)
         
         try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
     }
     
     private func unzipAndSetupCoreMLModel(for model: WhisperLocalModel, zipPath: URL, progressKey: String) async throws {
-        let coreMLDestination = URL.documentsDirectory.appendingPathComponent("\(model.name)-encoder.mlmodelc")
+        let coreMLDestination = URL.documentsDirectory.appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc")
         
         try? FileManager.default.removeItem(at: coreMLDestination)
         try Zip.unzipFile(zipPath, destination: URL.documentsDirectory, overwrite: true, password: nil)

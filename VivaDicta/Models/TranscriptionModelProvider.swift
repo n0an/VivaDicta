@@ -40,7 +40,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static var allLocalModels: [WhisperLocalModel] {
         [
             WhisperLocalModel(
-                name: "ggml-tiny",
+                name: "tiny",
                 displayName: "Tiny",
                 description: "Tiny model, fastest, least accurate",
                 provider: .local,
@@ -51,7 +51,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true),
             ),
             WhisperLocalModel(
-                name: "ggml-tiny.en",
+                name: "tiny.en",
                 displayName: "Tiny (English)",
                 description: "Tiny model optimized for English, fastest, least accurate",
                 provider: .local,
@@ -62,7 +62,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             WhisperLocalModel(
-                name: "ggml-base",
+                name: "base",
                 displayName: "Base",
                 description: "Base model, good balance between speed and accuracy, supports multiple languages",
                 provider: .local,
@@ -73,7 +73,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-base.en",
+                name: "base.en",
                 displayName: "Base (English)",
                 description: "Base model optimized for English, good balance between speed and accuracy",
                 provider: .local,
@@ -84,7 +84,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v2",
+                name: "large-v2",
                 displayName: "Large v2",
                 description: "Large model v2, slower than Medium but more accurate",
                 provider: .local,
@@ -95,7 +95,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v3",
+                name: "large-v3",
                 displayName: "Large v3",
                 description: "Large model v3, very slow but most accurate",
                 provider: .local,
@@ -106,7 +106,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v3-turbo",
+                name: "large-v3-turbo",
                 displayName: "Large v3 Turbo",
                 description: "Large model v3 Turbo, faster than v3 with similar accuracy",
                 provider: .local,
@@ -117,7 +117,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v3-turbo-q5_0",
+                name: "large-v3-turbo-q5_0",
                 displayName: "Large v3 Turbo (Quantized)",
                 description: "Quantized version of Large v3 Turbo, faster with slightly lower accuracy",
                 provider: .local,

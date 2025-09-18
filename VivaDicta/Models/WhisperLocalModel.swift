@@ -31,7 +31,7 @@ extension WhisperLocalModel {
     static let defaultURL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/"
 
     var filename: String {
-        "\(self.name).bin"
+        "ggml-\(self.name).bin"
     }
     
     var downloadURL: URL? {
@@ -41,7 +41,7 @@ extension WhisperLocalModel {
     var coreMLDownloadURL: URL? {
         // Only non-quantized models have Core ML versions
         guard !name.contains("q5") && !name.contains("q8") else { return nil }
-        return URL(string: "\(Self.defaultURL)\(name)-encoder.mlmodelc.zip")
+        return URL(string: "\(Self.defaultURL)ggml-\(name)-encoder.mlmodelc.zip")
     }
     
     var fileURL: URL {
