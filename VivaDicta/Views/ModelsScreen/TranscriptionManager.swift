@@ -10,7 +10,6 @@ import Foundation
 
 @Observable
 class TranscriptionManager {
-    // Transcription-related properties
     var whisperContext: WhisperContext?
     private let whisperPrompt: WhisperPrompt
     private var localTranscriptionService: LocalTranscriptionService!
@@ -37,9 +36,7 @@ class TranscriptionManager {
         self.localTranscriptionService = LocalTranscriptionService(transcriptionManager: self)
     }
 
-    // MARK: - Model Preheating
-
-    /// Loads the current mode's transcription model if it's a local model
+    // MARK: - Local Whisper Model Preheating
     func loadCurrentTranscriptionModel() {
         guard let currentModel = getCurrentTranscriptionModel(),
               currentModel.provider == .local,
@@ -51,13 +48,11 @@ class TranscriptionManager {
             try? await loadLocalModel(localWhisperModel)
         }
     }
-
-    /// Called when a mode is selected - loads the model if it's local
+    
     func handleModeChange(_ mode: FlowMode) {
-        // Apply language settings
         applyModeLanguage(mode)
-
-        // Load local model if needed
+        
+        // Preheat Local Whisper Model if needed
         if mode.transcriptionProvider == .local {
             let fullModelName = "ggml-\(mode.transcriptionModel)"
             if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
@@ -65,6 +60,14 @@ class TranscriptionManager {
                     try? await loadLocalModel(localModel)
                 }
             }
+        }
+    }
+    
+    func loadLocalModel(_ model: WhisperLocalModel) async throws {
+        do {
+            whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
+        } catch {
+            throw WhisperStateError.modelLoadFailed
         }
     }
     
@@ -174,13 +177,6 @@ class TranscriptionManager {
         updateLanguage(language)
     }
     
-    func loadLocalModel(_ model: WhisperLocalModel) async throws {
-        do {
-            whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-        } catch {
-            throw WhisperStateError.modelLoadFailed
-        }
-    }
 
     func updateCloudModels() {
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
