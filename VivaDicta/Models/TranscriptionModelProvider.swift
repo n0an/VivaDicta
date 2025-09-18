@@ -22,16 +22,9 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         switch self {
         case .local, .parakeet:
             return []
-        case .openAI:
-            return ["openai-gpt-4o"]
-        case .groq:
-            return ["whisper-large-v3-turbo"]
-        case .elevenLabs:
-            return ["scribe_v1"]
-        case .deepgram:
-            return ["nova-2"]
-        case .gemini:
-            return ["gemini-2.5-pro", "gemini-2.5-flash"]
+            
+        default:
+            return TranscriptionModelProvider.allCloudModels.compactMap { $0.provider == self ? $0.name : nil }
         }
     }
     
