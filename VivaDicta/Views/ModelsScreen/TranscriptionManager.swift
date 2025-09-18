@@ -10,6 +10,7 @@ import Foundation
 
 @Observable
 class TranscriptionManager {
+    private let appState: AppState
     private let aiService: AIService
     private let whisperPrompt: WhisperPrompt
     private let whisperContext: WhisperContext?
@@ -23,7 +24,8 @@ class TranscriptionManager {
         }
     }
 
-    init(aiService: AIService, whisperPrompt: WhisperPrompt, whisperContext: WhisperContext?) {
+    init(appState: AppState, aiService: AIService, whisperPrompt: WhisperPrompt, whisperContext: WhisperContext?) {
+        self.appState = appState
         self.aiService = aiService
         self.whisperPrompt = whisperPrompt
         self.whisperContext = whisperContext
@@ -140,9 +142,36 @@ class TranscriptionManager {
         guard let model = getCurrentTranscriptionModel() else {
             throw WhisperStateError.transcriptionFailed
         }
-
-        // Use CloudTranscriptionService which handles all providers
-        let service = CloudTranscriptionService()
-        return try await service.transcribe(audioURL: audioURL, model: model)
+        
+        
+        let transcriptionService: any TranscriptionService
+        switch model.provider {
+        case .local:
+            transcriptionService = appState.localTranscriptionService
+        default:
+            transcriptionService = CloudTranscriptionService()
+        }
+        
+        return try await transcriptionService.transcribe(audioURL: audioURL, model: model)
     }
+    
+    
+//    func transcribe(audioURL: URL) async throws -> String {
+//        guard let model = currentTranscriptionModel else {
+//            throw WhisperStateError.transcriptionFailed
+//        }
+//
+//        let transcriptionService: any TranscriptionService
+//        switch model.provider {
+//        case .local:
+//            transcriptionService = localTranscriptionService
+//        default:
+//            transcriptionService = cloudTranscriptionService
+//        }
+//
+//        let transcriptionStart = Date()
+//        let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
+//        let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+//        return text
+//    }
 }

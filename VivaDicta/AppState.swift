@@ -10,6 +10,7 @@ import SwiftUI
 
 @Observable
 class AppState {
+    // TODO: - move this properties to TranscriptionManager.
     var whisperContext: WhisperContext?
     var currentTranscriptionModel: (any TranscriptionModel)?
     
@@ -18,8 +19,8 @@ class AppState {
     var availableWhisperLocalModels: [WhisperLocalModel] {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
-    
-    private var localTranscriptionService: LocalTranscriptionService!
+    // TODO: - move this properties to TranscriptionManager. Handle all localTranscriptionService preparing in the TranscriptionManager
+    var localTranscriptionService: LocalTranscriptionService!
     private var cloudTranscriptionService = CloudTranscriptionService()
     
     let whisperPrompt = WhisperPrompt()
