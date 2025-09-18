@@ -12,7 +12,6 @@ import SwiftUI
 class AppState {
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
-    var promptsManager = PromptsManager()
     
     var selectedTab: TabTag = .record
 

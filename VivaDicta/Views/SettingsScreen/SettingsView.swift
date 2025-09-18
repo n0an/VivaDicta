@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     
     @Bindable var appState: AppState
+    @State var promptsManager = PromptsManager()
     
     @State var navigationPath = NavigationPath()
     
@@ -31,7 +32,7 @@ struct SettingsView: View {
                         destination: ModeEditView(
                             mode: nil,
                             aiService: appState.aiService,
-                            promptsManager: appState.promptsManager,
+                            promptsManager: promptsManager,
                             transcriptionManager: appState.transcriptionManager,
                             selectedTab: $appState.selectedTab,
                             navigationPath: $navigationPath)) {
@@ -60,7 +61,7 @@ struct SettingsView: View {
                 ModeEditView(
                     mode: mode,
                     aiService: appState.aiService,
-                    promptsManager: appState.promptsManager,
+                    promptsManager: promptsManager,
                     transcriptionManager: appState.transcriptionManager,
                     selectedTab: $appState.selectedTab,
                     navigationPath: $navigationPath)
@@ -68,7 +69,7 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(promptsManager: appState.promptsManager)
+                    PromptsSettings(promptsManager: promptsManager)
                 }
             }
             
