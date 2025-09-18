@@ -42,7 +42,7 @@ struct AddAPIKeyView: View {
                     .foregroundColor(.red)
                     .padding(.horizontal)
             }
-             
+            
             Button(action: saveKey) {
                 HStack {
                     if isVerifying {
@@ -65,8 +65,7 @@ struct AddAPIKeyView: View {
         }
         .onAppear {
             // Load existing API key if available
-            let apiKeyKey = Constants.kAPIKeyTemplate + provider.rawValue
-            apiKey = UserDefaults.standard.string(forKey: apiKeyKey) ?? ""
+            apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) ?? ""
         }
         .padding(.top, 32)
         .padding()
@@ -100,7 +99,7 @@ struct AddAPIKeyView: View {
     NavigationStack {
         AddAPIKeyView(
             provider: .openAI,
-            aiService: AIService(),
+            aiService: AIService(transcriptionManager: TranscriptionManager()),
             onSave: {_ in })
     }
 }

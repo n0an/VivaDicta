@@ -9,22 +9,16 @@ import SwiftUI
 
 struct CloudModelCard: View {
     private var model: CloudModel
-    private var onSelect: (CloudModel) -> Void
     private var onConfigure: (CloudModel) -> Void
-    private var isSelected: Bool
     
     private var isAPIConfigured: Bool {
         model.apiKey != nil
     }
     
     init(model: CloudModel,
-         isSelected: Bool,
-         onConfigure: @escaping (CloudModel) -> Void,
-         onSelect: @escaping (CloudModel) -> Void) {
+         onConfigure: @escaping (CloudModel) -> Void) {
         self.model = model
-        self.isSelected = isSelected
         self.onConfigure = onConfigure
-        self.onSelect = onSelect
     }
     
     var body: some View {
@@ -41,7 +35,7 @@ struct CloudModelCard: View {
             descriptionSection
         }
         .padding(16)
-        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white, in: .rect(cornerRadius: 16))
+        .background(.gray.opacity(0.1), in: .rect(cornerRadius: 16))
     }
     
     private var header: some View {
@@ -102,36 +96,9 @@ struct CloudModelCard: View {
     
     private var actionSection: some View {
         VStack {
-            if isAPIConfigured {
-                VStack(spacing: 12) {
-                    if isSelected {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("Selected")
-                        }
-                        .foregroundStyle(.green)
-                    } else {
-                        selectButton
-                    }
-                    
-                    configureButton
-                }
-                
-            } else {
-                configureButton
-            }
+            configureButton
         }
         .font(.callout.weight(.semibold))
-    }
-    
-    var selectButton: some View {
-        Button("Select") {
-            onSelect(model)
-        }
-        .foregroundStyle(.white)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
-        .background(.green, in: .capsule)
     }
     
     var configureButton: some View {
@@ -154,9 +121,7 @@ struct CloudModelCard: View {
 #Preview {
     CloudModelCard(
         model: TranscriptionModelProvider.allCloudModels[0],
-        isSelected: false,
-        onConfigure: {_ in print("configure") },
-        onSelect: {_ in print("select") }
+        onConfigure: {_ in print("configure") }
     )
 }
 

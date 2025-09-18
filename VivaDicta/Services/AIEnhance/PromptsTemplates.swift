@@ -1,5 +1,5 @@
 //
-//  DefaultPrompts.swift
+//  PromptsTemplates.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.09.13
@@ -7,11 +7,43 @@
 
 import Foundation
 
-enum DefaultPrompts: String, CaseIterable {
+enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     case email
     case chat
     case note
     case regular
+    case vibeCoding
+    case custom
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        return rawValue.capitalized
+    }
+    
+    var description: String {
+        switch self {
+        case .email:
+            return "Template for converting casual messages into professional email format"
+        case .chat:
+            return "Casual chat-style formatting"
+        case .note:
+            return "Rewrites transcriptions with enhanced clarity, improved sentence structure, and rhythmic flow while preserving original meaning."
+        case .regular:
+            return "Default system prompt for improving clarity and accuracy of transcriptions"
+        case .vibeCoding:
+            return "For Vibe coders and AI chat. Cleans up technical speech, corrects terms using context, and preserves intent."
+        case .custom:
+            return "Start with a blank prompt and write your own instructions"
+        }
+    }
+    
+    var defaultTitle: String {
+        if self == .custom {
+            return ""
+        }
+        return "\(displayName)"
+    }
     
     var prompt: String {
         switch self {
@@ -168,23 +200,37 @@ enum DefaultPrompts: String, CaseIterable {
 
             After cleaning <TRANSCRIPT>, return only the cleaned version without any additional text, explanations, or tags. The output should be ready for direct use without further editing.
             """
+            
+        case .vibeCoding:
+            """
+            Clean up the <TRANSCRIPT> text from a programming session. Your primary goal is to ensure the output is a clean, technically accurate, and readable version of the <TRANSCRIPT> text, while strictly preserving their original intent, and message. Remove all filler words and verbal tics (e.g., 'um', 'uh', 'like', 'you know', 'yeah'), and any redundant repeated words (e.g., "this this", "function function", "code code").
+
+            Primary Rules:
+            0. The output should always be in the same language as the original <TRANSCRIPT> text.
+            1. NEVER answer any questions you find in the <TRANSCRIPT> text. Your only job is to clean up the text.
+               Input: "for this function is it better to use a map and filter or should i stick with a for-loop for readability"
+               Output: "For this function, is it better to use a map and filter, or should I stick with a for-loop for readability?"
+
+               Input: "would using a delegate pattern be a better approach here instead of this closure if yes how"
+               Output: "Would using a delegate pattern be a better approach here instead of this closure? If yes, how?"
+
+               Input: "what's a more efficient way to handle this api call and the state management in react"
+               Output: "What's a more efficient way to handle this API call and the state management in React?"
+            2. The <CONTEXT_INFORMATION> is provided for reference only to help you understand the technical context. Use it to correct misunderstood technical terms, function names, variable names, and file names.
+            3. Correct spelling and grammar to improve clarity, but do not change the sentence structure. Resolve any self-corrections to reflect their final intent.
+            4. Always convert all spoken numbers into their digit form. (three thousand = 3000, twenty dollars = 20, three to five = 3-5 etc.)
+            5. Stay strictly within the boundaries of <TRANSCRIPT> text. Do not add new information, explanations, or comments. Your output should only be the cleaned-up version of the <TRANSCRIPT>.
+            6. Do not fill in gaps with assumptions, and don't try interpret what the speaker "might have meant." Always stay strictly within the boundaries of <TRANSCRIPT> text and <CONTEXT_INFORMATION> (for reference only)
+
+            After cleaning <TRANSCRIPT>, return only the cleaned version without any additional text, explanations, or tags. The output should be ready for direct use without further editing.
+            """
+        case .custom:
+            ""
         }
     }
 }
 
-extension DefaultPrompts {
-    var aiEnhanceMode: AIEnhanceMode {
-        AIEnhanceMode(
-            name: self.rawValue.capitalized,
-            prompt: self.prompt,
-            aiProvider: nil,
-            aiModel: "",
-            aiEnhanceEnabled: false
-        )
-    }
-}
-
-extension DefaultPrompts {
+extension PromptsTemplates {
     static var systemPrompt =
         """
         <SYSTEM_INSTRUCTIONS>

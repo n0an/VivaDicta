@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TranscriptionModelProvider: String, Sendable {
+enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
     case local
     case parakeet
     case openAI
@@ -16,12 +16,56 @@ enum TranscriptionModelProvider: String, Sendable {
     case deepgram
     case gemini
     
+    var id: Self { self }
+    
+    var cloudTranscriptionModelsNames: [String] {
+        switch self {
+        case .local, .parakeet:
+            return []
+            
+        default:
+            return TranscriptionModelProvider.allCloudModels.compactMap { $0.provider == self ? $0.name : nil }
+        }
+    }
+    
+    func getTranscriptionModelDisplayName(_ modelName: String) -> String {
+        switch self {
+        case .local:
+            guard let model = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == modelName}) else { return modelName }
+            return model.displayName
+            
+        case .parakeet:
+            return modelName
+            
+        default:
+            guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == modelName}) else { return modelName }
+            return model.displayName
+        }
+    }
+    
+    public var mappedAIProvider: AIProvider? {
+        switch self {
+        case .openAI:
+            return .openAI
+        case .groq:
+            return .groq
+        case .elevenLabs:
+            return .elevenLabs
+        case .deepgram:
+            return .deepgram
+        case .gemini:
+            return .gemini
+        case .local, .parakeet:
+            return nil
+        }
+    }
+    
     static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
-
+    
     static var allLocalModels: [WhisperLocalModel] {
         [
             WhisperLocalModel(
-                name: "ggml-tiny",
+                name: "tiny",
                 displayName: "Tiny",
                 description: "Tiny model, fastest, least accurate",
                 provider: .local,
@@ -31,8 +75,9 @@ enum TranscriptionModelProvider: String, Sendable {
                 ramUsage: 0.3,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true),
             ),
+            
             WhisperLocalModel(
-                name: "ggml-tiny.en",
+                name: "tiny.en",
                 displayName: "Tiny (English)",
                 description: "Tiny model optimized for English, fastest, least accurate",
                 provider: .local,
@@ -43,7 +88,7 @@ enum TranscriptionModelProvider: String, Sendable {
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             WhisperLocalModel(
-                name: "ggml-base",
+                name: "base",
                 displayName: "Base",
                 description: "Base model, good balance between speed and accuracy, supports multiple languages",
                 provider: .local,
@@ -54,7 +99,7 @@ enum TranscriptionModelProvider: String, Sendable {
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-base.en",
+                name: "base.en",
                 displayName: "Base (English)",
                 description: "Base model optimized for English, good balance between speed and accuracy",
                 provider: .local,
@@ -65,7 +110,7 @@ enum TranscriptionModelProvider: String, Sendable {
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v2",
+                name: "large-v2",
                 displayName: "Large v2",
                 description: "Large model v2, slower than Medium but more accurate",
                 provider: .local,
@@ -76,7 +121,7 @@ enum TranscriptionModelProvider: String, Sendable {
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v3",
+                name: "large-v3",
                 displayName: "Large v3",
                 description: "Large model v3, very slow but most accurate",
                 provider: .local,
@@ -87,7 +132,7 @@ enum TranscriptionModelProvider: String, Sendable {
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v3-turbo",
+                name: "large-v3-turbo",
                 displayName: "Large v3 Turbo",
                 description: "Large model v3 Turbo, faster than v3 with similar accuracy",
                 provider: .local,
@@ -98,7 +143,7 @@ enum TranscriptionModelProvider: String, Sendable {
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
             ),
             WhisperLocalModel(
-                name: "ggml-large-v3-turbo-q5_0",
+                name: "large-v3-turbo-q5_0",
                 displayName: "Large v3 Turbo (Quantized)",
                 description: "Quantized version of Large v3 Turbo, faster with slightly lower accuracy",
                 provider: .local,

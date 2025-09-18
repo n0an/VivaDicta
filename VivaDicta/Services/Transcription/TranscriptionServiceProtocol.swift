@@ -1,5 +1,5 @@
 //
-//  TranscriptionService.swift
+//  TranscriptionServiceProtocol.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.11

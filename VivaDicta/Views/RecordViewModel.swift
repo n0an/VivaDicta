@@ -174,7 +174,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             enhancedText: enhancedText,
                             audioDuration: audioDuration,
                             audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                            transcriptionModelName: appState?.transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                             aiEnhancementModelName: appState?.aiService.selectedMode.aiModel,
                             promptName: appState?.aiService.selectedMode.name,
                             transcriptionDuration: transcriptionDuration,
@@ -194,7 +194,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             enhancedText: "Enhancement failed: \(error)",
                             audioDuration: audioDuration,
                             audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                            transcriptionModelName: appState?.transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                             transcriptionDuration: transcriptionDuration)
                         
                         modelContext.insert(transcription)
@@ -211,7 +211,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         text: transcribedText,
                         audioDuration: audioDuration,
                         audioFileName: recordURL.lastPathComponent,
-                        transcriptionModelName: appState?.currentTranscriptionModel?.displayName,
+                        transcriptionModelName: appState?.transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                         transcriptionDuration: transcriptionDuration)
                     
                     modelContext.insert(transcription)

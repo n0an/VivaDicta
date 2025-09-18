@@ -15,7 +15,7 @@ struct CloudModelConfigurationView: View {
     @State var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
-    @State private var aiService = AIService()
+    @State private var aiService = AIService(transcriptionManager: TranscriptionManager())
     
     var body: some View {
         
@@ -69,26 +69,9 @@ struct CloudModelConfigurationView: View {
     }
     
     
-    private func mapToAIProvider(_ transcriptionProvider: TranscriptionModelProvider) -> AIProvider? {
-        switch transcriptionProvider {
-        case .openAI:
-            return .openAI
-        case .groq:
-            return .groq
-        case .elevenLabs:
-            return .elevenLabs
-        case .deepgram:
-            return .deepgram
-        case .gemini:
-            return .gemini
-        default:
-            return nil
-        }
-    }
-    
     func saveKey() {
         Task {
-            guard let aiProvider = mapToAIProvider(model.provider) else {
+            guard let aiProvider = model.provider.mappedAIProvider else {
                 await MainActor.run {
                     verificationError = "API verification not supported for this provider"
                 }

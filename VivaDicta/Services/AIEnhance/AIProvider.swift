@@ -66,7 +66,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .groq:
             return [
                 "llama-3.3-70b-versatile",
-                "moonshotai/kimi-k2-instruct",
+                "moonshotai/kimi-k2-instruct-0905",
                 "qwen/qwen3-32b",
                 "meta-llama/llama-4-maverick-17b-128e-instruct",
                 "openai/gpt-oss-120b"

@@ -16,9 +16,9 @@ struct RecordView: View {
     var appState: AppState
     
     var body: some View {
-        if appState.currentTranscriptionModel != nil {
+        if appState.transcriptionManager.getCurrentTranscriptionModel() != nil {
             modelSelectedView
-            
+
         } else {
             Button {
                 print("send to models screen")

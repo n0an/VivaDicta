@@ -14,7 +14,6 @@ struct ModelPerformanceStatsDots: View {
         HStack(spacing: 8) {
             progressDots(value: value)
             Text(String(format: "%.1f", value))
-//                .font(.system(size: 10, weight: .medium, design: .monospaced))
                 .font(.caption2.weight(.medium).monospaced())
                 .foregroundStyle(.secondary)
         }

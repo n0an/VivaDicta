@@ -10,8 +10,6 @@ import SwiftUI
 struct WhisperLocalModelCard: View {
     private var model: WhisperLocalModel
     private let downloadManager: WhisperModelDownloadManager
-    private var onSelect: (WhisperLocalModel) -> Void
-    private var isSelected: Bool
     
     private var currentProgress: Double {
         downloadManager.currentProgress(for: model)
@@ -26,13 +24,9 @@ struct WhisperLocalModelCard: View {
     }
     
     init(model: WhisperLocalModel,
-         isSelected: Bool,
-         downloadManager: WhisperModelDownloadManager,
-         onSelect: @escaping (WhisperLocalModel) -> Void) {
+         downloadManager: WhisperModelDownloadManager) {
         self.model = model
-        self.isSelected = isSelected
         self.downloadManager = downloadManager
-        self.onSelect = onSelect
     }
     
     var body: some View {
@@ -49,7 +43,7 @@ struct WhisperLocalModelCard: View {
             descriptionSection
         }
         .padding(16)
-        .background(isSelected ? Color(UIColor.blue.withAlphaComponent(0.1)) : .white, in: .rect(cornerRadius: 16))
+        .background(.gray.opacity(0.1), in: .rect(cornerRadius: 16))
     }
     
     private var header: some View {
@@ -96,19 +90,12 @@ struct WhisperLocalModelCard: View {
     
     private var statusBadge: some View {
         Group {
-            if isSelected {
-                Text("Default")
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.accentColor))
-                    .foregroundColor(.white)
-            } else if isDownloaded {
+            if isDownloaded {
                 Text("Downloaded")
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(.lightGray.withAlphaComponent(0.5)), in: .rect(cornerRadius: 16))
+                    .background(Color.gray.opacity(0.5), in: .rect(cornerRadius: 16))
             }
         }
     }
@@ -131,17 +118,11 @@ struct WhisperLocalModelCard: View {
             case .downloading:
                 progressView
             case .downloaded:
-                
-                if isSelected {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Selected")
-                    }
-                    .foregroundStyle(.green)
-                    
-                } else {
-                    selectButton
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Downloaded")
                 }
+                .foregroundStyle(.green)
             }
         }
     }
@@ -168,15 +149,6 @@ struct WhisperLocalModelCard: View {
         .background(.blue, in: .rect(cornerRadius: 8))
     }
     
-    var selectButton: some View {
-        Button("Select") {
-            onSelect(model)
-        }
-        .foregroundStyle(.white)
-        .padding(8)
-        .background(.green, in: .rect(cornerRadius: 8))
-    }
-    
     func downloadModel(_ model: WhisperLocalModel) {
         Task {
             do {
@@ -191,9 +163,7 @@ struct WhisperLocalModelCard: View {
 #Preview {
     WhisperLocalModelCard(
         model: TranscriptionModelProvider.allLocalModels[0],
-        isSelected: false,
-        downloadManager: WhisperModelDownloadManager(),
-        onSelect: {_ in print("select") }
+        downloadManager: WhisperModelDownloadManager()
     )
 }
 

@@ -11,9 +11,12 @@ import os
 @Observable
 class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
-    
+
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
+    public var modes: [FlowMode] = []
+
+    private let transcriptionManager: TranscriptionManager
     
     public var selectedModeName: String {
         didSet {
@@ -22,19 +25,24 @@ class AIService {
         }
     }
     
-    public var selectedMode: AIEnhanceMode = DefaultPrompts.regular.aiEnhanceMode
+    public var selectedMode: FlowMode = FlowMode.defaultMode {
+        didSet {
+            transcriptionManager.handleModeChange(selectedMode)
+        }
+    }
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30
 
     
-    init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? DefaultPrompts.regular.aiEnhanceMode.name
+    init(transcriptionManager: TranscriptionManager) {
+        self.transcriptionManager = transcriptionManager
+        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
         loadSavedOpenRouterModels()
         
-        // Fetch OpenRouter models on startup if API key exists
         Task {
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
@@ -42,32 +50,64 @@ class AIService {
         }
     }
     
-    public func getMode(name: String) -> AIEnhanceMode {
-        return loadMode(withUserDefaultsKey: "SavedAIMode\(name)")
+    public func getMode(name: String) -> FlowMode {
+        return modes.first { $0.name == name } ?? FlowMode.defaultMode
     }
     
-    public func saveMode(_ mode: AIEnhanceMode) {
-        if let encoded = try? JSONEncoder().encode(mode) {
-            userDefaults.set(encoded, forKey: "SavedAIMode\(mode.name)")
-            logger.info("Saved AI enhance mode: \(mode.name)")
-        } else {
-            logger.error("Failed to encode AI enhance mode: \(mode.name)")
+    public func addMode(_ mode: FlowMode) {
+        modes.append(mode)
+        saveModes()
+        logger.info("Added new mode: \(mode.name)")
+    }
+    
+    public func updateMode(_ mode: FlowMode) {
+        if let index = modes.firstIndex(where: { $0.id == mode.id }) {
+            modes[index] = mode
+            saveModes()
+            
+            if selectedMode.id == mode.id {
+                selectedMode = mode
+            }
+            
+            logger.info("Updated mode: \(mode.name)")
+        }
+    }
+    
+    public func deleteMode(_ mode: FlowMode) {
+        guard modes.count > 1 else {
+            logger.warning("Cannot delete last mode")
+            return
         }
         
-        updateSelectedMode()
-    }
-    
-    private func updateSelectedMode() {
-        self.selectedMode = getMode(name: selectedModeName)
-    }
-    
-    private func loadMode(withUserDefaultsKey key: String) -> AIEnhanceMode {
-        if let savedModeData = UserDefaults.standard.data(forKey: key),
-           let savedMode = try? JSONDecoder().decode(AIEnhanceMode.self, from: savedModeData) {
-            return savedMode
-        } else {
-            return DefaultPrompts.regular.aiEnhanceMode
+        modes.removeAll { $0.name == mode.name }
+        
+        // If deleted mode was selected, switch to first one
+        if selectedMode.name == mode.name {
+            selectedModeName = modes[0].name
         }
+
+        saveModes()
+        logger.info("Deleted mode: \(mode.name)")
+    }
+
+    private func loadModes() {
+        if let savedModesData = userDefaults.data(forKey: "AIEnhanceModes"),
+           let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
+            modes = savedModes
+        } else {
+            modes = [FlowMode.defaultMode]
+        }
+        
+        logger.info("Loaded \(self.modes.count) AI enhance modes")
+    }
+    
+    private func saveModes() {
+        guard let encoded = try? JSONEncoder().encode(modes) else {
+            logger.error("Failed to encode AI enhance modes")
+            return
+        }
+        userDefaults.set(encoded, forKey: "AIEnhanceModes")
+        logger.info("Saved \(self.modes.count) AI enhance modes")
     }
     
     private func saveSelectedModeName(_ modeName: String) {
@@ -101,10 +141,6 @@ class AIService {
         }
     }
     
-    private func getSystemMessage() -> String {
-        return String(format: DefaultPrompts.systemPrompt, selectedMode.prompt)
-    }
-    
     private func makeRequest(text: String) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider,
               let apiKey = self.getAPIKey(for: aiProvider) else {
@@ -118,7 +154,6 @@ class AIService {
         let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
         let systemMessage = getSystemMessage()
         
-        // Log the message being sent to AI enhancement
         logger.notice("AI Enhancement - System Message: \(systemMessage, privacy: .public)")
         logger.notice("AI Enhancement - User Message: \(formattedText, privacy: .public)")
         
@@ -236,6 +271,11 @@ class AIService {
         }
     }
     
+    private func getSystemMessage() -> String {
+        return String(format: PromptsTemplates.systemPrompt, selectedMode.prompt)
+    }
+    
+    
     // MARK: - API Keys methods
     public func refreshConnectedProviders() {
         connectedProviders = AIProvider.allCases.filter { provider in
@@ -248,13 +288,10 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                
-                // Always save the key for the correct provider
                 self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
                 
                 // Refresh connected providers to trigger UI update
                 self.refreshConnectedProviders()
-                
             }
         }
         

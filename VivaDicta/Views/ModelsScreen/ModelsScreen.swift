@@ -17,9 +17,6 @@ struct ModelsScreen: View {
         
         NavigationStack {
             VStack {
-                
-                LanguageSelectionMenu(appState: appState)
-                
                 Picker("Model type", selection: $modelType) {
                     ForEach(TranscriptionModelType.allCases, id: \.self) {
                         Text($0.rawValue.capitalized)
@@ -33,20 +30,12 @@ struct ModelsScreen: View {
                         if let model = model as? WhisperLocalModel {
                             WhisperLocalModelCard(
                                 model: model,
-                                isSelected: model.name == appState.currentTranscriptionModel?.name,
-                                downloadManager: downloadManager,
-                                onSelect: { model in
-                                    loadModel(whisperLocalModel: model)
-                                })
+                                downloadManager: downloadManager)
                         } else if let model = model as? CloudModel {
                             CloudModelCard(
                                 model: model,
-                                isSelected: model.name == appState.currentTranscriptionModel?.name,
                                 onConfigure: { model in
                                     configureCloudModel(model: model)
-                                },
-                                onSelect: { model in
-                                    loadModel(cloudModel: model)
                                 })
                         }
                     }
@@ -59,38 +48,17 @@ struct ModelsScreen: View {
                         cloudModelConfigured()
                     })
             })
-            .navigationTitle("Transcription Models")
-            .toolbar {
-//                LanguageSelectionMenu(appState: appState)
-//                ToolbarItem {
-//                    Menu("Language", systemImage: "globe") {
-//                        Picker("Language", selection: $appState.selectedLanguage) {
-//                            ForEach(Language.allCases, id: \.self) { language in
-//                                Text(language.fullName)
-//                                    .tag(language)
-//                            }
-//                        }
-//                    }
-//                }
-            }
+            .navigationTitle("Model Management")
         }
     }
     
     var filteredModels: [any TranscriptionModel] {
         switch modelType {
         case .local:
-            appState.allAvailableModels.filter { $0.provider == .local }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .local }
         case .cloud:
-            appState.allAvailableModels.filter { $0.provider != .local }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .local }
         }
-    }
-    
-    func loadModel(whisperLocalModel: WhisperLocalModel) {
-        appState.setDefaultTranscriptionModel(whisperLocalModel)
-    }
-    
-    func loadModel(cloudModel: CloudModel) {
-        appState.setDefaultTranscriptionModel(cloudModel)
     }
     
     func configureCloudModel(model: CloudModel) {
@@ -98,7 +66,7 @@ struct ModelsScreen: View {
     }
     
     func cloudModelConfigured() {
-        appState.updateCloudModels()
+        appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
     }
 }

@@ -134,6 +134,10 @@ When filtering optional fields in SwiftData predicates, use this proven pattern:
 - Follow patterns from working examples (VoiceInk, FaceFacts, iExpense)
 - Test thoroughly - predicate errors often appear at runtime, not compile time
 
+## SwiftUI
+- Don't use NavigationView {}, use modern NavigationStack instead
+- Use `foregroundStyle` instead of deprecated `foregroundColor` (iOS 17+)
+
 ## AI-Powered PR Review
 
 The repository includes automated GitHub Actions workflow for AI-powered code review with iOS test execution. TypeScript scripts in `/lib/agents/` orchestrate code review generation and test running using either OpenAI or Anthropic APIs.
