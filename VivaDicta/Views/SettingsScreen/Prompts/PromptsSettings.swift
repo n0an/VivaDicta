@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PromptsSettings: View {
-    @Bindable var promptsManager: PromptsManager
+    var promptsManager: PromptsManager
     @State private var showingTemplateSelection = false
     @State private var selectedTemplate: PromptsTemplates?
     @State private var editingPrompt: UserPrompt?
