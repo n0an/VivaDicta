@@ -8,14 +8,14 @@
 import SwiftUI
 
 struct PromptsSettings: View {
-    @Bindable var appState: AppState
+    @Bindable var promptsManager: PromptsManager
     @State private var showingTemplateSelection = false
     @State private var selectedTemplate: PromptsTemplates?
     @State private var editingPrompt: UserPrompt?
     
     var body: some View {
         VStack(spacing: 0) {
-            if appState.promptsManager.userPrompts.isEmpty {
+            if promptsManager.userPrompts.isEmpty {
                 emptyStateView
             } else {
                 promptsList
@@ -33,13 +33,13 @@ struct PromptsSettings: View {
         .sheet(item: $selectedTemplate) { template in
             PromptAddView(
                 template: template,
-                promptsManager: appState.promptsManager
+                promptsManager: promptsManager
             )
         }
         .sheet(item: $editingPrompt) { prompt in
             PromptEditView(
                 editingPrompt: prompt,
-                promptsManager: appState.promptsManager
+                promptsManager: promptsManager
             )
         }
     }
@@ -67,7 +67,7 @@ struct PromptsSettings: View {
     
     private var promptsList: some View {
         List {
-            ForEach(appState.promptsManager.userPrompts) { prompt in
+            ForEach(promptsManager.userPrompts) { prompt in
                 Button(action: {
                     editingPrompt = prompt
                 }) {
@@ -76,7 +76,7 @@ struct PromptsSettings: View {
                 .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
-                        appState.promptsManager.deletePrompt(prompt)
+                        promptsManager.deletePrompt(prompt)
                     }
                 }
             }
@@ -132,6 +132,6 @@ struct PromptRowView: View {
 }
 
 #Preview {
-    @Previewable @State var appState = AppState()
-    PromptsSettings(appState: appState)
+    @Previewable @State var promptsManager = PromptsManager()
+    PromptsSettings(promptsManager: promptsManager)
 }

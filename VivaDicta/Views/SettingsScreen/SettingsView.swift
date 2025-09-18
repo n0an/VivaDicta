@@ -68,7 +68,7 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(appState: appState)
+                    PromptsSettings(promptsManager: appState.promptsManager)
                 }
             }
             
