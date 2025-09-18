@@ -16,6 +16,8 @@ class AIService {
     public var openRouterModels: [String] = []
     public var modes: [FlowMode] = []
     
+    weak var transcriptionManager: TranscriptionManager?
+    
     public var selectedModeName: String {
         didSet {
             self.saveSelectedModeName(selectedModeName)
@@ -23,7 +25,11 @@ class AIService {
         }
     }
     
-    public var selectedMode: FlowMode = FlowMode.defaultMode
+    public var selectedMode: FlowMode = FlowMode.defaultMode {
+        didSet {
+            transcriptionManager?.applyModeLanguage(selectedMode)
+        }
+    }
     
     private let userDefaults = UserDefaults.standard
     private let baseTimeout: TimeInterval = 30

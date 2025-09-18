@@ -12,7 +12,8 @@ import SwiftUI
 class AppState {
     // TODO: - move this properties to TranscriptionManager.
     var whisperContext: WhisperContext?
-    var currentTranscriptionModel: (any TranscriptionModel)?
+    
+    var transcriptionManager: TranscriptionManager!
     
     var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
     
@@ -31,26 +32,21 @@ class AppState {
 
     init() {
         localTranscriptionService = LocalTranscriptionService(appState: self)
-        loadCurrentTranscriptionModel()
+        transcriptionManager = TranscriptionManager(
+            appState: self,
+            aiService: aiService,
+            whisperPrompt: whisperPrompt,
+            whisperContext: whisperContext
+        )
+        
+        aiService.transcriptionManager = transcriptionManager
+        // Apply selected mode's language on startup
+        transcriptionManager.applyModeLanguage(aiService.selectedMode)
+//        loadCurrentTranscriptionModel()
     }
     
     func transcribe(audioURL: URL) async throws -> String {
-        guard let model = currentTranscriptionModel else {
-            throw WhisperStateError.transcriptionFailed
-        }
-
-        let transcriptionService: any TranscriptionService
-        switch model.provider {
-        case .local:
-            transcriptionService = localTranscriptionService
-        default:
-            transcriptionService = cloudTranscriptionService
-        }
-
-        let transcriptionStart = Date()
-        let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
-        let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
-        return text
+        return try await transcriptionManager.transcribe(audioURL: audioURL)
     }
     
     // TODO: - Load model when tap Record button, and load model only if it's a local model and not already loaded
@@ -70,7 +66,8 @@ class AppState {
     }
     
     func updateTranscriptionPrompt() {
-        whisperPrompt.updateTranscriptionPrompt()
+//        whisperPrompt.updateTranscriptionPrompt()
+        transcriptionManager.updateLanguage(transcriptionManager.selectedLanguage)
     }
 }
 
@@ -83,27 +80,27 @@ enum TabTag {
 }
 
 // MARK: - save / load local transcription model
-extension AppState {
-    func loadCurrentTranscriptionModel() {
-        if let savedModelName = UserDefaults.standard.string(forKey: Constants.kCurrentTranscriptionModel),
-           let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
-            if savedModel.provider == .local,
-               let localWhipserModel = savedModel as? WhisperLocalModel {
-                Task { try await loadLocalModel(localWhipserModel) }
-            }
-            currentTranscriptionModel = savedModel
-        }
-    }
-    
-    func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
-        self.currentTranscriptionModel = model
-        
-        UserDefaults.standard.set(model.name, forKey: Constants.kCurrentTranscriptionModel)
-        UserDefaults.standard.synchronize()
-        
-        if model.provider == .local,
-           let localWhipserModel = model as? WhisperLocalModel {
-            Task { try await loadLocalModel(localWhipserModel) }
-        }
-    }
-}
+//extension AppState {
+//    func loadCurrentTranscriptionModel() {
+//        if let savedModelName = UserDefaults.standard.string(forKey: Constants.kCurrentTranscriptionModel),
+//           let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
+//            if savedModel.provider == .local,
+//               let localWhipserModel = savedModel as? WhisperLocalModel {
+//                Task { try await loadLocalModel(localWhipserModel) }
+//            }
+//            currentTranscriptionModel = savedModel
+//        }
+//    }
+//    
+//    func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
+//        self.currentTranscriptionModel = model
+//        
+//        UserDefaults.standard.set(model.name, forKey: Constants.kCurrentTranscriptionModel)
+//        UserDefaults.standard.synchronize()
+//        
+//        if model.provider == .local,
+//           let localWhipserModel = model as? WhisperLocalModel {
+//            Task { try await loadLocalModel(localWhipserModel) }
+//        }
+//    }
+//}
