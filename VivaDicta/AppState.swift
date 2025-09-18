@@ -65,10 +65,6 @@ class AppState {
         aiService.refreshConnectedProviders()
     }
     
-    func updateTranscriptionPrompt() {
-//        whisperPrompt.updateTranscriptionPrompt()
-        transcriptionManager.updateLanguage(transcriptionManager.selectedLanguage)
-    }
 }
 
 // MARK: - Global

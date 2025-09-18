@@ -13,7 +13,9 @@ class WhisperPrompt {
     private var customPrompts: [String: String] = [:]
     
     init() {
-        loadCustomPrompts()
+        // TODO: - Add custom Whisper prompts. Not used now
+//        loadCustomPrompts()
+        
         updateTranscriptionPrompt()
     }
     
@@ -34,6 +36,8 @@ class WhisperPrompt {
     }
     
     // MARK: - Custom Prompts
+    // TODO: - Add custom Whisper prompts. Not used now
+    /*
     public func setCustomPrompt(_ prompt: String, for language: String) {
         customPrompts[language] = prompt
         saveCustomPrompts()
@@ -50,6 +54,7 @@ class WhisperPrompt {
         UserDefaults.standard.set(customPrompts, forKey: Constants.kCustomPromptsKey)
         UserDefaults.standard.synchronize()
     }
+    */
     
     
     // Language-specific base prompts

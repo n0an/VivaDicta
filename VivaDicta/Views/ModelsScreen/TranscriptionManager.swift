@@ -126,7 +126,7 @@ class TranscriptionManager {
 //    }
 
     // Update language and trigger prompt update
-    func updateLanguage(_ language: String) {
+    private func updateLanguage(_ language: String) {
         selectedLanguage = language
         whisperPrompt.updateTranscriptionPrompt()
     }
