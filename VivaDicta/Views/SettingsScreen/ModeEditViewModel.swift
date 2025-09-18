@@ -22,9 +22,9 @@ class ModeEditViewModel {
     var aiModel: String?
     var selectedPromptID: UUID?
     
+    private let transcriptionManager: TranscriptionManager
     private let aiService: AIService
     let promptsManager: PromptsManager
-    private let appState: AppState
     private let originalMode: FlowMode?
     
     var isEditing: Bool {
@@ -38,11 +38,11 @@ class ModeEditViewModel {
     init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
-         appState: AppState) {
+         transcriptionManager: TranscriptionManager) {
         self.originalMode = mode
         self.aiService = aiService
         self.promptsManager = promptsManager
-        self.appState = appState
+        self.transcriptionManager = transcriptionManager
         
         if let existingMode = mode {
             modeName = existingMode.name
@@ -87,7 +87,7 @@ class ModeEditViewModel {
     func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
         switch provider {
         case .local:
-            return !appState.transcriptionManager.availableWhisperLocalModels.isEmpty
+            return !transcriptionManager.availableWhisperLocalModels.isEmpty
         case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
             // Cloud providers are configured if API key exists
             let apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
@@ -101,7 +101,7 @@ class ModeEditViewModel {
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
         case .local:
-            return appState.transcriptionManager.availableWhisperLocalModels.compactMap { model in
+            return transcriptionManager.availableWhisperLocalModels.compactMap { model in
                 if model.name.hasPrefix("ggml-") {
                     return String(model.name.dropFirst(5))
                 }

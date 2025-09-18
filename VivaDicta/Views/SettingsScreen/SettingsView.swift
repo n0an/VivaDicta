@@ -32,7 +32,7 @@ struct SettingsView: View {
                             mode: nil,
                             aiService: appState.aiService,
                             promptsManager: appState.promptsManager,
-                            appState: appState,
+                            transcriptionManager: appState.transcriptionManager,
                             selectedTab: $appState.selectedTab,
                             navigationPath: $navigationPath)) {
                                 HStack {
@@ -61,7 +61,7 @@ struct SettingsView: View {
                     mode: mode,
                     aiService: appState.aiService,
                     promptsManager: appState.promptsManager,
-                    appState: appState,
+                    transcriptionManager: appState.transcriptionManager,
                     selectedTab: $appState.selectedTab,
                     navigationPath: $navigationPath)
             }

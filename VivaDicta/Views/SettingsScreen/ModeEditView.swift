@@ -19,7 +19,7 @@ struct ModeEditView: View {
     init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
-         appState: AppState,
+         transcriptionManager: TranscriptionManager,
          selectedTab: Binding<TabTag>,
          navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
         self.aiService = aiService
@@ -31,7 +31,7 @@ struct ModeEditView: View {
                 mode: mode,
                 aiService: aiService,
                 promptsManager: promptsManager,
-                appState: appState))
+                transcriptionManager: transcriptionManager))
     }
     
     var body: some View {
@@ -214,13 +214,14 @@ struct ModeEditView: View {
     @Previewable @State var aiService = AIService(transcriptionManager: TranscriptionManager())
     @Previewable @State var promptsManager = PromptsManager()
     @Previewable @State var appState = AppState()
+    @Previewable @State var transcriptionManager = TranscriptionManager()
     @Previewable @State var selectedTab: TabTag = .settings
     @Previewable @State var navigationPath = NavigationPath()
     ModeEditView(
         mode: nil,
         aiService: aiService,
         promptsManager: promptsManager,
-        appState: appState,
+        transcriptionManager: transcriptionManager,
         selectedTab: $selectedTab,
         navigationPath: $navigationPath)
 }
