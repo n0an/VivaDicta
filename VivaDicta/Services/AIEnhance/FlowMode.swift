@@ -48,7 +48,7 @@ struct FlowMode: Identifiable, Hashable, Codable {
         id: UUID(),
         name: "Default",
         transcriptionProvider: .local,
-        transcriptionModel: "base",
+        transcriptionModel: "",
         transcriptionLanguage: "auto",
         prompt: "",
         aiModel: "",
