@@ -35,29 +35,3 @@ enum TabTag {
     case models
     case settings
 }
-
-// MARK: - save / load local transcription model
-//extension AppState {
-//    func loadCurrentTranscriptionModel() {
-//        if let savedModelName = UserDefaults.standard.string(forKey: Constants.kCurrentTranscriptionModel),
-//           let savedModel = allAvailableModels.first(where: { $0.name == savedModelName }) {
-//            if savedModel.provider == .local,
-//               let localWhipserModel = savedModel as? WhisperLocalModel {
-//                Task { try await loadLocalModel(localWhipserModel) }
-//            }
-//            currentTranscriptionModel = savedModel
-//        }
-//    }
-//    
-//    func setDefaultTranscriptionModel(_ model: any TranscriptionModel) {
-//        self.currentTranscriptionModel = model
-//        
-//        UserDefaults.standard.set(model.name, forKey: Constants.kCurrentTranscriptionModel)
-//        UserDefaults.standard.synchronize()
-//        
-//        if model.provider == .local,
-//           let localWhipserModel = model as? WhisperLocalModel {
-//            Task { try await loadLocalModel(localWhipserModel) }
-//        }
-//    }
-//}
