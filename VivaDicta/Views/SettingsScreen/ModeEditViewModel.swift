@@ -62,81 +62,6 @@ class ModeEditViewModel {
         }
     }
     
-    // MARK: - Transcription settings
-    func updateTranscriptionProvider(_ newProvider: TranscriptionModelProvider) {
-        let availableModels = getAvailableTranscriptionModels(for: newProvider)
-        transcriptionModel = availableModels.first ?? ""
-        logger.info("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
-
-        // Preheat local model if switching to a Local transcription
-        loadTranscriptionModelIfNeeded()
-    }
-
-    func updateTranscriptionModel(_ newModel: String) {
-        transcriptionModel = newModel
-        logger.info("Updated transcription model to: \(newModel)")
-
-        // Preheat local model if it's Local transcription provider
-        loadTranscriptionModelIfNeeded()
-    }
-
-    private func loadTranscriptionModelIfNeeded() {
-        guard transcriptionProvider == .local,
-              !transcriptionModel.isEmpty else {
-            return
-        }
-
-        if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
-            Task {
-                try? await transcriptionManager.loadLocalModel(localModel)
-                logger.info("Preheated local model: \(localModel.name)")
-            }
-        }
-    }
-    
-    
-    // MARK: - AI Enhancement settings
-    func updateProvider(_ newProvider: AIProvider?) {
-        aiProvider = newProvider
-        aiModel = newProvider?.defaultModel
-        logger.info("Updated provider to: \(newProvider?.rawValue ?? "none")")
-    }
-    
-    func updateModel(_ newModel: String?) {
-        aiModel = newModel
-        logger.info("Updated model to: \(newModel ?? "none")")
-    }
-    
-    
-    func hasAPIKey(for provider: AIProvider) -> Bool {
-        return aiService.connectedProviders.contains(provider)
-    }
-    
-    func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
-        switch provider {
-        case .local:
-            return !transcriptionManager.availableWhisperLocalModels.isEmpty
-        case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
-            guard let mappedAIProvider = provider.mappedAIProvider else { return false }
-            return self.hasAPIKey(for: mappedAIProvider)
-        case .parakeet:
-            // TODO: - Add Parakeet
-            return false
-        }
-    }
-    
-    func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
-        switch provider {
-        case .local:
-            return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
-        case .parakeet:
-            // TODO: Add Parakeet
-            return []
-        default: // Cloud models
-            return provider.cloudTranscriptionModelsNames
-        }
-    }
-    
     func saveMode() -> FlowMode {
         let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
         logger.info("Saving mode with name: '\(trimmedName)'")
@@ -157,6 +82,64 @@ class ModeEditViewModel {
         )
     }
     
+    // MARK: - Transcription settings
+    func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
+        switch provider {
+        case .local:
+            return !transcriptionManager.availableWhisperLocalModels.isEmpty
+        case .parakeet:
+            // TODO: - Add Parakeet
+            return false
+        default: // Cloud transcription models
+            guard let mappedAIProvider = provider.mappedAIProvider else { return false }
+            return self.hasAPIKey(for: mappedAIProvider)
+        }
+    }
+    
+    func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
+        switch provider {
+        case .local:
+            return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
+        case .parakeet:
+            // TODO: Add Parakeet
+            return []
+        default: // Cloud transcription models
+            return provider.cloudTranscriptionModelsNames
+        }
+    }
+    
+    func updateTranscriptionProvider(_ newProvider: TranscriptionModelProvider) {
+        let availableModels = getAvailableTranscriptionModels(for: newProvider)
+        transcriptionModel = availableModels.first ?? ""
+        logger.info("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
+
+        // Preheat local whisper model if switching to a Local transcription
+        preheatLocalTranscriptionModelIfNeeded()
+    }
+
+    func updateTranscriptionModel(_ newModel: String) {
+        transcriptionModel = newModel
+        logger.info("Updated transcription model to: \(newModel)")
+
+        // Preheat local whisper model if it's Local transcription provider
+        preheatLocalTranscriptionModelIfNeeded()
+    }
+    
+    private func preheatLocalTranscriptionModelIfNeeded() {
+        guard transcriptionProvider == .local,
+              !transcriptionModel.isEmpty else {
+            return
+        }
+
+        if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
+            Task {
+                try? await transcriptionManager.loadLocalModel(localModel)
+                logger.info("Preheated local model: \(localModel.name)")
+            }
+        }
+    }
+    
+    // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
         return ![.parakeet, .gemini].contains(transcriptionProvider)
@@ -186,7 +169,24 @@ class ModeEditViewModel {
         
         return []
     }
-
+    
+    // MARK: - AI Enhancement settings
+    func updateProvider(_ newProvider: AIProvider?) {
+        aiProvider = newProvider
+        aiModel = newProvider?.defaultModel
+        logger.info("Updated provider to: \(newProvider?.rawValue ?? "none")")
+    }
+    
+    func updateModel(_ newModel: String?) {
+        aiModel = newModel
+        logger.info("Updated model to: \(newModel ?? "none")")
+    }
+    
+    func hasAPIKey(for provider: AIProvider) -> Bool {
+        return aiService.connectedProviders.contains(provider)
+    }
+    
+    // MARK: - Prompt Settings
     private func getPromptForSelection(_ promptID: UUID?) -> String {
         guard let promptID = promptID,
               let selectedPrompt = promptsManager.userPrompts.first(where: { $0.id == promptID }) else {
