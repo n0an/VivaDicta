@@ -21,9 +21,9 @@ class ModeEditViewModel {
     var aiProvider: AIProvider?
     var aiModel: String?
     var selectedPromptID: UUID?
+    let aiService: AIService
     
     private let transcriptionManager: TranscriptionManager
-    private let aiService: AIService
     let promptsManager: PromptsManager
     private let originalMode: FlowMode?
     

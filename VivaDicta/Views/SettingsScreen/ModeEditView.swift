@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct ModeEditView: View {
-    let aiService: AIService
     @Environment(\.dismiss) private var dismiss
     @Binding var selectedTab: TabTag
     
@@ -22,7 +21,6 @@ struct ModeEditView: View {
          transcriptionManager: TranscriptionManager,
          selectedTab: Binding<TabTag>,
          navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
-        self.aiService = aiService
         self._selectedTab = selectedTab
         self._navigationPath = navigationPath
         
@@ -93,7 +91,7 @@ struct ModeEditView: View {
                         if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
                             NavigationLink(destination: AddAPIKeyView(
                                 provider: mappedProvider,
-                                aiService: aiService,
+                                aiService: viewModel.aiService,
                                 onSave: { _ in
                                     let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
                                     if let firstModel = availableModels.first {
@@ -137,7 +135,7 @@ struct ModeEditView: View {
                             if hasKey {
                                 
                                 Picker(selection: $viewModel.aiModel) {
-                                    ForEach(aiService.getAvailableModels(for: provider), id: \.self) { model in
+                                    ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
                                         Text(model).tag(model as String?)
                                     }
                                     
@@ -154,7 +152,7 @@ struct ModeEditView: View {
                             } else {
                                 NavigationLink(destination: AddAPIKeyView(
                                     provider: provider,
-                                    aiService: aiService, onSave: { provider in
+                                    aiService: viewModel.aiService, onSave: { provider in
                                         viewModel.updateModel(provider.defaultModel)
                                     })) {
                                         HStack {
@@ -205,9 +203,9 @@ struct ModeEditView: View {
     private func saveMode() {
         let newMode = viewModel.saveMode()
         if viewModel.isEditing {
-            aiService.updateMode(newMode)
+            viewModel.aiService.updateMode(newMode)
         } else {
-            aiService.addMode(newMode)
+            viewModel.aiService.addMode(newMode)
         }
         dismiss()
     }
