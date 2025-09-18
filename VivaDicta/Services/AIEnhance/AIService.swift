@@ -11,12 +11,12 @@ import os
 @Observable
 class AIService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
-    
+
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
     public var modes: [FlowMode] = []
-    
-    weak var transcriptionManager: TranscriptionManager?
+
+    private let transcriptionManager: TranscriptionManager
     
     public var selectedModeName: String {
         didSet {
@@ -27,7 +27,7 @@ class AIService {
     
     public var selectedMode: FlowMode = FlowMode.defaultMode {
         didSet {
-            transcriptionManager?.applyModeLanguage(selectedMode)
+            transcriptionManager.applyModeLanguage(selectedMode)
         }
     }
     
@@ -35,7 +35,8 @@ class AIService {
     private let baseTimeout: TimeInterval = 30
 
     
-    init() {
+    init(transcriptionManager: TranscriptionManager) {
+        self.transcriptionManager = transcriptionManager
         self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)

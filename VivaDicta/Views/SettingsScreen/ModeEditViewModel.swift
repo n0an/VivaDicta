@@ -87,7 +87,7 @@ class ModeEditViewModel {
     func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
         switch provider {
         case .local:
-            return !appState.availableWhisperLocalModels.isEmpty
+            return !appState.transcriptionManager.availableWhisperLocalModels.isEmpty
         case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
             // Cloud providers are configured if API key exists
             let apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
@@ -101,7 +101,7 @@ class ModeEditViewModel {
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
         case .local:
-            return appState.availableWhisperLocalModels.compactMap { model in
+            return appState.transcriptionManager.availableWhisperLocalModels.compactMap { model in
                 if model.name.hasPrefix("ggml-") {
                     return String(model.name.dropFirst(5))
                 }

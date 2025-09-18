@@ -10,10 +10,18 @@ import Foundation
 
 @Observable
 class TranscriptionManager {
-    private let appState: AppState
-    private let aiService: AIService
+    // Transcription-related properties
+    var whisperContext: WhisperContext?
     private let whisperPrompt: WhisperPrompt
-    private let whisperContext: WhisperContext?
+    private var localTranscriptionService: LocalTranscriptionService!
+    private let cloudTranscriptionService = CloudTranscriptionService()
+    weak var aiService: AIService?
+
+    var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+
+    var availableWhisperLocalModels: [WhisperLocalModel] {
+        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
+    }
 
     var selectedLanguage: String {
         get {
@@ -24,14 +32,13 @@ class TranscriptionManager {
         }
     }
 
-    init(appState: AppState, aiService: AIService, whisperPrompt: WhisperPrompt, whisperContext: WhisperContext?) {
-        self.appState = appState
-        self.aiService = aiService
-        self.whisperPrompt = whisperPrompt
-        self.whisperContext = whisperContext
+    init() {
+        self.whisperPrompt = WhisperPrompt()
+        self.localTranscriptionService = LocalTranscriptionService(transcriptionManager: self)
     }
     
     func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
+        guard let aiService = aiService else { return nil }
         let mode = aiService.selectedMode
         let provider = mode.transcriptionProvider
         let modelName = mode.transcriptionModel
@@ -124,17 +131,29 @@ class TranscriptionManager {
 //        }
 //        return modelName
 //    }
-
-    // Update language and trigger prompt update
+    
+    
     private func updateLanguage(_ language: String) {
         selectedLanguage = language
         whisperPrompt.updateTranscriptionPrompt()
     }
-
-    // Apply mode's language setting
-    func applyModeLanguage(_ mode: FlowMode) {
+    
+    public func applyModeLanguage(_ mode: FlowMode) {
         let language = mode.transcriptionLanguage ?? "auto"
         updateLanguage(language)
+    }
+    
+    func loadLocalModel(_ model: WhisperLocalModel) async throws {
+        do {
+            whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
+        } catch {
+            throw WhisperStateError.modelLoadFailed
+        }
+    }
+
+    func updateCloudModels() {
+        allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+        aiService?.refreshConnectedProviders()
     }
 
     // Transcribe using current mode's settings
@@ -146,9 +165,9 @@ class TranscriptionManager {
         let transcriptionService: any TranscriptionService
         switch model.provider {
         case .local:
-            transcriptionService = appState.localTranscriptionService
+            transcriptionService = localTranscriptionService
         default:
-            transcriptionService = CloudTranscriptionService()
+            transcriptionService = cloudTranscriptionService
         }
         
         return try await transcriptionService.transcribe(audioURL: audioURL, model: model)

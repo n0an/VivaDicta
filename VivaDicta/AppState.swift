@@ -10,61 +10,22 @@ import SwiftUI
 
 @Observable
 class AppState {
-    // TODO: - move this properties to TranscriptionManager.
-    var whisperContext: WhisperContext?
-    
     var transcriptionManager: TranscriptionManager!
-    
-    var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
-    
-    var availableWhisperLocalModels: [WhisperLocalModel] {
-        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
-    }
-    // TODO: - move this properties to TranscriptionManager. Handle all localTranscriptionService preparing in the TranscriptionManager
-    var localTranscriptionService: LocalTranscriptionService!
-    private var cloudTranscriptionService = CloudTranscriptionService()
-    
-    let whisperPrompt = WhisperPrompt()
-    var aiService = AIService()
+    var aiService: AIService!
     var promptsManager = PromptsManager()
     
     var selectedTab: TabTag = .record
 
     init() {
-        localTranscriptionService = LocalTranscriptionService(appState: self)
-        transcriptionManager = TranscriptionManager(
-            appState: self,
-            aiService: aiService,
-            whisperPrompt: whisperPrompt,
-            whisperContext: whisperContext
-        )
-        
-        aiService.transcriptionManager = transcriptionManager
-        // Apply selected mode's language on startup
+        transcriptionManager = TranscriptionManager()
+        aiService = AIService(transcriptionManager: transcriptionManager)
+        transcriptionManager.aiService = aiService
         transcriptionManager.applyModeLanguage(aiService.selectedMode)
-//        loadCurrentTranscriptionModel()
     }
     
     func transcribe(audioURL: URL) async throws -> String {
         return try await transcriptionManager.transcribe(audioURL: audioURL)
     }
-    
-    // TODO: - Load model when tap Record button, and load model only if it's a local model and not already loaded
-    func loadLocalModel(_ model: WhisperLocalModel) async throws {
-        // TODO: - Add whisperContext release after transcribing?
-        do {
-            whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-
-        } catch {
-            throw WhisperStateError.modelLoadFailed
-        }
-    }
-    
-    func updateCloudModels() {
-        allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
-        aiService.refreshConnectedProviders()
-    }
-    
 }
 
 // MARK: - Global

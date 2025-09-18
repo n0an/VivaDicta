@@ -55,9 +55,9 @@ struct ModelsScreen: View {
     var filteredModels: [any TranscriptionModel] {
         switch modelType {
         case .local:
-            appState.allAvailableModels.filter { $0.provider == .local }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .local }
         case .cloud:
-            appState.allAvailableModels.filter { $0.provider != .local }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .local }
         }
     }
     
@@ -66,7 +66,7 @@ struct ModelsScreen: View {
     }
     
     func cloudModelConfigured() {
-        appState.updateCloudModels()
+        appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
     }
 }
