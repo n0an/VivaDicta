@@ -65,8 +65,7 @@ struct AddAPIKeyView: View {
         }
         .onAppear {
             // Load existing API key if available
-            let apiKeyKey = Constants.kAPIKeyTemplate + provider.rawValue
-            apiKey = UserDefaults.standard.string(forKey: apiKeyKey) ?? ""
+            apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) ?? ""
         }
         .padding(.top, 32)
         .padding()
