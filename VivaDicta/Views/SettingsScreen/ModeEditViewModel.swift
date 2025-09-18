@@ -133,7 +133,7 @@ class ModeEditViewModel {
 
         if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
             Task {
-                try? await transcriptionManager.loadLocalModel(localModel)
+                try? await transcriptionManager.preheatLocalModel(localModel)
                 logger.info("Preheated local model: \(localModel.name)")
             }
         }
