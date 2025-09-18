@@ -97,8 +97,7 @@ class ModeEditViewModel {
             return
         }
 
-        let fullModelName = "ggml-\(transcriptionModel)"
-        if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
+        if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
             Task {
                 try? await transcriptionManager.loadLocalModel(localModel)
                 logger.info("Preheated local model: \(localModel.name)")
@@ -128,12 +127,7 @@ class ModeEditViewModel {
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
         case .local:
-            return transcriptionManager.availableWhisperLocalModels.compactMap { model in
-                if model.name.hasPrefix("ggml-") {
-                    return String(model.name.dropFirst(5))
-                }
-                return nil
-            }
+            return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
         case .openAI:
             return ["openai-gpt-4o"]
         case .groq:
@@ -213,8 +207,7 @@ class ModeEditViewModel {
         guard isLanguageSelectionAvailable() else { return [] }
         
         if transcriptionProvider == .local {
-            let fullModelName = "ggml-\(transcriptionModel)"
-            if let model = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
+            if let model = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
                 return model.supportedLanguages.sorted(by: {
                     if $0.key == "auto" { return true }
                     if $1.key == "auto" { return false }

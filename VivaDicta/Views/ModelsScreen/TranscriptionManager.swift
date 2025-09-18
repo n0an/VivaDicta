@@ -54,8 +54,7 @@ class TranscriptionManager {
         
         // Preheat Local Whisper Model if needed
         if mode.transcriptionProvider == .local {
-            let fullModelName = "ggml-\(mode.transcriptionModel)"
-            if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
+            if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == mode.transcriptionModel }) {
                 Task {
                     try? await loadLocalModel(localModel)
                 }
@@ -79,9 +78,8 @@ class TranscriptionManager {
         
         let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
         
-        let adjustedModelName = provider == .local ? "ggml-\(modelName)" : modelName
         return allModels.first { model in
-            model.provider == provider && model.name == adjustedModelName
+            model.provider == provider && model.name == modelName
         }
     }
 
