@@ -51,7 +51,7 @@ struct ModeEditView: View {
                 if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
                     Picker("Model", selection: $viewModel.transcriptionModel) {
                         ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
-                            Text(viewModel.getTranscriptionModelDisplayName(model, provider: viewModel.transcriptionProvider))
+                            Text(viewModel.transcriptionProvider.getTranscriptionModelDisplayName(model))
                                 .tag(model)
                         }
                     }

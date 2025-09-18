@@ -12,19 +12,21 @@ import os
 class ModeEditViewModel {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ModeEditViewModel")
     
-    // Simple bindable properties
     var modeName: String = ""
+    
     var transcriptionProvider: TranscriptionModelProvider = .local
     var transcriptionModel: String = ""
     var transcriptionLanguage: String = "auto"
+    
     var aiEnhanceEnabled: Bool = false
     var aiProvider: AIProvider?
     var aiModel: String?
     var selectedPromptID: UUID?
-    let aiService: AIService
     
+    let aiService: AIService
     private let transcriptionManager: TranscriptionManager
     let promptsManager: PromptsManager
+    
     private let originalMode: FlowMode?
     
     var isEditing: Bool {
@@ -52,8 +54,6 @@ class ModeEditViewModel {
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
-
-            // Set the selected prompt ID directly from the mode
             selectedPromptID = existingMode.promptID
         } else {
             transcriptionProvider = .local
@@ -62,23 +62,13 @@ class ModeEditViewModel {
         }
     }
     
-    func updateProvider(_ newProvider: AIProvider?) {
-        aiProvider = newProvider
-        aiModel = newProvider?.defaultModel
-        logger.info("Updated provider to: \(newProvider?.rawValue ?? "none")")
-    }
-    
-    func updateModel(_ newModel: String?) {
-        aiModel = newModel
-        logger.info("Updated model to: \(newModel ?? "none")")
-    }
-    
+    // MARK: - Transcription settings
     func updateTranscriptionProvider(_ newProvider: TranscriptionModelProvider) {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
         logger.info("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
 
-        // Load local model if switching to a local provider
+        // Preheat local model if switching to a Local transcription
         loadTranscriptionModelIfNeeded()
     }
 
@@ -86,12 +76,11 @@ class ModeEditViewModel {
         transcriptionModel = newModel
         logger.info("Updated transcription model to: \(newModel)")
 
-        // Load local model if it's a local provider
+        // Preheat local model if it's Local transcription provider
         loadTranscriptionModelIfNeeded()
     }
 
     private func loadTranscriptionModelIfNeeded() {
-        // Only load if it's a local model
         guard transcriptionProvider == .local,
               !transcriptionModel.isEmpty else {
             return
@@ -105,19 +94,31 @@ class ModeEditViewModel {
         }
     }
     
+    
+    // MARK: - AI Enhancement settings
+    func updateProvider(_ newProvider: AIProvider?) {
+        aiProvider = newProvider
+        aiModel = newProvider?.defaultModel
+        logger.info("Updated provider to: \(newProvider?.rawValue ?? "none")")
+    }
+    
+    func updateModel(_ newModel: String?) {
+        aiModel = newModel
+        logger.info("Updated model to: \(newModel ?? "none")")
+    }
+    
+    
     func hasAPIKey(for provider: AIProvider) -> Bool {
         return aiService.connectedProviders.contains(provider)
     }
     
-    // Check if transcription provider has configuration (models or API key)
     func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
         switch provider {
         case .local:
             return !transcriptionManager.availableWhisperLocalModels.isEmpty
         case .openAI, .groq, .elevenLabs, .deepgram, .gemini:
-            // Cloud providers are configured if API key exists
-            let apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
-            return apiKey != nil && !apiKey!.isEmpty
+            guard let mappedAIProvider = provider.mappedAIProvider else { return false }
+            return self.hasAPIKey(for: mappedAIProvider)
         case .parakeet:
             // TODO: - Add Parakeet
             return false
@@ -128,52 +129,11 @@ class ModeEditViewModel {
         switch provider {
         case .local:
             return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
-        case .openAI:
-            return ["openai-gpt-4o"]
-        case .groq:
-            return ["whisper-large-v3-turbo"]
-        case .elevenLabs:
-            return ["scribe_v1"]
-        case .deepgram:
-            return ["nova-2"]
-        case .gemini:
-            return ["gemini-2.5-pro", "gemini-2.5-flash"]
         case .parakeet:
             // TODO: Add Parakeet
             return []
-        }
-    }
-    
-    func getTranscriptionModelDisplayName(_ model: String, provider: TranscriptionModelProvider) -> String {
-        switch provider {
-        case .local:
-            switch model {
-            case "tiny": return "Tiny"
-            case "tiny.en": return "Tiny (English)"
-            case "base": return "Base"
-            case "base.en": return "Base (English)"
-            case "large-v2": return "Large v2"
-            case "large-v3": return "Large v3"
-            case "large-v3-turbo": return "Large v3 Turbo"
-            case "large-v3-turbo-q5_0": return "Large v3 Turbo (Quantized)"
-            default: return model
-            }
-        case .openAI:
-            return model == "openai-gpt-4o" ? "GPT-4o" : model
-        case .groq:
-            return model == "whisper-large-v3-turbo" ? "Whisper Large v3 Turbo" : model
-        case .elevenLabs:
-            return model == "scribe_v1" ? "Scribe v1" : model
-        case .deepgram:
-            return model == "nova-2" ? "Nova 2" : model
-        case .gemini:
-            switch model {
-            case "gemini-2.5-pro": return "Gemini 2.5 Pro"
-            case "gemini-2.5-flash": return "Gemini 2.5 Flash"
-            default: return model
-            }
-        case .parakeet:
-            return model
+        default: // Cloud models
+            return provider.cloudTranscriptionModelsNames
         }
     }
     

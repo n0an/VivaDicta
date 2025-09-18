@@ -18,6 +18,38 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     var id: Self { self }
     
+    var cloudTranscriptionModelsNames: [String] {
+        switch self {
+        case .local, .parakeet:
+            return []
+        case .openAI:
+            return ["openai-gpt-4o"]
+        case .groq:
+            return ["whisper-large-v3-turbo"]
+        case .elevenLabs:
+            return ["scribe_v1"]
+        case .deepgram:
+            return ["nova-2"]
+        case .gemini:
+            return ["gemini-2.5-pro", "gemini-2.5-flash"]
+        }
+    }
+    
+    func getTranscriptionModelDisplayName(_ modelName: String) -> String {
+        switch self {
+        case .local:
+            guard let model = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == modelName}) else { return modelName }
+            return model.displayName
+            
+        case .parakeet:
+            return modelName
+            
+        default:
+            guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == modelName}) else { return modelName }
+            return model.displayName
+        }
+    }
+    
     public var mappedAIProvider: AIProvider? {
         switch self {
         case .openAI:
@@ -50,6 +82,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 ramUsage: 0.3,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: true),
             ),
+            
             WhisperLocalModel(
                 name: "tiny.en",
                 displayName: "Tiny (English)",
