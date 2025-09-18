@@ -57,6 +57,9 @@ struct ModeEditView: View {
                                 .tag(model)
                         }
                     }
+                    .onChange(of: viewModel.transcriptionModel) { _, newModel in
+                        viewModel.updateTranscriptionModel(newModel)
+                    }
                     .onAppear {
                         let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
                         if !availableModels.contains(viewModel.transcriptionModel) && !availableModels.isEmpty {

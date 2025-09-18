@@ -20,7 +20,7 @@ class AppState {
         transcriptionManager = TranscriptionManager()
         aiService = AIService(transcriptionManager: transcriptionManager)
         transcriptionManager.aiService = aiService
-        transcriptionManager.applyModeLanguage(aiService.selectedMode)
+        transcriptionManager.handleModeChange(aiService.selectedMode)
     }
     
     func transcribe(audioURL: URL) async throws -> String {

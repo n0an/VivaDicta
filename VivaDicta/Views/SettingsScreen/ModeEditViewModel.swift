@@ -77,6 +77,33 @@ class ModeEditViewModel {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
         logger.info("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
+
+        // Load local model if switching to a local provider
+        loadTranscriptionModelIfNeeded()
+    }
+
+    func updateTranscriptionModel(_ newModel: String) {
+        transcriptionModel = newModel
+        logger.info("Updated transcription model to: \(newModel)")
+
+        // Load local model if it's a local provider
+        loadTranscriptionModelIfNeeded()
+    }
+
+    private func loadTranscriptionModelIfNeeded() {
+        // Only load if it's a local model
+        guard transcriptionProvider == .local,
+              !transcriptionModel.isEmpty else {
+            return
+        }
+
+        let fullModelName = "ggml-\(transcriptionModel)"
+        if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
+            Task {
+                try? await transcriptionManager.loadLocalModel(localModel)
+                logger.info("Preheated local model: \(localModel.name)")
+            }
+        }
     }
     
     func hasAPIKey(for provider: AIProvider) -> Bool {

@@ -27,7 +27,7 @@ class AIService {
     
     public var selectedMode: FlowMode = FlowMode.defaultMode {
         didSet {
-            transcriptionManager.applyModeLanguage(selectedMode)
+            transcriptionManager.handleModeChange(selectedMode)
         }
     }
     

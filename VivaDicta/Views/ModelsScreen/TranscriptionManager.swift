@@ -36,6 +36,37 @@ class TranscriptionManager {
         self.whisperPrompt = WhisperPrompt()
         self.localTranscriptionService = LocalTranscriptionService(transcriptionManager: self)
     }
+
+    // MARK: - Model Preheating
+
+    /// Loads the current mode's transcription model if it's a local model
+    func loadCurrentTranscriptionModel() {
+        guard let currentModel = getCurrentTranscriptionModel(),
+              currentModel.provider == .local,
+              let localWhisperModel = currentModel as? WhisperLocalModel else {
+            return
+        }
+
+        Task {
+            try? await loadLocalModel(localWhisperModel)
+        }
+    }
+
+    /// Called when a mode is selected - loads the model if it's local
+    func handleModeChange(_ mode: FlowMode) {
+        // Apply language settings
+        applyModeLanguage(mode)
+
+        // Load local model if needed
+        if mode.transcriptionProvider == .local {
+            let fullModelName = "ggml-\(mode.transcriptionModel)"
+            if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == fullModelName }) {
+                Task {
+                    try? await loadLocalModel(localModel)
+                }
+            }
+        }
+    }
     
     func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
         guard let aiService = aiService else { return nil }
@@ -138,7 +169,7 @@ class TranscriptionManager {
         whisperPrompt.updateTranscriptionPrompt()
     }
     
-    public func applyModeLanguage(_ mode: FlowMode) {
+    func applyModeLanguage(_ mode: FlowMode) {
         let language = mode.transcriptionLanguage ?? "auto"
         updateLanguage(language)
     }
