@@ -10,6 +10,8 @@ async function main() {
   } catch (error) {
     console.error('❌ AI PR Review failed:', error)
     process.exit(1)
+
+    
   }
 }
 
