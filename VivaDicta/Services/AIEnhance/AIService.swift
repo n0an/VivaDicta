@@ -125,6 +125,36 @@ class AIService {
         userDefaults.set(openRouterModels, forKey: "openRouterModels")
     }
     
+    // MARK: - Configuration validation
+    public func isProperlyConfigured() -> Bool {
+        // Check if AI enhancement is enabled
+        guard selectedMode.aiEnhanceEnabled else {
+            logger.info("AI enhancement is disabled for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        // Check if AI provider is selected
+        guard let aiProvider = selectedMode.aiProvider else {
+            logger.warning("No AI provider selected for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        // Check if AI model is selected (not empty)
+        guard !selectedMode.aiModel.isEmpty else {
+            logger.warning("No AI model selected for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        // Check if API key exists for the selected provider
+        guard getAPIKey(for: aiProvider) != nil else {
+            logger.warning("No API key configured for provider: \(aiProvider.rawValue)")
+            return false
+        }
+
+        logger.info("AI enhancement is properly configured for mode: \(self.selectedMode.name)")
+        return true
+    }
+
     // MARK: - Enhance methods
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
