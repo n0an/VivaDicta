@@ -17,11 +17,12 @@ struct FlowMode: Identifiable, Hashable, Codable {
 
     let promptID: UUID?
     let prompt: String
+    let promptName: String?
     var aiProvider: AIProvider?
     var aiModel: String
 
     let aiEnhanceEnabled: Bool
-    
+
     init(id: UUID,
          name: String,
          transcriptionProvider: TranscriptionModelProvider,
@@ -29,6 +30,7 @@ struct FlowMode: Identifiable, Hashable, Codable {
          transcriptionLanguage: String? = nil,
          promptID: UUID? = nil,
          prompt: String,
+         promptName: String? = nil,
          aiProvider: AIProvider? = nil,
          aiModel: String,
          aiEnhanceEnabled: Bool) {
@@ -39,6 +41,7 @@ struct FlowMode: Identifiable, Hashable, Codable {
         self.transcriptionLanguage = transcriptionLanguage
         self.promptID = promptID
         self.prompt = prompt
+        self.promptName = promptName
         self.aiProvider = aiProvider
         self.aiModel = aiModel
         self.aiEnhanceEnabled = aiEnhanceEnabled
