@@ -169,7 +169,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 if let aiService = aiService, aiService.isProperlyConfigured() {
                     
                     do {
-                        let (enhancedText, enhancementDuration, modeName) = try await aiService.enhance(transcribedText)
+                        let (enhancedText, enhancementDuration, promptName) = try await aiService.enhance(transcribedText)
                         
                         let transcription = Transcription(
                             text: transcribedText,
@@ -178,7 +178,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             audioFileName: recordURL.lastPathComponent,
                             transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                             aiEnhancementModelName: aiService.selectedMode.aiModel,
-                            promptName: aiService.selectedMode.name,
+                            promptName: promptName,
                             transcriptionDuration: transcriptionDuration,
                             enhancementDuration: enhancementDuration)
                         
