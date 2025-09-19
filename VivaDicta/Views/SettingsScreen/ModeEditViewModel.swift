@@ -76,6 +76,7 @@ class ModeEditViewModel {
             transcriptionLanguage: transcriptionLanguage,
             promptID: selectedPromptID,
             prompt: getPromptForSelection(selectedPromptID),
+            promptName: getPromptNameForSelection(selectedPromptID),
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
             aiEnhanceEnabled: aiEnhanceEnabled
@@ -193,5 +194,13 @@ class ModeEditViewModel {
             return ""
         }
         return selectedPrompt.promptInstructions
+    }
+
+    private func getPromptNameForSelection(_ promptID: UUID?) -> String? {
+        guard let promptID = promptID,
+              let selectedPrompt = promptsManager.userPrompts.first(where: { $0.id == promptID }) else {
+            return nil
+        }
+        return selectedPrompt.title
     }
 }
