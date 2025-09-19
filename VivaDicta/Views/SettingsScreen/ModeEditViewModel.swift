@@ -54,7 +54,7 @@ class ModeEditViewModel {
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
-            selectedPromptID = existingMode.promptID
+            selectedPromptID = existingMode.userPrompt?.id
         } else {
             transcriptionProvider = .local
             transcriptionModel = ""
@@ -74,9 +74,7 @@ class ModeEditViewModel {
             transcriptionProvider: transcriptionProvider,
             transcriptionModel: transcriptionModel,
             transcriptionLanguage: transcriptionLanguage,
-            promptID: selectedPromptID,
-            prompt: getPromptForSelection(selectedPromptID),
-            promptName: getPromptNameForSelection(selectedPromptID),
+            userPrompt: getSelectedUserPrompt(),
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
             aiEnhanceEnabled: aiEnhanceEnabled
@@ -188,19 +186,10 @@ class ModeEditViewModel {
     }
     
     // MARK: - Prompt Settings
-    private func getPromptForSelection(_ promptID: UUID?) -> String {
-        guard let promptID = promptID,
-              let selectedPrompt = promptsManager.userPrompts.first(where: { $0.id == promptID }) else {
-            return ""
-        }
-        return selectedPrompt.promptInstructions
-    }
-
-    private func getPromptNameForSelection(_ promptID: UUID?) -> String? {
-        guard let promptID = promptID,
-              let selectedPrompt = promptsManager.userPrompts.first(where: { $0.id == promptID }) else {
+    private func getSelectedUserPrompt() -> UserPrompt? {
+        guard let promptID = selectedPromptID else {
             return nil
         }
-        return selectedPrompt.title
+        return promptsManager.userPrompts.first(where: { $0.id == promptID })
     }
 }
