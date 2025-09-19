@@ -26,26 +26,41 @@ You are about to work on a complex task. Follow this systematic approach to ensu
    - Understand the current architecture
    - Find similar existing features to use as reference
 
-4. **Ask Clarifying Questions** (if needed)
+4. **Swift 6 Concurrency Analysis** (Critical for iOS/Swift projects)
+   - Check if Swift 6 strict concurrency is enabled in the project
+   - Identify @MainActor isolation requirements for UI code
+   - Look for existing actor-based patterns (e.g., WhisperContext)
+   - Review async/await usage in similar components
+   - Check for Sendable conformance requirements
+   - Understand data race prevention patterns in the codebase
+   - Note: SwiftUI Views are implicitly @MainActor in Swift 6
+
+5. **Ask Clarifying Questions** (if needed)
    - Request any missing requirements
    - Confirm assumptions about the implementation
    - Clarify priorities if multiple approaches exist
 
 ### Phase 2: PLAN (Design the Solution)
-1. **Create a Todo List**
+1. **Review Framework Documentation**
+   - Check the `/docs/` directory for relevant framework documentation
+   - For iOS/Swift projects: Review swift.md, swiftui.md, swiftdata.md, etc.
+   - For web projects: Check relevant framework docs
+   - Ensure alignment with framework best practices
+
+2. **Create a Todo List**
    - Use TodoWrite to create a comprehensive task list
    - Break down the implementation into logical steps
    - Order tasks by dependencies and priority
    - Include verification/testing tasks
 
-2. **Design the Solution**
+3. **Design the Solution**
    - Outline the technical approach
    - Identify files that need to be created/modified
    - Plan the component/module structure
    - Consider edge cases and error handling
    - Plan for testing strategy
 
-3. **Communicate the Plan**
+4. **Communicate the Plan**
    - Present the plan to the user
    - Explain key design decisions
    - Get confirmation before proceeding with implementation
@@ -79,13 +94,97 @@ You are about to work on a complex task. Follow this systematic approach to ensu
 5. Execute CODE phase systematically
 6. Provide summary of completed work
 
+## iOS/Swift Specific Patterns
+
+When working on iOS/Swift projects, follow these patterns from CLAUDE.md:
+
+### SwiftData Models
+```swift
+@Model
+final class MyModel {
+    // Use @Model, NOT Core Data NSManagedObject
+    var property: String
+    // Follow SwiftData patterns from docs/swiftdata.md
+}
+```
+
+### SwiftUI Views
+```swift
+struct MyView: View {
+    @State private var data: String = ""  // Use @State/@Binding, NOT @StateObject
+    // Views are implicitly @MainActor in Swift 6
+
+    var body: some View {
+        NavigationStack {  // Use NavigationStack, NOT NavigationView
+            // Implementation
+        }
+        .foregroundStyle(.primary)  // Use foregroundStyle, NOT foregroundColor
+    }
+}
+```
+
+### State Management
+- Use `@Observable` macro, NOT @ObservableObject/@Published
+- Use `@State` with `onChange` for expensive operations instead of computed properties
+- Extract reusable components for better organization
+
+### Async/Await Patterns
+```swift
+// Prefer async/await over completion handlers
+func fetchData() async throws -> Data {
+    // Actor-based patterns for thread safety
+    // Properly isolate UI updates to @MainActor
+}
+```
+
+### Swift 6 Concurrency Checklist
+- ✅ Enable strict concurrency checking in build settings
+- ✅ All UI updates isolated to @MainActor
+- ✅ Use actors for shared mutable state (e.g., WhisperContext)
+- ✅ Mark types as Sendable when crossing concurrency boundaries
+- ✅ Avoid completion handlers - use async/await
+- ✅ Remember: SwiftUI Views are implicitly @MainActor
+- ✅ Use `nonisolated` for non-UI async functions when appropriate
+
+### Performance Optimization
+- Use `@State` with `onChange` modifiers for expensive filtering
+- Extract reusable UI components
+- Actor-based patterns for thread-safe access to heavy resources
+
 ## Example Usage
 
-User: "Implement a new feature for exporting transcriptions to PDF format"
+### Example 1: iOS Feature Implementation
+User: "Add a new settings screen for managing export preferences"
 
 Assistant would:
-- EXPLORE: Search for existing export functionality, PDF libraries, transcription models
-- PLAN: Create todos for PDF generation, UI components, export logic, tests
-- CODE: Implement each todo systematically with proper testing
+- EXPLORE:
+  - Search for existing Settings views and patterns
+  - Check AppState for state management approach
+  - Review docs/swiftui.md and docs/swiftdata.md
+- PLAN:
+  - Review `/docs/swift-observable.md` for state patterns
+  - Create todos: Settings model, SwiftUI view, AppState integration
+  - Follow @Observable pattern for state management
+- CODE:
+  - Implement using NavigationStack and @State
+  - Use SwiftData @Model for persistence
+  - Follow async/await for any network calls
+
+### Example 2: Transcription Service Integration
+User: "Implement a new cloud transcription service"
+
+Assistant would:
+- EXPLORE:
+  - Review TranscriptionService protocol
+  - Check existing services (OpenAI, Groq, etc.)
+  - Study CloudTranscriptionService patterns
+- PLAN:
+  - Check `/docs/swift-concurrency.md` for async patterns
+  - Design actor-based service for thread safety
+  - Plan error handling and retry logic
+- CODE:
+  - Implement TranscriptionService protocol
+  - Use async/await, NOT completion handlers
+  - Integrate with AppState using @Observable
 
 Remember: For complex tasks, investing time in exploration and planning saves significant time during implementation and reduces errors.
