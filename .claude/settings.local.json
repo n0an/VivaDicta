@@ -20,7 +20,10 @@
       "Read(//Users/antonnovoselov/Desktop/**)",
       "Bash(xcbeautify:*)",
       "Bash(git config:*)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__linear-server__list_teams",
+      "mcp__linear-server__create_issue",
+      "mcp__linear-server__list_issues"
     ],
     "deny": [],
     "ask": [],
