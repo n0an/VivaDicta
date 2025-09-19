@@ -164,9 +164,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
-                
-                // TODO: - check if AI Enhance ready and configured
-                if let aiService = aiService {
+
+                // Check if AI Enhancement is properly configured
+                if let aiService = aiService, aiService.isProperlyConfigured() {
                     
                     do {
                         let (enhancedText, enhancementDuration, modeName) = try await aiService.enhance(transcribedText)
