@@ -36,14 +36,18 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var animationTimer: Timer?
     
 //    var transcriptionService: TranscriptionService?
-    var appState: AppState?
-    
+    private let transcriptionManager: TranscriptionManager
+    private let aiService: AIService?
+
     // TODO: Add auto stop feature later
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
-    
-    init(appState: AppState?) {
-        self.appState = appState
+
+    init(transcriptionManager: TranscriptionManager, aiService: AIService? = nil) {
+        self.transcriptionManager = transcriptionManager
+        self.aiService = aiService
+        super.init()
+        setupAudioSession()
     }
     
     var transcribingSpeechTask: Task<Void, Never>?
@@ -66,16 +70,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
-    override init() {
-        super.init()
-        
+    private func setupAudioSession() {
         #if !os(macOS)
         do {
             #if os(iOS)
             try recordingSession.setCategory(.playAndRecord, options: .defaultToSpeaker)
             #endif
             try recordingSession.setActive(true)
-            
+
             AVAudioApplication.requestRecordPermission { [weak self] allowed in
                 Task { @MainActor in
                     if !allowed {
@@ -157,14 +159,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.recordingState = .transcribing
                 
                 let transcriptionStart = Date()
-                guard let transcribedText = try await appState?.transcribe(audioURL: recordURL) else { return }
+                let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
                 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
                 
                 // TODO: - check if AI Enhance ready and configured
-                if let aiService = appState?.aiService {
+                if let aiService = aiService {
                     
                     do {
                         let (enhancedText, enhancementDuration, modeName) = try await aiService.enhance(transcribedText)
@@ -174,9 +176,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             enhancedText: enhancedText,
                             audioDuration: audioDuration,
                             audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: appState?.transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                            aiEnhancementModelName: appState?.aiService.selectedMode.aiModel,
-                            promptName: appState?.aiService.selectedMode.name,
+                            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                            aiEnhancementModelName: aiService.selectedMode.aiModel,
+                            promptName: aiService.selectedMode.name,
                             transcriptionDuration: transcriptionDuration,
                             enhancementDuration: enhancementDuration)
                         
@@ -194,7 +196,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             enhancedText: "Enhancement failed: \(error)",
                             audioDuration: audioDuration,
                             audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: appState?.transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                             transcriptionDuration: transcriptionDuration)
                         
                         modelContext.insert(transcription)
@@ -211,7 +213,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         text: transcribedText,
                         audioDuration: audioDuration,
                         audioFileName: recordURL.lastPathComponent,
-                        transcriptionModelName: appState?.transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                        transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                         transcriptionDuration: transcriptionDuration)
                     
                     modelContext.insert(transcription)
