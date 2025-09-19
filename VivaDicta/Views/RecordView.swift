@@ -10,11 +10,11 @@ import SiriWaveView
 
 struct RecordView: View {
     @Environment(\.modelContext) var modelContext
-    @State var vm = RecordViewModel()
+    @State var vm: RecordViewModel
     @State var isSymbolAnimating = false
-    
+
     var appState: AppState
-    
+
     var body: some View {
         if appState.transcriptionManager.getCurrentTranscriptionModel() != nil {
             modelSelectedView
@@ -28,10 +28,13 @@ struct RecordView: View {
             }
         }
     }
-    
+
     init(appState: AppState) {
-        self._vm = State(wrappedValue: RecordViewModel(appState: appState))
         self.appState = appState
+        self._vm = State(wrappedValue: RecordViewModel(
+            transcriptionManager: appState.transcriptionManager,
+            aiService: appState.aiService
+        ))
     }
     
     var modelSelectedView: some View {

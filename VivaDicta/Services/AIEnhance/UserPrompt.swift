@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct UserPrompt: Identifiable, Codable, Equatable {
+struct UserPrompt: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     let title: String
     let description: String

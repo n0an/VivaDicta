@@ -125,17 +125,54 @@ class AIService {
         userDefaults.set(openRouterModels, forKey: "openRouterModels")
     }
     
+    // MARK: - Configuration validation
+    public func isProperlyConfigured() -> Bool {
+        // Check if AI enhancement is enabled
+        guard selectedMode.aiEnhanceEnabled else {
+            logger.info("AI enhancement is disabled for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        // Check if AI provider is selected
+        guard let aiProvider = selectedMode.aiProvider else {
+            logger.warning("No AI provider selected for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        // Check if AI model is selected (not empty)
+        guard !selectedMode.aiModel.isEmpty else {
+            logger.warning("No AI model selected for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        // Check if API key exists for the selected provider
+        guard getAPIKey(for: aiProvider) != nil else {
+            logger.warning("No API key configured for provider: \(aiProvider.rawValue)")
+            return false
+        }
+
+        // Check if a prompt is selected
+        guard let userPrompt = selectedMode.userPrompt,
+              !userPrompt.promptInstructions.isEmpty else {
+            logger.warning("No prompt selected or prompt is empty for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        logger.info("AI enhancement is properly configured for mode: \(self.selectedMode.name)")
+        return true
+    }
+
     // MARK: - Enhance methods
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
-        
-        let modeName = selectedMode.name
-        
+
+        let promptName = selectedMode.userPrompt?.title
+
         do {
             let result = try await makeRequest(text: text)
             let endTime = Date()
             let duration = endTime.timeIntervalSince(startTime)
-            return (result, duration, modeName)
+            return (result, duration, promptName)
         } catch {
             throw error
         }
@@ -272,7 +309,8 @@ class AIService {
     }
     
     private func getSystemMessage() -> String {
-        return String(format: PromptsTemplates.systemPrompt, selectedMode.prompt)
+        let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
+        return String(format: PromptsTemplates.systemPrompt, promptInstructions)
     }
     
     
