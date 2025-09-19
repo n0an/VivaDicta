@@ -41,7 +41,7 @@ function getAnthropicModel(): LanguageModel {
     throw new Error('ANTHROPIC_API_KEY environment variable is required')
   }
 
-  const modelName = process.env.LLM_MODEL || 'claude-sonnet-4-20250514'
+  const modelName = process.env.LLM_MODEL || 'claude-opus-4-1-20250805'
   console.log(`🤖 Using Anthropic model: ${modelName}`)
   
   // Create Anthropic provider with API key
