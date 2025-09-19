@@ -89,10 +89,16 @@ You are about to work on a complex task. Follow this systematic approach to ensu
 
 1. Start by acknowledging the complex task
 2. Enter EXPLORE phase - be thorough in understanding the context
+   - Use TodoWrite to track exploration tasks if multiple areas need investigation
 3. Present findings and move to PLAN phase
-4. Create detailed todo list and get user approval
+   - Always use TodoWrite to create comprehensive task list
+4. Get user approval on the plan
 5. Execute CODE phase systematically
+   - Update todos to in_progress when starting each task
+   - Mark todos as completed immediately after finishing each task
 6. Provide summary of completed work
+
+**Important**: Use TodoWrite proactively throughout ALL phases to maintain visibility of progress. Don't wait until the PLAN phase - start tracking tasks as soon as you begin exploring.
 
 ## iOS/Swift Specific Patterns
 
@@ -133,7 +139,11 @@ struct MyView: View {
 // Prefer async/await over completion handlers
 func fetchData() async throws -> Data {
     // Actor-based patterns for thread safety
-    // Properly isolate UI updates to @MainActor
+    // SwiftUI Views are implicitly @MainActor in Swift 6
+    // Explicit @MainActor needed only for:
+    //   - ViewModels/ObservableObjects (if used)
+    //   - Non-UI types that update UI state
+    //   - Closures that update @State from background tasks
 }
 ```
 
