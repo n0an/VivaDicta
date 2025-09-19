@@ -151,6 +151,13 @@ class AIService {
             return false
         }
 
+        // Check if a prompt is selected
+        guard let userPrompt = selectedMode.userPrompt,
+              !userPrompt.promptInstructions.isEmpty else {
+            logger.warning("No prompt selected or prompt is empty for mode: \(self.selectedMode.name)")
+            return false
+        }
+
         logger.info("AI enhancement is properly configured for mode: \(self.selectedMode.name)")
         return true
     }
@@ -159,7 +166,7 @@ class AIService {
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
 
-        let promptName = selectedMode.promptName
+        let promptName = selectedMode.userPrompt?.title
 
         do {
             let result = try await makeRequest(text: text)
@@ -302,7 +309,8 @@ class AIService {
     }
     
     private func getSystemMessage() -> String {
-        return String(format: PromptsTemplates.systemPrompt, selectedMode.prompt)
+        let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
+        return String(format: PromptsTemplates.systemPrompt, promptInstructions)
     }
     
     
