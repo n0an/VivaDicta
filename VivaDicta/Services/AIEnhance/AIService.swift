@@ -158,14 +158,14 @@ class AIService {
     // MARK: - Enhance methods
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
-        
-        let modeName = selectedMode.name
-        
+
+        let promptName = selectedMode.promptName
+
         do {
             let result = try await makeRequest(text: text)
             let endTime = Date()
             let duration = endTime.timeIntervalSince(startTime)
-            return (result, duration, modeName)
+            return (result, duration, promptName)
         } catch {
             throw error
         }
