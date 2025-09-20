@@ -48,6 +48,8 @@ actor WhisperContext {
         } else {
             languageCString = nil
             params.language = nil
+            
+            
         }
         
         if prompt != nil {
