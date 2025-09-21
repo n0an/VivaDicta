@@ -110,6 +110,29 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             WhisperLocalModel(
+                name: "medium",
+                displayName: "Medium",
+                description: "Medium model, high accuracy with decent speed, supports multiple languages",
+                provider: .local,
+                size: "1.5 GB",
+                speed: 0.6,
+                accuracy: 0.90,
+                ramUsage: 2.5,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
+            ),
+            WhisperLocalModel(
+                name: "medium.en",
+                displayName: "Medium (English)",
+                description: "Medium model optimized for English, high accuracy with decent speed",
+                provider: .local,
+                size: "1.5 GB",
+                speed: 0.6,
+                accuracy: 0.92,
+                ramUsage: 2.5,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+
+            WhisperLocalModel(
                 name: "large-v2",
                 displayName: "Large v2",
                 description: "Large model v2, slower than Medium but more accurate",
