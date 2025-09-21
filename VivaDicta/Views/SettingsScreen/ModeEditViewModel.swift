@@ -62,12 +62,17 @@ class ModeEditViewModel {
         }
     }
     
-    func saveMode() -> FlowMode {
+    func saveMode() throws -> FlowMode  {
         let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        logger.info("Saving mode with name: '\(trimmedName)'")
-
         let modeId = originalMode?.id ?? UUID()
-
+        
+        let otherModes = aiService.modes.filter ({ $0.id != modeId })
+        if otherModes.contains(where: {$0.name.lowercased() == trimmedName.lowercased()}) {
+            throw SettingsError.duplicateModeName(trimmedName)
+        }
+        
+        logger.info("Saving mode with name: '\(trimmedName)'")
+        
         return FlowMode(
             id: modeId,
             name: trimmedName,

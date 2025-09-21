@@ -63,6 +63,21 @@ struct RecordView: View {
                     .lineLimit(2)
             }
         }
+        .alert(isPresented: $vm.isShowingAlert, error: vm.recordError) { recordError in
+            
+            switch recordError {
+            case .userDenied:
+                Button("Settings") {
+                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                }
+                Button("Cancel", role: .cancel) { }
+            default:
+                EmptyView()
+            }
+            
+        } message: { recordError in
+            Text(recordError.failureReason)
+        }
     }
     
     @ViewBuilder
@@ -83,7 +98,6 @@ struct RecordView: View {
     var startCaptureButton: some View {
         Button {
             vm.startCaptureAudio()
-            print("record")
         } label: {
             Image(systemName: "mic.circle")
                 .symbolRenderingMode(.multicolor)

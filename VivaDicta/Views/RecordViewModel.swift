@@ -23,19 +23,34 @@ enum RecordError: LocalizedError {
     case recordError
     case transcribe
     case other
-    
+
     var errorDescription: String? {
         switch self {
         case .avInitError:
-            "AV init error."
+            "Audio initialization failed"
         case .userDenied:
-            "Audio record is denied by user"
+            "Microphone access denied"
         case .recordError:
-            "Error during record"
+            "Recording failed"
         case .transcribe:
-            "Transcription error"
+            "Transcription failed"
         case .other:
-            self.localizedDescription
+            "Unexpected error"
+        }
+    }
+
+    var failureReason: String {
+        switch self {
+        case .avInitError:
+            return "Failed to initialize audio recording system. Please restart the app and try again."
+        case .userDenied:
+            return "Microphone access is required for recording. Please go to Settings > Privacy & Security > Microphone and enable access for VivaDicta."
+        case .recordError:
+            return "Failed to record audio. Check that no other app is using the microphone and try again."
+        case .transcribe:
+            return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
+        case .other:
+            return "An unexpected error occurred. Please restart the app and try again."
         }
     }
 }
@@ -62,7 +77,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         self.transcriptionManager = transcriptionManager
         self.aiService = aiService
         super.init()
-        setupAudioSession()
     }
     
     var transcribingSpeechTask: Task<Void, Never>?
@@ -77,6 +91,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
+    var isShowingAlert = false
+    var recordError: RecordError = .other
+    
     var audioPower = 0.0
     var siriWaveFormOpacity: CGFloat {
         switch recordingState {
@@ -85,7 +102,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
-    private func setupAudioSession() {
+    private func setupAudioSession() async throws -> Bool {
         #if !os(macOS)
         do {
             #if os(iOS)
@@ -93,38 +110,52 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             #endif
             try recordingSession.setActive(true)
 
-            AVAudioApplication.requestRecordPermission { [weak self] allowed in
-                Task { @MainActor in
-                    if !allowed {
-                        self?.recordingState = .error(.userDenied)
-                    }
+            return await withCheckedContinuation { continuation in
+                AVAudioApplication.requestRecordPermission { allowed in
+                    continuation.resume(returning: allowed)
                 }
             }
         } catch {
-            recordingState = .error(.other)
+            throw RecordError.other
         }
+        #else
+        return true
         #endif
     }
     
     
     func startCaptureAudio() {
-        resetValues()
-        recordingState = .recording
-        
-        do {
-            let settings: [String : Any] = [
-                AVFormatIDKey: Int(kAudioFormatLinearPCM),
-                AVSampleRateKey: 16000.0,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ]
-            
-            audioRecorder = try AVAudioRecorder(
-                url: captureURL,
-                settings: settings)
-            audioRecorder.isMeteringEnabled = true
-            audioRecorder.delegate = self
-            audioRecorder.record()
+        Task { @MainActor in
+            do {
+                let hasPermission = try await setupAudioSession()
+
+                if !hasPermission {
+                    recordError = .userDenied
+                    isShowingAlert = true
+                    return
+                }
+            } catch {
+                recordingState = .error(.other)
+                return
+            }
+
+            resetValues()
+            recordingState = .recording
+
+            do {
+                let settings: [String : Any] = [
+                    AVFormatIDKey: Int(kAudioFormatLinearPCM),
+                    AVSampleRateKey: 16000.0,
+                    AVNumberOfChannelsKey: 1,
+                    AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                ]
+
+                audioRecorder = try AVAudioRecorder(
+                    url: captureURL,
+                    settings: settings)
+                audioRecorder.isMeteringEnabled = true
+                audioRecorder.delegate = self
+                audioRecorder.record()
             
             animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
                 Task { @MainActor in
@@ -150,10 +181,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                }
 //                self.prevAudioPower = power
 //            })
-            
-        } catch {
-            resetValues()
-            recordingState = .error(.recordError)
+
+            } catch {
+                resetValues()
+                recordingState = .error(.recordError)
+            }
         }
     }
     
