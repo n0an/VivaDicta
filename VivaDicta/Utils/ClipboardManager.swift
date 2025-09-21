@@ -8,11 +8,6 @@
 import UIKit
 
 struct ClipboardManager {
-    enum ClipboardError: Error {
-        case copyFailed
-        case accessDenied
-    }
-    
     static func copyToClipboard(_ text: String) -> Bool {
         UIPasteboard.general.string = text
         return true

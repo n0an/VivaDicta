@@ -8,12 +8,6 @@
 import Foundation
 import os
 
-enum OpenAITranscriptionServiceError: Error {
-    case data
-    case format
-    case statusCode(Int)
-}
-
 struct OpenAITranscriptionService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "OpenAITranscriptionService")
 

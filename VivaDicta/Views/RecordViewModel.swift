@@ -17,12 +17,27 @@ enum RecordingState {
     case error(RecordError)
 }
 
-enum RecordError: Error {
+enum RecordError: LocalizedError {
     case avInitError
     case userDenied
     case recordError
     case transcribe
     case other
+    
+    var errorDescription: String? {
+        switch self {
+        case .avInitError:
+            "AV init error."
+        case .userDenied:
+            "Audio record is denied by user"
+        case .recordError:
+            "Error during record"
+        case .transcribe:
+            "Transcription error"
+        case .other:
+            self.localizedDescription
+        }
+    }
 }
 
 @Observable @MainActor
