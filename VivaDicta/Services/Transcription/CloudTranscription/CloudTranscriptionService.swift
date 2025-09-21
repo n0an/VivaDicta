@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum CloudTranscriptionError: Error, LocalizedError {
+enum CloudTranscriptionError: LocalizedError {
     case unsupportedProvider
     case missingAPIKey
     case invalidAPIKey

@@ -580,7 +580,7 @@ class AIService {
     }
 }
 
-enum EnhancementError: Error {
+enum EnhancementError: LocalizedError {
     case notConfigured
     case invalidResponse
     case enhancementFailed
@@ -588,9 +588,7 @@ enum EnhancementError: Error {
     case serverError
     case rateLimitExceeded
     case customError(String)
-}
-
-extension EnhancementError: LocalizedError {
+    
     var errorDescription: String? {
         switch self {
         case .notConfigured:

@@ -150,7 +150,7 @@ class WhisperModelDownloadManager: @unchecked Sendable {
     }
 }
 
-enum WhisperDownloadError: Error, LocalizedError {
+enum WhisperDownloadError: LocalizedError {
     case invalidURL
     case unzipFailed
     case downloadFailed(String)

@@ -7,17 +7,13 @@
 
 import Foundation
 
-enum WhisperStateError: Error, Identifiable {
+enum WhisperStateError: LocalizedError {
     case modelLoadFailed
     case transcriptionFailed
     case whisperCoreFailed
     case unzipFailed
     case unknownError
-    
-    var id: String { UUID().uuidString }
-}
-
-extension WhisperStateError: LocalizedError {
+        
     var errorDescription: String? {
         switch self {
         case .modelLoadFailed:
@@ -32,5 +28,4 @@ extension WhisperStateError: LocalizedError {
             return "An unknown error occurred."
         }
     }
-    
 }
