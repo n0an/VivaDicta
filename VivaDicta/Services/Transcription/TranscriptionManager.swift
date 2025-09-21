@@ -14,7 +14,10 @@ class TranscriptionManager {
     private let whisperPrompt: WhisperPrompt
     private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
-    weak var aiService: AIService?
+    private(set) var currentMode: FlowMode = FlowMode.defaultMode
+
+    // Callback for when cloud models are updated
+    public var onCloudModelsUpdate: (() -> Void)?
 
     var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
 
@@ -36,9 +39,10 @@ class TranscriptionManager {
         self.localTranscriptionService = LocalTranscriptionService(transcriptionManager: self)
     }
     
-    public func handleModeChange(_ mode: FlowMode) {
+    public func setCurrentMode(_ mode: FlowMode) {
+        currentMode = mode
         applyModeLanguage(mode)
-        
+
         // Preheat Local Whisper Model if needed
         if mode.transcriptionProvider == .local {
             if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == mode.transcriptionModel }) {
@@ -70,18 +74,16 @@ class TranscriptionManager {
 
     public func updateCloudModels() {
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
-        aiService?.refreshConnectedProviders()
+        onCloudModelsUpdate?()
     }
     
     
     public func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
-        guard let aiService = aiService else { return nil }
-        let mode = aiService.selectedMode
-        let provider = mode.transcriptionProvider
-        let modelName = mode.transcriptionModel
-        
+        let provider = currentMode.transcriptionProvider
+        let modelName = currentMode.transcriptionModel
+
         let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
-        
+
         return allModels.first { model in
             model.provider == provider && model.name == modelName
         }

@@ -99,7 +99,7 @@ struct AddAPIKeyView: View {
     NavigationStack {
         AddAPIKeyView(
             provider: .openAI,
-            aiService: AIService(transcriptionManager: TranscriptionManager()),
+            aiService: AIService(),
             onSave: {_ in })
     }
 }
