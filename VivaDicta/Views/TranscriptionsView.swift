@@ -100,9 +100,7 @@ struct TranscriptionsView: View {
     }
     
     private var emptyFilteredStateView: some View {
-        ContentUnavailableView {
-            Label("No Transcriptions found", systemImage: "doc.text.magnifyingglass")
-        }
+        ContentUnavailableView.search(text: searchText)
     }
     
     private var emptyAllStateView: some View {
