@@ -67,7 +67,7 @@ class ModeEditViewModel {
         let modeId = originalMode?.id ?? UUID()
         
         let otherModes = aiService.modes.filter ({ $0.id != modeId })
-        if otherModes.contains(where: {$0.name == trimmedName}) {
+        if otherModes.contains(where: {$0.name.lowercased() == trimmedName.lowercased()}) {
             throw SettingsError.duplicateModeName(trimmedName)
         }
         

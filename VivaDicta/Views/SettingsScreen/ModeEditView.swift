@@ -224,7 +224,8 @@ struct ModeEditView: View {
             showingAlert = true
             modeEditViewError = .duplicateModeName(name)
         } catch {
-            print(error.localizedDescription)
+            showingAlert = true
+            modeEditViewError = .unexpectedError(error.localizedDescription)
         }
         
     }
