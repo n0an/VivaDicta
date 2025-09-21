@@ -117,8 +117,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             }
         } catch {
             throw RecordError.other
-//            recordingState = .error(.other)
-//            return false
         }
         #else
         return true
@@ -132,15 +130,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let hasPermission = try await setupAudioSession()
 
                 if !hasPermission {
-                    recordingState = .error(.userDenied)
                     recordError = .userDenied
                     isShowingAlert = true
                     return
                 }
             } catch {
                 recordingState = .error(.other)
-                recordError = .other
-                isShowingAlert = true
                 return
             }
 

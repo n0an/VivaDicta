@@ -74,17 +74,6 @@ struct RecordView: View {
                 EmptyView()
             }
             
-            
-//            switch recordError {
-//            case .authNotDetermined, .noData, .unableToCompleteRequest, .invalidValue:
-//                EmptyView()
-//            case .sharingDenied(_):
-//                Button("Settings") {
-//                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-//                }
-//
-//                Button("Cancel", role: .cancel) { }
-//            }
         } message: { recordError in
             Text(recordError.failureReason)
         }
