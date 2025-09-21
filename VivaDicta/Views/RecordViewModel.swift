@@ -77,7 +77,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         self.transcriptionManager = transcriptionManager
         self.aiService = aiService
         super.init()
-        setupAudioSession()
     }
     
     var transcribingSpeechTask: Task<Void, Never>?
@@ -100,7 +99,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
-    private func setupAudioSession() {
+    private func setupAudioSession() async -> Bool {
         #if !os(macOS)
         do {
             #if os(iOS)
@@ -108,38 +107,47 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             #endif
             try recordingSession.setActive(true)
 
-            AVAudioApplication.requestRecordPermission { [weak self] allowed in
-                Task { @MainActor in
-                    if !allowed {
-                        self?.recordingState = .error(.userDenied)
-                    }
+            return await withCheckedContinuation { continuation in
+                AVAudioApplication.requestRecordPermission { allowed in
+                    continuation.resume(returning: allowed)
                 }
             }
         } catch {
             recordingState = .error(.other)
+            return false
         }
+        #else
+        return true
         #endif
     }
     
     
     func startCaptureAudio() {
-        resetValues()
-        recordingState = .recording
-        
-        do {
-            let settings: [String : Any] = [
-                AVFormatIDKey: Int(kAudioFormatLinearPCM),
-                AVSampleRateKey: 16000.0,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ]
-            
-            audioRecorder = try AVAudioRecorder(
-                url: captureURL,
-                settings: settings)
-            audioRecorder.isMeteringEnabled = true
-            audioRecorder.delegate = self
-            audioRecorder.record()
+        Task { @MainActor in
+            let hasPermission = await setupAudioSession()
+
+            if !hasPermission {
+                recordingState = .error(.userDenied)
+                return
+            }
+
+            resetValues()
+            recordingState = .recording
+
+            do {
+                let settings: [String : Any] = [
+                    AVFormatIDKey: Int(kAudioFormatLinearPCM),
+                    AVSampleRateKey: 16000.0,
+                    AVNumberOfChannelsKey: 1,
+                    AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                ]
+
+                audioRecorder = try AVAudioRecorder(
+                    url: captureURL,
+                    settings: settings)
+                audioRecorder.isMeteringEnabled = true
+                audioRecorder.delegate = self
+                audioRecorder.record()
             
             animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
                 Task { @MainActor in
@@ -165,10 +173,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                }
 //                self.prevAudioPower = power
 //            })
-            
-        } catch {
-            resetValues()
-            recordingState = .error(.recordError)
+
+            } catch {
+                resetValues()
+                recordingState = .error(.recordError)
+            }
         }
     }
     
