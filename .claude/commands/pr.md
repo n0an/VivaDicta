@@ -19,6 +19,14 @@ Based on the provided context, create a pull request following these steps:
      - Any breaking changes or notes
 6. Return the PR URL when complete
 
+## IMPORTANT: Final Summary
+**ALWAYS** end your response with a clear summary that includes:
+- What was done (branch created, commits made, etc.)
+- **The PR URL** (e.g., "PR #123: https://github.com/owner/repo/pull/123")
+- The PR is ready for review
+
+Format the PR link prominently so it's easy to find.
+
 If no arguments are provided, create a PR with auto-generated title and description based on the commit history.
 
 Use appropriate flags like `--draft` if the PR is work in progress.
