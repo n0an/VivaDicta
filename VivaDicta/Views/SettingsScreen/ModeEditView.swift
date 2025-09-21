@@ -15,6 +15,9 @@ struct ModeEditView: View {
     
     @State private var viewModel: ModeEditViewModel
     
+    @State private var showingAlert: Bool = false
+    @State private var modeEditViewError: SettingsError = .duplicateModeName("")
+    
     init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
@@ -189,6 +192,13 @@ struct ModeEditView: View {
             }
             
         }
+        .alert(isPresented: $showingAlert,
+               error: modeEditViewError,
+               actions: { error in
+            // Actions
+        }, message: { error in
+            Text(error.failureReason)
+        })
         .navigationTitle(viewModel.isEditing ? "Edit Mode" : "New Mode")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -201,13 +211,22 @@ struct ModeEditView: View {
     }
     
     private func saveMode() {
-        let newMode = viewModel.saveMode()
-        if viewModel.isEditing {
-            viewModel.aiService.updateMode(newMode)
-        } else {
-            viewModel.aiService.addMode(newMode)
+        
+        do {
+            let newMode = try viewModel.saveMode()
+            if viewModel.isEditing {
+                viewModel.aiService.updateMode(newMode)
+            } else {
+                viewModel.aiService.addMode(newMode)
+            }
+            dismiss()
+        } catch SettingsError.duplicateModeName(let name) {
+            showingAlert = true
+            modeEditViewError = .duplicateModeName(name)
+        } catch {
+            print(error.localizedDescription)
         }
-        dismiss()
+        
     }
 }
 

@@ -82,3 +82,22 @@ struct SettingsView: View {
     @Previewable @State var appState = AppState()
     SettingsView(appState: appState)
 }
+
+
+enum SettingsError: LocalizedError {
+    case duplicateModeName(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .duplicateModeName(_):
+            "Invalid Mode Name"
+        }
+    }
+    
+    var failureReason: String {
+        switch self {
+        case .duplicateModeName(let name):
+            "There's already existing Mode with name \(name). Enter different name for this mode."
+        }
+    }
+}
