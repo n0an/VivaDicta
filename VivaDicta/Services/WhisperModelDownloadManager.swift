@@ -154,15 +154,26 @@ enum WhisperDownloadError: LocalizedError {
     case invalidURL
     case unzipFailed
     case downloadFailed(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid download URL"
         case .unzipFailed:
-            return "Failed to unzip CoreML model"
+            return "Failed to unzip model"
+        case .downloadFailed(_):
+            return "Download failed"
+        }
+    }
+
+    var failureReason: String {
+        switch self {
+        case .invalidURL:
+            return "The download URL for this model is invalid or missing. Please try a different model or contact support."
+        case .unzipFailed:
+            return "Failed to extract the downloaded Core ML model. The download may be corrupted. Please try downloading again."
         case .downloadFailed(let message):
-            return "Download failed: \(message)"
+            return "Failed to download the model: \(message). Please check your internet connection and try again."
         }
     }
 }
