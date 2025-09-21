@@ -91,6 +91,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
+    var isShowingAlert = false
+    var recordError: RecordError = .other
+    
     var audioPower = 0.0
     var siriWaveFormOpacity: CGFloat {
         switch recordingState {
@@ -99,7 +102,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
-    private func setupAudioSession() async -> Bool {
+    private func setupAudioSession() async throws -> Bool {
         #if !os(macOS)
         do {
             #if os(iOS)
@@ -113,8 +116,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 }
             }
         } catch {
-            recordingState = .error(.other)
-            return false
+            throw RecordError.other
+//            recordingState = .error(.other)
+//            return false
         }
         #else
         return true
@@ -124,10 +128,19 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func startCaptureAudio() {
         Task { @MainActor in
-            let hasPermission = await setupAudioSession()
+            do {
+                let hasPermission = try await setupAudioSession()
 
-            if !hasPermission {
-                recordingState = .error(.userDenied)
+                if !hasPermission {
+                    recordingState = .error(.userDenied)
+                    recordError = .userDenied
+                    isShowingAlert = true
+                    return
+                }
+            } catch {
+                recordingState = .error(.other)
+                recordError = .other
+                isShowingAlert = true
                 return
             }
 
