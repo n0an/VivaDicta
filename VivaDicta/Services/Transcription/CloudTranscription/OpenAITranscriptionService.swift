@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 
 enum OpenAITranscriptionServiceError: Error {
     case data
@@ -14,6 +15,8 @@ enum OpenAITranscriptionServiceError: Error {
 }
 
 struct OpenAITranscriptionService {
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "OpenAITranscriptionService")
+
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)
         
@@ -32,7 +35,7 @@ struct OpenAITranscriptionService {
         
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-//            logger.error("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage, privacy: .public)")
+            logger.error("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage, privacy: .public)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
         
@@ -40,7 +43,7 @@ struct OpenAITranscriptionService {
             let transcriptionResponse = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
             return transcriptionResponse.text
         } catch {
-//            logger.error("Failed to decode Groq API response: \(error.localizedDescription)")
+            logger.error("Failed to decode Groq API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }

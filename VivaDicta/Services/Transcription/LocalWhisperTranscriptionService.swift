@@ -7,12 +7,13 @@
 
 import Foundation
 import whisper
+import os
 
 
 class LocalTranscriptionService: TranscriptionService {
 
     private var whisperContext: WhisperContext?
-//    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "LocalTranscriptionService")
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "LocalTranscriptionService")
     private weak var transcriptionManager: TranscriptionManager?
 
     init(transcriptionManager: TranscriptionManager? = nil) {
@@ -24,7 +25,7 @@ class LocalTranscriptionService: TranscriptionService {
             throw WhisperStateError.modelLoadFailed
         }
         
-//        logger.notice("Initiating local transcription for model: \(model.displayName)")
+        logger.notice("Initiating local transcription for model: \(model.displayName)")
         
         // Check if the required model is already loaded in TranscriptionManager
         if let transcriptionManager = transcriptionManager,
@@ -33,7 +34,7 @@ class LocalTranscriptionService: TranscriptionService {
             currentModel.provider == .local,
             currentModel.name == model.name {
 
-//            logger.notice("✅ Using already loaded model: \(model.name)")
+            logger.notice("✅ Using already loaded model: \(model.name)")
             whisperContext = loadedContext
         } else {
             // TODO: Important - remove this branch of logic, make it reliable instead
@@ -41,21 +42,21 @@ class LocalTranscriptionService: TranscriptionService {
             // Resolve the on-disk URL using TranscriptionManager.availableModels (covers imports)
             let resolvedURL: URL? = await transcriptionManager?.availableWhisperLocalModels.first(where: { $0.name == model.name })?.fileURL
             guard let modelURL = resolvedURL, FileManager.default.fileExists(atPath: modelURL.path) else {
-//                logger.error("Model file not found for: \(model.name)")
+                logger.error("Model file not found for: \(model.name)")
                 throw WhisperStateError.modelLoadFailed
             }
             
-//            logger.notice("Loading model: \(model.name)")
+            logger.notice("Loading model: \(model.name)")
             do {
                 whisperContext = try await WhisperContext.createContext(path: modelURL.path)
             } catch {
-//                logger.error("Failed to load model: \(model.name) - \(error.localizedDescription)")
+                logger.error("Failed to load model: \(model.name) - \(error.localizedDescription)")
                 throw WhisperStateError.modelLoadFailed
             }
         }
         
         guard let whisperContext = whisperContext else {
-//            logger.error("Cannot transcribe: Model could not be loaded")
+            logger.error("Cannot transcribe: Model could not be loaded")
             throw WhisperStateError.modelLoadFailed
         }
         
@@ -70,13 +71,13 @@ class LocalTranscriptionService: TranscriptionService {
         let success = await whisperContext.fullTranscribe(samples: data)
         
         guard success else {
-//            logger.error("Core transcription engine failed (whisper_full).")
+            logger.error("Core transcription engine failed (whisper_full).")
             throw WhisperStateError.whisperCoreFailed
         }
         
         var text = await whisperContext.getTranscription()
         
-//        logger.notice("✅ Local transcription completed successfully.")
+        logger.notice("✅ Local transcription completed successfully.")
         
         // Only release resources if we created a new context (not using the shared one)
         if await transcriptionManager?.whisperContext !== whisperContext {
