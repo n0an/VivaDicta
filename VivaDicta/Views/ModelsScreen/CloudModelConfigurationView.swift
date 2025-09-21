@@ -15,7 +15,7 @@ struct CloudModelConfigurationView: View {
     @State var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
-    @State private var aiService = AIService(transcriptionManager: TranscriptionManager())
+    @State private var aiService = AIService()
     
     var body: some View {
         

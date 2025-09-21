@@ -212,7 +212,7 @@ struct ModeEditView: View {
 }
 
 #Preview {
-    @Previewable @State var aiService = AIService(transcriptionManager: TranscriptionManager())
+    @Previewable @State var aiService = AIService()
     @Previewable @State var promptsManager = PromptsManager()
     @Previewable @State var appState = AppState()
     @Previewable @State var transcriptionManager = TranscriptionManager()

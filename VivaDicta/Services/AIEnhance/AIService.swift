@@ -16,8 +16,9 @@ class AIService {
     public var openRouterModels: [String] = []
     public var modes: [FlowMode] = []
 
-    private let transcriptionManager: TranscriptionManager
-    
+    // Callback for mode changes
+    public var onModeChange: ((FlowMode) -> Void)?
+
     public var selectedModeName: String {
         didSet {
             self.saveSelectedModeName(selectedModeName)
@@ -27,7 +28,7 @@ class AIService {
     
     public var selectedMode: FlowMode = FlowMode.defaultMode {
         didSet {
-            transcriptionManager.handleModeChange(selectedMode)
+            onModeChange?(selectedMode)
         }
     }
     
@@ -35,14 +36,13 @@ class AIService {
     private let baseTimeout: TimeInterval = 30
 
     
-    init(transcriptionManager: TranscriptionManager) {
-        self.transcriptionManager = transcriptionManager
+    init() {
         self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
         loadSavedOpenRouterModels()
-        
+
         Task {
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
