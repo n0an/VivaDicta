@@ -86,7 +86,7 @@ struct RecordView: View {
         case .idle, .error:
             startCaptureButton
         case .transcribing:
-            Image(systemName: "brain")
+            Image(systemName: "circle.dotted.circle")
                 .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
                 .font(.system(size: 128))
                 .onAppear { isSymbolAnimating = true }
