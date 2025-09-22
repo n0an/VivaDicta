@@ -152,26 +152,25 @@ class ModeEditViewModel {
     
     public func getAvailableLanguages() -> [(key: String, value: String)] {
         guard isLanguageSelectionAvailable() else { return [] }
-        
-        if transcriptionProvider == .local {
-            if let model = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
-                return model.supportedLanguages.sorted(by: {
-                    if $0.key == "auto" { return true }
-                    if $1.key == "auto" { return false }
-                    return $0.value < $1.value
-                })
-            }
-        } else {
-            if let model = TranscriptionModelProvider.allCloudModels.first(where: { $0.name == transcriptionModel }) {
-                return model.supportedLanguages.sorted(by: {
-                    if $0.key == "auto" { return true }
-                    if $1.key == "auto" { return false }
-                    return $0.value < $1.value
-                })
+
+        let models: [any TranscriptionModel] = transcriptionProvider == .local ? TranscriptionModelProvider.allLocalModels : TranscriptionModelProvider.allCloudModels
+
+        guard let model = models.first(where: { $0.name == transcriptionModel }) else {
+            return []
+        }
+
+        return sortLanguages(Array(model.supportedLanguages))
+    }
+
+    private func sortLanguages(_ languages: [(key: String, value: String)]) -> [(key: String, value: String)] {
+        // Sort with "auto" first, then alphabetically by value
+        return languages.sorted { lhs, rhs in
+            switch (lhs.key == "auto", rhs.key == "auto") {
+            case (true, false): return true
+            case (false, true): return false
+            default: return lhs.value < rhs.value
             }
         }
-        
-        return []
     }
     
     // MARK: - AI Enhancement settings
