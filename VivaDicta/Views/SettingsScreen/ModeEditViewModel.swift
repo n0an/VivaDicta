@@ -195,6 +195,6 @@ class ModeEditViewModel {
         guard let promptID = selectedPromptID else {
             return nil
         }
-        return promptsManager.userPrompts.first(where: { $0.id == promptID })
+        return promptsManager.userPrompts.first { $0.id == promptID }
     }
 }
