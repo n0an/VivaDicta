@@ -1,5 +1,5 @@
 //
-//  Extensions.swift
+//  View+Ext.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.02
@@ -181,18 +181,7 @@ extension View {
     }
 }
 
-// MARK: - Color
-extension Color {
-    static func random() -> Color {
-        Color(
-            red: Double.random(in: 0 ... 1),
-            green: Double.random(in: 0 ... 1),
-            blue: Double.random(in: 0 ... 1)
-        )
-    }
 
-    var sui: Color { Color(self) }
-}
 
 // MARK: - onFirstAppear
 private struct OnFirstAppearModifier: ViewModifier {
