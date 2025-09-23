@@ -23,7 +23,8 @@
       "WebSearch",
       "mcp__linear-server__list_teams",
       "mcp__linear-server__create_issue",
-      "mcp__linear-server__list_issues"
+      "mcp__linear-server__list_issues",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": [],
