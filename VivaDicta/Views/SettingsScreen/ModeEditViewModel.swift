@@ -116,31 +116,12 @@ class ModeEditViewModel {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
         logger.info("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
-
-        // Preheat local whisper model if switching to a Local transcription
-        preheatLocalTranscriptionModelIfNeeded()
     }
 
     func updateTranscriptionModel(_ newModel: String) {
         transcriptionModel = newModel
         logger.info("Updated transcription model to: \(newModel)")
 
-        // Preheat local whisper model if it's Local transcription provider
-        preheatLocalTranscriptionModelIfNeeded()
-    }
-    
-    private func preheatLocalTranscriptionModelIfNeeded() {
-        guard transcriptionProvider == .local,
-              !transcriptionModel.isEmpty else {
-            return
-        }
-
-        if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == transcriptionModel }) {
-            Task {
-                try? await transcriptionManager.preheatLocalModel(localModel)
-                logger.info("Preheated local model: \(localModel.name)")
-            }
-        }
     }
     
     // MARK: - Language Settings
