@@ -26,9 +26,16 @@ struct SettingsView: View {
                             Text(mode.name)
                                 .font(.body.weight(.medium))
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if appState.aiService.modes.count > 1 {
+                                Button(role: .destructive) {
+                                    deleteMode(mode)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
-                    .onDelete(perform: deleteMode)
-                    .deleteDisabled(appState.aiService.modes.count <= 1)
 
                     // Add New Mode button
                     NavigationLink(
@@ -91,14 +98,11 @@ struct SettingsView: View {
         }
     }
 
-    private func deleteMode(at offsets: IndexSet) {
+    private func deleteMode(_ mode: FlowMode) {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
 
-        for index in offsets {
-            let mode = appState.aiService.modes[index]
-            appState.aiService.deleteMode(mode)
-        }
+        appState.aiService.deleteMode(mode)
     }
 }
 
