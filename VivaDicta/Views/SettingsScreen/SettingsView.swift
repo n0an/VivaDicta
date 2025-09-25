@@ -20,14 +20,16 @@ struct SettingsView: View {
             Form {
                 // Modes section
                 Section("Modes") {
-                    
+
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
                             Text(mode.name)
                                 .font(.body.weight(.medium))
                         }
                     }
-                    
+                    .onDelete(perform: deleteMode)
+                    .deleteDisabled(appState.aiService.modes.count <= 1)
+
                     // Add New Mode button
                     NavigationLink(
                         destination: ModeEditView(
@@ -41,13 +43,13 @@ struct SettingsView: View {
                                     Image(systemName: "plus.circle.fill")
                                         .foregroundColor(.blue)
                                         .font(.title2)
-                                    
+
                                     Text("Add New Mode")
                                         .foregroundColor(.blue)
                                         .font(.body)
-                                    
+
                                     Spacer()
-                                    
+
                                 }
                             }
                 }
@@ -85,7 +87,17 @@ struct SettingsView: View {
                     PromptsSettings(promptsManager: promptsManager)
                 }
             }
-            
+
+        }
+    }
+
+    private func deleteMode(at offsets: IndexSet) {
+        // Prevent deletion if there's only one mode
+        guard appState.aiService.modes.count > 1 else { return }
+
+        for index in offsets {
+            let mode = appState.aiService.modes[index]
+            appState.aiService.deleteMode(mode)
         }
     }
 }
