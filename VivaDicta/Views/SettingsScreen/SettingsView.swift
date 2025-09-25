@@ -8,11 +8,12 @@
 import SwiftUI
 
 struct SettingsView: View {
-    
+
     @Bindable var appState: AppState
     @State var promptsManager = PromptsManager()
-    
+
     @State var navigationPath = NavigationPath()
+    @AppStorage("IsVADEnabled") private var isVADEnabled = true
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -51,6 +52,18 @@ struct SettingsView: View {
                             }
                 }
                 
+                Section("Transcription") {
+                    Toggle(isOn: $isVADEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Voice Activity Detection")
+                                .font(.body)
+                            Text("Improves accuracy by detecting speech segments")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("AI Enhancement") {
                     NavigationLink(value: SettingsDestination.promptsSettings) {
                         Text("LLM Prompts")
