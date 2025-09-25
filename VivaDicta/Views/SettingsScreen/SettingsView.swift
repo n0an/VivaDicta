@@ -20,14 +20,23 @@ struct SettingsView: View {
             Form {
                 // Modes section
                 Section("Modes") {
-                    
+
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
                             Text(mode.name)
                                 .font(.body.weight(.medium))
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            if appState.aiService.modes.count > 1 {
+                                Button(role: .destructive) {
+                                    deleteMode(mode)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
-                    
+
                     // Add New Mode button
                     NavigationLink(
                         destination: ModeEditView(
@@ -41,13 +50,13 @@ struct SettingsView: View {
                                     Image(systemName: "plus.circle.fill")
                                         .foregroundColor(.blue)
                                         .font(.title2)
-                                    
+
                                     Text("Add New Mode")
                                         .foregroundColor(.blue)
                                         .font(.body)
-                                    
+
                                     Spacer()
-                                    
+
                                 }
                             }
                 }
@@ -85,8 +94,15 @@ struct SettingsView: View {
                     PromptsSettings(promptsManager: promptsManager)
                 }
             }
-            
+
         }
+    }
+
+    private func deleteMode(_ mode: FlowMode) {
+        // Prevent deletion if there's only one mode
+        guard appState.aiService.modes.count > 1 else { return }
+
+        appState.aiService.deleteMode(mode)
     }
 }
 
