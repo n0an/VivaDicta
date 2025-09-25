@@ -87,6 +87,7 @@ struct TranscriptionDetailView: View {
                 }
                 if let duration = transcription.transcriptionDuration {
                     metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
+                    metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
                 }
                 if let duration = transcription.enhancementDuration {
                     metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
