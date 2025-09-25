@@ -55,6 +55,7 @@ class Transcription {
     }
     
     func getFactor(audioDuration: Double, transcriptionDuration: Double) -> String {
+        guard transcriptionDuration > 0 else { return "N/A" }
         return (audioDuration / transcriptionDuration).formatted(.number.precision(.fractionLength(0...1)))
     }
 }
