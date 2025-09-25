@@ -81,7 +81,7 @@ class TranscriptionManager {
         default:
             transcriptionService = cloudTranscriptionService
         }
-
-        return try await transcriptionService.transcribe(audioURL: audioURL, model: model)
+        
+        return try await WhisperHallucinationFilter.filter(transcriptionService.transcribe(audioURL: audioURL, model: model))
     }
 }
