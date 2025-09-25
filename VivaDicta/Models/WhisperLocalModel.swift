@@ -41,7 +41,15 @@ extension WhisperLocalModel {
     var coreMLDownloadURL: URL? {
         // Only non-quantized models have Core ML versions
         guard !name.contains("q5") && !name.contains("q8") else { return nil }
+
+        // Skip CoreML for Large and Large-Turbo models (too big for Apple Neural Engine)
+        guard !isLargeModel else { return nil }
+
         return URL(string: "\(Self.defaultURL)ggml-\(name)-encoder.mlmodelc.zip")
+    }
+
+    var isLargeModel: Bool {
+        name.contains("large")
     }
     
     var fileURL: URL {
