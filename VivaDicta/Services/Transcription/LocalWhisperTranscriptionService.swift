@@ -6,92 +6,74 @@
 //
 
 import Foundation
-import whisper
 import os
-
+import whisper
 
 class LocalTranscriptionService: TranscriptionService {
-
-    private var whisperContext: WhisperContext?
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "LocalTranscriptionService")
-    private weak var transcriptionManager: TranscriptionManager?
 
-    init(transcriptionManager: TranscriptionManager? = nil) {
-        self.transcriptionManager = transcriptionManager
-    }
-    
+    init() {}
+
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         guard model.provider == .local else {
             throw WhisperStateError.modelLoadFailed
         }
-        
-        logger.notice("Initiating local transcription for model: \(model.displayName)")
-        
-        // Check if the required model is already loaded in TranscriptionManager
-        if let transcriptionManager = transcriptionManager,
-           let loadedContext = await transcriptionManager.whisperContext,
-           let currentModel = await transcriptionManager.getCurrentTranscriptionModel(),
-            currentModel.provider == .local,
-            currentModel.name == model.name {
 
-            logger.notice("✅ Using already loaded model: \(model.name)")
-            whisperContext = loadedContext
-        } else {
-            // TODO: Important - remove this branch of logic, make it reliable instead
-            // Model not loaded or wrong model loaded, proceed with loading
-            // Resolve the on-disk URL using TranscriptionManager.availableModels (covers imports)
-            let resolvedURL: URL? = await transcriptionManager?.availableWhisperLocalModels.first { $0.name == model.name }?.fileURL
-            guard let modelURL = resolvedURL, FileManager.default.fileExists(atPath: modelURL.path) else {
-                logger.error("Model file not found for: \(model.name)")
-                throw WhisperStateError.modelLoadFailed
-            }
-            
-            logger.notice("Loading model: \(model.name)")
-            do {
-                whisperContext = try await WhisperContext.createContext(path: modelURL.path)
-            } catch {
-                logger.error("Failed to load model: \(model.name) - \(error.localizedDescription)")
-                throw WhisperStateError.modelLoadFailed
-            }
-        }
-        
-        guard let whisperContext = whisperContext else {
-            logger.error("Cannot transcribe: Model could not be loaded")
+        logger.notice("Initiating local transcription for model: \(model.displayName)")
+
+        // Always create a new context for each transcription to minimize RAM usage
+        // Find the model file on disk
+        let availableModels = TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
+        guard let localModel = availableModels.first(where: { $0.name == model.name }) else {
+            logger.error("Model file not found for: \(model.name)")
             throw WhisperStateError.modelLoadFailed
         }
-        
+
+        let modelURL = localModel.fileURL
+        guard FileManager.default.fileExists(atPath: modelURL.path) else {
+            logger.error("Model file does not exist at path: \(modelURL.path)")
+            throw WhisperStateError.modelLoadFailed
+        }
+
+        logger.notice("Loading model: \(model.name) from \(modelURL.path)")
+        let whisperContext: WhisperContext
+        do {
+            whisperContext = try await WhisperContext.createContext(path: modelURL.path)
+        } catch {
+            logger.error("Failed to load model: \(model.name) - \(error.localizedDescription)")
+            throw WhisperStateError.modelLoadFailed
+        }
+
         // Read audio data
         let data = try readAudioSamples(audioURL)
-        
+
         // Set prompt
         let currentPrompt = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
         await whisperContext.setPrompt(currentPrompt)
-        
+
         // Transcribe
         let success = await whisperContext.fullTranscribe(samples: data)
-        
+
         guard success else {
             logger.error("Core transcription engine failed (whisper_full).")
             throw WhisperStateError.whisperCoreFailed
         }
-        
-        var text = await whisperContext.getTranscription()
-        
+
+        let text = await whisperContext.getTranscription()
+
         logger.notice("✅ Local transcription completed successfully.")
-        
-        // Only release resources if we created a new context (not using the shared one)
-        if await transcriptionManager?.whisperContext !== whisperContext {
-            await whisperContext.releaseResources()
-            self.whisperContext = nil
-        }
-        
+
+        // Always release resources after transcription to minimize RAM usage
+        await whisperContext.releaseResources()
+        logger.notice("✅ Whisper context resources released.")
+
         return text
     }
-    
+
     private func readAudioSamples(_ url: URL) throws -> [Float] {
         let data = try Data(contentsOf: url)
         let floats = stride(from: 44, to: data.count, by: 2).map {
-            return data[$0..<$0 + 2].withUnsafeBytes {
+            data[$0 ..< $0 + 2].withUnsafeBytes {
                 let short = Int16(littleEndian: $0.load(as: Int16.self))
                 return max(-1.0, min(Float(short) / 32767.0, 1.0))
             }
@@ -99,7 +81,3 @@ class LocalTranscriptionService: TranscriptionService {
         return floats
     }
 }
-
-
-
-

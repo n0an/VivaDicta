@@ -25,11 +25,6 @@ actor WhisperContext {
 
     deinit {
         whisper_free(context)
-//        if let context = context {
-//            whisper_free(context)
-//        }
-        
-        
     }
 
     func fullTranscribe(samples: [Float]) -> Bool {
@@ -120,10 +115,7 @@ actor WhisperContext {
         let whisperContext = WhisperContext()
         try await whisperContext.initializeModel(path: path)
         
-        // Load VAD model from bundle resources
-        // TODO: Add Vad
-//        let vadModelPath = await VADModelManager.shared.getModelPath()
-//        await whisperContext.setVADModelPath(vadModelPath)
+        // VAD model loading can be added here if needed in the future
         
         return whisperContext
     }

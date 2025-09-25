@@ -5,16 +5,15 @@
 //  Created by Anton Novoselov on 2025.09.17
 //
 
-import SwiftUI
 import Foundation
+import SwiftUI
 
 @Observable
 class TranscriptionManager {
-    var whisperContext: WhisperContext?
     private let whisperPrompt: WhisperPrompt
     private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
-    private(set) var currentMode: FlowMode = FlowMode.defaultMode
+    private(set) var currentMode: FlowMode = .defaultMode
 
     // Callback for when cloud models are updated
     public var onCloudModelsUpdate: (() -> Void)?
@@ -35,49 +34,30 @@ class TranscriptionManager {
     }
 
     init() {
-        self.whisperPrompt = WhisperPrompt()
-        self.localTranscriptionService = LocalTranscriptionService(transcriptionManager: self)
+        whisperPrompt = WhisperPrompt()
+        localTranscriptionService = LocalTranscriptionService()
     }
-    
+
     public func setCurrentMode(_ mode: FlowMode) {
         currentMode = mode
         applyModeLanguage(mode)
+    }
 
-        // Preheat Local Whisper Model if needed
-        if mode.transcriptionProvider == .local {
-            if let localModel = TranscriptionModelProvider.allLocalModels.first(where: { $0.name == mode.transcriptionModel }) {
-                Task {
-                    try? await preheatLocalModel(localModel)
-                }
-            }
-        }
-    }
-    
-    func preheatLocalModel(_ model: WhisperLocalModel) async throws {
-        do {
-            whisperContext = try await WhisperContext.createContext(path: model.fileURL.path)
-        } catch {
-            throw WhisperStateError.modelLoadFailed
-        }
-    }
-    
     private func updateLanguage(_ language: String) {
         selectedLanguage = language
         whisperPrompt.updateTranscriptionPrompt()
     }
-    
+
     private func applyModeLanguage(_ mode: FlowMode) {
         let language = mode.transcriptionLanguage ?? "auto"
         updateLanguage(language)
     }
-    
 
     public func updateCloudModels() {
         allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
         onCloudModelsUpdate?()
     }
-    
-    
+
     public func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
@@ -88,12 +68,12 @@ class TranscriptionManager {
             model.provider == provider && model.name == modelName
         }
     }
-    
+
     public func transcribe(audioURL: URL) async throws -> String {
         guard let model = getCurrentTranscriptionModel() else {
             throw WhisperStateError.transcriptionFailed
         }
-        
+
         let transcriptionService: any TranscriptionService
         switch model.provider {
         case .local:
@@ -101,7 +81,7 @@ class TranscriptionManager {
         default:
             transcriptionService = cloudTranscriptionService
         }
-        
+
         return try await transcriptionService.transcribe(audioURL: audioURL, model: model)
     }
 }
