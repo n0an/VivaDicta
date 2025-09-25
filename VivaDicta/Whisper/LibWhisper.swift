@@ -43,8 +43,6 @@ actor WhisperContext {
         } else {
             languageCString = nil
             params.language = nil
-            
-            
         }
         
         if prompt != nil {
@@ -108,14 +106,16 @@ actor WhisperContext {
         for i in 0..<whisper_full_n_segments(context) {
             transcription += String(cString: whisper_full_get_segment_text(context, i))
         }
-        return WhisperHallucinationFilter.filter(transcription)
+        return transcription
     }
 
     static func createContext(path: String) async throws -> WhisperContext {
         let whisperContext = WhisperContext()
         try await whisperContext.initializeModel(path: path)
         
-        // VAD model loading can be added here if needed in the future
+        if let modelURL = Bundle.main.url(forResource: "ggml-silero-v5.1.2", withExtension: "bin") {
+            await whisperContext.setVADModelPath(modelURL.path)
+        }
         
         return whisperContext
     }
@@ -158,4 +158,3 @@ actor WhisperContext {
         self.prompt = prompt
     }
 }
-
