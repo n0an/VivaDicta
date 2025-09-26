@@ -13,16 +13,14 @@ struct RecordView: View {
     @State var vm: RecordViewModel
     @State var isSymbolAnimating = false
 
-    var appState: AppState
-
     var body: some View {
-        if appState.transcriptionManager.getCurrentTranscriptionModel() != nil {
+        if vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
             modelSelectedView
 
         } else {
             Button {
-                appState.shouldNavigateToModels = true
-                appState.selectedTab = .settings
+                vm.appState?.shouldNavigateToModels = true
+                vm.appState?.selectedTab = .settings
             } label: {
                 Text("Select transcription model")
             }
@@ -30,15 +28,12 @@ struct RecordView: View {
     }
 
     init(appState: AppState) {
-        self.appState = appState
-        self._vm = State(wrappedValue: RecordViewModel(
-            transcriptionManager: appState.transcriptionManager,
-            aiService: appState.aiService
-        ))
+        self._vm = State(wrappedValue: RecordViewModel(appState: appState))
     }
     
     var modelSelectedView: some View {
         VStack(spacing: 16) {
+            modePicker
             Spacer()
             SiriWaveView(power: $vm.audioPower)
                 .opacity(vm.siriWaveFormOpacity)
@@ -128,6 +123,23 @@ struct RecordView: View {
                 .font(.system(size: 44))
         }
         .buttonStyle(.borderless)
+    }
+
+    var modePicker: some View {
+        HStack {
+            Spacer()
+
+            Picker("Mode", selection: $vm.selectedModeName) {
+                ForEach(vm.availableModes, id: \.name) { mode in
+                    Text(mode.name)
+                        .tag(mode.name)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(.primary)
+        }
+        .padding(.horizontal)
+        .padding(.top)
     }
 }
 

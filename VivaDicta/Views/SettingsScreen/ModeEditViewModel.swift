@@ -29,6 +29,22 @@ class ModeEditViewModel {
     
     private let originalMode: FlowMode?
     
+    private var hasAvailableTranscriptionModels: Bool {
+        // Check if any local models are downloaded
+        let hasLocalModels = transcriptionManager.availableWhisperLocalModels.count > 0
+        
+        // Check if any cloud models are configured (have API keys)
+        let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
+            model.apiKey != nil
+        }
+        
+        return hasLocalModels || hasConfiguredCloudModels
+    }
+    
+    public var transcriptionFooterText: String {
+        hasAvailableTranscriptionModels ? "" : "No transcription models available. Download a local model or add an API key for a cloud model."
+    }
+    
     var isEditing: Bool {
         originalMode != nil
     }

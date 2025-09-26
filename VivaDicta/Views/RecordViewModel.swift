@@ -10,14 +10,14 @@ import Foundation
 import AVFoundation
 import SwiftData
 
-enum RecordingState {
+enum RecordingState: Equatable {
     case idle
     case recording
     case transcribing
     case error(RecordError)
 }
 
-enum RecordError: LocalizedError {
+enum RecordError: LocalizedError, Equatable {
     case avInitError
     case userDenied
     case recordError
@@ -62,20 +62,32 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     #if !os(macOS)
     var recordingSession = AVAudioSession.sharedInstance()
     #endif
-    
+
     var animationTimer: Timer?
-    
-//    var transcriptionService: TranscriptionService?
-    private let transcriptionManager: TranscriptionManager
-    private let aiService: AIService?
+
+    weak var appState: AppState?
+    public var transcriptionManager: TranscriptionManager {
+        appState?.transcriptionManager ?? TranscriptionManager()
+    }
+    public var aiService: AIService {
+        appState?.aiService ?? AIService()
+    }
+
+    var selectedModeName: String {
+        get { appState?.aiService.selectedModeName ?? "" }
+        set { appState?.aiService.selectedModeName = newValue }
+    }
+
+    var availableModes: [FlowMode] {
+        appState?.aiService.modes ?? []
+    }
 
     // TODO: Add auto stop feature later
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
 
-    init(transcriptionManager: TranscriptionManager, aiService: AIService? = nil) {
-        self.transcriptionManager = transcriptionManager
-        self.aiService = aiService
+    init(appState: AppState) {
+        self.appState = appState
         super.init()
     }
     
@@ -213,7 +225,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
                 // Check if AI Enhancement is properly configured
-                if let aiService = aiService, aiService.isProperlyConfigured() {
+                if aiService.isProperlyConfigured() {
                     
                     do {
                         let (enhancedText, enhancementDuration, promptName) = try await aiService.enhance(transcribedText)

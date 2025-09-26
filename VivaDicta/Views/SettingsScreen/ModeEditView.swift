@@ -41,13 +41,16 @@ struct ModeEditView: View {
                 TextField("Mode Name", text: $viewModel.modeName)
             }
             
-            Section("Transcription") {
+            Section(header: Text("Transcription"),
+                    footer: Text(viewModel.transcriptionFooterText)) {
+                
                 Picker("Provider", selection: $viewModel.transcriptionProvider) {
                     ForEach(TranscriptionModelProvider.allCases) { provider in
                         Text(provider.rawValue.capitalized).tag(provider)
                     }
                 }
-                .pickerStyle(.navigationLink)
+//                .tint(.primary)
+//                .pickerStyle(.menu)
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
                     viewModel.updateTranscriptionProvider(newProvider)
                 }
@@ -83,7 +86,7 @@ struct ModeEditView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "arrow.down.circle")
-                                Text("Download Local Model")
+                                Text("Download Local Transcription Model")
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.secondary)
