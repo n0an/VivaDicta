@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2025.08.11
 //
 
+import os
 import SwiftData
 import SwiftUI
 
@@ -16,6 +17,8 @@ struct TranscriptionsView: View {
     @State var searchText: String = ""
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
+
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsView")
 
     var appState: AppState
 
@@ -94,7 +97,7 @@ struct TranscriptionsView: View {
                     filteredTranscriptions = results
                 }
             } catch {
-                print("Search was cancelled or failed: \(error)")
+                logger.error("Search was cancelled or failed: \(error.localizedDescription)")
             }
         }
     }
@@ -104,11 +107,11 @@ struct TranscriptionsView: View {
             let transcription = displayedTranscriptions[index]
             modelContext.delete(transcription)
         }
-        
+
         do {
             try modelContext.save()
         } catch {
-            print("Failed to save after deletion: \(error)")
+            logger.error("Failed to save after deletion: \(error.localizedDescription)")
         }
     }
 
