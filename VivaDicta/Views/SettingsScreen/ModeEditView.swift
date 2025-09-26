@@ -9,8 +9,7 @@ import SwiftUI
 
 struct ModeEditView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var selectedTab: TabTag
-    
+
     @Binding var navigationPath: NavigationPath
     
     @State private var viewModel: ModeEditViewModel
@@ -22,9 +21,7 @@ struct ModeEditView: View {
          aiService: AIService,
          promptsManager: PromptsManager,
          transcriptionManager: TranscriptionManager,
-         selectedTab: Binding<TabTag>,
          navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
-        self._selectedTab = selectedTab
         self._navigationPath = navigationPath
         
         self._viewModel = State(
@@ -239,13 +236,11 @@ struct ModeEditView: View {
     @Previewable @State var promptsManager = PromptsManager()
     @Previewable @State var appState = AppState()
     @Previewable @State var transcriptionManager = TranscriptionManager()
-    @Previewable @State var selectedTab: TabTag = .settings
     @Previewable @State var navigationPath = NavigationPath()
     ModeEditView(
         mode: nil,
         aiService: aiService,
         promptsManager: promptsManager,
         transcriptionManager: transcriptionManager,
-        selectedTab: $selectedTab,
         navigationPath: $navigationPath)
 }

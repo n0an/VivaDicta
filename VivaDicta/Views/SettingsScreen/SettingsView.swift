@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    
-    @Bindable var appState: AppState
+
+    var appState: AppState
     @State var promptsManager = PromptsManager()
     
     @State var navigationPath = NavigationPath()
@@ -45,7 +45,6 @@ struct SettingsView: View {
                                 aiService: appState.aiService,
                                 promptsManager: promptsManager,
                                 transcriptionManager: appState.transcriptionManager,
-                                selectedTab: $appState.selectedTab,
                                 navigationPath: $navigationPath)) {
                                     HStack {
                                         Image(systemName: "plus.circle.fill")
@@ -99,7 +98,6 @@ struct SettingsView: View {
                     aiService: appState.aiService,
                     promptsManager: promptsManager,
                     transcriptionManager: appState.transcriptionManager,
-                    selectedTab: $appState.selectedTab,
                     navigationPath: $navigationPath)
             }
             .navigationDestination(for: SettingsDestination.self) { destination in
