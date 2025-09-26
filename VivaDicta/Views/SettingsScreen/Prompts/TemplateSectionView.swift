@@ -12,34 +12,23 @@ struct TemplateSelectionView: View {
     @Binding var isPresented: Bool
     
     var body: some View {
-        NavigationView {
-            List(PromptsTemplates.allCases) { template in
-                Button(action: {
-                    selectedTemplate = template
-                    isPresented = false
-                }) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(template.displayName)
-                            .font(.headline)
-                        
-                        Text(template.description)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.leading)
-                    }
-                    .padding(.vertical, 4)
+        List(PromptsTemplates.allCases) { template in
+            Button(action: {
+                selectedTemplate = template
+                isPresented = false
+            }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(template.displayName)
+                        .font(.headline)
+                    
+                    Text(template.description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .padding(.vertical, 4)
             }
-            .navigationTitle("Choose Template")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
-                        isPresented = false
-                    }
-                }
-            }
+            .buttonStyle(PlainButtonStyle())
         }
     }
 }
