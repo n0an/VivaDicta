@@ -81,6 +81,9 @@ The `/docs/` directory contains comprehensive reference documentation for Apple 
 - `xcode.md` - Xcode development environment and tools
 - `xcode26docs.mdc` - Xcode 26 specific features and documentation
 
+Additional Xcode documentation is available at:
+- `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/` - Latest iOS/Swift development documentation and updates
+
 Refer to these docs when working with Apple frameworks or implementing new features.
 
 ## Performance & Best Practices
