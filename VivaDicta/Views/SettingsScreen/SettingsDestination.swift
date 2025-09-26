@@ -9,4 +9,5 @@ import Foundation
 
 enum SettingsDestination: Hashable {
     case promptsSettings
+    case transcriptionModels
 }
