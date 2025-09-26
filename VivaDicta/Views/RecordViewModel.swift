@@ -10,14 +10,14 @@ import Foundation
 import AVFoundation
 import SwiftData
 
-enum RecordingState {
+enum RecordingState: Equatable {
     case idle
     case recording
     case transcribing
     case error(RecordError)
 }
 
-enum RecordError: LocalizedError {
+enum RecordError: LocalizedError, Equatable {
     case avInitError
     case userDenied
     case recordError
