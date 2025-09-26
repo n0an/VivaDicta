@@ -49,8 +49,8 @@ struct ModeEditView: View {
                         Text(provider.rawValue.capitalized).tag(provider)
                     }
                 }
-                .tint(.primary)
-                .pickerStyle(.menu)
+//                .tint(.primary)
+//                .pickerStyle(.menu)
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
                     viewModel.updateTranscriptionProvider(newProvider)
                 }
