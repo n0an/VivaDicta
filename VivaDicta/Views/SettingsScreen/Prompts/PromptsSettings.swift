@@ -33,6 +33,7 @@ struct PromptsSettings: View {
                 selectedTemplate: $selectedTemplate,
                 isPresented: $showingTemplateSelection
             )
+            .scrollContentBackground(.hidden)
             .navigationTransition(
                 .zoom(sourceID: "info", in: transition)
             )
