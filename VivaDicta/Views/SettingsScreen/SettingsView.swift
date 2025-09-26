@@ -8,19 +8,31 @@
 import SwiftUI
 
 struct SettingsView: View {
-
+    
     @Bindable var appState: AppState
     @State var promptsManager = PromptsManager()
-
+    
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
+    
+    private var hasAvailableModels: Bool {
+        // Check if any local models are downloaded
+        let hasLocalModels = appState.transcriptionManager.availableWhisperLocalModels.count > 0
+        
+        // Check if any cloud models are configured (have API keys)
+        let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
+            model.apiKey != nil
+        }
+        
+        return hasLocalModels || hasConfiguredCloudModels
+    }
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Form {
                 // Modes section
                 Section("Modes") {
-
+                    
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
                             Text(mode.name)
@@ -36,29 +48,39 @@ struct SettingsView: View {
                             }
                         }
                     }
-
-                    // Add New Mode button
-                    NavigationLink(
-                        destination: ModeEditView(
-                            mode: nil,
-                            aiService: appState.aiService,
-                            promptsManager: promptsManager,
-                            transcriptionManager: appState.transcriptionManager,
-                            selectedTab: $appState.selectedTab,
-                            navigationPath: $navigationPath)) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.blue)
-                                        .font(.title2)
-
-                                    Text("Add New Mode")
-                                        .foregroundColor(.blue)
-                                        .font(.body)
-
-                                    Spacer()
-
+                    
+                    // Add New Mode button - only show if models are available
+                    if hasAvailableModels {
+                        NavigationLink(
+                            destination: ModeEditView(
+                                mode: nil,
+                                aiService: appState.aiService,
+                                promptsManager: promptsManager,
+                                transcriptionManager: appState.transcriptionManager,
+                                selectedTab: $appState.selectedTab,
+                                navigationPath: $navigationPath)) {
+                                    HStack {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundColor(.blue)
+                                            .font(.title2)
+                                        
+                                        Text("Add New Mode")
+                                            .foregroundColor(.blue)
+                                            .font(.body)
+                                        
+                                        Spacer()
+                                        
+                                    }
                                 }
-                            }
+                    } else {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .foregroundStyle(.secondary)
+                            Text("Download models or configure API keys to add new modes")
+                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                        }
+                    }
                 }
                 
                 Section("Transcription") {
@@ -72,7 +94,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-
+                
                 Section("AI Enhancement") {
                     NavigationLink(value: SettingsDestination.promptsSettings) {
                         Text("LLM Prompts")
@@ -94,14 +116,14 @@ struct SettingsView: View {
                     PromptsSettings(promptsManager: promptsManager)
                 }
             }
-
+            
         }
     }
-
+    
     private func deleteMode(_ mode: FlowMode) {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
-
+        
         appState.aiService.deleteMode(mode)
     }
 }
@@ -116,7 +138,7 @@ struct SettingsView: View {
 enum SettingsError: LocalizedError {
     case duplicateModeName(String)
     case unexpectedError(String)
-
+    
     var errorDescription: String? {
         switch self {
         case .duplicateModeName(_):
@@ -125,7 +147,7 @@ enum SettingsError: LocalizedError {
             "Unexpected Error"
         }
     }
-
+    
     var failureReason: String {
         switch self {
         case .duplicateModeName(let name):
