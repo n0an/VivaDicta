@@ -16,9 +16,9 @@ struct ModelsScreen: View {
     init(appState: AppState) {
         self.appState = appState
         let manager = WhisperModelDownloadManager()
-        manager.onModelDownloaded = { model in
+        manager.onModelDownloaded = { [weak appState] model in
             // Update the default mode if it doesn't have a model yet
-            appState.aiService.updateDefaultModeIfNeeded(provider: .local, modelName: model.name)
+            appState?.aiService.updateDefaultModeIfNeeded(provider: .local, modelName: model.name)
         }
         self._downloadManager = State(initialValue: manager)
     }
