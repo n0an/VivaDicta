@@ -78,9 +78,9 @@ class AIService {
             logger.warning("Cannot delete last mode")
             return
         }
-        
+
         modes.removeAll { $0.name == mode.name }
-        
+
         // If deleted mode was selected, switch to first one
         if selectedMode.name == mode.name {
             selectedModeName = modes[0].name
@@ -88,6 +88,43 @@ class AIService {
 
         saveModes()
         logger.info("Deleted mode: \(mode.name)")
+    }
+
+    public func updateDefaultModeIfNeeded(provider: TranscriptionModelProvider, modelName: String) {
+        // Find the default mode
+        guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }) else {
+            logger.warning("Default mode not found")
+            return
+        }
+
+        let defaultMode = modes[defaultModeIndex]
+
+        // Only update if the default mode doesn't have a transcription model set
+        if defaultMode.transcriptionModel.isEmpty {
+            // Create updated mode with the new transcription settings
+            let updatedMode = FlowMode(
+                id: defaultMode.id,
+                name: defaultMode.name,
+                transcriptionProvider: provider,
+                transcriptionModel: modelName,
+                transcriptionLanguage: defaultMode.transcriptionLanguage,
+                userPrompt: defaultMode.userPrompt,
+                aiProvider: defaultMode.aiProvider,
+                aiModel: defaultMode.aiModel,
+                aiEnhanceEnabled: defaultMode.aiEnhanceEnabled
+            )
+
+            // Update the mode
+            modes[defaultModeIndex] = updatedMode
+            saveModes()
+
+            // If default mode is currently selected, update the selected mode
+            if selectedMode.name == "Default" {
+                selectedMode = updatedMode
+            }
+
+            logger.info("Updated default mode with first available model: \(modelName) from provider: \(provider.rawValue)")
+        }
     }
 
     private func loadModes() {

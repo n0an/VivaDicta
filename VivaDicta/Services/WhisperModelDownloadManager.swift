@@ -19,6 +19,7 @@ class WhisperModelDownloadManager: @unchecked Sendable {
     public var downloadProgress: [String: Double] = [:]
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
+    public var onModelDownloaded: ((WhisperLocalModel) -> Void)?
     
     public func downloadModel(_ model: WhisperLocalModel) async throws {
         guard let url = model.downloadURL else {
@@ -43,6 +44,9 @@ class WhisperModelDownloadManager: @unchecked Sendable {
             downloadStatuses[model.name] = .downloaded
             downloadProgress.removeValue(forKey: model.name + "_main")
             downloadProgress.removeValue(forKey: model.name + "_coreml")
+
+            // Call the callback to notify that a model was downloaded
+            onModelDownloaded?(model)
         }
     }
     
