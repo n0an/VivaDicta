@@ -84,6 +84,10 @@ struct SettingsView: View {
                 }
                 
                 Section("Transcription") {
+                    NavigationLink(value: SettingsDestination.transcriptionModels) {
+                        Text("Transcription Models")
+                    }
+
                     Toggle(isOn: $isVADEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Voice Activity Detection")
@@ -114,9 +118,17 @@ struct SettingsView: View {
                 switch destination {
                 case .promptsSettings:
                     PromptsSettings(promptsManager: promptsManager)
+                case .transcriptionModels:
+                    ModelsView(appState: appState)
                 }
             }
-            
+
+        }
+        .onAppear {
+            if appState.shouldNavigateToModels {
+                navigationPath.append(SettingsDestination.transcriptionModels)
+                appState.shouldNavigateToModels = false
+            }
         }
     }
     

@@ -21,8 +21,8 @@ struct RecordView: View {
 
         } else {
             Button {
-                print("send to models screen")
-                appState.selectedTab = .models
+                appState.shouldNavigateToModels = true
+                appState.selectedTab = .settings
             } label: {
                 Text("Select transcription model")
             }

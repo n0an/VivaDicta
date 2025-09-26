@@ -14,6 +14,7 @@ class AppState {
     var aiService: AIService!
 
     var selectedTab: TabTag = .record
+    var shouldNavigateToModels: Bool = false
 
     init() {
         transcriptionManager = TranscriptionManager()
@@ -53,6 +54,5 @@ class AppState {
 enum TabTag {
     case record
     case transcriptions
-    case models
     case settings
 }

@@ -24,11 +24,7 @@ struct TabBarView: View {
             Tab("Notes", systemImage: "text.document", value: TabTag.transcriptions) {
                 TranscriptionsView(appState: appState)
             }
-            
-            Tab("Models", systemImage: "sparkles", value: TabTag.models) {
-                ModelsScreen(appState: appState)
-            }
-            
+
             Tab("Settings", systemImage: "gear", value: TabTag.settings) {
                 SettingsView(appState: appState)
             }

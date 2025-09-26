@@ -79,8 +79,7 @@ struct ModeEditView: View {
                 } else {
                     if viewModel.transcriptionProvider == .local {
                         Button {
-                            dismiss()
-                            selectedTab = .models
+                            navigationPath.append(SettingsDestination.transcriptionModels)
                         } label: {
                             HStack {
                                 Image(systemName: "arrow.down.circle")
