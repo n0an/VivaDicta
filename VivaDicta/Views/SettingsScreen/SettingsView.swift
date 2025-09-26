@@ -126,8 +126,8 @@ struct SettingsView: View {
         }
         .onAppear {
             if appState.shouldNavigateToModels {
-                navigationPath.append(SettingsDestination.transcriptionModels)
                 appState.shouldNavigateToModels = false
+                navigationPath.append(SettingsDestination.transcriptionModels)
             }
         }
     }
