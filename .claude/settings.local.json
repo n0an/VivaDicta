@@ -24,7 +24,9 @@
       "mcp__linear-server__list_teams",
       "mcp__linear-server__create_issue",
       "mcp__linear-server__list_issues",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:uithub.com)"
     ],
     "deny": [],
     "ask": [],
