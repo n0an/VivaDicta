@@ -14,7 +14,19 @@ struct SettingsView: View {
 
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
-    
+
+    private var hasAvailableModels: Bool {
+        // Check if any local models are downloaded
+        let hasLocalModels = appState.transcriptionManager.availableWhisperLocalModels.count > 0
+
+        // Check if any cloud models are configured (have API keys)
+        let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
+            model.apiKey != nil
+        }
+
+        return hasLocalModels || hasConfiguredCloudModels
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Form {
@@ -37,28 +49,30 @@ struct SettingsView: View {
                         }
                     }
 
-                    // Add New Mode button
-                    NavigationLink(
-                        destination: ModeEditView(
-                            mode: nil,
-                            aiService: appState.aiService,
-                            promptsManager: promptsManager,
-                            transcriptionManager: appState.transcriptionManager,
-                            selectedTab: $appState.selectedTab,
-                            navigationPath: $navigationPath)) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.blue)
-                                        .font(.title2)
+                    // Add New Mode button - only show if models are available
+                    if hasAvailableModels {
+                        NavigationLink(
+                            destination: ModeEditView(
+                                mode: nil,
+                                aiService: appState.aiService,
+                                promptsManager: promptsManager,
+                                transcriptionManager: appState.transcriptionManager,
+                                selectedTab: $appState.selectedTab,
+                                navigationPath: $navigationPath)) {
+                                    HStack {
+                                        Image(systemName: "plus.circle.fill")
+                                            .foregroundColor(.blue)
+                                            .font(.title2)
 
-                                    Text("Add New Mode")
-                                        .foregroundColor(.blue)
-                                        .font(.body)
+                                        Text("Add New Mode")
+                                            .foregroundColor(.blue)
+                                            .font(.body)
 
-                                    Spacer()
+                                        Spacer()
 
+                                    }
                                 }
-                            }
+                    }
                 }
                 
                 Section("Transcription") {
