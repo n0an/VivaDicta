@@ -15,7 +15,7 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     
-    private var hasAvailableModels: Bool {
+    private var hasAvailableTranscriptionModels: Bool {
         // Check if any local models are downloaded
         let hasLocalModels = appState.transcriptionManager.availableWhisperLocalModels.count > 0
         
@@ -50,7 +50,7 @@ struct SettingsView: View {
                     }
                     
                     // Add New Mode button - only show if models are available
-                    if hasAvailableModels {
+                    if hasAvailableTranscriptionModels {
                         NavigationLink(
                             destination: ModeEditView(
                                 mode: nil,
