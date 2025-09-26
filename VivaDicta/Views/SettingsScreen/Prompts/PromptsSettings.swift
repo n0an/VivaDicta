@@ -8,17 +8,21 @@
 import SwiftUI
 
 struct PromptsSettings: View {
+    @Namespace private var transition
+    
     var promptsManager: PromptsManager
     @State private var showingTemplateSelection = false
     @State private var selectedTemplate: PromptsTemplates?
     @State private var editingPrompt: UserPrompt?
     
     var body: some View {
-        VStack(spacing: 0) {
-            if promptsManager.userPrompts.isEmpty {
-                emptyStateView
-            } else {
-                promptsList
+        ZStack {
+            VStack(spacing: 0) {
+                if promptsManager.userPrompts.isEmpty {
+                    emptyStateView
+                } else {
+                    promptsList
+                }
             }
             
             addPromptSection
@@ -29,6 +33,10 @@ struct PromptsSettings: View {
                 selectedTemplate: $selectedTemplate,
                 isPresented: $showingTemplateSelection
             )
+            .navigationTransition(
+                .zoom(sourceID: "info", in: transition)
+            )
+            .presentationDetents([.medium, .large])
         }
         .sheet(item: $selectedTemplate) { template in
             PromptAddView(
@@ -82,27 +90,26 @@ struct PromptsSettings: View {
             }
         }
     }
-    
     private var addPromptSection: some View {
-        VStack(spacing: 0) {
-            Divider()
-            
-            Button(action: {
-                showingTemplateSelection = true
-            }) {
-                HStack {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button {
+                    showingTemplateSelection = true
+                } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                    
-                    Text("Add Prompt")
-                        .font(.headline)
+                        .foregroundStyle(.white)
                 }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue, in: .capsule)
+                .frame(width: 60, height: 60)
+                .background(Color.blue, in: .circle)
+                .matchedTransitionSource(
+                    id: "info", in: transition
+                )
+                .padding(.trailing, 20)
             }
-            .padding()
+            .padding(.bottom, 20)
         }
     }
 }
