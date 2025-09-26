@@ -135,21 +135,21 @@ class AIService {
             modes = [FlowMode.defaultMode]
         }
         
-        logger.info("Loaded \(self.modes.count) AI enhance modes")
+        logger.info("Loaded \(self.modes.count) Flow Modes")
     }
     
     private func saveModes() {
         guard let encoded = try? JSONEncoder().encode(modes) else {
-            logger.error("Failed to encode AI enhance modes")
+            logger.error("Failed to encode Flow Modes")
             return
         }
         userDefaults.set(encoded, forKey: "AIEnhanceModes")
-        logger.info("Saved \(self.modes.count) AI enhance modes")
+        logger.info("Saved \(self.modes.count) Flow Modes")
     }
     
     private func saveSelectedModeName(_ modeName: String) {
         userDefaults.setValue(modeName, forKey: Constants.kSelectedAIMode)
-        logger.info("Saved AI enhance mode: \(modeName)")
+        logger.info("Saved Flow Mode: \(modeName)")
     }
     
     private func loadSavedOpenRouterModels() {
