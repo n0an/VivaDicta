@@ -105,9 +105,15 @@ struct TranscriptionsView: View {
     private func deleteTranscription(at offsets: IndexSet) {
         for index in offsets {
             let transcription = displayedTranscriptions[index]
+            
+            if let audioFileName = transcription.audioFileName {
+                let audioURL = URL.documentsDirectory.appendingPathComponent(audioFileName)
+                try? FileManager.default.removeItem(at: audioURL)
+            }
+            
             modelContext.delete(transcription)
         }
-
+        
         do {
             try modelContext.save()
         } catch {
