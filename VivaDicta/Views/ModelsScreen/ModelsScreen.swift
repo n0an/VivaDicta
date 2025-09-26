@@ -11,10 +11,20 @@ struct ModelsScreen: View {
     @Bindable var appState: AppState
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
-    @State private var downloadManager = WhisperModelDownloadManager()
-    
+    @State private var downloadManager: WhisperModelDownloadManager
+
+    init(appState: AppState) {
+        self.appState = appState
+        let manager = WhisperModelDownloadManager()
+        manager.onModelDownloaded = { [weak appState] model in
+            // Update the default mode if it doesn't have a model yet
+            appState?.aiService.updateDefaultModeIfNeeded(provider: .local, modelName: model.name)
+        }
+        self._downloadManager = State(initialValue: manager)
+    }
+
     var body: some View {
-        
+
         NavigationStack {
             VStack {
                 Picker("Model type", selection: $modelType) {
@@ -23,8 +33,8 @@ struct ModelsScreen: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                
-                
+
+
                 ScrollView {
                     ForEach(filteredModels, id: \.id) { model in
                         if let model = model as? WhisperLocalModel {
@@ -44,8 +54,8 @@ struct ModelsScreen: View {
             .navigationDestination(item: $cloudModelToConfigure, destination: { model in
                 CloudModelConfigurationView(
                     model: model,
-                    onSave: {
-                        cloudModelConfigured()
+                    onSave: { cloudModel in
+                        cloudModelConfigured(cloudModel)
                     })
             })
             .navigationTitle("Model Management")
@@ -65,7 +75,9 @@ struct ModelsScreen: View {
         cloudModelToConfigure = model
     }
     
-    func cloudModelConfigured() {
+    func cloudModelConfigured(_ model: CloudModel) {
+        // Update the default mode if it doesn't have a model yet
+        appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
         appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
     }

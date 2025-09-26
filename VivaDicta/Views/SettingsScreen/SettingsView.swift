@@ -63,7 +63,7 @@ struct SettingsView: View {
                                         Image(systemName: "plus.circle.fill")
                                             .foregroundColor(.blue)
                                             .font(.title2)
-                                        
+                                         
                                         Text("Add New Mode")
                                             .foregroundColor(.blue)
                                             .font(.body)

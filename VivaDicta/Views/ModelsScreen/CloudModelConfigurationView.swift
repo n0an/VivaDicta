@@ -10,8 +10,8 @@ import SwiftUI
 struct CloudModelConfigurationView: View {
     @Environment(\.dismiss) var dismiss
     var model: CloudModel
-    var onSave: () -> Void
-    
+    var onSave: (CloudModel) -> Void
+
     @State var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
@@ -87,9 +87,9 @@ struct CloudModelConfigurationView: View {
             
             await MainActor.run {
                 isVerifying = false
-                
+
                 if isValid {
-                    onSave()
+                    onSave(model)
                 } else {
                     verificationError = "Invalid API key. Please check your key and try again."
                 }
@@ -101,6 +101,6 @@ struct CloudModelConfigurationView: View {
 #Preview {
     CloudModelConfigurationView(
         model: TranscriptionModelProvider.allCloudModels[0],
-        onSave: {}
-        )
+        onSave: { _ in }
+    )
 }
