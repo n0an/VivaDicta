@@ -24,6 +24,18 @@ class TranscriptionManager {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
     }
 
+    var hasAvailableTranscriptionModels: Bool {
+        // Check if any local models are downloaded
+        let hasLocalModels = availableWhisperLocalModels.count > 0
+
+        // Check if any cloud models are configured (have API keys)
+        let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
+            model.apiKey != nil
+        }
+
+        return hasLocalModels || hasConfiguredCloudModels
+    }
+
     var selectedLanguage: String {
         get {
             UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
