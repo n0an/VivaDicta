@@ -7,7 +7,6 @@
 
 import Foundation
 import FluidAudio
-import AVFoundation
 import os
 
 class ParakeetTranscriptionService: TranscriptionService {
