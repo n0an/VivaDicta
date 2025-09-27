@@ -154,35 +154,37 @@ class ModelDownloadManager: @unchecked Sendable {
 
         logger.notice("📥 Starting download of \(model.displayName)")
 
-        do {
-            // Start progress simulation
-            let progressTask = Task { @MainActor in
-                while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
-                    if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
-                        self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
-                    }
-                    try? await Task.sleep(for: .seconds(1))
-                    
+        // Start progress simulation - declare outside do block to ensure cleanup
+        let progressTask = Task { @MainActor in
+            while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
+                if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
+                    self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
                 }
+                try? await Task.sleep(for: .seconds(1))
             }
-            
+        }
+
+        // Ensure progress task is cancelled regardless of success or failure
+        defer {
+            progressTask.cancel()
+        }
+
+        do {
             async let asrDownload = AsrModels.downloadAndLoad(to: model.modelsDirectory, version: .v3)
             async let vadDownload = DownloadUtils.loadModels(
                 .vad,
                 modelNames: Array(ModelNames.VAD.requiredModels),
                 directory: URL.documentsDirectory
             )
-            
-            _ = try await (asrDownload, vadDownload)
 
-            progressTask.cancel()
+            _ = try await (asrDownload, vadDownload)
 
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
                 logger.notice("✅ Successfully downloaded \(model.displayName)")
             }
-            
+
             try? await Task.sleep(for: .seconds(0.5))
 
             await MainActor.run {
@@ -191,7 +193,6 @@ class ModelDownloadManager: @unchecked Sendable {
             }
 
         } catch {
-            // progressTask is not in scope here, handle differently
             await MainActor.run {
                 self.downloadStatuses[model.name] = .download
                 self.downloadProgress.removeValue(forKey: model.name)
