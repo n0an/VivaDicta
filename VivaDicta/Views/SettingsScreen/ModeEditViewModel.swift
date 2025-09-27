@@ -96,8 +96,7 @@ class ModeEditViewModel {
         case .local:
             return !transcriptionManager.availableWhisperLocalModels.isEmpty
         case .parakeet:
-            // TODO: - Add Parakeet
-            return false
+            return !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
         default: // Cloud transcription models
             guard let mappedAIProvider = provider.mappedAIProvider else { return false }
             return self.hasAPIKey(for: mappedAIProvider)
@@ -109,8 +108,7 @@ class ModeEditViewModel {
         case .local:
             return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
         case .parakeet:
-            // TODO: Add Parakeet
-            return []
+            return TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.compactMap { $0.name }
         default: // Cloud transcription models
             return provider.cloudTranscriptionModelsNames
         }

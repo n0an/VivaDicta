@@ -13,12 +13,13 @@ class TranscriptionManager {
     private let whisperPrompt: WhisperPrompt
     private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
+    private let parakeetTranscriptionService = ParakeetTranscriptionService()
     private(set) var currentMode: FlowMode = .defaultMode
 
     // Callback for when cloud models are updated
     public var onCloudModelsUpdate: (() -> Void)?
 
-    var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+    var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allCloudModels
 
     var availableWhisperLocalModels: [WhisperLocalModel] {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
@@ -66,7 +67,7 @@ class TranscriptionManager {
     }
 
     public func updateCloudModels() {
-        allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+        allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allCloudModels
         onCloudModelsUpdate?()
     }
 
@@ -74,7 +75,7 @@ class TranscriptionManager {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
 
-        let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allCloudModels
+        let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allCloudModels
 
         return allModels.first { model in
             model.provider == provider && model.name == modelName
@@ -90,6 +91,8 @@ class TranscriptionManager {
         switch model.provider {
         case .local:
             transcriptionService = localTranscriptionService
+        case .parakeet:
+            transcriptionService = parakeetTranscriptionService
         default:
             transcriptionService = cloudTranscriptionService
         }

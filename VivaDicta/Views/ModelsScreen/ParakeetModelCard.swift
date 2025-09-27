@@ -1,34 +1,34 @@
 //
-//  WhisperLocalModelCard.swift
+//  ParakeetModelCard.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2025.08.12
+//  Created by Anton Novoselov on 2025.09.27
 //
 
 import SwiftUI
 
-struct WhisperLocalModelCard: View {
-    private var model: WhisperLocalModel
+struct ParakeetModelCard: View {
+    private var model: ParakeetModel
     private let downloadManager: ModelDownloadManager
-    
+
     private var currentProgress: Double {
         downloadManager.currentProgress(for: model)
     }
-    
+
     private var downloadStatus: DownloadStatus {
         downloadManager.downloadStatus(for: model)
     }
-    
+
     private var isDownloaded: Bool {
         downloadStatus == .downloaded
     }
-    
-    init(model: WhisperLocalModel,
+
+    init(model: ParakeetModel,
          downloadManager: ModelDownloadManager) {
         self.model = model
         self.downloadManager = downloadManager
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 8) {
@@ -37,7 +37,7 @@ struct WhisperLocalModelCard: View {
                     metadataSection
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 actionSection
             }
             descriptionSection
@@ -45,7 +45,7 @@ struct WhisperLocalModelCard: View {
         .padding(16)
         .background(.gray.opacity(0.1), in: .rect(cornerRadius: 16))
     }
-    
+
     private var header: some View {
         HStack {
             Text(model.displayName)
@@ -54,16 +54,16 @@ struct WhisperLocalModelCard: View {
             Spacer()
         }
     }
-    
+
     private var metadataSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                
+
                 HStack(spacing: 4) {
                     Text(model.language)
                     Image(systemName: "globe")
                 }
-                
+
                 HStack(spacing: 4) {
                     Text(model.size)
                     Image(systemName: "internaldrive")
@@ -71,14 +71,14 @@ struct WhisperLocalModelCard: View {
             }
             .foregroundStyle(.secondary)
             .font(.caption)
-            
+
             HStack(spacing: 3) {
                 Text("Speed")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 ModelPerformanceStatsDots(value: model.speed * 10)
             }
-            
+
             HStack(spacing: 3) {
                 Text("Accuracy")
                     .font(.caption.weight(.medium))
@@ -87,7 +87,7 @@ struct WhisperLocalModelCard: View {
             }
         }
     }
-    
+
     private var statusBadge: some View {
         Group {
             if isDownloaded {
@@ -99,7 +99,7 @@ struct WhisperLocalModelCard: View {
             }
         }
     }
-    
+
     private var descriptionSection: some View {
         Text(model.description)
             .multilineTextAlignment(.leading)
@@ -109,7 +109,7 @@ struct WhisperLocalModelCard: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)
     }
-    
+
     private var actionSection: some View {
         VStack {
             switch downloadStatus {
@@ -126,7 +126,7 @@ struct WhisperLocalModelCard: View {
             }
         }
     }
-    
+
     var progressView: some View {
         HStack {
             ProgressView(value: currentProgress)
@@ -138,18 +138,17 @@ struct WhisperLocalModelCard: View {
                 .frame(width: 30)
         }
     }
-    
+
     var downloadButton: some View {
         Button("Download") {
             downloadModel(self.model)
-            
         }
         .foregroundStyle(.white)
         .padding(8)
         .background(.blue, in: .rect(cornerRadius: 8))
     }
-    
-    func downloadModel(_ model: WhisperLocalModel) {
+
+    func downloadModel(_ model: ParakeetModel) {
         Task {
             do {
                 try await downloadManager.downloadModel(model)
@@ -161,9 +160,8 @@ struct WhisperLocalModelCard: View {
 }
 
 #Preview {
-    WhisperLocalModelCard(
-        model: TranscriptionModelProvider.allLocalModels[0],
+    ParakeetModelCard(
+        model: TranscriptionModelProvider.allParakeetModels[0],
         downloadManager: ModelDownloadManager()
     )
 }
-
