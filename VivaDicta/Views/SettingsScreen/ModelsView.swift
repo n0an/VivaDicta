@@ -22,6 +22,8 @@ struct ModelsView: View {
                 appState?.aiService.updateDefaultModeIfNeeded(provider: .local, modelName: whisperModel.name)
             } else if let parakeetModel = model as? ParakeetModel {
                 appState?.aiService.updateDefaultModeIfNeeded(provider: .parakeet, modelName: parakeetModel.name)
+            } else if let whisperKitModel = model as? WhisperKitModel {
+                appState?.aiService.updateDefaultModeIfNeeded(provider: .whisperKit, modelName: whisperKitModel.name)
             }
         }
         self._downloadManager = State(initialValue: manager)
@@ -45,6 +47,10 @@ struct ModelsView: View {
                             downloadManager: downloadManager)
                     } else if let model = model as? ParakeetModel {
                         ParakeetModelCard(
+                            model: model,
+                            downloadManager: downloadManager)
+                    } else if let model = model as? WhisperKitModel {
+                        WhisperKitModelCard(
                             model: model,
                             downloadManager: downloadManager)
                     } else if let model = model as? CloudModel {
@@ -71,9 +77,9 @@ struct ModelsView: View {
     var filteredModels: [any TranscriptionModel] {
         switch modelType {
         case .local:
-            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .local || $0.provider == .parakeet }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .local || $0.provider == .parakeet || $0.provider == .whisperKit }
         case .cloud:
-            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .local && $0.provider != .parakeet }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .local && $0.provider != .parakeet && $0.provider != .whisperKit }
         }
     }
 

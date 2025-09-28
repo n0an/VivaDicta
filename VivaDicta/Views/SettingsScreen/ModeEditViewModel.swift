@@ -97,6 +97,8 @@ class ModeEditViewModel {
             return !transcriptionManager.availableWhisperLocalModels.isEmpty
         case .parakeet:
             return !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
+        case .whisperKit:
+            return !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
         default: // Cloud transcription models
             guard let mappedAIProvider = provider.mappedAIProvider else { return false }
             return self.hasAPIKey(for: mappedAIProvider)
@@ -109,6 +111,8 @@ class ModeEditViewModel {
             return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
         case .parakeet:
             return TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.compactMap { $0.name }
+        case .whisperKit:
+            return TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.compactMap { $0.name }
         default: // Cloud transcription models
             return provider.cloudTranscriptionModelsNames
         }
@@ -136,7 +140,15 @@ class ModeEditViewModel {
     public func getAvailableLanguages() -> [(key: String, value: String)] {
         guard isLanguageSelectionAvailable() else { return [] }
 
-        let models: [any TranscriptionModel] = transcriptionProvider == .local ? TranscriptionModelProvider.allLocalModels : TranscriptionModelProvider.allCloudModels
+        let models: [any TranscriptionModel]
+        switch transcriptionProvider {
+        case .local:
+            models = TranscriptionModelProvider.allLocalModels
+        case .whisperKit:
+            models = TranscriptionModelProvider.allWhisperKitModels
+        default:
+            models = TranscriptionModelProvider.allCloudModels
+        }
 
         guard let model = models.first(where: { $0.name == transcriptionModel }) else {
             return []

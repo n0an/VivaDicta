@@ -12,6 +12,7 @@
 		18D047892E4A99BB00674B30 /* whisper.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D047872E4A99AA00674B30 /* whisper.xcframework */; };
 		18D0478A2E4A99BB00674B30 /* whisper.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 18D047872E4A99AA00674B30 /* whisper.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		18E328622E87C7620026327D /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328612E87C7620026327D /* FluidAudio */; };
+		18E328F72E894C3D0026327D /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328F62E894C3D0026327D /* WhisperKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 			files = (
 				18E328622E87C7620026327D /* FluidAudio in Frameworks */,
 				18351FD22E65934600944940 /* Zip in Frameworks */,
+				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				18D047892E4A99BB00674B30 /* whisper.xcframework in Frameworks */,
 				181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */,
 			);
@@ -130,6 +132,7 @@
 				181D0D002E42355600D357A6 /* SiriWaveView */,
 				18351FD12E65934600944940 /* Zip */,
 				18E328612E87C7620026327D /* FluidAudio */,
+				18E328F62E894C3D0026327D /* WhisperKit */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -190,6 +193,7 @@
 				181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */,
 				18351FD02E65934600944940 /* XCRemoteSwiftPackageReference "Zip" */,
 				18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -547,6 +551,14 @@
 				kind = branch;
 			};
 		};
+		18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -564,6 +576,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		18E328F62E894C3D0026327D /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

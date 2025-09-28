@@ -14,12 +14,17 @@ class TranscriptionManager {
     private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()
+    private let whisperKitTranscriptionService = WhisperKitTranscriptionService()
     private(set) var currentMode: FlowMode = .defaultMode
 
     // Callback for when cloud models are updated
     public var onCloudModelsUpdate: (() -> Void)?
-
-    var allAvailableModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allCloudModels
+    
+    var allAvailableModels: [any TranscriptionModel] =
+            TranscriptionModelProvider.allLocalModels +
+            TranscriptionModelProvider.allParakeetModels +
+            TranscriptionModelProvider.allWhisperKitModels +
+            TranscriptionModelProvider.allCloudModels
 
     var availableWhisperLocalModels: [WhisperLocalModel] {
         TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
@@ -28,15 +33,17 @@ class TranscriptionManager {
     var hasAvailableTranscriptionModels: Bool {
         // Check if any local models are downloaded
         let hasLocalModels = availableWhisperLocalModels.count > 0
-        
+
         let hasParakeetModels = !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
+
+        let hasWhisperKitModels = !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
 
         // Check if any cloud models are configured (have API keys)
         let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
             model.apiKey != nil
         }
 
-        return hasLocalModels || hasParakeetModels || hasConfiguredCloudModels
+        return hasLocalModels || hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels
     }
 
     var selectedLanguage: String {
@@ -69,7 +76,11 @@ class TranscriptionManager {
     }
 
     public func updateCloudModels() {
-        allAvailableModels = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allCloudModels
+        allAvailableModels =
+            TranscriptionModelProvider.allLocalModels +
+            TranscriptionModelProvider.allParakeetModels +
+            TranscriptionModelProvider.allWhisperKitModels +
+            TranscriptionModelProvider.allCloudModels
         onCloudModelsUpdate?()
     }
 
@@ -77,7 +88,7 @@ class TranscriptionManager {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
 
-        let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allCloudModels
+        let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allWhisperKitModels + TranscriptionModelProvider.allCloudModels
 
         return allModels.first { model in
             model.provider == provider && model.name == modelName
@@ -95,6 +106,8 @@ class TranscriptionManager {
             transcriptionService = localTranscriptionService
         case .parakeet:
             transcriptionService = parakeetTranscriptionService
+        case .whisperKit:
+            transcriptionService = whisperKitTranscriptionService
         default:
             transcriptionService = cloudTranscriptionService
         }
