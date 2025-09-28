@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FluidAudio
 
 enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
     case local
@@ -35,7 +36,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return model.displayName
             
         case .parakeet:
-            return modelName
+            guard let model = TranscriptionModelProvider.allParakeetModels.first(where: {$0.name == modelName}) else { return modelName }
+            return model.displayName
             
         default:
             guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == modelName}) else { return modelName }
@@ -60,7 +62,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
     
-    static let allModels: [any TranscriptionModel] = allLocalModels + allCloudModels
+    static let allModels: [any TranscriptionModel] = allLocalModels + allParakeetModels + allCloudModels
     
     static var allLocalModels: [WhisperLocalModel] {
         [
@@ -250,6 +252,21 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         supportManyLanguages ? allLanguages : ["en": "English"]
     }
     
+    static var allParakeetModels: [ParakeetModel] {
+        [
+            ParakeetModel(
+                name: "parakeet-tdt-0.6b",
+                displayName: "Parakeet",
+                description: "NVIDIA's ASR model for lightning-fast transcription with multi-lingual support.",
+                size: "630 MB",
+                speed: 0.99,
+                accuracy: 0.94,
+                ramUsage: 0.8,
+                supportedLanguages: allLanguages
+            )
+        ]
+    }
+
     static let allLanguages = [
         "auto": "Auto-detect",
         "af": "Afrikaans",

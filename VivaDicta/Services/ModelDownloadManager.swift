@@ -1,5 +1,5 @@
 //
-//  WhisperModelDownloadManager.swift
+//  ModelDownloadManager.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.09.02
@@ -7,6 +7,8 @@
 
 import Foundation
 import Zip
+import FluidAudio
+import os
 
 enum DownloadStatus: String {
     case download
@@ -15,31 +17,74 @@ enum DownloadStatus: String {
 }
 
 @Observable
-class WhisperModelDownloadManager: @unchecked Sendable {
+class ModelDownloadManager: @unchecked Sendable {
     public var downloadProgress: [String: Double] = [:]
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
-    public var onModelDownloaded: ((WhisperLocalModel) -> Void)?
-    
-    public func downloadModel(_ model: WhisperLocalModel) async throws {
-        guard let url = model.downloadURL else {
-            throw WhisperDownloadError.invalidURL 
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ModelDownloadManager")
+    public var onModelDownloaded: ((any TranscriptionModel) -> Void)?
+
+    // MARK: - Public Interface
+
+    public func downloadModel(_ model: any TranscriptionModel) async throws {
+        if let whisperModel = model as? WhisperLocalModel {
+            try await downloadWhisperModel(whisperModel)
+        } else if let parakeetModel = model as? ParakeetModel {
+            try await downloadParakeetModel(parakeetModel)
+        } else {
+            throw ModelDownloadError.unsupportedModelType
         }
-        
+    }
+
+    public func handleModelDownloadError(_ model: any TranscriptionModel, _ error: any Error) async {
+        await MainActor.run {
+            downloadStatuses[model.name] = .download
+            downloadProgress.removeValue(forKey: model.name + "_main")
+            downloadProgress.removeValue(forKey: model.name + "_coreml")
+            downloadProgress.removeValue(forKey: model.name)
+        }
+        logger.error("Error downloading model \(model.name): \(error.localizedDescription)")
+    }
+
+    public func currentProgress(for model: any TranscriptionModel) -> Double {
+        if let whisperModel = model as? WhisperLocalModel {
+            return currentProgressForWhisper(whisperModel)
+        } else if model is ParakeetModel {
+            return downloadProgress[model.name] ?? 0.0
+        }
+        return 0.0
+    }
+
+    public func downloadStatus(for model: any TranscriptionModel) -> DownloadStatus {
+        if let whisperModel = model as? WhisperLocalModel {
+            return downloadStatuses[model.name] ?? (whisperModel.fileExists ? .downloaded : .download)
+        } else if let parakeetModel = model as? ParakeetModel {
+            return downloadStatuses[model.name] ?? (parakeetModel.isDownloaded ? .downloaded : .download)
+        }
+        return .download
+    }
+
+    // MARK: - Whisper Model Download
+
+    private func downloadWhisperModel(_ model: WhisperLocalModel) async throws {
+        guard let url = model.downloadURL else {
+            throw ModelDownloadError.invalidURL
+        }
+
         await MainActor.run {
             downloadStatuses[model.name] = .downloading
         }
-        
-        try await performModelDownload(model, url)
+
+        try await performWhisperModelDownload(model, url)
     }
-    
-    private func performModelDownload(_ model: WhisperLocalModel, _ url: URL) async throws {
+
+    private func performWhisperModelDownload(_ model: WhisperLocalModel, _ url: URL) async throws {
         try await downloadMainModel(model, from: url)
-        
+
         if let coreMLDownloadURL = model.coreMLDownloadURL {
             try await downloadAndSetupCoreMLModel(for: model, from: coreMLDownloadURL)
         }
-        
+
         await MainActor.run {
             downloadStatuses[model.name] = .downloaded
             downloadProgress.removeValue(forKey: model.name + "_main")
@@ -49,59 +94,134 @@ class WhisperModelDownloadManager: @unchecked Sendable {
             onModelDownloaded?(model)
         }
     }
-    
+
     private func downloadMainModel(_ model: WhisperLocalModel, from url: URL) async throws {
         let progressKeyMain = model.name + "_main"
         let data = try await downloadFileWithProgress(from: url, progressKey: progressKeyMain)
         try data.write(to: model.fileURL)
     }
-    
+
     private func downloadAndSetupCoreMLModel(for model: WhisperLocalModel, from url: URL) async throws {
         let progressKeyCoreML = model.name + "_coreml"
         let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
-        
+
         let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc.zip")
         try coreMLData.write(to: coreMLZipPath)
-        
+
         try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
     }
-    
+
     private func unzipAndSetupCoreMLModel(for model: WhisperLocalModel, zipPath: URL, progressKey: String) async throws {
         let coreMLDestination = URL.documentsDirectory.appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc")
-        
+
         try? FileManager.default.removeItem(at: coreMLDestination)
         try Zip.unzipFile(zipPath, destination: URL.documentsDirectory, overwrite: true, password: nil)
         try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
     }
-    
+
     private func verifyAndCleanupCoreMLFiles(_ model: WhisperLocalModel, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory), isDirectory.boolValue else {
             try? FileManager.default.removeItem(at: zipPath)
-            throw WhisperDownloadError.unzipFailed
+            throw ModelDownloadError.unzipFailed
         }
-        
+
         try? FileManager.default.removeItem(at: zipPath)
         downloadProgress.removeValue(forKey: progressKey)
     }
-    
+
+    private func currentProgressForWhisper(_ model: WhisperLocalModel) -> Double {
+        let mainKey = model.name + "_main"
+        let coreMLKey = model.name + "_coreml"
+
+        let mainProgress = downloadProgress[mainKey] ?? 0.0
+        let coreMLProgress = downloadProgress[coreMLKey] ?? 0.0
+
+        if model.coreMLDownloadURL != nil {
+            return (mainProgress * 0.5) + (coreMLProgress * 0.5)
+        } else {
+            return mainProgress
+        }
+    }
+
+    // MARK: - Parakeet Model Download
+
+    private func downloadParakeetModel(_ model: ParakeetModel) async throws {
+        await MainActor.run {
+            downloadStatuses[model.name] = .downloading
+            downloadProgress[model.name] = 0.0
+        }
+
+        logger.notice("📥 Starting download of \(model.displayName)")
+
+        // Start progress simulation - declare outside do block to ensure cleanup
+        let progressTask = Task { @MainActor in
+            while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
+                if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
+                    self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
+                }
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+
+        // Ensure progress task is cancelled regardless of success or failure
+        defer {
+            progressTask.cancel()
+        }
+
+        do {
+            async let asrDownload = AsrModels.downloadAndLoad(to: model.modelsDirectory, version: .v3)
+            async let vadDownload = DownloadUtils.loadModels(
+                .vad,
+                modelNames: Array(ModelNames.VAD.requiredModels),
+                directory: URL.documentsDirectory
+            )
+
+            _ = try await (asrDownload, vadDownload)
+
+            await MainActor.run {
+                self.downloadProgress[model.name] = 1.0
+                self.downloadStatuses[model.name] = .downloaded
+                logger.notice("✅ Successfully downloaded \(model.displayName)")
+            }
+
+            try? await Task.sleep(for: .seconds(0.5))
+
+            await MainActor.run {
+                self.downloadProgress.removeValue(forKey: model.name)
+                self.onModelDownloaded?(model)
+            }
+
+        } catch {
+            await MainActor.run {
+                self.downloadStatuses[model.name] = .download
+                self.downloadProgress.removeValue(forKey: model.name)
+            }
+
+            logger.error("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    // MARK: - Common Download Utilities
+
     private func downloadFileWithProgress(from url: URL, progressKey: String) async throws -> Data {
         let destinationURL = URL.documentsDirectory.appendingPathComponent(UUID().uuidString)
-        
+
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
             let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
                 if let error = error {
                     continuation.resume(throwing: error)
                     return
                 }
-                
+
                 guard let httpResponse = response as? HTTPURLResponse,
                       (200...299).contains(httpResponse.statusCode),
                       let tempURL = tempURL else {
                     continuation.resume(throwing: URLError(.badServerResponse))
                     return
                 }
-                
+
                 do {
                     try FileManager.default.moveItem(at: tempURL, to: destinationURL)
                     let data = try Data(contentsOf: destinationURL, options: .mappedIfSafe)
@@ -111,53 +231,27 @@ class WhisperModelDownloadManager: @unchecked Sendable {
                     continuation.resume(throwing: error)
                 }
             }
-            
+
             task.resume()
-            
+
             let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
                 let currentProgress = round(progress.fractionCompleted * 100) / 100
                 Task { @MainActor in
                     self?.downloadProgress[progressKey] = currentProgress
                 }
             }
-            
+
             // Store observation for potential cleanup
             observations[progressKey] = observation
         }
     }
-    
-    func handleModelDownloadError(_ model: WhisperLocalModel, _ error: any Error) async {
-        await MainActor.run {
-            downloadStatuses[model.name] = .download
-            downloadProgress.removeValue(forKey: model.name + "_main")
-            downloadProgress.removeValue(forKey: model.name + "_coreml")
-        }
-        print("Error downloading model \(model.name): \(error.localizedDescription)")
-    }
-    
-    func currentProgress(for model: WhisperLocalModel) -> Double {
-        let mainKey = model.name + "_main"
-        let coreMLKey = model.name + "_coreml"
-        
-        let mainProgress = downloadProgress[mainKey] ?? 0.0
-        let coreMLProgress = downloadProgress[coreMLKey] ?? 0.0
-        
-        if model.coreMLDownloadURL != nil {
-            return (mainProgress * 0.5) + (coreMLProgress * 0.5)
-        } else {
-            return mainProgress
-        }
-    }
-    
-    func downloadStatus(for model: WhisperLocalModel) -> DownloadStatus {
-        return downloadStatuses[model.name] ?? (model.fileExists ? .downloaded : .download)
-    }
 }
 
-enum WhisperDownloadError: LocalizedError {
+enum ModelDownloadError: LocalizedError {
     case invalidURL
     case unzipFailed
     case downloadFailed(String)
+    case unsupportedModelType
 
     var errorDescription: String? {
         switch self {
@@ -167,6 +261,8 @@ enum WhisperDownloadError: LocalizedError {
             return "Failed to unzip model"
         case .downloadFailed(_):
             return "Download failed"
+        case .unsupportedModelType:
+            return "Unsupported model type"
         }
     }
 
@@ -178,6 +274,8 @@ enum WhisperDownloadError: LocalizedError {
             return "Failed to extract the downloaded Core ML model. The download may be corrupted. Please try downloading again."
         case .downloadFailed(let message):
             return "Failed to download the model: \(message). Please check your internet connection and try again."
+        case .unsupportedModelType:
+            return "This model type is not supported for download."
         }
     }
 }
