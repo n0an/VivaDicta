@@ -28,13 +28,15 @@ class TranscriptionManager {
     var hasAvailableTranscriptionModels: Bool {
         // Check if any local models are downloaded
         let hasLocalModels = availableWhisperLocalModels.count > 0
+        
+        let hasParakeetModels = !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
 
         // Check if any cloud models are configured (have API keys)
         let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
             model.apiKey != nil
         }
 
-        return hasLocalModels || hasConfiguredCloudModels
+        return hasLocalModels || hasParakeetModels || hasConfiguredCloudModels
     }
 
     var selectedLanguage: String {
