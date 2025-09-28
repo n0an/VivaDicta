@@ -37,7 +37,7 @@ extension WhisperKitModel {
     // WhisperKit downloads models to its own managed location
     private var whisperKitModelsRoot: URL {
         // WhisperKit uses ~/Documents/huggingface/models/argmaxinc/whisperkit-coreml/
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let documentsPath = URL.documentsDirectory
         return documentsPath
             .appendingPathComponent("huggingface")
             .appendingPathComponent("models")
