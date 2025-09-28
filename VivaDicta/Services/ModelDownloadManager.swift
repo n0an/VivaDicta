@@ -234,10 +234,6 @@ class ModelDownloadManager: @unchecked Sendable {
         }
 
         do {
-            // Use WhisperKit to download the model
-            // WhisperKit automatically downloads models to its cache directory
-            _ = model.modelsDirectory
-
             // Download the model using WhisperKit's built-in downloader
             let availableModels = try await WhisperKit.fetchAvailableModels()
 
