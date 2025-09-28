@@ -38,15 +38,15 @@ class ParakeetTranscriptionService: TranscriptionService {
  
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         guard let parakeetModel = model as? ParakeetModel else {
-            throw WhisperStateError.modelLoadFailed
+            throw TranscriptionError.unsupportedModel
         }
-        
+
         if asrManager == nil || !isModelLoaded {
             try await loadModel(modelsDirectory: parakeetModel.modelsDirectory)
         }
 
         guard let asrManager = asrManager else {
-            throw WhisperStateError.transcriptionFailed
+            throw TranscriptionError.modelLoadFailed
         }
 
         logger.notice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
