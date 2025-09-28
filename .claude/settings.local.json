@@ -26,7 +26,9 @@
       "mcp__linear-server__list_issues",
       "Bash(git checkout:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:uithub.com)"
+      "WebFetch(domain:uithub.com)",
+      "Bash(vt title:*)",
+      "Read(//Users/antonnovoselov/Downloads/**)"
     ],
     "deny": [],
     "ask": [],
