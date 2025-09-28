@@ -77,7 +77,7 @@ struct ModeEditView: View {
                         }
                     }
                 } else {
-                    if viewModel.transcriptionProvider == .local {
+                    if viewModel.transcriptionProvider == .local || viewModel.transcriptionProvider == .parakeet {
                         Button {
                             navigationPath.append(SettingsDestination.transcriptionModels)
                         } label: {
