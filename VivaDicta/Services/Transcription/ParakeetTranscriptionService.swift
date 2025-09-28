@@ -73,12 +73,10 @@ class ParakeetTranscriptionService: TranscriptionService {
         let result = try await asrManager.transcribe(speechAudio)
 
         // Clean up models after transcription to minimize RAM usage
-        Task {
-            asrManager.cleanup()
-            vadManager = nil
-            isModelLoaded = false
-            logger.notice("🧹 Parakeet ASR models cleaned up from memory")
-        }
+        asrManager.cleanup()
+        vadManager = nil
+        isModelLoaded = false
+        logger.notice("🧹 Parakeet ASR models cleaned up from memory")
 
         logger.notice("✅ Parakeet transcription completed successfully")
         return result.text
