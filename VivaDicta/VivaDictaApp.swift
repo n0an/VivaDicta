@@ -10,6 +10,11 @@ import SwiftData
 
 @main
 struct VivaDictaApp: App {
+    init() {
+        // Initialize app directories
+        FileManager.createAppDirectories()
+    }
+
     var body: some Scene {
         WindowGroup {
             TabBarView()
