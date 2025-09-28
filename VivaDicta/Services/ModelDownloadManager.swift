@@ -8,6 +8,7 @@
 import Foundation
 import Zip
 import FluidAudio
+import WhisperKit
 import os
 
 enum DownloadStatus: String {
@@ -31,6 +32,8 @@ class ModelDownloadManager: @unchecked Sendable {
             try await downloadWhisperModel(whisperModel)
         } else if let parakeetModel = model as? ParakeetModel {
             try await downloadParakeetModel(parakeetModel)
+        } else if let whisperKitModel = model as? WhisperKitModel {
+            try await downloadWhisperKitModel(whisperKitModel)
         } else {
             throw ModelDownloadError.unsupportedModelType
         }
@@ -49,7 +52,7 @@ class ModelDownloadManager: @unchecked Sendable {
     public func currentProgress(for model: any TranscriptionModel) -> Double {
         if let whisperModel = model as? WhisperLocalModel {
             return currentProgressForWhisper(whisperModel)
-        } else if model is ParakeetModel {
+        } else if model is ParakeetModel || model is WhisperKitModel {
             return downloadProgress[model.name] ?? 0.0
         }
         return 0.0
@@ -60,6 +63,8 @@ class ModelDownloadManager: @unchecked Sendable {
             return downloadStatuses[model.name] ?? (whisperModel.fileExists ? .downloaded : .download)
         } else if let parakeetModel = model as? ParakeetModel {
             return downloadStatuses[model.name] ?? (parakeetModel.isDownloaded ? .downloaded : .download)
+        } else if let whisperKitModel = model as? WhisperKitModel {
+            return downloadStatuses[model.name] ?? (whisperKitModel.isDownloaded ? .downloaded : .download)
         }
         return .download
     }
@@ -178,6 +183,71 @@ class ModelDownloadManager: @unchecked Sendable {
             )
 
             _ = try await (asrDownload, vadDownload)
+
+            await MainActor.run {
+                self.downloadProgress[model.name] = 1.0
+                self.downloadStatuses[model.name] = .downloaded
+                logger.notice("✅ Successfully downloaded \(model.displayName)")
+            }
+
+            try? await Task.sleep(for: .seconds(0.5))
+
+            await MainActor.run {
+                self.downloadProgress.removeValue(forKey: model.name)
+                self.onModelDownloaded?(model)
+            }
+
+        } catch {
+            await MainActor.run {
+                self.downloadStatuses[model.name] = .download
+                self.downloadProgress.removeValue(forKey: model.name)
+            }
+
+            logger.error("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    // MARK: - WhisperKit Model Download
+
+    private func downloadWhisperKitModel(_ model: WhisperKitModel) async throws {
+        await MainActor.run {
+            downloadStatuses[model.name] = .downloading
+            downloadProgress[model.name] = 0.0
+        }
+
+        logger.notice("📥 Starting download of \(model.displayName)")
+
+        // Start progress simulation
+        let progressTask = Task { @MainActor in
+            while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
+                if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
+                    self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
+                }
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+
+        // Ensure progress task is cancelled regardless of success or failure
+        defer {
+            progressTask.cancel()
+        }
+
+        do {
+            // Use WhisperKit to download the model
+            // WhisperKit automatically downloads models to its cache directory
+            _ = model.modelsDirectory
+
+            // Download the model using WhisperKit's built-in downloader
+            let availableModels = try await WhisperKit.fetchAvailableModels()
+
+            // Check if the model is available
+            guard availableModels.contains(model.whisperKitModelName) else {
+                throw ModelDownloadError.downloadFailed("Model \(model.whisperKitModelName) not available")
+            }
+
+            // Initialize WhisperKit with the model to trigger download
+            _ = try await WhisperKit(model: model.whisperKitModelName)
 
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
