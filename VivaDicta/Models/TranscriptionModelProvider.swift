@@ -298,29 +298,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             
             WhisperKitModel(
-                name: "whisperkit-small",
-                displayName: "WhisperKit Small",
-                description: "More accurate model with reasonable speed",
-                size: "487 MB",
-                speed: 0.70,
-                accuracy: 0.85,
-                ramUsage: 1.0,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "openai_whisper-small"
-            ),
-            WhisperKitModel(
-                name: "whisperkit-small.en",
-                displayName: "WhisperKit Small (English)",
-                description: "English-optimized small model with improved accuracy",
-                size: "487 MB",
-                speed: 0.70,
-                accuracy: 0.88,
-                ramUsage: 1.0,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
-                whisperKitModelName: "openai_whisper-small.en"
-            ),
-            
-            WhisperKitModel(
                 name: "whisperkit-base",
                 displayName: "WhisperKit Base",
                 description: "Balanced model offering good speed and accuracy",
@@ -341,6 +318,29 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 ramUsage: 0.5,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
                 whisperKitModelName: "openai_whisper-base.en"
+            ),
+            
+            WhisperKitModel(
+                name: "whisperkit-small",
+                displayName: "WhisperKit Small",
+                description: "More accurate model with reasonable speed",
+                size: "487 MB",
+                speed: 0.70,
+                accuracy: 0.85,
+                ramUsage: 1.0,
+                supportedLanguages: allLanguages,
+                whisperKitModelName: "openai_whisper-small"
+            ),
+            WhisperKitModel(
+                name: "whisperkit-small.en",
+                displayName: "WhisperKit Small (English)",
+                description: "English-optimized small model with improved accuracy",
+                size: "487 MB",
+                speed: 0.70,
+                accuracy: 0.88,
+                ramUsage: 1.0,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
+                whisperKitModelName: "openai_whisper-small.en"
             ),
             
             WhisperKitModel(
