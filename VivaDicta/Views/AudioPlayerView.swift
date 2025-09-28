@@ -192,7 +192,7 @@ struct AudioPlayerView: View {
     @State private var playerManager = AudioPlayerManager()
     
     private var audioURL: URL? {
-        URL.documentsDirectory.appendingPathComponent(audioFileName)
+        FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
     }
     
     var body: some View {

@@ -93,10 +93,10 @@ class ParakeetTranscriptionService: TranscriptionService {
 
         // Initialize VAD manager if needed
         if vadManager == nil {
-            // VAD models are stored in documents directory
+            // VAD models are stored in parakeet models directory
             vadManager = try await VadManager(
                 config: vadConfig,
-                modelDirectory: URL.documentsDirectory
+                modelDirectory: FileManager.appDirectory(for: .parakeetModels)
             )
         }
 

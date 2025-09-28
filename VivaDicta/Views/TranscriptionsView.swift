@@ -107,7 +107,7 @@ struct TranscriptionsView: View {
             let transcription = displayedTranscriptions[index]
             
             if let audioFileName = transcription.audioFileName {
-                let audioURL = URL.documentsDirectory.appendingPathComponent(audioFileName)
+                let audioURL = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
                 try? FileManager.default.removeItem(at: audioURL)
             }
             

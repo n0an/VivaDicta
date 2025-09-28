@@ -53,7 +53,7 @@ extension WhisperLocalModel {
     }
     
     var fileURL: URL {
-        URL.documentsDirectory.appendingPathComponent(filename)
+        FileManager.appDirectory(for: .models).appendingPathComponent(filename)
     }
     
     var fileExists: Bool {

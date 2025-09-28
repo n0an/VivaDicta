@@ -105,17 +105,17 @@ class ModelDownloadManager: @unchecked Sendable {
         let progressKeyCoreML = model.name + "_coreml"
         let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
 
-        let coreMLZipPath = URL.documentsDirectory.appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc.zip")
+        let coreMLZipPath = FileManager.appDirectory(for: .models).appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc.zip")
         try coreMLData.write(to: coreMLZipPath)
 
         try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
     }
 
     private func unzipAndSetupCoreMLModel(for model: WhisperLocalModel, zipPath: URL, progressKey: String) async throws {
-        let coreMLDestination = URL.documentsDirectory.appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc")
+        let coreMLDestination = FileManager.appDirectory(for: .models).appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc")
 
         try? FileManager.default.removeItem(at: coreMLDestination)
-        try Zip.unzipFile(zipPath, destination: URL.documentsDirectory, overwrite: true, password: nil)
+        try Zip.unzipFile(zipPath, destination: FileManager.appDirectory(for: .models), overwrite: true, password: nil)
         try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
     }
 
@@ -174,7 +174,7 @@ class ModelDownloadManager: @unchecked Sendable {
             async let vadDownload = DownloadUtils.loadModels(
                 .vad,
                 modelNames: Array(ModelNames.VAD.requiredModels),
-                directory: URL.documentsDirectory
+                directory: FileManager.appDirectory(for: .parakeetModels)
             )
 
             _ = try await (asrDownload, vadDownload)
@@ -206,7 +206,7 @@ class ModelDownloadManager: @unchecked Sendable {
     // MARK: - Common Download Utilities
 
     private func downloadFileWithProgress(from url: URL, progressKey: String) async throws -> Data {
-        let destinationURL = URL.documentsDirectory.appendingPathComponent(UUID().uuidString)
+        let destinationURL = FileManager.appDirectory(for: .models).appendingPathComponent(UUID().uuidString)
 
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
             let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in

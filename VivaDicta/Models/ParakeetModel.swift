@@ -30,7 +30,7 @@ struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
 // MARK: - Download & File Management
 extension ParakeetModel {
     var modelsDirectory: URL {
-        URL.documentsDirectory.appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
+        FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
     }
 
     var isDownloaded: Bool {

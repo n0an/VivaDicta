@@ -94,7 +94,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var transcribingSpeechTask: Task<Void, Never>?
     
     var captureURL: URL {
-        URL.documentsDirectory.appendingPathComponent("recording.m4a")
+        FileManager.appDirectory(for: .audio).appendingPathComponent("recording.m4a")
     }
     
     var recordingState: RecordingState = .idle {
@@ -203,7 +203,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func stopCaptureAudio(modelContext: ModelContext) {
         resetValues()
-        let finalURL = URL.documentsDirectory.appendingPathComponent("\(UUID().uuidString).m4a")
+        let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
         do {
             try FileManager.default.moveItem(at: captureURL, to: finalURL)
             transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
