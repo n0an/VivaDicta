@@ -344,41 +344,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             
             WhisperKitModel(
-                name: "whisperkit-medium",
-                displayName: "WhisperKit Medium",
-                description: "Balanced model offering good speed and accuracy",
-                size: "1.5 GB",
-                speed: 0.85,
-                accuracy: 0.75,
-                ramUsage: 0.5,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "openai_whisper-medium"
-            ),
-            WhisperKitModel(
-                name: "whisperkit-medium.en",
-                displayName: "WhisperKit Medium",
-                description: "Balanced model offering good speed and accuracy",
-                size: "1.5 GB",
-                speed: 0.85,
-                accuracy: 0.75,
-                ramUsage: 0.5,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
-                whisperKitModelName: "openai_whisper-medium.en"
-            ),
-            
-            WhisperKitModel(
-                name: "whisperkit-large-v3-v20240930",
-                displayName: "WhisperKit Large v3",
-                description: "Most accurate WhisperKit model with state-of-the-art performance",
-                size: "1.5 GB",
-                speed: 0.80,
-                accuracy: 0.98,
-                ramUsage: 3.0,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "openai_whisper-large-v3-v20240930"
-            ),
-            
-            WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_626MB",
                 displayName: "WhisperKit Large v3 v20240930 626 MB",
                 description: "Most accurate WhisperKit model with state-of-the-art performance",
@@ -391,17 +356,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             
             WhisperKitModel(
-                name: "whisperkit-large-v3-v20240930_turbo",
-                displayName: "WhisperKit Large v3 Turbo v20240930",
-                description: "Optimized for streaming with turbo inference",
-                size: "1.5 GB",
-                speed: 0.95,
-                accuracy: 0.96,
-                ramUsage: 2.0,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo"
-            ),
-            WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_turbo_632MB",
                 displayName: "WhisperKit Large v3 Turbo v20240930 Optimized 632 MB",
                 description: "Optimized for streaming with turbo inference, optimized size 632 MB",
@@ -412,18 +366,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo_632MB"
             ),
-            
-            WhisperKitModel(
-                name: "whisperkit-distil-large-v3_turbo_600MB",
-                displayName: "WhisperKit Distill Large v3 Turbo 600 MB",
-                description: "Distilled large 3 turbo 600 MB",
-                size: "600 MB",
-                speed: 0.95,
-                accuracy: 0.96,
-                ramUsage: 2.0,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "distil-whisper_distil-large-v3_turbo_600MB"
-            )
         ]
     }
 
