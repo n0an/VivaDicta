@@ -84,7 +84,7 @@ class TranscriptionManager {
 
     public func transcribe(audioURL: URL) async throws -> String {
         guard let model = getCurrentTranscriptionModel() else {
-            throw WhisperStateError.transcriptionFailed
+            throw TranscriptionError.transcriptionFailed
         }
 
         let transcriptionService: any TranscriptionService
