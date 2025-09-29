@@ -216,40 +216,78 @@ class ModelDownloadManager: @unchecked Sendable {
             downloadProgress[model.name] = 0.0
         }
 
-        logger.notice("📥 Starting download of \(model.displayName)")
-
-        // Start progress simulation
-        let progressTask = Task { @MainActor in
-            while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
-                if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
-                    self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
-                }
-                try? await Task.sleep(for: .seconds(1))
-            }
-        }
-
-        // Ensure progress task is cancelled regardless of success or failure
-        defer {
-            progressTask.cancel()
-        }
+        logger.notice("📥 Starting download and preparation of \(model.displayName)")
 
         do {
-            // Download the model using WhisperKit's built-in downloader
-            let availableModels = try await WhisperKit.fetchAvailableModels()
+            // Initialize WhisperKit without auto-loading
+            let config = WhisperKitConfig(
+                verbose: false,
+                logLevel: .info,
+                prewarm: false,
+                load: false,
+                download: false
+            )
 
-            // Check if the model is available
-            guard availableModels.contains(model.whisperKitModelName) else {
-                throw ModelDownloadError.downloadFailed("Model \(model.whisperKitModelName) not available")
+            let whisperKit = try await WhisperKit(config)
+
+            // Check if model needs downloading
+            let documentsPath = URL.documentsDirectory
+            let modelFolder = documentsPath
+                .appendingPathComponent("huggingface")
+                .appendingPathComponent("models")
+                .appendingPathComponent("argmaxinc")
+                .appendingPathComponent("whisperkit-coreml")
+                .appendingPathComponent(model.whisperKitModelName)
+
+            if !FileManager.default.fileExists(atPath: modelFolder.path) {
+                logger.notice("📥 Downloading model: \(model.whisperKitModelName)")
+
+                // Download the model with real progress tracking
+                let downloadedFolder = try await WhisperKit.download(
+                    variant: model.whisperKitModelName,
+                    from: "argmaxinc/whisperkit-coreml",
+                    progressCallback: { @Sendable progress in
+                        let progressValue = progress.fractionCompleted * 0.7
+                        Task { @MainActor in
+                            // 70% of progress for download
+                            self.downloadProgress[model.name] = progressValue
+                        }
+                    }
+                )
+
+                whisperKit.modelFolder = downloadedFolder
+            } else {
+                whisperKit.modelFolder = modelFolder
+                await MainActor.run {
+                    self.downloadProgress[model.name] = 0.7
+                }
             }
 
-            // Initialize WhisperKit with the model to trigger download
-            _ = try await WhisperKit(model: model.whisperKitModelName)
+            // Prewarm models (critical for first-time performance)
+            logger.notice("🔥 Prewarming model: \(model.whisperKitModelName)")
+            await MainActor.run {
+                self.downloadProgress[model.name] = 0.75
+            }
+
+            try await whisperKit.prewarmModels()
+
+            await MainActor.run {
+                self.downloadProgress[model.name] = 0.9
+            }
+
+            // Load models
+            logger.notice("📚 Loading model: \(model.whisperKitModelName)")
+            try await whisperKit.loadModels()
 
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
-                logger.notice("✅ Successfully downloaded \(model.displayName)")
+                logger.notice("✅ Successfully downloaded and prepared \(model.displayName)")
             }
+
+            // Unload models after download to free memory
+            // They will be loaded again when needed for transcription
+            await whisperKit.unloadModels()
 
             try? await Task.sleep(for: .seconds(0.5))
 

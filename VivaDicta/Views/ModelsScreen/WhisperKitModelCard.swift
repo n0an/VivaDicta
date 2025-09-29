@@ -128,14 +128,32 @@ struct WhisperKitModelCard: View {
     }
 
     var progressView: some View {
-        HStack {
-            ProgressView(value: currentProgress)
-                .progressViewStyle(LinearProgressViewStyle())
-                .frame(width: 100)
-            Text("\(Int(currentProgress * 100))%")
-                .font(.caption)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                ProgressView(value: currentProgress)
+                    .progressViewStyle(LinearProgressViewStyle())
+                    .frame(width: 100)
+                Text("\(Int(currentProgress * 100))%")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(width: 30)
+            }
+            Text(progressStatusText)
+                .font(.caption2)
                 .foregroundColor(.secondary)
-                .frame(width: 30)
+        }
+    }
+
+    private var progressStatusText: String {
+        let progress = currentProgress
+        if progress < 0.7 {
+            return "Downloading..."
+        } else if progress < 0.8 {
+            return "Preparing model..."
+        } else if progress < 0.95 {
+            return "Loading model..."
+        } else {
+            return "Finalizing..."
         }
     }
 
