@@ -20,8 +20,9 @@ class WhisperKitTranscriptionService: TranscriptionService {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "WhisperKitTranscriptionService")
 
     init() {}
-
-    func loadModel(modelPath: String, progressCallback: ((Double) -> Void)? = nil) async throws {
+    
+    // Separate method for loading model without progress callback for backward compatibility
+    private func loadModel(modelPath: String) async throws {
         // If the same model is already loaded, return early
         if currentModelName == modelPath && modelState == .loaded {
             logger.notice("Model \(modelPath) already loaded, skipping reload")
@@ -72,17 +73,14 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             whisperKit.modelFolder = modelFolder
             modelState = .downloaded
-            progressCallback?(0.1)  // Model found, starting load process
 
             // Prewarm models (THIS IS THE KEY STEP!)
             logger.notice("🔥 Prewarming model: \(modelPath)")
             modelState = .prewarming
-            progressCallback?(0.3)
 
             try await whisperKit.prewarmModels()
 
             modelState = .prewarmed
-            progressCallback?(0.7)
             logger.notice("✅ Model prewarmed successfully")
 
             // Load models
@@ -92,7 +90,6 @@ class WhisperKitTranscriptionService: TranscriptionService {
             try await whisperKit.loadModels()
 
             modelState = .loaded
-            progressCallback?(1.0)
             currentModelName = modelPath
 
             logger.notice("✅ WhisperKit model loaded and ready: \(modelPath)")
@@ -104,11 +101,6 @@ class WhisperKitTranscriptionService: TranscriptionService {
             logger.error("❌ Failed to load WhisperKit model: \(error.localizedDescription)")
             throw error
         }
-    }
-
-    // Separate method for loading model without progress callback for backward compatibility
-    func loadModel(modelPath: String) async throws {
-        try await loadModel(modelPath: modelPath, progressCallback: nil)
     }
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
