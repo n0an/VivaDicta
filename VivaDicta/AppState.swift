@@ -31,18 +31,33 @@ class AppState {
 
         // Initialize TranscriptionManager with the current mode
         transcriptionManager.setCurrentMode(aiService.selectedMode)
+
+        // Preload WhisperKit model if conditions are met
+        Task {
+            await preloadWhisperKitModelIfNeeded()
+        }
     }
 
     // This method is called when AIService changes its mode
     public func handleModeChange(_ newMode: FlowMode) {
         // Update TranscriptionManager's current mode
         transcriptionManager.setCurrentMode(newMode)
+
+        // Trigger preload if the new mode uses WhisperKit
+        Task {
+            await preloadWhisperKitModelIfNeeded()
+        }
     }
 
     // This method is called when TranscriptionManager updates cloud models
     public func handleCloudModelsUpdate() {
         // Notify AIService to refresh its connected providers
         aiService.refreshConnectedProviders()
+    }
+
+    // Preload WhisperKit model on app startup or mode change
+    private func preloadWhisperKitModelIfNeeded() async {
+        await transcriptionManager.preloadWhisperKitModelIfNeeded()
     }
     
     func transcribe(audioURL: URL) async throws -> String {

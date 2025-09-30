@@ -165,4 +165,31 @@ class WhisperKitTranscriptionService: TranscriptionService {
     var currentModelState: ModelState {
         return modelState
     }
+
+    // Preload model on app startup if conditions are met
+    public func preloadModelIfNeeded(modelPath: String) async {
+        // Check if model is already downloaded
+        let modelFolder = WhisperKitModel.modelPath(for: modelPath)
+        guard FileManager.default.fileExists(atPath: modelFolder.path) else {
+            logger.notice("⏭️ Skipping preload: Model \(modelPath) not downloaded")
+            return
+        }
+
+        // Check if model is already loaded
+        if currentModelName == modelPath && modelState == .loaded {
+            logger.notice("✅ Model \(modelPath) already loaded, no preload needed")
+            return
+        }
+
+        logger.notice("🚀 Preloading WhisperKit model: \(modelPath)")
+
+        do {
+            // Load model without progress callback (background operation)
+            try await loadModel(modelPath: modelPath)
+            logger.notice("✅ Successfully preloaded WhisperKit model: \(modelPath)")
+        } catch {
+            logger.error("⚠️ Failed to preload WhisperKit model: \(error.localizedDescription)")
+            // Don't throw - preload failure is non-critical
+        }
+    }
 }
