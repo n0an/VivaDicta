@@ -9,6 +9,9 @@ import Foundation
 import WhisperKit
 import os
 
+/// Service responsible for transcribing audio using WhisperKit models.
+/// Note: This service only loads and uses already-downloaded models.
+/// Model downloading is handled by ModelDownloadManager.
 @Observable
 class WhisperKitTranscriptionService: TranscriptionService {
     private var whisperKit: WhisperKit?
@@ -62,39 +65,24 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             // Check if model exists locally
             if !FileManager.default.fileExists(atPath: modelFolder.path) {
-                logger.notice("📥 Model not found locally, downloading: \(modelPath)")
-                modelState = .downloading
-                progressCallback?(0.0)
-
-                // Download the model with progress tracking
-                // Note: We'll just log progress internally for now due to Sendable constraints
-                let downloadedFolder = try await WhisperKit.download(
-                    variant: modelPath,
-                    from: "argmaxinc/whisperkit-coreml",
-                    progressCallback: { @Sendable progress in
-                        let progressValue = progress.fractionCompleted
-                        print("WhisperKit download progress: \(progressValue * 100)%")
-                    }
-                )
-
-                whisperKit.modelFolder = downloadedFolder
-                modelState = .downloaded
-                progressCallback?(0.7)
-            } else {
-                whisperKit.modelFolder = modelFolder
-                modelState = .downloaded
-                progressCallback?(0.7)
+                logger.error("❌ Model not found at path: \(modelFolder.path)")
+                logger.error("Please download the model first using ModelDownloadManager")
+                throw TranscriptionError.modelNotDownloaded
             }
+
+            whisperKit.modelFolder = modelFolder
+            modelState = .downloaded
+            progressCallback?(0.1)  // Model found, starting load process
 
             // Prewarm models (THIS IS THE KEY STEP!)
             logger.notice("🔥 Prewarming model: \(modelPath)")
             modelState = .prewarming
-            progressCallback?(0.75)
+            progressCallback?(0.3)
 
             try await whisperKit.prewarmModels()
 
             modelState = .prewarmed
-            progressCallback?(0.9)
+            progressCallback?(0.7)
             logger.notice("✅ Model prewarmed successfully")
 
             // Load models
