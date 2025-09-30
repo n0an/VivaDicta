@@ -28,7 +28,11 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:uithub.com)",
       "Bash(vt title:*)",
-      "Read(//Users/antonnovoselov/Downloads/**)"
+      "Read(//Users/antonnovoselov/Downloads/**)",
+      "Bash(find:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git restore:*)",
+      "Bash(gh pr view:*)"
     ],
     "deny": [],
     "ask": [],
