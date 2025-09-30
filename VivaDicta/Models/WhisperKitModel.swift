@@ -35,10 +35,9 @@ struct WhisperKitModel: @MainActor TranscriptionModel, Equatable {
 // MARK: - Download & File Management
 extension WhisperKitModel {
     // WhisperKit downloads models to its own managed location
-    private var whisperKitModelsRoot: URL {
-        // WhisperKit uses ~/Documents/huggingface/models/argmaxinc/whisperkit-coreml/
-        let documentsPath = URL.documentsDirectory
-        return documentsPath
+    // WhisperKit uses ~/Documents/huggingface/models/argmaxinc/whisperkit-coreml/
+    public static var whisperKitModelsRoot: URL {
+        URL.documentsDirectory
             .appendingPathComponent("huggingface")
             .appendingPathComponent("models")
             .appendingPathComponent("argmaxinc")
@@ -46,7 +45,12 @@ extension WhisperKitModel {
     }
 
     var modelsDirectory: URL {
-        whisperKitModelsRoot.appendingPathComponent(whisperKitModelName)
+        Self.whisperKitModelsRoot.appendingPathComponent(whisperKitModelName)
+    }
+
+    /// Returns the full path to the WhisperKit model directory for a given model name
+    public static func modelPath(for modelName: String) -> URL {
+        whisperKitModelsRoot.appendingPathComponent(modelName)
     }
 
     var isDownloaded: Bool {

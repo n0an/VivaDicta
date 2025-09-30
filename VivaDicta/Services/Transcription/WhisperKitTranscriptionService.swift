@@ -55,14 +55,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
                 throw TranscriptionError.modelLoadFailed
             }
 
-            // Set model folder
-            let documentsPath = URL.documentsDirectory
-            let modelFolder = documentsPath
-                .appendingPathComponent("huggingface")
-                .appendingPathComponent("models")
-                .appendingPathComponent("argmaxinc")
-                .appendingPathComponent("whisperkit-coreml")
-                .appendingPathComponent(modelPath)
+            // Set model folder using consolidated path from WhisperKitModel
+            let modelFolder = WhisperKitModel.modelPath(for: modelPath)
 
             // Check if model exists locally
             if !FileManager.default.fileExists(atPath: modelFolder.path) {

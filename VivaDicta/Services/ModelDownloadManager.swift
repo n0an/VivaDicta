@@ -230,14 +230,8 @@ class ModelDownloadManager: @unchecked Sendable {
 
             let whisperKit = try await WhisperKit(config)
 
-            // Check if model needs downloading
-            let documentsPath = URL.documentsDirectory
-            let modelFolder = documentsPath
-                .appendingPathComponent("huggingface")
-                .appendingPathComponent("models")
-                .appendingPathComponent("argmaxinc")
-                .appendingPathComponent("whisperkit-coreml")
-                .appendingPathComponent(model.whisperKitModelName)
+            // Check if model needs downloading using consolidated path
+            let modelFolder = WhisperKitModel.modelPath(for: model.whisperKitModelName)
 
             if !FileManager.default.fileExists(atPath: modelFolder.path) {
                 logger.notice("📥 Downloading model: \(model.whisperKitModelName)")
