@@ -38,6 +38,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
         }
 
         do {
+            let totalStartTime = Date()
             logger.notice("🚀 Starting WhisperKit initialization for model: \(modelPath)")
 
             // Initialize WhisperKit without auto-loading
@@ -72,21 +73,27 @@ class WhisperKitTranscriptionService: TranscriptionService {
             logger.notice("🔥 Prewarming model: \(modelPath)")
             modelState = .prewarming
 
+            let prewarmStart = Date()
             try await whisperKit.prewarmModels()
+            let prewarmDuration = Date().timeIntervalSince(prewarmStart)
 
             modelState = .prewarmed
-            logger.notice("✅ Model prewarmed successfully")
+            logger.notice("✅ Model prewarmed successfully in \(String(format: "%.2f", prewarmDuration)) seconds")
 
             // Load models
             logger.notice("📚 Loading model: \(modelPath)")
             modelState = .loading
 
+            let loadStart = Date()
             try await whisperKit.loadModels()
+            let loadDuration = Date().timeIntervalSince(loadStart)
 
             modelState = .loaded
             currentModelName = modelPath
 
-            logger.notice("✅ WhisperKit model loaded and ready: \(modelPath)")
+            let totalDuration = Date().timeIntervalSince(totalStartTime)
+            logger.notice("✅ WhisperKit model loaded and ready in \(String(format: "%.2f", loadDuration)) seconds: \(modelPath)")
+            logger.notice("⏱️ Total initialization time: \(String(format: "%.2f", totalDuration)) seconds (prewarm: \(String(format: "%.2f", prewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s)")
 
         } catch {
             modelState = .unloaded

@@ -263,7 +263,10 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress[model.name] = 0.75
             }
 
+            let prewarmStart = Date()
             try await whisperKit.prewarmModels()
+            let prewarmDuration = Date().timeIntervalSince(prewarmStart)
+            logger.notice("✅ Model prewarmed in \(String(format: "%.2f", prewarmDuration)) seconds")
 
             await MainActor.run {
                 self.downloadProgress[model.name] = 0.9
@@ -271,12 +274,16 @@ class ModelDownloadManager: @unchecked Sendable {
 
             // Load models
             logger.notice("📚 Loading model: \(model.whisperKitModelName)")
+            let loadStart = Date()
             try await whisperKit.loadModels()
+            let loadDuration = Date().timeIntervalSince(loadStart)
+            logger.notice("✅ Model loaded in \(String(format: "%.2f", loadDuration)) seconds")
 
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
                 logger.notice("✅ Successfully downloaded and prepared \(model.displayName)")
+                logger.notice("⏱️ Preparation time: prewarm: \(String(format: "%.2f", prewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s")
             }
 
             // Unload models after download to free memory
