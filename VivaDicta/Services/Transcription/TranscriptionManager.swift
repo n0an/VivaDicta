@@ -55,6 +55,19 @@ class TranscriptionManager {
         }
     }
 
+    // WhisperKit performance metrics
+    var whisperKitPrewarmDuration: TimeInterval {
+        whisperKitTranscriptionService.lastPrewarmDuration
+    }
+
+    var whisperKitLoadDuration: TimeInterval {
+        whisperKitTranscriptionService.lastLoadDuration
+    }
+
+    var whisperKitTotalInitDuration: TimeInterval {
+        whisperKitTranscriptionService.lastTotalInitDuration
+    }
+
     init() {
         whisperPrompt = WhisperPrompt()
         localTranscriptionService = LocalTranscriptionService()
@@ -113,5 +126,26 @@ class TranscriptionManager {
         }
         let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
         return WhisperHallucinationFilter.filter(text)
+    }
+
+    // Preload WhisperKit model on app startup if conditions are met
+    public func preloadWhisperKitModelIfNeeded() async {
+        // Check if current mode uses WhisperKit
+        guard currentMode.transcriptionProvider == .whisperKit else {
+            print("📱 Preload skipped: Current mode doesn't use WhisperKit (uses \(currentMode.transcriptionProvider))")
+            return
+        }
+
+        // Check if we have a valid WhisperKit model selected
+        guard let model = getCurrentTranscriptionModel(),
+              let whisperKitModel = model as? WhisperKitModel else {
+            print("📱 Preload skipped: No valid WhisperKit model in current mode")
+            return
+        }
+
+        print("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
+
+        // Trigger preload in background
+        await whisperKitTranscriptionService.preloadModelIfNeeded(modelPath: whisperKitModel.whisperKitModelName)
     }
 }

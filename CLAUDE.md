@@ -3,9 +3,17 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 If you don't know answer - it's ok to say that you don't know. It's not necessary to please me and be very polite with me. I'm not pleased if you always agree with everything I'm saying. I'm pleased when you provide correct answers, even if I don't like these answers.
 
+## Git Commit & PR Guidelines
+- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
+- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
+- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
+
 # VivaDicta iOS Codebase
 
 VivaDicta is an iOS voice transcription app that uses local Whisper.cpp models and cloud-based transcription services. The app records audio, transcribes it using AI models, and stores transcriptions with SwiftData for persistent storage.
+
+# Code style
+Use private for functions and proverties that called only from the same entity (struct, enum, class). Use public for functions and properties that called from other entities.
 
 ## Build Commands
 
