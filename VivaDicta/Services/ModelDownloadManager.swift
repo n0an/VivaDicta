@@ -257,10 +257,22 @@ class ModelDownloadManager: @unchecked Sendable {
                 }
             }
 
-            // Prewarm models (critical for first-time performance)
+            // Prewarm models with animated progress (critical for first-time performance)
             logger.notice("🔥 Prewarming model: \(model.whisperKitModelName)")
             await MainActor.run {
                 self.downloadProgress[model.name] = 0.75
+            }
+
+            // Start progress animation for pre-warming phase
+            let progressTask = Task { @MainActor in
+                logger.notice("📊 Starting pre-warm progress animation from 75% to 90%")
+                await self.animateProgressExponentially(
+                    for: model.name,
+                    from: 0.75,
+                    to: 0.9,
+                    maxDuration: 240.0 // 4 minutes max
+                )
+                logger.notice("📊 Pre-warm progress animation completed or cancelled")
             }
 
             let prewarmStart = Date()
@@ -268,17 +280,32 @@ class ModelDownloadManager: @unchecked Sendable {
             let prewarmDuration = Date().timeIntervalSince(prewarmStart)
             logger.notice("✅ Model prewarmed in \(String(format: "%.2f", prewarmDuration)) seconds")
 
+            // Cancel the animation task and set final progress
+            progressTask.cancel()
             await MainActor.run {
                 self.downloadProgress[model.name] = 0.9
             }
 
-            // Load models
+            // Load models with animated progress
             logger.notice("📚 Loading model: \(model.whisperKitModelName)")
+
+            // Start progress animation for loading phase
+            let loadProgressTask = Task {
+                await self.animateProgressExponentially(
+                    for: model.name,
+                    from: 0.9,
+                    to: 0.99,
+                    maxDuration: 60.0 // 1 minute max for loading
+                )
+            }
+
             let loadStart = Date()
             try await whisperKit.loadModels()
             let loadDuration = Date().timeIntervalSince(loadStart)
             logger.notice("✅ Model loaded in \(String(format: "%.2f", loadDuration)) seconds")
 
+            // Cancel the animation task and set final progress
+            loadProgressTask.cancel()
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
@@ -305,6 +332,52 @@ class ModelDownloadManager: @unchecked Sendable {
 
             logger.error("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
+        }
+    }
+
+    // MARK: - Progress Animation
+
+    /// Animates progress exponentially from current value to target value over a maximum duration
+    /// Uses exponential decay function for smooth, natural-looking progress animation
+    private func animateProgressExponentially(
+        for modelName: String,
+        from initialProgress: Float,
+        to targetProgress: Float,
+        maxDuration: TimeInterval
+    ) async {
+        // Calculate decay constant for exponential approach to target
+        // We want to reach ~99% of the target progress range in maxDuration
+        let progressRange = targetProgress - initialProgress
+        let decayConstant = -log(0.01) / Float(maxDuration) // -log(0.01) ≈ 4.605
+        let startTime = Date()
+
+        logger.debug("🎯 Starting progress animation: \(initialProgress) -> \(targetProgress) over \(maxDuration)s")
+        var updateCount = 0
+
+        while !Task.isCancelled {
+            let elapsedTime = Date().timeIntervalSince(startTime)
+
+            // Calculate progress using exponential decay
+            // This ensures smooth, continuous progress that asymptotically approaches target
+            let decayFactor = exp(-decayConstant * Float(elapsedTime))
+            let currentProgress = initialProgress + progressRange * (1 - decayFactor)
+
+            await MainActor.run {
+                self.downloadProgress[modelName] = Double(currentProgress)
+                updateCount += 1
+                if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
+                    logger.debug("📊 Progress update #\(updateCount): \(String(format: "%.1f", currentProgress * 100))%")
+                }
+            }
+
+            // Stop when we're close enough to target or time limit exceeded
+            if currentProgress >= targetProgress - 0.001 || elapsedTime >= maxDuration {
+                logger.debug("🏁 Animation ended: final progress \(String(format: "%.1f", currentProgress * 100))%")
+                break
+            }
+
+            // Update every 0.5 seconds for smooth animation
+            try? await Task.sleep(for: .milliseconds(500))
         }
     }
 

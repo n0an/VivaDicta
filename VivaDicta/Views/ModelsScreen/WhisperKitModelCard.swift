@@ -147,9 +147,11 @@ struct WhisperKitModelCard: View {
     private var progressStatusText: String {
         let progress = currentProgress
         if progress < 0.7 {
-            return "Downloading..."
-        } else if progress < 0.8 {
+            return "Downloading model files..."
+        } else if progress < 0.75 {
             return "Preparing model..."
+        } else if progress < 0.9 {
+            return "Optimizing for first-time use (this may take a few minutes)..."
         } else if progress < 0.95 {
             return "Loading model..."
         } else {
