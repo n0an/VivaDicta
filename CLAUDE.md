@@ -7,6 +7,9 @@ If you don't know answer - it's ok to say that you don't know. It's not necessar
 
 VivaDicta is an iOS voice transcription app that uses local Whisper.cpp models and cloud-based transcription services. The app records audio, transcribes it using AI models, and stores transcriptions with SwiftData for persistent storage.
 
+# Code style
+Use private for functions and proverties that called only from the same entity (struct, enum, class). Use public for functions and properties that called from other entities.
+
 ## Build Commands
 
 Use the following commands to build, run and test the app:
