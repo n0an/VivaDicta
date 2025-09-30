@@ -19,6 +19,11 @@ class WhisperKitTranscriptionService: TranscriptionService {
     private var modelState: ModelState = .unloaded
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "WhisperKitTranscriptionService")
 
+    // Public properties for UI display
+    public var lastPrewarmDuration: TimeInterval = 0
+    public var lastLoadDuration: TimeInterval = 0
+    public var lastTotalInitDuration: TimeInterval = 0
+
     init() {}
     
     // Separate method for loading model without progress callback for backward compatibility
@@ -76,6 +81,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
             let prewarmStart = Date()
             try await whisperKit.prewarmModels()
             let prewarmDuration = Date().timeIntervalSince(prewarmStart)
+            lastPrewarmDuration = prewarmDuration
 
             modelState = .prewarmed
             logger.notice("✅ Model prewarmed successfully in \(String(format: "%.2f", prewarmDuration)) seconds")
@@ -87,13 +93,15 @@ class WhisperKitTranscriptionService: TranscriptionService {
             let loadStart = Date()
             try await whisperKit.loadModels()
             let loadDuration = Date().timeIntervalSince(loadStart)
+            lastLoadDuration = loadDuration
 
             modelState = .loaded
             currentModelName = modelPath
 
             let totalDuration = Date().timeIntervalSince(totalStartTime)
+            lastTotalInitDuration = totalDuration
             logger.notice("✅ WhisperKit model loaded and ready in \(String(format: "%.2f", loadDuration)) seconds: \(modelPath)")
-            logger.notice("⏱️ Total initialization time: \(String(format: "%.2f", totalDuration)) seconds (prewarm: \(String(format: "%.2f", prewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s)")
+            logger.notice("⏱️ Total initialization time: \(String(format: "%.2f", totalDuration)) seconds (prewarm: \(String(format: "%.2f", self.lastPrewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s)")
 
         } catch {
             modelState = .unloaded

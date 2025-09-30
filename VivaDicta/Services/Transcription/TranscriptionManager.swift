@@ -55,6 +55,19 @@ class TranscriptionManager {
         }
     }
 
+    // WhisperKit performance metrics
+    var whisperKitPrewarmDuration: TimeInterval {
+        whisperKitTranscriptionService.lastPrewarmDuration
+    }
+
+    var whisperKitLoadDuration: TimeInterval {
+        whisperKitTranscriptionService.lastLoadDuration
+    }
+
+    var whisperKitTotalInitDuration: TimeInterval {
+        whisperKitTranscriptionService.lastTotalInitDuration
+    }
+
     init() {
         whisperPrompt = WhisperPrompt()
         localTranscriptionService = LocalTranscriptionService()

@@ -34,6 +34,7 @@ struct RecordView: View {
     var modelSelectedView: some View {
         VStack(spacing: 16) {
             modePicker
+            whisperKitPerformanceInfo
             Spacer()
             SiriWaveView(power: $vm.audioPower)
                 .opacity(vm.siriWaveFormOpacity)
@@ -140,6 +141,44 @@ struct RecordView: View {
         }
         .padding(.horizontal)
         .padding(.top)
+    }
+
+    @ViewBuilder
+    var whisperKitPerformanceInfo: some View {
+        // Only show if current model is WhisperKit and we have prewarm time
+        if let currentModel = vm.transcriptionManager.getCurrentTranscriptionModel(),
+           currentModel.provider == .whisperKit,
+           vm.transcriptionManager.whisperKitPrewarmDuration > 0 {
+            VStack(spacing: 4) {
+                Text("WhisperKit Performance")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack {
+                    Text("Prewarm: \(String(format: "%.2fs", vm.transcriptionManager.whisperKitPrewarmDuration))")
+                        .font(.caption2)
+                        .foregroundStyle(.green)
+
+                    Text("•")
+                        .foregroundStyle(.secondary)
+
+                    Text("Load: \(String(format: "%.2fs", vm.transcriptionManager.whisperKitLoadDuration))")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+
+                    Text("•")
+                        .foregroundStyle(.secondary)
+
+                    Text("Total: \(String(format: "%.2fs", vm.transcriptionManager.whisperKitTotalInitDuration))")
+                        .font(.caption2)
+                        .foregroundStyle(.primary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(RoundedRectangle(cornerRadius: 8).fill(.ultraThinMaterial))
+            }
+            .padding(.horizontal)
+        }
     }
 }
 
