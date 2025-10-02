@@ -8,7 +8,7 @@
 import UIKit
 import KeyboardKit
 import SwiftUI
-import OSLog
+import os
 
 class KeyboardViewController: KeyboardInputViewController {
 
@@ -16,6 +16,9 @@ class KeyboardViewController: KeyboardInputViewController {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
     private let appGroupId = "group.com.antonnovoselov.VivaDicta"
     private var transcriptionObserver: Timer?
+    private let appStateDetector = AppStateDetector()
+    private var appStateTimer: Timer?
+    private var appStateViewModel = AppStateViewModel()
 
     // MARK: - View Lifecycle
 
@@ -38,9 +41,12 @@ class KeyboardViewController: KeyboardInputViewController {
     override func viewWillSetupKeyboardView() {
         super.viewWillSetupKeyboardView()
 
+        // Check initial app state
+        updateAppState()
+
         // Setup the keyboard view with custom toolbar
         setupKeyboardView { [weak self] controller in
-            
+
             VStack(spacing: 0) {
                 KeyboardView(
                     state: controller.state,
@@ -51,6 +57,7 @@ class KeyboardViewController: KeyboardInputViewController {
                     emojiKeyboard: { $0.view },
                     toolbar: { params in
                         RecordingToolbar(
+                            isMainAppActive: self?.appStateViewModel.isMainAppActive ?? false,
                             onRecordTapped: {
                                 self?.handleRecordButtonTap()
                             }
@@ -58,19 +65,59 @@ class KeyboardViewController: KeyboardInputViewController {
                     }
                 )
             }
-            
-            
         }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        // Start monitoring app state periodically
+        startAppStateMonitoring()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
+        // Stop monitoring app state
+        stopAppStateMonitoring()
+    }
+
+    // MARK: - App State Monitoring
+
+    private func startAppStateMonitoring() {
+        // Stop any existing timer
+        stopAppStateMonitoring()
+
+        // Check state immediately
+        updateAppState()
+
+        // Set up periodic monitoring (every 5 seconds matches heartbeat interval)
+        appStateTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateAppState()
+            }
+        }
+
+        logger.info("🔍 Started app state monitoring")
+    }
+
+    private func stopAppStateMonitoring() {
+        appStateTimer?.invalidate()
+        appStateTimer = nil
+        logger.info("🔍 Stopped app state monitoring")
+    }
+
+    private func updateAppState() {
+        let previousState = appStateViewModel.isMainAppActive
+        let newState = appStateDetector.isMainAppActive()
+
+        Task { @MainActor in
+            self.appStateViewModel.isMainAppActive = newState
+
+            if previousState != newState {
+                self.logger.info("📱 App state changed: \(newState ? "ACTIVE ✅" : "SUSPENDED ⏸️")")
+            }
+        }
     }
 
     // MARK: - Recording
@@ -90,7 +137,24 @@ class KeyboardViewController: KeyboardInputViewController {
             textDocumentProxy.insertText("[Please enable 'Allow Full Access' for VivaDicta Keyboard in Settings] ")
             return
         }
-        
+
+        // Check current app state
+        let appState = appStateDetector.detectAppState()
+        logger.info("🎤 Current app state: \(appState == .active ? "ACTIVE" : "SUSPENDED")")
+
+        if appState == .suspended {
+            // App is suspended - open it via URL scheme
+            logger.info("🎤 App is suspended, opening via URL scheme")
+            openMainAppViaURLScheme()
+        } else {
+            // App is active - will send Darwin notification (placeholder for now)
+            logger.info("🎤 App is active, ready for Darwin notification (not implemented yet)")
+            // TODO: Send Darwin notification to start recording
+            textDocumentProxy.insertText("[App is active - Darwin notification will be sent here] ")
+        }
+    }
+
+    private func openMainAppViaURLScheme() {
         // Open main app with recording intent
         let url = URL(string: "vivadicta://record-for-keyboard")!
         logger.info("🎤 Opening URL: \(url.absoluteString)")
@@ -122,7 +186,9 @@ class KeyboardViewController: KeyboardInputViewController {
                         self?.logger.info("🎤 ✅ Successfully opened main app via UIApplication.open")
                     } else {
                         self?.logger.error("🎤 ❌ UIApplication.open failed")
-                        self?.openURLViaResponderChain(url)
+                        Task { @MainActor in
+                            self?.openURLViaResponderChain(url)
+                        }
                     }
                 }
                 return
@@ -167,6 +233,7 @@ class KeyboardViewController: KeyboardInputViewController {
 
 
 
+@MainActor
 struct URLOpener {
   let responder: UIResponder
 
