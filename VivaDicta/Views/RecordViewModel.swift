@@ -59,9 +59,7 @@ enum RecordError: LocalizedError, Equatable {
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
-    #if !os(macOS)
-    var recordingSession = AVAudioSession.sharedInstance()
-    #endif
+    private let sessionManager = AudioSessionManager.shared
 
     var animationTimer: Timer?
 
@@ -116,20 +114,23 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     private func setupAudioSession() async throws -> Bool {
         #if !os(macOS)
-        do {
-            #if os(iOS)
-            try recordingSession.setCategory(.playAndRecord, options: .defaultToSpeaker)
-            #endif
-            try recordingSession.setActive(true)
-
-            return await withCheckedContinuation { continuation in
-                AVAudioApplication.requestRecordPermission { allowed in
-                    continuation.resume(returning: allowed)
-                }
+        // Check microphone permission first
+        let hasPermission = await withCheckedContinuation { continuation in
+            AVAudioApplication.requestRecordPermission { allowed in
+                continuation.resume(returning: allowed)
             }
-        } catch {
-            throw RecordError.other
         }
+
+        if hasPermission {
+            // Use AudioSessionManager to activate session
+            do {
+                try sessionManager.activateSessionForRecording()
+            } catch {
+                throw RecordError.other
+            }
+        }
+
+        return hasPermission
         #else
         return true
         #endif
@@ -138,17 +139,22 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func startCaptureAudio() {
         Task { @MainActor in
-            do {
-                let hasPermission = try await setupAudioSession()
+            // If session is already active, extend the timeout instead of reactivating
+            if sessionManager.isSessionActive {
+                sessionManager.extendTimeout()
+            } else {
+                do {
+                    let hasPermission = try await setupAudioSession()
 
-                if !hasPermission {
-                    recordError = .userDenied
-                    isShowingAlert = true
+                    if !hasPermission {
+                        recordError = .userDenied
+                        isShowingAlert = true
+                        return
+                    }
+                } catch {
+                    recordingState = .error(.other)
                     return
                 }
-            } catch {
-                recordingState = .error(.other)
-                return
             }
 
             resetValues()
@@ -203,6 +209,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func stopCaptureAudio(modelContext: ModelContext) {
         resetValues()
+
+        // Schedule session deactivation after recording stops
+        sessionManager.scheduleDeactivation()
+
         let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
         do {
             try FileManager.default.moveItem(at: captureURL, to: finalURL)
@@ -313,6 +323,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcribingSpeechTask = nil
         resetValues()
         recordingState = .idle
+
+        // Schedule session deactivation when cancelling
+        sessionManager.scheduleDeactivation()
     }
     
     func resetValues() {
