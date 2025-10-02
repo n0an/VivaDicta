@@ -23,4 +23,11 @@ actor Constants {
     static let kSelectedAIModel = "selectedAIModel"
     static let kSelectedAIMode = "selectedAIMode"
     static let kOpenRouterModels = "openRouterModels"
+
+    // MARK: - App Groups & Keyboard Extension
+    static let appGroupId = "group.com.antonnovoselov.VivaDicta"
+    static let heartbeatKey = "appLastHeartbeat"
+    static let isMainAppActiveKey = "isMainAppActive"
+    static let heartbeatInterval: TimeInterval = 5.0
+    static let heartbeatThreshold: TimeInterval = 10.0  // Consider app active if heartbeat is within 10 seconds
 }

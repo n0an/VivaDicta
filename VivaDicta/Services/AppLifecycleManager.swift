@@ -12,14 +12,6 @@ import os
 /// Manages app lifecycle state and provides heartbeat updates for the keyboard extension
 class AppLifecycleManager {
 
-    // MARK: - Constants
-    private enum Constants {
-        static let heartbeatInterval: TimeInterval = 5.0
-        static let appGroupId = "group.com.antonnovoselov.VivaDicta"
-        static let heartbeatKey = "appLastHeartbeat"
-        static let isActiveKey = "isMainAppActive"
-    }
-
     // MARK: - Properties
     private var heartbeatTimer: Timer?
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppLifecycleManager")
@@ -130,7 +122,7 @@ class AppLifecycleManager {
     }
 
     private func updateAppActiveState(_ isActive: Bool) {
-        sharedDefaults?.set(isActive, forKey: Constants.isActiveKey)
+        sharedDefaults?.set(isActive, forKey: Constants.isMainAppActiveKey)
         sharedDefaults?.synchronize()
 
         logger.info("📱 App active state updated: \(isActive)")

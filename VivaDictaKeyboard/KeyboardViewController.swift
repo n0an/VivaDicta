@@ -14,7 +14,6 @@ class KeyboardViewController: KeyboardInputViewController {
 
     // MARK: - Properties
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
-    private let appGroupId = "group.com.antonnovoselov.VivaDicta"
     private var transcriptionObserver: Timer?
     private let appStateDetector = AppStateDetector()
     private var appStateTimer: Timer?
@@ -28,7 +27,7 @@ class KeyboardViewController: KeyboardInputViewController {
         // Create keyboard app configuration
         let keyboardApp = KeyboardApp(
             name: "VivaDicta Keyboard",
-            appGroupId: appGroupId,
+            appGroupId: Constants.appGroupId,
             deepLinks: .init(app: "vivadicta://")
         )
 

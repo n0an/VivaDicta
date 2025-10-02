@@ -17,14 +17,6 @@ class AppStateDetector {
         case active        // App is not suspended and ready to receive Darwin notifications
     }
 
-    // MARK: - Constants
-    private enum Constants {
-        static let appGroupId = "group.com.antonnovoselov.VivaDicta"
-        static let heartbeatKey = "appLastHeartbeat"
-        static let isActiveKey = "isMainAppActive"
-        static let heartbeatThreshold: TimeInterval = 10.0  // Consider app active if heartbeat is within 10 seconds
-    }
-
     // MARK: - Properties
     private let sharedDefaults: UserDefaults?
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppStateDetector")
