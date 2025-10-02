@@ -75,11 +75,21 @@
 			);
 			target = 18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */;
 		};
+		18E1C3DD2E8E776C00BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDicta" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		181D04D92E3E55E400D357A6 /* VivaDicta */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				18E1C3DD2E8E776C00BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDicta" target */,
+			);
 			path = VivaDicta;
 			sourceTree = "<group>";
 		};
@@ -484,6 +494,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VivaDicta/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to record your voice note";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -520,6 +531,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VivaDicta/Info.plist;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to record your voice note";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
