@@ -14,31 +14,41 @@ struct VivaDictaLiveActivity: Widget {
         ActivityConfiguration(for: VivaDictaLiveActivityAttributes.self) { context in
             // Lock screen/banner UI goes here
             VStack {
-                Text("Hello \(context.state.emoji)")
+                Spacer()
+                HStack {
+                    Spacer()
+                    Text("VivaDicta")
+                        .foregroundStyle(.black)
+                    
+                    Image(systemName: "microphone.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundStyle(.indigo)
+                    
+                    Spacer()
+                }
+                Spacer()
             }
-            .activityBackgroundTint(Color.cyan)
+            .padding()
+            .activityBackgroundTint(Color.yellow)
             .activitySystemActionForegroundColor(Color.black)
 
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI goes here.  Compose the expanded UI through
-                // various regions, like leading/trailing/center/bottom
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("Leading")
+                    Text("VivaDicta")
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("Trailing")
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    Text("Bottom \(context.state.emoji)")
-                    // more content
+                    Image(systemName: "microphone.badge.plus.fill")
+                        .foregroundStyle(.cyan)
                 }
             } compactLeading: {
-                Text("L")
+                EmptyView()
             } compactTrailing: {
-                Text("T \(context.state.emoji)")
+                Image(systemName: "microphone.and.signal.meter")
+                    .foregroundStyle(.purple)
             } minimal: {
-                Text(context.state.emoji)
+                Image(systemName: "microphone.square.fill")
+                    .foregroundStyle(.green)
             }
             .widgetURL(URL(string: "http://www.apple.com"))
             .keylineTint(Color.red)
