@@ -12,6 +12,7 @@ import SwiftUI
 class AppState {
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
+    var audioSessionManager = AudioSessionManager.shared
 
     var selectedTab: TabTag = .record
     var shouldNavigateToModels: Bool = false
