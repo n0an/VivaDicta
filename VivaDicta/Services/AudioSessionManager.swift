@@ -8,6 +8,7 @@
 
 import Foundation
 import AVFoundation
+import SwiftUI
 import os
 
 @MainActor @Observable
@@ -18,8 +19,17 @@ final class AudioSessionManager {
     var timeoutRemaining: TimeInterval = 0
 
     private var deactivationTimer: Timer?
-    private let audioSessionTimeout: Int = 90 // Default 90 seconds timeout
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioSessionManager")
+
+    // Use computed property to access UserDefaults
+    var audioSessionTimeout: Int {
+        get {
+            UserDefaults.standard.object(forKey: "audioSessionTimeout") as? Int ?? 180 // Default 3 minutes
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "audioSessionTimeout")
+        }
+    }
 
     private init() {}
 
