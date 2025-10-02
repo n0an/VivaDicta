@@ -52,24 +52,37 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Setup the keyboard view with custom toolbar
         setupKeyboardView { [weak self] controller in
-            VivaDictaKeyboardView(
-                controller: controller,
-                appGroupId: self?.appGroupId ?? "",
-                onRecordTapped: { [weak self] in
-                    self?.handleRecordButtonTap()
-                }
-            )
+            
+            VStack(spacing: 0) {
+                KeyboardView(
+                    state: controller.state,
+                    services: controller.services,
+                    buttonContent: { $0.view },
+                    buttonView: { $0.view },
+                    collapsedView: { $0.view },
+                    emojiKeyboard: { $0.view },
+                    toolbar: { params in
+                        RecordingToolbar(
+                            onRecordTapped: {
+                                self?.handleRecordButtonTap()
+                            }
+                        )
+                    }
+                )
+            }
+            
+            
         }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        startMonitoringTranscriptions()
+
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        stopMonitoringTranscriptions()
+
     }
 
     // MARK: - Recording
@@ -92,7 +105,7 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Quick App Group verification
         if let sharedDefaults = UserDefaults(suiteName: appGroupId) {
-            logger.info("🔍 App Group check - Can read main app test: \(sharedDefaults.string(forKey: "main_app_test") ?? "not found")")
+            logger.info("🔍 App Group check - Can read main app test: \(sharedDefaults.string(forKey: "main_app_test") ?? "not found", privacy: .public)")
         } else {
             logger.error("🎤 ❌ ERROR: Cannot access App Group")
         }
@@ -107,7 +120,7 @@ class KeyboardViewController: KeyboardInputViewController {
                 self?.logger.info("🎤 ✅ Successfully opened main app via extensionContext")
             } else {
                 self?.logger.info("🎤 ⚠️ extensionContext.open failed, trying alternative methods...")
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self?.tryAlternativeURLOpening(url)
                 }
             }
@@ -119,7 +132,7 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Method 2: Try UIApplication directly via key-value coding
         if let sharedApp = UIApplication.value(forKeyPath: "sharedApplication") as? UIApplication {
-            logger.info("🎤 Found UIApplication via KVC")
+            logger.info("🎤 Found UIApplication using sharedApplication")
 
             if sharedApp.canOpenURL(url) {
                 logger.info("🎤 canOpenURL returned true")
@@ -136,7 +149,7 @@ class KeyboardViewController: KeyboardInputViewController {
                 logger.warning("🎤 ⚠️ canOpenURL returned false")
             }
         } else {
-            logger.info("🎤 Could not get UIApplication via KVC")
+            logger.info("🎤 Could not get UIApplication via sharedApplication")
         }
 
         // Fallback to responder chain method
@@ -163,82 +176,10 @@ class KeyboardViewController: KeyboardInputViewController {
             logger.error("🎤 ❌ All URL opening methods failed")
 
             // Show error message to user
-            DispatchQueue.main.async { [weak self] in
-                self?.textDocumentProxy.insertText("[Unable to open VivaDicta. Please open the app manually] ")
+            Task { @MainActor in
+                textDocumentProxy.insertText("[Unable to open VivaDicta. Please open the app manually] ")
             }
         }
     }
 
-    // MARK: - Transcription Monitoring
-
-    private func startMonitoringTranscriptions() {
-        logger.info("👁️ Starting transcription monitoring")
-        // Check for new transcriptions every 0.5 seconds
-        transcriptionObserver = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            self?.checkForNewTranscription()
-        }
-    }
-
-    private func stopMonitoringTranscriptions() {
-        logger.info("👁️ Stopping transcription monitoring")
-        transcriptionObserver?.invalidate()
-        transcriptionObserver = nil
-    }
-
-    private func checkForNewTranscription() {
-        guard let sharedDefaults = UserDefaults(suiteName: appGroupId) else {
-            logger.error("👁️ ERROR: Could not access App Group UserDefaults")
-            return
-        }
-
-        if let transcribedText = sharedDefaults.string(forKey: "lastTranscribedText"),
-           !transcribedText.isEmpty {
-            logger.info("👁️ Found transcribed text: \(String(transcribedText.prefix(50)), privacy: .public)...")
-
-            // Insert the transcribed text
-            textDocumentProxy.insertText(transcribedText)
-            logger.info("👁️ Inserted text to document proxy")
-
-            // Clear the shared text
-            sharedDefaults.removeObject(forKey: "lastTranscribedText")
-            sharedDefaults.synchronize()
-            logger.info("👁️ Cleared transcribed text from App Group")
-        }
-    }
-}
-
-// MARK: - Custom Keyboard View
-
-struct VivaDictaKeyboardView: View {
-    let controller: KeyboardController
-    let appGroupId: String
-    let onRecordTapped: () -> Void
-
-    @State private var isRecording = false
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Custom recording toolbar
-            RecordingToolbar(
-                isRecording: $isRecording,
-                onRecordTapped: {
-                    onRecordTapped()
-                    isRecording = true
-                     
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(2))
-                        isRecording = false
-                    }
-                }
-            )
-//            .frame(height: 44)
-            .background(Color(UIColor.systemGray6))
-            
-            // Standard keyboard view
-            KeyboardView(
-                state: controller.state,
-                services: controller.services
-            )
-        }
-    }
 }

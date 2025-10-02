@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct RecordingToolbar: View {
-    @Binding var isRecording: Bool
     let onRecordTapped: () -> Void
 
     var body: some View {
@@ -19,11 +18,11 @@ struct RecordingToolbar: View {
             // Record button
             Button(action: onRecordTapped) {
                 HStack(spacing: 8) {
-                    Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                    Image(systemName: "mic.circle.fill")
                         .font(.system(size: 24))
-                        .foregroundStyle(isRecording ? Color.red : Color.blue)
+                        .foregroundStyle(Color.blue)
 
-                    Text(isRecording ? "Recording..." : "Record")
+                    Text("Record")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(Color.primary)
                 }
@@ -35,32 +34,12 @@ struct RecordingToolbar: View {
                         .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
                 )
             }
-            .disabled(isRecording)
 
             // Right spacer
             Spacer()
         }
         .padding(.horizontal)
-        .animation(.easeInOut(duration: 0.2), value: isRecording)
     }
 }
 
-// MARK: - Preview
 
-struct RecordingToolbar_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack {
-            RecordingToolbar(isRecording: .constant(false)) {
-                // Preview action
-            }
-            .frame(height: 44)
-            .background(Color(UIColor.systemGray6))
-
-            RecordingToolbar(isRecording: .constant(true)) {
-                // Preview action
-            }
-            .frame(height: 44)
-            .background(Color(UIColor.systemGray6))
-        }
-    }
-}
