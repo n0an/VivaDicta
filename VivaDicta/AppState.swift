@@ -12,11 +12,11 @@ import ActivityKit
 @Observable
 class AppState {
     var liveActivity: Activity<VivaDictaLiveActivityAttributes>? = nil
-
     
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
     var audioSessionManager = AudioSessionManager.shared
+    private let lifecycleManager = AppLifecycleManager.shared
 
     var selectedTab: TabTag = .record
     var shouldNavigateToModels: Bool = false
@@ -36,6 +36,9 @@ class AppState {
 
         // Initialize TranscriptionManager with the current mode
         transcriptionManager.setCurrentMode(aiService.selectedMode)
+
+        // Start app lifecycle tracking
+        lifecycleManager.startTracking()
 
         // Preload WhisperKit model if conditions are met
         Task {
@@ -72,14 +75,16 @@ class AppState {
     
     
     func startLiveActivity() {
-        
+        // Ensure lifecycle tracking is active when launched from keyboard
+        lifecycleManager.startTracking()
+
         let attributes = VivaDictaLiveActivityAttributes(name: "testName")
         do {
-            
+
             let activityContent = ActivityContent(state: VivaDictaLiveActivityAttributes.ContentState(emoji: "smile"), staleDate: .now.addingTimeInterval(60))
-            
+
             liveActivity = try Activity.request(attributes: attributes, content: activityContent)
-            
+
         } catch {
             print(error.localizedDescription)
         }
