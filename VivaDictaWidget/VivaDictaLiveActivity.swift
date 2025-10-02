@@ -56,21 +56,6 @@ struct VivaDictaLiveActivity: Widget {
     }
 }
 
-extension VivaDictaLiveActivityAttributes {
-    fileprivate static var preview: VivaDictaLiveActivityAttributes {
-        VivaDictaLiveActivityAttributes(name: "World")
-    }
-}
-
-extension VivaDictaLiveActivityAttributes.ContentState {
-    fileprivate static var smiley: VivaDictaLiveActivityAttributes.ContentState {
-        VivaDictaLiveActivityAttributes.ContentState(emoji: "😀")
-     }
-     
-     fileprivate static var starEyes: VivaDictaLiveActivityAttributes.ContentState {
-         VivaDictaLiveActivityAttributes.ContentState(emoji: "🤩")
-     }
-}
 
 #Preview("Notification", as: .content, using: VivaDictaLiveActivityAttributes.preview) {
    VivaDictaLiveActivity()
