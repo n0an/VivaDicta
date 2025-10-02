@@ -14,6 +14,7 @@ struct SettingsView: View {
     
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
+    @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -90,6 +91,28 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsDestination.promptsSettings) {
                         Text("LLM Prompts")
                     }
+                }
+
+                Section("Audio") {
+                    Picker("Session Timeout", selection: $audioSessionTimeout) {
+                        Text("Immediate").tag(0)
+                        Text("15 seconds").tag(15)
+                        Text("30 seconds").tag(30)
+                        Text("60 seconds").tag(60)
+                        Text("90 seconds").tag(90)
+                        Text("2 minutes").tag(120)
+                        Text("3 minutes").tag(180)
+                        Text("5 minutes").tag(300)
+                        Text("15 minutes").tag(900)
+                        Text("30 minutes").tag(1800)
+                        Text("1 hour").tag(3600)
+                    }
+                    .pickerStyle(.menu)
+                    .tint(.primary)
+
+                    Text("Keep microphone session active after recording stops to prevent activation errors during consecutive recordings.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationDestination(for: FlowMode.self) { mode in
