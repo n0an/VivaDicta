@@ -21,19 +21,7 @@ class KeyboardViewController: KeyboardInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Test App Group access
-        if let sharedDefaults = UserDefaults(suiteName: appGroupId) {
-            sharedDefaults.set("test_from_keyboard", forKey: "app_group_test")
-            sharedDefaults.set(Date().timeIntervalSince1970, forKey: "keyboard_test_timestamp")
-            sharedDefaults.synchronize()
-            logger.info("✅ App Group test write successful")
-            logger.info("✅ Written test value: test_from_keyboard")
-            logger.info("✅ Can read back: \(sharedDefaults.string(forKey: "app_group_test") ?? "nil", privacy: .public)")
-        } else {
-            logger.error("❌ ERROR: Cannot access App Group: \(self.appGroupId)")
-        }
-
+        
         // Create keyboard app configuration
         let keyboardApp = KeyboardApp(
             name: "VivaDicta Keyboard",
@@ -102,14 +90,7 @@ class KeyboardViewController: KeyboardInputViewController {
             textDocumentProxy.insertText("[Please enable 'Allow Full Access' for VivaDicta Keyboard in Settings] ")
             return
         }
-
-        // Quick App Group verification
-        if let sharedDefaults = UserDefaults(suiteName: appGroupId) {
-            logger.info("🔍 App Group check - Can read main app test: \(sharedDefaults.string(forKey: "main_app_test") ?? "not found", privacy: .public)")
-        } else {
-            logger.error("🎤 ❌ ERROR: Cannot access App Group")
-        }
-
+        
         // Open main app with recording intent
         let url = URL(string: "vivadicta://record-for-keyboard")!
         logger.info("🎤 Opening URL: \(url.absoluteString)")
