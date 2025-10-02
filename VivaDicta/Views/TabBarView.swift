@@ -9,7 +9,7 @@ import SwiftUI
 import TipKit
 
 struct TabBarView: View {
-    @State var appState = AppState()
+    @Bindable var appState: AppState
     
     var body: some View {
         let _ = Self._printChanges()
@@ -41,5 +41,6 @@ struct TabBarView: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    TabBarView()
+    @State @Previewable var appState = AppState()
+    TabBarView(appState: appState)
 }

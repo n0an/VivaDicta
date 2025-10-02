@@ -7,9 +7,13 @@
 
 import Foundation
 import SwiftUI
+import ActivityKit
 
 @Observable
 class AppState {
+    var liveActivity: Activity<VivaDictaLiveActivityAttributes>? = nil
+
+    
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
     var audioSessionManager = AudioSessionManager.shared
@@ -63,6 +67,22 @@ class AppState {
     
     func transcribe(audioURL: URL) async throws -> String {
         return try await transcriptionManager.transcribe(audioURL: audioURL)
+    }
+    
+    
+    
+    func startLiveActivity() {
+        
+        let attributes = VivaDictaLiveActivityAttributes(name: "testName")
+        do {
+            
+            let activityContent = ActivityContent(state: VivaDictaLiveActivityAttributes.ContentState(emoji: "smile"), staleDate: .now.addingTimeInterval(60))
+            
+            liveActivity = try Activity.request(attributes: attributes, content: activityContent)
+            
+        } catch {
+            print(error.localizedDescription)
+        }
     }
 }
 

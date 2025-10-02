@@ -7,9 +7,14 @@
 
 import SwiftUI
 import SwiftData
+import os
 
 @main
 struct VivaDictaApp: App {
+    @State var appState = AppState()
+    
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+
     init() {
         // Initialize app directories
         FileManager.createAppDirectories()
@@ -17,8 +22,26 @@ struct VivaDictaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabBarView()
+            TabBarView(appState: appState)
+                .onOpenURL { url in
+                    handleDeepLink(url)
+                }
         }
         .modelContainer(for: Transcription.self)
+    }
+    
+    
+    private func handleDeepLink(_ url: URL) {
+        logger.info("📱 Received deep link: \(url.absoluteString)")
+
+        // Handle deep links from keyboard extension
+        if url.absoluteString == "vivadicta://record-for-keyboard" {
+            logger.info("📱 Recognized as keyboard recording request")
+            
+            appState.startLiveActivity()
+            
+        } else {
+            logger.warning("📱 Unknown deep link URL: \(url.absoluteString)")
+        }
     }
 }
