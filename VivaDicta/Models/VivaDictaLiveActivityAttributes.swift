@@ -21,17 +21,17 @@ struct VivaDictaLiveActivityAttributes: ActivityAttributes {
 
 
 extension VivaDictaLiveActivityAttributes {
-    fileprivate static var preview: VivaDictaLiveActivityAttributes {
+    static var preview: VivaDictaLiveActivityAttributes {
         VivaDictaLiveActivityAttributes(name: "World")
     }
 }
 
 extension VivaDictaLiveActivityAttributes.ContentState {
-    fileprivate static var smiley: VivaDictaLiveActivityAttributes.ContentState {
+    static var smiley: VivaDictaLiveActivityAttributes.ContentState {
         VivaDictaLiveActivityAttributes.ContentState(emoji: "😀")
      }
      
-     fileprivate static var starEyes: VivaDictaLiveActivityAttributes.ContentState {
+     static var starEyes: VivaDictaLiveActivityAttributes.ContentState {
          VivaDictaLiveActivityAttributes.ContentState(emoji: "🤩")
      }
 }

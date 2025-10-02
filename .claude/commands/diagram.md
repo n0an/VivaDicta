@@ -39,3 +39,5 @@ Create a clear ASCII diagram representing the requested component, model, or cod
 ```
 
 Analyze the codebase structure first, then create the most appropriate diagram type for what's being asked. Include a brief description of what the diagram represents.
+
+Save resulting diagram and explanations in some file in the project
