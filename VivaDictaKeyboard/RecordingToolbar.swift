@@ -9,18 +9,28 @@ import SwiftUI
 
 struct RecordingToolbar: View {
     let isMainAppActive: Bool
+    let isRecording: Bool
     let onRecordTapped: () -> Void
 
     private var buttonColor: Color {
-        isMainAppActive ? Color.green : Color.gray
+        if isRecording {
+            return Color.red
+        }
+        return isMainAppActive ? Color.green : Color.gray
     }
 
     private var buttonText: String {
-        isMainAppActive ? "Record" : "Open App"
+        if isRecording {
+            return "Stop"
+        }
+        return isMainAppActive ? "Record" : "Open App"
     }
 
     private var buttonIcon: String {
-        isMainAppActive ? "mic.circle.fill" : "arrow.up.forward.app.fill"
+        if isRecording {
+            return "stop.circle.fill"
+        }
+        return isMainAppActive ? "mic.circle.fill" : "arrow.up.forward.app.fill"
     }
 
     var body: some View {

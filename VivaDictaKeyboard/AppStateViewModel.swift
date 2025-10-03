@@ -13,4 +13,5 @@ import SwiftUI
 @Observable
 class AppStateViewModel {
     var isMainAppActive: Bool = false
+    var isRecording: Bool = false
 }
