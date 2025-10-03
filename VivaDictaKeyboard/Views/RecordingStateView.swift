@@ -13,8 +13,6 @@ struct RecordingStateView: View {
     let onCancelTapped: () -> Void
     let onStopTapped: () -> Void
 
-    @State private var showFlowModePicker = false
-
     var body: some View {
         ZStack {
             // Background matching keyboard appearance
@@ -42,25 +40,22 @@ struct RecordingStateView: View {
 
                 // Flow Mode Picker
                 VStack(spacing: 20) {
-                    Button(action: {
-                        showFlowModePicker.toggle()
-                    }) {
-                        HStack(spacing: 8) {
-                            Text(stateManager.selectedFlowMode.name)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(Color.primary)
-
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(Color.secondary)
+                    Picker("Flow Mode", selection: Binding(
+                        get: { stateManager.selectedFlowMode },
+                        set: { stateManager.selectFlowMode($0) }
+                    )) {
+                        ForEach(stateManager.availableFlowModes, id: \.id) { mode in
+                            Text(mode.name).tag(mode)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(UIColor.tertiarySystemBackground))
-                        )
                     }
+                    .pickerStyle(.menu)
+                    .frame(minWidth: 120)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(UIColor.tertiarySystemBackground))
+                    )
 
                     // Recording indicator dots (placeholder for now)
                     HStack(spacing: 4) {
@@ -96,67 +91,6 @@ struct RecordingStateView: View {
                 .padding(.bottom, 30)
             }
         }
-        .sheet(isPresented: $showFlowModePicker) {
-            FlowModePickerSheet(
-                stateManager: stateManager,
-                isPresented: $showFlowModePicker
-            )
-        }
-    }
-}
-
-// MARK: - Flow Mode Picker Sheet
-
-struct FlowModePickerSheet: View {
-    let stateManager: KeyboardStateManager
-    @Binding var isPresented: Bool
-
-    var body: some View {
-        NavigationView {
-            List {
-                ForEach(stateManager.availableFlowModes, id: \.id) { mode in
-                    Button(action: {
-                        stateManager.selectFlowMode(mode)
-                        isPresented = false
-                    }) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(mode.name)
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundStyle(Color.primary)
-
-                                if mode.aiEnhanceEnabled {
-                                    Text("AI Enhancement enabled")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                            if mode.id == stateManager.selectedFlowMode.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.accentColor)
-                                    .font(.system(size: 14, weight: .semibold))
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .navigationTitle("Select Flow Mode")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        isPresented = false
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
     }
 }
 
