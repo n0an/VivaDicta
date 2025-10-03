@@ -87,6 +87,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     init(appState: AppState) {
         self.appState = appState
         super.init()
+        setupDarwinNotificationObservers()
+    }
+
+    deinit {
+        // Clean up Darwin notification observers
+        Task { @MainActor in
+            AppGroupCoordinator.shared.removeAllObservers()
+        }
     }
     
     var transcribingSpeechTask: Task<Void, Never>?
@@ -98,6 +106,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var recordingState: RecordingState = .idle {
         didSet {
             print(recordingState)
+            // Save recording state to shared UserDefaults for keyboard extension
+            let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+            let isRecording = (recordingState == .recording)
+            sharedDefaults?.set(isRecording, forKey: "isRecording")
+            sharedDefaults?.synchronize()
         }
     }
     
@@ -359,6 +372,137 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { @MainActor in
             resetValues()
             recordingState = .idle
+        }
+    }
+
+    // MARK: - Darwin Notification Handling
+
+    private func setupDarwinNotificationObservers() {
+        // Observe start recording request from keyboard
+        AppGroupCoordinator.shared.observeStartRecording { [weak self] in
+            Task { @MainActor in
+                guard let self = self else { return }
+                print("📱 Received Darwin notification: Start Recording from keyboard")
+
+                // Check if already recording
+                guard self.recordingState != .recording else {
+                    print("📱 Already recording, ignoring start request")
+                    return
+                }
+
+                // Start recording
+                self.startCaptureAudio()
+
+                // Notify keyboard that recording has started
+                AppGroupCoordinator.shared.notifyRecordingStarted()
+            }
+        }
+
+        // Observe stop recording request from keyboard
+        AppGroupCoordinator.shared.observeStopRecording { [weak self] in
+            Task { @MainActor in
+                guard let self = self else { return }
+                print("📱 Received Darwin notification: Stop Recording from keyboard")
+
+                // Check if actually recording
+                guard self.recordingState == .recording else {
+                    print("📱 Not recording, ignoring stop request")
+                    return
+                }
+
+                // Stop recording and handle transcription for keyboard
+                self.stopCaptureAudioForKeyboard()
+            }
+        }
+    }
+
+    private func stopCaptureAudioForKeyboard() {
+        // Stop recording
+        resetValues()
+
+        // Notify keyboard that recording has stopped
+        AppGroupCoordinator.shared.notifyRecordingStopped()
+
+        // Schedule session deactivation after recording stops
+        sessionManager.scheduleDeactivation()
+
+        // Save the audio file
+        let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+        do {
+            try FileManager.default.moveItem(at: captureURL, to: finalURL)
+
+            // Start transcription task that will save to both UserDefaults and SwiftData
+            transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
+        } catch {
+            print("Failed to move audio file: \(error)")
+            recordingState = .error(.recordError)
+        }
+    }
+
+    private func transcribeSpeechTaskForKeyboard(recordURL: URL) -> Task<Void, Never> {
+        Task { @MainActor in
+            do {
+                self.recordingState = .transcribing
+
+                let transcriptionStart = Date()
+                let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
+                let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+
+                // Get audio duration
+                let audioAsset = AVURLAsset(url: recordURL)
+                let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
+
+                // Save transcribed text to shared UserDefaults for keyboard
+                let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+                sharedDefaults?.set(transcribedText, forKey: "lastTranscription")
+                sharedDefaults?.synchronize()
+
+                // Also save to SwiftData using Persistence.container
+                let context = ModelContext(Persistence.container)
+
+                // Check if AI Enhancement is configured
+                var enhancedText: String? = nil
+                var promptName: String? = nil
+
+                if aiService.isProperlyConfigured() {
+                    do {
+                        let (enhanced, _, prompt) = try await aiService.enhance(transcribedText)
+                        enhancedText = enhanced
+                        promptName = prompt
+                    } catch {
+                        print("AI enhancement failed: \(error)")
+                    }
+                }
+
+                // Create and save transcription to SwiftData
+                let transcription = Transcription(
+                    text: transcribedText,
+                    enhancedText: enhancedText,
+                    audioDuration: audioDuration,
+                    audioFileName: recordURL.lastPathComponent,
+                    transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                    aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
+                    promptName: promptName,
+                    transcriptionDuration: transcriptionDuration
+                )
+
+                context.insert(transcription)
+                try context.save()
+
+                // Notify keyboard that transcription is ready
+                AppGroupCoordinator.shared.notifyTranscriptionReady()
+
+                self.recordingState = .idle
+
+                print("📱 Transcription saved to UserDefaults and SwiftData, notification sent to keyboard")
+            } catch {
+                self.recordingState = .error(.transcribe)
+
+                // Notify keyboard about error
+                AppGroupCoordinator.shared.notifyRecordingError()
+
+                print("📱 Transcription failed: \(error)")
+            }
         }
     }
 }
