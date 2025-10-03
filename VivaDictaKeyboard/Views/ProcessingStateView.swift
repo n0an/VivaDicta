@@ -40,58 +40,52 @@ struct ProcessingStateView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        ZStack {
-            // Background matching keyboard appearance
-            Color(UIColor.systemBackground)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // Top area with cancel button
-                HStack {
-                    Spacer()
-
-                    // Cancel button (X)
-                    Button(action: onCancel) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(Color.secondary)
-                            .frame(width: 44, height: 44)
-                            .background(.gray.opacity(0.1), in: .circle)
-                            .contentShape(Rectangle())
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.top, 8)
-                }
-
+        VStack(spacing: 0) {
+            // Top area with cancel button
+            HStack {
                 Spacer()
-
-                // Center area with progress indicator and status label
-                VStack(spacing: 20) {
-                    // Progress indicator
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .scaleEffect(1.5)
-                        .tint(.blue)
-                        .padding(.vertical, 20)
-                        .padding(.horizontal, 20)
-                        .background(.blue.opacity(0.1), in: .circle)
-                        
-
-                    // Processing status label
-                    Text(processingStage.statusText)
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundStyle(.primary)
-                        .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
+                
+                // Cancel button (X)
+                Button(action: onCancel) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.secondary)
+                        .frame(width: 44, height: 44)
+                        .background(.gray.opacity(0.1), in: .circle)
+                        .contentShape(Rectangle())
                 }
-                .padding(.horizontal, 20)
-
-                Spacer()
-
-                // Bottom padding to match keyboard height
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(height: 100)
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
             }
+            
+            Spacer()
+            
+            // Center area with progress indicator and status label
+            VStack(spacing: 20) {
+                // Progress indicator
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .scaleEffect(1.5)
+                    .tint(.blue)
+                    .padding(.vertical, 20)
+                    .padding(.horizontal, 20)
+                    .background(.blue.opacity(0.1), in: .circle)
+                
+                
+                // Processing status label
+                Text(processingStage.statusText)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(.primary)
+                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
+            
+            // Bottom padding to match keyboard height
+            Rectangle()
+                .fill(Color.clear)
+                .frame(height: 100)
         }
     }
 }
