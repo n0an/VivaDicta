@@ -30,6 +30,7 @@ struct RecordingStateView: View {
                             .font(.system(size: 18, weight: .medium))
                             .foregroundStyle(Color.secondary)
                             .frame(width: 44, height: 44)
+                            .background(.gray.opacity(0.1), in: .circle)
                             .contentShape(Rectangle())
                     }
                 }
