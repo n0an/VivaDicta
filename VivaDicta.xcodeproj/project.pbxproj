@@ -113,6 +113,7 @@
 		18E1C8232E8EE47200BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaKeyboard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AppGroupCoordinator.swift,
 				Utils/Constants.swift,
 			);
 			target = 18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */;
