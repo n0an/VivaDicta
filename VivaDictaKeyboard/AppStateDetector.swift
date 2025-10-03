@@ -51,7 +51,7 @@ class AppStateDetector {
 
         // Check if heartbeat is recent enough
         if timeSinceLastHeartbeat < AppGroupConfig.heartbeatThreshold {
-            logger.info("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
+            logger.debug("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
             return .active
         } else {
             logger.info("🔍 App is suspended (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")

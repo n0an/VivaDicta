@@ -25,7 +25,7 @@ class RecordingStateDetector {
 
     /// Check if recording is currently active based on heartbeat
     func isRecordingActive() -> Bool {
-        logger.info("🎤 💙 Checking recording state via heartbeat")
+        logger.debug("🎤 💙 Checking recording state via heartbeat")
 
         guard let sharedDefaults = sharedDefaults else {
             logger.error("🎤 💙 ❌ Failed to access shared UserDefaults")
@@ -37,7 +37,7 @@ class RecordingStateDetector {
 
         // If heartbeat is 0, recording is not active
         guard lastHeartbeat > 0 else {
-            logger.info("🎤 💙 Recording heartbeat is 0 - recording is not active")
+            logger.debug("🎤 💙 Recording heartbeat is 0 - recording is not active")
             return false
         }
 
@@ -47,7 +47,7 @@ class RecordingStateDetector {
 
         // Check if heartbeat is recent enough
         if timeSinceLastHeartbeat < AppGroupConfig.recordingHeartbeatThreshold {
-            logger.info("🎤 💙 Recording is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
+            logger.debug("🎤 💙 Recording is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
             return true
         } else {
             logger.info("🎤 💙 Recording is inactive (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")

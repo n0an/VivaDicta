@@ -118,7 +118,7 @@ class AppLifecycleManager {
         sharedDefaults.set(timestamp, forKey: AppGroupConfig.heartbeatKey)
         sharedDefaults.synchronize()
 
-        logger.info("💓 Heartbeat updated: \(timestamp)")
+        logger.debug("💓 Heartbeat updated: \(timestamp)")
     }
 
     private func updateAppActiveState(_ isActive: Bool) {

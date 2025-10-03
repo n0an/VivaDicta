@@ -434,7 +434,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         UserDefaultsStorage.shared.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
         UserDefaultsStorage.shared.synchronize()
 
-        logger.info("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
+        logger.debug("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
     }
 
     // MARK: - Darwin Notification Handling
