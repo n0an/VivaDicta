@@ -9,6 +9,7 @@ import SwiftUI
 import Foundation
 import AVFoundation
 import SwiftData
+import os
 
 enum RecordingState: Equatable {
     case idle
@@ -60,6 +61,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
     private let sessionManager = AudioSessionManager.shared
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordViewModel")
 
     var animationTimer: Timer?
 
@@ -105,7 +107,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     var recordingState: RecordingState = .idle {
         didSet {
-            print(recordingState)
+            logger.debug("📱 Recording state changed: \(String(describing: self.recordingState))")
             // Save recording state to shared UserDefaults for keyboard extension
             let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
             let isRecording = (recordingState == .recording)
@@ -231,7 +233,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             try FileManager.default.moveItem(at: captureURL, to: finalURL)
             transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
         } catch {
-            print("file err")
+            logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
         }
     }
     
@@ -382,11 +384,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         AppGroupCoordinator.shared.observeStartRecording { [weak self] in
             Task { @MainActor in
                 guard let self = self else { return }
-                print("📱 Received Darwin notification: Start Recording from keyboard")
+                self.logger.info("📱 Received Darwin notification: Start Recording from keyboard")
 
                 // Check if already recording
                 guard self.recordingState != .recording else {
-                    print("📱 Already recording, ignoring start request")
+                    self.logger.debug("📱 Already recording, ignoring start request")
                     return
                 }
 
@@ -402,11 +404,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         AppGroupCoordinator.shared.observeStopRecording { [weak self] in
             Task { @MainActor in
                 guard let self = self else { return }
-                print("📱 Received Darwin notification: Stop Recording from keyboard")
+                self.logger.info("📱 Received Darwin notification: Stop Recording from keyboard")
 
                 // Check if actually recording
                 guard self.recordingState == .recording else {
-                    print("📱 Not recording, ignoring stop request")
+                    self.logger.debug("📱 Not recording, ignoring stop request")
                     return
                 }
 
@@ -434,7 +436,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // Start transcription task that will save to both UserDefaults and SwiftData
             transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
         } catch {
-            print("Failed to move audio file: \(error)")
+            logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
             recordingState = .error(.recordError)
         }
     }
@@ -462,7 +464,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         enhancedText = enhanced
                         promptName = prompt
                     } catch {
-                        print("AI enhancement failed: \(error)")
+                        logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
                     }
                 }
 
@@ -496,14 +498,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.recordingState = .idle
 
                 let savedTextType = enhancedText != nil ? "enhanced" : "original"
-                print("📱 Transcription (\(savedTextType)) saved to UserDefaults and SwiftData, notification sent to keyboard")
+                logger.info("📱 Transcription (\(savedTextType)) saved to UserDefaults and SwiftData, notification sent to keyboard")
             } catch {
                 self.recordingState = .error(.transcribe)
 
                 // Notify keyboard about error
                 AppGroupCoordinator.shared.notifyRecordingError()
 
-                print("📱 Transcription failed: \(error)")
+                logger.error("📱 Transcription failed: \(error.localizedDescription)")
             }
         }
     }
