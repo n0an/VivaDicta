@@ -107,10 +107,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         didSet {
             logger.info("📱 Recording state changed: \(String(describing: self.recordingState))")
             // Save recording state to shared UserDefaults for keyboard extension
-            let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
             let isRecording = (recordingState == .recording)
-            sharedDefaults?.set(isRecording, forKey: "isRecording")
-            sharedDefaults?.synchronize()
+            UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
+            UserDefaultsStorage.shared.synchronize()
         }
     }
     
@@ -411,19 +410,17 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         recordingHeartbeatTimer = nil
 
         // Clear the heartbeat timestamp and recording flag to indicate recording has stopped
-        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
-        sharedDefaults?.set(0.0, forKey: AppGroupConfig.recordingHeartbeatKey)
-        sharedDefaults?.set(false, forKey: "isRecording")  // Explicitly clear the recording flag
-        sharedDefaults?.synchronize()
+        UserDefaultsStorage.shared.set(0.0, forKey: AppGroupConfig.recordingHeartbeatKey)
+        UserDefaultsStorage.shared.set(false, forKey: "isRecording")  // Explicitly clear the recording flag
+        UserDefaultsStorage.shared.synchronize()
 
         logger.info("💙 Stopped recording heartbeat timer and cleared recording flag")
     }
 
     private func updateRecordingHeartbeat() {
-        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
         let currentTime = Date().timeIntervalSince1970
-        sharedDefaults?.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
-        sharedDefaults?.synchronize()
+        UserDefaultsStorage.shared.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
+        UserDefaultsStorage.shared.synchronize()
 
         logger.info("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
     }
@@ -538,8 +535,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
                 // Load the selected flow mode from shared UserDefaults (set by keyboard)
-                let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
-                if let selectedModeName = sharedDefaults?.string(forKey: "selectedAIMode") {
+                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: "selectedAIMode") {
                     logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
                     // Update the AI service's selected mode to match what was selected in keyboard
                     aiService.selectedModeName = selectedModeName
@@ -561,8 +557,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Save the ENHANCED text (if available) or original text to shared UserDefaults for keyboard
                 let textToInsert = enhancedText ?? transcribedText
-                sharedDefaults?.set(textToInsert, forKey: "lastTranscription")
-                sharedDefaults?.synchronize()
+                UserDefaultsStorage.shared.set(textToInsert, forKey: "lastTranscription")
+                UserDefaultsStorage.shared.synchronize()
 
                 // Also save to SwiftData using Persistence.container
                 let context = ModelContext(Persistence.container)

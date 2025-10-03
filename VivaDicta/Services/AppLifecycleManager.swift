@@ -15,13 +15,13 @@ class AppLifecycleManager {
     // MARK: - Properties
     private var heartbeatTimer: Timer?
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppLifecycleManager")
-    private let sharedDefaults: UserDefaults?
-    
+    private let sharedDefaults: UserDefaults
+
     static let shared = AppLifecycleManager()
 
     // MARK: - Initialization
     private init() {
-        sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+        sharedDefaults = UserDefaultsStorage.shared
         setupNotificationObservers()
         logger.info("🔄 AppLifecycleManager initialized")
     }
@@ -107,23 +107,23 @@ class AppLifecycleManager {
         heartbeatTimer = nil
 
         // Write sentinel value to indicate app is not active
-        sharedDefaults?.set(0.0, forKey: AppGroupConfig.heartbeatKey)
-        sharedDefaults?.synchronize()
+        sharedDefaults.set(0.0, forKey: AppGroupConfig.heartbeatKey)
+        sharedDefaults.synchronize()
 
         logger.info("🛑 Heartbeat stopped")
     }
 
     @objc private func updateHeartbeat() {
         let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(timestamp, forKey: AppGroupConfig.heartbeatKey)
-        sharedDefaults?.synchronize()
+        sharedDefaults.set(timestamp, forKey: AppGroupConfig.heartbeatKey)
+        sharedDefaults.synchronize()
 
         logger.info("💓 Heartbeat updated: \(timestamp)")
     }
 
     private func updateAppActiveState(_ isActive: Bool) {
-        sharedDefaults?.set(isActive, forKey: AppGroupConfig.isMainAppActiveKey)
-        sharedDefaults?.synchronize()
+        sharedDefaults.set(isActive, forKey: AppGroupConfig.isMainAppActiveKey)
+        sharedDefaults.synchronize()
 
         logger.info("📱 App active state updated: \(isActive)")
     }
