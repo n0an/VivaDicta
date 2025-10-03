@@ -48,10 +48,11 @@ class TranscriptionManager {
 
     var selectedLanguage: String {
         get {
-            UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
+            // Language setting should be shared with keyboard extension
+            UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: Constants.kSelectedLanguageKey)
+            UserDefaultsStorage.shared.set(newValue, forKey: Constants.kSelectedLanguageKey)
         }
     }
 

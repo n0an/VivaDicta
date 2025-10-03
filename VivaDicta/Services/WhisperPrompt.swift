@@ -8,23 +8,24 @@
 import Foundation
 
 class WhisperPrompt {
-    private var transcriptionPrompt: String = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
-    
+    // Transcription prompts should be shared with keyboard extension
+    private var transcriptionPrompt: String = UserDefaultsStorage.shared.string(forKey: Constants.kTranscriptionPrompt) ?? ""
+
     private var customPrompts: [String: String] = [:]
-    
+
     init() {
         // TODO: - Add custom Whisper prompts. Not used now
 //        loadCustomPrompts()
-        
+
         updateTranscriptionPrompt()
     }
-    
+
     public func updateTranscriptionPrompt() {
-        let selectedLanguage = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
         let prompt = getLanguagePrompt(for: selectedLanguage)
         transcriptionPrompt = prompt
-        UserDefaults.standard.set(prompt, forKey: Constants.kTranscriptionPrompt)
-        UserDefaults.standard.synchronize()
+        UserDefaultsStorage.shared.set(prompt, forKey: Constants.kTranscriptionPrompt)
+        UserDefaultsStorage.shared.synchronize()
     }
     
     private func getLanguagePrompt(for language: String) -> String {
@@ -43,16 +44,16 @@ class WhisperPrompt {
         saveCustomPrompts()
         updateTranscriptionPrompt()
     }
-    
+
     private func loadCustomPrompts() {
-        if let savedPrompts = UserDefaults.standard.dictionary(forKey: Constants.kCustomPromptsKey) as? [String: String] {
+        if let savedPrompts = UserDefaultsStorage.shared.dictionary(forKey: Constants.kCustomPromptsKey) as? [String: String] {
             customPrompts = savedPrompts
         }
     }
-    
+
     private func saveCustomPrompts() {
-        UserDefaults.standard.set(customPrompts, forKey: Constants.kCustomPromptsKey)
-        UserDefaults.standard.synchronize()
+        UserDefaultsStorage.shared.set(customPrompts, forKey: Constants.kCustomPromptsKey)
+        UserDefaultsStorage.shared.synchronize()
     }
     */
     

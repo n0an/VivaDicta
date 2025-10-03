@@ -129,8 +129,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
         logger.notice("🎯 Starting WhisperKit transcription with model: \(whisperKitModel.displayName)")
 
         do {
-            // Get selected language if not auto-detect
-            let language = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
+            // Get selected language if not auto-detect (shared with keyboard)
+            let language = UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
             let decodingOptions = DecodingOptions(language: language == "auto" ? nil : language)
 
             // Perform transcription
