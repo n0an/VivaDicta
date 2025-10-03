@@ -19,7 +19,7 @@ class AppStateDetector {
 
     // MARK: - Properties
     private let sharedDefaults: UserDefaults?
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppStateDetector")
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
 
     // MARK: - Initialization
     init() {

@@ -14,6 +14,11 @@ public enum AppGroupConfig {
     static let isMainAppActiveKey = "isMainAppActive"
     static let heartbeatInterval: TimeInterval = 5.0
     static let heartbeatThreshold: TimeInterval = 10.0  // Consider app active if heartbeat is within 10 seconds
+
+    // Recording heartbeat configuration
+    static let recordingHeartbeatKey = "recordingLastHeartbeat"
+    static let recordingHeartbeatInterval: TimeInterval = 5.0
+    static let recordingHeartbeatThreshold: TimeInterval = 10.0  // Consider recording active if heartbeat is within 10 seconds
 }
 
 // MARK: - Darwin Notification Names

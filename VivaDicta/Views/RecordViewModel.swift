@@ -64,6 +64,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordViewModel")
 
     var animationTimer: Timer?
+    var recordingHeartbeatTimer: Timer?
 
     weak var appState: AppState?
     public var transcriptionManager: TranscriptionManager {
@@ -174,6 +175,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             resetValues()
             recordingState = .recording
+            startRecordingHeartbeat()  // Start heartbeat when recording starts
 
             do {
                 let settings: [String : Any] = [
@@ -224,6 +226,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func stopCaptureAudio(modelContext: ModelContext) {
         resetValues()
+        stopRecordingHeartbeat()  // Stop heartbeat when recording stops
 
         // Schedule session deactivation after recording stops
         sessionManager.scheduleDeactivation()
@@ -337,6 +340,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
         resetValues()
+        stopRecordingHeartbeat()  // Stop heartbeat when canceling
         recordingState = .idle
 
         // Schedule session deactivation when cancelling
@@ -375,6 +379,47 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             resetValues()
             recordingState = .idle
         }
+    }
+
+    // MARK: - Recording Heartbeat
+
+    private func startRecordingHeartbeat() {
+        // Send initial heartbeat
+        updateRecordingHeartbeat()
+
+        // Stop any existing timer
+        recordingHeartbeatTimer?.invalidate()
+
+        // Start new heartbeat timer
+        recordingHeartbeatTimer = Timer.scheduledTimer(withTimeInterval: AppGroupConfig.recordingHeartbeatInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateRecordingHeartbeat()
+            }
+        }
+
+        logger.debug("💙 Started recording heartbeat timer")
+    }
+
+    private func stopRecordingHeartbeat() {
+        recordingHeartbeatTimer?.invalidate()
+        recordingHeartbeatTimer = nil
+
+        // Clear the heartbeat timestamp and recording flag to indicate recording has stopped
+        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+        sharedDefaults?.set(0.0, forKey: AppGroupConfig.recordingHeartbeatKey)
+        sharedDefaults?.set(false, forKey: "isRecording")  // Explicitly clear the recording flag
+        sharedDefaults?.synchronize()
+
+        logger.debug("💙 Stopped recording heartbeat timer and cleared recording flag")
+    }
+
+    private func updateRecordingHeartbeat() {
+        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+        let currentTime = Date().timeIntervalSince1970
+        sharedDefaults?.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
+        sharedDefaults?.synchronize()
+
+        logger.debug("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
     }
 
     // MARK: - Darwin Notification Handling
@@ -421,6 +466,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     private func stopCaptureAudioForKeyboard() {
         // Stop recording
         resetValues()
+        stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
 
         // Notify keyboard that recording has stopped
         AppGroupCoordinator.shared.notifyRecordingStopped()

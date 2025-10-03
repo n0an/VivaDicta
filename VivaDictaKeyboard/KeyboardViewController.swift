@@ -16,6 +16,7 @@ class KeyboardViewController: KeyboardInputViewController {
     let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
     private var transcriptionObserver: Timer?
     private let appStateDetector = AppStateDetector()
+    private let recordingStateDetector = RecordingStateDetector()
     private var appStateTimer: Timer?
     var appStateViewModel = AppStateViewModel()
 
@@ -117,10 +118,9 @@ class KeyboardViewController: KeyboardInputViewController {
         let previousState = appStateViewModel.isMainAppActive
         let newState = appStateDetector.isMainAppActive()
 
-        // Also check recording state from shared UserDefaults
-        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+        // Check recording state using heartbeat detector
         let previousRecordingState = appStateViewModel.isRecording
-        let newRecordingState = sharedDefaults?.bool(forKey: "isRecording") ?? false
+        let newRecordingState = recordingStateDetector.isRecordingActive()
 
         Task { @MainActor in
             self.appStateViewModel.isMainAppActive = newState
@@ -132,6 +132,11 @@ class KeyboardViewController: KeyboardInputViewController {
 
             if previousRecordingState != newRecordingState {
                 self.logger.info("🎤 Recording state changed: \(newRecordingState ? "RECORDING 🔴" : "NOT RECORDING ⏹️")")
+
+                // Log heartbeat age for debugging
+                if let age = self.recordingStateDetector.recordingHeartbeatAge() {
+                    self.logger.debug("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
+                }
             }
         }
     }
