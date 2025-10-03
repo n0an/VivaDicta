@@ -71,6 +71,10 @@ struct ProcessingStateView: View {
                         .progressViewStyle(CircularProgressViewStyle())
                         .scaleEffect(1.5)
                         .tint(.blue)
+                        .padding(.vertical, 20)
+                        .padding(.horizontal, 20)
+                        .background(.blue.opacity(0.1), in: .circle)
+                        
 
                     // Processing status label
                     Text(processingStage.statusText)
