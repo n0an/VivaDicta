@@ -19,6 +19,7 @@ class KeyboardViewController: KeyboardInputViewController {
     private let recordingStateDetector = RecordingStateDetector()
     private var appStateTimer: Timer?
     var appStateViewModel = AppStateViewModel()
+    var keyboardStateManager = KeyboardStateManager()
 
     // MARK: - View Lifecycle
 
@@ -46,21 +47,42 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Setup the keyboard view with custom toolbar
         setupKeyboardView { [weak self] controller in
+            guard let self = self else {
+                return AnyView(EmptyView())
+            }
 
-            VStack(spacing: 0) {
-                KeyboardView(
-                    state: controller.state,
-                    services: controller.services,
-                    buttonContent: { $0.view },
-                    buttonView: { $0.view },
-                    collapsedView: { $0.view },
-                    emojiKeyboard: { $0.view },
-                    toolbar: { params in
-                        RecordingToolbar(
-                            isMainAppActive: self?.appStateViewModel.isMainAppActive ?? false,
-                            isRecording: self?.appStateViewModel.isRecording ?? false,
-                            onRecordTapped: {
-                                self?.handleRecordButtonTap()
+            // Show custom view based on keyboard state
+            if self.keyboardStateManager.viewState == .recording {
+                return AnyView(
+                    RecordingStateView(
+                        stateManager: self.keyboardStateManager,
+                        onCancelTapped: {
+                            self.handleCancelRecording()
+                        },
+                        onStopTapped: {
+                            self.handleStopRecording()
+                        }
+                    )
+                )
+            } else {
+                // Show normal keyboard with recording toolbar
+                return AnyView(
+                    VStack(spacing: 0) {
+                        KeyboardView(
+                            state: controller.state,
+                            services: controller.services,
+                            buttonContent: { $0.view },
+                            buttonView: { $0.view },
+                            collapsedView: { $0.view },
+                            emojiKeyboard: { $0.view },
+                            toolbar: { params in
+                                RecordingToolbar(
+                                    isMainAppActive: self.appStateViewModel.isMainAppActive,
+                                    isRecording: self.appStateViewModel.isRecording,
+                                    onRecordTapped: {
+                                        self.handleRecordButtonTap()
+                                    }
+                                )
                             }
                         )
                     }
@@ -137,6 +159,18 @@ class KeyboardViewController: KeyboardInputViewController {
                 if let age = self.recordingStateDetector.recordingHeartbeatAge() {
                     self.logger.info("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
                 }
+
+                // Update keyboard view state when recording status changes
+                if newRecordingState {
+                    // Recording started - show recording view
+                    self.keyboardStateManager.startRecording()
+                } else if self.keyboardStateManager.viewState == .recording {
+                    // Recording stopped - return to idle
+                    self.keyboardStateManager.finishProcessing()
+                }
+
+                // Force keyboard view to update
+                self.viewWillSetupKeyboardView()
             }
         }
     }
@@ -179,7 +213,54 @@ class KeyboardViewController: KeyboardInputViewController {
             // App is active - send Darwin notification to start recording
             logger.info("🎤 App is active, sending Darwin notification to start recording")
             AppGroupCoordinator.shared.requestStartRecording()
+
+            // Clear any previous cancel flag
+            keyboardStateManager.didCancelRecording = false
+
+            // Transition to recording state
+            keyboardStateManager.startRecording()
+
+            // Force keyboard view to update
+            viewWillSetupKeyboardView()
         }
+    }
+
+    private func handleCancelRecording() {
+        logger.info("🎤 Cancel recording tapped")
+
+        // If recording is active, cancel it (without transcription)
+        if appStateViewModel.isRecording {
+            AppGroupCoordinator.shared.requestCancelRecording()
+        }
+
+        // Mark that we canceled to prevent text insertion
+        keyboardStateManager.didCancelRecording = true
+
+        // Return to idle state
+        keyboardStateManager.cancelRecording()
+
+        // Force keyboard view to update
+        viewWillSetupKeyboardView()
+    }
+
+    private func handleStopRecording() {
+        logger.info("🎤 Stop recording tapped")
+
+        // Clear cancel flag - this is a normal stop with transcription
+        keyboardStateManager.didCancelRecording = false
+
+        // Send stop recording request
+        AppGroupCoordinator.shared.requestStopRecording()
+
+        // Transition to processing state (for now we'll go back to idle)
+        keyboardStateManager.stopRecording()
+
+        // For Phase 1, immediately go back to idle since we don't have ProcessingStateView yet
+        // In Phase 2, this will transition to processing state
+        keyboardStateManager.finishProcessing()
+
+        // Force keyboard view to update
+        viewWillSetupKeyboardView()
     }
 
     private func openMainAppViaURLScheme() {

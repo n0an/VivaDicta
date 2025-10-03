@@ -50,6 +50,18 @@ extension KeyboardViewController {
     }
 
     private func handleTranscriptionReady() {
+        // Check if the recording was canceled - if so, don't insert text
+        if keyboardStateManager.didCancelRecording {
+            logger.info("📝 Transcription ready but recording was canceled - not inserting text")
+
+            // Clear the flag and transcription
+            keyboardStateManager.didCancelRecording = false
+            let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+            sharedDefaults?.removeObject(forKey: "lastTranscription")
+            sharedDefaults?.synchronize()
+            return
+        }
+
         // Read transcribed text from shared UserDefaults
         let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
         if let transcribedText = sharedDefaults?.string(forKey: "lastTranscription") {
