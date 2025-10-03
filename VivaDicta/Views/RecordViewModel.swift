@@ -452,14 +452,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
-                // Save transcribed text to shared UserDefaults for keyboard
-                let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
-                sharedDefaults?.set(transcribedText, forKey: "lastTranscription")
-                sharedDefaults?.synchronize()
-
-                // Also save to SwiftData using Persistence.container
-                let context = ModelContext(Persistence.container)
-
                 // Check if AI Enhancement is configured
                 var enhancedText: String? = nil
                 var promptName: String? = nil
@@ -473,6 +465,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         print("AI enhancement failed: \(error)")
                     }
                 }
+
+                // Save the ENHANCED text (if available) or original text to shared UserDefaults for keyboard
+                let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+                let textToInsert = enhancedText ?? transcribedText
+                sharedDefaults?.set(textToInsert, forKey: "lastTranscription")
+                sharedDefaults?.synchronize()
+
+                // Also save to SwiftData using Persistence.container
+                let context = ModelContext(Persistence.container)
 
                 // Create and save transcription to SwiftData
                 let transcription = Transcription(
@@ -494,7 +495,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 self.recordingState = .idle
 
-                print("📱 Transcription saved to UserDefaults and SwiftData, notification sent to keyboard")
+                let savedTextType = enhancedText != nil ? "enhanced" : "original"
+                print("📱 Transcription (\(savedTextType)) saved to UserDefaults and SwiftData, notification sent to keyboard")
             } catch {
                 self.recordingState = .error(.transcribe)
 
