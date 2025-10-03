@@ -53,14 +53,14 @@ struct ProcessingStateView: View {
                     // Cancel button (X)
                     Button(action: onCancel) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(Color.secondary)
                             .frame(width: 44, height: 44)
                             .background(.gray.opacity(0.1), in: .circle)
                             .contentShape(Rectangle())
                     }
-                    .padding(.trailing, 16)
-                    .padding(.top, 16)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
                 }
 
                 Spacer()
