@@ -32,12 +32,13 @@ class AIService {
         }
     }
     
-    private let userDefaults = UserDefaults.standard
+    // All AI settings need to be shared with keyboard extension
+    private let userDefaults = UserDefaultsStorage.shared
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        self.selectedModeName = userDefaults.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
