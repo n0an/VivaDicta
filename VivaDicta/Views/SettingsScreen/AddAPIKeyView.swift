@@ -64,8 +64,8 @@ struct AddAPIKeyView: View {
             Spacer()
         }
         .onAppear {
-            // Load existing API key if available
-            apiKey = UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) ?? ""
+            // Load existing API key if available (needs to be shared with keyboard)
+            apiKey = UserDefaultsStorage.shared.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) ?? ""
         }
         .padding(.top, 32)
         .padding()

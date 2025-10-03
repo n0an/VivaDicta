@@ -21,13 +21,13 @@ final class AudioSessionManager {
     private var deactivationTimer: Timer?
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioSessionManager")
 
-    // Use computed property to access UserDefaults
+    // Audio session timeout is app-specific, doesn't need sharing with keyboard
     var audioSessionTimeout: Int {
         get {
-            UserDefaults.standard.object(forKey: "audioSessionTimeout") as? Int ?? 180 // Default 3 minutes
+            UserDefaultsStorage.appPrivate.object(forKey: "audioSessionTimeout") as? Int ?? 180 // Default 3 minutes
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "audioSessionTimeout")
+            UserDefaultsStorage.appPrivate.set(newValue, forKey: "audioSessionTimeout")
         }
     }
 
