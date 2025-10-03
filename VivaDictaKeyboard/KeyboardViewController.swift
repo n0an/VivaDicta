@@ -146,10 +146,9 @@ class KeyboardViewController: KeyboardInputViewController {
             logger.info("🎤 App is suspended, opening via URL scheme")
             openMainAppViaURLScheme()
         } else {
-            // App is active - will send Darwin notification (placeholder for now)
-            logger.info("🎤 App is active, ready for Darwin notification (not implemented yet)")
-            // TODO: Send Darwin notification to start recording
-            textDocumentProxy.insertText("[App is active - Darwin notification will be sent here] ")
+            // App is active - send Darwin notification to start recording
+            logger.info("🎤 App is active, sending Darwin notification to start recording")
+            AppGroupCoordinator.shared.requestStartRecording()
         }
     }
 
