@@ -43,6 +43,18 @@ public enum DarwinNotificationName {
 
     /// Notification sent when an error occurs
     static let recordingError = "com.antonnovoselov.VivaDicta.recordingError"
+
+    /// Notification sent when transcription starts
+    static let transcriptionStarted = "com.antonnovoselov.VivaDicta.transcriptionStarted"
+
+    /// Notification sent when transcription ends
+    static let transcriptionEnded = "com.antonnovoselov.VivaDicta.transcriptionEnded"
+
+    /// Notification sent when AI enhancement starts
+    static let aiEnhancementStarted = "com.antonnovoselov.VivaDicta.aiEnhancementStarted"
+
+    /// Notification sent when AI enhancement ends
+    static let aiEnhancementEnded = "com.antonnovoselov.VivaDicta.aiEnhancementEnded"
 }
 
 // MARK: - Darwin Notification Center
@@ -105,6 +117,26 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     /// Notify that an error occurred (sent from main app)
     public func notifyRecordingError() {
         postNotification(DarwinNotificationName.recordingError)
+    }
+
+    /// Notify that transcription has started (sent from main app)
+    public func notifyTranscriptionStarted() {
+        postNotification(DarwinNotificationName.transcriptionStarted)
+    }
+
+    /// Notify that transcription has ended (sent from main app)
+    public func notifyTranscriptionEnded() {
+        postNotification(DarwinNotificationName.transcriptionEnded)
+    }
+
+    /// Notify that AI enhancement has started (sent from main app)
+    public func notifyAIEnhancementStarted() {
+        postNotification(DarwinNotificationName.aiEnhancementStarted)
+    }
+
+    /// Notify that AI enhancement has ended (sent from main app)
+    public func notifyAIEnhancementEnded() {
+        postNotification(DarwinNotificationName.aiEnhancementEnded)
     }
 
     // MARK: - Observing Notifications
@@ -214,6 +246,26 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         addObserver(for: DarwinNotificationName.recordingError, callback: callback)
     }
 
+    /// Observe transcription started notifications
+    public func observeTranscriptionStarted(callback: @escaping () -> Void) {
+        addObserver(for: DarwinNotificationName.transcriptionStarted, callback: callback)
+    }
+
+    /// Observe transcription ended notifications
+    public func observeTranscriptionEnded(callback: @escaping () -> Void) {
+        addObserver(for: DarwinNotificationName.transcriptionEnded, callback: callback)
+    }
+
+    /// Observe AI enhancement started notifications
+    public func observeAIEnhancementStarted(callback: @escaping () -> Void) {
+        addObserver(for: DarwinNotificationName.aiEnhancementStarted, callback: callback)
+    }
+
+    /// Observe AI enhancement ended notifications
+    public func observeAIEnhancementEnded(callback: @escaping () -> Void) {
+        addObserver(for: DarwinNotificationName.aiEnhancementEnded, callback: callback)
+    }
+
     // MARK: - Convenience Methods for Cleanup
 
     /// Remove all keyboard-specific observers (used by keyboard extension)
@@ -222,6 +274,10 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         removeObserver(for: DarwinNotificationName.recordingStopped)
         removeObserver(for: DarwinNotificationName.transcriptionReady)
         removeObserver(for: DarwinNotificationName.recordingError)
+        removeObserver(for: DarwinNotificationName.transcriptionStarted)
+        removeObserver(for: DarwinNotificationName.transcriptionEnded)
+        removeObserver(for: DarwinNotificationName.aiEnhancementStarted)
+        removeObserver(for: DarwinNotificationName.aiEnhancementEnded)
     }
 
     /// Remove all main app recording observers (used by main app)

@@ -18,6 +18,7 @@ enum KeyboardViewState {
 class KeyboardStateManager {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardState")
     var viewState: KeyboardViewState = .idle
+    var processingStage: ProcessingStage = .waitingToStart
     var selectedFlowMode: FlowMode = FlowMode.defaultMode
     var availableFlowModes: [FlowMode] = []
     var didCancelRecording: Bool = false

@@ -246,7 +246,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { @MainActor in
             do {
                 self.recordingState = .transcribing
-                
+
+                // Notify keyboard that transcription has started
+                AppGroupCoordinator.shared.notifyTranscriptionStarted()
+
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
@@ -254,12 +257,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
+                // Notify keyboard that transcription has ended
+                AppGroupCoordinator.shared.notifyTranscriptionEnded()
+
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
-                    
+
+                    // Notify keyboard that AI enhancement has started
+                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
+
                     do {
                         let (enhancedText, enhancementDuration, promptName) = try await aiService.enhance(transcribedText)
-                        
+
+                        // Notify keyboard that AI enhancement has ended
+                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
+
                         let transcription = Transcription(
                             text: transcribedText,
                             enhancedText: enhancedText,
@@ -526,6 +538,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             do {
                 self.recordingState = .transcribing
 
+                // Notify keyboard that transcription has started
+                AppGroupCoordinator.shared.notifyTranscriptionStarted()
+
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
@@ -533,6 +548,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Get audio duration
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
+
+                // Notify keyboard that transcription has ended
+                AppGroupCoordinator.shared.notifyTranscriptionEnded()
 
                 // Load the selected flow mode from shared UserDefaults (set by keyboard)
                 if let selectedModeName = UserDefaultsStorage.shared.string(forKey: "selectedAIMode") {
@@ -546,12 +564,20 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 var promptName: String? = nil
 
                 if aiService.isProperlyConfigured() {
+                    // Notify keyboard that AI enhancement has started
+                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
+
                     do {
                         let (enhanced, _, prompt) = try await aiService.enhance(transcribedText)
                         enhancedText = enhanced
                         promptName = prompt
+
+                        // Notify keyboard that AI enhancement has ended
+                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                     } catch {
                         logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
+                        // Notify keyboard that AI enhancement has ended (even on failure)
+                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                     }
                 }
 

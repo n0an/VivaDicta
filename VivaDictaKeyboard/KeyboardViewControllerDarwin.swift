@@ -28,6 +28,53 @@ extension KeyboardViewController {
             Task { @MainActor in
                 self?.logger.info("📱 Received recordingStopped notification - updating UI immediately")
                 self?.appStateViewModel.isRecording = false
+
+                // Transition to processing state
+                self?.keyboardStateManager.stopRecording()
+                self?.keyboardStateManager.processingStage = .waitingToStart
+                self?.viewWillSetupKeyboardView()
+            }
+        }
+
+        // Observe transcription started notification
+        AppGroupCoordinator.shared.observeTranscriptionStarted { [weak self] in
+            Task { @MainActor in
+                self?.logger.info("📱 Received transcriptionStarted notification")
+                self?.keyboardStateManager.processingStage = .transcribing
+
+                // Force UI update if in processing state
+                if self?.keyboardStateManager.viewState == .processing {
+                    self?.viewWillSetupKeyboardView()
+                }
+            }
+        }
+
+        // Observe transcription ended notification
+        AppGroupCoordinator.shared.observeTranscriptionEnded { [weak self] in
+            Task { @MainActor in
+                self?.logger.info("📱 Received transcriptionEnded notification")
+                // Just log for now, AI enhancement starts next
+            }
+        }
+
+        // Observe AI enhancement started notification
+        AppGroupCoordinator.shared.observeAIEnhancementStarted { [weak self] in
+            Task { @MainActor in
+                self?.logger.info("📱 Received aiEnhancementStarted notification")
+                self?.keyboardStateManager.processingStage = .enhancingWithAI
+
+                // Force UI update if in processing state
+                if self?.keyboardStateManager.viewState == .processing {
+                    self?.viewWillSetupKeyboardView()
+                }
+            }
+        }
+
+        // Observe AI enhancement ended notification
+        AppGroupCoordinator.shared.observeAIEnhancementEnded { [weak self] in
+            Task { @MainActor in
+                self?.logger.info("📱 Received aiEnhancementEnded notification")
+                self?.keyboardStateManager.processingStage = .completed
             }
         }
 
@@ -36,6 +83,10 @@ extension KeyboardViewController {
             Task { @MainActor in
                 self?.logger.info("📱 Received transcriptionReady notification")
                 self?.handleTranscriptionReady()
+
+                // Return to idle state
+                self?.keyboardStateManager.finishProcessing()
+                self?.viewWillSetupKeyboardView()
             }
         }
 
@@ -45,6 +96,18 @@ extension KeyboardViewController {
                 self?.logger.info("📱 Received recordingError notification")
                 // Reset recording state on error
                 self?.appStateViewModel.isRecording = false
+
+                // Show error in processing view then return to idle
+                self?.keyboardStateManager.processingStage = .error("Processing failed")
+
+                // Return to idle after a delay
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                    await MainActor.run {
+                        self?.keyboardStateManager.cancelRecording()
+                        self?.viewWillSetupKeyboardView()
+                    }
+                }
             }
         }
     }

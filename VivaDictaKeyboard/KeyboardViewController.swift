@@ -64,6 +64,18 @@ class KeyboardViewController: KeyboardInputViewController {
                         }
                     )
                 )
+            } else if self.keyboardStateManager.viewState == .processing {
+                return AnyView(
+                    ProcessingStateView(
+                        processingStage: .init(
+                            get: { self.keyboardStateManager.processingStage },
+                            set: { self.keyboardStateManager.processingStage = $0 }
+                        ),
+                        onCancel: {
+                            self.handleCancelProcessing()
+                        }
+                    )
+                )
             } else {
                 // Show normal keyboard with recording toolbar
                 return AnyView(
@@ -255,12 +267,23 @@ class KeyboardViewController: KeyboardInputViewController {
         // Send stop recording request
         AppGroupCoordinator.shared.requestStopRecording()
 
-        // Transition to processing state (for now we'll go back to idle)
-        keyboardStateManager.stopRecording()
+        // Note: The transition to processing state will happen
+        // when we receive the recordingStopped notification
+    }
 
-        // For Phase 1, immediately go back to idle since we don't have ProcessingStateView yet
-        // In Phase 2, this will transition to processing state
-        keyboardStateManager.finishProcessing()
+    private func handleCancelProcessing() {
+        logger.info("❌ Cancel processing tapped")
+
+        // Mark that we canceled to prevent text insertion
+        keyboardStateManager.didCancelRecording = true
+
+        // Request cancellation if still recording
+        if appStateViewModel.isRecording {
+            AppGroupCoordinator.shared.requestCancelRecording()
+        }
+
+        // Return to idle state
+        keyboardStateManager.cancelRecording()
 
         // Force keyboard view to update
         viewWillSetupKeyboardView()
