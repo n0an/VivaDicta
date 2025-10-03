@@ -28,12 +28,7 @@ class KeyboardStateManager {
     // MARK: - Flow Mode Management
 
     private func loadFlowModes() {
-        guard let userDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId) else {
-            availableFlowModes = [FlowMode.defaultMode]
-            return
-        }
-
-        if let savedModesData = userDefaults.data(forKey: "AIEnhanceModes"),
+        if let savedModesData = UserDefaultsStorage.shared.data(forKey: "AIEnhanceModes"),
            let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             availableFlowModes = savedModes
         } else {
@@ -42,12 +37,7 @@ class KeyboardStateManager {
     }
 
     private func loadSelectedMode() {
-        guard let userDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId) else {
-            selectedFlowMode = FlowMode.defaultMode
-            return
-        }
-
-        let selectedModeName = userDefaults.string(forKey: "selectedAIMode") ?? FlowMode.defaultMode.name
+        let selectedModeName = UserDefaultsStorage.shared.string(forKey: "selectedAIMode") ?? FlowMode.defaultMode.name
         selectedFlowMode = availableFlowModes.first(where: { $0.name == selectedModeName }) ?? FlowMode.defaultMode
     }
 
@@ -57,8 +47,7 @@ class KeyboardStateManager {
     }
 
     private func saveSelectedMode() {
-        guard let userDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId) else { return }
-        userDefaults.set(selectedFlowMode.name, forKey: "selectedAIMode")
+        UserDefaultsStorage.shared.set(selectedFlowMode.name, forKey: "selectedAIMode")
     }
 
     // MARK: - State Transitions

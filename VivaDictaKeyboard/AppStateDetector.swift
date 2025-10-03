@@ -23,7 +23,7 @@ class AppStateDetector {
 
     // MARK: - Initialization
     init() {
-        sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+        sharedDefaults = UserDefaultsStorage.shared
         logger.info("🔍 AppStateDetector initialized")
     }
 

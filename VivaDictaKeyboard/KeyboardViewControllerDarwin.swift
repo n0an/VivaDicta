@@ -56,23 +56,21 @@ extension KeyboardViewController {
 
             // Clear the flag and transcription
             keyboardStateManager.didCancelRecording = false
-            let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
-            sharedDefaults?.removeObject(forKey: "lastTranscription")
-            sharedDefaults?.synchronize()
+            UserDefaultsStorage.shared.removeObject(forKey: "lastTranscription")
+            UserDefaultsStorage.shared.synchronize()
             return
         }
 
         // Read transcribed text from shared UserDefaults
-        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
-        if let transcribedText = sharedDefaults?.string(forKey: "lastTranscription") {
+        if let transcribedText = UserDefaultsStorage.shared.string(forKey: "lastTranscription") {
             logger.info("📝 Inserting transcribed text: \(transcribedText.prefix(50))...")
 
             // Insert the transcribed text
             textDocumentProxy.insertText(transcribedText)
 
             // Clear the transcription from UserDefaults
-            sharedDefaults?.removeObject(forKey: "lastTranscription")
-            sharedDefaults?.synchronize()
+            UserDefaultsStorage.shared.removeObject(forKey: "lastTranscription")
+            UserDefaultsStorage.shared.synchronize()
         }
     }
 }
