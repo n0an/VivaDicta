@@ -12,86 +12,79 @@ struct RecordingStateView: View {
     let stateManager: KeyboardStateManager
     let onCancelTapped: () -> Void
     let onStopTapped: () -> Void
-
+    
     var body: some View {
-        ZStack {
-            // Background matching keyboard appearance
-            Color(UIColor.secondarySystemBackground)
-                .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                // Top Bar with Cancel Button
-                HStack {
-                    Spacer()
-
-                    // Cancel button (X)
-                    Button(action: onCancelTapped) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(Color.secondary)
-                            .frame(width: 44, height: 44)
-                            .background(.gray.opacity(0.1), in: .circle)
-                            .contentShape(Rectangle())
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
-
+        
+        VStack(spacing: 0) {
+            // Top Bar with Cancel Button
+            HStack {
                 Spacer()
-
-                // Flow Mode Picker
-                VStack(spacing: 20) {
-                    Picker("Flow Mode", selection: Binding(
-                        get: { stateManager.selectedFlowMode },
-                        set: { stateManager.selectFlowMode($0) }
-                    )) {
-                        ForEach(stateManager.availableFlowModes, id: \.id) { mode in
-                            Text(mode.name).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(minWidth: 120)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(UIColor.tertiarySystemBackground))
-                    )
-
-                    // Recording indicator dots (placeholder for now)
-                    HStack(spacing: 4) {
-                        ForEach(0..<12) { index in
-                            Circle()
-                                .fill(index < 6 ? Color.red.opacity(0.8) : Color.gray.opacity(0.3))
-                                .frame(width: 6, height: 6)
-                        }
-                    }
-                    .padding(.vertical, 20)
+                
+                // Cancel button (X)
+                Button(action: onCancelTapped) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(Color.secondary)
+                        .frame(width: 44, height: 44)
+                        .background(.gray.opacity(0.1), in: .circle)
+                        .contentShape(Rectangle())
                 }
-
-                Spacer()
-
-                // Stop Button
-                Button(action: onStopTapped) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
-
-                        Text("Stop")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 12)
-                    .background(
-                        Capsule()
-                            .fill(Color.red)
-                    )
-                }
-                .padding(.bottom, 30)
             }
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
+            
+            Spacer()
+            
+            // Flow Mode Picker
+            VStack(spacing: 20) {
+                Picker("Flow Mode", selection: Binding(
+                    get: { stateManager.selectedFlowMode },
+                    set: { stateManager.selectFlowMode($0) }
+                )) {
+                    ForEach(stateManager.availableFlowModes, id: \.id) { mode in
+                        Text(mode.name).tag(mode)
+                    }
+                }
+                .tint(.primary)
+                .pickerStyle(.menu)
+                .frame(minWidth: 120)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                
+                // Recording indicator dots (placeholder for now)
+                HStack(spacing: 4) {
+                    ForEach(0..<12) { index in
+                        Circle()
+                            .fill(index < 6 ? Color.red.opacity(0.8) : Color.gray.opacity(0.3))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .padding(.vertical, 20)
+            }
+            
+            Spacer()
+            
+            // Stop Button
+            Button(action: onStopTapped) {
+                HStack(spacing: 8) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                    
+                    Text("Stop")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 40)
+                .padding(.vertical, 12)
+                .background(
+                    Capsule()
+                        .fill(Color.red)
+                )
+            }
+            .padding(.bottom, 30)
         }
+        
     }
 }
 
