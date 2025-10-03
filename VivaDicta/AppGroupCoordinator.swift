@@ -29,6 +29,9 @@ public enum DarwinNotificationName {
     /// Notification sent from keyboard to stop recording
     static let stopRecording = "com.antonnovoselov.VivaDicta.stopRecording"
 
+    /// Notification sent from keyboard to cancel recording without transcription
+    static let cancelRecording = "com.antonnovoselov.VivaDicta.cancelRecording"
+
     /// Notification sent from main app when transcription is ready
     static let transcriptionReady = "com.antonnovoselov.VivaDicta.transcriptionReady"
 
@@ -77,6 +80,11 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     /// Request to stop recording (sent from keyboard)
     public func requestStopRecording() {
         postNotification(DarwinNotificationName.stopRecording)
+    }
+
+    /// Request to cancel recording without transcription (sent from keyboard)
+    public func requestCancelRecording() {
+        postNotification(DarwinNotificationName.cancelRecording)
     }
 
     /// Notify that transcription is ready (sent from main app)
@@ -181,6 +189,11 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         addObserver(for: DarwinNotificationName.stopRecording, callback: callback)
     }
 
+    /// Observe cancel recording requests
+    public func observeCancelRecording(callback: @escaping () -> Void) {
+        addObserver(for: DarwinNotificationName.cancelRecording, callback: callback)
+    }
+
     /// Observe transcription ready notifications
     public func observeTranscriptionReady(callback: @escaping () -> Void) {
         addObserver(for: DarwinNotificationName.transcriptionReady, callback: callback)
@@ -215,6 +228,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     public func removeMainAppObservers() {
         removeObserver(for: DarwinNotificationName.startRecording)
         removeObserver(for: DarwinNotificationName.stopRecording)
+        removeObserver(for: DarwinNotificationName.cancelRecording)
     }
 }
 
