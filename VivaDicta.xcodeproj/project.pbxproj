@@ -114,6 +114,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppGroupCoordinator.swift,
+				Models/Persistence.swift,
+				Models/Transcription.swift,
 				Utils/Constants.swift,
 			);
 			target = 18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */;

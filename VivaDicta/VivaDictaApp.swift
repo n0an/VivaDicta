@@ -27,7 +27,7 @@ struct VivaDictaApp: App {
                     handleDeepLink(url)
                 }
         }
-        .modelContainer(for: Transcription.self)
+        .modelContainer(Persistence.container)
     }
     
     
