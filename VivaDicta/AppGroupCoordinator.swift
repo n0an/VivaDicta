@@ -48,10 +48,13 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     // MARK: - Properties
     public static let shared = AppGroupCoordinator()
     private let darwinCenter = CFNotificationCenterGetDarwinNotifyCenter()
-    private var observations: [Any] = []
+    private var observations: [String: Unmanaged<DarwinNotificationCallback>] = [:]  // Track by notification name
 
     // MARK: - Initialization
     private init() {}
+
+    // Note: No deinit needed since this is a singleton that lives for the app's lifetime
+    // The OS will clean up Darwin notification observers when the app terminates
 
     // MARK: - Posting Notifications
 
@@ -103,12 +106,24 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     ///   - name: The notification name to observe
     ///   - callback: The callback to execute when notification is received
     public func addObserver(for name: String, callback: @escaping () -> Void) {
+        // Remove existing observer if any
+        if let existingObserver = observations[name] {
+            CFNotificationCenterRemoveObserver(
+                darwinCenter,
+                existingObserver.toOpaque(),
+                CFNotificationName(rawValue: name as CFString),
+                nil
+            )
+            existingObserver.release()  // Release the retained callback
+        }
+
         // Create a context object to hold the callback
-        let observer = Unmanaged.passRetained(DarwinNotificationCallback(callback: callback)).toOpaque()
+        let callbackObject = DarwinNotificationCallback(callback: callback)
+        let observer = Unmanaged.passRetained(callbackObject)
 
         CFNotificationCenterAddObserver(
             darwinCenter,
-            observer,
+            observer.toOpaque(),
             { _, observer, name, _, _ in
                 if let observer = observer {
                     let callback = Unmanaged<DarwinNotificationCallback>.fromOpaque(observer).takeUnretainedValue()
@@ -120,23 +135,37 @@ public final class AppGroupCoordinator: @unchecked Sendable {
             .deliverImmediately
         )
 
-        // Keep reference to prevent deallocation
-        observations.append(observer)
+        // Keep reference to manage memory properly
+        observations[name] = observer
     }
 
     /// Remove observer for a Darwin notification
     public func removeObserver(for name: String) {
-        CFNotificationCenterRemoveObserver(
-            darwinCenter,
-            nil,
-            CFNotificationName(rawValue: name as CFString),
-            nil
-        )
+        // Remove from notification center
+        if let observer = observations[name] {
+            CFNotificationCenterRemoveObserver(
+                darwinCenter,
+                observer.toOpaque(),
+                CFNotificationName(rawValue: name as CFString),
+                nil
+            )
+            observer.release()  // Release the retained callback
+            observations.removeValue(forKey: name)
+        }
     }
 
     /// Remove all observers
     public func removeAllObservers() {
-        CFNotificationCenterRemoveEveryObserver(darwinCenter, nil)
+        // Release all retained callbacks and remove observers
+        for (name, observer) in observations {
+            CFNotificationCenterRemoveObserver(
+                darwinCenter,
+                observer.toOpaque(),
+                CFNotificationName(rawValue: name as CFString),
+                nil
+            )
+            observer.release()  // Release the retained callback
+        }
         observations.removeAll()
     }
 
@@ -170,6 +199,22 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     /// Observe recording error notifications
     public func observeRecordingError(callback: @escaping () -> Void) {
         addObserver(for: DarwinNotificationName.recordingError, callback: callback)
+    }
+
+    // MARK: - Convenience Methods for Cleanup
+
+    /// Remove all keyboard-specific observers (used by keyboard extension)
+    public func removeKeyboardObservers() {
+        removeObserver(for: DarwinNotificationName.recordingStarted)
+        removeObserver(for: DarwinNotificationName.recordingStopped)
+        removeObserver(for: DarwinNotificationName.transcriptionReady)
+        removeObserver(for: DarwinNotificationName.recordingError)
+    }
+
+    /// Remove all main app recording observers (used by main app)
+    public func removeMainAppObservers() {
+        removeObserver(for: DarwinNotificationName.startRecording)
+        removeObserver(for: DarwinNotificationName.stopRecording)
     }
 }
 
