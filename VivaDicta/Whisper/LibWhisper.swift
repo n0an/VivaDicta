@@ -89,11 +89,11 @@ actor WhisperContext {
             vadParams.samples_overlap = 0.875
             params.vad_params = vadParams
 
-            logger.debug("VAD enabled with threshold: \(vadParams.threshold), min_silence: \(vadParams.min_silence_duration_ms)ms")
+            logger.info("VAD enabled with threshold: \(vadParams.threshold), min_silence: \(vadParams.min_silence_duration_ms)ms")
         } else {
             params.vad = false
             if !isVADEnabled {
-                logger.debug("VAD disabled by user preference")
+                logger.info("VAD disabled by user preference")
             } else if vadModelPath == nil {
                 logger.warning("VAD model not available despite being enabled")
             }
@@ -112,7 +112,7 @@ actor WhisperContext {
 
         let processingTime = Date().timeIntervalSince(startTime)
         if vadEnabled {
-            logger.debug("Transcription with VAD completed in \(String(format: "%.2f", processingTime))s")
+            logger.info("Transcription with VAD completed in \(String(format: "%.2f", processingTime))s")
         }
 
         languageCString = nil

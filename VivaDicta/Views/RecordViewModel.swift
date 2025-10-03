@@ -105,7 +105,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     var recordingState: RecordingState = .idle {
         didSet {
-            logger.debug("📱 Recording state changed: \(String(describing: self.recordingState))")
+            logger.info("📱 Recording state changed: \(String(describing: self.recordingState))")
             // Save recording state to shared UserDefaults for keyboard extension
             let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
             let isRecording = (recordingState == .recording)
@@ -154,7 +154,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { @MainActor in
             // Guard against duplicate starts
             guard recordingState != .recording else {
-                logger.debug("📱 Already recording, ignoring duplicate start request")
+                logger.info("📱 Already recording, ignoring duplicate start request")
                 return
             }
 
@@ -389,7 +389,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     private func startRecordingHeartbeat() {
         // Guard against duplicate starts
         guard recordingHeartbeatTimer == nil else {
-            logger.debug("💙 Recording heartbeat timer already running, skipping duplicate start")
+            logger.info("💙 Recording heartbeat timer already running, skipping duplicate start")
             return
         }
 
@@ -403,7 +403,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             }
         }
 
-        logger.debug("💙 Started recording heartbeat timer")
+        logger.info("💙 Started recording heartbeat timer")
     }
 
     private func stopRecordingHeartbeat() {
@@ -416,7 +416,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         sharedDefaults?.set(false, forKey: "isRecording")  // Explicitly clear the recording flag
         sharedDefaults?.synchronize()
 
-        logger.debug("💙 Stopped recording heartbeat timer and cleared recording flag")
+        logger.info("💙 Stopped recording heartbeat timer and cleared recording flag")
     }
 
     private func updateRecordingHeartbeat() {
@@ -425,7 +425,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         sharedDefaults?.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
         sharedDefaults?.synchronize()
 
-        logger.debug("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
+        logger.info("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
     }
 
     // MARK: - Darwin Notification Handling
@@ -439,7 +439,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Check if already recording
                 guard self.recordingState != .recording else {
-                    self.logger.debug("📱 Already recording, ignoring start request")
+                    self.logger.info("📱 Already recording, ignoring start request")
                     return
                 }
 
@@ -459,7 +459,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Check if actually recording
                 guard self.recordingState == .recording else {
-                    self.logger.debug("📱 Not recording, ignoring stop request")
+                    self.logger.info("📱 Not recording, ignoring stop request")
                     return
                 }
 

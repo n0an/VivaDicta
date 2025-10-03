@@ -41,7 +41,7 @@ class AppStateDetector {
 
         // If heartbeat is 0, app has never been active or explicitly marked as inactive
         guard lastHeartbeat > 0 else {
-            logger.debug("🔍 App heartbeat is 0 - app is suspended")
+            logger.info("🔍 App heartbeat is 0 - app is suspended")
             return .suspended
         }
 
@@ -51,10 +51,10 @@ class AppStateDetector {
 
         // Check if heartbeat is recent enough
         if timeSinceLastHeartbeat < AppGroupConfig.heartbeatThreshold {
-            logger.debug("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
+            logger.info("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
             return .active
         } else {
-            logger.debug("🔍 App is suspended (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
+            logger.info("🔍 App is suspended (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
             return .suspended
         }
     }

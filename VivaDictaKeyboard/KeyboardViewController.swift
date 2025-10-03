@@ -135,7 +135,7 @@ class KeyboardViewController: KeyboardInputViewController {
 
                 // Log heartbeat age for debugging
                 if let age = self.recordingStateDetector.recordingHeartbeatAge() {
-                    self.logger.debug("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
+                    self.logger.info("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
                 }
             }
         }

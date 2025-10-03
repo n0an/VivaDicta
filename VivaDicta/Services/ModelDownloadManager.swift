@@ -351,7 +351,7 @@ class ModelDownloadManager: @unchecked Sendable {
         let decayConstant = -log(0.01) / Float(maxDuration) // -log(0.01) ≈ 4.605
         let startTime = Date()
 
-        logger.debug("🎯 Starting progress animation: \(initialProgress) -> \(targetProgress) over \(maxDuration)s")
+        logger.info("🎯 Starting progress animation: \(initialProgress) -> \(targetProgress) over \(maxDuration)s")
         var updateCount = 0
 
         while !Task.isCancelled {
@@ -366,13 +366,13 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress[modelName] = Double(currentProgress)
                 updateCount += 1
                 if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
-                    logger.debug("📊 Progress update #\(updateCount): \(String(format: "%.1f", currentProgress * 100))%")
+                    logger.info("📊 Progress update #\(updateCount): \(String(format: "%.1f", currentProgress * 100))%")
                 }
             }
 
             // Stop when we're close enough to target or time limit exceeded
             if currentProgress >= targetProgress - 0.001 || elapsedTime >= maxDuration {
-                logger.debug("🏁 Animation ended: final progress \(String(format: "%.1f", currentProgress * 100))%")
+                logger.info("🏁 Animation ended: final progress \(String(format: "%.1f", currentProgress * 100))%")
                 break
             }
 
