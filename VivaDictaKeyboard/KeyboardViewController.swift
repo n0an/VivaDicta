@@ -13,11 +13,11 @@ import os
 class KeyboardViewController: KeyboardInputViewController {
 
     // MARK: - Properties
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
+    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
     private var transcriptionObserver: Timer?
     private let appStateDetector = AppStateDetector()
     private var appStateTimer: Timer?
-    private var appStateViewModel = AppStateViewModel()
+    var appStateViewModel = AppStateViewModel()
 
     // MARK: - View Lifecycle
 
@@ -57,6 +57,7 @@ class KeyboardViewController: KeyboardInputViewController {
                     toolbar: { params in
                         RecordingToolbar(
                             isMainAppActive: self?.appStateViewModel.isMainAppActive ?? false,
+                            isRecording: self?.appStateViewModel.isRecording ?? false,
                             onRecordTapped: {
                                 self?.handleRecordButtonTap()
                             }
@@ -72,6 +73,9 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Start monitoring app state periodically
         startAppStateMonitoring()
+
+        // Setup Darwin notification observers for immediate updates
+        setupDarwinNotificationObservers()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -79,6 +83,9 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Stop monitoring app state
         stopAppStateMonitoring()
+
+        // Clean up Darwin notification observers
+        AppGroupCoordinator.shared.removeAllObservers()
     }
 
     // MARK: - App State Monitoring
@@ -110,11 +117,21 @@ class KeyboardViewController: KeyboardInputViewController {
         let previousState = appStateViewModel.isMainAppActive
         let newState = appStateDetector.isMainAppActive()
 
+        // Also check recording state from shared UserDefaults
+        let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+        let previousRecordingState = appStateViewModel.isRecording
+        let newRecordingState = sharedDefaults?.bool(forKey: "isRecording") ?? false
+
         Task { @MainActor in
             self.appStateViewModel.isMainAppActive = newState
+            self.appStateViewModel.isRecording = newRecordingState
 
             if previousState != newState {
                 self.logger.info("📱 App state changed: \(newState ? "ACTIVE ✅" : "SUSPENDED ⏸️")")
+            }
+
+            if previousRecordingState != newRecordingState {
+                self.logger.info("🎤 Recording state changed: \(newRecordingState ? "RECORDING 🔴" : "NOT RECORDING ⏹️")")
             }
         }
     }
@@ -134,6 +151,14 @@ class KeyboardViewController: KeyboardInputViewController {
 
             // Show error to user (insert message in text field)
             textDocumentProxy.insertText("[Please enable 'Allow Full Access' for VivaDicta Keyboard in Settings] ")
+            return
+        }
+
+        // Check if currently recording
+        if appStateViewModel.isRecording {
+            // Stop recording
+            logger.info("🛑 Stopping recording via Darwin notification")
+            AppGroupCoordinator.shared.requestStopRecording()
             return
         }
 
@@ -230,7 +255,7 @@ class KeyboardViewController: KeyboardInputViewController {
 }
 
 
-
+// FIXME: - not used, perhaps delete
 @MainActor
 struct URLOpener {
   let responder: UIResponder
