@@ -10,7 +10,6 @@ import SwiftUI
 
 @Observable
 class TranscriptionManager {
-    private let whisperPrompt: WhisperPrompt
     private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()
@@ -70,7 +69,6 @@ class TranscriptionManager {
     }
 
     init() {
-        whisperPrompt = WhisperPrompt()
         localTranscriptionService = LocalTranscriptionService()
     }
 
@@ -81,7 +79,6 @@ class TranscriptionManager {
 
     private func updateLanguage(_ language: String) {
         selectedLanguage = language
-        whisperPrompt.updateTranscriptionPrompt()
     }
 
     private func applyModeLanguage(_ mode: FlowMode) {
