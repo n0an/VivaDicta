@@ -537,6 +537,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: recordURL)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
+                // Load the selected flow mode from shared UserDefaults (set by keyboard)
+                let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
+                if let selectedModeName = sharedDefaults?.string(forKey: "selectedAIMode") {
+                    logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
+                    // Update the AI service's selected mode to match what was selected in keyboard
+                    aiService.selectedModeName = selectedModeName
+                }
+
                 // Check if AI Enhancement is configured
                 var enhancedText: String? = nil
                 var promptName: String? = nil
@@ -552,7 +560,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 }
 
                 // Save the ENHANCED text (if available) or original text to shared UserDefaults for keyboard
-                let sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
                 let textToInsert = enhancedText ?? transcribedText
                 sharedDefaults?.set(textToInsert, forKey: "lastTranscription")
                 sharedDefaults?.synchronize()
