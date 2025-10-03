@@ -467,6 +467,37 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.stopCaptureAudioForKeyboard()
             }
         }
+
+        // Observe cancel recording request from keyboard (no transcription)
+        AppGroupCoordinator.shared.observeCancelRecording { [weak self] in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.logger.info("📱 Received Darwin notification: Cancel Recording from keyboard")
+
+                // Check if actually recording
+                guard self.recordingState == .recording else {
+                    self.logger.info("📱 Not recording, ignoring cancel request")
+                    return
+                }
+
+                // Cancel recording without transcription
+                self.cancelCaptureAudioForKeyboard()
+            }
+        }
+    }
+
+    private func cancelCaptureAudioForKeyboard() {
+        logger.info("📱 Canceling recording from keyboard - no transcription")
+
+        // Stop recording without transcription
+        resetValues()
+        stopRecordingHeartbeat()  // Stop heartbeat when keyboard cancels recording
+
+        // Notify keyboard that recording has stopped
+        AppGroupCoordinator.shared.notifyRecordingStopped()
+
+        // Clear recording state to prevent transcription
+        recordingState = .idle
     }
 
     private func stopCaptureAudioForKeyboard() {
