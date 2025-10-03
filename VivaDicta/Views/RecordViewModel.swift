@@ -155,6 +155,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func startCaptureAudio() {
         Task { @MainActor in
+            // Guard against duplicate starts
+            guard recordingState != .recording else {
+                logger.debug("📱 Already recording, ignoring duplicate start request")
+                return
+            }
+
             // If session is already active, extend the timeout instead of reactivating
             if sessionManager.isSessionActive {
                 sessionManager.extendTimeout()
@@ -384,11 +390,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     // MARK: - Recording Heartbeat
 
     private func startRecordingHeartbeat() {
+        // Guard against duplicate starts
+        guard recordingHeartbeatTimer == nil else {
+            logger.debug("💙 Recording heartbeat timer already running, skipping duplicate start")
+            return
+        }
+
         // Send initial heartbeat
         updateRecordingHeartbeat()
-
-        // Stop any existing timer
-        recordingHeartbeatTimer?.invalidate()
 
         // Start new heartbeat timer
         recordingHeartbeatTimer = Timer.scheduledTimer(withTimeInterval: AppGroupConfig.recordingHeartbeatInterval, repeats: true) { [weak self] _ in
