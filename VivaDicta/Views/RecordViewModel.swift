@@ -93,12 +93,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         setupDarwinNotificationObservers()
     }
 
-    deinit {
-        // Clean up Darwin notification observers
-        Task { @MainActor in
-            AppGroupCoordinator.shared.removeAllObservers()
-        }
-    }
+    // Note: No deinit cleanup needed for Darwin observers
+    // The AppGroupCoordinator will properly handle duplicate registrations by
+    // removing old observers before adding new ones (see AppGroupCoordinator.addObserver)
     
     var transcribingSpeechTask: Task<Void, Never>?
     
