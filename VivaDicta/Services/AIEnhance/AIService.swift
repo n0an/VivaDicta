@@ -145,7 +145,8 @@ class AIService {
             return
         }
         userDefaults.set(encoded, forKey: "AIEnhanceModes")
-        logger.info("Saved \(self.modes.count) Flow Modes")
+        userDefaults.synchronize() // Force immediate write to disk
+        logger.info("Saved \(self.modes.count) Flow Modes to shared storage")
     }
     
     private func saveSelectedModeName(_ modeName: String) {

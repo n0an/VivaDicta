@@ -217,6 +217,9 @@ class KeyboardViewController: KeyboardInputViewController {
             // Clear any previous cancel flag
             keyboardStateManager.didCancelRecording = false
 
+            // Refresh flow modes to get latest from main app
+            keyboardStateManager.refreshFlowModes()
+
             // Transition to recording state
             keyboardStateManager.startRecording()
 

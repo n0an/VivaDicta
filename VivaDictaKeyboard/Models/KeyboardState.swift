@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 
 enum KeyboardViewState {
     case idle        // Normal keyboard with record button
@@ -15,6 +16,7 @@ enum KeyboardViewState {
 
 @Observable
 class KeyboardStateManager {
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardState")
     var viewState: KeyboardViewState = .idle
     var selectedFlowMode: FlowMode = FlowMode.defaultMode
     var availableFlowModes: [FlowMode] = []
@@ -27,11 +29,27 @@ class KeyboardStateManager {
 
     // MARK: - Flow Mode Management
 
+    func refreshFlowModes() {
+        loadFlowModes()
+        loadSelectedMode()
+    }
+
     private func loadFlowModes() {
-        if let savedModesData = UserDefaultsStorage.shared.data(forKey: "AIEnhanceModes"),
-           let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
-            availableFlowModes = savedModes
+        logger.info("🎯 Loading flow modes from shared storage...")
+
+        if let savedModesData = UserDefaultsStorage.shared.data(forKey: "AIEnhanceModes") {
+            logger.info("🎯 Found saved modes data, attempting to decode...")
+
+            do {
+                let savedModes = try JSONDecoder().decode([FlowMode].self, from: savedModesData)
+                availableFlowModes = savedModes
+                logger.info("🎯 Successfully loaded \(savedModes.count) flow modes: \(savedModes.map { $0.name }.joined(separator: ", "))")
+            } catch {
+                logger.error("🎯 Failed to decode flow modes: \(error.localizedDescription)")
+                availableFlowModes = [FlowMode.defaultMode]
+            }
         } else {
+            logger.warning("🎯 No saved flow modes found in shared storage")
             availableFlowModes = [FlowMode.defaultMode]
         }
     }
