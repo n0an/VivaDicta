@@ -27,7 +27,7 @@ class KeyboardViewController: KeyboardInputViewController {
         // Create keyboard app configuration
         let keyboardApp = KeyboardApp(
             name: "VivaDicta Keyboard",
-            appGroupId: Constants.appGroupId,
+            appGroupId: AppGroupConfig.appGroupId,
             deepLinks: .init(app: "vivadicta://")
         )
 

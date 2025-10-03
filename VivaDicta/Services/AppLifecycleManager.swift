@@ -21,7 +21,7 @@ class AppLifecycleManager {
 
     // MARK: - Initialization
     private init() {
-        sharedDefaults = UserDefaults(suiteName: Constants.appGroupId)
+        sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
         setupNotificationObservers()
         logger.info("🔄 AppLifecycleManager initialized")
     }
@@ -95,11 +95,11 @@ class AppLifecycleManager {
         updateHeartbeat()
 
         // Schedule timer for periodic updates
-        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: Constants.heartbeatInterval, repeats: true) { [weak self] _ in
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: AppGroupConfig.heartbeatInterval, repeats: true) { [weak self] _ in
             self?.updateHeartbeat()
         }
 
-        logger.info("💚 Heartbeat started (interval: \(Constants.heartbeatInterval)s)")
+        logger.info("💚 Heartbeat started (interval: \(AppGroupConfig.heartbeatInterval)s)")
     }
 
     private func stopHeartbeat() {
@@ -107,7 +107,7 @@ class AppLifecycleManager {
         heartbeatTimer = nil
 
         // Write sentinel value to indicate app is not active
-        sharedDefaults?.set(0.0, forKey: Constants.heartbeatKey)
+        sharedDefaults?.set(0.0, forKey: AppGroupConfig.heartbeatKey)
         sharedDefaults?.synchronize()
 
         logger.info("🛑 Heartbeat stopped")
@@ -115,14 +115,14 @@ class AppLifecycleManager {
 
     @objc private func updateHeartbeat() {
         let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(timestamp, forKey: Constants.heartbeatKey)
+        sharedDefaults?.set(timestamp, forKey: AppGroupConfig.heartbeatKey)
         sharedDefaults?.synchronize()
 
         logger.debug("💓 Heartbeat updated: \(timestamp)")
     }
 
     private func updateAppActiveState(_ isActive: Bool) {
-        sharedDefaults?.set(isActive, forKey: Constants.isMainAppActiveKey)
+        sharedDefaults?.set(isActive, forKey: AppGroupConfig.isMainAppActiveKey)
         sharedDefaults?.synchronize()
 
         logger.info("📱 App active state updated: \(isActive)")

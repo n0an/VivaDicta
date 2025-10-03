@@ -23,7 +23,7 @@ class AppStateDetector {
 
     // MARK: - Initialization
     init() {
-        sharedDefaults = UserDefaults(suiteName: Constants.appGroupId)
+        sharedDefaults = UserDefaults(suiteName: AppGroupConfig.appGroupId)
         logger.info("🔍 AppStateDetector initialized")
     }
 
@@ -37,7 +37,7 @@ class AppStateDetector {
         }
 
         // Check the last heartbeat timestamp
-        let lastHeartbeat = sharedDefaults.double(forKey: Constants.heartbeatKey)
+        let lastHeartbeat = sharedDefaults.double(forKey: AppGroupConfig.heartbeatKey)
 
         // If heartbeat is 0, app has never been active or explicitly marked as inactive
         guard lastHeartbeat > 0 else {
@@ -50,7 +50,7 @@ class AppStateDetector {
         let timeSinceLastHeartbeat = currentTime - lastHeartbeat
 
         // Check if heartbeat is recent enough
-        if timeSinceLastHeartbeat < Constants.heartbeatThreshold {
+        if timeSinceLastHeartbeat < AppGroupConfig.heartbeatThreshold {
             logger.debug("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
             return .active
         } else {
@@ -68,7 +68,7 @@ class AppStateDetector {
     func heartbeatAge() -> TimeInterval? {
         guard let sharedDefaults = sharedDefaults else { return nil }
 
-        let lastHeartbeat = sharedDefaults.double(forKey: Constants.heartbeatKey)
+        let lastHeartbeat = sharedDefaults.double(forKey: AppGroupConfig.heartbeatKey)
         guard lastHeartbeat > 0 else { return nil }
 
         return Date().timeIntervalSince1970 - lastHeartbeat
