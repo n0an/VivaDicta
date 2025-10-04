@@ -46,6 +46,11 @@ final class AudioPrewarmManager {
         return max(0, sessionTimeoutDuration - elapsed)
     }
 
+    /// Public getter for real recorder (for metering in RecordViewModel)
+    var activeRealRecorder: AVAudioRecorder? {
+        realRecorder
+    }
+
     private init() {}
 
     // MARK: - Session Management
@@ -189,6 +194,7 @@ final class AudioPrewarmManager {
         ]
 
         realRecorder = try AVAudioRecorder(url: url, settings: settings)
+        realRecorder?.isMeteringEnabled = true  // Enable metering for visualization
         realRecorder?.record()
 
         logger.info("🎙️ Real recorder started (parallel with dummy)")

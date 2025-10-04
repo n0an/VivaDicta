@@ -174,8 +174,18 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // This will start recording alongside the dummy recorder
                     try prewarmManager.startRealCapture(to: captureURL)
 
-                    // Note: Audio metering won't work in prewarm mode (no audioRecorder reference)
-                    // but that's acceptable for keyboard recording
+                    // Set audioRecorder reference to prewarm's real recorder for metering
+                    audioRecorder = prewarmManager.activeRealRecorder
+
+                    // Start metering timer for visualization
+                    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
+                        Task { @MainActor in
+                            guard self.audioRecorder != nil else { return }
+                            self.audioRecorder.updateMeters()
+                            let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
+                            self.audioPower = power
+                        }
+                    })
 
                 } catch {
                     resetValues()
