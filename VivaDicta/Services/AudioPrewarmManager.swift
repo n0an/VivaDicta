@@ -12,9 +12,20 @@ import os
 
 @MainActor @Observable
 final class AudioPrewarmManager {
+    
     static let shared = AudioPrewarmManager()
-
+    
     // MARK: - Properties
+    
+    
+    var audioSessionTimeout: Int {
+        get {
+            UserDefaultsStorage.appPrivate.object(forKey: "audioSessionTimeout") as? Int ?? 180 // Default 3 minutes
+        }
+        set {
+            UserDefaultsStorage.appPrivate.set(newValue, forKey: "audioSessionTimeout")
+        }
+    }
 
     private var dummyRecorder: AVAudioRecorder?
     private var realRecorder: AVAudioRecorder?
@@ -50,7 +61,7 @@ final class AudioPrewarmManager {
         }
 
         // Use AudioSessionManager timeout if not specified
-        let sessionTimeout = timeout ?? TimeInterval(AudioSessionManager.shared.audioSessionTimeout)
+        let sessionTimeout = timeout ?? TimeInterval(audioSessionTimeout)
         sessionStartTime = Date()
         sessionTimeoutDuration = sessionTimeout
 
@@ -80,7 +91,7 @@ final class AudioPrewarmManager {
     private func extendSession(timeout: TimeInterval?) {
         guard isSessionActive else { return }
 
-        let newTimeout = timeout ?? TimeInterval(AudioSessionManager.shared.audioSessionTimeout)
+        let newTimeout = timeout ?? TimeInterval(audioSessionTimeout)
         sessionStartTime = Date()
         sessionTimeoutDuration = newTimeout
 

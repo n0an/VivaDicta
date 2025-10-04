@@ -60,7 +60,12 @@ enum RecordError: LocalizedError, Equatable {
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
-    private let sessionManager = AudioSessionManager.shared
+    
+//    private let sessionManager = AudioSessionManager.shared
+#if !os(macOS)
+    var recordingSession = AVAudioSession.sharedInstance()
+#endif
+    
     private let prewarmManager = AudioPrewarmManager.shared
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordViewModel")
 
@@ -126,28 +131,26 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     private func setupAudioSession() async throws -> Bool {
-        #if !os(macOS)
-        // Check microphone permission first
-        let hasPermission = await withCheckedContinuation { continuation in
-            AVAudioApplication.requestRecordPermission { allowed in
-                continuation.resume(returning: allowed)
+#if !os(macOS)
+        do {
+#if os(iOS)
+            try recordingSession.setCategory(.playAndRecord, options: .defaultToSpeaker)
+#endif
+            try recordingSession.setActive(true)
+            
+            return await withCheckedContinuation { continuation in
+                AVAudioApplication.requestRecordPermission { allowed in
+                    continuation.resume(returning: allowed)
+                }
             }
+        } catch {
+            throw RecordError.other
         }
-
-        if hasPermission {
-            // Use AudioSessionManager to activate session
-            do {
-                try sessionManager.activateSessionForRecording()
-            } catch {
-                throw RecordError.other
-            }
-        }
-
-        return hasPermission
-        #else
+#else
         return true
-        #endif
+#endif
     }
+    
     
     
     func startCaptureAudio() {
@@ -184,22 +187,18 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Normal recording flow (not from keyboard)
                 logger.info("🎙️ Using normal recording flow")
 
-                // If session is already active, extend the timeout instead of reactivating
-                if sessionManager.isSessionActive {
-                    sessionManager.extendTimeout()
-                } else {
-                    do {
-                        let hasPermission = try await setupAudioSession()
-
-                        if !hasPermission {
-                            recordError = .userDenied
-                            isShowingAlert = true
-                            return
-                        }
-                    } catch {
-                        recordingState = .error(.other)
+                
+                do {
+                    let hasPermission = try await setupAudioSession()
+                    
+                    if !hasPermission {
+                        recordError = .userDenied
+                        isShowingAlert = true
                         return
                     }
+                } catch {
+                    recordingState = .error(.other)
+                    return
                 }
 
                 resetValues()
@@ -280,9 +279,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // Normal mode
             resetValues()
             stopRecordingHeartbeat()  // Stop heartbeat when recording stops
-
-            // Schedule session deactivation only in normal mode
-            sessionManager.scheduleDeactivation()
+            
 
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
             do {
@@ -408,9 +405,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         resetValues()
         stopRecordingHeartbeat()  // Stop heartbeat when canceling
         recordingState = .idle
-
-        // Schedule session deactivation when cancelling
-        sessionManager.scheduleDeactivation()
     }
     
     func resetValues() {
@@ -598,9 +592,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             // Notify keyboard that recording has stopped
             AppGroupCoordinator.shared.notifyRecordingStopped()
-
-            // Schedule session deactivation after recording stops
-            sessionManager.scheduleDeactivation()
 
             // Save the audio file
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
