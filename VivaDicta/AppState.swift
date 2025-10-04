@@ -15,7 +15,6 @@ class AppState {
     
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
-    var audioSessionManager = AudioSessionManager.shared
     private let lifecycleManager = AppLifecycleManager.shared
 
     var selectedTab: TabTag = .record
