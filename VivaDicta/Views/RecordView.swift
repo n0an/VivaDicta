@@ -84,7 +84,7 @@ struct RecordView: View {
         case .transcribing:
             VStack(spacing: 12) {
                 Image(systemName: "circle.dotted.circle")
-                    .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.5)), value: isSymbolAnimating)
                     .font(.system(size: 80))
                     .onAppear { isSymbolAnimating = true }
                     .onDisappear { isSymbolAnimating = false }
