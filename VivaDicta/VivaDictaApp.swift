@@ -39,7 +39,15 @@ struct VivaDictaApp: App {
             logger.info("📱 Recognized as keyboard recording request")
             
             appState.startLiveActivity()
-            
+
+            // Start audio prewarm session to keep app alive in background
+            do {
+                try AudioPrewarmManager.shared.startPrewarmSession()
+                logger.info("🎙️ Audio prewarm session started from deeplink")
+            } catch {
+                logger.error("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+            }
+
         } else {
             logger.warning("📱 Unknown deep link URL: \(url.absoluteString)")
         }

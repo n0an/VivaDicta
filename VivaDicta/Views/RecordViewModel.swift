@@ -61,6 +61,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
     private let sessionManager = AudioSessionManager.shared
+    private let prewarmManager = AudioPrewarmManager.shared
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordViewModel")
 
     var animationTimer: Timer?
@@ -157,51 +158,77 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 return
             }
 
-            // If session is already active, extend the timeout instead of reactivating
-            if sessionManager.isSessionActive {
-                sessionManager.extendTimeout()
-            } else {
-                do {
-                    let hasPermission = try await setupAudioSession()
+            // Check if prewarm session is active (keyboard recording)
+            if prewarmManager.isSessionActive {
+                logger.info("🎙️ Using prewarm session for recording")
 
-                    if !hasPermission {
-                        recordError = .userDenied
-                        isShowingAlert = true
-                        return
-                    }
+                resetValues()
+                recordingState = .recording
+                startRecordingHeartbeat()  // Start heartbeat when recording starts
+
+                do {
+                    // Use prewarm manager's parallel real recorder
+                    // This will start recording alongside the dummy recorder
+                    try prewarmManager.startRealCapture(to: captureURL)
+
+                    // Note: Audio metering won't work in prewarm mode (no audioRecorder reference)
+                    // but that's acceptable for keyboard recording
+
                 } catch {
-                    recordingState = .error(.other)
+                    resetValues()
+                    recordingState = .error(.recordError)
                     return
                 }
-            }
 
-            resetValues()
-            recordingState = .recording
-            startRecordingHeartbeat()  // Start heartbeat when recording starts
+            } else {
+                // Normal recording flow (not from keyboard)
+                logger.info("🎙️ Using normal recording flow")
 
-            do {
-                let settings: [String : Any] = [
-                    AVFormatIDKey: Int(kAudioFormatLinearPCM),
-                    AVSampleRateKey: 16000.0,
-                    AVNumberOfChannelsKey: 1,
-                    AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-                ]
+                // If session is already active, extend the timeout instead of reactivating
+                if sessionManager.isSessionActive {
+                    sessionManager.extendTimeout()
+                } else {
+                    do {
+                        let hasPermission = try await setupAudioSession()
 
-                audioRecorder = try AVAudioRecorder(
-                    url: captureURL,
-                    settings: settings)
-                audioRecorder.isMeteringEnabled = true
-                audioRecorder.delegate = self
-                audioRecorder.record()
-            
-            animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
-                Task { @MainActor in
-                    guard self.audioRecorder != nil else { return }
-                    self.audioRecorder.updateMeters()
-                    let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                    self.audioPower = power
+                        if !hasPermission {
+                            recordError = .userDenied
+                            isShowingAlert = true
+                            return
+                        }
+                    } catch {
+                        recordingState = .error(.other)
+                        return
+                    }
                 }
-            })
+
+                resetValues()
+                recordingState = .recording
+                startRecordingHeartbeat()  // Start heartbeat when recording starts
+
+                do {
+                    let settings: [String : Any] = [
+                        AVFormatIDKey: Int(kAudioFormatLinearPCM),
+                        AVSampleRateKey: 16000.0,
+                        AVNumberOfChannelsKey: 1,
+                        AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                    ]
+                    
+                    audioRecorder = try AVAudioRecorder(
+                        url: captureURL,
+                        settings: settings)
+                    audioRecorder.isMeteringEnabled = true
+                    audioRecorder.delegate = self
+                    audioRecorder.record()
+
+                    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
+                        Task { @MainActor in
+                            guard self.audioRecorder != nil else { return }
+                            self.audioRecorder.updateMeters()
+                            let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
+                            self.audioPower = power
+                        }
+                    })
             
             // TODO: Add auto stop feature later
 //            recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: true, block: { [unowned self]_ in
@@ -219,26 +246,51 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                self.prevAudioPower = power
 //            })
 
-            } catch {
-                resetValues()
-                recordingState = .error(.recordError)
+                } catch {
+                    resetValues()
+                    recordingState = .error(.recordError)
+                }
             }
         }
     }
     
     func stopCaptureAudio(modelContext: ModelContext) {
-        resetValues()
-        stopRecordingHeartbeat()  // Stop heartbeat when recording stops
+        // Stop real recorder if in prewarm mode (dummy continues running)
+        if prewarmManager.isSessionActive {
+            logger.info("🎙️ Stopping real capture in prewarm mode (dummy continues)")
+            prewarmManager.stopRealCapture()
 
-        // Schedule session deactivation after recording stops
-        sessionManager.scheduleDeactivation()
+            // In prewarm mode, we need a small delay to ensure file is flushed to disk
+            // before trying to move it
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
 
-        let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
-        do {
-            try FileManager.default.moveItem(at: captureURL, to: finalURL)
-            transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
-        } catch {
-            logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                resetValues()
+                stopRecordingHeartbeat()  // Stop heartbeat when recording stops
+
+                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+                do {
+                    try FileManager.default.moveItem(at: captureURL, to: finalURL)
+                    transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
+                } catch {
+                    logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                }
+            }
+        } else {
+            // Normal mode
+            resetValues()
+            stopRecordingHeartbeat()  // Stop heartbeat when recording stops
+
+            // Schedule session deactivation only in normal mode
+            sessionManager.scheduleDeactivation()
+
+            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+            do {
+                try FileManager.default.moveItem(at: captureURL, to: finalURL)
+                transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
+            } catch {
+                logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+            }
         }
     }
     
@@ -510,26 +562,57 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
 
     private func stopCaptureAudioForKeyboard() {
-        // Stop recording
-        resetValues()
-        stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
+        // Stop real recorder if in prewarm mode (dummy continues running)
+        if prewarmManager.isSessionActive {
+            logger.info("🎙️ Stopping real capture in prewarm mode for keyboard (dummy continues)")
+            prewarmManager.stopRealCapture()
 
-        // Notify keyboard that recording has stopped
-        AppGroupCoordinator.shared.notifyRecordingStopped()
+            // In prewarm mode, we need a small delay to ensure file is flushed to disk
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
 
-        // Schedule session deactivation after recording stops
-        sessionManager.scheduleDeactivation()
+                resetValues()
+                stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
 
-        // Save the audio file
-        let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
-        do {
-            try FileManager.default.moveItem(at: captureURL, to: finalURL)
+                // Notify keyboard that recording has stopped
+                AppGroupCoordinator.shared.notifyRecordingStopped()
 
-            // Start transcription task that will save to both UserDefaults and SwiftData
-            transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
-        } catch {
-            logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
-            recordingState = .error(.recordError)
+                // Don't schedule session deactivation - prewarm session continues
+
+                // Save the audio file
+                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+                do {
+                    try FileManager.default.moveItem(at: captureURL, to: finalURL)
+
+                    // Start transcription task that will save to both UserDefaults and SwiftData
+                    transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
+                } catch {
+                    logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                    recordingState = .error(.recordError)
+                }
+            }
+        } else {
+            // Normal mode (not using prewarm)
+            resetValues()
+            stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
+
+            // Notify keyboard that recording has stopped
+            AppGroupCoordinator.shared.notifyRecordingStopped()
+
+            // Schedule session deactivation after recording stops
+            sessionManager.scheduleDeactivation()
+
+            // Save the audio file
+            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+            do {
+                try FileManager.default.moveItem(at: captureURL, to: finalURL)
+
+                // Start transcription task that will save to both UserDefaults and SwiftData
+                transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
+            } catch {
+                logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                recordingState = .error(.recordError)
+            }
         }
     }
 
