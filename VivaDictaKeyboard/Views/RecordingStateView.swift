@@ -9,9 +9,13 @@ import SwiftUI
 import KeyboardKit
 
 struct RecordingStateView: View {
+    
+    @State var isSymbolAnimating = false
+    
     let stateManager: KeyboardStateManager
     let onCancelTapped: () -> Void
     let onStopTapped: () -> Void
+    
     
     var body: some View {
         
@@ -52,14 +56,14 @@ struct RecordingStateView: View {
                 .padding(.vertical, 10)
                 
                 // Recording indicator dots (placeholder for now)
-                HStack(spacing: 4) {
-                    ForEach(0..<12) { index in
-                        Circle()
-                            .fill(index < 6 ? Color.red.opacity(0.8) : Color.gray.opacity(0.3))
-                            .frame(width: 6, height: 6)
-                    }
-                }
-                .padding(.vertical, 20)
+                
+                Image(systemName: "microphone.circle.fill")
+                    .foregroundStyle(Color.green)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
+                    .font(.system(size: 30))
+                    .onAppear { isSymbolAnimating = true }
+                    .onDisappear { isSymbolAnimating = false }
+                    .padding(.vertical, 20)
             }
             
             Spacer()
