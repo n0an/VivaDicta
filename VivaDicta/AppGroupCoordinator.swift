@@ -23,6 +23,10 @@ public enum AppGroupConfig {
     public static let recordingHeartbeatInterval: TimeInterval = 5.0
     public static let recordingHeartbeatThreshold: TimeInterval = 10.0  // Consider recording active if heartbeat is within 10 seconds
 
+    // Timeout configuration
+    public static let recordingStartTimeout: TimeInterval = 10.0  // Keyboard: timeout for recording to start
+    public static let audioPrewarmSessionTimeout: TimeInterval = 300.0  // Audio prewarm session timeout (5 minutes)
+
     // AI Enhancement configuration
     public static let aiEnhanceModesKey = "AIEnhanceModes"
     public static let selectedAIModeKey = "selectedAIMode"

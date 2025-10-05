@@ -213,15 +213,15 @@ class KeyboardViewController: KeyboardInputViewController {
         // Cancel any existing timeout
         recordingTimeoutTask?.cancel()
 
-        // Start new timeout (10 seconds)
+        // Start new timeout
         recordingTimeoutTask = Task { @MainActor in
             do {
-                try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+                try await Task.sleep(nanoseconds: UInt64(AppGroupConfig.recordingStartTimeout * 1_000_000_000))
 
                 // Check if we're still waiting for recording to start
                 // (recording view is shown but actual recording hasn't started)
                 if self.keyboardStateManager.viewState == .recording && !self.appStateViewModel.isRecording {
-                    self.logger.info("⏰ Recording timeout - recording didn't start within 10 seconds")
+                    self.logger.info("⏰ Recording timeout - recording didn't start within \(AppGroupConfig.recordingStartTimeout) seconds")
 
                     // Show error
                     self.handleRecordingTimeout()
