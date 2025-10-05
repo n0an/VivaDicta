@@ -48,59 +48,15 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Setup the keyboard view with custom toolbar
         setupKeyboardView { [weak self] controller in
-            guard let self = self else {
-                return AnyView(EmptyView())
-            }
-
-            // Show custom view based on keyboard state
-            if self.keyboardStateManager.viewState == .recording {
-                return AnyView(
-                    RecordingStateView(
-                        stateManager: self.keyboardStateManager,
-                        onCancelTapped: {
-                            self.handleCancelRecording()
-                        },
-                        onStopTapped: {
-                            self.handleStopRecording()
-                        }
-                    )
-                )
-            } else if self.keyboardStateManager.viewState == .processing {
-                return AnyView(
-                    ProcessingStateView(
-                        processingStage: .init(
-                            get: { self.keyboardStateManager.processingStage },
-                            set: { self.keyboardStateManager.processingStage = $0 }
-                        ),
-                        onCancel: {
-                            self.handleCancelProcessing()
-                        }
-                    )
-                )
-            } else {
-                // Show normal keyboard with recording toolbar
-                return AnyView(
-                    VStack(spacing: 0) {
-                        KeyboardView(
-                            state: controller.state,
-                            services: controller.services,
-                            buttonContent: { $0.view },
-                            buttonView: { $0.view },
-                            collapsedView: { $0.view },
-                            emojiKeyboard: { $0.view },
-                            toolbar: { params in
-                                RecordingToolbar(
-                                    isMainAppActive: self.appStateViewModel.isMainAppActive,
-                                    isRecording: self.appStateViewModel.isRecording,
-                                    onRecordTapped: {
-                                        self.handleRecordButtonTap()
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-            }
+            KeyboardCustomView(
+                controller: controller,
+                stateManager: self?.keyboardStateManager,
+                appStateViewModel: self?.appStateViewModel,
+                onCancelRecording: { self?.handleCancelRecording() },
+                onStopRecording: { self?.handleStopRecording() },
+                onCancelProcessing: { self?.handleCancelProcessing() },
+                onRecordTapped: { self?.handleRecordButtonTap() }
+            )
         }
     }
 
