@@ -38,7 +38,7 @@ class KeyboardStateManager {
     private func loadFlowModes() {
         logger.info("🎯 Loading flow modes from shared storage...")
 
-        if let savedModesData = UserDefaultsStorage.shared.data(forKey: "AIEnhanceModes") {
+        if let savedModesData = UserDefaultsStorage.shared.data(forKey: AppGroupConfig.aiEnhanceModesKey) {
             logger.info("🎯 Found saved modes data, attempting to decode...")
 
             do {
@@ -56,7 +56,7 @@ class KeyboardStateManager {
     }
 
     private func loadSelectedMode() {
-        let selectedModeName = UserDefaultsStorage.shared.string(forKey: "selectedAIMode") ?? FlowMode.defaultMode.name
+        let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupConfig.selectedAIModeKey) ?? FlowMode.defaultMode.name
         selectedFlowMode = availableFlowModes.first(where: { $0.name == selectedModeName }) ?? FlowMode.defaultMode
     }
 
@@ -66,7 +66,7 @@ class KeyboardStateManager {
     }
 
     private func saveSelectedMode() {
-        UserDefaultsStorage.shared.set(selectedFlowMode.name, forKey: "selectedAIMode")
+        UserDefaultsStorage.shared.set(selectedFlowMode.name, forKey: AppGroupConfig.selectedAIModeKey)
     }
 
     // MARK: - State Transitions

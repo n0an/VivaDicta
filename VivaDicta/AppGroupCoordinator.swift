@@ -9,16 +9,23 @@ import Foundation
 
 // MARK: - App Groups Configuration
 public enum AppGroupConfig {
-    static let appGroupId = "group.com.antonnovoselov.VivaDicta"
-    static let heartbeatKey = "appLastHeartbeat"
-    static let isMainAppActiveKey = "isMainAppActive"
-    static let heartbeatInterval: TimeInterval = 5.0
-    static let heartbeatThreshold: TimeInterval = 10.0  // Consider app active if heartbeat is within 10 seconds
+    // App Group ID
+    public static let appGroupId = "group.com.antonnovoselov.VivaDicta"
+
+    // Heartbeat configuration
+    public static let heartbeatKey = "appLastHeartbeat"
+    public static let isMainAppActiveKey = "isMainAppActive"
+    public static let heartbeatInterval: TimeInterval = 5.0
+    public static let heartbeatThreshold: TimeInterval = 10.0  // Consider app active if heartbeat is within 10 seconds
 
     // Recording heartbeat configuration
-    static let recordingHeartbeatKey = "recordingLastHeartbeat"
-    static let recordingHeartbeatInterval: TimeInterval = 5.0
-    static let recordingHeartbeatThreshold: TimeInterval = 10.0  // Consider recording active if heartbeat is within 10 seconds
+    public static let recordingHeartbeatKey = "recordingLastHeartbeat"
+    public static let recordingHeartbeatInterval: TimeInterval = 5.0
+    public static let recordingHeartbeatThreshold: TimeInterval = 10.0  // Consider recording active if heartbeat is within 10 seconds
+
+    // AI Enhancement configuration
+    public static let aiEnhanceModesKey = "AIEnhanceModes"
+    public static let selectedAIModeKey = "selectedAIMode"
 }
 
 // MARK: - Darwin Notification Names
