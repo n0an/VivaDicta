@@ -15,10 +15,17 @@ class KeyboardViewController: KeyboardInputViewController {
     // MARK: - Properties
     let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
     private var transcriptionObserver: Timer?
-    private let appStateDetector = AppStateDetector()
-    private let recordingStateDetector = RecordingStateDetector()
-    private var appStateTimer: Timer?
-    var recordingTimeoutTask: Task<Void, Never>?
+
+    // Services (internal so extensions can access them)
+    // Using protocol types for easier testing and mocking
+    lazy var appStateMonitoringService: AppStateMonitoring = AppStateMonitoringService()
+    lazy var recordingCoordinator: RecordingCoordination = RecordingCoordinator()
+    private lazy var urlOpeningService: URLOpening = URLOpeningService(
+        extensionContext: self.extensionContext,
+        responderChainRoot: self
+    )
+
+    // State
     var appStateViewModel = AppStateViewModel()
     var keyboardStateManager = KeyboardStateManager()
 
@@ -26,7 +33,10 @@ class KeyboardViewController: KeyboardInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
+        // Setup service delegates
+        setupServiceDelegates()
+
         // Create keyboard app configuration
         let keyboardApp = KeyboardApp(
             name: "VivaDicta Keyboard",
@@ -40,11 +50,16 @@ class KeyboardViewController: KeyboardInputViewController {
         }
     }
 
+    private func setupServiceDelegates() {
+        appStateMonitoringService.delegate = self
+        recordingCoordinator.delegate = self
+    }
+
     override func viewWillSetupKeyboardView() {
         super.viewWillSetupKeyboardView()
 
-        // Check initial app state
-        updateAppState()
+        // Check initial app state using the monitoring service
+        appStateMonitoringService.updateStates()
 
         // Setup the keyboard view with custom toolbar
         setupKeyboardView { [weak self] controller in
@@ -63,8 +78,8 @@ class KeyboardViewController: KeyboardInputViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        // Start monitoring app state periodically
-        startAppStateMonitoring()
+        // Start monitoring app state using the service
+        appStateMonitoringService.startMonitoring()
 
         // Setup Darwin notification observers for immediate updates
         setupDarwinNotificationObservers()
@@ -73,80 +88,16 @@ class KeyboardViewController: KeyboardInputViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        // Stop monitoring app state
-        stopAppStateMonitoring()
+        // Stop monitoring app state using the service
+        appStateMonitoringService.stopMonitoring()
 
-        // Cancel any pending recording timeout
-        recordingTimeoutTask?.cancel()
-        recordingTimeoutTask = nil
+        // Cancel any pending recording timeout using the coordinator
+        recordingCoordinator.cancelRecordingTimeout()
 
         // Clean up Darwin notification observers specific to keyboard
         AppGroupCoordinator.shared.removeKeyboardObservers()
     }
 
-    // MARK: - App State Monitoring
-
-    private func startAppStateMonitoring() {
-        // Stop any existing timer
-        stopAppStateMonitoring()
-
-        // Check state immediately
-        updateAppState()
-
-        // Set up periodic monitoring (every 5 seconds matches heartbeat interval)
-        appStateTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateAppState()
-            }
-        }
-
-        logger.info("🔍 Started app state monitoring")
-    }
-
-    private func stopAppStateMonitoring() {
-        appStateTimer?.invalidate()
-        appStateTimer = nil
-        logger.info("🔍 Stopped app state monitoring")
-    }
-
-    private func updateAppState() {
-        let previousState = appStateViewModel.isMainAppActive
-        let newState = appStateDetector.isMainAppActive()
-
-        // Check recording state using heartbeat detector
-        let previousRecordingState = appStateViewModel.isRecording
-        let newRecordingState = recordingStateDetector.isRecordingActive()
-
-        Task { @MainActor in
-            self.appStateViewModel.isMainAppActive = newState
-            self.appStateViewModel.isRecording = newRecordingState
-
-            if previousState != newState {
-                self.logger.info("📱 App state changed: \(newState ? "ACTIVE ✅" : "SUSPENDED ⏸️")")
-            }
-
-            if previousRecordingState != newRecordingState {
-                self.logger.info("🎤 Recording state changed: \(newRecordingState ? "RECORDING 🔴" : "NOT RECORDING ⏹️")")
-
-                // Log heartbeat age for debugging
-                if let age = self.recordingStateDetector.recordingHeartbeatAge() {
-                    self.logger.info("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
-                }
-
-                // Update keyboard view state when recording status changes
-                if newRecordingState {
-                    // Recording started - show recording view
-                    self.keyboardStateManager.startRecording()
-                } else if self.keyboardStateManager.viewState == .recording {
-                    // Recording stopped - return to idle
-                    self.keyboardStateManager.finishProcessing()
-                }
-
-                // Force keyboard view to update
-                self.viewWillSetupKeyboardView()
-            }
-        }
-    }
 
     // MARK: - Recording
 
@@ -168,24 +119,22 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Check if currently recording
         if appStateViewModel.isRecording {
-            // Stop recording
-            logger.info("🛑 Stopping recording via Darwin notification")
-            AppGroupCoordinator.shared.requestStopRecording()
+            // Stop recording using coordinator
+            recordingCoordinator.stopRecording()
             return
         }
 
         // Check current app state
-        let appState = appStateDetector.detectAppState()
-        logger.info("🎤 Current app state: \(appState == .active ? "ACTIVE" : "SUSPENDED")")
+        let isAppActive = appStateMonitoringService.isMainAppActive
+        logger.info("🎤 Current app state: \(isAppActive ? "ACTIVE" : "SUSPENDED")")
 
-        if appState == .suspended {
+        if !isAppActive {
             // App is suspended - open it via URL scheme
             logger.info("🎤 App is suspended, opening via URL scheme")
             openMainAppViaURLScheme()
         } else {
-            // App is active - send Darwin notification to start recording
-            logger.info("🎤 App is active, sending Darwin notification to start recording")
-            AppGroupCoordinator.shared.requestStartRecording()
+            // App is active - start recording via coordinator
+            logger.info("🎤 App is active, starting recording via coordinator")
 
             // Clear any previous cancel flag
             keyboardStateManager.didCancelRecording = false
@@ -199,60 +148,19 @@ class KeyboardViewController: KeyboardInputViewController {
             // Force keyboard view to update
             viewWillSetupKeyboardView()
 
-            // Set up timeout in case recording doesn't start
-            startRecordingTimeout()
-        }
-    }
-
-    private func startRecordingTimeout() {
-        // Cancel any existing timeout
-        recordingTimeoutTask?.cancel()
-
-        // Start new timeout
-        recordingTimeoutTask = Task { @MainActor in
-            do {
-                try await Task.sleep(nanoseconds: UInt64(AppGroupConfig.recordingStartTimeout * 1_000_000_000))
-
-                // Check if we're still waiting for recording to start
-                // (recording view is shown but actual recording hasn't started)
-                if self.keyboardStateManager.viewState == .recording && !self.appStateViewModel.isRecording {
-                    self.logger.info("⏰ Recording timeout - recording didn't start within \(AppGroupConfig.recordingStartTimeout) seconds")
-
-                    // Show error
-                    self.handleRecordingTimeout()
-                }
-            } catch {
-                // Task was cancelled, this is normal
-            }
-        }
-    }
-
-    private func handleRecordingTimeout() {
-        logger.info("❌ Handling recording timeout")
-
-        // Transition to error state
-        keyboardStateManager.processingStage = .error("Recording failed to start")
-        keyboardStateManager.viewState = .processing
-        viewWillSetupKeyboardView()
-
-        // Return to idle after showing error
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-            self.keyboardStateManager.cancelRecording()
-            self.viewWillSetupKeyboardView()
+            // Start recording via coordinator (which also starts timeout)
+            recordingCoordinator.startRecording()
         }
     }
 
     private func handleCancelRecording() {
         logger.info("🎤 Cancel recording tapped")
 
-        // If recording is active, cancel it (without transcription)
-        if appStateViewModel.isRecording {
-            AppGroupCoordinator.shared.requestCancelRecording()
-        }
-
         // Mark that we canceled to prevent text insertion
         keyboardStateManager.didCancelRecording = true
+
+        // Cancel recording via coordinator
+        recordingCoordinator.cancelRecording()
 
         // Return to idle state
         keyboardStateManager.cancelRecording()
@@ -267,8 +175,8 @@ class KeyboardViewController: KeyboardInputViewController {
         // Clear cancel flag - this is a normal stop with transcription
         keyboardStateManager.didCancelRecording = false
 
-        // Send stop recording request
-        AppGroupCoordinator.shared.requestStopRecording()
+        // Stop recording via coordinator
+        recordingCoordinator.stopRecording()
 
         // Note: The transition to processing state will happen
         // when we receive the recordingStopped notification
@@ -280,10 +188,8 @@ class KeyboardViewController: KeyboardInputViewController {
         // Mark that we canceled to prevent text insertion
         keyboardStateManager.didCancelRecording = true
 
-        // Request cancellation if still recording
-        if appStateViewModel.isRecording {
-            AppGroupCoordinator.shared.requestCancelRecording()
-        }
+        // Cancel recording via coordinator
+        recordingCoordinator.cancelRecording()
 
         // Return to idle state
         keyboardStateManager.cancelRecording()
@@ -295,65 +201,70 @@ class KeyboardViewController: KeyboardInputViewController {
     private func openMainAppViaURLScheme() {
         // Open main app with recording intent
         let url = URL(string: "vivadicta://record-for-keyboard")!
-        logger.info("🎤 Opening URL: \(url.absoluteString)")
+        urlOpeningService.openURL(url, completion: nil)
+    }
+}
 
-        // Method 1: Try extensionContext.open (primary method)
-        self.extensionContext?.open(url) { [weak self] success in
-            if success {
-                self?.logger.info("🎤 ✅ Successfully opened main app via extensionContext")
-            } else {
-                self?.logger.info("🎤 ⚠️ extensionContext.open failed, trying alternative methods...")
-                Task { @MainActor in
-                    self?.tryAlternativeURLOpening(url)
-                }
-            }
-        }
+// MARK: - AppStateMonitoringDelegate
+
+extension KeyboardViewController: AppStateMonitoringDelegate {
+
+    func appStateDidChange(isActive: Bool) {
+        appStateViewModel.isMainAppActive = isActive
     }
 
-    private func tryAlternativeURLOpening(_ url: URL) {
-        logger.info("🎤 Trying alternative URL opening methods...")
+    func recordingStateDidChange(isRecording: Bool) {
+        appStateViewModel.isRecording = isRecording
 
-        // Method 2: Try UIApplication directly via key-value coding
-        if let sharedApp = UIApplication.value(forKeyPath: "sharedApplication") as? UIApplication {
-            logger.info("🎤 Found UIApplication using sharedApplication")
-
-            if sharedApp.canOpenURL(url) {
-                logger.info("🎤 canOpenURL returned true")
-                sharedApp.open(url, options: [:]) { [weak self] success in
-                    if success {
-                        self?.logger.info("🎤 ✅ Successfully opened main app via UIApplication.open")
-                    } else {
-                        self?.logger.error("🎤 ❌ UIApplication.open failed")
-                        Task { @MainActor in
-                            self?.openURLViaResponderChain(url)
-                        }
-                    }
-                }
-                return
-            } else {
-                logger.warning("🎤 ⚠️ canOpenURL returned false")
-            }
-        } else {
-            logger.info("🎤 Could not get UIApplication via sharedApplication")
+        // Update keyboard view state when recording status changes
+        if isRecording {
+            // Recording started - show recording view
+            keyboardStateManager.startRecording()
+        } else if keyboardStateManager.viewState == .recording {
+            // Recording stopped - return to idle
+            keyboardStateManager.finishProcessing()
         }
 
-        // Fallback to responder chain method
-        openURLViaResponderChain(url)
+        // Force keyboard view to update
+        viewWillSetupKeyboardView()
     }
-    
-    private func openURLViaResponderChain(_ url: URL) {
-        var optionalResponder: UIResponder? = self
-        let selector = NSSelectorFromString("openURL:")
-        while let responder = optionalResponder {
-            if responder.responds(to: selector) {
-                logger.info("🎤 Found responder that responds to openURL:")
-                responder.perform(selector, with: url)
-                logger.info("🎤 ✅ Attempted to open main app via responder chain")
-                return
-            }
-            optionalResponder = responder.next
-        }
-        logger.error("🎤 ❌ All URL opening methods failed")
+}
 
+// MARK: - RecordingCoordinatorDelegate
+
+extension KeyboardViewController: RecordingCoordinatorDelegate {
+
+    func recordingCoordinatorDidStartRecording() {
+        // Coordinator has sent the start recording request
+        // No additional action needed here as Darwin notifications will handle state updates
+    }
+
+    func recordingCoordinatorDidStopRecording() {
+        // Coordinator has sent the stop recording request
+        // No additional action needed here as Darwin notifications will handle state updates
+    }
+
+    func recordingCoordinatorDidCancelRecording() {
+        // Coordinator has sent the cancel recording request
+        // No additional action needed here as Darwin notifications will handle state updates
+    }
+
+    func recordingCoordinatorDidTimeout() {
+        logger.info("❌ Recording coordinator timeout - handling error")
+
+        // Check if we're still waiting for recording to start
+        if keyboardStateManager.viewState == .recording && !appStateViewModel.isRecording {
+            // Transition to error state
+            keyboardStateManager.processingStage = .error("Recording failed to start")
+            keyboardStateManager.viewState = .processing
+            viewWillSetupKeyboardView()
+
+            // Return to idle after showing error
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+                self.keyboardStateManager.cancelRecording()
+                self.viewWillSetupKeyboardView()
+            }
+        }
     }
 }

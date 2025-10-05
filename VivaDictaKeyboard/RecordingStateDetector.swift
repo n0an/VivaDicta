@@ -9,14 +9,14 @@ import Foundation
 import os
 
 /// Detects the recording state in the main app using heartbeat mechanism
-class RecordingStateDetector {
+public class RecordingStateDetector {
 
     // MARK: - Properties
     private let sharedDefaults: UserDefaults?
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
 
     // MARK: - Initialization
-    init() {
+    public init() {
         sharedDefaults = UserDefaultsStorage.shared
         logger.info("🎤 💙 RecordingStateDetector initialized")
     }
@@ -24,7 +24,7 @@ class RecordingStateDetector {
     // MARK: - Public Methods
 
     /// Check if recording is currently active based on heartbeat
-    func isRecordingActive() -> Bool {
+    public func isRecordingActive() -> Bool {
         logger.debug("🎤 💙 Checking recording state via heartbeat")
 
         guard let sharedDefaults = sharedDefaults else {
@@ -61,7 +61,7 @@ class RecordingStateDetector {
     }
 
     /// Get the age of the last recording heartbeat in seconds (for debugging)
-    func recordingHeartbeatAge() -> TimeInterval? {
+    public func recordingHeartbeatAge() -> TimeInterval? {
         guard let sharedDefaults = sharedDefaults else { return nil }
 
         let lastHeartbeat = sharedDefaults.double(forKey: AppGroupConfig.recordingHeartbeatKey)
@@ -69,9 +69,9 @@ class RecordingStateDetector {
 
         return Date().timeIntervalSince1970 - lastHeartbeat
     }
-    
+
     /// Check if the recording flag is set (legacy check without heartbeat)
-    func isRecordingFlagSet() -> Bool {
+    public func isRecordingFlagSet() -> Bool {
         guard let sharedDefaults = sharedDefaults else {
             logger.error("🎤 💙 ❌ Failed to access shared UserDefaults")
             return false
