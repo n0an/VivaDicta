@@ -17,9 +17,20 @@ protocol RecordingCoordinatorDelegate: AnyObject {
     func recordingCoordinatorDidTimeout()
 }
 
+/// Protocol for recording coordinator to enable mocking in tests
+@MainActor
+protocol RecordingCoordination: AnyObject {
+    var delegate: RecordingCoordinatorDelegate? { get set }
+
+    func startRecording()
+    func stopRecording()
+    func cancelRecording()
+    func cancelRecordingTimeout()
+}
+
 /// Service that coordinates recording operations and handles timeouts
 @MainActor
-class RecordingCoordinator {
+class RecordingCoordinator: RecordingCoordination {
 
     // MARK: - Properties
 

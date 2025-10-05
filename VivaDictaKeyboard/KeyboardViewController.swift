@@ -17,9 +17,10 @@ class KeyboardViewController: KeyboardInputViewController {
     private var transcriptionObserver: Timer?
 
     // Services (internal so extensions can access them)
-    lazy var appStateMonitoringService = AppStateMonitoringService()
-    lazy var recordingCoordinator = RecordingCoordinator()
-    private lazy var urlOpeningService = URLOpeningService(
+    // Using protocol types for easier testing and mocking
+    lazy var appStateMonitoringService: AppStateMonitoring = AppStateMonitoringService()
+    lazy var recordingCoordinator: RecordingCoordination = RecordingCoordinator()
+    private lazy var urlOpeningService: URLOpening = URLOpeningService(
         extensionContext: self.extensionContext,
         responderChainRoot: self
     )
@@ -200,7 +201,7 @@ class KeyboardViewController: KeyboardInputViewController {
     private func openMainAppViaURLScheme() {
         // Open main app with recording intent
         let url = URL(string: "vivadicta://record-for-keyboard")!
-        urlOpeningService.openURL(url)
+        urlOpeningService.openURL(url, completion: nil)
     }
 }
 

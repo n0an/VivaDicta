@@ -8,8 +8,13 @@
 import UIKit
 import os
 
+/// Protocol for URL opening service to enable mocking in tests
+protocol URLOpening {
+    func openURL(_ url: URL, completion: ((Bool) -> Void)?)
+}
+
 /// Service that handles opening URLs via different methods with fallback strategies
-class URLOpeningService {
+class URLOpeningService: URLOpening {
 
     // MARK: - Properties
 

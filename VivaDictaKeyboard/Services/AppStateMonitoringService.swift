@@ -15,9 +15,21 @@ protocol AppStateMonitoringDelegate: AnyObject {
     func recordingStateDidChange(isRecording: Bool)
 }
 
+/// Protocol for app state monitoring service to enable mocking in tests
+@MainActor
+protocol AppStateMonitoring: AnyObject {
+    var delegate: AppStateMonitoringDelegate? { get set }
+    var isMainAppActive: Bool { get }
+    var isRecording: Bool { get }
+
+    func startMonitoring()
+    func stopMonitoring()
+    func updateStates()
+}
+
 /// Service that monitors app and recording states periodically
 @MainActor
-class AppStateMonitoringService {
+class AppStateMonitoringService: AppStateMonitoring {
 
     // MARK: - Properties
 
