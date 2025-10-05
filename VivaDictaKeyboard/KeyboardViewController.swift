@@ -83,6 +83,11 @@ class KeyboardViewController: KeyboardInputViewController {
         // Clean up Darwin notification observers specific to keyboard
         AppGroupCoordinator.shared.removeKeyboardObservers()
     }
+    
+    isolated deinit {
+        appStateTimer?.invalidate()
+        appStateTimer = nil
+    }
 
     // MARK: - App State Monitoring
 
