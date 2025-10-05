@@ -20,6 +20,10 @@ extension KeyboardViewController {
             Task { @MainActor in
                 self?.logger.info("📱 Received recordingStarted notification - updating UI immediately")
                 self?.appStateViewModel.isRecording = true
+
+                // Cancel recording timeout since recording started successfully
+                self?.recordingTimeoutTask?.cancel()
+                self?.recordingTimeoutTask = nil
             }
         }
 
@@ -93,20 +97,27 @@ extension KeyboardViewController {
         // Observe recording error notification
         AppGroupCoordinator.shared.observeRecordingError { [weak self] in
             Task { @MainActor in
-                self?.logger.info("📱 Received recordingError notification")
+                guard let self = self else { return }
+
+                self.logger.info("📱 Received recordingError notification")
+
                 // Reset recording state on error
-                self?.appStateViewModel.isRecording = false
+                self.appStateViewModel.isRecording = false
 
                 // Show error in processing view then return to idle
-                self?.keyboardStateManager.processingStage = .error("Processing failed")
+                self.keyboardStateManager.processingStage = .error("Recording failed")
 
-                // Return to idle after a delay
-                Task {
+                // If not in processing state, transition to it to show error
+                if self.keyboardStateManager.viewState != .processing {
+                    self.keyboardStateManager.viewState = .processing
+                    self.viewWillSetupKeyboardView()
+                }
+
+                // Return to idle after showing error
+                Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-                    await MainActor.run {
-                        self?.keyboardStateManager.cancelRecording()
-                        self?.viewWillSetupKeyboardView()
-                    }
+                    self.keyboardStateManager.cancelRecording()
+                    self.viewWillSetupKeyboardView()
                 }
             }
         }
@@ -128,12 +139,24 @@ extension KeyboardViewController {
         if let transcribedText = UserDefaultsStorage.shared.string(forKey: "lastTranscription") {
             logger.info("📝 Inserting transcribed text: \(transcribedText.prefix(50))...")
 
+            // Safely insert the transcribed text with error handling
+            guard !transcribedText.isEmpty else {
+                logger.info("📝 Transcribed text is empty, skipping insertion")
+                UserDefaultsStorage.shared.removeObject(forKey: "lastTranscription")
+                UserDefaultsStorage.shared.synchronize()
+                return
+            }
+
             // Insert the transcribed text
             textDocumentProxy.insertText(transcribedText)
 
             // Clear the transcription from UserDefaults
             UserDefaultsStorage.shared.removeObject(forKey: "lastTranscription")
             UserDefaultsStorage.shared.synchronize()
+
+            logger.info("📝 Successfully inserted transcription")
+        } else {
+            logger.info("📝 No transcription found in UserDefaults")
         }
     }
 }

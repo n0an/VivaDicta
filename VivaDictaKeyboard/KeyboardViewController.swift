@@ -18,6 +18,7 @@ class KeyboardViewController: KeyboardInputViewController {
     private let appStateDetector = AppStateDetector()
     private let recordingStateDetector = RecordingStateDetector()
     private var appStateTimer: Timer?
+    var recordingTimeoutTask: Task<Void, Never>?
     var appStateViewModel = AppStateViewModel()
     var keyboardStateManager = KeyboardStateManager()
 
@@ -118,6 +119,10 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Stop monitoring app state
         stopAppStateMonitoring()
+
+        // Cancel any pending recording timeout
+        recordingTimeoutTask?.cancel()
+        recordingTimeoutTask = nil
 
         // Clean up Darwin notification observers specific to keyboard
         AppGroupCoordinator.shared.removeKeyboardObservers()
@@ -237,6 +242,48 @@ class KeyboardViewController: KeyboardInputViewController {
 
             // Force keyboard view to update
             viewWillSetupKeyboardView()
+
+            // Set up timeout in case recording doesn't start
+            startRecordingTimeout()
+        }
+    }
+
+    private func startRecordingTimeout() {
+        // Cancel any existing timeout
+        recordingTimeoutTask?.cancel()
+
+        // Start new timeout (10 seconds)
+        recordingTimeoutTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+
+                // Check if we're still waiting for recording to start
+                // (recording view is shown but actual recording hasn't started)
+                if self.keyboardStateManager.viewState == .recording && !self.appStateViewModel.isRecording {
+                    self.logger.info("⏰ Recording timeout - recording didn't start within 10 seconds")
+
+                    // Show error
+                    self.handleRecordingTimeout()
+                }
+            } catch {
+                // Task was cancelled, this is normal
+            }
+        }
+    }
+
+    private func handleRecordingTimeout() {
+        logger.info("❌ Handling recording timeout")
+
+        // Transition to error state
+        keyboardStateManager.processingStage = .error("Recording failed to start")
+        keyboardStateManager.viewState = .processing
+        viewWillSetupKeyboardView()
+
+        // Return to idle after showing error
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            self.keyboardStateManager.cancelRecording()
+            self.viewWillSetupKeyboardView()
         }
     }
 
