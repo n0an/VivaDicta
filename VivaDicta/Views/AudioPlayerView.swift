@@ -7,11 +7,12 @@
 
 import SwiftUI
 import AVFoundation
+import os
 
 struct WaveformGenerator {
+    
     static func generateWaveformSamples(from url: URL, sampleCount: Int = 100) async -> [Float] {
-        print("🌊 WaveformGenerator: Attempting to read audio file at \(url)")
-        guard let audioFile = try? AVAudioFile(forReading: url) else { 
+        guard let audioFile = try? AVAudioFile(forReading: url) else {
             return []
         }
         
@@ -54,6 +55,8 @@ struct WaveformGenerator {
 
 @Observable @MainActor
 class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPlayerManager")
+    
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?
     var isPlaying = false
@@ -78,7 +81,7 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
                 }
             }
         } catch {
-            print("❌ Error loading audio: \(error.localizedDescription)")
+            logger.error("❌ Error loading audio: \(error.localizedDescription)")
         }
     }
     

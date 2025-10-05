@@ -8,9 +8,12 @@
 import Foundation
 import SwiftUI
 import ActivityKit
+import os
 
 @Observable
 class AppState {
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppState")
+    
     var liveActivity: Activity<VivaDictaLiveActivityAttributes>? = nil
     
     var transcriptionManager: TranscriptionManager!
@@ -85,7 +88,7 @@ class AppState {
             liveActivity = try Activity.request(attributes: attributes, content: activityContent)
 
         } catch {
-            print(error.localizedDescription)
+            logger.error("🤺 Error starting Live Activity \(error.localizedDescription)")
         }
     }
 }
