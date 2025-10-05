@@ -137,7 +137,7 @@ extension KeyboardViewController {
 
         // Read transcribed text from shared UserDefaults
         if let transcribedText = UserDefaultsStorage.shared.string(forKey: "lastTranscription") {
-            logger.info("📝 Inserting transcribed text: \(transcribedText.prefix(50))...")
+            logger.info("📝 Inserting transcribed text...")
 
             // Safely insert the transcribed text with error handling
             guard !transcribedText.isEmpty else {

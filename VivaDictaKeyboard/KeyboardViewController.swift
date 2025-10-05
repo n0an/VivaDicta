@@ -384,55 +384,20 @@ class KeyboardViewController: KeyboardInputViewController {
         // Fallback to responder chain method
         openURLViaResponderChain(url)
     }
-
+    
     private func openURLViaResponderChain(_ url: URL) {
-        logger.info("🎤 Trying responder chain method...")
-
-        // Method 3: Walk responder chain to find openURL: selector
-        var responder: UIResponder? = self
-        let selector = sel_registerName("openURL:")
-
-        // Find a responder that can handle openURL:
-        while let r = responder, !r.responds(to: selector) {
-            responder = r.next
-        }
-
-        if let responder = responder {
-            logger.info("🎤 Found responder that responds to openURL:")
-            _ = responder.perform(selector, with: url)
-            logger.info("🎤 ✅ Attempted to open main app via responder chain")
-        } else {
-            logger.error("🎤 ❌ All URL opening methods failed")
-
-            // Show error message to user
-            Task { @MainActor in
-                textDocumentProxy.insertText("[Unable to open VivaDicta. Please open the app manually] ")
+        var optionalResponder: UIResponder? = self
+        let selector = NSSelectorFromString("openURL:")
+        while let responder = optionalResponder {
+            if responder.responds(to: selector) {
+                logger.info("🎤 Found responder that responds to openURL:")
+                responder.perform(selector, with: url)
+                logger.info("🎤 ✅ Attempted to open main app via responder chain")
+                return
             }
+            optionalResponder = responder.next
         }
+        logger.error("🎤 ❌ All URL opening methods failed")
+
     }
-
-}
-
-
-// FIXME: - not used, perhaps delete
-@MainActor
-struct URLOpener {
-  let responder: UIResponder
-
-  func open(urlString: String) {
-    if let url = URL(string: urlString) {
-      var optionalResponder: UIResponder? = responder
-      let selector = NSSelectorFromString("openURL:")
-      while let responder = optionalResponder {
-        if responder.responds(to: selector) {
-          responder.perform(selector, with: url)
-          return
-        }
-        optionalResponder = responder.next
-      }
-      print("Can't open", urlString)
-    } else {
-      print("Can't open", urlString)
-    }
-  }
 }
