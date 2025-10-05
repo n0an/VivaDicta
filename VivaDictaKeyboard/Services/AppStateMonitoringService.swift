@@ -10,14 +10,14 @@ import os
 
 /// Delegate protocol for app state monitoring events
 @MainActor
-protocol AppStateMonitoringDelegate: AnyObject {
+public protocol AppStateMonitoringDelegate: AnyObject {
     func appStateDidChange(isActive: Bool)
     func recordingStateDidChange(isRecording: Bool)
 }
 
 /// Protocol for app state monitoring service to enable mocking in tests
 @MainActor
-protocol AppStateMonitoring: AnyObject {
+public protocol AppStateMonitoring: AnyObject {
     var delegate: AppStateMonitoringDelegate? { get set }
     var isMainAppActive: Bool { get }
     var isRecording: Bool { get }
@@ -29,7 +29,7 @@ protocol AppStateMonitoring: AnyObject {
 
 /// Service that monitors app and recording states periodically
 @MainActor
-class AppStateMonitoringService: AppStateMonitoring {
+public class AppStateMonitoringService: AppStateMonitoring {
 
     // MARK: - Properties
 
@@ -38,15 +38,15 @@ class AppStateMonitoringService: AppStateMonitoring {
     private let recordingStateDetector: RecordingStateDetector
     private var monitoringTimer: Timer?
 
-    weak var delegate: AppStateMonitoringDelegate?
+    public weak var delegate: AppStateMonitoringDelegate?
 
     // Current state cache
-    private(set) var isMainAppActive: Bool = false
-    private(set) var isRecording: Bool = false
+    public private(set) var isMainAppActive: Bool = false
+    public private(set) var isRecording: Bool = false
 
     // MARK: - Initialization
 
-    init(
+    public init(
         appStateDetector: AppStateDetector = AppStateDetector(),
         recordingStateDetector: RecordingStateDetector = RecordingStateDetector()
     ) {
@@ -57,7 +57,7 @@ class AppStateMonitoringService: AppStateMonitoring {
     // MARK: - Public Methods
 
     /// Start monitoring app and recording states
-    func startMonitoring() {
+    public func startMonitoring() {
         // Stop any existing timer
         stopMonitoring()
 
@@ -78,14 +78,14 @@ class AppStateMonitoringService: AppStateMonitoring {
     }
 
     /// Stop monitoring app and recording states
-    func stopMonitoring() {
+    public func stopMonitoring() {
         monitoringTimer?.invalidate()
         monitoringTimer = nil
         logger.info("🔍 Stopped app state monitoring")
     }
 
     /// Force an immediate state update (useful for manual refresh)
-    func updateStates() {
+    public func updateStates() {
         let previousAppState = isMainAppActive
         let newAppState = appStateDetector.isMainAppActive()
 

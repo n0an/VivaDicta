@@ -9,10 +9,10 @@ import Foundation
 import os
 
 /// Detects the main app's state (active/suspended) for the keyboard extension
-class AppStateDetector {
+public class AppStateDetector {
 
     // MARK: - Types
-    enum AppState {
+    public enum AppState {
         case suspended      // App is suspended and cannot receive Darwin notifications
         case active        // App is not suspended and ready to receive Darwin notifications
     }
@@ -22,7 +22,7 @@ class AppStateDetector {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
 
     // MARK: - Initialization
-    init() {
+    public init() {
         sharedDefaults = UserDefaultsStorage.shared
         logger.info("🔍 AppStateDetector initialized")
     }
@@ -30,7 +30,7 @@ class AppStateDetector {
     // MARK: - Public Methods
 
     /// Detect the current state of the main app
-    func detectAppState() -> AppState {
+    public func detectAppState() -> AppState {
         guard let sharedDefaults = sharedDefaults else {
             logger.error("🔍 ❌ Failed to access shared UserDefaults")
             return .suspended
@@ -60,12 +60,12 @@ class AppStateDetector {
     }
 
     /// Check if the main app is currently active (convenience method)
-    func isMainAppActive() -> Bool {
+    public func isMainAppActive() -> Bool {
         return detectAppState() == .active
     }
 
     /// Get the age of the last heartbeat in seconds (for debugging)
-    func heartbeatAge() -> TimeInterval? {
+    public func heartbeatAge() -> TimeInterval? {
         guard let sharedDefaults = sharedDefaults else { return nil }
 
         let lastHeartbeat = sharedDefaults.double(forKey: AppGroupConfig.heartbeatKey)

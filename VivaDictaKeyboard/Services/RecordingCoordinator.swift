@@ -10,7 +10,7 @@ import os
 
 /// Delegate protocol for recording coordinator events
 @MainActor
-protocol RecordingCoordinatorDelegate: AnyObject {
+public protocol RecordingCoordinatorDelegate: AnyObject {
     func recordingCoordinatorDidStartRecording()
     func recordingCoordinatorDidStopRecording()
     func recordingCoordinatorDidCancelRecording()
@@ -19,7 +19,7 @@ protocol RecordingCoordinatorDelegate: AnyObject {
 
 /// Protocol for recording coordinator to enable mocking in tests
 @MainActor
-protocol RecordingCoordination: AnyObject {
+public protocol RecordingCoordination: AnyObject {
     var delegate: RecordingCoordinatorDelegate? { get set }
 
     func startRecording()
@@ -30,7 +30,7 @@ protocol RecordingCoordination: AnyObject {
 
 /// Service that coordinates recording operations and handles timeouts
 @MainActor
-class RecordingCoordinator: RecordingCoordination {
+public class RecordingCoordinator: RecordingCoordination {
 
     // MARK: - Properties
 
@@ -38,18 +38,18 @@ class RecordingCoordinator: RecordingCoordination {
     private let appGroupCoordinator: AppGroupCoordinator
     private var recordingTimeoutTask: Task<Void, Never>?
 
-    weak var delegate: RecordingCoordinatorDelegate?
+    public weak var delegate: RecordingCoordinatorDelegate?
 
     // MARK: - Initialization
 
-    init(appGroupCoordinator: AppGroupCoordinator = .shared) {
+    public init(appGroupCoordinator: AppGroupCoordinator = .shared) {
         self.appGroupCoordinator = appGroupCoordinator
     }
 
     // MARK: - Public Methods
 
     /// Start recording
-    func startRecording() {
+    public func startRecording() {
         logger.info("🎤 Starting recording via Darwin notification")
         appGroupCoordinator.requestStartRecording()
 
@@ -61,7 +61,7 @@ class RecordingCoordinator: RecordingCoordination {
     }
 
     /// Stop recording (with transcription)
-    func stopRecording() {
+    public func stopRecording() {
         logger.info("🎤 Stopping recording via Darwin notification")
         appGroupCoordinator.requestStopRecording()
 
@@ -73,7 +73,7 @@ class RecordingCoordinator: RecordingCoordination {
     }
 
     /// Cancel recording (without transcription)
-    func cancelRecording() {
+    public func cancelRecording() {
         logger.info("🎤 Canceling recording via Darwin notification")
         appGroupCoordinator.requestCancelRecording()
 
@@ -85,7 +85,7 @@ class RecordingCoordinator: RecordingCoordination {
     }
 
     /// Cancel any pending timeout task
-    func cancelRecordingTimeout() {
+    public func cancelRecordingTimeout() {
         recordingTimeoutTask?.cancel()
         recordingTimeoutTask = nil
     }

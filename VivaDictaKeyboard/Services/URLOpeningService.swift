@@ -9,12 +9,12 @@ import UIKit
 import os
 
 /// Protocol for URL opening service to enable mocking in tests
-protocol URLOpening {
+public protocol URLOpening {
     func openURL(_ url: URL, completion: ((Bool) -> Void)?)
 }
 
 /// Service that handles opening URLs via different methods with fallback strategies
-class URLOpeningService: URLOpening {
+public class URLOpeningService: URLOpening {
 
     // MARK: - Properties
 
@@ -24,7 +24,7 @@ class URLOpeningService: URLOpening {
 
     // MARK: - Initialization
 
-    init(extensionContext: NSExtensionContext?, responderChainRoot: UIResponder?) {
+    public init(extensionContext: NSExtensionContext?, responderChainRoot: UIResponder?) {
         self.extensionContext = extensionContext
         self.responderChainRoot = responderChainRoot
     }
@@ -32,7 +32,7 @@ class URLOpeningService: URLOpening {
     // MARK: - Public Methods
 
     /// Open a URL using the best available method with automatic fallback
-    func openURL(_ url: URL, completion: ((Bool) -> Void)? = nil) {
+    public func openURL(_ url: URL, completion: ((Bool) -> Void)? = nil) {
         logger.info("🎤 Opening URL: \(url.absoluteString)")
 
         // Method 1: Try extensionContext.open (primary method)
