@@ -21,7 +21,7 @@ struct TranscriptionDetailView: View {
             HStack {
                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 
                 Text(transcription.getDurationFormatted(transcription.audioDuration))
@@ -29,7 +29,7 @@ struct TranscriptionDetailView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.blue.opacity(0.1))
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
                     .cornerRadius(6)
             }
             
@@ -42,7 +42,7 @@ struct TranscriptionDetailView: View {
                 HStack {
                     Text("Original")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Spacer()
                     AnimatedCopyButton(textToCopy: transcription.text)
                 }
@@ -60,10 +60,10 @@ struct TranscriptionDetailView: View {
                     HStack {
                         HStack(spacing: 4) {
                             Image(systemName: "sparkles")
-                                .foregroundColor(.blue)
+                                .foregroundStyle(.blue)
                             Text("Enhanced")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.blue)
+                                .foregroundStyle(.blue)
                         }
                         Spacer()
                         AnimatedCopyButton(textToCopy: enhancedText)
@@ -104,16 +104,16 @@ struct TranscriptionDetailView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.footnote.weight(.medium))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .frame(width: 20, alignment: .center)
 
             Text(label)
                 .font(.footnote.weight(.medium))
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
             Spacer()
             Text(value)
                 .font(.footnote.weight(.medium))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
     }
 }

@@ -37,7 +37,7 @@ extension Transition where Self == BlurTransition {
 //    func body(content: Content) -> some View {
 //        content
 //            .font(.caption)
-//            .foregroundColor(.white)
+//            .foregroundStyle(.white)
 //            .padding(.horizontal, 5)
 //            .padding(.vertical, 2)
 //            .background {
@@ -75,7 +75,7 @@ struct DefaultBadgeStyle: BadgeStyle {
     func makeBody(_ label: AnyView) -> some View {
         label
             .font(.caption)
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
             .background {
@@ -136,7 +136,7 @@ struct FancyBadgeStyle: BadgeStyle {
 
     func makeBody(_ label: AnyView) -> some View {
         label
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .font(.caption)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)

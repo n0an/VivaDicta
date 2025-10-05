@@ -18,10 +18,10 @@ struct AnimatedCopyButton: View {
             HStack(spacing: 4) {
                 Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 12, weight: isCopied ? .bold : .regular))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                 Text(isCopied ? "Copied" : "Copy")
                     .font(.system(size: 12, weight: isCopied ? .medium : .regular))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)

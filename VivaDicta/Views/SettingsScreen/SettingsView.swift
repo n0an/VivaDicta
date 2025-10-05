@@ -49,11 +49,11 @@ struct SettingsView: View {
                                 navigationPath: $navigationPath)) {
                                     HStack {
                                         Image(systemName: "plus.circle.fill")
-                                            .foregroundColor(.blue)
+                                            .foregroundStyle(.blue)
                                             .font(.title2)
                                          
                                         Text("Add New Mode")
-                                            .foregroundColor(.blue)
+                                            .foregroundStyle(.blue)
                                             .font(.body)
                                         
                                         Spacer()
