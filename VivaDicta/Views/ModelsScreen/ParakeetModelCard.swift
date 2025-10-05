@@ -134,7 +134,7 @@ struct ParakeetModelCard: View {
                 .frame(width: 100)
             Text("\(Int(currentProgress * 100))%")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .frame(width: 30)
         }
     }

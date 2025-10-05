@@ -88,10 +88,10 @@ struct ModeEditView: View {
                                 Text("Download Local Transcription Model")
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.blue)
                     } else {
                         if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
                             NavigationLink(destination: AddAPIKeyView(

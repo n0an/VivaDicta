@@ -15,7 +15,7 @@ struct TranscriptionRowView: View {
             HStack {
                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 
                 Text(transcription.getDurationFormatted(transcription.audioDuration))
@@ -23,7 +23,7 @@ struct TranscriptionRowView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(.blue.opacity(0.1))
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
                     .cornerRadius(6)
             }
             

@@ -23,15 +23,15 @@ import SwiftUI
 //                    VStack(alignment: .leading, spacing: 8) {
 //                        Text("Language: Autodetected")
 //                            .font(.subheadline)
-//                            .foregroundColor(.primary)
+//                            .foregroundStyle(.primary)
 //
 //                        Text("Current model: \(currentModel.displayName)")
 //                            .font(.caption)
-//                            .foregroundColor(.secondary)
+//                            .foregroundStyle(.secondary)
 //
 //                        Text("The transcription language is automatically detected by the model.")
 //                            .font(.caption)
-//                            .foregroundColor(.secondary)
+//                            .foregroundStyle(.secondary)
 //                    }
 //                } else if isMultilingualModel {
 //                    VStack(alignment: .leading, spacing: 8) {
@@ -55,30 +55,30 @@ import SwiftUI
 //
 //                        Text("Current model: \(currentModel.displayName)")
 //                            .font(.caption)
-//                            .foregroundColor(.secondary)
+//                            .foregroundStyle(.secondary)
 //
 //                        Text(
 //                            "This model supports multiple languages. Select a specific language or auto-detect(if available)"
 //                        )
 //                        .font(.caption)
-//                        .foregroundColor(.secondary)
+//                        .foregroundStyle(.secondary)
 //                    }
 //                } else {
 //                    // For English-only models, force set language to English
 //                    VStack(alignment: .leading, spacing: 8) {
 //                        Text("Language: English")
 //                            .font(.subheadline)
-//                            .foregroundColor(.primary)
+//                            .foregroundStyle(.primary)
 //
 //                        Text("Current model: \(currentModel.displayName)")
 //                            .font(.caption)
-//                            .foregroundColor(.secondary)
+//                            .foregroundStyle(.secondary)
 //
 //                        Text(
 //                            "This is an English-optimized model and only supports English transcription."
 //                        )
 //                        .font(.caption)
-//                        .foregroundColor(.secondary)
+//                        .foregroundStyle(.secondary)
 //                    }
 //                    .onAppear {
 //                        // Force set English when viewing English-only model
@@ -88,7 +88,7 @@ import SwiftUI
 //            } else {
 //                Text("No model selected")
 //                    .font(.subheadline)
-//                    .foregroundColor(.secondary)
+//                    .foregroundStyle(.secondary)
 //            }
 //        }
 //        .padding()
