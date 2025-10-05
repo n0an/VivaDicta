@@ -67,7 +67,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
     
-    static let allModels: [any TranscriptionModel] = allLocalModels + allParakeetModels + allWhisperKitModels + allCloudModels
+    @MainActor static let allModels: [any TranscriptionModel] = allLocalModels + allParakeetModels + allWhisperKitModels + allCloudModels
     
     static var allLocalModels: [WhisperLocalModel] {
         [

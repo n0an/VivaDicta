@@ -61,8 +61,8 @@ struct GroqTranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
         
-        let selectedLanguage = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
-        let prompt = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
+        let prompt = UserDefaultsStorage.shared.string(forKey: Constants.kTranscriptionPrompt) ?? ""
         
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)

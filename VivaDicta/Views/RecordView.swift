@@ -82,11 +82,15 @@ struct RecordView: View {
         case .idle, .error:
             startCaptureButton
         case .transcribing:
-            Image(systemName: "circle.dotted.circle")
-                .symbolEffect(.bounce.up.byLayer, options: .repeating, value: isSymbolAnimating)
-                .font(.system(size: 128))
-                .onAppear { isSymbolAnimating = true }
-                .onDisappear { isSymbolAnimating = false }
+            VStack(spacing: 12) {
+                Image(systemName: "circle.dotted.circle")
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.5)), value: isSymbolAnimating)
+                    .font(.system(size: 80))
+                    .onAppear { isSymbolAnimating = true }
+                    .onDisappear { isSymbolAnimating = false }
+                
+                Text("Transcribing...")
+            }
         default: EmptyView()
         }
     }

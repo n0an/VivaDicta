@@ -44,7 +44,8 @@ struct CloudModel: @MainActor TranscriptionModel {
 extension CloudModel {
     var apiKey: String? {
         get {
-            UserDefaults.standard.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+            // API keys need to be shared with keyboard extension
+            return UserDefaultsStorage.shared.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
         }
     }
 }

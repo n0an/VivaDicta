@@ -34,8 +34,9 @@ actor WhisperContext {
         let maxThreads = max(1, min(8, ProcessInfo.processInfo.processorCount - 2))
         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
 
-        // Read language directly from UserDefaults
-        let selectedLanguage = UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
+        // Read language directly from shared UserDefaults (needs to be shared with keyboard)
+        let sharedDefaults = UserDefaults(suiteName: "group.com.antonnovoselov.VivaDicta") ?? UserDefaults.standard
+        let selectedLanguage = sharedDefaults.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto" {
             languageCString = Array(selectedLanguage.utf8CString)
             params.language = languageCString?.withUnsafeBufferPointer { ptr in
@@ -69,8 +70,8 @@ actor WhisperContext {
 
         whisper_reset_timings(context)
 
-        // Configure VAD if enabled by user and model is available
-        let isVADEnabled = UserDefaults.standard.object(forKey: "IsVADEnabled") as? Bool ?? true
+        // Configure VAD if enabled by user and model is available (shared setting)
+        let isVADEnabled = sharedDefaults.object(forKey: "IsVADEnabled") as? Bool ?? true
         if isVADEnabled, let vadModelPath = vadModelPath {
             // Store the VAD model path as C string for persistence
             vadModelPathCString = Array(vadModelPath.utf8CString)
@@ -89,11 +90,11 @@ actor WhisperContext {
             vadParams.samples_overlap = 0.875
             params.vad_params = vadParams
 
-            logger.debug("VAD enabled with threshold: \(vadParams.threshold), min_silence: \(vadParams.min_silence_duration_ms)ms")
+            logger.info("VAD enabled with threshold: \(vadParams.threshold), min_silence: \(vadParams.min_silence_duration_ms)ms")
         } else {
             params.vad = false
             if !isVADEnabled {
-                logger.debug("VAD disabled by user preference")
+                logger.info("VAD disabled by user preference")
             } else if vadModelPath == nil {
                 logger.warning("VAD model not available despite being enabled")
             }
@@ -112,7 +113,7 @@ actor WhisperContext {
 
         let processingTime = Date().timeIntervalSince(startTime)
         if vadEnabled {
-            logger.debug("Transcription with VAD completed in \(String(format: "%.2f", processingTime))s")
+            logger.info("Transcription with VAD completed in \(String(format: "%.2f", processingTime))s")
         }
 
         languageCString = nil

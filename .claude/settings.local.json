@@ -32,7 +32,8 @@
       "Bash(find:*)",
       "Bash(gh pr create:*)",
       "Bash(git restore:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "WebFetch(domain:keyboardkit.github.io)"
     ],
     "deny": [],
     "ask": [],

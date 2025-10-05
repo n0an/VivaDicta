@@ -47,8 +47,8 @@ class LocalTranscriptionService: TranscriptionService {
         // Read audio data
         let data = try readAudioSamples(audioURL)
 
-        // Set prompt
-        let currentPrompt = UserDefaults.standard.string(forKey: Constants.kTranscriptionPrompt) ?? ""
+        // Set prompt (needs to be shared with keyboard extension)
+        let currentPrompt = UserDefaultsStorage.shared.string(forKey: Constants.kTranscriptionPrompt) ?? ""
         await whisperContext.setPrompt(currentPrompt)
 
         // Transcribe

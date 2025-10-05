@@ -3,6 +3,10 @@
 You are given the following context:
 $ARGUMENTS
 
+<IMPORTANT>
+DON'T CHANGE ANYTHING. JUST REVIEW THE CHANGES
+</IMPORTANT>
+
 ## Task
 Perform a comprehensive code review of the current changes (git diff) in the repository.
 

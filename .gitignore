@@ -106,3 +106,7 @@ claude_session_*
 
 buildServer.json
 Makefile
+
+
+llmtemp/
+llmtempArchive/

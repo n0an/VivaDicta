@@ -7,10 +7,12 @@
 
 import Foundation
 import SwiftUI
+import os
 
 @Observable
 class TranscriptionManager {
-    private let whisperPrompt: WhisperPrompt
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionManager")
+    
     private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()
@@ -48,10 +50,11 @@ class TranscriptionManager {
 
     var selectedLanguage: String {
         get {
-            UserDefaults.standard.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
+            // Language setting should be shared with keyboard extension
+            UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "en"
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: Constants.kSelectedLanguageKey)
+            UserDefaultsStorage.shared.set(newValue, forKey: Constants.kSelectedLanguageKey)
         }
     }
 
@@ -69,7 +72,6 @@ class TranscriptionManager {
     }
 
     init() {
-        whisperPrompt = WhisperPrompt()
         localTranscriptionService = LocalTranscriptionService()
     }
 
@@ -80,7 +82,6 @@ class TranscriptionManager {
 
     private func updateLanguage(_ language: String) {
         selectedLanguage = language
-        whisperPrompt.updateTranscriptionPrompt()
     }
 
     private func applyModeLanguage(_ mode: FlowMode) {
@@ -132,18 +133,18 @@ class TranscriptionManager {
     public func preloadWhisperKitModelIfNeeded() async {
         // Check if current mode uses WhisperKit
         guard currentMode.transcriptionProvider == .whisperKit else {
-            print("📱 Preload skipped: Current mode doesn't use WhisperKit (uses \(currentMode.transcriptionProvider))")
+            logger.info("📱 Preload skipped: Current mode doesn't use WhisperKit (uses \(self.currentMode.transcriptionProvider.rawValue))")
             return
         }
 
         // Check if we have a valid WhisperKit model selected
         guard let model = getCurrentTranscriptionModel(),
               let whisperKitModel = model as? WhisperKitModel else {
-            print("📱 Preload skipped: No valid WhisperKit model in current mode")
+            logger.info("📱 Preload skipped: No valid WhisperKit model in current mode")
             return
         }
 
-        print("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
+        logger.info("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
 
         // Trigger preload in background
         await whisperKitTranscriptionService.preloadModelIfNeeded(modelPath: whisperKitModel.whisperKitModelName)

@@ -32,12 +32,13 @@ class AIService {
         }
     }
     
-    private let userDefaults = UserDefaults.standard
+    // All AI settings need to be shared with keyboard extension
+    private let userDefaults = UserDefaultsStorage.shared
     private let baseTimeout: TimeInterval = 30
 
     
     init() {
-        self.selectedModeName = UserDefaults.standard.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        self.selectedModeName = userDefaults.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
@@ -128,23 +129,24 @@ class AIService {
     }
 
     private func loadModes() {
-        if let savedModesData = userDefaults.data(forKey: "AIEnhanceModes"),
+        if let savedModesData = userDefaults.data(forKey: AppGroupConfig.aiEnhanceModesKey),
            let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             modes = savedModes
         } else {
             modes = [FlowMode.defaultMode]
         }
-        
+
         logger.info("Loaded \(self.modes.count) Flow Modes")
     }
-    
+
     private func saveModes() {
         guard let encoded = try? JSONEncoder().encode(modes) else {
             logger.error("Failed to encode Flow Modes")
             return
         }
-        userDefaults.set(encoded, forKey: "AIEnhanceModes")
-        logger.info("Saved \(self.modes.count) Flow Modes")
+        userDefaults.set(encoded, forKey: AppGroupConfig.aiEnhanceModesKey)
+        userDefaults.synchronize() // Force immediate write to disk
+        logger.info("Saved \(self.modes.count) Flow Modes to shared storage")
     }
     
     private func saveSelectedModeName(_ modeName: String) {
