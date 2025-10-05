@@ -178,12 +178,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     audioRecorder = prewarmManager.activeRealRecorder
 
                     // Start metering timer for visualization
-                    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
+                    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            guard self.audioRecorder != nil else { return }
-                            self.audioRecorder.updateMeters()
-                            let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                            self.audioPower = power
+                            guard self?.audioRecorder != nil else { return }
+                            self?.audioRecorder.updateMeters()
+                            if let audioRecorder = self?.audioRecorder {
+                                let power = min(1, max(0, 1 - abs(Double(audioRecorder.averagePower(forChannel: 0)) / 50) ))
+                                self?.audioPower = power
+                            }
                         }
                     })
 
@@ -230,12 +232,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     audioRecorder.delegate = self
                     audioRecorder.record()
 
-                    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
+                    animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            guard self.audioRecorder != nil else { return }
-                            self.audioRecorder.updateMeters()
-                            let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                            self.audioPower = power
+                            guard self?.audioRecorder != nil else { return }
+                            self?.audioRecorder.updateMeters()
+                            if let audioRecorder = self?.audioRecorder {
+                                let power = min(1, max(0, 1 - abs(Double(audioRecorder.averagePower(forChannel: 0)) / 50) ))
+                                self?.audioPower = power
+                            }
+                            
                         }
                     })
             
@@ -399,12 +404,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         audioPlayer.delegate = self
         audioPlayer.play()
         
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [unowned self]_ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
             Task { @MainActor in
-                guard self.audioPlayer != nil else { return }
-                self.audioPlayer.updateMeters()
-                let power = min(1, max(0, 1 - abs(Double(self.audioPlayer.averagePower(forChannel: 0)) / 160) ))
-                self.audioPower = power
+                guard self?.audioPlayer != nil else { return }
+                self?.audioPlayer.updateMeters()
+                if let audioPlayer = self?.audioPlayer {
+                    let power = min(1, max(0, 1 - abs(Double(audioPlayer.averagePower(forChannel: 0)) / 160) ))
+                    self?.audioPower = power
+                }
             }
         })
     }
@@ -637,7 +644,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 AppGroupCoordinator.shared.notifyTranscriptionEnded()
 
                 // Load the selected flow mode from shared UserDefaults (set by keyboard)
-                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: "selectedAIMode") {
+                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupConfig.selectedAIModeKey) {
                     logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
                     // Update the AI service's selected mode to match what was selected in keyboard
                     aiService.selectedModeName = selectedModeName
