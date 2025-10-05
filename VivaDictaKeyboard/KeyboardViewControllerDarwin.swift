@@ -22,8 +22,7 @@ extension KeyboardViewController {
                 self?.appStateViewModel.isRecording = true
 
                 // Cancel recording timeout since recording started successfully
-                self?.recordingTimeoutTask?.cancel()
-                self?.recordingTimeoutTask = nil
+                self?.recordingCoordinator.cancelRecordingTimeout()
             }
         }
 

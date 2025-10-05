@@ -23,7 +23,7 @@ struct PromptEditView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)

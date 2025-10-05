@@ -38,7 +38,7 @@ struct CloudModelConfigurationView: View {
             if let error = verificationError {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .padding(.horizontal)
             }
              

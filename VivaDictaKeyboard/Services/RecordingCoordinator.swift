@@ -1,0 +1,104 @@
+//
+//  RecordingCoordinator.swift
+//  VivaDictaKeyboard
+//
+//  Service responsible for coordinating recording lifecycle and handling timeouts
+//
+
+import Foundation
+import os
+
+/// Delegate protocol for recording coordinator events
+@MainActor
+protocol RecordingCoordinatorDelegate: AnyObject {
+    func recordingCoordinatorDidStartRecording()
+    func recordingCoordinatorDidStopRecording()
+    func recordingCoordinatorDidCancelRecording()
+    func recordingCoordinatorDidTimeout()
+}
+
+/// Service that coordinates recording operations and handles timeouts
+@MainActor
+class RecordingCoordinator {
+
+    // MARK: - Properties
+
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordingCoordinator")
+    private let appGroupCoordinator: AppGroupCoordinator
+    private var recordingTimeoutTask: Task<Void, Never>?
+
+    weak var delegate: RecordingCoordinatorDelegate?
+
+    // MARK: - Initialization
+
+    init(appGroupCoordinator: AppGroupCoordinator = .shared) {
+        self.appGroupCoordinator = appGroupCoordinator
+    }
+
+    // MARK: - Public Methods
+
+    /// Start recording
+    func startRecording() {
+        logger.info("🎤 Starting recording via Darwin notification")
+        appGroupCoordinator.requestStartRecording()
+
+        // Set up timeout in case recording doesn't start
+        startRecordingTimeout()
+
+        // Notify delegate
+        delegate?.recordingCoordinatorDidStartRecording()
+    }
+
+    /// Stop recording (with transcription)
+    func stopRecording() {
+        logger.info("🎤 Stopping recording via Darwin notification")
+        appGroupCoordinator.requestStopRecording()
+
+        // Cancel any pending timeout
+        cancelRecordingTimeout()
+
+        // Notify delegate
+        delegate?.recordingCoordinatorDidStopRecording()
+    }
+
+    /// Cancel recording (without transcription)
+    func cancelRecording() {
+        logger.info("🎤 Canceling recording via Darwin notification")
+        appGroupCoordinator.requestCancelRecording()
+
+        // Cancel any pending timeout
+        cancelRecordingTimeout()
+
+        // Notify delegate
+        delegate?.recordingCoordinatorDidCancelRecording()
+    }
+
+    /// Cancel any pending timeout task
+    func cancelRecordingTimeout() {
+        recordingTimeoutTask?.cancel()
+        recordingTimeoutTask = nil
+    }
+
+    // MARK: - Private Methods
+
+    private func startRecordingTimeout() {
+        // Cancel any existing timeout
+        cancelRecordingTimeout()
+
+        // Start new timeout
+        recordingTimeoutTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(AppGroupConfig.recordingStartTimeout * 1_000_000_000))
+
+                // If we reach here, timeout occurred
+                logger.info("⏰ Recording timeout - recording didn't start within \(AppGroupConfig.recordingStartTimeout) seconds")
+
+                // Notify delegate
+                delegate?.recordingCoordinatorDidTimeout()
+
+            } catch {
+                // Task was cancelled, this is normal
+            }
+        }
+    }
+}
