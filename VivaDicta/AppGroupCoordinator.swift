@@ -24,46 +24,47 @@ public enum AppGroupConfig {
 // MARK: - Darwin Notification Names
 public enum DarwinNotificationName {
     /// Notification sent from keyboard to start recording
-    static let startRecording = "com.antonnovoselov.VivaDicta.startRecording"
+    nonisolated(unsafe) public static let startRecording = "com.antonnovoselov.VivaDicta.startRecording"
 
     /// Notification sent from keyboard to stop recording
-    static let stopRecording = "com.antonnovoselov.VivaDicta.stopRecording"
+    nonisolated(unsafe) public static let stopRecording = "com.antonnovoselov.VivaDicta.stopRecording"
 
     /// Notification sent from keyboard to cancel recording without transcription
-    static let cancelRecording = "com.antonnovoselov.VivaDicta.cancelRecording"
+    nonisolated(unsafe) public static let cancelRecording = "com.antonnovoselov.VivaDicta.cancelRecording"
 
     /// Notification sent from main app when transcription is ready
-    static let transcriptionReady = "com.antonnovoselov.VivaDicta.transcriptionReady"
+    nonisolated(unsafe) public static let transcriptionReady = "com.antonnovoselov.VivaDicta.transcriptionReady"
 
     /// Notification sent from main app when recording has started
-    static let recordingStarted = "com.antonnovoselov.VivaDicta.recordingStarted"
+    nonisolated(unsafe) public static let recordingStarted = "com.antonnovoselov.VivaDicta.recordingStarted"
 
     /// Notification sent from main app when recording has stopped
-    static let recordingStopped = "com.antonnovoselov.VivaDicta.recordingStopped"
+    nonisolated(unsafe) public static let recordingStopped = "com.antonnovoselov.VivaDicta.recordingStopped"
 
     /// Notification sent when an error occurs
-    static let recordingError = "com.antonnovoselov.VivaDicta.recordingError"
+    nonisolated(unsafe) public static let recordingError = "com.antonnovoselov.VivaDicta.recordingError"
 
     /// Notification sent when transcription starts
-    static let transcriptionStarted = "com.antonnovoselov.VivaDicta.transcriptionStarted"
+    nonisolated(unsafe) public static let transcriptionStarted = "com.antonnovoselov.VivaDicta.transcriptionStarted"
 
     /// Notification sent when transcription ends
-    static let transcriptionEnded = "com.antonnovoselov.VivaDicta.transcriptionEnded"
+    nonisolated(unsafe) public static let transcriptionEnded = "com.antonnovoselov.VivaDicta.transcriptionEnded"
 
     /// Notification sent when AI enhancement starts
-    static let aiEnhancementStarted = "com.antonnovoselov.VivaDicta.aiEnhancementStarted"
+    nonisolated(unsafe) public static let aiEnhancementStarted = "com.antonnovoselov.VivaDicta.aiEnhancementStarted"
 
     /// Notification sent when AI enhancement ends
-    static let aiEnhancementEnded = "com.antonnovoselov.VivaDicta.aiEnhancementEnded"
+    nonisolated(unsafe) public static let aiEnhancementEnded = "com.antonnovoselov.VivaDicta.aiEnhancementEnded"
 }
 
 // MARK: - Darwin Notification Center
-public final class AppGroupCoordinator: @unchecked Sendable {
+public actor AppGroupCoordinator {
 
     // MARK: - Properties
     public static let shared = AppGroupCoordinator()
-    private let darwinCenter = CFNotificationCenterGetDarwinNotifyCenter()
-    private var observations: [String: Unmanaged<DarwinNotificationCallback>] = [:]  // Track by notification name
+    private nonisolated(unsafe) let darwinCenter = CFNotificationCenterGetDarwinNotifyCenter()
+    private let observationsLock = NSLock()
+    private nonisolated(unsafe) var observations: [String: Unmanaged<DarwinNotificationCallback>] = [:]  // Protected by observationsLock
 
     // MARK: - Initialization
     private init() {}
@@ -74,7 +75,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     // MARK: - Posting Notifications
 
     /// Post a Darwin notification to communicate between app and keyboard extension
-    public func postNotification(_ name: String) {
+    nonisolated public func postNotification(_ name: String) {
         CFNotificationCenterPostNotification(
             darwinCenter,
             CFNotificationName(rawValue: name as CFString),
@@ -85,57 +86,57 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     }
 
     /// Request to start recording (sent from keyboard)
-    public func requestStartRecording() {
+    nonisolated public func requestStartRecording() {
         postNotification(DarwinNotificationName.startRecording)
     }
 
     /// Request to stop recording (sent from keyboard)
-    public func requestStopRecording() {
+    nonisolated public func requestStopRecording() {
         postNotification(DarwinNotificationName.stopRecording)
     }
 
     /// Request to cancel recording without transcription (sent from keyboard)
-    public func requestCancelRecording() {
+    nonisolated public func requestCancelRecording() {
         postNotification(DarwinNotificationName.cancelRecording)
     }
 
     /// Notify that transcription is ready (sent from main app)
-    public func notifyTranscriptionReady() {
+    nonisolated public func notifyTranscriptionReady() {
         postNotification(DarwinNotificationName.transcriptionReady)
     }
 
     /// Notify that recording has started (sent from main app)
-    public func notifyRecordingStarted() {
+    nonisolated public func notifyRecordingStarted() {
         postNotification(DarwinNotificationName.recordingStarted)
     }
 
     /// Notify that recording has stopped (sent from main app)
-    public func notifyRecordingStopped() {
+    nonisolated public func notifyRecordingStopped() {
         postNotification(DarwinNotificationName.recordingStopped)
     }
 
     /// Notify that an error occurred (sent from main app)
-    public func notifyRecordingError() {
+    nonisolated public func notifyRecordingError() {
         postNotification(DarwinNotificationName.recordingError)
     }
 
     /// Notify that transcription has started (sent from main app)
-    public func notifyTranscriptionStarted() {
+    nonisolated public func notifyTranscriptionStarted() {
         postNotification(DarwinNotificationName.transcriptionStarted)
     }
 
     /// Notify that transcription has ended (sent from main app)
-    public func notifyTranscriptionEnded() {
+    nonisolated public func notifyTranscriptionEnded() {
         postNotification(DarwinNotificationName.transcriptionEnded)
     }
 
     /// Notify that AI enhancement has started (sent from main app)
-    public func notifyAIEnhancementStarted() {
+    nonisolated public func notifyAIEnhancementStarted() {
         postNotification(DarwinNotificationName.aiEnhancementStarted)
     }
 
     /// Notify that AI enhancement has ended (sent from main app)
-    public func notifyAIEnhancementEnded() {
+    nonisolated public func notifyAIEnhancementEnded() {
         postNotification(DarwinNotificationName.aiEnhancementEnded)
     }
 
@@ -145,7 +146,10 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     /// - Parameters:
     ///   - name: The notification name to observe
     ///   - callback: The callback to execute when notification is received
-    public func addObserver(for name: String, callback: @escaping () -> Void) {
+    nonisolated public func addObserver(for name: String, callback: @escaping @Sendable () -> Void) {
+        observationsLock.lock()
+        defer { observationsLock.unlock() }
+
         // Remove existing observer if any
         if let existingObserver = observations[name] {
             CFNotificationCenterRemoveObserver(
@@ -180,7 +184,10 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     }
 
     /// Remove observer for a Darwin notification
-    public func removeObserver(for name: String) {
+    nonisolated public func removeObserver(for name: String) {
+        observationsLock.lock()
+        defer { observationsLock.unlock() }
+
         // Remove from notification center
         if let observer = observations[name] {
             CFNotificationCenterRemoveObserver(
@@ -195,7 +202,10 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     }
 
     /// Remove all observers
-    public func removeAllObservers() {
+    nonisolated public func removeAllObservers() {
+        observationsLock.lock()
+        defer { observationsLock.unlock() }
+
         // Release all retained callbacks and remove observers
         for (name, observer) in observations {
             CFNotificationCenterRemoveObserver(
@@ -212,64 +222,64 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     // MARK: - Convenience Methods for Observing
 
     /// Observe start recording requests
-    public func observeStartRecording(callback: @escaping () -> Void) {
+    nonisolated public func observeStartRecording(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.startRecording, callback: callback)
     }
 
     /// Observe stop recording requests
-    public func observeStopRecording(callback: @escaping () -> Void) {
+    nonisolated public func observeStopRecording(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.stopRecording, callback: callback)
     }
 
     /// Observe cancel recording requests
-    public func observeCancelRecording(callback: @escaping () -> Void) {
+    nonisolated public func observeCancelRecording(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.cancelRecording, callback: callback)
     }
 
     /// Observe transcription ready notifications
-    public func observeTranscriptionReady(callback: @escaping () -> Void) {
+    nonisolated public func observeTranscriptionReady(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.transcriptionReady, callback: callback)
     }
 
     /// Observe recording started notifications
-    public func observeRecordingStarted(callback: @escaping () -> Void) {
+    nonisolated public func observeRecordingStarted(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.recordingStarted, callback: callback)
     }
 
     /// Observe recording stopped notifications
-    public func observeRecordingStopped(callback: @escaping () -> Void) {
+    nonisolated public func observeRecordingStopped(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.recordingStopped, callback: callback)
     }
 
     /// Observe recording error notifications
-    public func observeRecordingError(callback: @escaping () -> Void) {
+    nonisolated public func observeRecordingError(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.recordingError, callback: callback)
     }
 
     /// Observe transcription started notifications
-    public func observeTranscriptionStarted(callback: @escaping () -> Void) {
+    nonisolated public func observeTranscriptionStarted(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.transcriptionStarted, callback: callback)
     }
 
     /// Observe transcription ended notifications
-    public func observeTranscriptionEnded(callback: @escaping () -> Void) {
+    nonisolated public func observeTranscriptionEnded(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.transcriptionEnded, callback: callback)
     }
 
     /// Observe AI enhancement started notifications
-    public func observeAIEnhancementStarted(callback: @escaping () -> Void) {
+    nonisolated public func observeAIEnhancementStarted(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.aiEnhancementStarted, callback: callback)
     }
 
     /// Observe AI enhancement ended notifications
-    public func observeAIEnhancementEnded(callback: @escaping () -> Void) {
+    nonisolated public func observeAIEnhancementEnded(callback: @escaping @Sendable () -> Void) {
         addObserver(for: DarwinNotificationName.aiEnhancementEnded, callback: callback)
     }
 
     // MARK: - Convenience Methods for Cleanup
 
     /// Remove all keyboard-specific observers (used by keyboard extension)
-    public func removeKeyboardObservers() {
+    nonisolated public func removeKeyboardObservers() {
         removeObserver(for: DarwinNotificationName.recordingStarted)
         removeObserver(for: DarwinNotificationName.recordingStopped)
         removeObserver(for: DarwinNotificationName.transcriptionReady)
@@ -281,7 +291,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     }
 
     /// Remove all main app recording observers (used by main app)
-    public func removeMainAppObservers() {
+    nonisolated public func removeMainAppObservers() {
         removeObserver(for: DarwinNotificationName.startRecording)
         removeObserver(for: DarwinNotificationName.stopRecording)
         removeObserver(for: DarwinNotificationName.cancelRecording)
@@ -289,14 +299,14 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 }
 
 // MARK: - Helper Class for Callbacks
-private class DarwinNotificationCallback {
-    let callback: () -> Void
+private final class DarwinNotificationCallback: @unchecked Sendable {
+    let callback: @Sendable () -> Void
 
-    init(callback: @escaping () -> Void) {
+    nonisolated init(callback: @escaping @Sendable () -> Void) {
         self.callback = callback
     }
 
-    func invoke() {
+    nonisolated func invoke() {
         callback()
     }
 }
