@@ -17,11 +17,11 @@ enum KeyboardViewState {
 @Observable
 class KeyboardStateManager {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardState")
-    var viewState: KeyboardViewState = .idle
-    var processingStage: ProcessingStage = .waitingToStart
-    var selectedFlowMode: FlowMode = FlowMode.defaultMode
-    var availableFlowModes: [FlowMode] = []
-    var didCancelRecording: Bool = false
+    public var viewState: KeyboardViewState = .idle
+    public var processingStage: ProcessingStage = .waitingToStart
+    public private(set) var selectedFlowMode: FlowMode = FlowMode.defaultMode
+    public private(set) var availableFlowModes: [FlowMode] = []
+    public var didCancelRecording: Bool = false
 
     init() {
         loadFlowModes()
@@ -30,7 +30,7 @@ class KeyboardStateManager {
 
     // MARK: - Flow Mode Management
 
-    func refreshFlowModes() {
+    public func refreshFlowModes() {
         loadFlowModes()
         loadSelectedMode()
     }
@@ -60,7 +60,7 @@ class KeyboardStateManager {
         selectedFlowMode = availableFlowModes.first(where: { $0.name == selectedModeName }) ?? FlowMode.defaultMode
     }
 
-    func selectFlowMode(_ mode: FlowMode) {
+    public func selectFlowMode(_ mode: FlowMode) {
         selectedFlowMode = mode
         saveSelectedMode()
     }
@@ -71,19 +71,19 @@ class KeyboardStateManager {
 
     // MARK: - State Transitions
 
-    func startRecording() {
+    public func startRecording() {
         viewState = .recording
     }
 
-    func stopRecording() {
+    public func stopRecording() {
         viewState = .processing
     }
 
-    func cancelRecording() {
+    public func cancelRecording() {
         viewState = .idle
     }
 
-    func finishProcessing() {
+    public func finishProcessing() {
         viewState = .idle
     }
 }

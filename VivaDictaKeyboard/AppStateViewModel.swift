@@ -12,6 +12,6 @@ import SwiftUI
 @MainActor
 @Observable
 class AppStateViewModel {
-    var isMainAppActive: Bool = false
-    var isRecording: Bool = false
+    public var isMainAppActive: Bool = false
+    public var isRecording: Bool = false
 }
