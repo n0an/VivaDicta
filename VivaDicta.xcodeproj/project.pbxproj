@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
 		18351FD22E65934600944940 /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = 18351FD12E65934600944940 /* Zip */; };
+		1855AE212E9260470038F3D9 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 1855AE202E9260470038F3D9 /* FluidAudio */; };
 		18D047892E4A99BB00674B30 /* whisper.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18D047872E4A99AA00674B30 /* whisper.xcframework */; };
 		18D0478A2E4A99BB00674B30 /* whisper.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 18D047872E4A99AA00674B30 /* whisper.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -192,6 +193,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1855AE212E9260470038F3D9 /* FluidAudio in Frameworks */,
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -316,6 +318,7 @@
 			name = VivaDictaKeyboard;
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
+				1855AE202E9260470038F3D9 /* FluidAudio */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -950,6 +953,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18351FD02E65934600944940 /* XCRemoteSwiftPackageReference "Zip" */;
 			productName = Zip;
+		};
+		1855AE202E9260470038F3D9 /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
