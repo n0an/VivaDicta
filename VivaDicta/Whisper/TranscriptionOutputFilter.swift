@@ -1,5 +1,5 @@
 //
-//  WhisperHallucinationFilter.swift
+//  TranscriptionOutputFilter.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.09.06
@@ -8,8 +8,8 @@
 import Foundation
 import os
 
-actor WhisperHallucinationFilter {
-    private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "WhisperHallucinationFilter")
+struct TranscriptionOutputFilter {
+    private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionOutputFilter")
     
     private static let hallucinationPatterns = [
         #"\[.*?\]"#,     // []
@@ -18,7 +18,7 @@ actor WhisperHallucinationFilter {
     ]
 
     private static let fillerWords = [
-        "uh", "um", "uhm", "umm", "uhh", "uhhh", "er", "ah", "eh",
+        "uh", "um", "uhm", "umm", "uhh", "uhhh", "ah", "eh",
         "hmm", "hm", "mmm", "mm", "mh", "ha", "ehh"
     ]
     static func filter(_ text: String) -> String {
