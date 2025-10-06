@@ -323,69 +323,51 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Notify keyboard that transcription has ended
                 AppGroupCoordinator.shared.notifyTranscriptionEnded()
+                
+                // Precreate Transcription with original text
+                let finalTransription = Transcription(
+                    text: transcribedText,
+                    audioDuration: audioDuration,
+                    audioFileName: recordURL.lastPathComponent,
+                    transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                    transcriptionDuration: transcriptionDuration)
+                
+                modelContext.insert(finalTransription)
+                try modelContext.save()
 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
-
                     // Notify keyboard that AI enhancement has started
                     AppGroupCoordinator.shared.notifyAIEnhancementStarted()
 
                     do {
                         let (enhancedText, enhancementDuration, promptName) = try await aiService.enhance(transcribedText)
-
+                        
                         // Notify keyboard that AI enhancement has ended
                         AppGroupCoordinator.shared.notifyAIEnhancementEnded()
-
-                        let transcription = Transcription(
-                            text: transcribedText,
-                            enhancedText: enhancedText,
-                            audioDuration: audioDuration,
-                            audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                            aiEnhancementModelName: aiService.selectedMode.aiModel,
-                            promptName: promptName,
-                            transcriptionDuration: transcriptionDuration,
-                            enhancementDuration: enhancementDuration)
                         
-                        modelContext.insert(transcription)
+                        finalTransription.enhancedText = enhancedText
+                        finalTransription.aiEnhancementModelName = aiService.selectedMode.aiModel
+                        finalTransription.promptName = promptName
+                        finalTransription.enhancementDuration = enhancementDuration
+                        
                         try modelContext.save()
                         
                         try Task.checkCancellation()
-                        
                         self.recordingState = .idle
                         
                     } catch {
                         // Enhancement failed
-                        let transcription = Transcription(
-                            text: transcribedText,
-                            enhancedText: "Enhancement failed: \(error)",
-                            audioDuration: audioDuration,
-                            audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                            transcriptionDuration: transcriptionDuration)
-                        
-                        modelContext.insert(transcription)
+                        finalTransription.enhancedText = "Enhancement failed: \(error)"
                         try modelContext.save()
                         
                         try Task.checkCancellation()
-                        
                         self.recordingState = .idle
                     }
                     
                 } else {
-                    // NO AI Enhance applied
-                    let transcription = Transcription(
-                        text: transcribedText,
-                        audioDuration: audioDuration,
-                        audioFileName: recordURL.lastPathComponent,
-                        transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                        transcriptionDuration: transcriptionDuration)
-                    
-                    modelContext.insert(transcription)
-                    try modelContext.save()
-                    
+                    // NO AI Enhance applied. Transcription is already saved. Setting recordingState to .idle
                     try Task.checkCancellation()
-                    
                     self.recordingState = .idle
                 }
                 
