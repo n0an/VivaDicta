@@ -12,25 +12,23 @@ import os
 class ParakeetTranscriptionService: TranscriptionService {
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
-    private var isModelLoaded = false
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ParakeetTranscriptionService")
 
     init() {}
 
     func loadModel(modelsDirectory: URL) async throws {
-        if isModelLoaded {
+        guard asrManager == nil else {
             return
         }
-
+        
         do {
-            asrManager = AsrManager(config: .default)
+            let manager = AsrManager(config: .default)
             let models = try await AsrModels.load(from: modelsDirectory)
-            try await asrManager?.initialize(models: models)
-            isModelLoaded = true
+            try await manager.initialize(models: models)
+            
+            self.asrManager = manager
             logger.notice("✅ Parakeet ASR model loaded successfully")
         } catch {
-            isModelLoaded = false
-            asrManager = nil
             logger.error("❌ Failed to load Parakeet model: \(error.localizedDescription)")
             throw error
         }
@@ -40,15 +38,14 @@ class ParakeetTranscriptionService: TranscriptionService {
         guard let parakeetModel = model as? ParakeetModel else {
             throw TranscriptionError.unsupportedModel
         }
-
-        if asrManager == nil || !isModelLoaded {
-            try await loadModel(modelsDirectory: parakeetModel.modelsDirectory)
-        }
-
+        
+        try await loadModel(modelsDirectory: parakeetModel.modelsDirectory)
+        
         guard let asrManager = asrManager else {
+            logger.notice("🦜 ASR manager not initialized, cannot transcribe")
             throw TranscriptionError.modelLoadFailed
         }
-
+        
         logger.notice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
 
         // Read and convert audio to 16kHz mono Float32
@@ -75,10 +72,11 @@ class ParakeetTranscriptionService: TranscriptionService {
 
         // Clean up models after transcription to minimize RAM usage
         asrManager.cleanup()
-        vadManager = nil
-        isModelLoaded = false
-        logger.notice("🧹 Parakeet ASR models cleaned up from memory")
-
+        
+        self.asrManager = nil
+        self.vadManager = nil
+        logger.notice("🦜 Parakeet ASR models cleaned up from memory")
+        
         logger.notice("✅ Parakeet transcription completed successfully")
         return result.text
     }
