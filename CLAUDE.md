@@ -3,6 +3,17 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 If you don't know answer - it's ok to say that you don't know. It's not necessary to please me and be very polite with me. I'm not pleased if you always agree with everything I'm saying. I'm pleased when you provide correct answers, even if I don't like these answers.
 
+## Skills
+
+When @.claude/skills is mentioned or when starting a task:
+
+1. Read .claude/skills/CLAUDE.md
+2. Scan the index for relevant skills
+3. Mention which skills you're referencing
+4. Note any deviations from the skill pattern and why
+5. Suggest new skills when you see repeated patterns (use `.claude/commands/create-skill.md` to create a new skill)
+
+
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
