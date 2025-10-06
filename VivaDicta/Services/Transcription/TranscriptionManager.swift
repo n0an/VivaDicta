@@ -126,7 +126,7 @@ class TranscriptionManager {
             transcriptionService = cloudTranscriptionService
         }
         let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
-        return WhisperHallucinationFilter.filter(text)
+        return TranscriptionOutputFilter.filter(text)
     }
 
     // Preload WhisperKit model on app startup if conditions are met
