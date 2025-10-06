@@ -24,6 +24,7 @@ enum RecordError: LocalizedError, Equatable {
     case recordError
     case transcribe
     case other
+    case debugError
 
     var errorDescription: String? {
         switch self {
@@ -37,6 +38,8 @@ enum RecordError: LocalizedError, Equatable {
             "Transcription failed"
         case .other:
             "Unexpected error"
+        case .debugError:
+            "DEBUG ERROR"
         }
     }
 
@@ -52,6 +55,8 @@ enum RecordError: LocalizedError, Equatable {
             return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
         case .other:
             return "An unexpected error occurred. Please restart the app and try again."
+        case .debugError:
+            return "DEBUG ERROR"
         }
     }
 }
@@ -323,71 +328,52 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Notify keyboard that transcription has ended
                 AppGroupCoordinator.shared.notifyTranscriptionEnded()
-
+                
+                var enhancedText: String? = nil
+                var promptName: String? = nil
+                var enhancementDur: TimeInterval? = nil
+                
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
-
                     // Notify keyboard that AI enhancement has started
                     AppGroupCoordinator.shared.notifyAIEnhancementStarted()
 
                     do {
-                        let (enhancedText, enhancementDuration, promptName) = try await aiService.enhance(transcribedText)
-
+                        let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
+                        
                         // Notify keyboard that AI enhancement has ended
                         AppGroupCoordinator.shared.notifyAIEnhancementEnded()
-
-                        let transcription = Transcription(
-                            text: transcribedText,
-                            enhancedText: enhancedText,
-                            audioDuration: audioDuration,
-                            audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                            aiEnhancementModelName: aiService.selectedMode.aiModel,
-                            promptName: promptName,
-                            transcriptionDuration: transcriptionDuration,
-                            enhancementDuration: enhancementDuration)
                         
-                        modelContext.insert(transcription)
-                        try modelContext.save()
-                        
-                        try Task.checkCancellation()
-                        
-                        self.recordingState = .idle
+                        enhancedText = enhanced
+                        promptName = prompt
+                        enhancementDur = enhancementDuration
                         
                     } catch {
                         // Enhancement failed
-                        let transcription = Transcription(
-                            text: transcribedText,
-                            enhancedText: "Enhancement failed: \(error)",
-                            audioDuration: audioDuration,
-                            audioFileName: recordURL.lastPathComponent,
-                            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                            transcriptionDuration: transcriptionDuration)
-                        
-                        modelContext.insert(transcription)
-                        try modelContext.save()
-                        
+                        logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
                         try Task.checkCancellation()
-                        
                         self.recordingState = .idle
                     }
-                    
-                } else {
-                    // NO AI Enhance applied
-                    let transcription = Transcription(
-                        text: transcribedText,
-                        audioDuration: audioDuration,
-                        audioFileName: recordURL.lastPathComponent,
-                        transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                        transcriptionDuration: transcriptionDuration)
-                    
-                    modelContext.insert(transcription)
-                    try modelContext.save()
-                    
-                    try Task.checkCancellation()
-                    
-                    self.recordingState = .idle
                 }
+                
+                // Create and save transcription to SwiftData
+                let transcription = Transcription(
+                    text: transcribedText,
+                    enhancedText: enhancedText,
+                    audioDuration: audioDuration,
+                    audioFileName: recordURL.lastPathComponent,
+                    transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                    aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
+                    promptName: promptName,
+                    transcriptionDuration: transcriptionDuration,
+                    enhancementDuration: enhancementDur
+                )
+
+                modelContext.insert(transcription)
+                try modelContext.save()
+                
+                try Task.checkCancellation()
+                self.recordingState = .idle
                 
             } catch {
                 if Task.isCancelled { return }
@@ -603,6 +589,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 }
             }
         } else {
+            // TODO: - probably safe to delete - if there's no prewarm session, we can't catch darwin notification
             // Normal mode (not using prewarm)
             resetValues()
             stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
@@ -616,7 +603,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try FileManager.default.moveItem(at: captureURL, to: finalURL)
 
                 // Start transcription task that will save to both UserDefaults and SwiftData
-                transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
+                
+                // TODO: Disabling transcription and Setting Debug Error, this path should never happen
+//                transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
+                recordingState = .error(.debugError)
             } catch {
                 logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
                 recordingState = .error(.recordError)
@@ -642,26 +632,28 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Notify keyboard that transcription has ended
                 AppGroupCoordinator.shared.notifyTranscriptionEnded()
-
+                
                 // Load the selected flow mode from shared UserDefaults (set by keyboard)
                 if let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupConfig.selectedAIModeKey) {
                     logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
                     // Update the AI service's selected mode to match what was selected in keyboard
                     aiService.selectedModeName = selectedModeName
                 }
-
+                
                 // Check if AI Enhancement is configured
                 var enhancedText: String? = nil
                 var promptName: String? = nil
+                var enhancementDur: TimeInterval? = nil
 
                 if aiService.isProperlyConfigured() {
                     // Notify keyboard that AI enhancement has started
                     AppGroupCoordinator.shared.notifyAIEnhancementStarted()
 
                     do {
-                        let (enhanced, _, prompt) = try await aiService.enhance(transcribedText)
+                        let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
                         enhancedText = enhanced
                         promptName = prompt
+                        enhancementDur = enhancementDuration
 
                         // Notify keyboard that AI enhancement has ended
                         AppGroupCoordinator.shared.notifyAIEnhancementEnded()
@@ -689,12 +681,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                     aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
                     promptName: promptName,
-                    transcriptionDuration: transcriptionDuration
+                    transcriptionDuration: transcriptionDuration,
+                    enhancementDuration: enhancementDur
                 )
 
                 context.insert(transcription)
                 try context.save()
-
+                
                 // Notify keyboard that transcription is ready
                 AppGroupCoordinator.shared.notifyTranscriptionReady()
 
