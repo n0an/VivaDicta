@@ -13,7 +13,6 @@ import os
 class TranscriptionManager {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionManager")
     
-    private var localTranscriptionService: LocalTranscriptionService!
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()
     private let whisperKitTranscriptionService = WhisperKitTranscriptionService()
@@ -23,19 +22,11 @@ class TranscriptionManager {
     public var onCloudModelsUpdate: (() -> Void)?
     
     var allAvailableModels: [any TranscriptionModel] =
-            TranscriptionModelProvider.allLocalModels +
             TranscriptionModelProvider.allParakeetModels +
             TranscriptionModelProvider.allWhisperKitModels +
             TranscriptionModelProvider.allCloudModels
-
-    var availableWhisperLocalModels: [WhisperLocalModel] {
-        TranscriptionModelProvider.allLocalModels.filter { $0.fileExists }
-    }
-
+    
     var hasAvailableTranscriptionModels: Bool {
-        // Check if any local models are downloaded
-        let hasLocalModels = availableWhisperLocalModels.count > 0
-
         let hasParakeetModels = !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
 
         let hasWhisperKitModels = !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
@@ -45,7 +36,7 @@ class TranscriptionManager {
             model.apiKey != nil
         }
 
-        return hasLocalModels || hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels
+        return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels
     }
 
     var selectedLanguage: String {
@@ -70,11 +61,7 @@ class TranscriptionManager {
     var whisperKitTotalInitDuration: TimeInterval {
         whisperKitTranscriptionService.lastTotalInitDuration
     }
-
-    init() {
-        localTranscriptionService = LocalTranscriptionService()
-    }
-
+    
     public func setCurrentMode(_ mode: FlowMode) {
         currentMode = mode
         applyModeLanguage(mode)
@@ -91,7 +78,6 @@ class TranscriptionManager {
 
     public func updateCloudModels() {
         allAvailableModels =
-            TranscriptionModelProvider.allLocalModels +
             TranscriptionModelProvider.allParakeetModels +
             TranscriptionModelProvider.allWhisperKitModels +
             TranscriptionModelProvider.allCloudModels
@@ -102,7 +88,10 @@ class TranscriptionManager {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
 
-        let allModels: [any TranscriptionModel] = TranscriptionModelProvider.allLocalModels + TranscriptionModelProvider.allParakeetModels + TranscriptionModelProvider.allWhisperKitModels + TranscriptionModelProvider.allCloudModels
+        let allModels: [any TranscriptionModel] =
+        TranscriptionModelProvider.allParakeetModels +
+        TranscriptionModelProvider.allWhisperKitModels +
+        TranscriptionModelProvider.allCloudModels
 
         return allModels.first { model in
             model.provider == provider && model.name == modelName
@@ -116,8 +105,6 @@ class TranscriptionManager {
 
         let transcriptionService: any TranscriptionService
         switch model.provider {
-        case .local:
-            transcriptionService = localTranscriptionService
         case .parakeet:
             transcriptionService = parakeetTranscriptionService
         case .whisperKit:

@@ -77,8 +77,7 @@ struct ModeEditView: View {
                         }
                     }
                 } else {
-                    if viewModel.transcriptionProvider == .local ||
-                        viewModel.transcriptionProvider == .parakeet ||
+                    if viewModel.transcriptionProvider == .parakeet ||
                         viewModel.transcriptionProvider == .whisperKit {
                         Button {
                             navigationPath.append(SettingsDestination.transcriptionModels)
