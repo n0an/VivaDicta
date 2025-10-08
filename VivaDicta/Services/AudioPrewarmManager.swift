@@ -10,7 +10,7 @@ import Foundation
 import AVFoundation
 import os
 
-@MainActor @Observable
+@Observable
 final class AudioPrewarmManager {
     
     static let shared = AudioPrewarmManager()
