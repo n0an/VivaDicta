@@ -15,9 +15,9 @@ When a Pull Request is opened, updated, or reopened against the `main` branch:
 The automation runs on **macOS runners** (required for iOS development) with the following steps:
 
 1. **Checkout code** with full git history
-2. **Setup Node.js** for the AI review scripts  
+2. **Setup Node.js** for the AI review scripts
 3. **Setup Xcode** with latest stable version
-4. **Create & boot iOS Simulator** (iPhone 16 Pro)
+4. **Create & boot iOS Simulator** (iPhone 17 Pro)
 5. **Run AI Agent** which performs:
    - Code review generation
    - iOS test execution
@@ -38,8 +38,7 @@ The system runs iOS tests using:
 ```bash
 xcodebuild test -scheme VivaDicta \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination "platform=iOS Simulator,name=iPhone 16 Pro,OS=18.1" \
-  CODE_SIGNING_ALLOWED=NO
+  -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest" | xcbeautify
 ```
 
 ## Project Structure
