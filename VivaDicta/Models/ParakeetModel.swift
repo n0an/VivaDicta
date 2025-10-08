@@ -5,7 +5,6 @@
 //  Created by Anton Novoselov on 2025.09.27
 //
 
-#if canImport(FluidAudio)
 import Foundation
 import FluidAudio
 
@@ -38,5 +37,4 @@ extension ParakeetModel {
         FileManager.default.fileExists(atPath: modelsDirectory.path)
     }
 }
-#endif
 

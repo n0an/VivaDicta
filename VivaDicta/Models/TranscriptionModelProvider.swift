@@ -6,14 +6,10 @@
 //
 
 import Foundation
-#if canImport(FluidAudio)
 import FluidAudio
-#endif
 
 enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
-    #if canImport(FluidAudio)
     case parakeet
-    #endif
     case whisperKit
     case openAI
     case groq
@@ -25,13 +21,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     var cloudTranscriptionModelsNames: [String] {
         switch self {
-        #if canImport(FluidAudio)
         case .parakeet, .whisperKit:
             return []
-        #else
-        case .whisperKit:
-            return []
-        #endif
 
         default:
             return TranscriptionModelProvider.allCloudModels.compactMap { $0.provider == self ? $0.name : nil }
@@ -40,11 +31,9 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     func getTranscriptionModelDisplayName(_ modelName: String) -> String {
         switch self {
-        #if canImport(FluidAudio)
         case .parakeet:
             guard let model = TranscriptionModelProvider.allParakeetModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
-        #endif
 
         case .whisperKit:
             guard let model = TranscriptionModelProvider.allWhisperKitModels.first(where: {$0.name == modelName}) else { return modelName }
@@ -68,23 +57,12 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .deepgram
         case .gemini:
             return .gemini
-        #if canImport(FluidAudio)
         case .parakeet, .whisperKit:
             return nil
-        #else
-        case .whisperKit:
-            return nil
-        #endif
         }
     }
     
-    @MainActor static let allModels: [any TranscriptionModel] = {
-        #if canImport(FluidAudio)
-        return allParakeetModels + allWhisperKitModels + allCloudModels
-        #else
-        return allWhisperKitModels + allCloudModels
-        #endif
-    }()
+    @MainActor static let allModels: [any TranscriptionModel] = allParakeetModels + allWhisperKitModels + allCloudModels
     
     
     static var allCloudModels: [CloudModel] {
@@ -158,7 +136,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         supportManyLanguages ? allLanguages : ["en": "English"]
     }
     
-    #if canImport(FluidAudio)
     static var allParakeetModels: [ParakeetModel] {
         [
             ParakeetModel(
@@ -173,7 +150,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             )
         ]
     }
-    #endif
 
     static var allWhisperKitModels: [WhisperKitModel] {
         [
