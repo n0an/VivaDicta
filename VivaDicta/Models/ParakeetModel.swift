@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import FluidAudio
+//import FluidAudio
 
 struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
     static func == (lhs: ParakeetModel, rhs: ParakeetModel) -> Bool {
