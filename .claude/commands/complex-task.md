@@ -29,7 +29,7 @@ You are about to work on a complex task. Follow this systematic approach to ensu
 4. **Swift 6 Concurrency Analysis** (Critical for iOS/Swift projects)
    - Check if Swift 6 strict concurrency is enabled in the project
    - Identify @MainActor isolation requirements for UI code
-   - Look for existing actor-based patterns (e.g., WhisperContext)
+   - Look for existing actor-based patterns (e.g., WhisperKit, Parakeet services)
    - Review async/await usage in similar components
    - Check for Sendable conformance requirements
    - Understand data race prevention patterns in the codebase

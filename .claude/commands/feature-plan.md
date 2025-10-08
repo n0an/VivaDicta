@@ -5,8 +5,8 @@ You are helping plan a new feature for VivaDicta, an iOS voice transcription app
 ## Context
 VivaDicta is built with:
 - Swift 6.0 with strict concurrency
-- SwiftUI + SwiftData for UI and persistence  
-- Local Whisper.cpp and cloud transcription services
+- SwiftUI + SwiftData for UI and persistence
+- On-device transcription (WhisperKit and Parakeet) and cloud transcription services
 - AVFoundation for audio recording
 - iOS 18+ deployment target
 
