@@ -72,6 +72,7 @@
 /* Begin PBXFileReference section */
 		181D04D72E3E55E400D357A6 /* VivaDicta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VivaDicta.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		18351E572E634FF000944940 /* VivaDictaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VivaDictaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1855BB842E96C8560038F3D9 /* VivaDicta.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = VivaDicta.xctestplan; sourceTree = "<group>"; };
 		18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -216,6 +217,7 @@
 		181D04CE2E3E55E400D357A6 = {
 			isa = PBXGroup;
 			children = (
+				1855BB842E96C8560038F3D9 /* VivaDicta.xctestplan */,
 				181D04D92E3E55E400D357A6 /* VivaDicta */,
 				18351E582E634FF000944940 /* VivaDictaTests */,
 				18E1B49F2E8C6FF400BE8A11 /* VivaDictaKeyboard */,

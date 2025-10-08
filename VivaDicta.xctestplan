@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "B51F193E-BACB-4FD1-A82A-778FA2774625",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:VivaDicta.xcodeproj",
+      "identifier" : "181D04D62E3E55E400D357A6",
+      "name" : "VivaDicta"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:VivaDicta.xcodeproj",
+        "identifier" : "18351E562E634FF000944940",
+        "name" : "VivaDictaTests"
+      }
+    }
+  ],
+  "version" : 1
+}
