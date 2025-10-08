@@ -10,7 +10,7 @@ import Foundation
 import AVFoundation
 import os
 
-@MainActor @Observable
+@Observable
 final class AudioPrewarmManager {
     
     static let shared = AudioPrewarmManager()
@@ -164,6 +164,7 @@ final class AudioPrewarmManager {
         expiryTimer?.invalidate()
 
         expiryTimer = Timer.scheduledTimer(withTimeInterval: sessionTimeoutDuration, repeats: false) { [weak self] _ in
+            
             Task { @MainActor [weak self] in
                 self?.logger.info("⏰ Prewarm session timeout reached")
                 self?.endSession()

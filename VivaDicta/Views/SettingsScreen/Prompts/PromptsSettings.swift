@@ -29,15 +29,20 @@ struct PromptsSettings: View {
         }
         .navigationTitle("Prompts")
         .sheet(isPresented: $showingTemplateSelection) {
-            TemplateSelectionView(
-                selectedTemplate: $selectedTemplate,
-                isPresented: $showingTemplateSelection
-            )
-            .scrollContentBackground(.hidden)
+            NavigationStack {
+                TemplateSelectionView(
+                    selectedTemplate: $selectedTemplate,
+                    isPresented: $showingTemplateSelection
+                )
+                .navigationTitle("Select Template")
+                .navigationBarTitleDisplayMode(.inline)
+
+                .scrollContentBackground(.hidden)
+            }
             .navigationTransition(
                 .zoom(sourceID: "info", in: transition)
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.fraction(0.6)])
         }
         .sheet(item: $selectedTemplate) { template in
             PromptAddView(

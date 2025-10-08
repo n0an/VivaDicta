@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 
 /// View model for managing app state in the keyboard extension
-@MainActor
 @Observable
 class AppStateViewModel {
     public var isMainAppActive: Bool = false

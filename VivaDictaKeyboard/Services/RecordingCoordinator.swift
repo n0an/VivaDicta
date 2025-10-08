@@ -9,7 +9,6 @@ import Foundation
 import os
 
 /// Delegate protocol for recording coordinator events
-@MainActor
 public protocol RecordingCoordinatorDelegate: AnyObject {
     func recordingCoordinatorDidStartRecording()
     func recordingCoordinatorDidStopRecording()
@@ -18,7 +17,6 @@ public protocol RecordingCoordinatorDelegate: AnyObject {
 }
 
 /// Protocol for recording coordinator to enable mocking in tests
-@MainActor
 public protocol RecordingCoordination: AnyObject {
     var delegate: RecordingCoordinatorDelegate? { get set }
 
@@ -29,7 +27,6 @@ public protocol RecordingCoordination: AnyObject {
 }
 
 /// Service that coordinates recording operations and handles timeouts
-@MainActor
 public class RecordingCoordinator: RecordingCoordination {
 
     // MARK: - Properties

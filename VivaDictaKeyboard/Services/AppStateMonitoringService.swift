@@ -9,14 +9,12 @@ import Foundation
 import os
 
 /// Delegate protocol for app state monitoring events
-@MainActor
 public protocol AppStateMonitoringDelegate: AnyObject {
     func appStateDidChange(isActive: Bool)
     func recordingStateDidChange(isRecording: Bool)
 }
 
 /// Protocol for app state monitoring service to enable mocking in tests
-@MainActor
 public protocol AppStateMonitoring: AnyObject {
     var delegate: AppStateMonitoringDelegate? { get set }
     var isMainAppActive: Bool { get }
@@ -28,7 +26,6 @@ public protocol AppStateMonitoring: AnyObject {
 }
 
 /// Service that monitors app and recording states periodically
-@MainActor
 public class AppStateMonitoringService: AppStateMonitoring {
 
     // MARK: - Properties

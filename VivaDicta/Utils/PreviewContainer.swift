@@ -22,5 +22,5 @@ struct TranscriptionsMockData: PreviewModifier {
 }
 
 extension PreviewTrait where T == Preview.ViewTraits {
-    @MainActor static var transcriptionsMockData: Self = .modifier(TranscriptionsMockData())
+    static var transcriptionsMockData: Self = .modifier(TranscriptionsMockData())
 }
