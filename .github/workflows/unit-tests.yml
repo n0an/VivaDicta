@@ -17,7 +17,10 @@ jobs:
         
     - name: List Available Simulators
       run: xcrun simctl list devices
-        
+
+    - name: Install xcbeautify
+      run: brew install xcbeautify
+
     - name: Run Tests
       run: |
         xcodebuild test -scheme VivaDicta \
