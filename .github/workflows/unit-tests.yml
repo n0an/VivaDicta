@@ -21,6 +21,18 @@ jobs:
     - name: Install xcbeautify
       run: brew install xcbeautify
 
+    - name: Clear Swift Package Cache
+      run: |
+        rm -rf ~/Library/Caches/org.swift.swiftpm
+        rm -rf .build
+        rm -rf VivaDicta.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+
+    - name: Resolve Swift Packages
+      run: |
+        xcodebuild -resolvePackageDependencies \
+        -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+        -scheme VivaDicta
+
     - name: Run Tests
       run: |
         xcodebuild test -scheme VivaDicta \
