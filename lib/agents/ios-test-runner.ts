@@ -89,7 +89,7 @@ export async function runIOSTests(): Promise<TestResult> {
 
   // Use explicit destination matching local development setup
   // Note: findBestSimulatorDestination() method is available if dynamic detection is needed
-  const destination = 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
+  const destination = 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0'
   console.log(`📱 Using destination: ${destination}`)
 
   const testCommand = `xcodebuild test -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination "${destination}" | xcbeautify`

@@ -122,7 +122,7 @@ Build and run:
 ```bash
 xcodebuild -scheme VivaDicta -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
   build | xcbeautify
 ```
 
@@ -237,7 +237,7 @@ Build and navigate to the new screen:
 ```bash
 xcodebuild -scheme VivaDicta -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
   build | xcbeautify
 ```
 

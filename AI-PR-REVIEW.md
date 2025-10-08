@@ -38,7 +38,7 @@ The system runs iOS tests using:
 ```bash
 xcodebuild test -scheme VivaDicta \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest" | xcbeautify
+  -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0" | xcbeautify
 ```
 
 ## Project Structure
