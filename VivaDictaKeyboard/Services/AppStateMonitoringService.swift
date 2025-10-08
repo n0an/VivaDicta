@@ -66,8 +66,8 @@ public class AppStateMonitoringService: AppStateMonitoring {
             withTimeInterval: 5.0,
             repeats: true
         ) { [weak self] _ in
-            Task {
-                await self?.updateStates()
+            Task { @MainActor in
+                self?.updateStates()
             }
         }
 

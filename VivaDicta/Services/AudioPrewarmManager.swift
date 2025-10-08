@@ -164,9 +164,10 @@ final class AudioPrewarmManager {
         expiryTimer?.invalidate()
 
         expiryTimer = Timer.scheduledTimer(withTimeInterval: sessionTimeoutDuration, repeats: false) { [weak self] _ in
-            Task { [weak self] in
+            
+            Task { @MainActor [weak self] in
                 self?.logger.info("⏰ Prewarm session timeout reached")
-                await self?.endSession()
+                self?.endSession()
             }
         }
 
