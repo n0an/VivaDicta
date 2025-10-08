@@ -212,6 +212,8 @@ Then add to navigationDestination:
 
 Don't forget to add case to SettingsDestination enum:
 
+Location: `VivaDicta/Views/SettingsScreen/SettingsDestination.swift`
+
 ```swift
 enum SettingsDestination: Hashable {
     case promptsSettings
@@ -316,17 +318,35 @@ struct YourNewView: View {
 
 ```
 VivaDicta/Views/
-├── TabBarView.swift           # Main tab container
-├── RecordView.swift           # Tab-level views
+├── TabBarView.swift              # Main tab container
+├── RecordView.swift              # Tab-level views
+├── RecordViewModel.swift
 ├── TranscriptionsView.swift
-├── SettingsScreen/            # Settings-related screens
+├── TranscriptionDetailView.swift
+├── TranscriptionRowView.swift
+├── AudioPlayerView.swift
+├── AnimatedCopyButton.swift
+├── ModelsScreen/                 # Models-related screens
+│   ├── CloudModelCard.swift
+│   ├── CloudModelConfigurationView.swift
+│   ├── LanguageSelectionMenu.swift
+│   ├── ModelPerformanceStatsDots.swift
+│   ├── ParakeetModelCard.swift
+│   └── WhisperKitModelCard.swift
+├── SettingsScreen/               # Settings-related screens
 │   ├── SettingsView.swift
+│   ├── SettingsDestination.swift
 │   ├── ModelsView.swift
 │   ├── ModeEditView.swift
-│   └── Prompts/               # Sub-category
+│   ├── ModeEditViewModel.swift
+│   ├── AddAPIKeyView.swift
+│   └── Prompts/                  # Prompts sub-category
 │       ├── PromptsSettings.swift
-│       └── PromptAddView.swift
-└── [YourCategory]/            # Create folders for related views
+│       ├── PromptAddView.swift
+│       ├── PromptEditingView.swift
+│       ├── TemplateSectionView.swift
+│       └── PromptsManager.swift
+└── [YourCategory]/               # Create folders for related views
 ```
 
 ## Code Style Checklist
