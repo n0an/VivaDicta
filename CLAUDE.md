@@ -21,7 +21,7 @@ When @.claude/skills is mentioned or when starting a task:
 
 # VivaDicta iOS Codebase
 
-VivaDicta is an iOS voice transcription app that uses local Whisper.cpp models and cloud-based transcription services. The app records audio, transcribes it using AI models, and stores transcriptions with SwiftData for persistent storage.
+VivaDicta is an iOS voice transcription app that uses on-device transcription (WhisperKit and Parakeet) and cloud-based transcription services. The app records audio, transcribes it using AI models, and stores transcriptions with SwiftData for persistent storage.
 
 # Code style
 Use private for functions and proverties that called only from the same entity (struct, enum, class). Use public for functions and properties that called from other entities.
@@ -38,37 +38,40 @@ Use the following commands to build, run and test the app:
 
 ### Core Components
 
-- **AppState**: Observable app-wide state management using Swift's `@Observable` macro. Manages selected transcription service, language, and Whisper model configuration.
+- **AppState**: Observable app-wide state management using Swift's `@Observable` macro. Coordinates TranscriptionManager and AIService with mode-based configuration.
 - **Transcription Model**: SwiftData model for persistent storage of transcriptions with metadata including text, timestamps, enhanced text, audio file URL, duration, and transcription/enhancement model names.
-- **TranscriptionService Protocol**: Abstraction for different transcription backends (local Whisper.cpp, OpenAI, etc.)
+- **TranscriptionManager**: Central manager coordinating all transcription services (WhisperKit, Parakeet, and cloud providers) with mode-aware model selection.
+- **TranscriptionService Protocol**: Abstraction for different transcription backends enabling unified interface across on-device and cloud services.
 
 ### App Structure
 
 - **TabBarView**: Main navigation with tabs for recording, transcriptions, models, and settings
 - **RecordView/RecordViewModel**: Audio recording interface with AVAudioRecorder integration and real-time audio level monitoring
-- **ModelsView**: Management of local Whisper models with download/delete functionality
+- **ModelsView**: Management of on-device models (WhisperKit and Parakeet) with download/delete functionality and cloud API configuration
 - **TranscriptionsView**: Display and management of saved transcriptions with search functionality and performance-optimized filtering
 - **TranscriptionRowView**: Reusable component for transcription list items
 - **TranscriptionDetailView**: Detailed view showing both original and AI-enhanced transcription text
 
 ### Transcription Services
 
-- **LocalTranscriptionService/LocalWhisperTranscriptionService**: Uses the bundled whisper.xcframework for on-device transcription
+- **WhisperKitTranscriptionService**: Uses WhisperKit package for on-device OpenAI Whisper model inference with performance metrics tracking
+- **ParakeetTranscriptionService**: Uses FluidAudio framework for on-device NVIDIA Parakeet model transcription with VAD (Voice Activity Detection) support
 - **CloudTranscriptionService**: Unified service managing multiple cloud providers:
   - **OpenAITranscriptionService**: OpenAI Whisper API
   - **ElevenLabsTranscriptionService**: ElevenLabs speech-to-text
   - **GroqTranscriptionService**: Groq API transcription
   - **DeepgramTranscriptionService**: Deepgram Nova API
   - **GeminiTranscriptionService**: Google Gemini API
-- **WhisperContext**: Actor-based wrapper around whisper.cpp C library ensuring thread-safe access
-- **AIService**: AI-powered text enhancement service for improving transcription quality
+- **TranscriptionManager**: Coordinates between on-device (WhisperKit/Parakeet) and cloud services with mode-aware model selection
+- **AIService**: AI-powered text enhancement service for improving transcription quality using cloud AI models
 
 ### Key Technologies
 
 - **Swift 6.0** with strict concurrency enabled
-- **SwiftUI** for UI with SwiftData for persistence  
+- **SwiftUI** for UI with SwiftData for persistence
 - **AVFoundation** for audio recording/playback
-- **whisper.xcframework** - Local Whisper.cpp integration
+- **WhisperKit** - On-device OpenAI Whisper model inference
+- **FluidAudio** - On-device NVIDIA Parakeet model transcription with VAD
 - **SiriWaveView** package for audio visualization
 - **TipKit** for user onboarding and feature discovery
 - **iOS 18+ deployment target**
@@ -110,7 +113,7 @@ Refer to these docs when working with Apple frameworks or implementing new featu
 - **State Management**: Use `@State` with `onChange` modifiers instead of computed properties for expensive filtering operations
 - **Component Extraction**: Extract reusable UI components for better code organization and maintainability
 - **Concurrency**: All UI updates properly isolated to `@MainActor` with Swift 6 strict concurrency
-- **Memory Management**: Actor-based patterns for thread-safe access to heavy resources like Whisper models
+- **Memory Management**: Efficient model loading and unloading patterns for on-device transcription models (WhisperKit/Parakeet)
 
 ## Code Review Guidelines
 
