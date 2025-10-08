@@ -1,0 +1,25 @@
+name: Unit-tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode 26.0.1
+      run: |
+        sudo xcode-select -s /Applications/Xcode_26.0.1.app
+        xcodebuild -version
+        
+    - name: List Available Simulators
+      run: xcrun simctl list devices
+        
+    - name: Run Tests
+      run: |
+        xcodebuild test -scheme VivaDicta \
+        -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+        -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=latest" | xcbeautify

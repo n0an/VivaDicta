@@ -47,6 +47,6 @@ jobs:
           # LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'openai' }}
           LLM_PROVIDER: anthropic
           LLM_MODEL: claude-opus-4-1-20250805
-          # XCODE_VERSION: ${{ secrets.XCODE_VERSION || '26.0' }}
+          # XCODE_VERSION: ${{ secrets.XCODE_VERSION || '26.0.1' }}
           XCODE_VERSION: 26.0.1
         run: npx tsx scripts/ai-pr-review.ts
