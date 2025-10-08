@@ -16,18 +16,13 @@ struct PromptsSettings: View {
     @State private var editingPrompt: UserPrompt?
     
     var body: some View {
-        ZStack {
-            VStack(spacing: 0) {
-                if promptsManager.userPrompts.isEmpty {
-                    emptyStateView
-                } else {
-                    promptsList
-                }
+        VStack(spacing: 0) {
+            if promptsManager.userPrompts.isEmpty {
+                emptyStateView
+            } else {
+                promptsList
             }
-            
-            addPromptSection
         }
-        .navigationTitle("Prompts")
         .sheet(isPresented: $showingTemplateSelection) {
             NavigationStack {
                 TemplateSelectionView(
@@ -56,6 +51,26 @@ struct PromptsSettings: View {
                 promptsManager: promptsManager
             )
         }
+        .toolbar {
+            if #available(iOS 26, *) {
+                ToolbarItem {
+                    Button("Add Data", systemImage: "plus") {
+                        showingTemplateSelection = true
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(.blue)
+                }
+                .matchedTransitionSource(id: "info", in: transition)
+            } else {
+                ToolbarItem {
+                    Button("Add Data", systemImage: "plus") {
+                        showingTemplateSelection = true
+                    }
+                }
+            }
+        }
+        .toolbarTitleDisplayMode(.inlineLarge)
+        .navigationTitle("Prompts")
     }
     
     private var emptyStateView: some View {
@@ -96,28 +111,28 @@ struct PromptsSettings: View {
             }
         }
     }
-    private var addPromptSection: some View {
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                Button {
-                    showingTemplateSelection = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 60, height: 60)
-                .background(Color.blue, in: .circle)
-                .matchedTransitionSource(
-                    id: "info", in: transition
-                )
-                .padding(.trailing, 20)
-            }
-            .padding(.bottom, 20)
-        }
-    }
+//    private var addPromptSection: some View {
+//        VStack {
+//            Spacer()
+//            HStack {
+//                Spacer()
+//                Button {
+//                    showingTemplateSelection = true
+//                } label: {
+//                    Image(systemName: "plus.circle.fill")
+//                        .font(.title2)
+//                        .foregroundStyle(.white)
+//                }
+//                .frame(width: 60, height: 60)
+//                .background(Color.blue, in: .circle)
+//                .matchedTransitionSource(
+//                    id: "info", in: transition
+//                )
+//                .padding(.trailing, 20)
+//            }
+//            .padding(.bottom, 20)
+//        }
+//    }
 }
 
 struct PromptRowView: View {
