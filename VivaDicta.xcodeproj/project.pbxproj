@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
 		18351FD22E65934600944940 /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = 18351FD12E65934600944940 /* Zip */; };
-		1855AE212E9260470038F3D9 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 1855AE202E9260470038F3D9 /* FluidAudio */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -72,7 +71,7 @@
 /* Begin PBXFileReference section */
 		181D04D72E3E55E400D357A6 /* VivaDicta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VivaDicta.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		18351E572E634FF000944940 /* VivaDictaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VivaDictaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1855BB842E96C8560038F3D9 /* VivaDicta.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = VivaDicta.xctestplan; sourceTree = "<group>"; };
+		1855BB842E96C8560038F3D9 /* VivaDicta.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = VivaDicta.xctestplan; sourceTree = "<group>"; };
 		18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -188,7 +187,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1855AE212E9260470038F3D9 /* FluidAudio in Frameworks */,
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -313,7 +311,6 @@
 			name = VivaDictaKeyboard;
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
-				1855AE202E9260470038F3D9 /* FluidAudio */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -948,11 +945,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18351FD02E65934600944940 /* XCRemoteSwiftPackageReference "Zip" */;
 			productName = Zip;
-		};
-		1855AE202E9260470038F3D9 /* FluidAudio */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
