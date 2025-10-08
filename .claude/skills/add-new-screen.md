@@ -123,7 +123,7 @@ Build and run:
 xcodebuild -scheme VivaDicta -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -allowProvisioningUpdates build | xcbeautify
+  build | xcbeautify
 ```
 
 ## Path B: Nested Screen
@@ -238,7 +238,7 @@ Build and navigate to the new screen:
 xcodebuild -scheme VivaDicta -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
-  -allowProvisioningUpdates build | xcbeautify
+  build | xcbeautify
 ```
 
 ## Common Patterns
