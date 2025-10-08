@@ -44,7 +44,7 @@ struct FlowMode: Identifiable, Hashable, Codable {
     static let defaultMode = FlowMode(
         id: UUID(),
         name: "Default",
-        transcriptionProvider: .local,
+        transcriptionProvider: .whisperKit,
         transcriptionModel: "",
         transcriptionLanguage: "auto",
         userPrompt: nil,

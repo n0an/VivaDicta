@@ -9,7 +9,6 @@ import Foundation
 import FluidAudio
 
 enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
-    case local
     case parakeet
     case whisperKit
     case openAI
@@ -22,7 +21,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     var cloudTranscriptionModelsNames: [String] {
         switch self {
-        case .local, .parakeet, .whisperKit:
+        case .parakeet, .whisperKit:
             return []
 
         default:
@@ -32,10 +31,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     func getTranscriptionModelDisplayName(_ modelName: String) -> String {
         switch self {
-        case .local:
-            guard let model = TranscriptionModelProvider.allLocalModels.first(where: {$0.name == modelName}) else { return modelName }
-            return model.displayName
-
         case .parakeet:
             guard let model = TranscriptionModelProvider.allParakeetModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
@@ -62,129 +57,13 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .deepgram
         case .gemini:
             return .gemini
-        case .local, .parakeet, .whisperKit:
+        case .parakeet, .whisperKit:
             return nil
         }
     }
     
-    @MainActor static let allModels: [any TranscriptionModel] = allLocalModels + allParakeetModels + allWhisperKitModels + allCloudModels
+    @MainActor static let allModels: [any TranscriptionModel] = allParakeetModels + allWhisperKitModels + allCloudModels
     
-    static var allLocalModels: [WhisperLocalModel] {
-        [
-            WhisperLocalModel(
-                name: "tiny",
-                displayName: "Tiny",
-                description: "Tiny model, fastest, least accurate",
-                provider: .local,
-                size: "75 MB",
-                speed: 0.95,
-                accuracy: 0.6,
-                ramUsage: 0.3,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true),
-            ),
-            
-            WhisperLocalModel(
-                name: "tiny.en",
-                displayName: "Tiny (English)",
-                description: "Tiny model optimized for English, fastest, least accurate",
-                provider: .local,
-                size: "75 MB",
-                speed: 0.95,
-                accuracy: 0.65,
-                ramUsage: 0.3,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
-            ),
-            WhisperLocalModel(
-                name: "base",
-                displayName: "Base",
-                description: "Base model, good balance between speed and accuracy, supports multiple languages",
-                provider: .local,
-                size: "142 MB",
-                speed: 0.85,
-                accuracy: 0.72,
-                ramUsage: 0.5,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
-            ),
-            WhisperLocalModel(
-                name: "base.en",
-                displayName: "Base (English)",
-                description: "Base model optimized for English, good balance between speed and accuracy",
-                provider: .local,
-                size: "142 MB",
-                speed: 0.85,
-                accuracy: 0.75,
-                ramUsage: 0.5,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
-            ),
-            WhisperLocalModel(
-                name: "medium",
-                displayName: "Medium",
-                description: "Medium model, high accuracy with decent speed, supports multiple languages",
-                provider: .local,
-                size: "1.5 GB",
-                speed: 0.6,
-                accuracy: 0.90,
-                ramUsage: 2.5,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
-            ),
-            WhisperLocalModel(
-                name: "medium.en",
-                displayName: "Medium (English)",
-                description: "Medium model optimized for English, high accuracy with decent speed",
-                provider: .local,
-                size: "1.5 GB",
-                speed: 0.6,
-                accuracy: 0.92,
-                ramUsage: 2.5,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
-            ),
-
-            WhisperLocalModel(
-                name: "large-v2",
-                displayName: "Large v2",
-                description: "Large model v2, slower than Medium but more accurate",
-                provider: .local,
-                size: "2.9 GB",
-                speed: 0.3,
-                accuracy: 0.96,
-                ramUsage: 3.8,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
-            ),
-            WhisperLocalModel(
-                name: "large-v3",
-                displayName: "Large v3",
-                description: "Large model v3, very slow but most accurate",
-                provider: .local,
-                size: "2.9 GB",
-                speed: 0.3,
-                accuracy: 0.98,
-                ramUsage: 3.9,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
-            ),
-            WhisperLocalModel(
-                name: "large-v3-turbo",
-                displayName: "Large v3 Turbo",
-                description: "Large model v3 Turbo, faster than v3 with similar accuracy",
-                provider: .local,
-                size: "1.5 GB",
-                speed: 0.75,
-                accuracy: 0.97,
-                ramUsage: 1.8,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
-            ),
-            WhisperLocalModel(
-                name: "large-v3-turbo-q5_0",
-                displayName: "Large v3 Turbo (Quantized)",
-                description: "Quantized version of Large v3 Turbo, faster with slightly lower accuracy",
-                provider: .local,
-                size: "547 MB",
-                speed: 0.75,
-                accuracy: 0.95,
-                ramUsage: 1.0,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: true)
-            ),
-        ]
-    }
     
     static var allCloudModels: [CloudModel] {
         [

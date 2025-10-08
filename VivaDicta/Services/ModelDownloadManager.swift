@@ -28,9 +28,7 @@ class ModelDownloadManager: @unchecked Sendable {
     // MARK: - Public Interface
 
     public func downloadModel(_ model: any TranscriptionModel) async throws {
-        if let whisperModel = model as? WhisperLocalModel {
-            try await downloadWhisperModel(whisperModel)
-        } else if let parakeetModel = model as? ParakeetModel {
+        if let parakeetModel = model as? ParakeetModel {
             try await downloadParakeetModel(parakeetModel)
         } else if let whisperKitModel = model as? WhisperKitModel {
             try await downloadWhisperKitModel(whisperKitModel)
@@ -50,18 +48,14 @@ class ModelDownloadManager: @unchecked Sendable {
     }
 
     public func currentProgress(for model: any TranscriptionModel) -> Double {
-        if let whisperModel = model as? WhisperLocalModel {
-            return currentProgressForWhisper(whisperModel)
-        } else if model is ParakeetModel || model is WhisperKitModel {
+        if model is ParakeetModel || model is WhisperKitModel {
             return downloadProgress[model.name] ?? 0.0
         }
         return 0.0
     }
 
     public func downloadStatus(for model: any TranscriptionModel) -> DownloadStatus {
-        if let whisperModel = model as? WhisperLocalModel {
-            return downloadStatuses[model.name] ?? (whisperModel.fileExists ? .downloaded : .download)
-        } else if let parakeetModel = model as? ParakeetModel {
+        if let parakeetModel = model as? ParakeetModel {
             return downloadStatuses[model.name] ?? (parakeetModel.isDownloaded ? .downloaded : .download)
         } else if let whisperKitModel = model as? WhisperKitModel {
             return downloadStatuses[model.name] ?? (whisperKitModel.isDownloaded ? .downloaded : .download)
@@ -69,85 +63,6 @@ class ModelDownloadManager: @unchecked Sendable {
         return .download
     }
 
-    // MARK: - Whisper Model Download
-
-    private func downloadWhisperModel(_ model: WhisperLocalModel) async throws {
-        guard let url = model.downloadURL else {
-            throw ModelDownloadError.invalidURL
-        }
-
-        await MainActor.run {
-            downloadStatuses[model.name] = .downloading
-        }
-
-        try await performWhisperModelDownload(model, url)
-    }
-
-    private func performWhisperModelDownload(_ model: WhisperLocalModel, _ url: URL) async throws {
-        try await downloadMainModel(model, from: url)
-
-        if let coreMLDownloadURL = model.coreMLDownloadURL {
-            try await downloadAndSetupCoreMLModel(for: model, from: coreMLDownloadURL)
-        }
-
-        await MainActor.run {
-            downloadStatuses[model.name] = .downloaded
-            downloadProgress.removeValue(forKey: model.name + "_main")
-            downloadProgress.removeValue(forKey: model.name + "_coreml")
-
-            // Call the callback to notify that a model was downloaded
-            onModelDownloaded?(model)
-        }
-    }
-
-    private func downloadMainModel(_ model: WhisperLocalModel, from url: URL) async throws {
-        let progressKeyMain = model.name + "_main"
-        let data = try await downloadFileWithProgress(from: url, progressKey: progressKeyMain)
-        try data.write(to: model.fileURL)
-    }
-
-    private func downloadAndSetupCoreMLModel(for model: WhisperLocalModel, from url: URL) async throws {
-        let progressKeyCoreML = model.name + "_coreml"
-        let coreMLData = try await downloadFileWithProgress(from: url, progressKey: progressKeyCoreML)
-
-        let coreMLZipPath = FileManager.appDirectory(for: .models).appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc.zip")
-        try coreMLData.write(to: coreMLZipPath)
-
-        try await unzipAndSetupCoreMLModel(for: model, zipPath: coreMLZipPath, progressKey: progressKeyCoreML)
-    }
-
-    private func unzipAndSetupCoreMLModel(for model: WhisperLocalModel, zipPath: URL, progressKey: String) async throws {
-        let coreMLDestination = FileManager.appDirectory(for: .models).appendingPathComponent("ggml-\(model.name)-encoder.mlmodelc")
-
-        try? FileManager.default.removeItem(at: coreMLDestination)
-        try Zip.unzipFile(zipPath, destination: FileManager.appDirectory(for: .models), overwrite: true, password: nil)
-        try verifyAndCleanupCoreMLFiles(model, coreMLDestination, zipPath, progressKey)
-    }
-
-    private func verifyAndCleanupCoreMLFiles(_ model: WhisperLocalModel, _ destination: URL, _ zipPath: URL, _ progressKey: String) throws {
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            try? FileManager.default.removeItem(at: zipPath)
-            throw ModelDownloadError.unzipFailed
-        }
-
-        try? FileManager.default.removeItem(at: zipPath)
-        downloadProgress.removeValue(forKey: progressKey)
-    }
-
-    private func currentProgressForWhisper(_ model: WhisperLocalModel) -> Double {
-        let mainKey = model.name + "_main"
-        let coreMLKey = model.name + "_coreml"
-
-        let mainProgress = downloadProgress[mainKey] ?? 0.0
-        let coreMLProgress = downloadProgress[coreMLKey] ?? 0.0
-
-        if model.coreMLDownloadURL != nil {
-            return (mainProgress * 0.5) + (coreMLProgress * 0.5)
-        } else {
-            return mainProgress
-        }
-    }
 
     // MARK: - Parakeet Model Download
 

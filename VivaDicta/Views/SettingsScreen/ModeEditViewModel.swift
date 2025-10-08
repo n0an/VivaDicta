@@ -14,7 +14,7 @@ class ModeEditViewModel {
     
     var modeName: String = ""
     
-    var transcriptionProvider: TranscriptionModelProvider = .local
+    var transcriptionProvider: TranscriptionModelProvider = .whisperKit
     var transcriptionModel: String = ""
     var transcriptionLanguage: String = "auto"
     
@@ -60,7 +60,7 @@ class ModeEditViewModel {
             aiModel = existingMode.aiModel
             selectedPromptID = existingMode.userPrompt?.id
         } else {
-            transcriptionProvider = .local
+            transcriptionProvider = .whisperKit
             transcriptionModel = ""
             transcriptionLanguage = "auto"
         }
@@ -93,8 +93,6 @@ class ModeEditViewModel {
     // MARK: - Transcription settings
     func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
         switch provider {
-        case .local:
-            return !transcriptionManager.availableWhisperLocalModels.isEmpty
         case .parakeet:
             return !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
         case .whisperKit:
@@ -107,8 +105,6 @@ class ModeEditViewModel {
     
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
-        case .local:
-            return transcriptionManager.availableWhisperLocalModels.compactMap { $0.name }
         case .parakeet:
             return TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.compactMap { $0.name }
         case .whisperKit:
@@ -142,8 +138,6 @@ class ModeEditViewModel {
 
         let models: [any TranscriptionModel]
         switch transcriptionProvider {
-        case .local:
-            models = TranscriptionModelProvider.allLocalModels
         case .whisperKit:
             models = TranscriptionModelProvider.allWhisperKitModels
         default:

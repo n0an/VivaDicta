@@ -79,7 +79,9 @@ class AppState {
     func startLiveActivity() {
         // Ensure lifecycle tracking is active when launched from keyboard
         lifecycleManager.startTracking()
-
+        
+        guard liveActivity == nil else { return }
+        
         let attributes = VivaDictaLiveActivityAttributes(name: "testName")
         do {
 

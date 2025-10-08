@@ -18,9 +18,7 @@ struct ModelsView: View {
         let manager = ModelDownloadManager()
         manager.onModelDownloaded = { [weak appState] model in
             // Update the default mode if it doesn't have a model yet
-            if let whisperModel = model as? WhisperLocalModel {
-                appState?.aiService.updateDefaultModeIfNeeded(provider: .local, modelName: whisperModel.name)
-            } else if let parakeetModel = model as? ParakeetModel {
+            if let parakeetModel = model as? ParakeetModel {
                 appState?.aiService.updateDefaultModeIfNeeded(provider: .parakeet, modelName: parakeetModel.name)
             } else if let whisperKitModel = model as? WhisperKitModel {
                 appState?.aiService.updateDefaultModeIfNeeded(provider: .whisperKit, modelName: whisperKitModel.name)
@@ -41,11 +39,7 @@ struct ModelsView: View {
 
             ScrollView {
                 ForEach(filteredModels, id: \.id) { model in
-                    if let model = model as? WhisperLocalModel {
-                        WhisperLocalModelCard(
-                            model: model,
-                            downloadManager: downloadManager)
-                    } else if let model = model as? ParakeetModel {
+                    if let model = model as? ParakeetModel {
                         ParakeetModelCard(
                             model: model,
                             downloadManager: downloadManager)
@@ -77,9 +71,9 @@ struct ModelsView: View {
     var filteredModels: [any TranscriptionModel] {
         switch modelType {
         case .local:
-            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .local || $0.provider == .parakeet || $0.provider == .whisperKit }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .parakeet || $0.provider == .whisperKit }
         case .cloud:
-            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .local && $0.provider != .parakeet && $0.provider != .whisperKit }
+            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .parakeet && $0.provider != .whisperKit }
         }
     }
 
