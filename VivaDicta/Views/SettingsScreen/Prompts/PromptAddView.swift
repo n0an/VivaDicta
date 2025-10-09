@@ -42,26 +42,46 @@ struct PromptAddView: View {
                         .frame(minHeight: 200)
                 }
             }
-            .navigationTitle("New Prompt")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("New \(currentTemplate.displayName) Prompt")
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+                ToolbarItem(placement: .topBarLeading) {
+                    if #available(iOS 26, *) {
+                        Button(role: .close) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        let prompt = UserPrompt(
-                            title: title,
-                            description: description,
-                            promptInstructions: promptInstructions)
-                        
-                        promptsManager.addPrompt(prompt)
-                        dismiss()
+                ToolbarItem(placement: .topBarTrailing) {
+                    if #available(iOS 26, *){
+                        Button(role: .confirm) {
+                            let prompt = UserPrompt(
+                                title: title,
+                                description: description,
+                                promptInstructions: promptInstructions)
+                            
+                            promptsManager.addPrompt(prompt)
+                            dismiss()
+                        }
+                        .disabled(title.isEmpty)
+                        .tint(.blue)
+                    } else {
+                        Button("Save") {
+                            let prompt = UserPrompt(
+                                title: title,
+                                description: description,
+                                promptInstructions: promptInstructions)
+                            
+                            promptsManager.addPrompt(prompt)
+                            dismiss()
+                        }
+                        .disabled(title.isEmpty)
                     }
-                    .disabled(title.isEmpty)
                 }
             }
         }
