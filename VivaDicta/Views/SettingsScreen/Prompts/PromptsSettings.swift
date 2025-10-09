@@ -69,6 +69,7 @@ struct PromptsSettings: View {
                 }
             }
         }
+        .sensoryFeedback(.selection, trigger: showingTemplateSelection)
         .toolbarTitleDisplayMode(.inlineLarge)
         .navigationTitle("Prompts")
     }
