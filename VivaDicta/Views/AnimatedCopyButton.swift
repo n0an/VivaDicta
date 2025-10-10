@@ -23,14 +23,8 @@ struct AnimatedCopyButton: View {
                     .font(.system(size: 12, weight: isCopied ? .medium : .regular))
                     .foregroundStyle(.white)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(isCopied ? Color.green.opacity(0.8) : Color.blue)
-            )
         }
-        .buttonStyle(.plain)
+        .animatedCopyButtonStyle(color: .blue, colorPressed: .green.opacity(0.8), isPressed: isCopied)
         .scaleEffect(isCopied ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCopied)
     }

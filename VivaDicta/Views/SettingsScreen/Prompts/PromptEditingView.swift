@@ -38,33 +38,62 @@ struct PromptEditView: View {
                 }
             }
             .navigationTitle("Edit Prompt")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
+            
+            
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+                ToolbarItem(placement: .topBarLeading) {
+                    if #available(iOS 26, *) {
+                        Button(role: .close) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        if let existingPrompt = editingPrompt {
-                            // Update existing prompt
-                            let updatedPrompt = UserPrompt(
-                                id: existingPrompt.id,
-                                title: title,
-                                description: description,
-                                promptInstructions: promptInstructions,
-                                createdAt: existingPrompt.createdAt
-                            )
-                            promptsManager.updatePrompt(updatedPrompt)
+                ToolbarItem(placement: .topBarTrailing) {
+                    if #available(iOS 26, *){
+                        Button(role: .confirm) {
+                            if let existingPrompt = editingPrompt {
+                                // Update existing prompt
+                                let updatedPrompt = UserPrompt(
+                                    id: existingPrompt.id,
+                                    title: title,
+                                    description: description,
+                                    promptInstructions: promptInstructions,
+                                    createdAt: existingPrompt.createdAt
+                                )
+                                promptsManager.updatePrompt(updatedPrompt)
+                            }
+                            dismiss()
                         }
-                        dismiss()
+                        .disabled(title.isEmpty)
+                        .tint(.blue)
+                    } else {
+                        Button("Save") {
+                            if let existingPrompt = editingPrompt {
+                                // Update existing prompt
+                                let updatedPrompt = UserPrompt(
+                                    id: existingPrompt.id,
+                                    title: title,
+                                    description: description,
+                                    promptInstructions: promptInstructions,
+                                    createdAt: existingPrompt.createdAt
+                                )
+                                promptsManager.updatePrompt(updatedPrompt)
+                            }
+                            dismiss()
+                        }
+                        .disabled(title.isEmpty)
                     }
-                    .disabled(title.isEmpty)
                 }
             }
+            
         }
+        
         .onAppear {
             if let existingPrompt = editingPrompt {
                 // Pre-fill with existing prompt data

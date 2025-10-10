@@ -231,3 +231,31 @@ extension View {
         modifier(ProminentButton(color: color))
     }
 }
+
+
+struct AnimatedCopyButtonStyle: ViewModifier {
+    var color: Color
+    var colorPressed: Color
+    
+    var isPressed: Bool
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *){
+            content
+                .buttonStyle(.glassProminent)
+                .tint(isPressed ? colorPressed : color)
+        } else {
+            content
+                .buttonStyle(.borderedProminent)
+                .tint(isPressed ? colorPressed : color)
+        }
+    }
+}
+
+extension View {
+    func animatedCopyButtonStyle(color: Color,
+                                 colorPressed: Color,
+                                 isPressed: Bool) -> some View {
+        modifier(AnimatedCopyButtonStyle(color: color, colorPressed: colorPressed, isPressed: isPressed))
+    }
+}
