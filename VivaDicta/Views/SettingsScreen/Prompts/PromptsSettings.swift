@@ -37,7 +37,7 @@ struct PromptsSettings: View {
             .navigationTransition(
                 .zoom(sourceID: "info", in: transition)
             )
-            .presentationDetents([.fraction(0.6)])
+            .presentationDetents([.medium])
         }
         .sheet(item: $selectedTemplate) { template in
             PromptAddView(
