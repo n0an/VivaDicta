@@ -12,7 +12,8 @@ import os
 @main
 struct VivaDictaApp: App {
     @State var appState = AppState()
-    
+    @Environment(\.scenePhase) private var scenePhase
+
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
 
     init() {
@@ -25,6 +26,19 @@ struct VivaDictaApp: App {
             TabBarView(appState: appState)
                 .onOpenURL { url in
                     handleDeepLink(url)
+                }
+                .onChange(of: scenePhase) { oldPhase, newPhase in
+                    switch newPhase {
+                    case .active:
+                        logger.info("🎬 App became active - checking for stale Live Activity")
+                        appState.checkAndEndStaleLiveActivity()
+                    case .inactive:
+                        logger.info("🎬 App became inactive")
+                    case .background:
+                        logger.info("🎬 App went to background")
+                    @unknown default:
+                        break
+                    }
                 }
         }
         .modelContainer(Persistence.container)

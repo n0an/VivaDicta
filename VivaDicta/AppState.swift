@@ -13,9 +13,11 @@ import os
 @Observable
 class AppState {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppState")
-    
+
     var liveActivity: Activity<VivaDictaLiveActivityAttributes>? = nil
-    
+    private var liveActivityTimer: Timer?
+    private var liveActivityStartTime: Date?
+
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
     private let lifecycleManager = AppLifecycleManager.shared
@@ -79,18 +81,78 @@ class AppState {
     func startLiveActivity() {
         // Ensure lifecycle tracking is active when launched from keyboard
         lifecycleManager.startTracking()
-        
+
         guard liveActivity == nil else { return }
-        
+
+        // Cancel any existing timer
+        liveActivityTimer?.invalidate()
+
         let attributes = VivaDictaLiveActivityAttributes(name: "testName")
         do {
-
-            let activityContent = ActivityContent(state: VivaDictaLiveActivityAttributes.ContentState(emoji: "smile"), staleDate: .now.addingTimeInterval(60))
+            // Set both staleDate (for system UI hints) and dismissalPolicy
+            let activityContent = ActivityContent(
+                state: VivaDictaLiveActivityAttributes.ContentState(emoji: "smile"),
+                staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+            )
 
             liveActivity = try Activity.request(attributes: attributes, content: activityContent)
 
+            // Store the start time
+            liveActivityStartTime = Date()
+
+            // Set up timer to end the activity after 10 minutes
+            liveActivityTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: false) { [weak self] _ in
+                Task {
+                    await self?.endLiveActivity()
+                }
+            }
+
         } catch {
             logger.error("🤺 Error starting Live Activity \(error.localizedDescription)")
+        }
+    }
+
+    func endLiveActivity() async {
+        guard let liveActivity else { return }
+
+        // Cancel the timer
+        liveActivityTimer?.invalidate()
+        liveActivityTimer = nil
+
+        // End the Live Activity immediately without updating content
+        await liveActivity.end(nil, dismissalPolicy: .immediate)
+
+        self.liveActivity = nil
+        self.liveActivityStartTime = nil
+        logger.info("Live Activity ended")
+    }
+
+    /// Check if the Live Activity is stale and end it if necessary
+    /// Called when the app returns to foreground
+    public func checkAndEndStaleLiveActivity() {
+        guard liveActivity != nil,
+              let startTime = liveActivityStartTime else { return }
+
+        let elapsed = Date().timeIntervalSince(startTime)
+        let maxDuration: TimeInterval = 600 // 10 minutes in seconds
+
+        if elapsed >= maxDuration {
+            logger.info("Live Activity is stale (elapsed: \(elapsed) seconds), ending it")
+            Task {
+                await endLiveActivity()
+            }
+        } else {
+            // Reschedule the timer for the remaining time
+            let remainingTime = maxDuration - elapsed
+            logger.info("Live Activity still valid. Rescheduling timer for \(remainingTime) seconds")
+
+            // Cancel existing timer and create a new one
+            liveActivityTimer?.invalidate()
+            liveActivityTimer = Timer.scheduledTimer(withTimeInterval: remainingTime, repeats: false) { [weak self] _ in
+                Task {
+                    await self?.endLiveActivity()
+                }
+            }
         }
     }
 }
