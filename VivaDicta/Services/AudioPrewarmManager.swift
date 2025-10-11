@@ -187,11 +187,13 @@ final class AudioPrewarmManager {
 
         // IMPORTANT: Don't stop dummy recorder - it keeps running!
         // Use SAME settings as RecordViewModel normal flow for compatibility
-        let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatLinearPCM),
-            AVSampleRateKey: 16000.0,  // Match RecordViewModel setting
+        let settings: [String : Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 16_000.0,
             AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: false
         ]
 
         realRecorder = try AVAudioRecorder(url: url, settings: settings)

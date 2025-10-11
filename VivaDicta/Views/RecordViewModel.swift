@@ -224,10 +224,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 do {
                     let settings: [String : Any] = [
-                        AVFormatIDKey: Int(kAudioFormatLinearPCM),
-                        AVSampleRateKey: 16000.0,
+                        AVFormatIDKey: kAudioFormatLinearPCM,
+                        AVSampleRateKey: 16_000.0,
                         AVNumberOfChannelsKey: 1,
-                        AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                        AVLinearPCMBitDepthKey: 16,
+                        AVLinearPCMIsBigEndianKey: false,
+                        AVLinearPCMIsFloatKey: false
                     ]
                     
                     audioRecorder = try AVAudioRecorder(
