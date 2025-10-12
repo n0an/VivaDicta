@@ -12,7 +12,7 @@ enum UserDefaultsStorage {
     /// For data that MUST be shared between app and extensions
     /// Examples: Flow modes, API keys, transcription settings, selected modes
     static var shared: UserDefaults {
-        UserDefaults(suiteName: AppGroupConfig.appGroupId)!
+        UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)!
     }
 
     /// For app-private data that extensions don't need

@@ -68,7 +68,7 @@ class KeyboardViewController: KeyboardInputViewController {
         // Create keyboard app configuration
         let keyboardApp = KeyboardApp(
             name: "VivaDicta Keyboard",
-            appGroupId: AppGroupCoordinator.shared.appGroupIdentifier,
+            appGroupId: AppGroupCoordinator.shared.appGroupId,
             deepLinks: .init(app: "vivadicta://")
         )
 
@@ -99,7 +99,7 @@ class KeyboardViewController: KeyboardInputViewController {
                 collapsedView: { $0.view },
                 emojiKeyboard: { $0.view },
                 toolbar: { _ in
-                    VoiceInkToolbarView()
+                    VivaDictaKeyboardToolbarView()
                         .environment(self.dictationState)
                 }
             )
@@ -393,7 +393,7 @@ struct ListeningIndicatorView: View {
     }
 }
 
-struct VoiceInkToolbarView: View {
+struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @State private var showOverlay = false
     @Environment(\.openURL) private var openURL

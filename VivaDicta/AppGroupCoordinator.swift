@@ -15,9 +15,34 @@ public final class AppGroupCoordinator {
     public static let shared = AppGroupCoordinator()
 
     // MARK: - Constants
-    public let appGroupIdentifier = "group.com.antonnovoselov.VivaDicta"
+    public let appGroupId = "group.com.antonnovoselov.VivaDicta"
+    
+//    public static let appGroupId = "group.com.antonnovoselov.VivaDicta"
 
-    private enum UserDefaultsKeys {
+    // Heartbeat configuration
+    public static let heartbeatKey = "appLastHeartbeat"
+    public static let isMainAppActiveKey = "isMainAppActive"
+    public static let heartbeatInterval: TimeInterval = 5.0
+    public static let heartbeatThreshold: TimeInterval = 10.0  // Consider app active if heartbeat is within 10 seconds
+
+    // Recording heartbeat configuration
+    public static let recordingHeartbeatKey = "recordingLastHeartbeat"
+    public static let recordingHeartbeatInterval: TimeInterval = 5.0
+    public static let recordingHeartbeatThreshold: TimeInterval = 10.0  // Consider recording active if heartbeat is within 10 seconds
+
+    // Timeout configuration
+    public static let recordingStartTimeout: TimeInterval = 10.0  // Keyboard: timeout for recording to start
+    public static let audioPrewarmSessionTimeout: TimeInterval = 300.0  // Audio prewarm session timeout (5 minutes)
+//    public static let keyboardDictationTimeoutSeconds: Int = 180 // 3 minutes hot mic session
+
+    // AI Enhancement configuration
+    public static let aiEnhanceModesKey = "AIEnhanceModes"
+    public static let selectedAIModeKey = "selectedAIMode"
+    
+    
+    
+
+    nonisolated private enum UserDefaultsKeys {
         static let shouldStartRecording = "shouldStartRecording"
         static let shouldStopRecording = "shouldStopRecording"
         static let shouldCancelRecording = "shouldCancelRecording"
@@ -34,7 +59,7 @@ public final class AppGroupCoordinator {
         static let transcriptionErrorMessage = "transcriptionErrorMessage"
     }
 
-    private enum NotificationNames {
+    nonisolated private enum NotificationNames {
         static let startRecording = "com.antonnovoselov.VivaDicta.startRecording"
         static let stopRecording = "com.antonnovoselov.VivaDicta.stopRecording"
         static let cancelRecording = "com.antonnovoselov.VivaDicta.cancelRecording"
@@ -51,7 +76,7 @@ public final class AppGroupCoordinator {
         static let stopHotMicFromWidget = "com.antonnovoselov.VivaDicta.stopHotMicFromWidget"
     }
 
-    enum TranscriptionStatus: String {
+    public enum TranscriptionStatus: String {
         case idle = "idle"
         case recording = "recording"
         case transcribing = "transcribing"
@@ -81,7 +106,7 @@ public final class AppGroupCoordinator {
 
     // MARK: - Initialization
     private init() {
-        sharedDefaults = UserDefaults(suiteName: appGroupIdentifier)
+        sharedDefaults = UserDefaults(suiteName: appGroupId)
         setupNotificationObservers()
     }
 
@@ -707,7 +732,7 @@ public final class AppGroupCoordinator {
             "stopHotMicRequested": defaults.bool(forKey: "stopHotMicRequested"),
             "stopHotMicRequestedTimestamp": defaults.double(forKey: "stopHotMicRequestedTimestamp"),
 
-            "appGroupIdentifier": appGroupIdentifier
+            "appGroupIdentifier": appGroupId
         ]
     }
 }
@@ -752,6 +777,7 @@ public final class AppGroupCoordinator {
 //    // Timeout configuration
 //    public static let recordingStartTimeout: TimeInterval = 10.0  // Keyboard: timeout for recording to start
 //    public static let audioPrewarmSessionTimeout: TimeInterval = 300.0  // Audio prewarm session timeout (5 minutes)
+////    public static let keyboardDictationTimeoutSeconds: Int = 180 // 3 minutes hot mic session
 //
 //    // AI Enhancement configuration
 //    public static let aiEnhanceModesKey = "AIEnhanceModes"

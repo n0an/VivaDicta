@@ -20,7 +20,7 @@ class AppState {
 
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
-    private let lifecycleManager = AppLifecycleManager.shared
+//    private let lifecycleManager = AppLifecycleManager.shared
 
     var selectedTab: TabTag = .record
     var shouldNavigateToModels: Bool = false
@@ -42,7 +42,7 @@ class AppState {
         transcriptionManager.setCurrentMode(aiService.selectedMode)
 
         // Start app lifecycle tracking
-        lifecycleManager.startTracking()
+//        lifecycleManager.startTracking()
 
         // Preload WhisperKit model if conditions are met
         Task {
@@ -80,7 +80,7 @@ class AppState {
     
     func startLiveActivity() {
         // Ensure lifecycle tracking is active when launched from keyboard
-        lifecycleManager.startTracking()
+//        lifecycleManager.startTracking()
 
         guard liveActivity == nil else { return }
 

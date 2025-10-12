@@ -101,7 +101,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     init(appState: AppState) {
         self.appState = appState
         super.init()
-        setupDarwinNotificationObservers()
+        // setupDarwinNotificationObservers() // TODO: Re-enable when refactoring is complete
     }
 
     // Note: No deinit cleanup needed for Darwin observers
@@ -319,7 +319,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.recordingState = .transcribing
 
                 // Notify keyboard that transcription has started
-                AppGroupCoordinator.shared.notifyTranscriptionStarted()
+//                AppGroupCoordinator.shared.notifyTranscriptionStarted()
 
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
@@ -329,7 +329,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
                 // Notify keyboard that transcription has ended
-                AppGroupCoordinator.shared.notifyTranscriptionEnded()
+//                AppGroupCoordinator.shared.notifyTranscriptionEnded()
                 
                 var enhancedText: String? = nil
                 var promptName: String? = nil
@@ -338,13 +338,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
                     // Notify keyboard that AI enhancement has started
-                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
+//                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
                         
                         // Notify keyboard that AI enhancement has ended
-                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
+//                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                         
                         enhancedText = enhanced
                         promptName = prompt
@@ -459,7 +459,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         updateRecordingHeartbeat()
 
         // Start new heartbeat timer
-        recordingHeartbeatTimer = Timer.scheduledTimer(withTimeInterval: AppGroupConfig.recordingHeartbeatInterval, repeats: true) { [weak self] _ in
+        // TODO: Remove heartbeats
+        recordingHeartbeatTimer = Timer.scheduledTimer(withTimeInterval: AppGroupCoordinator.recordingHeartbeatInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.updateRecordingHeartbeat()
             }
@@ -473,7 +474,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         recordingHeartbeatTimer = nil
 
         // Clear the heartbeat timestamp and recording flag to indicate recording has stopped
-        UserDefaultsStorage.shared.set(0.0, forKey: AppGroupConfig.recordingHeartbeatKey)
+        UserDefaultsStorage.shared.set(0.0, forKey: AppGroupCoordinator.recordingHeartbeatKey)
         UserDefaultsStorage.shared.set(false, forKey: "isRecording")  // Explicitly clear the recording flag
         UserDefaultsStorage.shared.synchronize()
 
@@ -482,7 +483,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
     private func updateRecordingHeartbeat() {
         let currentTime = Date().timeIntervalSince1970
-        UserDefaultsStorage.shared.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
+        UserDefaultsStorage.shared.set(currentTime, forKey: AppGroupCoordinator.recordingHeartbeatKey)
         UserDefaultsStorage.shared.synchronize()
 
         logger.debug("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
@@ -490,61 +491,61 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
     // MARK: - Darwin Notification Handling
 
-    private func setupDarwinNotificationObservers() {
-        // Observe start recording request from keyboard
-        AppGroupCoordinator.shared.observeStartRecording { [weak self] in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.logger.info("📱 Received Darwin notification: Start Recording from keyboard")
-
-                // Check if already recording
-                guard self.recordingState != .recording else {
-                    self.logger.info("📱 Already recording, ignoring start request")
-                    return
-                }
-
-                // Start recording
-                self.startCaptureAudio()
-
-                // Notify keyboard that recording has started
-                AppGroupCoordinator.shared.notifyRecordingStarted()
-            }
-        }
-
-        // Observe stop recording request from keyboard
-        AppGroupCoordinator.shared.observeStopRecording { [weak self] in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.logger.info("📱 Received Darwin notification: Stop Recording from keyboard")
-
-                // Check if actually recording
-                guard self.recordingState == .recording else {
-                    self.logger.info("📱 Not recording, ignoring stop request")
-                    return
-                }
-
-                // Stop recording and handle transcription for keyboard
-                self.stopCaptureAudioForKeyboard()
-            }
-        }
-
-        // Observe cancel recording request from keyboard (no transcription)
-        AppGroupCoordinator.shared.observeCancelRecording { [weak self] in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.logger.info("📱 Received Darwin notification: Cancel Recording from keyboard")
-
-                // Check if actually recording
-                guard self.recordingState == .recording else {
-                    self.logger.info("📱 Not recording, ignoring cancel request")
-                    return
-                }
-
-                // Cancel recording without transcription
-                self.cancelCaptureAudioForKeyboard()
-            }
-        }
-    }
+//    private func setupDarwinNotificationObservers() {
+//        // Observe start recording request from keyboard
+//        AppGroupCoordinator.shared.observeStartRecording { [weak self] in
+//            Task { @MainActor in
+//                guard let self = self else { return }
+//                self.logger.info("📱 Received Darwin notification: Start Recording from keyboard")
+//
+//                // Check if already recording
+//                guard self.recordingState != .recording else {
+//                    self.logger.info("📱 Already recording, ignoring start request")
+//                    return
+//                }
+//
+//                // Start recording
+//                self.startCaptureAudio()
+//
+//                // Notify keyboard that recording has started
+////                AppGroupCoordinator.shared.notifyRecordingStarted()
+//            }
+//        }
+//
+//        // Observe stop recording request from keyboard
+////        AppGroupCoordinator.shared.observeStopRecording { [weak self] in
+////            Task { @MainActor in
+////                guard let self = self else { return }
+////                self.logger.info("📱 Received Darwin notification: Stop Recording from keyboard")
+////
+////                // Check if actually recording
+////                guard self.recordingState == .recording else {
+////                    self.logger.info("📱 Not recording, ignoring stop request")
+////                    return
+////                }
+////
+////                // Stop recording and handle transcription for keyboard
+////                self.stopCaptureAudioForKeyboard()
+////            }
+////        }
+//
+//        // Observe cancel recording request from keyboard (no transcription)
+////        AppGroupCoordinator.shared.observeCancelRecording { [weak self] in
+////            Task { @MainActor in
+////                guard let self = self else { return }
+////                self.logger.info("📱 Received Darwin notification: Cancel Recording from keyboard")
+////
+////                // Check if actually recording
+////                guard self.recordingState == .recording else {
+////                    self.logger.info("📱 Not recording, ignoring cancel request")
+////                    return
+////                }
+////
+////                // Cancel recording without transcription
+////                self.cancelCaptureAudioForKeyboard()
+////            }
+////        }
+//    }
 
     private func cancelCaptureAudioForKeyboard() {
         logger.info("📱 Canceling recording from keyboard - no transcription")
@@ -554,7 +555,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         stopRecordingHeartbeat()  // Stop heartbeat when keyboard cancels recording
 
         // Notify keyboard that recording has stopped
-        AppGroupCoordinator.shared.notifyRecordingStopped()
+//        AppGroupCoordinator.shared.notifyRecordingStopped()
 
         // Clear recording state to prevent transcription
         recordingState = .idle
@@ -574,7 +575,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
 
                 // Notify keyboard that recording has stopped
-                AppGroupCoordinator.shared.notifyRecordingStopped()
+//                AppGroupCoordinator.shared.notifyRecordingStopped()
 
                 // Don't schedule session deactivation - prewarm session continues
 
@@ -597,7 +598,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
 
             // Notify keyboard that recording has stopped
-            AppGroupCoordinator.shared.notifyRecordingStopped()
+//            AppGroupCoordinator.shared.notifyRecordingStopped()
 
             // Save the audio file
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
@@ -622,7 +623,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.recordingState = .transcribing
 
                 // Notify keyboard that transcription has started
-                AppGroupCoordinator.shared.notifyTranscriptionStarted()
+//                AppGroupCoordinator.shared.notifyTranscriptionStarted()
 
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
@@ -633,10 +634,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
                 // Notify keyboard that transcription has ended
-                AppGroupCoordinator.shared.notifyTranscriptionEnded()
+//                AppGroupCoordinator.shared.notifyTranscriptionEnded()
                 
                 // Load the selected flow mode from shared UserDefaults (set by keyboard)
-                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupConfig.selectedAIModeKey) {
+                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.selectedAIModeKey) {
                     logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
                     // Update the AI service's selected mode to match what was selected in keyboard
                     aiService.selectedModeName = selectedModeName
@@ -649,7 +650,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 if aiService.isProperlyConfigured() {
                     // Notify keyboard that AI enhancement has started
-                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
+//                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
@@ -658,11 +659,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         enhancementDur = enhancementDuration
 
                         // Notify keyboard that AI enhancement has ended
-                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
+//                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                     } catch {
                         logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
                         // Notify keyboard that AI enhancement has ended (even on failure)
-                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
+//                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                     }
                 }
 
@@ -691,7 +692,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try context.save()
                 
                 // Notify keyboard that transcription is ready
-                AppGroupCoordinator.shared.notifyTranscriptionReady()
+//                AppGroupCoordinator.shared.notifyTranscriptionReady()
 
                 self.recordingState = .idle
 
@@ -701,7 +702,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.recordingState = .error(.transcribe)
 
                 // Notify keyboard about error
-                AppGroupCoordinator.shared.notifyRecordingError()
+//                AppGroupCoordinator.shared.notifyRecordingError()
 
                 logger.error("📱 Transcription failed: \(error.localizedDescription)")
             }

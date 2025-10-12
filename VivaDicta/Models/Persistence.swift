@@ -11,7 +11,7 @@ import Foundation
 struct Persistence {
     static var container: ModelContainer {
         let container: ModelContainer = {
-            let sharedStoreURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupConfig.appGroupId)!.appendingPathComponent("VivaDicta.sqlite")
+            let sharedStoreURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!.appendingPathComponent("VivaDicta.sqlite")
             let config = ModelConfiguration(url: sharedStoreURL)
             return try! ModelContainer(for: Transcription.self, configurations: config)
         }()

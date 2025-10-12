@@ -139,10 +139,9 @@ final class AudioSessionManager {
 
         timeoutRemaining = timeout
 
-        deactivationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+        deactivationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 guard let self = self else {
-                    timer.invalidate()
                     return
                 }
 

@@ -30,7 +30,7 @@ final class AudioPrewarmManager {
     private var dummyRecorder: AVAudioRecorder?
     private var realRecorder: AVAudioRecorder?
     private var sessionStartTime: Date?
-    private var sessionTimeoutDuration: TimeInterval = AppGroupConfig.audioPrewarmSessionTimeout
+    private var sessionTimeoutDuration: TimeInterval = AppGroupCoordinator.audioPrewarmSessionTimeout
     private var expiryTimer: Timer?
     private var dummyFileURL: URL?
 

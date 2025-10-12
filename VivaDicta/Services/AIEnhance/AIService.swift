@@ -129,7 +129,7 @@ class AIService {
     }
 
     private func loadModes() {
-        if let savedModesData = userDefaults.data(forKey: AppGroupConfig.aiEnhanceModesKey),
+        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.aiEnhanceModesKey),
            let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             modes = savedModes
         } else {
@@ -144,7 +144,7 @@ class AIService {
             logger.error("Failed to encode Flow Modes")
             return
         }
-        userDefaults.set(encoded, forKey: AppGroupConfig.aiEnhanceModesKey)
+        userDefaults.set(encoded, forKey: AppGroupCoordinator.aiEnhanceModesKey)
         userDefaults.synchronize() // Force immediate write to disk
         logger.info("Saved \(self.modes.count) Flow Modes to shared storage")
     }
