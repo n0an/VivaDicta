@@ -52,12 +52,17 @@ struct VivaDictaApp: App {
         if url.absoluteString == "vivadicta://record-for-keyboard" {
             logger.info("📱 Recognized as keyboard recording request")
             
-            appState.startLiveActivity()
+//            appState.startLiveActivity()
+            
 
             // Start audio prewarm session to keep app alive in background
             do {
-                try AudioPrewarmManager.shared.startPrewarmSession()
-                logger.info("🎙️ Audio prewarm session started from deeplink")
+                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
+//                try AudioPrewarmManager.shared.startPrewarmSession()
+//                logger.info("🎙️ Audio prewarm session started from deeplink")
+                
+                logger.info("🎙️ Hot Mic started from deeplink")
+
             } catch {
                 logger.error("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }

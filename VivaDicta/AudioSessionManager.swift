@@ -1,4 +1,5 @@
 import Foundation
+import ActivityKit
 import AVFoundation
 import UIKit
 
@@ -61,7 +62,42 @@ final class AudioSessionManager {
 
         let sessionId = UUID().uuidString
         // TODO: Start live activity here
+        startLiveActivity()
 //        liveActivityManager.startHotMicActivity(sessionId: sessionId)
+    }
+    
+    func startLiveActivity() {
+        // Ensure lifecycle tracking is active when launched from keyboard
+//        lifecycleManager.startTracking()
+
+//        guard liveActivity == nil else { return }
+//
+//        // Cancel any existing timer
+//        liveActivityTimer?.invalidate()
+
+        let attributes = VivaDictaLiveActivityAttributes(name: "testName")
+        do {
+            // Set both staleDate (for system UI hints) and dismissalPolicy
+            let activityContent = ActivityContent(
+                state: VivaDictaLiveActivityAttributes.ContentState(emoji: "smile"),
+                staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+            )
+
+            _ = try Activity.request(attributes: attributes, content: activityContent)
+
+            // Store the start time
+//            liveActivityStartTime = Date()
+
+            // Set up timer to end the activity after 10 minutes
+//            liveActivityTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: false) { [weak self] _ in
+//                Task {
+//                    await self?.endLiveActivity()
+//                }
+//            }
+
+        } catch {
+//            logger.error("🤺 Error starting Live Activity \(error.localizedDescription)")
+        }
     }
 
     func pauseHotMicForRecording() {
