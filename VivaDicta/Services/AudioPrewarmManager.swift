@@ -167,10 +167,35 @@ final class AudioPrewarmManager {
         expiryTimer?.invalidate()
 
         expiryTimer = Timer.scheduledTimer(withTimeInterval: sessionTimeoutDuration, repeats: false) { [weak self] _ in
-            
+
             Task { @MainActor [weak self] in
-                self?.logger.info("⏰ Prewarm session timeout reached")
-                self?.endSession()
+                guard let self = self else { return }
+
+                // Check if real recording is still active
+                if self.realRecorder?.isRecording == true {
+                    self.logger.info("⏰ Timeout reached but real recording is active - extending session")
+
+                    // Real recording is still happening, extend the session
+                    let fullTimeoutDuration = TimeInterval(self.audioSessionTimeout)
+
+                    // Reset the session start time to now
+                    self.sessionStartTime = Date()
+                    self.sessionTimeoutDuration = fullTimeoutDuration
+
+                    // Reschedule another timeout check
+                    self.scheduleSessionTimeout()
+
+                    // Also refresh the keyboard session
+                    AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
+                        timeoutSeconds: Int(fullTimeoutDuration)
+                    )
+
+                    self.logger.info("🎙️ Extended session by \(Int(fullTimeoutDuration))s due to active recording")
+                } else {
+                    // No real recording active, safe to end the session
+                    self.logger.info("⏰ Prewarm session timeout reached - ending session")
+                    self.endSession()
+                }
             }
         }
 
@@ -206,23 +231,46 @@ final class AudioPrewarmManager {
         logger.info("🎙️ Real recorder started (parallel with dummy)")
     }
 
-    /// Stops real recording (dummy continues running)
+    /// Stops real recording and extends the pre-warm session
     func stopRealCapture() {
-        logger.info("🎙️ Stopping real capture (dummy continues)")
+        logger.info("🎙️ Stopping real capture and extending session")
 
         realRecorder?.stop()
         realRecorder = nil
 
-        // Refresh keyboard session timeout if still active
-        if isWithinSessionTimeout() {
-            AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
-                timeoutSeconds: Int(timeoutRemaining)
-            )
-            logger.info("🎙️ Refreshed keyboard session timeout: \(Int(self.timeoutRemaining))s")
+        // Get the full timeout duration from settings
+        let fullTimeoutDuration = TimeInterval(audioSessionTimeout)
+
+        // With our new timeout logic, dummy recorder should always be active here
+        // But we'll add a safety check just in case something unexpected happened
+        guard dummyRecorder?.isRecording == true else {
+            // This should never happen in normal operation
+            // But if it does (system killed audio, crash, etc.), try to recover
+            logger.error("❌ Unexpected: Dummy recorder not active after real recording!")
+
+            do {
+                // Attempt to restart the session as a recovery mechanism
+                try startPrewarmSession(timeout: fullTimeoutDuration)
+                logger.info("🔧 Recovery: Successfully restarted pre-warm session")
+            } catch {
+                logger.error("❌ Recovery failed: \(error.localizedDescription)")
+            }
+            return
         }
 
-        // Dummy keeps running - no switching, no orange dot disappearing
-        // Session continues until timeout
+        // Normal case: Extend the session for another full timeout period
+        sessionStartTime = Date()
+        sessionTimeoutDuration = fullTimeoutDuration
+
+        // Reschedule the timeout timer for the full duration
+        scheduleSessionTimeout()
+
+        // Also refresh the keyboard session with the full timeout
+        AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
+            timeoutSeconds: Int(fullTimeoutDuration)
+        )
+
+        logger.info("🎙️ Extended pre-warm session by full timeout: \(Int(fullTimeoutDuration))s")
     }
 
     // MARK: - Private Helpers
