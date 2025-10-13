@@ -55,6 +55,7 @@ public final class AppGroupCoordinator {
         static let keyboardSessionActivated = "com.antonnovoselov.VivaDicta.keyboardSessionActivated"
         static let keyboardSessionExpired = "com.antonnovoselov.VivaDicta.keyboardSessionExpired"
         static let transcriptionTranscribing = "com.antonnovoselov.VivaDicta.transcriptionTranscribing"
+        static let transcriptionEnhancing = "com.antonnovoselov.VivaDicta.transcriptionEnhancing"
         static let transcriptionError = "com.antonnovoselov.VivaDicta.transcriptionError"
         static let audioLevelUpdated = "com.antonnovoselov.VivaDicta.audioLevelUpdated"
         static let stopHotMicFromWidget = "com.antonnovoselov.VivaDicta.stopHotMicFromWidget"
@@ -64,6 +65,7 @@ public final class AppGroupCoordinator {
         case idle = "idle"
         case recording = "recording"
         case transcribing = "transcribing"
+        case enhancing = "enhancing"
         case completed = "completed"
         case error = "error"
     }
@@ -80,6 +82,7 @@ public final class AppGroupCoordinator {
     @MainActor var onKeyboardSessionActivated: (() -> Void)?
     @MainActor var onTranscriptionCompleted: ((String) -> Void)?
     @MainActor var onTranscriptionTranscribing: (() -> Void)?
+    @MainActor var onTranscriptionEnhancing: (() -> Void)?
     @MainActor var onTranscriptionError: (() -> Void)?
     @MainActor var onTranscriptionErrorMessage: ((String) -> Void)?
     @MainActor var onKeyboardSessionExpired: (() -> Void)?
@@ -351,6 +354,8 @@ public final class AppGroupCoordinator {
         switch status {
         case .transcribing:
             postDarwinNotification(NotificationNames.transcriptionTranscribing)
+        case .enhancing:
+            postDarwinNotification(NotificationNames.transcriptionEnhancing)
         case .error:
             postDarwinNotification(NotificationNames.transcriptionError)
         case .completed:
@@ -463,6 +468,19 @@ public final class AppGroupCoordinator {
                 coordinator.handleTranscriptionTranscribingNotification()
             },
             NotificationNames.transcriptionTranscribing as CFString,
+            nil,
+            .deliverImmediately
+        )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleTranscriptionEnhancingNotification()
+            },
+            NotificationNames.transcriptionEnhancing as CFString,
             nil,
             .deliverImmediately
         )
@@ -623,6 +641,12 @@ public final class AppGroupCoordinator {
     nonisolated private func handleTranscriptionTranscribingNotification() {
         Task { @MainActor in
             await onTranscriptionTranscribing?()
+        }
+    }
+
+    nonisolated private func handleTranscriptionEnhancingNotification() {
+        Task { @MainActor in
+            await onTranscriptionEnhancing?()
         }
     }
 
