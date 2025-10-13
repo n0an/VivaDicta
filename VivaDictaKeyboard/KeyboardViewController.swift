@@ -86,35 +86,30 @@ class KeyboardViewController: KeyboardInputViewController {
     override func viewWillSetupKeyboardView() {
         super.viewWillSetupKeyboardView()
 
-        // Check initial app state using the monitoring service
-//        appStateMonitoringService.updateStates()
-
-        // Setup the keyboard view with custom toolbar
-        setupKeyboardView { controller in
-            KeyboardView(
-                state: controller.state,
-                services: controller.services,
-                buttonContent: { $0.view },
-                buttonView: { $0.view },
-                collapsedView: { $0.view },
-                emojiKeyboard: { $0.view },
-                toolbar: { _ in
-                    VivaDictaKeyboardToolbarView()
-                        .environment(self.dictationState)
+        // Setup the keyboard view with our custom view that switches based on state
+        setupKeyboardView { [weak self] controller in
+            KeyboardCustomView(
+                controller: controller,
+                onCancelRecording: {
+                    // Canceling is handled by dictationState.requestCancelRecording()
+                    // No additional action needed here
+                },
+                onStopRecording: {
+                    // Stopping is handled by dictationState.requestStopRecording()
+                    // No additional action needed here
+                },
+                onCancelProcessing: {
+                    // Cancel processing
+                    self?.dictationState.errorMessage = nil
+                    self?.dictationState.transcriptionStatus = .idle
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                },
+                onRecordTapped: {
+                    // This is handled by the toolbar button directly
                 }
             )
+            .environment(self?.dictationState ?? KeyboardDictationState())
         }
-//        setupKeyboardView { [weak self] controller in
-//            KeyboardCustomView(
-//                controller: controller,
-//                stateManager: self?.keyboardStateManager,
-//                appStateViewModel: self?.appStateViewModel,
-//                onCancelRecording: { self?.handleCancelRecording() },
-//                onStopRecording: { self?.handleStopRecording() },
-//                onCancelProcessing: { self?.handleCancelProcessing() },
-//                onRecordTapped: { self?.handleRecordButtonTap() }
-//            )
-//        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -395,7 +390,6 @@ struct ListeningIndicatorView: View {
 
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
-    @State private var showOverlay = false
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -426,14 +420,6 @@ struct VivaDictaKeyboardToolbarView: View {
             }
         }
         .padding(.horizontal, 16)
-        .fullScreenCover(isPresented: $showOverlay) {
-            KeyboardDictationSheetView(onCancelTapped: {
-                showOverlay = false
-            }, onStopTapped: {
-                showOverlay = false
-            })
-            .environment(dictationState)
-        }
     }
 
     private func handleMic() {
@@ -447,11 +433,11 @@ struct VivaDictaKeyboardToolbarView: View {
         }
 
         if dictationState.uiState == .ready {
+            // Start recording when mic is tapped and ready
             dictationState.requestStartRecording()
-            showOverlay = true
         } else if dictationState.uiState == .recording {
-            // If already recording, show the overlay
-            showOverlay = true
+            // If already recording, stop it
+            dictationState.requestStopRecording()
         }
     }
 
@@ -482,7 +468,3 @@ struct VivaDictaKeyboardToolbarView: View {
         }
     }
 }
-
-//private extension VoiceInkToolbarView {
-//    
-//}
