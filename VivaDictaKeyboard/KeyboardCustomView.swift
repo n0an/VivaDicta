@@ -87,6 +87,8 @@ struct KeyboardCustomView: View {
         switch dictationState.transcriptionStatus {
         case .transcribing:
             processingStage = .transcribing
+        case .enhancing:
+            processingStage = .enhancingWithAI
         case .error:
             if let errorMsg = dictationState.errorMessage {
                 processingStage = .error(errorMsg)

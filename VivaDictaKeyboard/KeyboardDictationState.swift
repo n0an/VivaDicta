@@ -39,7 +39,7 @@ final class KeyboardDictationState {
     var uiState: UIState {
         if isRecording { return .recording }
         switch transcriptionStatus {
-        case .transcribing: return .processing
+        case .transcribing, .enhancing: return .processing
         case .error: return .error
         default: break
         }
@@ -73,6 +73,9 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onTranscriptionTranscribing = { [weak self] in
             DispatchQueue.main.async { self?.transcriptionStatus = .transcribing }
         }
+        AppGroupCoordinator.shared.onTranscriptionEnhancing = { [weak self] in
+            DispatchQueue.main.async { self?.transcriptionStatus = .enhancing }
+        }
         AppGroupCoordinator.shared.onTranscriptionCompleted = { [weak self] transcription in
             DispatchQueue.main.async {
                 self?.transcriptionStatus = .completed
@@ -96,6 +99,7 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onKeyboardSessionActivated = nil
         AppGroupCoordinator.shared.onKeyboardSessionExpired = nil
         AppGroupCoordinator.shared.onTranscriptionTranscribing = nil
+        AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
         AppGroupCoordinator.shared.onTranscriptionCompleted = nil
         AppGroupCoordinator.shared.onTranscriptionError = nil
         errorDismissTimer?.invalidate()
