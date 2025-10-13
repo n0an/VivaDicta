@@ -101,7 +101,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     init(appState: AppState) {
         self.appState = appState
         super.init()
-        // setupDarwinNotificationObservers() // TODO: Re-enable when refactoring is complete
+        setupKeyboardRecordingHandlers()
     }
 
     // Note: No deinit cleanup needed for Darwin observers
@@ -174,6 +174,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 recordingState = .recording
                 startRecordingHeartbeat()  // Start heartbeat when recording starts
 
+                // Notify keyboard that recording has started
+                AppGroupCoordinator.shared.updateRecordingState(true)
+
                 do {
                     // Use prewarm manager's parallel real recorder
                     // This will start recording alongside the dummy recorder
@@ -221,6 +224,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 resetValues()
                 recordingState = .recording
                 startRecordingHeartbeat()  // Start heartbeat when recording starts
+
+                // Notify keyboard that recording has started (even in normal mode)
+                AppGroupCoordinator.shared.updateRecordingState(true)
 
                 do {
                     let settings: [String : Any] = [
@@ -289,6 +295,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 resetValues()
                 stopRecordingHeartbeat()  // Stop heartbeat when recording stops
 
+                // Notify keyboard that recording has stopped
+                AppGroupCoordinator.shared.updateRecordingState(false)
+
                 let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
                 do {
                     try FileManager.default.moveItem(at: captureURL, to: finalURL)
@@ -301,7 +310,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // Normal mode
             resetValues()
             stopRecordingHeartbeat()  // Stop heartbeat when recording stops
-            
+
+            // Notify keyboard that recording has stopped
+            AppGroupCoordinator.shared.updateRecordingState(false)
 
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
             do {
@@ -319,7 +330,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.recordingState = .transcribing
 
                 // Notify keyboard that transcription has started
-//                AppGroupCoordinator.shared.notifyTranscriptionStarted()
+                AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
 
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
@@ -373,14 +384,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 modelContext.insert(transcription)
                 try modelContext.save()
-                
+
+                // Share transcribed text with keyboard (enhanced text if available, otherwise original)
+                let textToShare = enhancedText ?? transcribedText
+                AppGroupCoordinator.shared.shareTranscribedText(textToShare)
+
                 try Task.checkCancellation()
                 self.recordingState = .idle
-                
+
             } catch {
                 if Task.isCancelled { return }
                 recordingState = .error(.transcribe)
                 resetValues()
+
+                // Notify keyboard of error
+                AppGroupCoordinator.shared.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
             }
         }
     }
@@ -410,6 +428,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         resetValues()
         stopRecordingHeartbeat()  // Stop heartbeat when canceling
         recordingState = .idle
+
+        // Notify keyboard that recording was canceled
+        AppGroupCoordinator.shared.updateRecordingState(false)
+        AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
     }
     
     func resetValues() {
@@ -487,6 +509,63 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         UserDefaultsStorage.shared.synchronize()
 
         logger.debug("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
+    }
+
+    // MARK: - Keyboard Recording Handlers
+
+    private func setupKeyboardRecordingHandlers() {
+        // Handle start recording request from keyboard
+        AppGroupCoordinator.shared.onStartRecordingRequested = { [weak self] in
+            guard let self = self else { return }
+
+            // Only start if prewarm session is active and not already recording
+            if self.prewarmManager.isSessionActive && self.recordingState != .recording {
+                self.logger.info("📱 Starting recording from keyboard request")
+                self.startCaptureAudio()
+            }
+        }
+
+        // Handle stop recording request from keyboard
+        AppGroupCoordinator.shared.onStopRecordingRequested = { [weak self] in
+            guard let self = self else { return }
+
+            if self.recordingState == .recording {
+                self.logger.info("📱 Stopping recording from keyboard request")
+                // Create a new ModelContext from Persistence container
+                let context = ModelContext(Persistence.container)
+                self.stopCaptureAudio(modelContext: context)
+            }
+        }
+
+        // Handle cancel recording request from keyboard
+        AppGroupCoordinator.shared.onCancelRecordingRequested = { [weak self] in
+            guard let self = self else { return }
+
+            if self.recordingState == .recording {
+                self.logger.info("📱 Canceling recording from keyboard request")
+                self.cancelTranscribe()
+            }
+        }
+
+        // Handle pause recording request from keyboard
+        AppGroupCoordinator.shared.onPauseRecordingRequested = { [weak self] in
+            guard let self = self else { return }
+
+            if self.recordingState == .recording {
+                self.logger.info("📱 Pausing recording from keyboard request")
+                // TODO: Implement pause functionality if needed
+            }
+        }
+
+        // Handle resume recording request from keyboard
+        AppGroupCoordinator.shared.onResumeRecordingRequested = { [weak self] in
+            guard let self = self else { return }
+
+            if self.recordingState == .recording {
+                self.logger.info("📱 Resuming recording from keyboard request")
+                // TODO: Implement resume functionality if needed
+            }
+        }
     }
 
     // MARK: - Darwin Notification Handling

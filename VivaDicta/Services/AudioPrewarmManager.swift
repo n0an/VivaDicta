@@ -134,7 +134,10 @@ final class AudioPrewarmManager {
         }
         #endif
 
-        logger.info("🎙️ Prewarm session ended")
+        // Deactivate keyboard session to notify keyboard that hot mic has ended
+        AppGroupCoordinator.shared.deactivateKeyboardSession()
+
+        logger.info("🎙️ Prewarm session and keyboard session ended")
     }
 
     // MARK: - Dummy Recorder (Continuous)
@@ -209,6 +212,14 @@ final class AudioPrewarmManager {
 
         realRecorder?.stop()
         realRecorder = nil
+
+        // Refresh keyboard session timeout if still active
+        if isWithinSessionTimeout() {
+            AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
+                timeoutSeconds: Int(timeoutRemaining)
+            )
+            logger.info("🎙️ Refreshed keyboard session timeout: \(Int(self.timeoutRemaining))s")
+        }
 
         // Dummy keeps running - no switching, no orange dot disappearing
         // Session continues until timeout

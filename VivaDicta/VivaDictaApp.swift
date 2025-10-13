@@ -59,9 +59,13 @@ struct VivaDictaApp: App {
             do {
 //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
                 try AudioPrewarmManager.shared.startPrewarmSession()
-//                logger.info("🎙️ Audio prewarm session started from deeplink")
-                
-                logger.info("🎙️ Hot Mic started from deeplink")
+
+                // Activate keyboard session to notify keyboard that hot mic is ready
+                AppGroupCoordinator.shared.activateKeyboardSession(
+                    timeoutSeconds: AudioPrewarmManager.shared.audioSessionTimeout
+                )
+
+                logger.info("🎙️ Hot Mic and keyboard session activated from deeplink")
 
             } catch {
                 logger.error("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
