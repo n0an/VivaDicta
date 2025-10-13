@@ -427,11 +427,12 @@ struct VivaDictaKeyboardToolbarView: View {
         }
         .padding(.horizontal, 16)
         .fullScreenCover(isPresented: $showOverlay) {
-            Color.red
-//            KeyboardDictationSheetView {
-//                showOverlay = false
-//            }
-//            .environmentObject(dictationState)
+            KeyboardDictationSheetView(onCancelTapped: {
+                showOverlay = false
+            }, onStopTapped: {
+                showOverlay = false
+            })
+            .environment(dictationState)
         }
     }
 
@@ -447,9 +448,11 @@ struct VivaDictaKeyboardToolbarView: View {
 
         if dictationState.uiState == .ready {
             dictationState.requestStartRecording()
+            showOverlay = true
+        } else if dictationState.uiState == .recording {
+            // If already recording, show the overlay
+            showOverlay = true
         }
-
-        showOverlay = true
     }
 
     private func openMainAppForHotMic() {

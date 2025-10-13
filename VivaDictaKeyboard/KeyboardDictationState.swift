@@ -124,6 +124,7 @@ final class KeyboardDictationState {
         }
     }
     func requestStopRecording() { AppGroupCoordinator.shared.requestStopRecording() }
+    func requestCancelRecording() { AppGroupCoordinator.shared.requestCancelRecording() }
     func requestPauseRecording() { AppGroupCoordinator.shared.requestPauseRecording() }
     func requestResumeRecording() { AppGroupCoordinator.shared.requestResumeRecording() }
 
