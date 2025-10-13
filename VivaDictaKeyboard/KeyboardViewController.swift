@@ -319,95 +319,12 @@ class KeyboardViewController: KeyboardInputViewController {
 
 
 
-
-struct ListeningIndicatorView: View {
-    @Environment(KeyboardDictationState.self) var dictationState
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        Group {
-            if dictationState.uiState == .recording {
-                Button(action: {
-                    if dictationState.isPaused {
-                        dictationState.requestResumeRecording()
-                    } else {
-                        dictationState.requestStopRecording()
-                    }
-                }) {
-                    Text(statusText)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(statusColor)
-                        .frame(width: 80, alignment: .center)
-                }
-                .buttonStyle(.plain)
-            } else if dictationState.uiState == .error {
-                Button(action: {
-                    openMainApp()
-                }) {
-                    Text(errorText)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.orange)
-                        .frame(width: 80, alignment: .center)
-                        .lineLimit(1)
-                }
-                .buttonStyle(.plain)
-            } else {
-                Text(statusText)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(statusColor)
-                    .frame(width: 80, alignment: .center)
-            }
-        }
-    }
-
-    private var statusText: String {
-        switch dictationState.uiState {
-        case .recording:
-            return dictationState.isPaused ? "Paused" : "Listening..."
-        case .processing: return "Processing..."
-        default: return ""
-        }
-    }
-
-    private var statusColor: Color {
-        switch dictationState.uiState {
-        case .recording: return .red
-        case .processing: return .primary  // Matches the processing color in KeyboardDictationSheetView
-        default: return .clear
-        }
-    }
-
-    private var errorText: String {
-        return "Error"
-    }
-
-    private func openMainApp() {
-        if let url = URL(string: "vivadicta://record-for-keyboard") {
-            openURL(url)
-        }
-    }
-}
-
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        HStack(spacing: 16) {
-            Color.clear
-                .frame(width: 24)
-
-            Spacer()
-
-            ZStack {
-                if dictationState.uiState == .recording || dictationState.uiState == .processing || dictationState.uiState == .error {
-                    ListeningIndicatorView()
-                        .environment(dictationState)
-                } else {
-                    Color.clear.frame(width: 80)
-                }
-            }
-
+        HStack(spacing: 0) {
             Spacer()
 
             Button(action: handleMic) {
