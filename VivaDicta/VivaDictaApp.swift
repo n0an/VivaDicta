@@ -57,8 +57,8 @@ struct VivaDictaApp: App {
 
             // Start audio prewarm session to keep app alive in background
             do {
-                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
-//                try AudioPrewarmManager.shared.startPrewarmSession()
+//                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
+                try AudioPrewarmManager.shared.startPrewarmSession()
 //                logger.info("🎙️ Audio prewarm session started from deeplink")
                 
                 logger.info("🎙️ Hot Mic started from deeplink")
