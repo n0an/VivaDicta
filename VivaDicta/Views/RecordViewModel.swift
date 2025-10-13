@@ -344,13 +344,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
                     // Notify keyboard that AI enhancement has started
-//                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
-                        
-                        // Notify keyboard that AI enhancement has ended
-//                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                         
                         enhancedText = enhanced
                         promptName = prompt
