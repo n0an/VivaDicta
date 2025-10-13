@@ -36,7 +36,11 @@ final class AudioPrewarmManager {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
 
     var isSessionActive: Bool {
-        dummyRecorder?.isRecording == true && isWithinSessionTimeout()
+        // Session is active if dummy recorder is running AND either:
+        // 1. We're within the timeout period, OR
+        // 2. Real recording is currently active (no timeout during real recording)
+        dummyRecorder?.isRecording == true &&
+        (isWithinSessionTimeout() || realRecorder?.isRecording == true)
     }
 
     var timeoutRemaining: TimeInterval {
@@ -173,27 +177,10 @@ final class AudioPrewarmManager {
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
 
-                // Check if real recording is still active
-                if self.realRecorder?.isRecording == true {
-                    self.logger.info("⏰ Timeout reached but real recording is active - extending session")
-
-                    // Reset the session start time to now
-                    self.sessionStartTime = Date()
-
-                    // Reschedule another timeout check
-                    self.scheduleSessionTimeout()
-
-                    // Also refresh the keyboard session
-                    AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
-                        timeoutSeconds: self.audioSessionTimeout
-                    )
-
-                    self.logger.info("🎙️ Extended session by \(self.audioSessionTimeout)s due to active recording")
-                } else {
-                    // No real recording active, safe to end the session
-                    self.logger.info("⏰ Prewarm session timeout reached - ending session")
-                    self.endSession()
-                }
+                // Simply end the session when timeout is reached
+                // Real recording will have already invalidated this timer if active
+                self.logger.info("⏰ Prewarm session timeout reached - ending session")
+                self.endSession()
             }
         }
 
@@ -210,6 +197,11 @@ final class AudioPrewarmManager {
         }
 
         logger.info("🎙️ Starting real capture (dummy keeps running)")
+
+        // Invalidate the dummy recorder timeout timer while real recording is active
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+        logger.info("⏰ Invalidated dummy recorder timeout - will continue indefinitely while recording")
 
         // IMPORTANT: Don't stop dummy recorder - it keeps running!
         // Use SAME settings as RecordViewModel normal flow for compatibility
@@ -229,14 +221,14 @@ final class AudioPrewarmManager {
         logger.info("🎙️ Real recorder started (parallel with dummy)")
     }
 
-    /// Stops real recording and extends the pre-warm session
+    /// Stops real recording and restarts the pre-warm session timeout
     func stopRealCapture() {
-        logger.info("🎙️ Stopping real capture and extending session")
+        logger.info("🎙️ Stopping real capture and restarting session timeout")
 
         realRecorder?.stop()
         realRecorder = nil
 
-        // With our new timeout logic, dummy recorder should always be active here
+        // Dummy recorder should always be active here since we invalidated its timeout
         // But we'll add a safety check just in case something unexpected happened
         guard dummyRecorder?.isRecording == true else {
             // This should never happen in normal operation
@@ -253,18 +245,18 @@ final class AudioPrewarmManager {
             return
         }
 
-        // Normal case: Extend the session for another full timeout period
+        // Reset the session start time to now
         sessionStartTime = Date()
 
-        // Reschedule the timeout timer for the full duration
+        // Restart the timeout timer with the initial timeout value
         scheduleSessionTimeout()
 
-        // Also refresh the keyboard session with the full timeout
+        // Also refresh the keyboard session with the initial timeout
         AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
             timeoutSeconds: audioSessionTimeout
         )
 
-        logger.info("🎙️ Extended pre-warm session by full timeout: \(self.audioSessionTimeout)s")
+        logger.info("🎙️ Restarted pre-warm session timeout: \(self.audioSessionTimeout)s from now")
     }
 
     // MARK: - Private Helpers
