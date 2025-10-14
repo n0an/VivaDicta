@@ -9,10 +9,10 @@
 import Foundation
 import AVFoundation
 import os
+@preconcurrency import AVFAudio
 
 @Observable
 final class AudioPrewarmManager {
-    
     static let shared = AudioPrewarmManager()
     
     // MARK: - Properties
@@ -32,6 +32,11 @@ final class AudioPrewarmManager {
     private var sessionStartTime: Date?
     private var expiryTimer: Timer?
     private var dummyFileURL: URL?
+    
+    var audioEngine: AVAudioEngine?
+    private var isCapturing = false
+    private var audioFile: AVAudioFile?
+    private var captureContext: AudioCaptureContext?
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
 
@@ -88,7 +93,10 @@ final class AudioPrewarmManager {
         #endif
 
         // Start continuous dummy recorder
-        try startDummyRecording()
+        Task {
+            
+            try await startDummyRecording()
+        }
 
         // Setup session timeout
         scheduleSessionTimeout()
@@ -115,6 +123,15 @@ final class AudioPrewarmManager {
     /// Ends the prewarm session and cleans up all resources
     func endSession() {
         logger.info("🎙️ Ending prewarm session")
+
+        // Stop capturing if active
+        captureContext?.isCapturing = false
+        captureContext?.audioFile = nil
+        captureContext = nil
+
+        // Stop audio engine
+        audioEngine?.stop()
+        audioEngine = nil
 
         dummyRecorder?.stop()
         realRecorder?.stop()
@@ -148,25 +165,40 @@ final class AudioPrewarmManager {
 
     // MARK: - Dummy Recorder (Continuous)
 
-    private func startDummyRecording() throws {
+    private func startDummyRecording() async throws {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("dummy_\(Date().timeIntervalSince1970).m4a")
 
         dummyFileURL = tempURL
 
-        // Use EXACT SAME settings as RecordViewModel for consistency
-        // This ensures both recorders can coexist without format conflicts
-        let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatLinearPCM),
-            AVSampleRateKey: 16000.0,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-        ]
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else {
+            throw PrewarmError.recorderNotActive
+        }
 
-        dummyRecorder = try AVAudioRecorder(url: tempURL, settings: settings)
-        dummyRecorder?.record()
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        logger.info("🎙️ Dummy recorder started (keeps app alive, orange dot visible)")
+        // Create capture context for controlling real recordings
+        let captureContext = AudioCaptureContext()
+        self.captureContext = captureContext
+
+        // Install tap on background queue to avoid inheriting actor context
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                installInputTapNonisolated(
+                    inputNode: inputNode,
+                    format: recordingFormat,
+                    captureContext: captureContext
+                )
+                continuation.resume()
+            }
+        }
+
+        // Start the audio engine
+        try audioEngine.start()
+
+        logger.info("🎙️ Dummy audio engine started (tap installed, ready for real capture)")
     }
 
     private func scheduleSessionTimeout() {
@@ -196,47 +228,47 @@ final class AudioPrewarmManager {
             throw PrewarmError.sessionExpired
         }
 
-        logger.info("🎙️ Starting real capture (dummy keeps running)")
+        guard let captureContext = captureContext else {
+            throw PrewarmError.recorderNotActive
+        }
 
-        // Invalidate the dummy recorder timeout timer while real recording is active
+        guard let audioEngine = audioEngine else {
+            throw PrewarmError.recorderNotActive
+        }
+
+        logger.info("🎙️ Starting real capture to file (audio already flowing through tap)")
+
+        // Invalidate timeout timer while real recording is active
         expiryTimer?.invalidate()
         expiryTimer = nil
-        logger.info("⏰ Invalidated dummy recorder timeout - will continue indefinitely while recording")
+        logger.info("⏰ Invalidated timeout - will continue indefinitely while recording")
 
-        // IMPORTANT: Don't stop dummy recorder - it keeps running!
-        // Use SAME settings as RecordViewModel normal flow for compatibility
-        let settings: [String : Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 16_000.0,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
-        ]
+        // Create audio file for the real recording
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        realRecorder = try AVAudioRecorder(url: url, settings: settings)
-        realRecorder?.isMeteringEnabled = true  // Enable metering for visualization
-        realRecorder?.record()
+        let audioFile = try AVAudioFile(forWriting: url, settings: recordingFormat.settings)
 
-        logger.info("🎙️ Real recorder started (parallel with dummy)")
+        // Atomically start capturing to the new file
+        captureContext.audioFile = audioFile
+        captureContext.isCapturing = true
+
+        logger.info("🎙️ Real capture started (buffers now writing to disk)")
     }
 
     /// Stops real recording and restarts the pre-warm session timeout
     func stopRealCapture() {
         logger.info("🎙️ Stopping real capture and restarting session timeout")
 
-        realRecorder?.stop()
-        realRecorder = nil
+        // Stop writing to file atomically
+        captureContext?.isCapturing = false
+        captureContext?.audioFile = nil
 
-        // Dummy recorder should always be active here since we invalidated its timeout
-        // But we'll add a safety check just in case something unexpected happened
-        guard dummyRecorder?.isRecording == true else {
-            // This should never happen in normal operation
-            // But if it does (system killed audio, crash, etc.), try to recover
-            logger.error("❌ Unexpected: Dummy recorder not active after real recording!")
+        // Audio engine keeps running (no check needed)
+        guard audioEngine?.isRunning == true else {
+            logger.error("❌ Unexpected: Audio engine not running after real recording!")
 
             do {
-                // Attempt to restart the session as a recovery mechanism
                 try startPrewarmSession()
                 logger.info("🔧 Recovery: Successfully restarted pre-warm session")
             } catch {
@@ -245,13 +277,13 @@ final class AudioPrewarmManager {
             return
         }
 
-        // Reset the session start time to now
+        // Reset the session start time
         sessionStartTime = Date()
 
-        // Restart the timeout timer with the initial timeout value
+        // Restart the timeout timer
         scheduleSessionTimeout()
 
-        // Also refresh the keyboard session with the initial timeout
+        // Refresh keyboard session expiry
         AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
             timeoutSeconds: audioSessionTimeout
         )
@@ -282,4 +314,73 @@ final class AudioPrewarmManager {
 enum PrewarmError: Error {
     case sessionExpired
     case recorderNotActive
+}
+
+
+
+
+nonisolated private func installInputTapNonisolated(
+    inputNode: AVAudioInputNode,
+    format: AVAudioFormat,
+    captureContext: AudioCaptureContext
+) {
+    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "installInputTapNonisolated")
+
+    inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+        // This runs on audio thread - context handles thread-safety
+        captureContext.writeBufferIfCapturing(buffer)
+    }
+
+    logger.info("🎙️ Input tap installed on audio thread")
+}
+
+
+
+/// Thread-safe capture context for audio recording
+nonisolated private final class AudioCaptureContext: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _isCapturing = false
+    private var _audioFile: AVAudioFile?
+
+    nonisolated init() {}
+
+    var isCapturing: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _isCapturing
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _isCapturing = newValue
+        }
+    }
+
+    var audioFile: AVAudioFile? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _audioFile
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _audioFile = newValue
+        }
+    }
+
+    nonisolated func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard _isCapturing, let file = _audioFile else { return }
+
+        do {
+            try file.write(from: buffer)
+        } catch {
+            // Log error but don't crash audio thread
+            print("Failed to write audio buffer: \(error)")
+        }
+    }
 }
