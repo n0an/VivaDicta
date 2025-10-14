@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import AVFoundation
+@preconcurrency import AVFAudio
 import SwiftData
 import os
 
@@ -110,7 +111,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var transcribingSpeechTask: Task<Void, Never>?
     
     var captureURL: URL {
-        FileManager.appDirectory(for: .audio).appendingPathComponent("recording.m4a")
+        FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
     }
     
     var recordingState: RecordingState = .idle {
@@ -287,7 +288,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Notify keyboard that recording has stopped
                 AppGroupCoordinator.shared.updateRecordingState(false)
 
-                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
                 do {
                     try FileManager.default.moveItem(at: captureURL, to: finalURL)
                     transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
@@ -302,7 +303,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // Notify keyboard that recording has stopped
             AppGroupCoordinator.shared.updateRecordingState(false)
 
-            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
             do {
                 try FileManager.default.moveItem(at: captureURL, to: finalURL)
                 transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
@@ -312,6 +313,57 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
+    /// Downsample audio file to 16kHz mono for optimal transcription
+    private func downsampleTo16kHzMono(inputURL: URL, outputURL: URL) async throws {
+        // 1) Open source file
+        let inFile = try AVAudioFile(forReading: inputURL)
+        let inFmt = inFile.processingFormat
+
+        // 2) Target format: 16kHz, mono, PCM Int16
+        guard let outFmt = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: 16_000,
+            channels: 1,
+            interleaved: false
+        ) else {
+            throw RecordError.other
+        }
+
+        // 3) Create converter with quality settings
+        guard let converter = AVAudioConverter(from: inFmt, to: outFmt) else {
+            throw RecordError.other
+        }
+        converter.sampleRateConverterQuality = AVAudioQuality.max.rawValue
+
+        // 4) Read entire input file
+        let frameCount = AVAudioFrameCount(inFile.length)
+        guard let inputBuffer = AVAudioPCMBuffer(pcmFormat: inFmt, frameCapacity: frameCount) else {
+            throw RecordError.other
+        }
+        try inFile.read(into: inputBuffer)
+
+        // 5) Calculate output buffer size
+        let outputFrameCount = AVAudioFrameCount(Double(frameCount) * (16000.0 / inFmt.sampleRate))
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outFmt, frameCapacity: outputFrameCount) else {
+            throw RecordError.other
+        }
+
+        // 6) Convert
+        var error: NSError?
+        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
+            outStatus.pointee = .haveData
+            return inputBuffer
+        }
+
+        if let error = error {
+            throw error
+        }
+
+        // 7) Write output file
+        let outFile = try AVAudioFile(forWriting: outputURL, settings: outFmt.settings, commonFormat: outFmt.commonFormat, interleaved: false)
+        try outFile.write(from: outputBuffer)
+    }
+
     func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext) -> Task<Void, Never> {
         Task { @MainActor in
             do {
@@ -320,11 +372,47 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Notify keyboard that transcription has started
                 AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
 
+                // Check if file needs downsampling (keyboard recordings are 48kHz)
+                var audioURLToTranscribe = recordURL
+
+                // Detect sample rate
+                let tempFile = try AVAudioFile(forReading: recordURL)
+                let sampleRate = tempFile.processingFormat.sampleRate
+
+                if sampleRate > 16000 {
+                    logger.info("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
+                    // Use .wav extension for cross-platform PCM support
+                    let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
+
+                    do {
+                        try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
+
+                        // Verify the output file was created and has content
+                        let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
+                        let fileSize = attributes[.size] as? Int64 ?? 0
+
+                        if fileSize > 1000 {  // At least 1KB
+                            // Delete original high-rate file to save space
+                            try? FileManager.default.removeItem(at: recordURL)
+
+                            // Use downsampled file for transcription
+                            audioURLToTranscribe = downsampledURL
+                            logger.info("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
+                        } else {
+                            logger.warning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
+                            try? FileManager.default.removeItem(at: downsampledURL)
+                        }
+                    } catch {
+                        logger.warning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
+                        // Continue with original file if downsampling fails
+                    }
+                }
+
                 let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
+                let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURLToTranscribe)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
-                
-                let audioAsset = AVURLAsset(url: recordURL)
+
+                let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
                 // Notify keyboard that transcription has ended
@@ -359,7 +447,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     text: transcribedText,
                     enhancedText: enhancedText,
                     audioDuration: audioDuration,
-                    audioFileName: recordURL.lastPathComponent,
+                    audioFileName: audioURLToTranscribe.lastPathComponent,
                     transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                     aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
                     promptName: promptName,
