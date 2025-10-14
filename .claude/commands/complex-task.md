@@ -52,6 +52,7 @@ You are about to work on a complex task. Follow this systematic approach to ensu
    - Break down the implementation into logical steps
    - Order tasks by dependencies and priority
    - Include verification/testing tasks
+   - Save plan to some file
 
 3. **Design the Solution**
    - Outline the technical approach
