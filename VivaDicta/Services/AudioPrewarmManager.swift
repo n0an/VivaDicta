@@ -32,8 +32,6 @@ final class AudioPrewarmManager {
     private var expiryTimer: Timer?
 
     var audioEngine: AVAudioEngine?
-    private var isCapturing = false
-    private var audioFile: AVAudioFile?
     private var captureContext: AudioCaptureContext?
 
     // Audio level for visualization (0.0 to 1.0)
