@@ -349,7 +349,7 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(status.rawValue, forKey: UserDefaultsKeys.transcriptionStatus)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
 
-        logger.error("📊 Transcription status: \(status.rawValue)")
+        logger.error("📊 Transcription status: \(status.rawValue, privacy: .public)")
 
         switch status {
         case .transcribing:
