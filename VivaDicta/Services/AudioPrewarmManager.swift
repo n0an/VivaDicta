@@ -3,7 +3,8 @@
 //  VivaDicta
 //
 //  Manages audio pre-warming session for keyboard recording
-//  Uses continuous dummy recorder + parallel real recorder approach
+//  Uses continuous AVAudioEngine with installTap
+//  Switches between discarding buffers (armed) and writing to file (capturing)
 //
 
 import Foundation
@@ -27,12 +28,9 @@ final class AudioPrewarmManager {
         }
     }
 
-    private var dummyRecorder: AVAudioRecorder?
-    private var realRecorder: AVAudioRecorder?
     private var sessionStartTime: Date?
     private var expiryTimer: Timer?
-    private var dummyFileURL: URL?
-    
+
     var audioEngine: AVAudioEngine?
     private var isCapturing = false
     private var audioFile: AVAudioFile?
@@ -40,23 +38,19 @@ final class AudioPrewarmManager {
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
 
+    /// Returns true if the prewarm session is active
+    /// - Session is active if audio engine is running AND either:
+    ///   1. We're within the timeout period, OR
+    ///   2. Real recording is currently active (no timeout during real recording)
     var isSessionActive: Bool {
-        // Session is active if dummy recorder is running AND either:
-        // 1. We're within the timeout period, OR
-        // 2. Real recording is currently active (no timeout during real recording)
-        dummyRecorder?.isRecording == true &&
-        (isWithinSessionTimeout() || realRecorder?.isRecording == true)
+        audioEngine?.isRunning == true &&
+        (isWithinSessionTimeout() || captureContext?.isCapturing == true)
     }
 
     var timeoutRemaining: TimeInterval {
         guard let startTime = sessionStartTime else { return 0 }
         let elapsed = Date().timeIntervalSince(startTime)
         return max(0, TimeInterval(audioSessionTimeout) - elapsed)
-    }
-
-    /// Public getter for real recorder (for metering in RecordViewModel)
-    var activeRealRecorder: AVAudioRecorder? {
-        realRecorder
     }
 
     private init() {}
@@ -133,21 +127,10 @@ final class AudioPrewarmManager {
         audioEngine?.stop()
         audioEngine = nil
 
-        dummyRecorder?.stop()
-        realRecorder?.stop()
-        dummyRecorder = nil
-        realRecorder = nil
-
         expiryTimer?.invalidate()
         expiryTimer = nil
 
         sessionStartTime = nil
-
-        // Clean up dummy file
-        if let url = dummyFileURL {
-            cleanupDummyFile(url)
-            dummyFileURL = nil
-        }
 
         #if !os(macOS)
         do {
@@ -163,14 +146,9 @@ final class AudioPrewarmManager {
         logger.info("🎙️ Prewarm session and keyboard session ended")
     }
 
-    // MARK: - Dummy Recorder (Continuous)
+    // MARK: - Audio Engine (Continuous)
 
     private func startDummyRecording() async throws {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("dummy_\(Date().timeIntervalSince1970).m4a")
-
-        dummyFileURL = tempURL
-
         audioEngine = AVAudioEngine()
         guard let audioEngine = audioEngine else {
             throw PrewarmError.recorderNotActive
@@ -198,7 +176,7 @@ final class AudioPrewarmManager {
         // Start the audio engine
         try audioEngine.start()
 
-        logger.info("🎙️ Dummy audio engine started (tap installed, ready for real capture)")
+        logger.info("🎙️ Audio engine started (tap installed, ready for real capture)")
     }
 
     private func scheduleSessionTimeout() {
@@ -232,7 +210,7 @@ final class AudioPrewarmManager {
             throw PrewarmError.recorderNotActive
         }
 
-        guard let audioEngine = audioEngine else {
+        guard let audioEngine = audioEngine, audioEngine.isRunning else {
             throw PrewarmError.recorderNotActive
         }
 
@@ -243,11 +221,28 @@ final class AudioPrewarmManager {
         expiryTimer = nil
         logger.info("⏰ Invalidated timeout - will continue indefinitely while recording")
 
-        // Create audio file for the real recording
+        // Get the actual format from the audio engine's input node
         let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        let engineFormat = inputNode.outputFormat(forBus: 0)
 
-        let audioFile = try AVAudioFile(forWriting: url, settings: recordingFormat.settings)
+        // Check if format is float or integer
+        let isFloat = engineFormat.commonFormat == .pcmFormatFloat32 ||
+                      engineFormat.commonFormat == .pcmFormatFloat64
+
+        logger.info("🎙️ Engine format: \(engineFormat.sampleRate)Hz, \(engineFormat.channelCount) channels, isFloat: \(isFloat), commonFormat: \(engineFormat.commonFormat.rawValue)")
+
+        // Create settings based on engine's actual format to avoid sample rate mismatch
+        // Use the engine's native sample rate and format
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: engineFormat.sampleRate,
+            AVNumberOfChannelsKey: engineFormat.channelCount,
+            AVLinearPCMBitDepthKey: isFloat ? 32 : 16,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsFloatKey: isFloat
+        ]
+
+        let audioFile = try AVAudioFile(forWriting: url, settings: settings)
 
         // Atomically start capturing to the new file
         captureContext.audioFile = audioFile
@@ -297,15 +292,6 @@ final class AudioPrewarmManager {
         guard let startTime = sessionStartTime else { return false }
         let elapsed = Date().timeIntervalSince(startTime)
         return elapsed < TimeInterval(audioSessionTimeout)
-    }
-
-    private func cleanupDummyFile(_ url: URL) {
-        do {
-            try FileManager.default.removeItem(at: url)
-            logger.info("🗑️ Cleaned up dummy recording file")
-        } catch {
-            logger.error("⚠️ Failed to cleanup dummy file: \(error.localizedDescription)")
-        }
     }
 }
 

@@ -176,22 +176,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 AppGroupCoordinator.shared.updateRecordingState(true)
 
                 do {
-                    // Use prewarm manager's parallel real recorder
-                    // This will start recording alongside the dummy recorder
+                    // Use prewarm manager's AVAudioEngine for recording
                     try prewarmManager.startRealCapture(to: captureURL)
 
-                    // Set audioRecorder reference to prewarm's real recorder for metering
-                    audioRecorder = prewarmManager.activeRealRecorder
-
-                    // Start metering timer for visualization
+                    // TODO Phase 2: Implement audio metering from AVAudioEngine
+                    // For now, just set a fixed level to avoid crashes
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            guard self?.audioRecorder != nil else { return }
-                            self?.audioRecorder.updateMeters()
-                            if let audioRecorder = self?.audioRecorder {
-                                let power = min(1, max(0, 1 - abs(Double(audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                                self?.audioPower = power
-                            }
+                            // Temporary: just show medium level until Phase 2 implements proper metering
+                            self?.audioPower = 0.5
                         }
                     })
 
