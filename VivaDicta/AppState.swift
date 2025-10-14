@@ -20,6 +20,7 @@ class AppState {
 
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
+    var recordViewModel: RecordViewModel!
 //    private let lifecycleManager = AppLifecycleManager.shared
 
     var selectedTab: TabTag = .record
@@ -28,6 +29,7 @@ class AppState {
     init() {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()
+        recordViewModel = RecordViewModel(appState: self)
 
         // Set up callbacks to coordinate between services
         aiService.onModeChange = { [weak self] newMode in
