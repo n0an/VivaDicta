@@ -36,6 +36,9 @@ final class AudioPrewarmManager {
     private var audioFile: AVAudioFile?
     private var captureContext: AudioCaptureContext?
 
+    // Audio level for visualization (0.0 to 1.0)
+    private(set) var currentAudioLevel: Float = 0.0
+
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
 
     /// Returns true if the prewarm session is active
@@ -167,7 +170,12 @@ final class AudioPrewarmManager {
                 installInputTapNonisolated(
                     inputNode: inputNode,
                     format: recordingFormat,
-                    captureContext: captureContext
+                    captureContext: captureContext,
+                    onLevelUpdate: { [weak self] level in
+                        Task { @MainActor [weak self] in
+                            self?.currentAudioLevel = level
+                        }
+                    }
                 )
                 continuation.resume()
             }
@@ -308,13 +316,14 @@ enum PrewarmError: Error {
 nonisolated private func installInputTapNonisolated(
     inputNode: AVAudioInputNode,
     format: AVAudioFormat,
-    captureContext: AudioCaptureContext
+    captureContext: AudioCaptureContext,
+    onLevelUpdate: @escaping (Float) -> Void
 ) {
     let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "installInputTapNonisolated")
 
     inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
         // This runs on audio thread - context handles thread-safety
-        captureContext.writeBufferIfCapturing(buffer)
+        captureContext.writeBufferIfCapturing(buffer, updateLevel: onLevelUpdate)
     }
 
     logger.info("🎙️ Input tap installed on audio thread")
@@ -327,6 +336,7 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
     private let lock = NSLock()
     private var _isCapturing = false
     private var _audioFile: AVAudioFile?
+    private var _currentAudioLevel: Float = 0.0
 
     nonisolated init() {}
 
@@ -356,9 +366,24 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
         }
     }
 
-    nonisolated func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer) {
+    var currentAudioLevel: Float {
         lock.lock()
         defer { lock.unlock() }
+        return _currentAudioLevel
+    }
+
+    nonisolated func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer, updateLevel: @escaping (Float) -> Void) {
+        // Calculate audio level from PCM buffer
+        let level = calculateAudioLevel(from: buffer)
+
+        // Update level immediately (outside lock to avoid potential issues)
+        updateLevel(level)
+
+        // Now handle file writing with lock
+        lock.lock()
+        defer { lock.unlock() }
+
+        _currentAudioLevel = level
 
         guard _isCapturing, let file = _audioFile else { return }
 
@@ -368,5 +393,41 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
             // Log error but don't crash audio thread
             print("Failed to write audio buffer: \(error)")
         }
+    }
+
+    private func calculateAudioLevel(from buffer: AVAudioPCMBuffer) -> Float {
+        // Try float32 format first (most common for AVAudioEngine)
+        if let floatData = buffer.floatChannelData {
+            let channelData = floatData.pointee
+            var sum: Float = 0
+            for i in 0..<Int(buffer.frameLength) {
+                let sample = channelData[i]
+                sum += sample * sample
+            }
+
+            let rms = sqrt(sum / Float(buffer.frameLength))
+            let avgPower = 20 * log10(rms)
+            // Normalize to 0...1 range (assuming -50dB to 0dB range)
+            let normalizedPower = max(0, min(1, 1 - abs(avgPower / 50)))
+            return normalizedPower
+        }
+
+        // Fallback to int16 format
+        if let int16Data = buffer.int16ChannelData {
+            let channelData = int16Data.pointee
+            var sum: Float = 0
+            for i in 0..<Int(buffer.frameLength) {
+                let sample = Float(channelData[i]) / 32768.0  // Normalize to -1.0...1.0
+                sum += sample * sample
+            }
+
+            let rms = sqrt(sum / Float(buffer.frameLength))
+            let avgPower = 20 * log10(rms)
+            // Normalize to 0...1 range (assuming -50dB to 0dB range)
+            let normalizedPower = max(0, min(1, 1 - abs(avgPower / 50)))
+            return normalizedPower
+        }
+
+        return 0
     }
 }

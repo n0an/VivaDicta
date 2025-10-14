@@ -179,12 +179,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Use prewarm manager's AVAudioEngine for recording
                     try prewarmManager.startRealCapture(to: captureURL)
 
-                    // TODO Phase 2: Implement audio metering from AVAudioEngine
-                    // For now, just set a fixed level to avoid crashes
+                    // Update audio levels from prewarmManager for visualization
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            // Temporary: just show medium level until Phase 2 implements proper metering
-                            self?.audioPower = 0.5
+                            guard let self = self else { return }
+                            let level = Double(self.prewarmManager.currentAudioLevel)
+                            self.audioPower = level
                         }
                     })
 
