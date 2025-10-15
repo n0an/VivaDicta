@@ -127,7 +127,7 @@ struct ModeEditView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "cpu")
-                                    .foregroundStyle(Gradient(colors: [.red, .blue]))
+                                    .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
                                 Text("AI Provider")
                             }
                         }
