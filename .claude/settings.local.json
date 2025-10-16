@@ -41,5 +41,9 @@
       "/Users/antonnovoselov/.config"
     ]
   },
-  "outputStyle": "default"
+  "outputStyle": "default",
+  "statusLine": {
+    "type": "command",
+    "command": "python3 .claude/scripts/context-monitor.py"
+  }
 }
