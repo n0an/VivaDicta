@@ -9,8 +9,10 @@ Use this skill when you need to capture console logs from iOS apps running in Si
 
 ## Additional Resources
 
-- [XcodeBuildMCP Documentation](../../docs/MCPs/XcodeBuildMCP_README.md) - Complete XcodeBuildMCP reference (if available)
-- [mcpli GitHub Repository](https://github.com/cameroncooke/mcpli) - CLI tool for using MCP servers
+- [XcodeBuildMCP Documentation](../../docs/Tools/XcodebuildMCPTools/XcodeBuildMCP_README.md) - Complete XcodeBuildMCP reference
+- [XcodeBuildMCP Tools Reference](../../docs/Tools/XcodebuildMCPTools/XcodeBuildMCP_TOOLS.md) - All 61 tools organized by workflow
+- [MCPLI Documentation](../../docs/Tools/MCPLI/MCPLI_README.md) - CLI tool for using MCP servers granularly
+- [MCPLI Architecture](../../docs/Tools/MCPLI/MCPLI_architecture.md) - Detailed architecture and implementation guide
 
 ## Skill Flow
 
