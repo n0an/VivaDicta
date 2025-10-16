@@ -2,57 +2,74 @@
 
 ## Task
 
-Start a log capture session for VivaDicta app running in the iOS Simulator. This command does NOT relaunch the app - it captures structured logs from the already running app.
+Start a log capture session for VivaDicta app running in the iOS Simulator. This command captures structured logs from the running app in real-time and saves them to a file.
 
 ## Instructions
 
-1. **Get the simulator UUID** using AXe:
+1. **Create logs directory** (if it doesn't exist):
    ```bash
-   axe list-simulators | grep Booted | head -1
-   ```
-   Extract the UUID from the output.
-
-2. **Ensure llmtemp directory exists**:
-   ```bash
-   mkdir -p llmtemp
+   mkdir -p logs
    ```
 
-3. **Start the log capture session** using mcpli:
+2. **Launch the script in the background**:
    ```bash
-   mcpli start-sim-log-cap \
-     --simulatorUuid "<UUID>" \
-     --bundleId "com.antonnovoselov.VivaDicta" \
-     -- npx -y xcodebuildmcp@latest
+   ./scripts/launch_simulator.sh
    ```
 
-4. **Extract and save the session ID** from the JSON response:
-   - Look for the `logSessionId` field in the response
-   - Save it to `llmtemp/.log-session-id` file for automatic retrieval by `/stop-logs`
-   - Display it clearly to the user as well
+   Use `run_in_background: true` when calling via Bash tool.
 
-5. **Report to the user**:
-   - Confirm that log capture session has started
-   - Display the session ID prominently
-   - Remind the user: "Log capture is active. Interact with your app, then use `/stop-logs` to retrieve the logs (session ID will be used automatically)"
+   This will:
+   - Automatically detect the booted simulator
+   - Stream logs in real-time to console
+   - Save logs to `logs/sim-YYYYMMDD-HHMMSS.log` with timestamp
+   - Capture all log levels (debug, info, error, etc.)
+   - Filter only VivaDicta subsystem logs
+
+3. **Report to the user**:
+   - Confirm that log capture has started
+   - Display the log file path
+   - Remind the user: "Log capture is active. Interact with your app, then use `/stop-logs` to stop and view the captured logs"
    - Note: The app continues running and does NOT need to be relaunched
-   - Mention that they can also use `/stop-logs <session-id>` to explicitly specify a different session
+
+## Expected Output
+
+You should see logs streaming in real-time:
+```
+Filtering the log data using "subsystem == "com.antonnovoselov.VivaDicta""
+Timestamp                       Thread     Type        Activity             PID    TTL
+2025-10-16 21:35:17.123456-0700 0x123456   Default     0x0                  12345  0    VivaDicta: [AppState] 📱 Preload skipped: Current mode doesn't use WhisperKit (uses parakeet)
+2025-10-16 21:35:17.234567-0700 0x123456   Default     0x0                  12345  0    VivaDicta: [AppState] 🎬 App became active - checking for stale Live Activity
+```
 
 ## Important Notes
 
-- **VivaDicta uses structured logging (os_log/Logger)** - no `--captureConsole` flag needed
+- **VivaDicta uses structured logging (os_log/Logger)** - all logs are captured
 - The app will NOT be relaunched - it keeps running with its current state
 - The user can interact with the app manually while logs are being captured
-- The session ID is required to stop the capture later
+- Press `Ctrl+C` or use `/stop-logs` to stop capturing
+
+## What Gets Captured
+
+- ✅ All Logger.info(), .debug(), .error(), .warning(), .notice() calls
+- ✅ Emojis and special characters preserved
+- ✅ Category information (AppState, AudioPrewarmManager, etc.)
+- ✅ Timestamps and thread information
+- ❌ Print statements (NOT captured by log stream - only OSLog)
+
+## Troubleshooting
+
+- **No simulator booted**: The script will exit with an error if no simulator is booted. Launch a simulator first.
+- **No logs appearing**: Ensure the app is running and generating logs
+- **Permission denied**: Check that the simulator is fully booted
 
 ## Technical Details
 
-- Uses the `ios-log-capture.md` skill (Path A: Simulator Log Capture)
-- Log capture is session-based: start returns a session ID, stop retrieves logs
-- Only structured logs are captured (sufficient for VivaDicta)
-- Requires mcpli and Node.js 18+
+- Uses `xcrun simctl spawn` to run `log stream` inside the simulator
+- Filters by subsystem to show only VivaDicta logs
+- Logs are saved with timestamps to avoid overwriting
+- Background process continues until stopped
 
-## Additional Resources
+## Related
 
-- [iOS Log Capture Skill](../.claude/skills/ios-log-capture.md) - Complete log capture reference
-- [MCPLI Documentation](../docs/Tools/MCPLI/MCPLI_README.md) - CLI wrapper documentation
-- [XcodeBuildMCP Tools](../docs/Tools/XcodebuildMCPTools/XcodeBuildMCP_TOOLS.md) - All available tools
+- `/stop-logs` - Stop log capture and view summary
+- `logs/sim-*.log` - Timestamped simulator log files

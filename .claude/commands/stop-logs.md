@@ -5,104 +5,178 @@ ARGUMENTS: {{ARGS}}
 
 ## Task
 
-Stop an active log capture session and retrieve the captured logs. Optionally analyze the logs based on user instructions.
+Stop the active simulator log capture session and display a summary of the captured logs. Optionally analyze the logs based on user instructions.
 
 ## Instructions
 
-1. **Get the session ID**:
-   - Check if ARGS contains a session ID
-   - If ARGS contains a session ID, use it
-   - If ARGS is empty or only contains analysis instructions:
-     - Try to read session ID from `llmtemp/.log-session-id`
-     - If file exists, use that session ID
-     - If file doesn't exist, inform the user they need to run `/start-logs` first or provide a session ID
-   - Session ID format: typically looks like `abc123-def456-ghi789`
+1. **Stop the log capture process**:
+   - Press `Ctrl+C` in the terminal where the log capture is running
+   - This will terminate the `log stream` process and stop capturing logs
 
-2. **Ensure logs directory exists**:
+2. **Find the most recent log file**:
    ```bash
-   mkdir -p logs
+   ls -t logs/sim-*.log 2>/dev/null | head -1
    ```
 
-3. **Stop the log capture session** and save logs to a timestamped file:
+3. **Display log file information**:
    ```bash
-   mcpli stop-sim-log-cap \
-     --logSessionId "<session-id>" \
-     -- npx -y xcodebuildmcp@latest > logs/sim_$(date +%Y%m%d_%H%M%S).json
+   LOGFILE=$(ls -t logs/sim-*.log 2>/dev/null | head -1)
+   if [ -n "$LOGFILE" ]; then
+       echo "✅ Log capture stopped"
+       echo ""
+       echo "📝 Log file: $LOGFILE"
+       echo "📊 Size: $(du -h "$LOGFILE" | cut -f1)"
+       echo "📅 Created: $(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$LOGFILE" 2>/dev/null || stat -c "%y" "$LOGFILE" 2>/dev/null | cut -d'.' -f1)"
+       echo "📏 Lines: $(wc -l < "$LOGFILE" | tr -d ' ')"
+       echo ""
+
+       # Analyze logs
+       ERRORS=$(grep -i "error\|fault" "$LOGFILE" | wc -l | tr -d ' ')
+       WARNINGS=$(grep -i "warning" "$LOGFILE" | wc -l | tr -d ' ')
+
+       echo "📊 Summary:"
+       echo "   Errors: $ERRORS"
+       echo "   Warnings: $WARNINGS"
+       echo ""
+   else
+       echo "⚠️  No log files found in ./logs directory"
+   fi
    ```
 
-4. **Parse and analyze the logs**:
-   - Read the saved JSON file
-   - By default, look for errors and warnings:
-     ```bash
-     jq '.logs[] | select(.level=="error" or .level=="warning")' logs/sim_*.json | tail -20
-     ```
-   - If ARGS contains specific instructions (e.g., "show all logs", "filter for 'keyboard'"), follow those instructions
+4. **Analyze logs based on ARGS** (if provided):
+   - If ARGS is empty: show last 20 lines
+   - If ARGS contains "errors": show all error lines
+   - If ARGS contains "warnings": show all warning lines
+   - If ARGS contains search term: grep for that term
+   - If ARGS contains "all": show entire file
 
-5. **Report results**:
-   - Confirm that log capture session has been stopped
-   - Display the saved log file path
-   - Show a summary:
-     - Total number of log entries
-     - Number of errors (if any)
-     - Number of warnings (if any)
-   - Display the most relevant logs based on ARGS or show errors/warnings by default
-   - If requested in ARGS, provide detailed analysis
+## Automated Script
+
+For easier use, run this all-in-one command:
+
+```bash
+echo "⏹️  Stopping simulator log capture..."
+echo ""
+LOGFILE=$(ls -t logs/sim-*.log 2>/dev/null | head -1)
+if [ -n "$LOGFILE" ]; then
+    echo "✅ Log capture stopped"
+    echo ""
+    echo "📝 Log file: $LOGFILE"
+    echo "📊 Size: $(du -h "$LOGFILE" | cut -f1)"
+    echo "📅 Created: $(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$LOGFILE" 2>/dev/null || stat -c "%y" "$LOGFILE" 2>/dev/null | cut -d'.' -f1)"
+    echo "📏 Lines: $(wc -l < "$LOGFILE" | tr -d ' ')"
+    echo ""
+
+    # Count errors and warnings
+    ERRORS=$(grep -i "error\|fault" "$LOGFILE" | wc -l | tr -d ' ')
+    WARNINGS=$(grep -i "warning" "$LOGFILE" | wc -l | tr -d ' ')
+
+    echo "📊 Summary:"
+    echo "   Errors: $ERRORS"
+    echo "   Warnings: $WARNINGS"
+    echo ""
+
+    echo "💡 Last 20 lines:"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    tail -20 "$LOGFILE"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+else
+    echo "⚠️  No log files found in ./logs directory"
+fi
+```
 
 ## Example Usage
 
 ```bash
-# Stop the most recent session (uses saved session ID automatically)
+# Stop and show summary with last 20 lines
 /stop-logs
 
-# Stop with custom analysis
-/stop-logs show all logs
-/stop-logs show logs related to keyboard
-/stop-logs analyze app startup logs
+# Stop and show all errors
+/stop-logs errors
 
-# Stop specific session explicitly
-/stop-logs abc123-def456-ghi789
+# Stop and show all warnings
+/stop-logs warnings
 
-# Stop specific session with custom analysis
-/stop-logs abc123-def456-ghi789 show logs related to keyboard
+# Stop and search for specific term
+/stop-logs keyboard
+/stop-logs Parakeet
+
+# Stop and show entire file
+/stop-logs all
+```
+
+## Expected Output
+
+```
+⏹️  Stopping simulator log capture...
+
+✅ Log capture stopped
+
+📝 Log file: logs/sim-20251016-213545.log
+📊 Size: 142K
+📅 Created: 2025-10-16 21:35:45
+📏 Lines: 856
+
+📊 Summary:
+   Errors: 0
+   Warnings: 2
+
+💡 Last 20 lines:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2025-10-16 21:35:17.123456-0700 VivaDicta: [AppState] 📱 Preload skipped
+2025-10-16 21:35:17.234567-0700 VivaDicta: [AppState] 🎬 App became active
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+## Log Analysis Commands
+
+```bash
+# View entire log file
+cat logs/sim-20251016-213545.log
+
+# Search for specific emoji
+grep "📱" logs/sim-*.log
+
+# Show only error lines
+grep -i "error\|fault" logs/sim-*.log
+
+# Show only warning lines
+grep -i "warning" logs/sim-*.log
+
+# Search for specific category
+grep "\[AudioPrewarmManager\]" logs/sim-*.log
+
+# Count total log entries
+wc -l logs/sim-*.log
+
+# View last 50 lines
+tail -50 logs/sim-*.log
 ```
 
 ## Important Notes
 
-- **Session ID is optional** - if not provided, uses the session ID from the most recent `/start-logs`
-- Session ID can be explicitly provided to stop a specific session
-- Logs are saved to `logs/` directory (gitignored)
-- JSON format allows easy parsing with `jq`
-- Timestamped filenames prevent overwrites
-- The saved session ID file is `llmtemp/.log-session-id`
+- **Manual step required**: You must press `Ctrl+C` to stop the log stream first
+- **Multiple sessions**: If you have multiple log files, this shows the most recent one
+- **File preservation**: Log files are preserved until you manually delete them
+- **Emojis preserved**: All emojis and special characters are maintained in the log file
 
-## Common jq Queries for Analysis
+## Background Process Management
+
+If the log capture is running in a background process:
 
 ```bash
-# Filter errors only
-jq '.logs[] | select(.level=="error")' logs/file.json
+# Find the process
+ps aux | grep "log stream"
 
-# Extract messages
-jq '.logs[].message' logs/file.json
+# Kill by process ID
+kill <PID>
 
-# Count warnings
-jq '[.logs[] | select(.level=="warning")] | length' logs/file.json
-
-# Filter by content
-jq '.logs[] | select(.message | contains("keyboard"))' logs/file.json
-
-# Show recent entries (last 10)
-jq '.logs[-10:]' logs/file.json
+# Or kill all log stream processes
+pkill -f "log stream.*VivaDicta"
 ```
 
-## Technical Details
+## Related
 
-- Uses the `ios-log-capture.md` skill (Step 5A: Stop Log Capture)
-- Logs are returned as JSON from the session
-- Use `jq` for powerful log analysis and filtering
-- Saved logs can be analyzed later if needed
-
-## Additional Resources
-
-- [iOS Log Capture Skill](../.claude/skills/ios-log-capture.md) - Complete log capture reference
-- [MCPLI Documentation](../docs/Tools/MCPLI/MCPLI_README.md) - CLI wrapper documentation
-- [XcodeBuildMCP Tools](../docs/Tools/XcodebuildMCPTools/XcodeBuildMCP_TOOLS.md) - All available tools
+- `/start-logs` - Start simulator log capture
+- `logs/sim-*.log` - Timestamped simulator log files
+- `.gitignore` should include `logs/` to avoid committing large log files
