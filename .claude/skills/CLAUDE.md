@@ -17,6 +17,7 @@ Scan this file for relevant skills based on the given task.
 - [`add-new-screen.md`](./add-new-screen.md): Add a new screen (View) to the VivaDicta iOS app
 - [`axe-simulator-control.md`](./axe-simulator-control.md): Automate iOS Simulator with AXe terminal tool for taps, gestures, text input, and video recording
 - [`commit-to-git.md`](./commit-to-git.md): Commit changes to git following project guidelines
+- [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md): Capture screenshots from iOS Simulator using Peekaboo MCP
 
 ## Skill Directory
 
@@ -55,3 +56,15 @@ For committing changes to the git repository following project-specific guidelin
   - "create a commit for this work"
   - "git commit this"
   - "save these changes to git"
+
+### iOS Simulator Screenshot
+
+For capturing screenshots from the iOS Simulator using Peekaboo MCP.
+
+- Skill file: [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md)
+- Related queries:
+  - "take a screenshot of the simulator"
+  - "capture the current simulator screen"
+  - "screenshot the iOS simulator"
+  - "save simulator screen to file"
+  - "capture and analyze simulator screenshot"
