@@ -1,8 +1,8 @@
-# start-device-logs
+# start-logs-device
 
 ## Task
 
-Prepare for device log capture by recording the current timestamp. When ready to collect logs, you'll use `/stop-device-logs` which will collect all logs since this timestamp from your physical iOS device.
+Prepare for device log capture by recording the current timestamp. When ready to collect logs, you'll use `/stop-logs-device` which will collect all logs since this timestamp from your physical iOS device.
 
 ## Instructions
 
@@ -31,14 +31,14 @@ Prepare for device log capture by recording the current timestamp. When ready to
    - Confirm that log capture session has been initialized
    - Display the device name and UDID
    - Display the start timestamp prominently
-   - Instruct the user: "Start timestamp recorded. Interact with your app on the device, then use `/stop-device-logs` to collect all logs since this time."
-   - Note: `/stop-device-logs` will prompt for your sudo password to collect the logs
+   - Instruct the user: "Start timestamp recorded. Interact with your app on the device, then use `/stop-logs-device` to collect all logs since this time."
+   - Note: `/stop-logs-device` will prompt for your sudo password to collect the logs
    - The app should already be running on the device
 
 ## Important Notes
 
 - **No background process** - this just records a timestamp
-- The actual log collection happens when you run `/stop-device-logs`
+- The actual log collection happens when you run `/stop-logs-device`
 - **Requires sudo** - `log collect` needs elevated privileges to access device logs
 - The device must be connected via USB or network
 - The device must be trusted and paired with the Mac
@@ -46,9 +46,9 @@ Prepare for device log capture by recording the current timestamp. When ready to
 
 ## How It Works
 
-1. `start-device-logs` - Records current timestamp
+1. `start-logs-device` - Records current timestamp
 2. *You interact with your app*
-3. `stop-device-logs` - Collects all logs from the device since the recorded timestamp using `sudo log collect`
+3. `stop-logs-device` - Collects all logs from the device since the recorded timestamp using `sudo log collect`
 
 ## Technical Details
 

@@ -6,7 +6,7 @@
 # Read timestamp and UDID from temp files
 if [ ! -f "llmtemp/.device-log-start-time" ] || [ ! -f "llmtemp/.device-log-udid" ]; then
   echo "Error: Start timestamp or UDID not found."
-  echo "Please run /start-device-logs first."
+  echo "Please run /start-logs-device first."
   exit 1
 fi
 

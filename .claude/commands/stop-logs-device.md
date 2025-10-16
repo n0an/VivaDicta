@@ -1,11 +1,11 @@
-# stop-device-logs
+# stop-logs-device
 
 You are given the following context:
 ARGUMENTS: {{ARGS}}
 
 ## Task
 
-Collect device logs from the timestamp recorded by `/start-device-logs` and analyze them. This uses `sudo log collect` which requires your password.
+Collect device logs from the timestamp recorded by `/start-logs-device` and analyze them. This uses `sudo log collect` which requires your password.
 
 ## Instructions
 
@@ -42,7 +42,7 @@ The `llmtemp/collect_device_logs.sh` script should contain:
 # Read timestamp and UDID from temp files
 if [ ! -f "llmtemp/.device-log-start-time" ] || [ ! -f "llmtemp/.device-log-udid" ]; then
   echo "Error: Start timestamp or UDID not found."
-  echo "Please run /start-device-logs first."
+  echo "Please run /start-logs-device first."
   exit 1
 fi
 
@@ -115,12 +115,12 @@ fi
 
 ```bash
 # Collect logs since start (prompts for sudo password)
-/stop-device-logs
+/stop-logs-device
 
 # Collect with custom analysis
-/stop-device-logs show all logs
-/stop-device-logs show logs related to keyboard
-/stop-device-logs analyze recording errors
+/stop-logs-device show all logs
+/stop-logs-device show logs related to keyboard
+/stop-logs-device analyze recording errors
 ```
 
 ## Important Notes
