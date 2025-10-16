@@ -1,187 +1,125 @@
 # stop-logs-device
 
-You are given the following context:
-ARGUMENTS: {{ARGS}}
-
 ## Task
 
-Collect device logs from the timestamp recorded by `/start-logs-device` and analyze them. This uses `sudo log collect` which requires your password.
+Stop the currently running device log capture session and report the log file location.
 
 ## Instructions
 
-1. **Check if collection script exists, create if needed**:
-   - If `scripts/collect_device_logs.sh` doesn't exist, create it with the proper script (see script template below)
-   - Make it executable: `chmod +x scripts/collect_device_logs.sh`
+1. **Stop the log capture process**:
+   - Press `Ctrl+C` in the terminal where the log capture is running
+   - This will terminate the `devicectl` process and stop capturing logs
 
-2. **Tell the user to run the script**:
-   - Inform them: "I've prepared the log collection script. Please run it in your terminal (it needs interactive sudo access):"
-   - Show them: `./scripts/collect_device_logs.sh`
-   - Tell them: "The script will prompt for your sudo password, collect the logs, and show a summary."
+2. **Find the most recent log file**:
+   ```bash
+   # Look for both properly timestamped files and the literal filename
+   ls -t logs/device-*.log "logs/device-\$(date +%Y%m%d-%H%M%S).log" 2>/dev/null | head -1
+   ```
 
-3. **Wait for user confirmation**:
-   - Ask them to let you know when it's done
-   - Once done, proceed to analyze the logs
+3. **Display log file information**:
+   ```bash
+   LOGFILE=$(ls -t logs/device-*.log "logs/device-\$(date +%Y%m%d-%H%M%S).log" 2>/dev/null | head -1)
+   if [ -n "$LOGFILE" ]; then
+       echo "✅ Log capture stopped"
+       echo ""
+       echo "📝 Log file saved to: $LOGFILE"
+       echo "📊 File size: $(du -h "$LOGFILE" | cut -f1)"
+       echo "📅 Created: $(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$LOGFILE" 2>/dev/null || stat -c "%y" "$LOGFILE" 2>/dev/null | cut -d'.' -f1)"
+       echo "📏 Lines: $(wc -l < "$LOGFILE" | tr -d ' ')"
+       echo ""
+       echo "💡 Quick actions:"
+       echo "   View file:   cat \"$LOGFILE\""
+       echo "   Tail file:   tail -f \"$LOGFILE\""
+       echo "   Search:      grep 'pattern' \"$LOGFILE\""
+   else
+       echo "⚠️  No log files found in ./logs directory"
+   fi
+   ```
 
-4. **After script completes, analyze the logs**:
-   - Find the latest log file: `logs/device_*.txt`
-   - Read and analyze based on ARGS:
-     - Default: Show errors and warnings
-     - If ARGS specifies, filter accordingly (e.g., "show all logs", "filter for 'keyboard'")
-   - Provide detailed analysis as requested
+## Automated Script
 
-## Script Template
-
-The `llmtemp/collect_device_logs.sh` script should contain:
+For easier use, you can run this all-in-one command:
 
 ```bash
-#!/bin/bash
-
-# Device log collection script
-# This script requires sudo access and will prompt for your password
-
-# Read timestamp and UDID from temp files
-if [ ! -f "llmtemp/.device-log-start-time" ] || [ ! -f "llmtemp/.device-log-udid" ]; then
-  echo "Error: Start timestamp or UDID not found."
-  echo "Please run /start-logs-device first."
-  exit 1
-fi
-
-START_TIME=$(cat llmtemp/.device-log-start-time)
-UDID=$(cat llmtemp/.device-log-udid)
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-LOGARCHIVE="logs/vivadicta_device_${TIMESTAMP}.logarchive"
-LOGFILE="logs/device_${TIMESTAMP}.txt"
-
-echo "Collecting device logs from device"
-echo "Start time: ${START_TIME}"
-echo "UDID: ${UDID}"
+echo "⏹️  Stopping device log capture..."
 echo ""
-echo "This will prompt for your sudo password..."
-echo ""
-
-# Collect logs from device
-sudo log collect \
-  --device-udid "${UDID}" \
-  --start "${START_TIME}" \
-  --output "${LOGARCHIVE}"
-
-if [ $? -eq 0 ]; then
-  echo ""
-  echo "✓ Log archive collected: ${LOGARCHIVE}"
-  echo ""
-  echo "Extracting VivaDicta logs..."
-
-  # Extract and filter logs
-  log show "${LOGARCHIVE}" \
-    --predicate 'subsystem == "com.antonnovoselov.VivaDicta"' \
-    --style compact > "${LOGFILE}"
-
-  echo "✓ Filtered logs saved: ${LOGFILE}"
-  echo ""
-
-  # Show summary
-  TOTAL_LINES=$(wc -l < "${LOGFILE}")
-  ERRORS=$(grep -ic "error" "${LOGFILE}" || echo "0")
-  WARNINGS=$(grep -ic "warning" "${LOGFILE}" || echo "0")
-
-  echo "Summary:"
-  echo "  Total log entries: ${TOTAL_LINES}"
-  echo "  Errors: ${ERRORS}"
-  echo "  Warnings: ${WARNINGS}"
-  echo ""
-
-  if [ ${ERRORS} -gt 0 ] || [ ${WARNINGS} -gt 0 ]; then
-    echo "Recent errors/warnings:"
-    grep -iE "error|warning" "${LOGFILE}" | tail -20
-  fi
-
-  # Clean up temp files
-  rm -f llmtemp/.device-log-start-time
-  rm -f llmtemp/.device-log-udid
-
-  echo ""
-  echo "✓ Log collection complete!"
-  echo ""
-  echo "To analyze further:"
-  echo "  • View text logs: cat ${LOGFILE}"
-  echo "  • Open in Console.app: open ${LOGARCHIVE}"
+# Find most recent log file (handle both normal and literal filenames)
+LOGFILE=$(ls -t logs/device-*.log "logs/device-\$(date +%Y%m%d-%H%M%S).log" 2>/dev/null | head -1)
+if [ -n "$LOGFILE" ]; then
+    echo "✅ Log capture stopped"
+    echo ""
+    echo "📝 Log file: $LOGFILE"
+    echo "📊 Size: $(du -h "$LOGFILE" | cut -f1)"
+    echo "📅 Created: $(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$LOGFILE" 2>/dev/null || stat -c "%y" "$LOGFILE" 2>/dev/null | cut -d'.' -f1)"
+    echo "📏 Lines: $(wc -l < "$LOGFILE" | tr -d ' ')"
+    echo ""
+    echo "💡 Quick preview (last 10 lines):"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    tail -10 "$LOGFILE"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 else
-  echo "✗ Log collection failed"
-  exit 1
+    echo "⚠️  No log files found in ./logs directory"
 fi
 ```
 
-## Example Usage
+## What This Does
 
-```bash
-# Collect logs since start (prompts for sudo password)
-/stop-logs-device
+1. **Stops the logging process** (you need to press Ctrl+C manually first)
+2. **Finds the most recent log file** in the `./logs` directory
+3. **Displays useful information**:
+   - File path
+   - File size
+   - Creation timestamp
+   - Number of lines
+   - Last 10 lines preview
 
-# Collect with custom analysis
-/stop-logs-device show all logs
-/stop-logs-device show logs related to keyboard
-/stop-logs-device analyze recording errors
+## Expected Output
+
+```
+⏹️  Stopping device log capture...
+
+✅ Log capture stopped
+
+📝 Log file: logs/device-20251016-213545.log
+📊 Size: 245K
+📅 Created: 2025-10-16 21:35:45
+📏 Lines: 1247
+
+💡 Quick preview (last 10 lines):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 Preload skipped: Current mode doesn't use WhisperKit (uses parakeet)
+🎬 App became active - checking for stale Live Activity
+✅ Parakeet ASR model loaded successfully
+🦜 Starting Parakeet transcription with model: Parakeet 1.1B
+📊 Audio duration: 3.45 seconds
+✅ Parakeet transcription completed successfully
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## Important Notes
+## Notes
 
-- **Requires sudo password** - you'll be prompted to enter your macOS password
-- Log collection may take 30-60 seconds depending on log volume
-- Creates a `.logarchive` file (can be opened in Console.app)
-- Also creates a filtered `.txt` file for easy reading
-- The `.logarchive` preserves all metadata and can be re-analyzed later
+- **Manual step required**: You must press `Ctrl+C` in the terminal running the log capture first
+- **Multiple sessions**: If you have multiple log files, this shows the most recent one
+- **Empty logs directory**: If no logs exist, you'll see a warning message
+- **File preservation**: Log files are preserved until you manually delete them
 
-## Advanced Analysis
+## Background Process Management
 
-After collection, you can re-analyze the `.logarchive`:
+If the log capture is running in a background process:
 
 ```bash
-# View all VivaDicta logs
-log show logs/vivadicta_device_*.logarchive \
-  --predicate 'subsystem == "com.antonnovoselov.VivaDicta"'
+# Find the process
+ps aux | grep "devicectl.*console"
 
-# Filter by message type
-log show logs/vivadicta_device_*.logarchive \
-  --predicate 'subsystem == "com.antonnovoselov.VivaDicta" AND messageType == "Error"'
+# Kill by process ID
+kill <PID>
 
-# Filter by category
-log show logs/vivadicta_device_*.logarchive \
-  --predicate 'subsystem == "com.antonnovoselov.VivaDicta" AND category == "RecordViewModel"'
-
-# Export to JSON
-log show logs/vivadicta_device_*.logarchive \
-  --predicate 'subsystem == "com.antonnovoselov.VivaDicta"' \
-  --style json > logs/device_logs.json
-
-# Open in Console.app for GUI analysis
-open logs/vivadicta_device_*.logarchive
+# Or kill all devicectl processes (use with caution!)
+pkill -f "devicectl.*console"
 ```
 
-## Technical Details
+## Related
 
-- Uses native `log collect` command (most reliable method)
-- Creates a complete log archive from the device
-- Filters by subsystem for VivaDicta-specific logs
-- Supports rich predicates for advanced filtering
-- `.logarchive` files can be shared for debugging
-
-## Troubleshooting
-
-**"Device not found" error:**
-- Ensure device is connected and trusted
-- Check UDID: `xcrun xctrace list devices`
-
-**"Permission denied" even with sudo:**
-- Ensure you're using an admin account
-- Try unlocking the device
-
-**No logs in output:**
-- Check if app was running during the time period
-- Verify subsystem name: `com.antonnovoselov.VivaDicta`
-- Try opening the `.logarchive` in Console.app to see all logs
-
-## Additional Resources
-
-- [iOS Log Capture Skill](../.claude/skills/ios-log-capture.md) - Complete log capture reference
-- Apple Developer: `man log` - log command documentation
-- Console.app - GUI for viewing `.logarchive` files
+- `/start-logs-device` - Start device log capture
+- `logs/device-*.log` - Timestamped log files
+- `.gitignore` should include `logs/` to avoid committing large log files

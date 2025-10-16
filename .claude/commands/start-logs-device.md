@@ -2,62 +2,104 @@
 
 ## Task
 
-Prepare for device log capture by recording the current timestamp. When ready to collect logs, you'll use `/stop-logs-device` which will collect all logs since this timestamp from your physical iOS device.
+Launch VivaDicta on a physical iOS device with print logging enabled to capture real-time console output including all emojis and log messages.
 
 ## Instructions
 
-1. **Get the device UDID**:
+1. **Create logs directory** (if it doesn't exist):
    ```bash
-   xcrun xctrace list devices | grep iPhone | grep -v Simulator | head -1
-   ```
-   Extract the UDID from the output (format: `00008130-001250203C92001C`).
-
-2. **Ensure llmtemp directory exists**:
-   ```bash
-   mkdir -p llmtemp
+   mkdir -p logs
    ```
 
-3. **Record the start timestamp**:
+2. **Launch the script in the background**:
    ```bash
-   date '+%Y-%m-%d %H:%M:%S' > llmtemp/.device-log-start-time
+   ./scripts/launch_device.sh
    ```
 
-4. **Save the device UDID**:
-   ```bash
-   echo "<UDID>" > llmtemp/.device-log-udid
-   ```
+   Use `run_in_background: true` when calling via Bash tool.
 
-5. **Report to the user**:
-   - Confirm that log capture session has been initialized
-   - Display the device name and UDID
-   - Display the start timestamp prominently
-   - Instruct the user: "Start timestamp recorded. Interact with your app on the device, then use `/stop-logs-device` to collect all logs since this time."
-   - Note: `/stop-logs-device` will prompt for your sudo password to collect the logs
-   - The app should already be running on the device
+   This will:
+   - Display logs in the console in real-time
+   - Save logs to `logs/device-YYYYMMDD-HHMMSS.log` with timestamp
+
+3. **What this does**:
+   - Launches VivaDicta on the connected physical device
+   - Sets `ENABLE_PRINT_LOGS=1` environment variable to enable print statements
+   - Captures stdout/stderr output in real-time
+   - Shows all log messages with emojis (📱, 🎬, 🦜, ✅, etc.)
+   - Terminates any existing instance of the app before launching
+
+## Expected Output
+
+You should see output like:
+```
+Launched application with com.antonnovoselov.VivaDicta bundle identifier.
+Waiting for the application to terminate…
+📱 Preload skipped: Current mode doesn't use WhisperKit (uses parakeet)
+🎬 App became active - checking for stale Live Activity
+```
 
 ## Important Notes
 
-- **No background process** - this just records a timestamp
-- The actual log collection happens when you run `/stop-logs-device`
-- **Requires sudo** - `log collect` needs elevated privileges to access device logs
-- The device must be connected via USB or network
-- The device must be trusted and paired with the Mac
-- Works with iOS 12+ devices
+- **Device UDID**: The script is configured for device `00008130-001250203C92001C` (iPhone 15 Pro Max Anton)
+  - If using a different device, update the `--device` parameter in `./scripts/launch_device.sh`
 
-## How It Works
+- **Device Requirements**:
+  - Device must be connected via USB or network
+  - Device must be trusted and paired with the Mac
+  - Works with iOS 17+ devices (devicectl requires iOS 17+)
 
-1. `start-logs-device` - Records current timestamp
-2. *You interact with your app*
-3. `stop-logs-device` - Collects all logs from the device since the recorded timestamp using `sudo log collect`
+- **Environment Variable**:
+  - `ENABLE_PRINT_LOGS=1` enables print statements alongside Logger calls
+  - Without this variable, only OSLog statements are captured (not visible in --console)
+  - Print statements are conditionally enabled via LoggerExtension.swift
 
-## Technical Details
+- **How It Works**:
+  - LoggerExtension checks `ProcessInfo.processInfo.environment["ENABLE_PRINT_LOGS"]`
+  - When set to "1": both Logger.info() AND print() execute
+  - When not set: only Logger.info() executes (no print statements)
+  - This avoids duplicate logs in Xcode while enabling console capture on device
 
-- Uses native `log collect` command (most reliable method)
-- Filters logs by subsystem: `com.antonnovoselov.VivaDicta`
-- Creates a `.logarchive` file that can be analyzed with `log show`
-- Supports timestamp-based log collection
+- **Stopping the Log Stream**:
+  - Press Ctrl+C to stop capturing logs
+  - The app will continue running on the device
 
-## Additional Resources
+## Troubleshooting
 
-- [iOS Log Capture Skill](../.claude/skills/ios-log-capture.md) - Complete log capture reference
-- Apple Developer: `man log` - log command documentation
+- **Device not found**: Verify device is connected with `xcrun xctrace list devices`
+- **Permission denied**: Ensure device is trusted in System Settings
+- **No logs appearing**: Check that ENABLE_PRINT_LOGS is set correctly in the JSON
+- **App won't launch**: Try rebuilding and installing via Xcode first
+
+## Log File Management
+
+**Log files are automatically saved to**: `./logs/device-YYYYMMDD-HHMMSS.log`
+
+**View recent logs**:
+```bash
+ls -lt logs/device-*.log | head -5
+```
+
+**View a specific log file**:
+```bash
+cat logs/device-20251016-213500.log
+```
+
+**Search logs for specific patterns**:
+```bash
+grep "📱" logs/device-*.log  # Find all lines with 📱 emoji
+grep -i "error" logs/device-*.log  # Find all error messages
+```
+
+**Clean up old logs** (optional):
+```bash
+# Remove logs older than 7 days
+find logs -name "device-*.log" -mtime +7 -delete
+```
+
+## Related
+
+- LoggerExtension.swift - Contains the conditional print logic
+- All logger calls use `.logInfo()`, `.logError()`, etc. wrapper methods
+- When running from Xcode: no duplicate logs (print is disabled)
+- When running from devicectl: print logs are visible in console
