@@ -17,6 +17,7 @@ Scan this file for relevant skills based on the given task.
 - [`add-new-screen.md`](./add-new-screen.md): Add a new screen (View) to the VivaDicta iOS app
 - [`axe-simulator-control.md`](./axe-simulator-control.md): Automate iOS Simulator with AXe terminal tool for taps, gestures, text input, and video recording
 - [`commit-to-git.md`](./commit-to-git.md): Commit changes to git following project guidelines
+- [`ios-log-capture.md`](./ios-log-capture.md): Capture console logs from iOS apps in Simulator or physical devices using mcpli and XcodeBuildMCP
 - [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md): Capture screenshots from iOS Simulator using Peekaboo MCP
 
 ## Skill Directory
@@ -56,6 +57,20 @@ For committing changes to the git repository following project-specific guidelin
   - "create a commit for this work"
   - "git commit this"
   - "save these changes to git"
+
+### iOS Log Capture
+
+For capturing console logs from iOS apps running in Simulator or on physical devices using mcpli and XcodeBuildMCP.
+
+- Skill file: [`ios-log-capture.md`](./ios-log-capture.md)
+- Related queries:
+  - "capture logs from the simulator"
+  - "start logging the app in simulator"
+  - "get console output from the running app"
+  - "launch app and capture its logs"
+  - "capture logs from physical iPhone"
+  - "debug app crash with logs"
+  - "monitor app output during testing"
 
 ### iOS Simulator Screenshot
 
