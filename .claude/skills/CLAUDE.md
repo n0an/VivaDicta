@@ -15,6 +15,7 @@ Scan this file for relevant skills based on the given task.
 ## Skill List
 
 - [`add-new-screen.md`](./add-new-screen.md): Add a new screen (View) to the VivaDicta iOS app
+- [`axe-simulator-control.md`](./axe-simulator-control.md): Automate iOS Simulator with AXe terminal tool for taps, gestures, text input, and video recording
 - [`commit-to-git.md`](./commit-to-git.md): Commit changes to git following project guidelines
 
 ## Skill Directory
@@ -29,6 +30,20 @@ For adding a new screen (SwiftUI View) to the VivaDicta iOS app.
   - "create a new view for user profile"
   - "I need a new screen in the settings tab"
   - "add a detail view for this data"
+
+### AXe Simulator Control
+
+For automating iOS Simulator interactions using the AXe terminal tool.
+
+- Skill file: [`axe-simulator-control.md`](./axe-simulator-control.md)
+- Related queries:
+  - "tap at coordinates in the simulator"
+  - "type text into the simulator"
+  - "press the home button"
+  - "record simulator video"
+  - "perform a scroll gesture"
+  - "list available simulators"
+  - "swipe from edge in simulator"
 
 ### Commit to Git
 
