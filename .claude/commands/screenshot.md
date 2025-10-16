@@ -57,3 +57,7 @@ Capture a screenshot of the iOS Simulator using Peekaboo MCP and optionally anal
 - Screenshots are saved to `llmtemp/screenshots` (gitignored directory)
 - Filenames include timestamps to prevent overwrites
 - Always uses `capture_focus="background"` for non-intrusive capture
+
+## Additional Resources
+
+- [Peekaboo MCP Documentation](../docs/MCPs/Peekaboo_README.md) - Complete Peekaboo reference for advanced usage and troubleshooting
