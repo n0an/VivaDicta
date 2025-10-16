@@ -7,6 +7,10 @@ Use this skill when you need to automate iOS Simulator interactions, including t
 - See [`xcodebuild-testing.md`](./xcodebuild-testing.md) for running tests that might require simulator interactions
 - See [`ios-ui-testing.md`](./ios-ui-testing.md) if you need to write UI tests instead of direct simulator control
 
+## Additional Resources
+
+- [AXe Documentation](../../docs/Tools/Axe_README.md) - Complete AXe reference including advanced features, architecture, and troubleshooting
+
 ## Skill Flow
 
 - Example queries:
