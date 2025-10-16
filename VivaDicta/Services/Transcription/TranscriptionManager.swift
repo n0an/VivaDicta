@@ -120,18 +120,18 @@ class TranscriptionManager {
     public func preloadWhisperKitModelIfNeeded() async {
         // Check if current mode uses WhisperKit
         guard currentMode.transcriptionProvider == .whisperKit else {
-            logger.info("📱 Preload skipped: Current mode doesn't use WhisperKit (uses \(self.currentMode.transcriptionProvider.rawValue))")
+            logger.logInfo("📱 Preload skipped: Current mode doesn't use WhisperKit (uses \(self.currentMode.transcriptionProvider.rawValue))")
             return
         }
 
         // Check if we have a valid WhisperKit model selected
         guard let model = getCurrentTranscriptionModel(),
               let whisperKitModel = model as? WhisperKitModel else {
-            logger.info("📱 Preload skipped: No valid WhisperKit model in current mode")
+            logger.logInfo("📱 Preload skipped: No valid WhisperKit model in current mode")
             return
         }
 
-        logger.info("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
+        logger.logInfo("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
 
         // Trigger preload in background
         await whisperKitTranscriptionService.preloadModelIfNeeded(modelPath: whisperKitModel.whisperKitModelName)

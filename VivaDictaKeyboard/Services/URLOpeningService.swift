@@ -33,15 +33,15 @@ public class URLOpeningService: URLOpening {
 
     /// Open a URL using the best available method with automatic fallback
     public func openURL(_ url: URL, completion: ((Bool) -> Void)? = nil) {
-        logger.info("🎤 Opening URL: \(url.absoluteString)")
+        logger.logInfo("🎤 Opening URL: \(url.absoluteString)")
 
         // Method 1: Try extensionContext.open (primary method)
         extensionContext?.open(url) { [weak self] success in
             if success {
-                self?.logger.info("🎤 ✅ Successfully opened URL via extensionContext")
+                self?.logger.logInfo("🎤 ✅ Successfully opened URL via extensionContext")
                 completion?(true)
             } else {
-                self?.logger.info("🎤 ⚠️ extensionContext.open failed, trying alternative methods...")
+                self?.logger.logInfo("🎤 ⚠️ extensionContext.open failed, trying alternative methods...")
                 Task { @MainActor in
                     self?.tryAlternativeURLOpening(url, completion: completion)
                 }
@@ -52,20 +52,20 @@ public class URLOpeningService: URLOpening {
     // MARK: - Private Methods
 
     private func tryAlternativeURLOpening(_ url: URL, completion: ((Bool) -> Void)?) {
-        logger.info("🎤 Trying alternative URL opening methods...")
+        logger.logInfo("🎤 Trying alternative URL opening methods...")
 
         // Method 2: Try UIApplication directly via key-value coding
         if let sharedApp = UIApplication.value(forKeyPath: "sharedApplication") as? UIApplication {
-            logger.info("🎤 Found UIApplication using sharedApplication")
+            logger.logInfo("🎤 Found UIApplication using sharedApplication")
 
             if sharedApp.canOpenURL(url) {
-                logger.info("🎤 canOpenURL returned true")
+                logger.logInfo("🎤 canOpenURL returned true")
                 sharedApp.open(url, options: [:]) { [weak self] success in
                     if success {
-                        self?.logger.info("🎤 ✅ Successfully opened URL via UIApplication.open")
+                        self?.logger.logInfo("🎤 ✅ Successfully opened URL via UIApplication.open")
                         completion?(true)
                     } else {
-                        self?.logger.error("🎤 ❌ UIApplication.open failed")
+                        self?.logger.logError("🎤 ❌ UIApplication.open failed")
                         Task { @MainActor in
                             self?.openURLViaResponderChain(url, completion: completion)
                         }
@@ -73,10 +73,10 @@ public class URLOpeningService: URLOpening {
                 }
                 return
             } else {
-                logger.warning("🎤 ⚠️ canOpenURL returned false")
+                logger.logWarning("🎤 ⚠️ canOpenURL returned false")
             }
         } else {
-            logger.info("🎤 Could not get UIApplication via sharedApplication")
+            logger.logInfo("🎤 Could not get UIApplication via sharedApplication")
         }
 
         // Fallback to responder chain method
@@ -89,16 +89,16 @@ public class URLOpeningService: URLOpening {
 
         while let responder = optionalResponder {
             if responder.responds(to: selector) {
-                logger.info("🎤 Found responder that responds to openURL:")
+                logger.logInfo("🎤 Found responder that responds to openURL:")
                 responder.perform(selector, with: url)
-                logger.info("🎤 ✅ Attempted to open URL via responder chain")
+                logger.logInfo("🎤 ✅ Attempted to open URL via responder chain")
                 completion?(true)
                 return
             }
             optionalResponder = responder.next
         }
 
-        logger.error("🎤 ❌ All URL opening methods failed")
+        logger.logError("🎤 ❌ All URL opening methods failed")
         completion?(false)
     }
 }

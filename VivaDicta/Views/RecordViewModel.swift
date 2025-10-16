@@ -116,7 +116,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     var recordingState: RecordingState = .idle {
         didSet {
-            logger.info("📱 Recording state changed: \(String(describing: self.recordingState))")
+            logger.logInfo("📱 Recording state changed: \(String(describing: self.recordingState))")
             // Save recording state to shared UserDefaults for keyboard extension
             let isRecording = (recordingState == .recording)
             UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
@@ -162,13 +162,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { @MainActor in
             // Guard against duplicate starts
             guard recordingState != .recording else {
-                logger.info("📱 Already recording, ignoring duplicate start request")
+                logger.logInfo("📱 Already recording, ignoring duplicate start request")
                 return
             }
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
-                logger.info("🎙️ Using prewarm session for recording")
+                logger.logInfo("🎙️ Using prewarm session for recording")
 
                 resetValues()
                 recordingState = .recording
@@ -197,7 +197,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             } else {
                 // Normal recording flow (not from keyboard)
-                logger.info("🎙️ Using normal recording flow")
+                logger.logInfo("🎙️ Using normal recording flow")
 
                 
                 do {
@@ -275,7 +275,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     func stopCaptureAudio(modelContext: ModelContext) {
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
-            logger.info("🎙️ Stopping real capture in prewarm mode (dummy continues)")
+            logger.logInfo("🎙️ Stopping real capture in prewarm mode (dummy continues)")
             prewarmManager.stopRealCapture()
 
             // In prewarm mode, we need a small delay to ensure file is flushed to disk
@@ -293,7 +293,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     try FileManager.default.moveItem(at: captureURL, to: finalURL)
                     transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
                 } catch {
-                    logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                    logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
                 }
             }
         } else {
@@ -308,7 +308,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try FileManager.default.moveItem(at: captureURL, to: finalURL)
                 transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
             } catch {
-                logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
             }
         }
     }
@@ -380,7 +380,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let sampleRate = tempFile.processingFormat.sampleRate
 
                 if sampleRate > 16000 {
-                    logger.info("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
+                    logger.logInfo("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
                     // Use .wav extension for cross-platform PCM support
                     let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
 
@@ -397,13 +397,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                             // Use downsampled file for transcription
                             audioURLToTranscribe = downsampledURL
-                            logger.info("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
+                            logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
                         } else {
-                            logger.warning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
+                            logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
                             try? FileManager.default.removeItem(at: downsampledURL)
                         }
                     } catch {
-                        logger.warning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
+                        logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
                         // Continue with original file if downsampling fails
                     }
                 }
@@ -436,7 +436,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         
                     } catch {
                         // Enhancement failed
-                        logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
+                        logger.logWarning("📱 AI enhancement failed: \(error.localizedDescription)")
                         try Task.checkCancellation()
                         self.recordingState = .idle
                     }
@@ -549,7 +549,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             // Only start if prewarm session is active and not already recording
             if self.prewarmManager.isSessionActive && self.recordingState != .recording {
-                self.logger.info("📱 Starting recording from keyboard request")
+                self.logger.logInfo("📱 Starting recording from keyboard request")
                 self.startCaptureAudio()
             }
         }
@@ -559,7 +559,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             guard let self = self else { return }
 
             if self.recordingState == .recording {
-                self.logger.info("📱 Stopping recording from keyboard request")
+                self.logger.logInfo("📱 Stopping recording from keyboard request")
                 // Create a new ModelContext from Persistence container
                 let context = ModelContext(Persistence.container)
                 self.stopCaptureAudio(modelContext: context)
@@ -571,7 +571,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             guard let self = self else { return }
 
             if self.recordingState == .recording {
-                self.logger.info("📱 Canceling recording from keyboard request")
+                self.logger.logInfo("📱 Canceling recording from keyboard request")
                 self.cancelTranscribe()
             }
         }
@@ -581,7 +581,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             guard let self = self else { return }
 
             if self.recordingState == .recording {
-                self.logger.info("📱 Pausing recording from keyboard request")
+                self.logger.logInfo("📱 Pausing recording from keyboard request")
                 // TODO: Implement pause functionality if needed
             }
         }
@@ -591,7 +591,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             guard let self = self else { return }
 
             if self.recordingState == .recording {
-                self.logger.info("📱 Resuming recording from keyboard request")
+                self.logger.logInfo("📱 Resuming recording from keyboard request")
                 // TODO: Implement resume functionality if needed
             }
         }
@@ -603,7 +603,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //    private func stopCaptureAudioForKeyboard() {
 //        // Stop real recorder if in prewarm mode (dummy continues running)
 //        if prewarmManager.isSessionActive {
-//            logger.info("🎙️ Stopping real capture in prewarm mode for keyboard (dummy continues)")
+//            logger.logInfo("🎙️ Stopping real capture in prewarm mode for keyboard (dummy continues)")
 //            prewarmManager.stopRealCapture()
 //
 //            // In prewarm mode, we need a small delay to ensure file is flushed to disk
@@ -626,7 +626,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                    // Start transcription task that will save to both UserDefaults and SwiftData
 //                    transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
 //                } catch {
-//                    logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+//                    logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
 //                    recordingState = .error(.recordError)
 //                }
 //            }
@@ -650,7 +650,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 ////                transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
 //                recordingState = .error(.debugError)
 //            } catch {
-//                logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+//                logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
 //                recordingState = .error(.recordError)
 //            }
 //        }
@@ -677,7 +677,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                
 //                // Load the selected flow mode from shared UserDefaults (set by keyboard)
 //                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.selectedAIModeKey) {
-//                    logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
+//                    logger.logInfo("📱 Loading flow mode from keyboard: \(selectedModeName)")
 //                    // Update the AI service's selected mode to match what was selected in keyboard
 //                    aiService.selectedModeName = selectedModeName
 //                }
@@ -700,7 +700,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                        // Notify keyboard that AI enhancement has ended
 ////                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
 //                    } catch {
-//                        logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
+//                        logger.logWarning("📱 AI enhancement failed: \(error.localizedDescription)")
 //                        // Notify keyboard that AI enhancement has ended (even on failure)
 ////                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
 //                    }
@@ -736,14 +736,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //                self.recordingState = .idle
 //
 //                let savedTextType = enhancedText != nil ? "enhanced" : "original"
-//                logger.info("📱 Transcription (\(savedTextType)) saved to UserDefaults and SwiftData, notification sent to keyboard")
+//                logger.logInfo("📱 Transcription (\(savedTextType)) saved to UserDefaults and SwiftData, notification sent to keyboard")
 //            } catch {
 //                self.recordingState = .error(.transcribe)
 //
 //                // Notify keyboard about error
 ////                AppGroupCoordinator.shared.notifyRecordingError()
 //
-//                logger.error("📱 Transcription failed: \(error.localizedDescription)")
+//                logger.logError("📱 Transcription failed: \(error.localizedDescription)")
 //            }
 //        }
 //    }

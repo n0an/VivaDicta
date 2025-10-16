@@ -96,7 +96,7 @@ final class AudioSessionManager {
 //            }
 
         } catch {
-//            logger.error("🤺 Error starting Live Activity \(error.localizedDescription)")
+//            logger.logError("🤺 Error starting Live Activity \(error.localizedDescription)")
         }
     }
 

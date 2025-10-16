@@ -36,21 +36,21 @@
 //    }
 //
 //    private func loadFlowModes() {
-//        logger.info("🎯 Loading flow modes from shared storage...")
+//        logger.logInfo("🎯 Loading flow modes from shared storage...")
 //
 //        if let savedModesData = UserDefaultsStorage.shared.data(forKey: AppGroupConfig.aiEnhanceModesKey) {
-//            logger.info("🎯 Found saved modes data, attempting to decode...")
+//            logger.logInfo("🎯 Found saved modes data, attempting to decode...")
 //
 //            do {
 //                let savedModes = try JSONDecoder().decode([FlowMode].self, from: savedModesData)
 //                availableFlowModes = savedModes
-//                logger.info("🎯 Successfully loaded \(savedModes.count) flow modes: \(savedModes.map { $0.name }.joined(separator: ", "))")
+//                logger.logInfo("🎯 Successfully loaded \(savedModes.count) flow modes: \(savedModes.map { $0.name }.joined(separator: ", "))")
 //            } catch {
-//                logger.error("🎯 Failed to decode flow modes: \(error.localizedDescription)")
+//                logger.logError("🎯 Failed to decode flow modes: \(error.localizedDescription)")
 //                availableFlowModes = [FlowMode.defaultMode]
 //            }
 //        } else {
-//            logger.warning("🎯 No saved flow modes found in shared storage")
+//            logger.logWarning("🎯 No saved flow modes found in shared storage")
 //            availableFlowModes = [FlowMode.defaultMode]
 //        }
 //    }

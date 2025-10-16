@@ -74,7 +74,7 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Setup the keyboard
         setup(for: keyboardApp) { [weak self] result in
-            self?.logger.info("Keyboard setup result: \(String(describing: result), privacy: .public)")
+            self?.logger.logInfo("Keyboard setup result: \(String(describing: result))")
         }
     }
 
@@ -149,15 +149,15 @@ class KeyboardViewController: KeyboardInputViewController {
     // MARK: - Recording
 
 //    private func handleRecordButtonTap() {
-//        logger.info("🎤 Record button tapped")
+//        logger.logInfo("🎤 Record button tapped")
 //
 //        // Check if keyboard has full access
 //        let hasFullAccess = self.hasFullAccess
-//        logger.info("🎤 Has Full Access: \(hasFullAccess)")
+//        logger.logInfo("🎤 Has Full Access: \(hasFullAccess)")
 //
 //        if !hasFullAccess {
-//            logger.error("🎤 ❌ ERROR: Keyboard doesn't have Full Access permission")
-//            logger.error("🎤 ❌ User needs to enable 'Allow Full Access' in Settings → Keyboards")
+//            logger.logError("🎤 ❌ ERROR: Keyboard doesn't have Full Access permission")
+//            logger.logError("🎤 ❌ User needs to enable 'Allow Full Access' in Settings → Keyboards")
 //
 //            // Show error to user (insert message in text field)
 //            textDocumentProxy.insertText("[Please enable 'Allow Full Access' for VivaDicta Keyboard in Settings] ")
@@ -173,15 +173,15 @@ class KeyboardViewController: KeyboardInputViewController {
 //
 //        // Check current app state
 //        let isAppActive = appStateMonitoringService.isMainAppActive
-//        logger.info("🎤 Current app state: \(isAppActive ? "ACTIVE" : "SUSPENDED")")
+//        logger.logInfo("🎤 Current app state: \(isAppActive ? "ACTIVE" : "SUSPENDED")")
 //
 //        if !isAppActive {
 //            // App is suspended - open it via URL scheme
-//            logger.info("🎤 App is suspended, opening via URL scheme")
+//            logger.logInfo("🎤 App is suspended, opening via URL scheme")
 //            openMainAppViaURLScheme()
 //        } else {
 //            // App is active - start recording via coordinator
-//            logger.info("🎤 App is active, starting recording via coordinator")
+//            logger.logInfo("🎤 App is active, starting recording via coordinator")
 //
 //            // Clear any previous cancel flag
 //            keyboardStateManager.didCancelRecording = false
@@ -201,7 +201,7 @@ class KeyboardViewController: KeyboardInputViewController {
 //    }
 //
 //    private func handleCancelRecording() {
-//        logger.info("🎤 Cancel recording tapped")
+//        logger.logInfo("🎤 Cancel recording tapped")
 //
 //        // Mark that we canceled to prevent text insertion
 //        keyboardStateManager.didCancelRecording = true
@@ -217,7 +217,7 @@ class KeyboardViewController: KeyboardInputViewController {
 //    }
 //
 //    private func handleStopRecording() {
-//        logger.info("🎤 Stop recording tapped")
+//        logger.logInfo("🎤 Stop recording tapped")
 //
 //        // Clear cancel flag - this is a normal stop with transcription
 //        keyboardStateManager.didCancelRecording = false
@@ -230,7 +230,7 @@ class KeyboardViewController: KeyboardInputViewController {
 //    }
 //
 //    private func handleCancelProcessing() {
-//        logger.info("❌ Cancel processing tapped")
+//        logger.logInfo("❌ Cancel processing tapped")
 //
 //        // Mark that we canceled to prevent text insertion
 //        keyboardStateManager.didCancelRecording = true
@@ -297,7 +297,7 @@ class KeyboardViewController: KeyboardInputViewController {
 //    }
 //
 //    func recordingCoordinatorDidTimeout() {
-//        logger.info("❌ Recording coordinator timeout - handling error")
+//        logger.logInfo("❌ Recording coordinator timeout - handling error")
 //
 //        // Check if we're still waiting for recording to start
 //        if keyboardStateManager.viewState == .recording && !appStateViewModel.isRecording {

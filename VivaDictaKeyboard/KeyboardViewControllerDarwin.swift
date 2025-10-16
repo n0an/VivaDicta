@@ -18,7 +18,7 @@ import os
 //        // Observe recording started notification for immediate UI update
 //        AppGroupCoordinator.shared.observeRecordingStarted { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received recordingStarted notification - updating UI immediately")
+//                self?.logger.logInfo("📱 Received recordingStarted notification - updating UI immediately")
 //                self?.appStateViewModel.isRecording = true
 //
 //                // Cancel recording timeout since recording started successfully
@@ -29,7 +29,7 @@ import os
 //        // Observe recording stopped notification for immediate UI update
 //        AppGroupCoordinator.shared.observeRecordingStopped { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received recordingStopped notification - updating UI immediately")
+//                self?.logger.logInfo("📱 Received recordingStopped notification - updating UI immediately")
 //                self?.appStateViewModel.isRecording = false
 //
 //                // Transition to processing state
@@ -42,7 +42,7 @@ import os
 //        // Observe transcription started notification
 //        AppGroupCoordinator.shared.observeTranscriptionStarted { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received transcriptionStarted notification")
+//                self?.logger.logInfo("📱 Received transcriptionStarted notification")
 //                self?.keyboardStateManager.processingStage = .transcribing
 //
 //                // Force UI update if in processing state
@@ -55,7 +55,7 @@ import os
 //        // Observe transcription ended notification
 //        AppGroupCoordinator.shared.observeTranscriptionEnded { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received transcriptionEnded notification")
+//                self?.logger.logInfo("📱 Received transcriptionEnded notification")
 //                // Just log for now, AI enhancement starts next
 //            }
 //        }
@@ -63,7 +63,7 @@ import os
 //        // Observe AI enhancement started notification
 //        AppGroupCoordinator.shared.observeAIEnhancementStarted { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received aiEnhancementStarted notification")
+//                self?.logger.logInfo("📱 Received aiEnhancementStarted notification")
 //                self?.keyboardStateManager.processingStage = .enhancingWithAI
 //
 //                // Force UI update if in processing state
@@ -76,7 +76,7 @@ import os
 //        // Observe AI enhancement ended notification
 //        AppGroupCoordinator.shared.observeAIEnhancementEnded { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received aiEnhancementEnded notification")
+//                self?.logger.logInfo("📱 Received aiEnhancementEnded notification")
 //                self?.keyboardStateManager.processingStage = .completed
 //            }
 //        }
@@ -84,7 +84,7 @@ import os
 //        // Observe transcription ready notification
 //        AppGroupCoordinator.shared.observeTranscriptionReady { [weak self] in
 //            Task { @MainActor in
-//                self?.logger.info("📱 Received transcriptionReady notification")
+//                self?.logger.logInfo("📱 Received transcriptionReady notification")
 //                self?.handleTranscriptionReady()
 //
 //                // Return to idle state
@@ -98,7 +98,7 @@ import os
 //            Task { @MainActor in
 //                guard let self = self else { return }
 //
-//                self.logger.info("📱 Received recordingError notification")
+//                self.logger.logInfo("📱 Received recordingError notification")
 //
 //                // Reset recording state on error
 //                self.appStateViewModel.isRecording = false
@@ -125,7 +125,7 @@ import os
 //    private func handleTranscriptionReady() {
 //        // Check if the recording was canceled - if so, don't insert text
 //        if keyboardStateManager.didCancelRecording {
-//            logger.info("📝 Transcription ready but recording was canceled - not inserting text")
+//            logger.logInfo("📝 Transcription ready but recording was canceled - not inserting text")
 //
 //            // Clear the flag and transcription
 //            keyboardStateManager.didCancelRecording = false
@@ -136,11 +136,11 @@ import os
 //
 //        // Read transcribed text from shared UserDefaults
 //        if let transcribedText = UserDefaultsStorage.shared.string(forKey: "lastTranscription") {
-//            logger.info("📝 Inserting transcribed text...")
+//            logger.logInfo("📝 Inserting transcribed text...")
 //
 //            // Safely insert the transcribed text with error handling
 //            guard !transcribedText.isEmpty else {
-//                logger.info("📝 Transcribed text is empty, skipping insertion")
+//                logger.logInfo("📝 Transcribed text is empty, skipping insertion")
 //                UserDefaultsStorage.shared.removeObject(forKey: "lastTranscription")
 //                UserDefaultsStorage.shared.synchronize()
 //                return
@@ -153,9 +153,9 @@ import os
 //            UserDefaultsStorage.shared.removeObject(forKey: "lastTranscription")
 //            UserDefaultsStorage.shared.synchronize()
 //
-//            logger.info("📝 Successfully inserted transcription")
+//            logger.logInfo("📝 Successfully inserted transcription")
 //        } else {
-//            logger.info("📝 No transcription found in UserDefaults")
+//            logger.logInfo("📝 No transcription found in UserDefaults")
 //        }
 //    }
 //}

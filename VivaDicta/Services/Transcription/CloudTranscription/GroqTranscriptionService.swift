@@ -29,7 +29,7 @@ struct GroqTranscriptionService {
         
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.error("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage, privacy: .public)")
+            logger.logError("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
         
@@ -37,7 +37,7 @@ struct GroqTranscriptionService {
             let transcriptionResponse = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
             return transcriptionResponse.text
         } catch {
-            logger.error("Failed to decode Groq API response: \(error.localizedDescription)")
+            logger.logError("Failed to decode Groq API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }

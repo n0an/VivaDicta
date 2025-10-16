@@ -123,7 +123,7 @@ public final class AppGroupCoordinator {
 
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.lastRecordingTimestamp)
 
-        logger.error("🧹 Complete session state reset on app launch - fresh start")
+        logger.logError("🧹 Complete session state reset on app launch - fresh start")
     }
 
     // MARK: - Public Interface for Keyboard Extension
@@ -169,7 +169,7 @@ public final class AppGroupCoordinator {
         let currentTime = Date().timeIntervalSince1970
 
         if storedState && (currentTime - timestamp) > 30 && !isKeyboardSessionActive {
-            logger.error("⚠️ Recording state appears stale, clearing it")
+            logger.logError("⚠️ Recording state appears stale, clearing it")
             updateRecordingState(false)
             return false
         }
@@ -183,14 +183,14 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(isRecording, forKey: UserDefaultsKeys.isRecording)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.recordingStateChanged)
-        logger.error("📡 Updated recording state: \(isRecording)")
+        logger.logError("📡 Updated recording state: \(isRecording)")
     }
 
     func updatePausedState(_ isPaused: Bool) {
         sharedDefaults?.set(isPaused, forKey: UserDefaultsKeys.isPaused)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.pausedStateChanged)
-        logger.error("📡 Updated paused state: \(isPaused)")
+        logger.logError("📡 Updated paused state: \(isPaused)")
     }
 
     // MARK: - Audio Level Sharing
@@ -268,7 +268,7 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(expiryTime, forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.keyboardSessionActivated)
-        logger.error("🔑 Keyboard session activated for \(timeoutSeconds) seconds")
+        logger.logError("🔑 Keyboard session activated for \(timeoutSeconds) seconds")
     }
 
     var isKeyboardSessionActive: Bool {
@@ -311,7 +311,7 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(false, forKey: UserDefaultsKeys.keyboardSessionActive)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         postDarwinNotification(NotificationNames.keyboardSessionExpired)
-        logger.error("🔑 Keyboard session deactivated")
+        logger.logError("🔑 Keyboard session deactivated")
     }
 
     func refreshKeyboardSessionExpiry(timeoutSeconds: Int) {
@@ -321,7 +321,7 @@ public final class AppGroupCoordinator {
         let newExpiryTime = Date().timeIntervalSince1970 + Double(timeoutSeconds)
         defaults.set(newExpiryTime, forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         defaults.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
-        logger.error("🔁 Keyboard session expiry refreshed for \(timeoutSeconds) seconds")
+        logger.logError("🔁 Keyboard session expiry refreshed for \(timeoutSeconds) seconds")
     }
 
     // MARK: - Transcribed Text Sharing
@@ -330,7 +330,7 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(text, forKey: UserDefaultsKeys.transcribedText)
         updateTranscriptionStatus(.completed)
         postDarwinNotification(NotificationNames.transcriptionCompleted)
-        logger.error("📝 Shared transcribed text: \(text.prefix(50))...")
+        logger.logError("📝 Shared transcribed text: \(text.prefix(50))...")
     }
 
     func getAndConsumeTranscribedText() -> String? {
@@ -349,7 +349,7 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(status.rawValue, forKey: UserDefaultsKeys.transcriptionStatus)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
 
-        logger.error("📊 Transcription status: \(status.rawValue, privacy: .public)")
+        logger.logError("📊 Transcription status: \(status.rawValue)")
 
         switch status {
         case .transcribing:

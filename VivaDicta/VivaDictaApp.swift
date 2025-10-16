@@ -30,12 +30,12 @@ struct VivaDictaApp: App {
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     switch newPhase {
                     case .active:
-                        logger.info("🎬 App became active - checking for stale Live Activity")
+                        logger.logInfo("🎬 App became active - checking for stale Live Activity")
                         appState.checkAndEndStaleLiveActivity()
                     case .inactive:
-                        logger.info("🎬 App became inactive")
+                        logger.logInfo("🎬 App became inactive")
                     case .background:
-                        logger.info("🎬 App went to background")
+                        logger.logInfo("🎬 App went to background")
                     @unknown default:
                         break
                     }
@@ -44,13 +44,13 @@ struct VivaDictaApp: App {
         .modelContainer(Persistence.container)
     }
     
-    
+
     private func handleDeepLink(_ url: URL) {
-        logger.info("📱 Received deep link: \(url.absoluteString)")
+        logger.logInfo("📱 Received deep link: \(url.absoluteString)")
 
         // Handle deep links from keyboard extension
         if url.absoluteString == "vivadicta://record-for-keyboard" {
-            logger.info("📱 Recognized as keyboard recording request")
+            logger.logInfo("📱 Recognized as keyboard recording request")
             
 //            appState.startLiveActivity()
             
@@ -65,14 +65,14 @@ struct VivaDictaApp: App {
                     timeoutSeconds: AudioPrewarmManager.shared.audioSessionTimeout
                 )
 
-                logger.info("🎙️ Hot Mic and keyboard session activated from deeplink")
+                logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
 
             } catch {
-                logger.error("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+                logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
 
         } else {
-            logger.warning("📱 Unknown deep link URL: \(url.absoluteString)")
+            logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }
     }
 }

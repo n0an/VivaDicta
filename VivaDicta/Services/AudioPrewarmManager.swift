@@ -63,7 +63,7 @@ final class AudioPrewarmManager {
     func startPrewarmSession(timeout: TimeInterval? = nil) throws {
         // If session is already active, just extend it
         if isSessionActive {
-            logger.info("🎙️ Prewarm session already active, extending timeout")
+            logger.logInfo("🎙️ Prewarm session already active, extending timeout")
             extendSession(timeout: timeout)
             return
         }
@@ -74,7 +74,7 @@ final class AudioPrewarmManager {
         }
         sessionStartTime = Date()
 
-        logger.info("🎙️ Starting prewarm session (timeout: \(self.audioSessionTimeout)s)")
+        logger.logInfo("🎙️ Starting prewarm session (timeout: \(self.audioSessionTimeout)s)")
 
         // Configure audio session
         #if !os(macOS)
@@ -96,7 +96,7 @@ final class AudioPrewarmManager {
         // Setup session timeout
         scheduleSessionTimeout()
 
-        logger.info("🎙️ Prewarm session started successfully")
+        logger.logInfo("🎙️ Prewarm session started successfully")
     }
 
     /// Extends the current session timeout (called from deeplink if session already active)
@@ -112,12 +112,12 @@ final class AudioPrewarmManager {
         // Reschedule timeout
         scheduleSessionTimeout()
 
-        logger.info("🎙️ Prewarm session extended (new timeout: \(self.audioSessionTimeout)s)")
+        logger.logInfo("🎙️ Prewarm session extended (new timeout: \(self.audioSessionTimeout)s)")
     }
 
     /// Ends the prewarm session and cleans up all resources
     func endSession() {
-        logger.info("🎙️ Ending prewarm session")
+        logger.logInfo("🎙️ Ending prewarm session")
 
         // Stop capturing if active
         captureContext?.isCapturing = false
@@ -137,14 +137,14 @@ final class AudioPrewarmManager {
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         } catch {
-            logger.error("⚠️ Failed to deactivate audio session: \(error.localizedDescription)")
+            logger.logError("⚠️ Failed to deactivate audio session: \(error.localizedDescription)")
         }
         #endif
 
         // Deactivate keyboard session to notify keyboard that hot mic has ended
         AppGroupCoordinator.shared.deactivateKeyboardSession()
 
-        logger.info("🎙️ Prewarm session and keyboard session ended")
+        logger.logInfo("🎙️ Prewarm session and keyboard session ended")
     }
 
     // MARK: - Audio Engine (Continuous)
@@ -182,7 +182,7 @@ final class AudioPrewarmManager {
         // Start the audio engine
         try audioEngine.start()
 
-        logger.info("🎙️ Audio engine started (tap installed, ready for real capture)")
+        logger.logInfo("🎙️ Audio engine started (tap installed, ready for real capture)")
     }
 
     private func scheduleSessionTimeout() {
@@ -195,12 +195,12 @@ final class AudioPrewarmManager {
 
                 // Simply end the session when timeout is reached
                 // Real recording will have already invalidated this timer if active
-                self.logger.info("⏰ Prewarm session timeout reached - ending session")
+                self.logger.logInfo("⏰ Prewarm session timeout reached - ending session")
                 self.endSession()
             }
         }
 
-        logger.info("⏰ Session timeout scheduled for \(self.audioSessionTimeout)s from now")
+        logger.logInfo("⏰ Session timeout scheduled for \(self.audioSessionTimeout)s from now")
     }
 
     // MARK: - Real Recorder (Parallel)
@@ -220,12 +220,12 @@ final class AudioPrewarmManager {
             throw PrewarmError.recorderNotActive
         }
 
-        logger.info("🎙️ Starting real capture to file (audio already flowing through tap)")
+        logger.logInfo("🎙️ Starting real capture to file (audio already flowing through tap)")
 
         // Invalidate timeout timer while real recording is active
         expiryTimer?.invalidate()
         expiryTimer = nil
-        logger.info("⏰ Invalidated timeout - will continue indefinitely while recording")
+        logger.logInfo("⏰ Invalidated timeout - will continue indefinitely while recording")
 
         // Get the actual format from the audio engine's input node
         let inputNode = audioEngine.inputNode
@@ -235,7 +235,7 @@ final class AudioPrewarmManager {
         let isFloat = engineFormat.commonFormat == .pcmFormatFloat32 ||
                       engineFormat.commonFormat == .pcmFormatFloat64
 
-        logger.info("🎙️ Engine format: \(engineFormat.sampleRate)Hz, \(engineFormat.channelCount) channels, isFloat: \(isFloat), commonFormat: \(engineFormat.commonFormat.rawValue)")
+        logger.logInfo("🎙️ Engine format: \(engineFormat.sampleRate)Hz, \(engineFormat.channelCount) channels, isFloat: \(isFloat), commonFormat: \(engineFormat.commonFormat.rawValue)")
 
         // Create settings based on engine's actual format to avoid sample rate mismatch
         // Use the engine's native sample rate and format
@@ -254,12 +254,12 @@ final class AudioPrewarmManager {
         captureContext.audioFile = audioFile
         captureContext.isCapturing = true
 
-        logger.info("🎙️ Real capture started (buffers now writing to disk)")
+        logger.logInfo("🎙️ Real capture started (buffers now writing to disk)")
     }
 
     /// Stops real recording and restarts the pre-warm session timeout
     func stopRealCapture() {
-        logger.info("🎙️ Stopping real capture and restarting session timeout")
+        logger.logInfo("🎙️ Stopping real capture and restarting session timeout")
 
         // Stop writing to file atomically
         captureContext?.isCapturing = false
@@ -267,13 +267,13 @@ final class AudioPrewarmManager {
 
         // Audio engine keeps running (no check needed)
         guard audioEngine?.isRunning == true else {
-            logger.error("❌ Unexpected: Audio engine not running after real recording!")
+            logger.logError("❌ Unexpected: Audio engine not running after real recording!")
 
             do {
                 try startPrewarmSession()
-                logger.info("🔧 Recovery: Successfully restarted pre-warm session")
+                logger.logInfo("🔧 Recovery: Successfully restarted pre-warm session")
             } catch {
-                logger.error("❌ Recovery failed: \(error.localizedDescription)")
+                logger.logError("❌ Recovery failed: \(error.localizedDescription)")
             }
             return
         }
@@ -289,7 +289,7 @@ final class AudioPrewarmManager {
             timeoutSeconds: audioSessionTimeout
         )
 
-        logger.info("🎙️ Restarted pre-warm session timeout: \(self.audioSessionTimeout)s from now")
+        logger.logInfo("🎙️ Restarted pre-warm session timeout: \(self.audioSessionTimeout)s from now")
     }
 
     // MARK: - Private Helpers
@@ -324,7 +324,7 @@ nonisolated private func installInputTapNonisolated(
         captureContext.writeBufferIfCapturing(buffer, updateLevel: onLevelUpdate)
     }
 
-    logger.info("🎙️ Input tap installed on audio thread")
+    logger.logError("🎙️ Input tap installed on audio thread")
 }
 
 

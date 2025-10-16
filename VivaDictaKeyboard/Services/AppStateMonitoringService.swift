@@ -71,14 +71,14 @@
 //            }
 //        }
 //
-//        logger.info("🔍 Started app state monitoring")
+//        logger.logInfo("🔍 Started app state monitoring")
 //    }
 //
 //    /// Stop monitoring app and recording states
 //    public func stopMonitoring() {
 //        monitoringTimer?.invalidate()
 //        monitoringTimer = nil
-//        logger.info("🔍 Stopped app state monitoring")
+//        logger.logInfo("🔍 Stopped app state monitoring")
 //    }
 //
 //    /// Force an immediate state update (useful for manual refresh)
@@ -95,16 +95,16 @@
 //
 //        // Notify delegate of changes
 //        if previousAppState != newAppState {
-//            logger.info("📱 App state changed: \(newAppState ? "ACTIVE ✅" : "SUSPENDED ⏸️")")
+//            logger.logInfo("📱 App state changed: \(newAppState ? "ACTIVE ✅" : "SUSPENDED ⏸️")")
 //            delegate?.appStateDidChange(isActive: newAppState)
 //        }
 //
 //        if previousRecordingState != newRecordingState {
-//            logger.info("🎤 Recording state changed: \(newRecordingState ? "RECORDING 🔴" : "NOT RECORDING ⏹️")")
+//            logger.logInfo("🎤 Recording state changed: \(newRecordingState ? "RECORDING 🔴" : "NOT RECORDING ⏹️")")
 //
 //            // Log heartbeat age for debugging
 //            if let age = recordingStateDetector.recordingHeartbeatAge() {
-//                logger.info("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
+//                logger.logInfo("🎤 💙 Recording heartbeat age: \(String(format: "%.1f", age))s")
 //            }
 //
 //            delegate?.recordingStateDidChange(isRecording: newRecordingState)

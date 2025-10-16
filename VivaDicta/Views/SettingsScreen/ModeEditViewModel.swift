@@ -75,7 +75,7 @@ class ModeEditViewModel {
             throw SettingsError.duplicateModeName(trimmedName)
         }
         
-        logger.info("Saving mode with name: '\(trimmedName)'")
+        logger.logInfo("Saving mode with name: '\(trimmedName)'")
         
         return FlowMode(
             id: modeId,
@@ -117,12 +117,12 @@ class ModeEditViewModel {
     func updateTranscriptionProvider(_ newProvider: TranscriptionModelProvider) {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
-        logger.info("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
+        logger.logInfo("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
     }
 
     func updateTranscriptionModel(_ newModel: String) {
         transcriptionModel = newModel
-        logger.info("Updated transcription model to: \(newModel)")
+        logger.logInfo("Updated transcription model to: \(newModel)")
 
     }
     
@@ -166,12 +166,12 @@ class ModeEditViewModel {
     func updateProvider(_ newProvider: AIProvider?) {
         aiProvider = newProvider
         aiModel = newProvider?.defaultModel
-        logger.info("Updated provider to: \(newProvider?.rawValue ?? "none")")
+        logger.logInfo("Updated provider to: \(newProvider?.rawValue ?? "none")")
     }
-    
+
     func updateModel(_ newModel: String?) {
         aiModel = newModel
-        logger.info("Updated model to: \(newModel ?? "none")")
+        logger.logInfo("Updated model to: \(newModel ?? "none")")
     }
     
     func hasAPIKey(for provider: AIProvider) -> Bool {

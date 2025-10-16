@@ -24,7 +24,7 @@ import os
 //    // MARK: - Initialization
 //    public init() {
 //        sharedDefaults = UserDefaultsStorage.shared
-//        logger.info("🔍 AppStateDetector initialized")
+//        logger.logInfo("🔍 AppStateDetector initialized")
 //    }
 //
 //    // MARK: - Public Methods
@@ -32,7 +32,7 @@ import os
 //    /// Detect the current state of the main app
 //    public func detectAppState() -> AppState {
 //        guard let sharedDefaults = sharedDefaults else {
-//            logger.error("🔍 ❌ Failed to access shared UserDefaults")
+//            logger.logError("🔍 ❌ Failed to access shared UserDefaults")
 //            return .suspended
 //        }
 //
@@ -41,7 +41,7 @@ import os
 //
 //        // If heartbeat is 0, app has never been active or explicitly marked as inactive
 //        guard lastHeartbeat > 0 else {
-//            logger.info("🔍 App heartbeat is 0 - app is suspended")
+//            logger.logInfo("🔍 App heartbeat is 0 - app is suspended")
 //            return .suspended
 //        }
 //
@@ -51,10 +51,10 @@ import os
 //
 //        // Check if heartbeat is recent enough
 //        if timeSinceLastHeartbeat < AppGroupConfig.heartbeatThreshold {
-//            logger.debug("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
+//            logger.logDebug("🔍 App is active (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
 //            return .active
 //        } else {
-//            logger.info("🔍 App is suspended (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
+//            logger.logInfo("🔍 App is suspended (heartbeat age: \(String(format: "%.1f", timeSinceLastHeartbeat))s)")
 //            return .suspended
 //        }
 //    }

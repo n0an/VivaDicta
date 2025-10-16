@@ -47,7 +47,7 @@
 //
 //    /// Start recording
 //    public func startRecording() {
-//        logger.info("🎤 Starting recording via Darwin notification")
+//        logger.logInfo("🎤 Starting recording via Darwin notification")
 //        appGroupCoordinator.requestStartRecording()
 //
 //        // Set up timeout in case recording doesn't start
@@ -59,7 +59,7 @@
 //
 //    /// Stop recording (with transcription)
 //    public func stopRecording() {
-//        logger.info("🎤 Stopping recording via Darwin notification")
+//        logger.logInfo("🎤 Stopping recording via Darwin notification")
 //        appGroupCoordinator.requestStopRecording()
 //
 //        // Cancel any pending timeout
@@ -71,7 +71,7 @@
 //
 //    /// Cancel recording (without transcription)
 //    public func cancelRecording() {
-//        logger.info("🎤 Canceling recording via Darwin notification")
+//        logger.logInfo("🎤 Canceling recording via Darwin notification")
 //        appGroupCoordinator.requestCancelRecording()
 //
 //        // Cancel any pending timeout
@@ -99,7 +99,7 @@
 //                try await Task.sleep(nanoseconds: UInt64(AppGroupConfig.recordingStartTimeout * 1_000_000_000))
 //
 //                // If we reach here, timeout occurred
-//                logger.info("⏰ Recording timeout - recording didn't start within \(AppGroupConfig.recordingStartTimeout) seconds")
+//                logger.logInfo("⏰ Recording timeout - recording didn't start within \(AppGroupConfig.recordingStartTimeout) seconds")
 //
 //                // Notify delegate
 //                delegate?.recordingCoordinatorDidTimeout()

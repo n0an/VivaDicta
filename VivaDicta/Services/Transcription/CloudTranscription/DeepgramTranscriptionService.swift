@@ -30,7 +30,7 @@ class DeepgramTranscriptionService {
         
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.error("Deepgram API request failed with status \(httpResponse.statusCode): \(errorMessage, privacy: .public)")
+            logger.logError("Deepgram API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
         
@@ -38,12 +38,12 @@ class DeepgramTranscriptionService {
             let transcriptionResponse = try JSONDecoder().decode(DeepgramResponse.self, from: data)
             guard let transcript = transcriptionResponse.results.channels.first?.alternatives.first?.transcript,
                   !transcript.isEmpty else {
-                logger.error("No transcript found in Deepgram response")
+                logger.logError("No transcript found in Deepgram response")
                 throw CloudTranscriptionError.noTranscriptionReturned
             }
             return transcript
         } catch {
-            logger.error("Failed to decode Deepgram API response: \(error.localizedDescription)")
+            logger.logError("Failed to decode Deepgram API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }
