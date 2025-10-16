@@ -186,21 +186,18 @@ xcodebuild -scheme VivaDicta \
 
 ### 2D. Start Log Capture Session
 
-First, get the simulator UUID and start log capture:
+Start log capture using the `/start-logs` command:
 
 ```bash
-# Get booted simulator UUID
-SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
-
 # Start log capture (see ios-log-capture.md for details)
-mcpli start-sim-log-cap \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.antonnovoselov.VivaDicta" \
-  --captureConsole true \
-  -- npx -y xcodebuildmcp@latest
+/start-logs
 ```
 
-Save the returned session ID for later.
+This will:
+- Automatically detect the booted simulator
+- Start capturing VivaDicta logs in the background
+- Save logs to `logs/sim-YYYYMMDD-HHMMSS.log`
+- The app continues running without restart
 
 ### 3D. Run Tests
 
@@ -216,13 +213,16 @@ xcodebuild -scheme VivaDicta \
 ### 4D. Stop Log Capture and Analyze
 
 ```bash
-# Stop capture and save logs
-mcpli stop-sim-log-cap \
-  --logSessionId "<session-id>" \
-  -- npx -y xcodebuildmcp@latest > logs/test_run_$(date +%Y%m%d_%H%M%S).txt
+# Stop capture and view summary
+/stop-logs
 
-# Analyze logs for errors
-grep -i "error\|fail\|crash" logs/test_run_*.txt
+# Or search for specific patterns
+/stop-logs errors          # Show only errors
+/stop-logs warnings        # Show only warnings
+
+# Analyze logs manually
+grep -i "error\|fail\|crash" logs/sim-*.log
+grep "test" logs/sim-*.log
 ```
 
 ## Common Workflows

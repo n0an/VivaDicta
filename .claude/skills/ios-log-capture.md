@@ -7,12 +7,14 @@ Use this skill when you need to capture console logs from iOS apps running in Si
 - See [`xcodebuild-testing.md`](./xcodebuild-testing.md) for running tests that may require log analysis
 - See [`axe-simulator-control.md`](./axe-simulator-control.md) for automating simulator interactions before capturing logs
 
-## Additional Resources
+## Related Commands
 
-- [XcodeBuildMCP Documentation](../../docs/Tools/XcodebuildMCPTools/XcodeBuildMCP_README.md) - Complete XcodeBuildMCP reference
-- [XcodeBuildMCP Tools Reference](../../docs/Tools/XcodebuildMCPTools/XcodeBuildMCP_TOOLS.md) - All 61 tools organized by workflow
-- [MCPLI Documentation](../../docs/Tools/MCPLI/MCPLI_README.md) - CLI tool for using MCP servers granularly
-- [MCPLI Architecture](../../docs/Tools/MCPLI/MCPLI_architecture.md) - Detailed architecture and implementation guide
+- `/start-logs` - Start simulator log capture (structured logging)
+- `/stop-logs` - Stop simulator log capture and view summary
+- `/start-logs-device` - Launch app on device with print logging enabled
+- `/stop-logs-device` - Stop device log capture (print-based)
+- `/start-logs-device-structured` - Record timestamp for structured device log collection
+- `/stop-logs-device-structured` - Collect structured device logs since timestamp (requires sudo)
 
 ## Skill Flow
 
@@ -20,450 +22,443 @@ Use this skill when you need to capture console logs from iOS apps running in Si
   - "capture logs from the simulator"
   - "start logging the app in simulator"
   - "get console output from the running app"
-  - "launch app and capture its logs"
   - "capture logs from physical iPhone"
+  - "debug this issue by looking at logs"
 - Notes:
-  - Uses `mcpli` to access XcodeBuildMCP tools granularly
-  - Requires Node.js 18+ and npm/npx
-  - Log capture is session-based: start returns a session ID, stop returns the captured logs
-  - Simulator must be booted before capturing logs
-  - For VivaDicta project, bundle ID is typically `com.antonnovoselov.VivaDicta` (verify in Xcode)
-  - Default simulator: iPhone 17 Pro, OS=26.0
-  - **VivaDicta uses structured logging (os_log/Logger)** - no need to use `--captureConsole true` or relaunch the app
+  - Uses native iOS logging tools (`log stream`, `log collect`, `devicectl`)
+  - **VivaDicta uses structured logging (os_log/Logger)** - all logs include emojis and metadata
+  - Simulator logs are captured in real-time to timestamped files in `logs/` directory
+  - Device logs support both print-based (`devicectl`) and structured (`log collect`) approaches
 
-### 1. Determine Capture Target
+## Overview of Logging Methods
 
-**iOS Simulator** if:
-- Testing in simulator environment
-- Need quick iteration during development
-- Want to capture logs from simulator app
+### Simulator Log Capture (Recommended for VivaDicta)
 
-→ Continue with **Path A: Simulator Log Capture** (steps 2A-5A)
+**Method:** Native `log stream` via `xcrun simctl spawn`
 
-**Physical Device** if:
+**Commands:** `/start-logs` and `/stop-logs`
+
+**Best for:**
+- Quick development iteration
+- Real-time log monitoring
+- Structured logging with categories and emojis
+- No app relaunch required
+
+**How it works:**
+1. `/start-logs` - Spawns a background log stream process
+2. App continues running - no restart needed
+3. Logs are filtered by subsystem (`com.antonnovoselov.VivaDicta`)
+4. Logs saved to `logs/sim-YYYYMMDD-HHMMSS.log`
+5. `/stop-logs` - Terminates process and shows summary
+
+**Captures:**
+- ✅ All `Logger.info()`, `.debug()`, `.error()`, `.warning()`, `.notice()` calls
+- ✅ Emojis and special characters
+- ✅ Category information (AppState, RecordViewModel, etc.)
+- ✅ Timestamps and thread information
+- ❌ Print statements (use device print-based method instead)
+
+### Device Log Capture - Print-Based
+
+**Method:** `devicectl device process launch --console`
+
+**Commands:** `/start-logs-device` and `/stop-logs-device`
+
+**Best for:**
+- Capturing print statements
 - Testing on real hardware
-- Need device-specific behavior
-- Testing production builds
+- When LoggerExtension with `ENABLE_PRINT_LOGS=1` is used
 
-→ Continue with **Path B: Device Log Capture** (steps 2B-5B)
+**How it works:**
+1. `/start-logs-device` - Launches app with `ENABLE_PRINT_LOGS=1` environment variable
+2. LoggerExtension conditionally executes print statements
+3. stdout/stderr captured to `logs/device-YYYYMMDD-HHMMSS.log`
+4. `/stop-logs-device` - Terminates and shows summary
 
-**Launch and Capture** if:
-- Want to launch app and start log capture in one command
-- Need to test app startup behavior
-- Convenient workflow: launch → interact → stop capture
-
-→ Continue with **Path C: Launch with Logs** (steps 2C-3C)
-
-## Path A: Simulator Log Capture
-
-### 2A. Get Simulator UUID
-
-```bash
-# List available simulators using AXe (simpler than mcpli)
-axe list-simulators
-
-# Example output:
-# iPhone 17 Pro (26.0) - D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75 [Booted]
-# iPhone 16 (25.0) - A12BC456-7DEF-89GH-IJKL-MNOPQRSTUVWX [Shutdown]
-
-# Store the UUID for the target simulator
-SIMULATOR_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
-
-# Or extract programmatically (get first booted simulator)
-SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
-```
-
-**Notes:**
-- `axe list-simulators` shows status [Booted] or [Shutdown]
-- Only booted simulators can capture logs
-- Use `xcrun simctl list` for additional simulator details if needed
-- UUID can also be obtained from Xcode's Devices and Simulators window
-
-### 3A. Get Bundle ID
-
-```bash
-# Bundle ID is defined in your Xcode project
-# Common locations to check:
-# - Xcode: Target → General → Bundle Identifier
-# - Info.plist: CFBundleIdentifier key
-
-# For VivaDicta project, verify the bundle ID
-# Example: com.antonnovoselov.VivaDicta
-BUNDLE_ID="com.antonnovoselov.VivaDicta"
-```
-
-### 4A. Start Log Capture
-
-```bash
-# Start capturing logs (recommended for VivaDicta - no app relaunch needed)
-mcpli start-sim-log-cap \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "$BUNDLE_ID" \
-  -- npx -y xcodebuildmcp@latest
-
-# Start capturing with console output (requires app relaunch - NOT needed for VivaDicta)
-mcpli start-sim-log-cap \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "$BUNDLE_ID" \
-  --captureConsole true \
-  -- npx -y xcodebuildmcp@latest
-
-# Save the returned session ID
-# Example response:
-# {
-#   "logSessionId": "abc123-def456-ghi789"
-# }
-```
-
-**Available parameters:**
-- `--simulatorUuid` (required): UUID from list-sims
-- `--bundleId` (required): App's bundle identifier
-- `--captureConsole` (optional): Include console output (requires app relaunch)
+**Captures:**
+- ✅ Print statements (when `ENABLE_PRINT_LOGS=1` is set)
+- ✅ stdout/stderr output
+- ✅ Emojis in print statements
+- ❌ Structured os_log metadata (timestamps less precise)
 
 **Important:**
-- Response includes a `logSessionId` - save this for stopping the capture
-- **For VivaDicta**: Omit `--captureConsole` flag - the app uses structured logging (os_log/Logger) and does NOT need to be relaunched
-- If using `--captureConsole true`, the app will be relaunched (only needed for print() statements)
-- Without `--captureConsole`, only structured logs are captured (sufficient for VivaDicta)
+- Requires iOS 17+ (uses `devicectl`)
+- Device must be connected and trusted
+- Script configured for device UDID `00008130-001250203C92001C` by default
 
-### 5A. Stop Log Capture
+### Device Log Capture - Structured (Advanced)
 
-```bash
-# Stop the log capture session and retrieve logs
-LOG_SESSION_ID="abc123-def456-ghi789"
+**Method:** `sudo log collect` with `.logarchive` output
 
-mcpli stop-sim-log-cap \
-  --logSessionId "$LOG_SESSION_ID" \
-  -- npx -y xcodebuildmcp@latest
+**Commands:** `/start-logs-device-structured` and `/stop-logs-device-structured`
 
-# Save logs to file
-mcpli stop-sim-log-cap \
-  --logSessionId "$LOG_SESSION_ID" \
-  -- npx -y xcodebuildmcp@latest > logs/simulator_logs.json
+**Best for:**
+- Production debugging
+- Complete log archive with full metadata
+- Advanced filtering and analysis
+- Sharing logs for bug reports
 
-# Parse with jq for analysis
-mcpli stop-sim-log-cap \
-  --logSessionId "$LOG_SESSION_ID" \
-  -- npx -y xcodebuildmcp@latest | jq '.logs'
-```
+**How it works:**
+1. `/start-logs-device-structured` - Records timestamp and device UDID
+2. User interacts with app (app should already be running)
+3. `/stop-logs-device-structured` - Creates collection script
+4. **User manually runs script** (requires sudo password)
+5. Script collects logs via `sudo log collect` and extracts VivaDicta logs
 
-**Notes:**
-- Logs are returned as JSON in the response
-- Use `jq` or other tools for parsing and filtering
-- Create a `logs/` directory in your project for storing captured logs
-- Consider timestamped filenames: `logs/sim_$(date +%Y%m%d_%H%M%S).json`
-
-## Path B: Device Log Capture
-
-### 2B. Get Device UDID
-
-```bash
-# List connected physical devices
-# Note: XcodeBuildMCP should have a list-devices command
-# If not available, use Xcode or system_profiler
-
-# Via Xcode: Window → Devices and Simulators → Devices tab
-# Via command line:
-xcrun xctrace list devices
-
-# Store the device UDID
-DEVICE_ID="00008101-000123456789ABCD"
-```
-
-**Notes:**
-- Device must be connected via USB or network
-- Device must be trusted and paired with the Mac
-- Ensure developer mode is enabled on the device (iOS 16+)
-
-### 3B. Get Bundle ID
-
-```bash
-# Same as simulator - get from Xcode project
-BUNDLE_ID="com.antonnovoselov.VivaDicta"
-```
-
-### 4B. Start Device Log Capture
-
-```bash
-# Start capturing logs from device
-mcpli start-device-log-cap \
-  --deviceId "$DEVICE_ID" \
-  --bundleId "$BUNDLE_ID" \
-  -- npx -y xcodebuildmcp@latest
-
-# Save the returned session ID
-# Example response:
-# {
-#   "logSessionId": "xyz789-abc123-def456"
-# }
-```
-
-**Available parameters:**
-- `--deviceId` (required): Device UDID from list-devices or xctrace
-- `--bundleId` (required): App's bundle identifier
+**Captures:**
+- ✅ Complete structured logs with all metadata
+- ✅ Can be opened in Console.app
+- ✅ Supports rich predicates for filtering
+- ✅ Full timestamps and categories
+- ✅ Can be re-analyzed later
 
 **Important:**
-- Launches the app with console output capture enabled
-- Response includes a `logSessionId` - save this for stopping the capture
-- App will be launched on the device when capture starts
+- Requires sudo password (interactive)
+- Works with iOS 12+
+- Creates `.logarchive` files for later analysis
+- More comprehensive but slower than other methods
 
-### 5B. Stop Device Log Capture
+## Quick Start Guide
+
+### Capture Logs from Simulator
 
 ```bash
-# Stop the device log capture session and retrieve logs
-LOG_SESSION_ID="xyz789-abc123-def456"
+# Start capturing
+/start-logs
 
-mcpli stop-device-log-cap \
-  --logSessionId "$LOG_SESSION_ID" \
-  -- npx -y xcodebuildmcp@latest
+# Interact with your app in the simulator
+# ... perform actions ...
 
-# Save logs to file
-mcpli stop-device-log-cap \
-  --logSessionId "$LOG_SESSION_ID" \
-  -- npx -y xcodebuildmcp@latest > logs/device_logs.json
+# Stop and view logs
+/stop-logs
 
-# Parse with jq
-mcpli stop-device-log-cap \
-  --logSessionId "$LOG_SESSION_ID" \
-  -- npx -y xcodebuildmcp@latest | jq '.logs'
+# Analyze specific patterns
+/stop-logs errors          # Show only errors
+/stop-logs warnings        # Show only warnings
+/stop-logs keyboard        # Search for "keyboard"
+/stop-logs all            # Show entire log file
 ```
 
-## Path C: Launch with Logs
-
-### 2C. Launch App and Start Log Capture
-
-This is a convenience command that combines app launch with log capture in one step:
+### Capture Logs from Physical Device (Print-Based)
 
 ```bash
-# Get simulator UUID first (using AXe)
-SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
-BUNDLE_ID="com.antonnovoselov.VivaDicta"
+# Launch app with logging enabled
+/start-logs-device
 
-# Launch app and start log capture (returns session ID)
-SESSION=$(mcpli launch-app-logs-sim \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "$BUNDLE_ID" \
-  -- npx -y xcodebuildmcp@latest 2>&1 | grep "session ID:" | sed -E 's/.*session ID: ([a-z0-9-]+).*/\1/')
+# Interact with your app on the device
+# ... perform actions ...
 
-echo "Log session started: $SESSION"
-
-# Launch with app arguments
-mcpli launch-app-logs-sim \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "$BUNDLE_ID" \
-  --args '["--test-mode", "--verbose"]' \
-  -- npx -y xcodebuildmcp@latest
+# Stop and view logs (press Ctrl+C first)
+/stop-logs-device
 ```
 
-**Available parameters:**
-- `--simulatorUuid` (required): UUID from axe list-simulators
-- `--bundleId` (required): App's bundle identifier
-- `--args` (optional): JSON array of arguments to pass to the app
-
-**Notes:**
-- Launches the app and starts a log capture session
-- Returns a session ID (like `start-sim-log-cap`)
-- Useful for testing app startup behavior
-- Logs are captured from app launch
-
-### 3C. Stop Launch Log Capture
-
-After interacting with the app, stop the capture and retrieve logs:
+### Capture Structured Logs from Physical Device
 
 ```bash
-# Stop capture and get logs
-mcpli stop-sim-log-cap \
-  --logSessionId "$SESSION" \
-  -- npx -y xcodebuildmcp@latest
+# Record start timestamp
+/start-logs-device-structured
 
-# Save logs to file
-mcpli stop-sim-log-cap \
-  --logSessionId "$SESSION" \
-  -- npx -y xcodebuildmcp@latest > logs/launch_logs.txt
+# Interact with your app on the device (already running)
+# ... perform actions ...
 
-# Parse and analyze
-mcpli stop-sim-log-cap \
-  --logSessionId "$SESSION" \
-  -- npx -y xcodebuildmcp@latest | grep "Error\|Warning"
+# Collect logs (creates script)
+/stop-logs-device-structured
+
+# Run the script manually (in your terminal):
+./llmtemp/collect_device_logs.sh
+
+# Analyze the collected logs
+cat logs/device_*.txt
+open logs/vivadicta_device_*.logarchive  # Opens in Console.app
 ```
 
 ## Common Workflows
 
-### Debug App Crash in Simulator
+### Debug Groq API Error in Simulator
 
 ```bash
-# 1. Get simulator UUID using AXe
-SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
+# Start log capture
+/start-logs
 
-# 2. Start log capture with console output
-SESSION=$(mcpli start-sim-log-cap \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.antonnovoselov.VivaDicta" \
-  --captureConsole true \
-  -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
+# In simulator: Create a very short recording (< 1 second)
+# ... tap record, tap stop immediately ...
 
-# 3. Reproduce the crash (use AXe or manual interaction)
-# ... perform actions that cause crash ...
+# Stop and view logs
+/stop-logs
 
-# 4. Stop capture and save logs
-mcpli stop-sim-log-cap \
-  --logSessionId "$SESSION" \
-  -- npx -y xcodebuildmcp@latest > logs/crash_$(date +%Y%m%d_%H%M%S).json
-
-# 5. Analyze logs
-jq '.logs[] | select(.level=="error")' logs/crash_*.json
+# Look for Groq API errors
+grep "GroqTranscriptionService" logs/sim-*.log
+grep "Audio file is too short" logs/sim-*.log
 ```
 
-### Capture Logs During Automated Testing
+### Monitor App State Transitions
 
 ```bash
-# 1. Start log capture (no app relaunch for VivaDicta)
-SIMULATOR_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
-SESSION=$(mcpli start-sim-log-cap \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.antonnovoselov.VivaDicta" \
-  -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
+# Start capture
+/start-logs
 
-# 2. Run automated tests with AXe or interact manually
-axe tap -x 195 -y 400 --udid "$SIMULATOR_UUID"
-axe gesture scroll-up --udid "$SIMULATOR_UUID"
-axe type 'test input' --udid "$SIMULATOR_UUID"
+# Switch app states: background → foreground → background
+# ... press home button, reopen app, etc. ...
 
-# 3. Stop capture
-mcpli stop-sim-log-cap \
-  --logSessionId "$SESSION" \
-  -- npx -y xcodebuildmcp@latest > logs/test_run.json
+# Stop and search for state logs
+/stop-logs
+
+# View state transitions
+grep "App became active" logs/sim-*.log
+grep "App resigned active" logs/sim-*.log
 ```
 
-### Compare Device vs Simulator Logs
+### Debug Recording Flow on Device
 
 ```bash
-# 1. Capture simulator logs
-SIM_SESSION=$(mcpli start-sim-log-cap \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.antonnovoselov.VivaDicta" \
-  --captureConsole true \
-  -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
+# Launch with print logging
+/start-logs-device
 
-# ... perform test actions ...
+# On device: start recording, speak, stop recording
+# ... perform recording workflow ...
 
-mcpli stop-sim-log-cap \
-  --logSessionId "$SIM_SESSION" \
-  -- npx -y xcodebuildmcp@latest > logs/simulator.json
+# Stop capture (Ctrl+C first)
+/stop-logs-device
 
-# 2. Capture device logs
-DEV_SESSION=$(mcpli start-device-log-cap \
-  --deviceId "$DEVICE_ID" \
-  --bundleId "com.antonnovoselov.VivaDicta" \
-  -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
-
-# ... perform same test actions on device ...
-
-mcpli stop-device-log-cap \
-  --logSessionId "$DEV_SESSION" \
-  -- npx -y xcodebuildmcp@latest > logs/device.json
-
-# 3. Compare logs
-diff <(jq '.logs' logs/simulator.json) <(jq '.logs' logs/device.json)
+# Analyze recording states
+grep "Recording state changed" logs/device-*.log
+grep "RecordViewModel" logs/device-*.log
 ```
 
-### Quick Launch and Log Check
+### Collect Complete Device Logs for Bug Report
 
 ```bash
-# Launch app, wait, then get logs
-SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
+# Record start time
+/start-logs-device-structured
 
-# Launch and capture session ID
-SESSION=$(mcpli launch-app-logs-sim \
-  --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.antonnovoselov.VivaDicta" \
-  -- npx -y xcodebuildmcp@latest 2>&1 | grep "session ID:" | sed -E 's/.*session ID: ([a-z0-9-]+).*/\1/')
+# Reproduce the bug on device
+# ... perform steps that trigger the issue ...
 
-# Wait for app to run (or interact with it)
-sleep 5
+# Collect logs
+/stop-logs-device-structured
 
-# Get logs and filter for errors/warnings
-mcpli stop-sim-log-cap \
-  --logSessionId "$SESSION" \
-  -- npx -y xcodebuildmcp@latest 2>&1 | grep -E "Error|Warning|error|warning"
+# Run the script (enter sudo password)
+./llmtemp/collect_device_logs.sh
+
+# Share the log archive
+# logs/vivadicta_device_*.logarchive can be opened in Console.app
+# logs/device_*.txt contains filtered text logs
+```
+
+### Compare Simulator vs Device Behavior
+
+```bash
+# Capture simulator logs
+/start-logs
+# ... perform test actions in simulator ...
+/stop-logs
+
+# Capture device logs
+/start-logs-device
+# ... perform same actions on device ...
+/stop-logs-device
+
+# Compare
+diff logs/sim-*.log logs/device-*.log
+```
+
+## Log Analysis
+
+### Common Search Patterns
+
+```bash
+# Find all errors
+grep -i "error\|fault" logs/sim-*.log
+
+# Find warnings
+grep -i "warning" logs/sim-*.log
+
+# Search by category
+grep "\[AppState\]" logs/sim-*.log
+grep "\[RecordViewModel\]" logs/sim-*.log
+grep "\[GroqTranscriptionService\]" logs/sim-*.log
+
+# Find specific emojis
+grep "📱" logs/sim-*.log  # Preload/state changes
+grep "🎙️" logs/sim-*.log  # Recording
+grep "📊" logs/sim-*.log  # Transcription status
+
+# Count log entries
+wc -l logs/sim-*.log
+
+# View recent logs
+tail -50 logs/sim-*.log
+
+# Follow logs in real-time (while capture is running)
+tail -f logs/sim-*.log
+```
+
+### Advanced Device Log Analysis
+
+For structured device logs (`.logarchive` files):
+
+```bash
+# Open in Console.app (GUI)
+open logs/vivadicta_device_*.logarchive
+
+# Filter by message type
+log show logs/vivadicta_device_*.logarchive \
+  --predicate 'subsystem == "com.antonnovoselov.VivaDicta" AND messageType == "Error"'
+
+# Filter by category
+log show logs/vivadicta_device_*.logarchive \
+  --predicate 'subsystem == "com.antonnovoselov.VivaDicta" AND category == "RecordViewModel"'
+
+# Export to JSON
+log show logs/vivadicta_device_*.logarchive \
+  --predicate 'subsystem == "com.antonnovoselov.VivaDicta"' \
+  --style json > logs/device_logs.json
+
+# Search for specific text in messages
+log show logs/vivadicta_device_*.logarchive \
+  --predicate 'subsystem == "com.antonnovoselov.VivaDicta" AND eventMessage CONTAINS "Groq"'
+```
+
+## Log File Management
+
+### File Naming Convention
+
+- **Simulator logs:** `logs/sim-YYYYMMDD-HHMMSS.log`
+- **Device print logs:** `logs/device-YYYYMMDD-HHMMSS.log`
+- **Device structured logs:** `logs/device_YYYYMMDD_HHMMSS.txt`
+- **Device log archives:** `logs/vivadicta_device_YYYYMMDD_HHMMSS.logarchive`
+
+### Clean Up Old Logs
+
+```bash
+# List log files by age
+ls -lht logs/
+
+# Remove logs older than 7 days
+find logs -name "*.log" -mtime +7 -delete
+find logs -name "*.txt" -mtime +7 -delete
+
+# Remove log archives (large files)
+find logs -name "*.logarchive" -mtime +3 -delete
+```
+
+### View Recent Logs
+
+```bash
+# List 5 most recent log files
+ls -lt logs/sim-*.log logs/device-*.log logs/device_*.txt 2>/dev/null | head -5
+
+# View latest simulator log
+cat "$(ls -t logs/sim-*.log 2>/dev/null | head -1)"
+
+# View latest device log
+cat "$(ls -t logs/device-*.log 2>/dev/null | head -1)"
 ```
 
 ## Troubleshooting
 
-**"Simulator not found" error:**
-- Ensure simulator is booted: `xcrun simctl list | grep Booted`
-- Verify UUID is correct: `mcpli list-sims -- npx -y xcodebuildmcp@latest`
-- Boot simulator: `xcrun simctl boot <UUID>` or use Xcode
+### Simulator Logs
 
-**"Bundle identifier not found" error:**
-- Verify bundle ID in Xcode: Target → General → Bundle Identifier
-- Ensure app is installed in simulator/device
-- Check for typos in bundle ID string
+**No simulator booted:**
+- Launch simulator first: Xcode → Window → Devices and Simulators → Simulators → Boot
+- Or via command: `xcrun simctl boot <UUID>`
 
-**"No logs captured" or empty logs:**
-- For simulator: Use `--captureConsole true` to capture more verbose output
-- Ensure app is actually running and producing logs
-- Check if logs are being filtered by the system
-- Verify app has logging statements (print, os_log, Logger)
+**No logs appearing:**
+- Ensure app is running and generating logs
+- Check that VivaDicta is using `Logger` (not just `print()`)
+- Verify subsystem in code: `Logger(subsystem: "com.antonnovoselov.VivaDicta", ...)`
+
+**Log capture script fails:**
+- Check script exists: `ls -la scripts/launch_simulator.sh`
+- Make executable: `chmod +x scripts/launch_simulator.sh`
+- Verify simulator UUID in script output
+
+### Device Logs (Print-Based)
+
+**Device not found:**
+- Check connection: `xcrun xctrace list devices`
+- Ensure device is trusted: System Settings → Privacy & Security → Developer Mode
+- Verify device is unlocked
+
+**No logs appearing:**
+- Check `ENABLE_PRINT_LOGS` environment variable is set in script
+- Verify LoggerExtension checks `ProcessInfo.processInfo.environment["ENABLE_PRINT_LOGS"]`
+- Ensure print statements are not commented out
+
+**App won't launch:**
+- Try rebuilding and installing via Xcode first
+- Check device UDID in script: `./scripts/launch_device.sh`
+- Verify bundle ID: `com.antonnovoselov.VivaDicta`
+
+### Device Logs (Structured)
 
 **"Device not found" error:**
-- Ensure device is connected and trusted
-- Check device is visible: `xcrun xctrace list devices`
-- Enable developer mode on iOS 16+ devices: Settings → Privacy & Security → Developer Mode
-- Verify device is paired: Xcode → Window → Devices and Simulators
+- Ensure device is connected: `xcrun xctrace list devices | grep iPhone`
+- Verify UDID is correct: check `llmtemp/.device-log-udid`
 
-**mcpli command not found:**
-- Install mcpli: `npm install -g mcpli`
-- Or use npx: `npx mcpli@latest <command> -- npx -y xcodebuildmcp@latest`
+**"Permission denied" with sudo:**
+- Ensure you're using an admin account
+- Try unlocking the device before running script
+- Run script interactively (not in background)
 
-**XcodeBuildMCP timeout or slow response:**
-- First run may be slow as npx downloads the package
-- Subsequent runs use cached package and are faster
-- Increase timeout if needed: `mcpli --timeout 60000 <command> ...`
+**No logs in output:**
+- Verify app was running during the time period
+- Check subsystem name: `com.antonnovoselov.VivaDicta`
+- Try opening `.logarchive` in Console.app to see all logs
+- Ensure start timestamp was recorded: `cat llmtemp/.device-log-start-time`
 
-**JSON parsing errors:**
-- Ensure output is valid JSON: `mcpli <command> ... | jq .`
-- Check for stderr mixed with stdout - use `2>/dev/null` if needed
-- Save raw output first, then parse: `... > output.json && jq . output.json`
+**Script not created:**
+- Check if `/stop-logs-device-structured` completed successfully
+- Manually create script directory: `mkdir -p llmtemp`
+- Review script template in command documentation
 
 ## Best Practices
 
-1. **Use session-based capture for long-running tests:**
-   - Start capture, run tests, stop capture
-   - Gives you full control over timing
+1. **Choose the right logging method:**
+   - **Simulator structured logging:** Best for most development workflows
+   - **Device print logging:** When testing print statements or device-specific behavior
+   - **Device structured logging:** For production debugging and comprehensive log collection
 
-2. **Use launch-app-logs-sim for quick checks:**
-   - Single command for immediate feedback
-   - Great for CI/CD pipelines
+2. **Use descriptive log messages:**
+   - Include emojis for visual scanning: 📱, 🎙️, 🎬, ✅, ❌, 📊
+   - Add category information: `[RecordViewModel]`, `[AppState]`
+   - Log state transitions clearly
 
 3. **Always save logs to files:**
-   - Use timestamped filenames for tracking
-   - Keep logs organized in a `logs/` directory
+   - Logs are automatically timestamped
+   - Keep logs directory organized: `logs/`
    - Add `logs/` to `.gitignore`
 
-4. **Parse logs with jq:**
-   - Filter by level: `jq '.logs[] | select(.level=="error")'`
-   - Extract messages: `jq '.logs[].message'`
-   - Count warnings: `jq '[.logs[] | select(.level=="warning")] | length'`
+4. **Clean up old logs regularly:**
+   - Remove logs older than 7 days
+   - Delete large `.logarchive` files after analysis
+   - Keep only relevant logs for bug tracking
 
-5. **Combine with other tools:**
+5. **Combine with other debugging tools:**
+   - Use `/screenshot` to capture visual state
    - Use AXe for UI automation during log capture
-   - Use xcrun simctl for screenshots at error points
-   - Use xcodebuild for running tests with log capture
+   - Use Xcode console for real-time debugging
 
-6. **Clean up logs directory:**
-   ```bash
-   # Remove old logs (older than 7 days)
-   find logs/ -name "*.json" -mtime +7 -delete
-   ```
+6. **Structured logging over print statements:**
+   - VivaDicta uses `Logger` - prefer structured logs
+   - Only use print logging when absolutely necessary
+   - Structured logs provide better metadata and filtering
 
-7. **Store bundle ID and UUIDs in environment variables:**
-   ```bash
-   export VIVADICTA_BUNDLE_ID="com.antonnovoselov.VivaDicta"
-   export DEFAULT_SIM_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
-   ```
+7. **For production issues:**
+   - Use device structured logging (`/start-logs-device-structured`)
+   - Collect complete `.logarchive` files
+   - Share with team or attach to bug reports
 
-8. **Prefer structured logging over console capture:**
-   - VivaDicta uses structured logging (os_log/Logger) - no need for `--captureConsole`
-   - Structured logs are faster, cleaner, and don't require app relaunch
-   - Only add `--captureConsole true` if you need print() output (requires app relaunch)
+8. **Analyze logs systematically:**
+   - Start with summary (error/warning counts)
+   - Search by category or emoji
+   - Follow specific workflows (recording → transcription → enhancement)
+   - Use Console.app for advanced filtering of `.logarchive` files
+
+## Additional Resources
+
+- [Log Streaming Documentation (Apple)](https://developer.apple.com/documentation/os/logging)
+- [Unified Logging and Activity Tracing (Apple)](https://developer.apple.com/wwdc/videos/)
+- Console.app - Built-in macOS app for viewing `.logarchive` files
+- `man log` - Manual page for log command
+- VivaDicta LoggerExtension.swift - Conditional print logic implementation
