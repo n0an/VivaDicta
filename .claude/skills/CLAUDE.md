@@ -19,6 +19,7 @@ Scan this file for relevant skills based on the given task.
 - [`commit-to-git.md`](./commit-to-git.md): Commit changes to git following project guidelines
 - [`ios-log-capture.md`](./ios-log-capture.md): Capture console logs from iOS apps in Simulator or physical devices using mcpli and XcodeBuildMCP
 - [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md): Capture screenshots from iOS Simulator using Peekaboo MCP
+- [`xcodebuild-testing.md`](./xcodebuild-testing.md): Run unit tests and UI tests using xcodebuild command-line tool
 
 ## Skill Directory
 
@@ -83,3 +84,17 @@ For capturing screenshots from the iOS Simulator using Peekaboo MCP.
   - "screenshot the iOS simulator"
   - "save simulator screen to file"
   - "capture and analyze simulator screenshot"
+
+### Xcodebuild Testing
+
+For running unit tests and UI tests using xcodebuild command-line tool.
+
+- Skill file: [`xcodebuild-testing.md`](./xcodebuild-testing.md)
+- Related queries:
+  - "run all tests"
+  - "run tests for the app"
+  - "run a specific test"
+  - "test this feature"
+  - "run failing tests"
+  - "execute unit tests"
+  - "run test class"
