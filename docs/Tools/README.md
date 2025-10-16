@@ -181,6 +181,94 @@ xcodebuild [options] | xcbeautify
 
 ---
 
+### mcpli + XcodeBuildMCP
+- **Purpose**: Granular access to XcodeBuildMCP tools without full MCP server integration
+- **MCPLI Docs**: [MCPLI/MCPLI_README.md](./MCPLI/MCPLI_README.md) - CLI wrapper documentation
+- **MCPLI Architecture**: [MCPLI/MCPLI_architecture.md](./MCPLI/MCPLI_architecture.md) - Implementation details
+- **XcodeBuildMCP Docs**: [XcodebuildMCPTools/XcodeBuildMCP_README.md](./XcodebuildMCPTools/XcodeBuildMCP_README.md)
+- **XcodeBuildMCP Tools**: [XcodebuildMCPTools/XcodeBuildMCP_TOOLS.md](./XcodebuildMCPTools/XcodeBuildMCP_TOOLS.md)
+- **Installation**: `npm install -g mcpli` (CLI wrapper)
+
+**Why mcpli + XcodeBuildMCP?**
+- **Problem**: XcodeBuildMCP provides 61 tools across 12 workflow groups - too many for full MCP integration
+- **Solution**: Use `mcpli` to access only the specific tools you need granularly via command line
+- **Pattern**: Treat XcodeBuildMCP as a CLI tool library rather than a connected MCP server
+
+**Available Tool Groups** (61 tools total):
+- **Logging** (4 tools) - Log capture for simulators and devices
+  - `start_sim_log_cap` - Start simulator log capture
+  - `stop_sim_log_cap` - Stop simulator log capture and retrieve logs
+  - `start_device_log_cap` - Start device log capture
+  - `stop_device_log_cap` - Stop device log capture and retrieve logs
+- **Simulator** (12 tools) - Build, install, launch, test iOS apps
+- **Device** (7 tools) - Build, install, launch, test on physical devices
+- **UI Testing** (11 tools) - UI automation and accessibility testing
+- **Project Discovery** (5 tools) - Find and examine Xcode projects
+- **Simulator Management** (5 tools) - Boot, erase, configure simulators
+- **macOS** (6 tools) - macOS app development
+- **Swift Package** (6 tools) - SPM operations
+- **Project Scaffolding** (2 tools) - Create new projects
+- **Utilities** (1 tool) - Clean operations
+- **Doctor** (1 tool) - Environment diagnostics
+- **Discovery** (1 tool) - Dynamic tool discovery
+
+**Primary Use Cases:**
+- Session-based log capture from iOS simulators
+- Session-based log capture from physical devices
+- Launch apps with immediate log capture
+- Granular tool access without MCP server overhead
+
+**Integration:**
+- Called via Bash tool using `mcpli` CLI wrapper
+- Requires Node.js 18+ and npm/npx
+- Uses `npx -y xcodebuildmcp@latest` to run tools on-demand
+
+**Related Skills:**
+- [ios-log-capture.md](../../.claude/skills/ios-log-capture.md)
+
+**Common Patterns:**
+```bash
+# Get tool help
+mcpli --help -- npx -y xcodebuildmcp@latest
+
+# Start simulator log capture
+mcpli start-sim-log-cap \
+  --simulatorUuid "D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75" \
+  --bundleId "com.example.VivaDicta" \
+  --captureConsole true \
+  -- npx -y xcodebuildmcp@latest
+
+# Stop log capture and save to file
+mcpli stop-sim-log-cap \
+  --logSessionId "session-id-here" \
+  -- npx -y xcodebuildmcp@latest > logs/simulator_logs.txt
+
+# Launch app and capture logs in one command
+mcpli launch-app-logs-sim \
+  --simulatorUuid "D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75" \
+  --bundleId "com.example.VivaDicta" \
+  -- npx -y xcodebuildmcp@latest
+```
+
+**Notes:**
+- XcodeBuildMCP is accessed **via mcpli CLI**, not as a connected MCP server
+- Only use the specific tools you need (logging, testing, building, etc.)
+- First run may be slow as npx downloads the package
+- Session-based workflow: start returns session ID, stop returns captured logs
+- Logs saved to `logs/` directory (gitignored)
+
+**Key Differences from Full MCP Integration:**
+
+| Aspect | Full MCP Server | mcpli CLI Pattern |
+|--------|----------------|-------------------|
+| Installation | Configure in MCP client | `npm install -g mcpli` |
+| Context Usage | All 61 tools loaded | Only tools you invoke |
+| Access Method | AI calls tools directly | Bash + mcpli commands |
+| Flexibility | Limited to MCP client | Any shell/script usage |
+| Use Case | All workflows | Specific tools on-demand |
+
+---
+
 ## Tool Integration Patterns
 
 ### Screenshot Workflow
