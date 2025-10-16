@@ -34,7 +34,7 @@ This directory contains documentation for command-line tools used in this projec
 
 **Integration:**
 - Called via Bash tool from Claude Code
-- Used in combination with Peekaboo for capture-after-interaction workflows
+- Used in combination with xcrun simctl for capture-after-interaction workflows
 - Requires simulator UDID (obtained via `axe list-simulators`)
 
 **Related Skills:**
@@ -90,11 +90,11 @@ axe button home --udid $UDID
 
 **Integration:**
 - Native Xcode tool, always available
-- Used for clean screenshots (alternative to Peekaboo)
+- Primary method for iOS Simulator screenshots
 - Simulator management in CI/CD pipelines
 
 **Related Skills:**
-- [ios-simulator-screenshot.md](../../.claude/skills/ios-simulator-screenshot.md) (Alternative section)
+- [ios-simulator-screenshot.md](../../.claude/skills/ios-simulator-screenshot.md)
 
 **Common Patterns:**
 ```bash
@@ -120,6 +120,11 @@ xcrun simctl launch booted com.example.app
 | Video Recording | ✅ Yes | ❌ No |
 | Simulator Management | ⚠️ Limited | ✅ Full control |
 | Installation | Homebrew | Built-in with Xcode |
+
+**Notes:**
+- `xcrun simctl` is the **primary method** for iOS Simulator screenshots in this project
+- Captures clean framebuffer without simulator bezel (ideal for documentation)
+- Fast, lightweight, and has no external dependencies
 
 ---
 
@@ -277,15 +282,11 @@ mcpli launch-app-logs-sim \
 axe tap -x 195 -y 400 --udid $UDID
 axe gesture scroll-up --udid $UDID
 
-# 2. Capture with Peekaboo (via MCP)
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/result.png",
-    app_target="Simulator",
-    capture_focus="background"
-)
+# 2. Wait for animation to complete
+sleep 0.5
 
-# 3. Or use xcrun simctl for clean screenshot
-xcrun simctl io booted screenshot llmtemp/screenshots/clean.png
+# 3. Capture with xcrun simctl (primary method)
+xcrun simctl io booted screenshot llmtemp/screenshots/screenshot.png
 ```
 
 ### Testing Workflow
@@ -299,8 +300,8 @@ xcodebuild -scheme VivaDicta test | xcbeautify
 # 3. Automate UI interactions with AXe if needed
 axe tap -x 195 -y 400 --udid $UDID
 
-# 4. Capture results with Peekaboo
-mcp__peekaboo__image(path="...", capture_focus="background")
+# 4. Capture results with xcrun simctl
+xcrun simctl io booted screenshot llmtemp/screenshots/test_result.png
 ```
 
 ## Configuration

@@ -18,7 +18,7 @@ Scan this file for relevant skills based on the given task.
 - [`axe-simulator-control.md`](./axe-simulator-control.md): Automate iOS Simulator with AXe terminal tool for taps, gestures, text input, and video recording
 - [`commit-to-git.md`](./commit-to-git.md): Commit changes to git following project guidelines
 - [`ios-log-capture.md`](./ios-log-capture.md): Capture console logs from iOS apps in Simulator or physical devices using mcpli and XcodeBuildMCP
-- [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md): Capture screenshots from iOS Simulator using Peekaboo MCP
+- [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md): Capture screenshots from iOS Simulator using native xcrun simctl command
 - [`xcodebuild-testing.md`](./xcodebuild-testing.md): Run unit tests and UI tests using xcodebuild command-line tool
 
 ## Skill Directory
@@ -75,7 +75,7 @@ For capturing console logs from iOS apps running in Simulator or on physical dev
 
 ### iOS Simulator Screenshot
 
-For capturing screenshots from the iOS Simulator using Peekaboo MCP.
+For capturing screenshots from the iOS Simulator using native xcrun simctl command.
 
 - Skill file: [`ios-simulator-screenshot.md`](./ios-simulator-screenshot.md)
 - Related queries:

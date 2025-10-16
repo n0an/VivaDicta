@@ -4,44 +4,6 @@ This directory contains documentation for Model Context Protocol (MCP) servers u
 
 ## Active MCP Servers
 
-### Peekaboo MCP
-- **Purpose**: macOS screenshot capture, image analysis, and system inspection
-- **Docs**: [Peekaboo_README.md](./Peekaboo_README.md)
-- **Repository**: https://github.com/steipete/Peekaboo
-- **Configuration**: `~/.config/claude-code/config.json`
-
-**Available Tools:**
-- `mcp__peekaboo__image` - Capture screenshots with optional AI analysis
-  - Supports background capture mode (non-intrusive)
-  - Can target specific apps or windows
-  - Multiple output formats (PNG, JPEG, Base64)
-- `mcp__peekaboo__analyze` - Analyze existing image files
-  - AI-powered image understanding
-  - Text extraction and OCR
-- `mcp__peekaboo__list` - List system items
-  - Running applications
-  - Application windows
-  - Server status
-
-**Primary Use Cases:**
-- iOS Simulator screenshot capture for documentation
-- Automated visual verification in testing workflows
-- UI element detection and analysis
-- Non-intrusive development monitoring
-
-**Related Skills:**
-- [ios-simulator-screenshot.md](../../.claude/skills/ios-simulator-screenshot.md)
-
-**Related Commands:**
-- `/screenshot` - Capture and optionally analyze simulator screenshots
-
-**AI Provider Configuration:**
-- Supports multiple AI providers for image analysis
-- Configured via `PEEKABOO_AI_PROVIDERS` environment variable
-- Available providers: Anthropic Claude, OpenAI, Ollama
-
----
-
 ### Linear Server MCP
 - **Purpose**: Linear issue and project management
 - **Repository**: https://github.com/linear/linear-mcp
@@ -152,3 +114,21 @@ When adding a new MCP server:
 - [Model Context Protocol Documentation](https://modelcontextprotocol.io/)
 - [Anthropic MCP Documentation](https://docs.anthropic.com/en/docs/mcp)
 - [MCP Servers Registry](https://github.com/modelcontextprotocol/servers)
+
+---
+
+## Inactive/Removed MCP Servers
+
+### Peekaboo MCP (Removed)
+- **Status**: ❌ No longer active
+- **Reason**: Replaced by native `xcrun simctl` for iOS Simulator screenshots
+- **Benefits of removal**: Reduced context token usage, eliminated external dependencies
+- **Replacement**: Use `xcrun simctl io booted screenshot` (see [Tools/README.md](../Tools/README.md))
+- **Docs**: [Peekaboo_README.md](./Peekaboo_README.md) (archived for reference)
+
+**Migration Notes:**
+- Old Peekaboo approach used MCP tool for screenshot capture
+- New approach uses native Xcode command-line tool
+- For screenshot analysis, capture with `xcrun simctl` then use Read tool
+- Related skill updated: [ios-simulator-screenshot.md](../../.claude/skills/ios-simulator-screenshot.md)
+- Related command updated: `/screenshot` now uses `xcrun simctl`

@@ -5,7 +5,7 @@ ARGUMENTS: {{ARGS}}
 
 ## Task
 
-Capture a screenshot of the iOS Simulator using Peekaboo MCP and optionally analyze it based on user instructions.
+Capture a screenshot of the iOS Simulator using `xcrun simctl` and optionally analyze it based on user instructions.
 
 ## Instructions
 
@@ -14,15 +14,19 @@ Capture a screenshot of the iOS Simulator using Peekaboo MCP and optionally anal
    mkdir -p llmtemp/screenshots
    ```
 
-2. **Capture the screenshot** using Peekaboo MCP with these settings:
+2. **Capture the screenshot** using `xcrun simctl` with these settings:
    - Path: `llmtemp/screenshots/screenshot_<timestamp>.png` (use current timestamp for uniqueness)
-   - Format: `png`
-   - App target: `"Simulator"`
-   - Capture focus: `"background"` (to prevent window focus changes)
+   - Target: `booted` (captures the currently running simulator)
+   - Format: PNG (default)
+
+   ```bash
+   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+   xcrun simctl io booted screenshot llmtemp/screenshots/screenshot_${TIMESTAMP}.png
+   ```
 
 3. **Handle the optional argument**:
    - **If ARGS is empty or not provided**: Simply capture and save the screenshot, then report the saved path
-   - **If ARGS is provided**: After capturing and saving the screenshot, read the screenshot file and follow the instructions in ARGS
+   - **If ARGS is provided**: After capturing and saving the screenshot, read the screenshot file using the Read tool and follow the instructions in ARGS
 
    Common argument patterns:
    - "take a look" / "analyze" / "what's on screen" → Read and describe what's visible
@@ -56,8 +60,13 @@ Capture a screenshot of the iOS Simulator using Peekaboo MCP and optionally anal
 - Uses the `ios-simulator-screenshot.md` skill for reference
 - Screenshots are saved to `llmtemp/screenshots` (gitignored directory)
 - Filenames include timestamps to prevent overwrites
-- Always uses `capture_focus="background"` for non-intrusive capture
+- Uses native `xcrun simctl` command (no external dependencies)
+- Captures clean screenshots without simulator bezel
+- Fast and lightweight
 
-## Additional Resources
+## Additional Context
 
-- [Peekaboo MCP Documentation](../docs/MCPs/Peekaboo_README.md) - Complete Peekaboo reference for advanced usage and troubleshooting
+- **Simulator Target**: Uses `booted` to capture the currently running simulator
+- **Format**: PNG (lossless, clean output)
+- **Speed**: Native framebuffer capture (very fast)
+- **No Dependencies**: Only requires Xcode (no MCP servers needed)

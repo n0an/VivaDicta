@@ -7,10 +7,6 @@ Use this skill when you need to capture screenshots from the iOS Simulator for d
 - See [`axe-simulator-control.md`](./axe-simulator-control.md) for automating simulator interactions before capturing
 - See [`xcodebuild-testing.md`](./xcodebuild-testing.md) for running tests that may require visual verification
 
-## Additional Resources
-
-- [Peekaboo MCP Documentation](../../docs/MCPs/Peekaboo_README.md) - Complete Peekaboo reference including advanced features and troubleshooting
-
 ## Skill Flow
 
 - Example queries:
@@ -19,132 +15,94 @@ Use this skill when you need to capture screenshots from the iOS Simulator for d
   - "screenshot the iOS simulator"
   - "save simulator screen to file"
 - Notes:
-  - Uses Peekaboo MCP server for screenshot capture
-  - Captures without changing window focus (non-intrusive)
-  - Supports PNG format output
-  - Can capture specific app windows or frontmost application
-  - Optional AI analysis of captured images
+  - Uses native `xcrun simctl` command for clean screenshots
+  - No external dependencies (only Xcode required)
+  - Captures framebuffer directly (clean, no simulator bezel)
+  - Fast and lightweight
   - **Default screenshot directory**: `llmtemp/screenshots` in project root
   - Screenshots directory is gitignored and safe for temporary files
 
-### 1. Determine Capture Target
+## Basic Usage
 
-**Frontmost Window** if:
-- Need to capture whatever is currently visible
-- Simulator is the active application
-- Quick capture without specifying target
+### Capture Screenshot from Booted Simulator
 
-→ Continue with **Path A: Frontmost Capture** (step 2A)
+```bash
+# Create screenshots directory if needed
+mkdir -p llmtemp/screenshots
 
-**Specific Application** if:
-- Need to target simulator specifically by name
-- Multiple applications open
-- Want explicit control over target
-
-→ Continue with **Path B: App-Targeted Capture** (step 2B)
-
-**With AI Analysis** if:
-- Need to understand what's in the screenshot
-- Want to extract text or UI elements
-- Need automated visual verification
-
-→ Continue with **Path C: Capture with Analysis** (step 2C)
-
-## Path A: Frontmost Capture
-
-### 2A. Capture Frontmost Window
-
-Use the Peekaboo MCP `image` tool to capture the frontmost application:
-
-```python
-# Using MCP tool directly
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/simulator_screenshot.png",
-    format="png",
-    app_target="frontmost",
-    capture_focus="background"
-)
+# Capture from booted simulator
+xcrun simctl io booted screenshot llmtemp/screenshots/screenshot.png
 ```
 
 **Parameters:**
-- `path`: Output file path (absolute path recommended)
-- `format`: Output format (`png`, `jpg`, or `data` for Base64)
-- `app_target`: Set to `"frontmost"` for active window
-- `capture_focus`: Set to `"background"` to prevent window focus changes (recommended)
+- `booted` - Target the currently booted simulator (most common)
+- Output path - Where to save the screenshot (PNG format)
 
 **Result:**
-- Screenshot saved to specified path
-- No focus change to simulator (when using `capture_focus="background"`)
-- Returns confirmation message
+- Clean screenshot without simulator frame/bezel
+- PNG format (lossless quality)
+- Fast capture directly from simulator framebuffer
 
-## Path B: App-Targeted Capture
+## Advanced Usage
 
-### 2B. Capture Specific Application
+### Capture from Specific Simulator
 
-Target the iOS Simulator specifically by application name:
+If you have multiple simulators running, target a specific one by UDID:
 
-```python
-# Using MCP tool with app name
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/simulator_screenshot.png",
-    format="png",
-    app_target="Simulator",
-    capture_focus="background"
-)
+```bash
+# Get simulator UDID
+SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
+
+# Or use specific UDID directly
+SIMULATOR_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
+
+# Capture from specific simulator
+xcrun simctl io "$SIMULATOR_UUID" screenshot llmtemp/screenshots/screenshot.png
 ```
 
-**Common iOS Simulator targets:**
-- `"Simulator"` - The iOS Simulator app (most common)
-- `"frontmost"` - Whatever app is currently active
-- `""` (empty string) - All screens
+### Specify Image Format
 
-**Tips:**
-- Use `"Simulator"` to specifically target iOS Simulator
-- App names are case-sensitive
-- Peekaboo will capture all windows of the specified app
+```bash
+# PNG format (default, lossless)
+xcrun simctl io booted screenshot --type=png llmtemp/screenshots/screenshot.png
 
-## Path C: Capture with Analysis
-
-### 2C. Capture and Analyze Screenshot
-
-Capture a screenshot and ask AI to analyze its contents:
-
-```python
-# Capture with AI analysis
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/simulator_screenshot.png",
-    format="png",
-    app_target="frontmost",
-    capture_focus="background",
-    question="What UI elements are visible on the screen?"
-)
+# TIFF format (high quality)
+xcrun simctl io booted screenshot --type=tiff llmtemp/screenshots/screenshot.tiff
 ```
 
-**Analysis use cases:**
-- Extract visible text from screenshot
-- Verify UI layout and elements
-- Identify button states or labels
-- Check for error messages
-- Validate screen content
+### Capture Specific Display
 
-**Example questions:**
-- "What text is displayed on the screen?"
-- "Are there any error messages visible?"
-- "What buttons are shown in the navigation bar?"
-- "Describe the layout of this screen"
+For simulators with multiple displays (e.g., paired Apple Watch):
+
+```bash
+# Capture main display (default)
+xcrun simctl io booted screenshot --display=1 llmtemp/screenshots/main_display.png
+
+# Capture secondary display
+xcrun simctl io booted screenshot --display=2 llmtemp/screenshots/watch_display.png
+```
+
+### Mask Private Information
+
+When capturing screenshots that might contain sensitive data:
+
+```bash
+# Mask sensitive data (requires iOS 15+)
+xcrun simctl io booted screenshot --mask=black llmtemp/screenshots/masked_screenshot.png
+
+# Available mask options: black, ignored
+```
 
 ## Common Workflows
 
 ### Quick Screenshot for Documentation
 
-```python
-# 1. Capture current simulator state
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/app_screenshot.png",
-    format="png",
-    app_target="frontmost",
-    capture_focus="background"
-)
+```bash
+# 1. Ensure screenshots directory exists
+mkdir -p llmtemp/screenshots
+
+# 2. Capture current simulator state
+xcrun simctl io booted screenshot llmtemp/screenshots/app_screenshot.png
 ```
 
 ### Screenshot After Automation
@@ -154,126 +112,134 @@ mcp__peekaboo__image(
 axe tap -x 195 -y 400 --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75
 axe gesture scroll-up --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75
 
-# 2. Capture the result with Peekaboo MCP
-```
+# 2. Wait for animation to complete
+sleep 0.5
 
-```python
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/after_interaction.png",
-    format="png",
-    app_target="Simulator",
-    capture_focus="background"
-)
-```
-
-### Visual Test Verification
-
-```python
-# 1. Capture screenshot with analysis
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/login_screen.png",
-    format="png",
-    app_target="Simulator",
-    capture_focus="background",
-    question="Is there a 'Login' button visible on the screen?"
-)
-
-# 2. AI will analyze and respond with findings
-# 3. Use response to verify test expectations
+# 3. Capture the result
+xcrun simctl io booted screenshot llmtemp/screenshots/after_interaction.png
 ```
 
 ### Multiple Screenshots Sequence
 
-```python
-# Capture initial state
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/screen_01_initial.png",
-    format="png",
-    app_target="Simulator",
-    capture_focus="background"
-)
+```bash
+# Ensure directory exists
+mkdir -p llmtemp/screenshots
 
-# Perform action with AXe (in bash)
-# axe tap -x 195 -y 400 --udid <UDID>
+# Capture initial state
+xcrun simctl io booted screenshot llmtemp/screenshots/screen_01_initial.png
+
+# Perform action with AXe
+axe tap -x 195 -y 400 --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75
+sleep 0.3
 
 # Capture after interaction
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/screen_02_after_tap.png",
-    format="png",
-    app_target="Simulator",
-    capture_focus="background"
-)
+xcrun simctl io booted screenshot llmtemp/screenshots/screen_02_after_tap.png
+
+# Continue sequence
+axe type 'test input' --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75
+sleep 0.3
+
+xcrun simctl io booted screenshot llmtemp/screenshots/screen_03_after_input.png
 ```
 
-## Output Formats
+### Screenshot with Timestamp
 
-### PNG (Default)
-```python
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/screenshot.png",
-    format="png",
-    app_target="frontmost",
-    capture_focus="background"
-)
-```
-- Best for documentation
-- Lossless quality
-- Larger file size
+```bash
+# Create timestamped filename
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+xcrun simctl io booted screenshot llmtemp/screenshots/screenshot_${TIMESTAMP}.png
 
-### JPEG
-```python
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/screenshot.jpg",
-    format="jpg",
-    app_target="frontmost",
-    capture_focus="background"
-)
+# Or use date command inline
+xcrun simctl io booted screenshot "llmtemp/screenshots/screenshot_$(date +%Y%m%d_%H%M%S).png"
 ```
-- Smaller file size
-- Lossy compression
-- Good for web usage
 
-### Base64 Data
-```python
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/screenshot.png",
-    format="data",
-    app_target="frontmost",
-    capture_focus="background"
-)
+### Screenshot Different Device Sizes
+
+```bash
+# Get all booted simulators
+xcrun simctl list devices | grep Booted
+
+# Capture from specific device
+xcrun simctl io "iPhone-15-Pro-UDID" screenshot llmtemp/screenshots/iphone15_pro.png
+xcrun simctl io "iPad-Pro-UDID" screenshot llmtemp/screenshots/ipad_pro.png
 ```
-- Returns Base64 encoded image data
-- Useful for embedding in JSON/API responses
-- Can still save to file if path is provided
+
+### App Store Screenshots
+
+```bash
+# Create directory for App Store screenshots
+mkdir -p llmtemp/screenshots/appstore
+
+# Capture clean screenshots for different devices
+# iPhone 6.7" display (iPhone 15 Pro Max, etc.)
+xcrun simctl io booted screenshot llmtemp/screenshots/appstore/iphone_6_7_inch_01.png
+
+# iPhone 6.5" display (iPhone 11 Pro Max, etc.)
+xcrun simctl io booted screenshot llmtemp/screenshots/appstore/iphone_6_5_inch_01.png
+
+# iPad Pro 12.9" display
+xcrun simctl io booted screenshot llmtemp/screenshots/appstore/ipad_12_9_inch_01.png
+```
+
+## Screenshot Analysis with Claude
+
+After capturing a screenshot, you can read and analyze it using Claude Code:
+
+```bash
+# 1. Capture screenshot
+xcrun simctl io booted screenshot llmtemp/screenshots/current_screen.png
+
+# 2. Read and analyze (Claude Code will process the image)
+# Use the Read tool to view the screenshot
+# Claude can then describe what's visible, extract text, check for UI elements, etc.
+```
+
+Example analysis tasks:
+- "Is there a login button visible?"
+- "What text is displayed on the screen?"
+- "Are there any error messages?"
+- "Describe the layout of this screen"
+- "Extract all visible text"
 
 ## Troubleshooting
 
+**"No such device: booted" error:**
+- Ensure a simulator is running: `xcrun simctl list devices | grep Booted`
+- Boot a simulator: `xcrun simctl boot <UDID>` or launch Simulator.app
+- Check simulator status: `axe list-simulators`
+
 **Screenshot is blank or black:**
-- Ensure iOS Simulator is actually running and visible
-- Check that simulator window is not minimized
-- Verify simulator has content displayed (not loading screen)
+- Ensure simulator window is visible and not minimized
+- Wait for content to load before capturing
+- Check simulator is not showing splash screen
+- Verify app is fully launched
 
-**Wrong window captured:**
-- Use `app_target="Simulator"` instead of `"frontmost"`
-- Make sure simulator is the active window
-- Check for multiple simulator instances
+**"Invalid display" error:**
+- Most simulators only have display 1 (main)
+- Only use `--display=2` for devices with secondary displays (e.g., Apple Watch)
+- Omit `--display` parameter to use default (main display)
 
-**File not found error:**
-- Ensure `llmtemp/screenshots` directory exists in project root
-- Use relative paths from project root: `llmtemp/screenshots/screenshot.png`
-- Create directory if needed: `mkdir -p llmtemp/screenshots`
-- Check file permissions
+**File not saved or path error:**
+- Ensure `llmtemp/screenshots` directory exists: `mkdir -p llmtemp/screenshots`
+- Use relative paths from project root
+- Check file permissions in target directory
+- Verify path doesn't contain special characters that need escaping
 
-**Capture focus changes:**
-- Always use `capture_focus="background"` to prevent window focus changes
-- Without this parameter, the simulator window may be brought to front
-- This is especially important when capturing during automation sequences
+**Wrong simulator captured:**
+- Use specific UDID instead of `booted`: `xcrun simctl io <UDID> screenshot ...`
+- List booted simulators: `xcrun simctl list devices | grep Booted`
+- Use AXe to verify UDID: `axe list-simulators`
+
+**Screenshot contains simulator bezel:**
+- This should NOT happen with `xcrun simctl` - it captures framebuffer only
+- If you see a bezel, you may be using a different capture method
+- Verify you're using `xcrun simctl io` command
 
 ## Best Practices
 
 1. **Use descriptive file names** with timestamps or sequence numbers:
-   ```python
-   path=f"llmtemp/screenshots/simulator_{test_name}_{timestamp}.png"
+   ```bash
+   xcrun simctl io booted screenshot "llmtemp/screenshots/login_screen_$(date +%Y%m%d_%H%M%S).png"
    ```
 
 2. **Ensure directory exists** before capturing:
@@ -283,90 +249,59 @@ mcp__peekaboo__image(
 
 3. **Clean up old screenshots** after use:
    ```bash
-   rm llmtemp/screenshots/simulator_*.png
+   rm llmtemp/screenshots/screenshot_*.png
+   # Or delete old files (older than 7 days)
+   find llmtemp/screenshots -name "*.png" -mtime +7 -delete
    ```
 
 4. **Combine with AXe automation** for reproducible screenshot sequences
 
-5. **Use AI analysis** for automated visual verification instead of manual checking
-
-6. **Store screenshots** in organized subdirectories:
-   ```python
-   path="llmtemp/screenshots/login/step_1.png"
+5. **Wait for animations** before capturing:
+   ```bash
+   axe tap -x 195 -y 400 --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75
+   sleep 0.5  # Wait for animation
+   xcrun simctl io booted screenshot llmtemp/screenshots/after_tap.png
    ```
 
-7. **Specify simulator explicitly** when multiple apps are open:
-   ```python
-   app_target="Simulator"  # More reliable than "frontmost"
+6. **Store screenshots** in organized subdirectories:
+   ```bash
+   mkdir -p llmtemp/screenshots/login
+   xcrun simctl io booted screenshot llmtemp/screenshots/login/step_1.png
+   ```
+
+7. **Use consistent simulator** for comparable screenshots:
+   ```bash
+   # Always use same simulator for feature screenshots
+   SIMULATOR_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
+   xcrun simctl io "$SIMULATOR_UUID" screenshot llmtemp/screenshots/consistent.png
    ```
 
 8. **Screenshots are gitignored** - the `llmtemp` directory is safe for temporary files
 
-## Alternative: Using `xcrun simctl` for Clean Screenshots
+9. **Capture at consistent times**:
+   ```bash
+   # Wait for network requests to complete
+   sleep 2
+   xcrun simctl io booted screenshot llmtemp/screenshots/loaded_state.png
+   ```
 
-For scenarios where you need clean screenshots without the simulator chrome/bezel, use the native `xcrun simctl` command:
+10. **Document screenshot purpose** in filenames or log files:
+    ```bash
+    # Use descriptive names
+    xcrun simctl io booted screenshot llmtemp/screenshots/bug_123_reproduction.png
+    xcrun simctl io booted screenshot llmtemp/screenshots/feature_xyz_final_state.png
+    ```
 
-### When to Use `xcrun simctl`
+## Comparison with Other Methods
 
-**Use `xcrun simctl` when:**
-- Need clean screenshots without simulator frame/bezel
-- Creating App Store screenshots or professional documentation
-- Generating screenshots for multiple device sizes/orientations
-- Performance matters (bulk screenshot generation)
-- Want native simulator framebuffer capture
+| Feature | `xcrun simctl` | Window Capture Tools |
+|---------|----------------|----------------------|
+| Capture type | Framebuffer (clean) | Window (with bezel) |
+| Speed | ⚡ Fast | Slower |
+| Dependencies | Xcode only | Additional tools |
+| Output quality | Clean, no bezel | Includes simulator frame |
+| Multiple simulators | ✅ Yes (by UDID) | ✅ Yes (by app name) |
+| Built-in analysis | ❌ No | ✅ Some tools |
+| Best for | Documentation, testing | Developer screenshots |
 
-**Use Peekaboo (this skill) when:**
-- Want non-intrusive capture during development
-- Need AI analysis of screenshots
-- Capturing from multiple apps in automation workflows
-- Want integrated MCP tool ecosystem
-- Need background capture mode
-
-### Using `xcrun simctl` Command
-
-```bash
-# Basic screenshot capture
-xcrun simctl io booted screenshot llmtemp/screenshots/clean_screenshot.png
-
-# Capture specific simulator by UDID
-xcrun simctl io booted screenshot --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75 llmtemp/screenshots/screenshot.png
-
-# Specify image format
-xcrun simctl io booted screenshot --type=png llmtemp/screenshots/screenshot.png
-
-# Display format (matches device screen)
-xcrun simctl io booted screenshot --display=2 llmtemp/screenshots/screenshot.png
-```
-
-**Key differences:**
-
-| Feature | Peekaboo MCP | `xcrun simctl` |
-|---------|--------------|----------------|
-| Capture type | Window screenshot (with bezel) | Framebuffer (clean) |
-| Background mode | ✅ Yes | ❌ No |
-| AI analysis | ✅ Built-in | ❌ Manual |
-| Works with any app | ✅ Yes | ❌ Simulator only |
-| Speed | Slower | ⚡ Faster |
-| Dependencies | Peekaboo MCP | Xcode only |
-| Output | Window as displayed | Raw screen content |
-
-### Hybrid Workflow Example
-
-```bash
-# Use xcrun simctl for clean documentation screenshots
-xcrun simctl io booted screenshot llmtemp/screenshots/appstore_screenshot.png
-
-# Use Peekaboo for automated testing with analysis
-```
-
-```python
-mcp__peekaboo__image(
-    path="llmtemp/screenshots/test_result.png",
-    format="png",
-    app_target="Simulator",
-    capture_focus="background",
-    question="Are there any error messages visible?"
-)
-```
-
-**Recommendation:** Use `xcrun simctl` for final documentation/marketing screenshots, and Peekaboo for development, debugging, and automated testing workflows.
+**Recommendation:** Use `xcrun simctl` for all iOS Simulator screenshot needs - it's fast, clean, and has no external dependencies.

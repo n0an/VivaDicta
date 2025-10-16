@@ -448,7 +448,7 @@ mcpli stop-sim-log-cap \
 
 5. **Combine with other tools:**
    - Use AXe for UI automation during log capture
-   - Use Peekaboo for screenshots at error points
+   - Use xcrun simctl for screenshots at error points
    - Use xcodebuild for running tests with log capture
 
 6. **Clean up logs directory:**

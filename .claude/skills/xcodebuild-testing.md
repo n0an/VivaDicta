@@ -319,7 +319,7 @@ xcodebuild -scheme VivaDicta \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
   test -only-testing:VivaDictaTests/UITests/testLoginFlow | xcbeautify
 
-# 2. If test fails, capture screenshot (use Peekaboo or xcrun simctl)
+# 2. If test fails, capture screenshot using xcrun simctl
 xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
 ```
 
