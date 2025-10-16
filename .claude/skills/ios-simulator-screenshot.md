@@ -7,6 +7,10 @@ Use this skill when you need to capture screenshots from the iOS Simulator for d
 - See [`axe-simulator-control.md`](./axe-simulator-control.md) for automating simulator interactions before capturing
 - See [`xcodebuild-testing.md`](./xcodebuild-testing.md) for running tests that may require visual verification
 
+## Additional Resources
+
+- [Peekaboo MCP Documentation](../../docs/MCPs/Peekaboo_README.md) - Complete Peekaboo reference including advanced features and troubleshooting
+
 ## Skill Flow
 
 - Example queries:
@@ -297,3 +301,72 @@ mcp__peekaboo__image(
    ```
 
 8. **Screenshots are gitignored** - the `llmtemp` directory is safe for temporary files
+
+## Alternative: Using `xcrun simctl` for Clean Screenshots
+
+For scenarios where you need clean screenshots without the simulator chrome/bezel, use the native `xcrun simctl` command:
+
+### When to Use `xcrun simctl`
+
+**Use `xcrun simctl` when:**
+- Need clean screenshots without simulator frame/bezel
+- Creating App Store screenshots or professional documentation
+- Generating screenshots for multiple device sizes/orientations
+- Performance matters (bulk screenshot generation)
+- Want native simulator framebuffer capture
+
+**Use Peekaboo (this skill) when:**
+- Want non-intrusive capture during development
+- Need AI analysis of screenshots
+- Capturing from multiple apps in automation workflows
+- Want integrated MCP tool ecosystem
+- Need background capture mode
+
+### Using `xcrun simctl` Command
+
+```bash
+# Basic screenshot capture
+xcrun simctl io booted screenshot llmtemp/screenshots/clean_screenshot.png
+
+# Capture specific simulator by UDID
+xcrun simctl io booted screenshot --udid D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75 llmtemp/screenshots/screenshot.png
+
+# Specify image format
+xcrun simctl io booted screenshot --type=png llmtemp/screenshots/screenshot.png
+
+# Display format (matches device screen)
+xcrun simctl io booted screenshot --display=2 llmtemp/screenshots/screenshot.png
+```
+
+**Key differences:**
+
+| Feature | Peekaboo MCP | `xcrun simctl` |
+|---------|--------------|----------------|
+| Capture type | Window screenshot (with bezel) | Framebuffer (clean) |
+| Background mode | ✅ Yes | ❌ No |
+| AI analysis | ✅ Built-in | ❌ Manual |
+| Works with any app | ✅ Yes | ❌ Simulator only |
+| Speed | Slower | ⚡ Faster |
+| Dependencies | Peekaboo MCP | Xcode only |
+| Output | Window as displayed | Raw screen content |
+
+### Hybrid Workflow Example
+
+```bash
+# Use xcrun simctl for clean documentation screenshots
+xcrun simctl io booted screenshot llmtemp/screenshots/appstore_screenshot.png
+
+# Use Peekaboo for automated testing with analysis
+```
+
+```python
+mcp__peekaboo__image(
+    path="llmtemp/screenshots/test_result.png",
+    format="png",
+    app_target="Simulator",
+    capture_focus="background",
+    question="Are there any error messages visible?"
+)
+```
+
+**Recommendation:** Use `xcrun simctl` for final documentation/marketing screenshots, and Peekaboo for development, debugging, and automated testing workflows.
