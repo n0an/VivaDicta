@@ -21,7 +21,7 @@ Start a log capture session for VivaDicta app running in the iOS Simulator. This
    ```bash
    mcpli start-sim-log-cap \
      --simulatorUuid "<UUID>" \
-     --bundleId "com.example.VivaDicta" \
+     --bundleId "com.antonnovoselov.VivaDicta" \
      -- npx -y xcodebuildmcp@latest
    ```
 

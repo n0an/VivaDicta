@@ -234,7 +234,7 @@ mcpli --help -- npx -y xcodebuildmcp@latest
 # Start simulator log capture
 mcpli start-sim-log-cap \
   --simulatorUuid "D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   --captureConsole true \
   -- npx -y xcodebuildmcp@latest
 
@@ -246,7 +246,7 @@ mcpli stop-sim-log-cap \
 # Launch app and capture logs in one command
 mcpli launch-app-logs-sim \
   --simulatorUuid "D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   -- npx -y xcodebuildmcp@latest
 ```
 

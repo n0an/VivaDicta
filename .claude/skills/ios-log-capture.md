@@ -27,7 +27,7 @@ Use this skill when you need to capture console logs from iOS apps running in Si
   - Requires Node.js 18+ and npm/npx
   - Log capture is session-based: start returns a session ID, stop returns the captured logs
   - Simulator must be booted before capturing logs
-  - For VivaDicta project, bundle ID is typically `com.example.VivaDicta` (verify in Xcode)
+  - For VivaDicta project, bundle ID is typically `com.antonnovoselov.VivaDicta` (verify in Xcode)
   - Default simulator: iPhone 17 Pro, OS=26.0
   - **VivaDicta uses structured logging (os_log/Logger)** - no need to use `--captureConsole true` or relaunch the app
 
@@ -88,8 +88,8 @@ SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A
 # - Info.plist: CFBundleIdentifier key
 
 # For VivaDicta project, verify the bundle ID
-# Example: com.example.VivaDicta
-BUNDLE_ID="com.example.VivaDicta"
+# Example: com.antonnovoselov.VivaDicta
+BUNDLE_ID="com.antonnovoselov.VivaDicta"
 ```
 
 ### 4A. Start Log Capture
@@ -179,7 +179,7 @@ DEVICE_ID="00008101-000123456789ABCD"
 
 ```bash
 # Same as simulator - get from Xcode project
-BUNDLE_ID="com.example.VivaDicta"
+BUNDLE_ID="com.antonnovoselov.VivaDicta"
 ```
 
 ### 4B. Start Device Log Capture
@@ -237,7 +237,7 @@ This is a convenience command that combines app launch with log capture in one s
 ```bash
 # Get simulator UUID first (using AXe)
 SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A-F0-9-]+).*/\1/')
-BUNDLE_ID="com.example.VivaDicta"
+BUNDLE_ID="com.antonnovoselov.VivaDicta"
 
 # Launch app and start log capture (returns session ID)
 SESSION=$(mcpli launch-app-logs-sim \
@@ -298,7 +298,7 @@ SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A
 # 2. Start log capture with console output
 SESSION=$(mcpli start-sim-log-cap \
   --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   --captureConsole true \
   -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
 
@@ -321,7 +321,7 @@ jq '.logs[] | select(.level=="error")' logs/crash_*.json
 SIMULATOR_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
 SESSION=$(mcpli start-sim-log-cap \
   --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
 
 # 2. Run automated tests with AXe or interact manually
@@ -341,7 +341,7 @@ mcpli stop-sim-log-cap \
 # 1. Capture simulator logs
 SIM_SESSION=$(mcpli start-sim-log-cap \
   --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   --captureConsole true \
   -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
 
@@ -354,7 +354,7 @@ mcpli stop-sim-log-cap \
 # 2. Capture device logs
 DEV_SESSION=$(mcpli start-device-log-cap \
   --deviceId "$DEVICE_ID" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
 
 # ... perform same test actions on device ...
@@ -376,7 +376,7 @@ SIMULATOR_UUID=$(axe list-simulators | grep Booted | head -1 | sed -E 's/.*- ([A
 # Launch and capture session ID
 SESSION=$(mcpli launch-app-logs-sim \
   --simulatorUuid "$SIMULATOR_UUID" \
-  --bundleId "com.example.VivaDicta" \
+  --bundleId "com.antonnovoselov.VivaDicta" \
   -- npx -y xcodebuildmcp@latest 2>&1 | grep "session ID:" | sed -E 's/.*session ID: ([a-z0-9-]+).*/\1/')
 
 # Wait for app to run (or interact with it)
@@ -459,7 +459,7 @@ mcpli stop-sim-log-cap \
 
 7. **Store bundle ID and UUIDs in environment variables:**
    ```bash
-   export VIVADICTA_BUNDLE_ID="com.example.VivaDicta"
+   export VIVADICTA_BUNDLE_ID="com.antonnovoselov.VivaDicta"
    export DEFAULT_SIM_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
    ```
 
