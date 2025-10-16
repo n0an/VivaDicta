@@ -29,6 +29,7 @@ Use this skill when you need to capture console logs from iOS apps running in Si
   - Simulator must be booted before capturing logs
   - For VivaDicta project, bundle ID is typically `com.example.VivaDicta` (verify in Xcode)
   - Default simulator: iPhone 17 Pro, OS=26.0
+  - **VivaDicta uses structured logging (os_log/Logger)** - no need to use `--captureConsole true` or relaunch the app
 
 ### 1. Determine Capture Target
 
@@ -94,13 +95,13 @@ BUNDLE_ID="com.example.VivaDicta"
 ### 4A. Start Log Capture
 
 ```bash
-# Start capturing logs (structured logs only by default)
+# Start capturing logs (recommended for VivaDicta - no app relaunch needed)
 mcpli start-sim-log-cap \
   --simulatorUuid "$SIMULATOR_UUID" \
   --bundleId "$BUNDLE_ID" \
   -- npx -y xcodebuildmcp@latest
 
-# Start capturing with console output (requires app relaunch)
+# Start capturing with console output (requires app relaunch - NOT needed for VivaDicta)
 mcpli start-sim-log-cap \
   --simulatorUuid "$SIMULATOR_UUID" \
   --bundleId "$BUNDLE_ID" \
@@ -121,8 +122,9 @@ mcpli start-sim-log-cap \
 
 **Important:**
 - Response includes a `logSessionId` - save this for stopping the capture
-- If using `--captureConsole true`, the app will be relaunched
-- Without `--captureConsole`, only structured logs are captured
+- **For VivaDicta**: Omit `--captureConsole` flag - the app uses structured logging (os_log/Logger) and does NOT need to be relaunched
+- If using `--captureConsole true`, the app will be relaunched (only needed for print() statements)
+- Without `--captureConsole`, only structured logs are captured (sufficient for VivaDicta)
 
 ### 5A. Stop Log Capture
 
@@ -315,14 +317,14 @@ jq '.logs[] | select(.level=="error")' logs/crash_*.json
 ### Capture Logs During Automated Testing
 
 ```bash
-# 1. Start log capture
+# 1. Start log capture (no app relaunch for VivaDicta)
 SIMULATOR_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
 SESSION=$(mcpli start-sim-log-cap \
   --simulatorUuid "$SIMULATOR_UUID" \
   --bundleId "com.example.VivaDicta" \
   -- npx -y xcodebuildmcp@latest | jq -r '.logSessionId')
 
-# 2. Run automated tests with AXe
+# 2. Run automated tests with AXe or interact manually
 axe tap -x 195 -y 400 --udid "$SIMULATOR_UUID"
 axe gesture scroll-up --udid "$SIMULATOR_UUID"
 axe type 'test input' --udid "$SIMULATOR_UUID"
@@ -461,7 +463,7 @@ mcpli stop-sim-log-cap \
    export DEFAULT_SIM_UUID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
    ```
 
-8. **Use console capture when needed:**
-   - Structured logs are faster and cleaner
-   - Add `--captureConsole true` when you need print() output
-   - Remember: console capture requires app relaunch
+8. **Prefer structured logging over console capture:**
+   - VivaDicta uses structured logging (os_log/Logger) - no need for `--captureConsole`
+   - Structured logs are faster, cleaner, and don't require app relaunch
+   - Only add `--captureConsole true` if you need print() output (requires app relaunch)
