@@ -15,7 +15,15 @@ final class FlowModeManager {
 
     // MARK: - Properties
     public private(set) var availableFlowModes: [FlowMode] = []
-    public private(set) var selectedFlowMode: FlowMode = FlowMode.defaultMode
+    public var selectedFlowMode: FlowMode = FlowMode.defaultMode {
+        didSet {
+            if oldValue.id != selectedFlowMode.id {
+                saveSelectedMode()
+                // Notify the main app about the change
+                AppGroupCoordinator.shared.setSelectedFlowMode(selectedFlowMode.name)
+            }
+        }
+    }
 
     // MARK: - Init
     init() {
@@ -27,14 +35,6 @@ final class FlowModeManager {
     public func refreshFlowModes() {
         loadFlowModes()
         loadSelectedMode()
-    }
-
-    public func selectFlowMode(_ mode: FlowMode) {
-        selectedFlowMode = mode
-        saveSelectedMode()
-
-        // Notify the main app about the change
-        AppGroupCoordinator.shared.setSelectedFlowMode(mode.name)
     }
 
     // MARK: - Private Methods

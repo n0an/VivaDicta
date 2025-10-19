@@ -12,7 +12,7 @@ struct RecordingStateView: View {
 
     @State var isSymbolAnimating = false
 
-    let flowModeManager: FlowModeManager
+    @Bindable var flowModeManager: FlowModeManager
     let onCancelTapped: () -> Void
     let onStopTapped: () -> Void
     
@@ -41,10 +41,7 @@ struct RecordingStateView: View {
             
             // Flow Mode Picker
             VStack(spacing: 20) {
-                Picker("Flow Mode", selection: Binding(
-                    get: { flowModeManager.selectedFlowMode },
-                    set: { flowModeManager.selectFlowMode($0) }
-                )) {
+                Picker("Flow Mode", selection: $flowModeManager.selectedFlowMode) {
                     ForEach(flowModeManager.availableFlowModes, id: \.id) { mode in
                         Text(mode.name).tag(mode)
                     }
