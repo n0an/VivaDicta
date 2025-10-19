@@ -14,8 +14,6 @@ struct KeyboardCustomView: View {
     @State private var processingStage: ProcessingStage = .waitingToStart
 
     let controller: KeyboardInputViewController
-//    let stateManager: KeyboardStateManager?
-//    let appStateViewModel: AppStateViewModel?
 
     let onCancelRecording: () -> Void
     let onStopRecording: () -> Void
