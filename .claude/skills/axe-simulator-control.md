@@ -25,6 +25,7 @@ Use this skill when you need to automate iOS Simulator interactions, including t
   - The simulator must be booted and running for most operations
   - AXe uses the iOS Simulator's accessibility framework
   - For VivaDicta project, the default simulator is: `iPhone 17 Pro, OS=26.0`
+  - Save screenshots to `llmtemp/screenshots/` directory for temporary test artifacts
 
 ### 1. Determine the Required Action
 
@@ -82,31 +83,58 @@ axe list-simulators
 UDID="B34FF305-5EA8-412B-943F-1D0371CA17FF"
 ```
 
-### 3A. Perform Tap Action
+### 3A. Get Accurate Coordinates Using describe-ui
+
+**IMPORTANT:** Always use `axe describe-ui` to get accurate coordinates instead of guessing from screenshots.
 
 ```bash
-# Simple tap at coordinates
-axe tap -x 100 -y 200 --udid $UDID
+# Get the full UI accessibility tree
+axe describe-ui --udid $UDID > ui_tree.json
+
+# Example output for a button:
+# {
+#   "AXFrame" : "{{175, 741}, {52, 50}}",
+#   "AXLabel" : "stop.circle.fill",
+#   "type" : "Button",
+#   ...
+# }
+
+# Calculate center coordinates:
+# x_center = x + (width / 2)  →  175 + (52 / 2) = 201
+# y_center = y + (height / 2)  →  741 + (50 / 2) = 766
+```
+
+**Why this matters:**
+- Visual appearance in screenshots doesn't always match accessibility frame coordinates
+- UI elements that change state (e.g., record → stop button) may have different positions than they appear
+- The accessibility frame is what AXe actually uses for tap detection
+
+### 4A. Perform Tap Action
+
+```bash
+# Simple tap at coordinates (use coordinates from describe-ui)
+axe tap -x 201 -y 766 --udid $UDID
 
 # Tap with delays before and after
-axe tap -x 100 -y 200 --pre-delay 1.0 --post-delay 0.5 --udid $UDID
+axe tap -x 201 -y 766 --pre-delay 1.0 --post-delay 0.5 --udid $UDID
 ```
 
 **Available tap options:**
-- `-x` and `-y`: Coordinates (required)
+- `-x` and `-y`: Coordinates (required) - get these from `describe-ui` output
 - `--pre-delay`: Delay in seconds before tapping
 - `--post-delay`: Delay in seconds after tapping
 - `--udid`: Simulator UDID (required)
 
 **Note:** The `tap` command does NOT support `--duration` for long press. Use `--pre-delay` and `--post-delay` for timing control.
 
-### 4A. Verify the Action
+### 5A. Verify the Action
 
 - Check the simulator visually or via app logs
 - If tap didn't register, ensure:
   - Simulator is in foreground
   - Coordinates are correct (origin is top-left)
   - Target element is interactive
+  - You used coordinates from `describe-ui`, not visual estimates
 
 ## Path B: Text Input
 
@@ -277,6 +305,61 @@ axe button home --udid $UDID
 kill $RECORD_PID
 ```
 
+## Known Limitations
+
+### SwiftUI TabView Navigation
+
+**Issue:** SwiftUI's modern `TabView` component (iOS 18+) doesn't expose individual tab buttons in the accessibility hierarchy.
+
+**What you'll see:**
+- `axe describe-ui` shows the tab bar as a single `AXGroup` with no children
+- Individual tab buttons are NOT listed as separate accessible elements
+
+**Example:**
+```json
+{
+  "AXFrame" : "{{0, 791}, {402, 83}}",
+  "AXLabel" : "Tab Bar",
+  "type" : "Group",
+  "children" : []  // ← No individual tab buttons exposed
+}
+```
+
+**✅ However, tab navigation DOES work with calculated coordinates!**
+
+Even though tab buttons aren't in the accessibility tree, you can still tap them using estimated positions within the Tab Bar frame:
+
+```bash
+# Tab Bar frame: x: 0, y: 791, width: 402, height: 83
+# Calculate y-center: 791 + (83/2) = 832
+
+# For a 3-tab layout (Record, Notes, Settings):
+UDID="D28078F6-0BE9-4EB8-BEBE-BF8EBEA5CA75"
+
+# Tap Record tab (left third)
+axe tap -x 103 -y 832 --udid $UDID    # x ≈ 402 * 1/4
+
+# Tap Notes tab (center)
+axe tap -x 201 -y 832 --udid $UDID    # x ≈ 402 * 1/2
+
+# Tap Settings tab (right third)
+axe tap -x 268 -y 832 --udid $UDID    # x ≈ 402 * 2/3
+```
+
+**Key insight:** The Tab Bar frame tells you the tappable area. Calculate positions by:
+1. Get y-center from frame: `y + (height / 2)`
+2. Divide x-axis by number of tabs to estimate positions
+3. Test and adjust x-coordinates based on actual tab spacing
+
+**Alternative workarounds:**
+- Use XCUITest for UI testing that requires guaranteed tab detection
+- Add custom accessibility identifiers if you control the app code
+- Use deep linking or keyboard shortcuts for tab navigation in automation
+
+### Other SwiftUI Components
+
+Some SwiftUI components may have limited accessibility exposure. Always use `axe describe-ui` to verify an element is accessible before attempting to interact with it.
+
 ## Troubleshooting
 
 **"Simulator not found" error:**
@@ -284,8 +367,10 @@ kill $RECORD_PID
 - Verify UDID is correct: `axe list-simulators`
 
 **Tap not registering:**
+- **FIRST:** Use `axe describe-ui` to get accurate coordinates (don't guess from screenshots)
 - Check coordinates are within screen bounds
 - Ensure element is visible and interactive
+- Verify the element appears in the accessibility tree with `describe-ui`
 - Try adding small delay between taps
 
 **Text not appearing:**
