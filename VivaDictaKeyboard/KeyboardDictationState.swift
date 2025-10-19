@@ -1,8 +1,5 @@
 import SwiftUI
 
-extension Notification.Name {
-    static let didFinalizeTranscription = Notification.Name("didFinalizeTranscription")
-}
 
 @Observable
 final class KeyboardDictationState {
@@ -23,6 +20,8 @@ final class KeyboardDictationState {
 
     // MARK: - FlowMode Manager
     let flowModeManager = FlowModeManager()
+    
+    var onTranscriptionReady: ((String) -> Void)?
 
     // MARK: - Auto-dismiss timer
     private var errorDismissTimer: Timer?
@@ -80,11 +79,7 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onTranscriptionCompleted = { [weak self] transcription in
             DispatchQueue.main.async {
                 self?.transcriptionStatus = .completed
-                NotificationCenter.default.post(
-                    name: .didFinalizeTranscription,
-                    object: nil,
-                    userInfo: ["text": transcription]
-                )
+                self?.onTranscriptionReady?(transcription)
             }
         }
         AppGroupCoordinator.shared.onTranscriptionError = { [weak self] in
@@ -94,8 +89,7 @@ final class KeyboardDictationState {
             DispatchQueue.main.async { self?.errorMessage = message }
         }
     }
-
-    // MARK: - will be used from deinit of KeyboardViewController
+    
     nonisolated func stop() {
         // Clear all callbacks - these are @MainActor isolated but setting to nil is safe
         Task { @MainActor in
@@ -132,8 +126,14 @@ final class KeyboardDictationState {
             self.isSessionActive = false
         }
     }
-    func requestStopRecording() { AppGroupCoordinator.shared.requestStopRecording() }
-    func requestCancelRecording() { AppGroupCoordinator.shared.requestCancelRecording() }
+    
+    func requestStopRecording() {
+        AppGroupCoordinator.shared.requestStopRecording()
+    }
+    
+    func requestCancelRecording() {
+        AppGroupCoordinator.shared.requestCancelRecording()
+    }
 
     // MARK: - Error Auto-dismiss
     private func autoDismissError() {

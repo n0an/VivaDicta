@@ -13,9 +13,9 @@ import os
 class KeyboardViewController: KeyboardInputViewController {
     
     let dictationState = KeyboardDictationState()
-    
-    @objc func handleTranscription(notification: Notification) {
-        guard let text = notification.userInfo?["text"] as? String, !text.isEmpty else { return }
+
+    private func handleTranscription(_ text: String) {
+        guard !text.isEmpty else { return }
         textDocumentProxy.insertText(text)
         UIPasteboard.general.string = text
     }
@@ -25,22 +25,13 @@ class KeyboardViewController: KeyboardInputViewController {
     let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
     
     // MARK: - View Lifecycle
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-        dictationState.stop()
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleTranscription(notification:)),
-            name: .didFinalizeTranscription,
-            object: nil
-        )
-        
+        dictationState.onTranscriptionReady = { [weak self] text in
+            self?.handleTranscription(text)
+        }
+
         dictationState.start()
         
         // Create keyboard app configuration
@@ -75,6 +66,12 @@ class KeyboardViewController: KeyboardInputViewController {
             constraint.isActive = false
         }
     }
+    
+    
+    deinit {
+        dictationState.stop()
+    }
+
 }
 
 struct VivaDictaKeyboardToolbarView: View {
@@ -98,7 +95,7 @@ struct VivaDictaKeyboardToolbarView: View {
     }
 
     private func handleMic() {
-        if dictationState.uiState == .notReady {
+        guard dictationState.uiState != .notReady else {
             openMainAppForHotMic()
             return
         }
