@@ -96,16 +96,19 @@ final class KeyboardDictationState {
     }
 
     // MARK: - will be used from deinit of KeyboardViewController
-    func stop() {
-        AppGroupCoordinator.shared.onRecordingStateChanged = nil
-        AppGroupCoordinator.shared.onKeyboardSessionActivated = nil
-        AppGroupCoordinator.shared.onKeyboardSessionExpired = nil
-        AppGroupCoordinator.shared.onTranscriptionTranscribing = nil
-        AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
-        AppGroupCoordinator.shared.onTranscriptionCompleted = nil
-        AppGroupCoordinator.shared.onTranscriptionError = nil
-        errorDismissTimer?.invalidate()
-        errorDismissTimer = nil
+    nonisolated func stop() {
+        // Clear all callbacks - these are @MainActor isolated but setting to nil is safe
+        Task { @MainActor in
+            AppGroupCoordinator.shared.onRecordingStateChanged = nil
+            AppGroupCoordinator.shared.onKeyboardSessionActivated = nil
+            AppGroupCoordinator.shared.onKeyboardSessionExpired = nil
+            AppGroupCoordinator.shared.onTranscriptionTranscribing = nil
+            AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
+            AppGroupCoordinator.shared.onTranscriptionCompleted = nil
+            AppGroupCoordinator.shared.onTranscriptionError = nil
+            errorDismissTimer?.invalidate()
+            errorDismissTimer = nil
+        }
     }
 
     // MARK: - Actions
