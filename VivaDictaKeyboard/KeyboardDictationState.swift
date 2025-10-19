@@ -22,6 +22,9 @@ final class KeyboardDictationState {
         }
     }
 
+    // MARK: - FlowMode Manager
+    let flowModeManager = FlowModeManager()
+
     // MARK: - Auto-dismiss timer
     private var errorDismissTimer: Timer?
 
@@ -58,6 +61,9 @@ final class KeyboardDictationState {
 
     // MARK: - Lifecycle
     func start() {
+        // Refresh FlowModes when keyboard starts
+        flowModeManager.refreshFlowModes()
+
         AppGroupCoordinator.shared.onRecordingStateChanged = { [weak self] state in
             DispatchQueue.main.async { self?.isRecording = state }
         }
