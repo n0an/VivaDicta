@@ -10,17 +10,10 @@ import Foundation
 // MARK: - UserDefaults keys
 actor Constants {
     // Transcribe module
-    static let kSelectedWhisperLocalModel = "selectedWhisperLocalModel"
-    static let kSelectedCloudModel = "selectedCloudModel"
     static let kSelectedLanguageKey = "selectedLanguageKey"
     static let kAPIKeyTemplate = "apiKeyTemplate"
     static let kTranscriptionPrompt = "TranscriptionPrompt"
-    static let kCurrentTranscriptionModel = "CurrentTranscriptionModel"
-    static let kCustomPromptsKey = "CustomLanguagePrompts"
     
     // AI enhance module
-    static let kSelectedAIProvider = "selectedAIProvider"
-    static let kSelectedAIModel = "selectedAIModel"
     static let kSelectedAIMode = "selectedAIMode"
-    static let kOpenRouterModels = "openRouterModels"
 }

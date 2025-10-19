@@ -25,6 +25,12 @@ class KeyboardViewController: KeyboardInputViewController {
     let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
     
     // MARK: - View Lifecycle
+    
+    // TODO: Fix build err
+//    deinit {
+//        NotificationCenter.default.removeObserver(self)
+//        dictationState.stop()
+//    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
