@@ -60,7 +60,7 @@ class DeepgramTranscriptionService {
         var queryItems: [URLQueryItem] = []
         
         // Add language parameter if not auto-detect
-        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         
         // Choose model based on language
         let modelName = selectedLanguage == "en" ? "nova-3" : "nova-2"

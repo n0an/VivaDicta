@@ -24,6 +24,9 @@ public final class AppGroupCoordinator {
     // AI Enhancement configuration
     public static let aiEnhanceModesKey = "AIEnhanceModes"
     public static let selectedAIModeKey = "selectedAIMode"
+    public static let kSelectedLanguageKey = "selectedLanguageKey"
+    public static let kAPIKeyTemplate = "apiKeyTemplate"
+    public static let kTranscriptionPrompt = "TranscriptionPrompt"
     
     
     nonisolated private enum UserDefaultsKeys {

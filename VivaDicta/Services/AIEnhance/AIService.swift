@@ -38,7 +38,7 @@ class AIService {
 
     
     init() {
-        self.selectedModeName = userDefaults.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
@@ -57,7 +57,7 @@ class AIService {
 
     /// Reload the selected mode from UserDefaults (used when keyboard extension changes the mode)
     public func reloadSelectedModeFromKeyboard() {
-        let savedModeName = userDefaults.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
         if savedModeName != selectedModeName {
             logger.logInfo("📱 Reloading FlowMode from keyboard: \(savedModeName)")
             selectedModeName = savedModeName
@@ -160,7 +160,7 @@ class AIService {
     }
     
     private func saveSelectedModeName(_ modeName: String) {
-        userDefaults.setValue(modeName, forKey: Constants.kSelectedAIMode)
+        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedAIModeKey)
         logger.logInfo("Saved Flow Mode: \(modeName)")
     }
     
@@ -366,7 +366,7 @@ class AIService {
     // MARK: - API Keys methods
     public func refreshConnectedProviders() {
         connectedProviders = AIProvider.allCases.filter { provider in
-            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
+            return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) != nil
         }
     }
     
@@ -375,7 +375,7 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+                self.userDefaults.set(key, forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
                 
                 // Refresh connected providers to trigger UI update
                 self.refreshConnectedProviders()
@@ -391,7 +391,7 @@ class AIService {
     }
     
     private func getAPIKey(for provider: AIProvider) -> String? {
-        return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+        return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
     }
     
     private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
