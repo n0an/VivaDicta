@@ -48,9 +48,9 @@ AppGroupCoordinator is the central communication hub between the VivaDicta main 
 │  │  │                                                                         │ │  │
 │  │  │  Recording State:        Session Management:      Transcription State:  │ │  │
 │  │  │  • isRecording           • keyboardSessionActive  • transcriptionStatus │ │  │
-│  │  │  • shouldStartRecording  • sessionExpiryTime      • transcribedText     │ │  │
-│  │  │  • shouldStopRecording   • lastRecordingTimestamp • errorMessage        │ │  │
-│  │  │  • shouldCancelRecording                          • audioLevel          │ │  │
+│  │  │  • lastRecordingTimestamp• sessionExpiryTime      • transcribedText     │ │  │
+│  │  │                                                   • errorMessage        │ │  │
+│  │  │                          Audio:                   • audioLevel          │ │  │
 │  │  │                                                                         │ │  │
 │  │  │  FlowMode Management:    Language Settings:       API Keys:             │ │  │
 │  │  │  • selectedAIModeKey     • selectedLanguageKey    • apiKeyTemplate     │ │  │
@@ -140,18 +140,21 @@ Keyboard Extension          AppGroupCoordinator           Main App            Pr
 #### Shared UserDefaults (App Group)
 - **Purpose**: Persistent state storage accessible by both app and extension
 - **App Group ID**: `group.com.antonnovoselov.VivaDicta`
-- **Use Cases**:
-  - Storing recording state
-  - Sharing transcribed text
-  - Saving user preferences (FlowMode, language)
-  - Session management
+- **Actually Used Data**:
+  - Recording state (`isRecording`, `lastRecordingTimestamp`)
+  - Transcribed text sharing (`transcribedText`)
+  - User preferences (FlowMode via `selectedAIModeKey`, language)
+  - Session management (`keyboardSessionActive`, `sessionExpiryTime`)
+  - Transcription status and errors (`transcriptionStatus`, `errorMessage`)
+  - Audio level for visualization (`audioLevel`)
 
 #### Darwin Notifications (CFNotificationCenter)
 - **Purpose**: Real-time signaling between processes
 - **Characteristics**:
   - Immediate delivery
-  - No data payload
-  - Used as triggers to check shared state
+  - No data payload (just triggers)
+  - Directly trigger callbacks without intermediate flag checking
+  - Used for: startRecording, stopRecording, cancelRecording, state changes
 
 ### 2. **PrewarmManager Integration**
 
@@ -176,11 +179,11 @@ The PrewarmManager works with AppGroupCoordinator to maintain background audio s
 
 #### Recording Flow:
 1. Keyboard extension calls `requestStartRecording()`
-2. AppGroupCoordinator posts Darwin notification
-3. Main app receives notification and starts PrewarmManager
-4. PrewarmManager activates audio session
-5. AppGroupCoordinator updates session state
-6. Keyboard receives confirmation and shows recording UI
+2. AppGroupCoordinator posts Darwin notification "startRecording"
+3. Main app receives notification and triggers `onStartRecordingRequested` callback
+4. RecordViewModel starts PrewarmManager session
+5. AppGroupCoordinator updates session state in shared UserDefaults
+6. Keyboard monitors session state and shows recording UI
 
 #### Transcription Flow:
 1. Recording stops via `requestStopRecording()`
