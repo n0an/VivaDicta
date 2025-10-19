@@ -89,33 +89,3 @@ struct ProcessingStateView: View {
         }
     }
 }
-
-// MARK: - Preview Provider
-#if DEBUG
-struct ProcessingStateView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            ProcessingStateView(
-                processingStage: .transcribing,
-                onCancel: {}
-            )
-            .previewDisplayName("Transcribing - Light")
-            .preferredColorScheme(.light)
-
-            ProcessingStateView(
-                processingStage: .enhancingWithAI,
-                onCancel: {}
-            )
-            .previewDisplayName("Enhancing - Dark")
-            .preferredColorScheme(.dark)
-
-            ProcessingStateView(
-                processingStage: .error("Failed to process"),
-                onCancel: {}
-            )
-            .previewDisplayName("Error State")
-        }
-        .frame(height: 300)
-    }
-}
-#endif
