@@ -30,9 +30,6 @@ public final class AppGroupCoordinator {
     
     
     nonisolated private enum UserDefaultsKeys {
-        static let shouldStartRecording = "shouldStartRecording"
-        static let shouldStopRecording = "shouldStopRecording"
-        static let shouldCancelRecording = "shouldCancelRecording"
         static let isRecording = "isRecording"
         static let lastRecordingTimestamp = "lastRecordingTimestamp"
         static let transcribedText = "transcribedText"
@@ -109,9 +106,6 @@ public final class AppGroupCoordinator {
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.transcribedText)
         updateTranscriptionStatus(.idle)
 
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldStartRecording)
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldStopRecording)
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldCancelRecording)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.audioLevel)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.transcriptionErrorMessage)
 
@@ -124,21 +118,18 @@ public final class AppGroupCoordinator {
 
     public func requestStartRecording() {
         let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(true, forKey: UserDefaultsKeys.shouldStartRecording)
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.startRecording)
     }
 
     public func requestStopRecording() {
         let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(true, forKey: UserDefaultsKeys.shouldStopRecording)
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.stopRecording)
     }
 
     public func requestCancelRecording() {
         let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(true, forKey: UserDefaultsKeys.shouldCancelRecording)
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.cancelRecording)
     }
@@ -177,39 +168,6 @@ public final class AppGroupCoordinator {
         let value = sharedDefaults?.double(forKey: UserDefaultsKeys.audioLevel) ?? 0
         return CGFloat(max(0, min(1, value)))
     }
-
-//    func checkAndConsumeStartRecordingFlag() -> Bool {
-//        guard let defaults = sharedDefaults else { return false }
-//
-//        let shouldStart = defaults.bool(forKey: UserDefaultsKeys.shouldStartRecording)
-//        if shouldStart {
-//            defaults.set(false, forKey: UserDefaultsKeys.shouldStartRecording)
-//            return true
-//        }
-//        return false
-//    }
-
-//    func checkAndConsumeStopRecordingFlag() -> Bool {
-//        guard let defaults = sharedDefaults else { return false }
-//
-//        let shouldStop = defaults.bool(forKey: UserDefaultsKeys.shouldStopRecording)
-//        if shouldStop {
-//            defaults.set(false, forKey: UserDefaultsKeys.shouldStopRecording)
-//            return true
-//        }
-//        return false
-//    }
-
-//    func checkAndConsumeCancelRecordingFlag() -> Bool {
-//        guard let defaults = sharedDefaults else { return false }
-//
-//        let shouldCancel = defaults.bool(forKey: UserDefaultsKeys.shouldCancelRecording)
-//        if shouldCancel {
-//            defaults.set(false, forKey: UserDefaultsKeys.shouldCancelRecording)
-//            return true
-//        }
-//        return false
-//    }
 
     // MARK: - Keyboard Dictation Session Management
 
