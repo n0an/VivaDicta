@@ -10,7 +10,6 @@ final class KeyboardDictationState {
     var isRecording: Bool
     var isSessionActive: Bool
     var transcriptionStatus: AppGroupCoordinator.TranscriptionStatus
-    var isPaused: Bool = false
     var errorMessage: String? {
         didSet {
             if errorMessage == nil && transcriptionStatus == .error {
@@ -33,7 +32,6 @@ final class KeyboardDictationState {
         self.isRecording = AppGroupCoordinator.shared.isRecording
         self.isSessionActive = AppGroupCoordinator.shared.isKeyboardSessionActive
         self.transcriptionStatus = AppGroupCoordinator.shared.transcriptionStatus
-//        self.isPaused = AppGroupCoordinator.shared.isPaused
     }
 
     // MARK: - UI Derivations
@@ -67,9 +65,6 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onRecordingStateChanged = { [weak self] state in
             DispatchQueue.main.async { self?.isRecording = state }
         }
-        AppGroupCoordinator.shared.onPausedStateChanged = { [weak self] paused in
-            DispatchQueue.main.async { self?.isPaused = paused }
-        }
         AppGroupCoordinator.shared.onKeyboardSessionActivated = { [weak self] in
             DispatchQueue.main.async { self?.isSessionActive = true }
         }
@@ -100,6 +95,7 @@ final class KeyboardDictationState {
         }
     }
 
+    // MARK: - will be used from deinit of KeyboardViewController
     func stop() {
         AppGroupCoordinator.shared.onRecordingStateChanged = nil
         AppGroupCoordinator.shared.onKeyboardSessionActivated = nil
@@ -135,8 +131,6 @@ final class KeyboardDictationState {
     }
     func requestStopRecording() { AppGroupCoordinator.shared.requestStopRecording() }
     func requestCancelRecording() { AppGroupCoordinator.shared.requestCancelRecording() }
-//    func requestPauseRecording() { AppGroupCoordinator.shared.requestPauseRecording() }
-//    func requestResumeRecording() { AppGroupCoordinator.shared.requestResumeRecording() }
 
     // MARK: - Error Auto-dismiss
     private func autoDismissError() {

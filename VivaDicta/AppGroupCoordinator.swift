@@ -87,7 +87,6 @@ public final class AppGroupCoordinator {
     @MainActor var onKeyboardSessionExpired: (() -> Void)?
     @MainActor var onAudioLevelUpdated: ((CGFloat) -> Void)?
     @MainActor var onRecordingStateChanged: ((Bool) -> Void)?
-    @MainActor var onPausedStateChanged: ((Bool) -> Void)?
     @MainActor var onStopHotMicFromWidget: (() -> Void)?
 
     // MARK: - Initialization
@@ -179,38 +178,38 @@ public final class AppGroupCoordinator {
         return CGFloat(max(0, min(1, value)))
     }
 
-    func checkAndConsumeStartRecordingFlag() -> Bool {
-        guard let defaults = sharedDefaults else { return false }
+//    func checkAndConsumeStartRecordingFlag() -> Bool {
+//        guard let defaults = sharedDefaults else { return false }
+//
+//        let shouldStart = defaults.bool(forKey: UserDefaultsKeys.shouldStartRecording)
+//        if shouldStart {
+//            defaults.set(false, forKey: UserDefaultsKeys.shouldStartRecording)
+//            return true
+//        }
+//        return false
+//    }
 
-        let shouldStart = defaults.bool(forKey: UserDefaultsKeys.shouldStartRecording)
-        if shouldStart {
-            defaults.set(false, forKey: UserDefaultsKeys.shouldStartRecording)
-            return true
-        }
-        return false
-    }
+//    func checkAndConsumeStopRecordingFlag() -> Bool {
+//        guard let defaults = sharedDefaults else { return false }
+//
+//        let shouldStop = defaults.bool(forKey: UserDefaultsKeys.shouldStopRecording)
+//        if shouldStop {
+//            defaults.set(false, forKey: UserDefaultsKeys.shouldStopRecording)
+//            return true
+//        }
+//        return false
+//    }
 
-    func checkAndConsumeStopRecordingFlag() -> Bool {
-        guard let defaults = sharedDefaults else { return false }
-
-        let shouldStop = defaults.bool(forKey: UserDefaultsKeys.shouldStopRecording)
-        if shouldStop {
-            defaults.set(false, forKey: UserDefaultsKeys.shouldStopRecording)
-            return true
-        }
-        return false
-    }
-
-    func checkAndConsumeCancelRecordingFlag() -> Bool {
-        guard let defaults = sharedDefaults else { return false }
-
-        let shouldCancel = defaults.bool(forKey: UserDefaultsKeys.shouldCancelRecording)
-        if shouldCancel {
-            defaults.set(false, forKey: UserDefaultsKeys.shouldCancelRecording)
-            return true
-        }
-        return false
-    }
+//    func checkAndConsumeCancelRecordingFlag() -> Bool {
+//        guard let defaults = sharedDefaults else { return false }
+//
+//        let shouldCancel = defaults.bool(forKey: UserDefaultsKeys.shouldCancelRecording)
+//        if shouldCancel {
+//            defaults.set(false, forKey: UserDefaultsKeys.shouldCancelRecording)
+//            return true
+//        }
+//        return false
+//    }
 
     // MARK: - Keyboard Dictation Session Management
 
@@ -242,14 +241,14 @@ public final class AppGroupCoordinator {
         return isActive
     }
 
-    var keyboardSessionRemainingSeconds: TimeInterval {
-        guard let defaults = sharedDefaults else { return 0 }
-
-        let expiryTime = defaults.double(forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
-        let currentTime = Date().timeIntervalSince1970
-
-        return max(0, expiryTime - currentTime)
-    }
+//    var keyboardSessionRemainingSeconds: TimeInterval {
+//        guard let defaults = sharedDefaults else { return 0 }
+//
+//        let expiryTime = defaults.double(forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
+//        let currentTime = Date().timeIntervalSince1970
+//
+//        return max(0, expiryTime - currentTime)
+//    }
 
     func deactivateKeyboardSession() {
         let wasActive = sharedDefaults?.bool(forKey: UserDefaultsKeys.keyboardSessionActive) ?? true
