@@ -550,6 +550,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // Only start if prewarm session is active and not already recording
             if self.prewarmManager.isSessionActive && self.recordingState != .recording {
                 self.logger.logInfo("📱 Starting recording from keyboard request")
+
+                // Reload the selected FlowMode from keyboard before starting
+                self.appState?.aiService.reloadSelectedModeFromKeyboard()
+                // Update TranscriptionManager with the reloaded mode
+                if let selectedMode = self.appState?.aiService.selectedMode {
+                    self.appState?.transcriptionManager.setCurrentMode(selectedMode)
+                }
+
                 self.startCaptureAudio()
             }
         }
@@ -560,6 +568,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             if self.recordingState == .recording {
                 self.logger.logInfo("📱 Stopping recording from keyboard request")
+
+                // Reload the selected FlowMode from keyboard before transcription
+                self.appState?.aiService.reloadSelectedModeFromKeyboard()
+                // Update TranscriptionManager with the reloaded mode
+                if let selectedMode = self.appState?.aiService.selectedMode {
+                    self.appState?.transcriptionManager.setCurrentMode(selectedMode)
+                }
+
                 // Create a new ModelContext from Persistence container
                 let context = ModelContext(Persistence.container)
                 self.stopCaptureAudio(modelContext: context)
