@@ -389,6 +389,14 @@ public final class AppGroupCoordinator {
         return message
     }
 
+    // MARK: - FlowMode Management
+
+    public func setSelectedFlowMode(_ modeName: String) {
+        sharedDefaults?.set(modeName, forKey: AppGroupCoordinator.selectedAIModeKey)
+        sharedDefaults?.synchronize()
+        logger.logInfo("📱 Keyboard Extension set selected FlowMode: \(modeName)")
+    }
+
     // MARK: - Darwin Notifications (Real-time Communication)
 
     nonisolated private func setupNotificationObservers() {

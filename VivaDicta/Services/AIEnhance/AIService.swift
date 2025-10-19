@@ -54,6 +54,16 @@ class AIService {
     public func getMode(name: String) -> FlowMode {
         return modes.first { $0.name == name } ?? FlowMode.defaultMode
     }
+
+    /// Reload the selected mode from UserDefaults (used when keyboard extension changes the mode)
+    public func reloadSelectedModeFromKeyboard() {
+        let savedModeName = userDefaults.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        if savedModeName != selectedModeName {
+            logger.logInfo("📱 Reloading FlowMode from keyboard: \(savedModeName)")
+            selectedModeName = savedModeName
+            selectedMode = getMode(name: savedModeName)
+        }
+    }
     
     public func addMode(_ mode: FlowMode) {
         modes.append(mode)
