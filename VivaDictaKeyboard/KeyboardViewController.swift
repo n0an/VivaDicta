@@ -56,27 +56,8 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Setup the keyboard view with our custom view that switches based on state
         setupKeyboardView { [weak self] controller in
-            KeyboardCustomView(
-                controller: controller,
-                onCancelRecording: {
-                    // Canceling is handled by dictationState.requestCancelRecording()
-                    // No additional action needed here
-                },
-                onStopRecording: {
-                    // Stopping is handled by dictationState.requestStopRecording()
-                    // No additional action needed here
-                },
-                onCancelProcessing: {
-                    // Cancel processing
-                    self?.dictationState.errorMessage = nil
-                    self?.dictationState.transcriptionStatus = .idle
-                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
-                },
-                onRecordTapped: {
-                    // This is handled by the toolbar button directly
-                }
-            )
-            .environment(self?.dictationState ?? KeyboardDictationState())
+            KeyboardCustomView(controller: controller)
+                .environment(self?.dictationState ?? KeyboardDictationState())
         }
     }
 

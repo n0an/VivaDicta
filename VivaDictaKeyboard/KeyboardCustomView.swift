@@ -15,11 +15,6 @@ struct KeyboardCustomView: View {
 
     let controller: KeyboardInputViewController
 
-    let onCancelRecording: () -> Void
-    let onStopRecording: () -> Void
-    let onCancelProcessing: () -> Void
-    let onRecordTapped: () -> Void
-
     var body: some View {
         Group {
             switch dictationState.uiState {
@@ -28,11 +23,9 @@ struct KeyboardCustomView: View {
                     flowModeManager: dictationState.flowModeManager,
                     onCancelTapped: {
                         dictationState.requestCancelRecording()
-                        onCancelRecording()
                     },
                     onStopTapped: {
                         dictationState.requestStopRecording()
-                        onStopRecording()
                     }
                 )
 
@@ -40,8 +33,10 @@ struct KeyboardCustomView: View {
                 ProcessingStateView(
                     processingStage: $processingStage,
                     onCancel: {
-                        // Cancel processing if possible
-                        onCancelProcessing()
+                        // Cancel processing
+                        dictationState.errorMessage = nil
+                        dictationState.transcriptionStatus = .idle
+                        AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
                     }
                 )
                 .onAppear {
