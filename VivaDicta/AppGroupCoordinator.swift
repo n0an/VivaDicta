@@ -33,10 +33,7 @@ public final class AppGroupCoordinator {
         static let shouldStartRecording = "shouldStartRecording"
         static let shouldStopRecording = "shouldStopRecording"
         static let shouldCancelRecording = "shouldCancelRecording"
-        static let shouldPauseRecording = "shouldPauseRecording"
-        static let shouldResumeRecording = "shouldResumeRecording"
         static let isRecording = "isRecording"
-        static let isPaused = "isPaused"
         static let lastRecordingTimestamp = "lastRecordingTimestamp"
         static let transcribedText = "transcribedText"
         static let transcriptionStatus = "transcriptionStatus"
@@ -53,7 +50,6 @@ public final class AppGroupCoordinator {
         static let pauseRecording = "com.antonnovoselov.VivaDicta.pauseRecording"
         static let resumeRecording = "com.antonnovoselov.VivaDicta.resumeRecording"
         static let recordingStateChanged = "com.antonnovoselov.VivaDicta.recordingStateChanged"
-        static let pausedStateChanged = "com.antonnovoselov.VivaDicta.pausedStateChanged"
         static let transcriptionCompleted = "com.antonnovoselov.VivaDicta.transcriptionCompleted"
         static let keyboardSessionActivated = "com.antonnovoselov.VivaDicta.keyboardSessionActivated"
         static let keyboardSessionExpired = "com.antonnovoselov.VivaDicta.keyboardSessionExpired"
@@ -117,10 +113,6 @@ public final class AppGroupCoordinator {
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldStartRecording)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldStopRecording)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldCancelRecording)
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldPauseRecording)
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.shouldResumeRecording)
-
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.isPaused)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.audioLevel)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.transcriptionErrorMessage)
 
@@ -152,20 +144,6 @@ public final class AppGroupCoordinator {
         postDarwinNotification(NotificationNames.cancelRecording)
     }
 
-    func requestPauseRecording() {
-        let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(true, forKey: UserDefaultsKeys.shouldPauseRecording)
-        sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
-        postDarwinNotification(NotificationNames.pauseRecording)
-    }
-
-    func requestResumeRecording() {
-        let timestamp = Date().timeIntervalSince1970
-        sharedDefaults?.set(true, forKey: UserDefaultsKeys.shouldResumeRecording)
-        sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
-        postDarwinNotification(NotificationNames.resumeRecording)
-    }
-
     var isRecording: Bool {
         let storedState = sharedDefaults?.bool(forKey: UserDefaultsKeys.isRecording) ?? false
         let timestamp = sharedDefaults?.double(forKey: UserDefaultsKeys.lastRecordingTimestamp) ?? 0
@@ -187,13 +165,6 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.recordingStateChanged)
         logger.logError("📡 Updated recording state: \(isRecording)")
-    }
-
-    func updatePausedState(_ isPaused: Bool) {
-        sharedDefaults?.set(isPaused, forKey: UserDefaultsKeys.isPaused)
-        sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
-        postDarwinNotification(NotificationNames.pausedStateChanged)
-        logger.logError("📡 Updated paused state: \(isPaused)")
     }
 
     // MARK: - Audio Level Sharing
@@ -241,28 +212,6 @@ public final class AppGroupCoordinator {
         return false
     }
 
-    func checkAndConsumePauseRecordingFlag() -> Bool {
-        guard let defaults = sharedDefaults else { return false }
-
-        let shouldPause = defaults.bool(forKey: UserDefaultsKeys.shouldPauseRecording)
-        if shouldPause {
-            defaults.set(false, forKey: UserDefaultsKeys.shouldPauseRecording)
-            return true
-        }
-        return false
-    }
-
-    func checkAndConsumeResumeRecordingFlag() -> Bool {
-        guard let defaults = sharedDefaults else { return false }
-
-        let shouldResume = defaults.bool(forKey: UserDefaultsKeys.shouldResumeRecording)
-        if shouldResume {
-            defaults.set(false, forKey: UserDefaultsKeys.shouldResumeRecording)
-            return true
-        }
-        return false
-    }
-
     // MARK: - Keyboard Dictation Session Management
 
     func activateKeyboardSession(timeoutSeconds: Int) {
@@ -291,11 +240,6 @@ public final class AppGroupCoordinator {
         }
 
         return isActive
-    }
-
-    var isPaused: Bool {
-        let stored = sharedDefaults?.bool(forKey: UserDefaultsKeys.isPaused) ?? false
-        return stored
     }
 
     var keyboardSessionRemainingSeconds: TimeInterval {
@@ -554,19 +498,6 @@ public final class AppGroupCoordinator {
             { (center, observer, name, object, userInfo) in
                 guard let observer = observer else { return }
                 let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
-                coordinator.handlePausedStateChangedNotification()
-            },
-            NotificationNames.pausedStateChanged as CFString,
-            nil,
-            .deliverImmediately
-        )
-
-        CFNotificationCenterAddObserver(
-            center,
-            Unmanaged.passUnretained(self).toOpaque(),
-            { (center, observer, name, object, userInfo) in
-                guard let observer = observer else { return }
-                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
                 coordinator.handleKeyboardSessionActivatedNotification()
             },
             NotificationNames.keyboardSessionActivated as CFString,
@@ -692,13 +623,6 @@ public final class AppGroupCoordinator {
         }
     }
 
-    nonisolated private func handlePausedStateChangedNotification() {
-        Task { @MainActor in
-            let paused = await isPaused
-            await onPausedStateChanged?(paused)
-        }
-    }
-
     nonisolated private func handleKeyboardSessionActivatedNotification() {
         Task { @MainActor in
             await onKeyboardSessionActivated?()
@@ -716,43 +640,6 @@ public final class AppGroupCoordinator {
         Task { @MainActor in
             await onStopHotMicFromWidget?()
         }
-    }
-
-    // MARK: - Debug Helpers
-
-    /// Clear all shared data (useful for debugging)
-    func clearAllSharedData() {
-        guard let defaults = sharedDefaults else { return }
-        defaults.removeObject(forKey: UserDefaultsKeys.shouldStartRecording)
-        defaults.removeObject(forKey: UserDefaultsKeys.shouldStopRecording)
-        defaults.removeObject(forKey: UserDefaultsKeys.isRecording)
-        defaults.removeObject(forKey: UserDefaultsKeys.lastRecordingTimestamp)
-        defaults.removeObject(forKey: UserDefaultsKeys.transcribedText)
-        defaults.removeObject(forKey: UserDefaultsKeys.transcriptionStatus)
-        defaults.removeObject(forKey: UserDefaultsKeys.keyboardSessionActive)
-        defaults.removeObject(forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
-    }
-
-    func getDebugInfo() -> [String: Any] {
-        guard let defaults = sharedDefaults else { return ["error": "No shared defaults"] }
-
-        return [
-            "shouldStartRecording": defaults.bool(forKey: UserDefaultsKeys.shouldStartRecording),
-            "shouldStopRecording": defaults.bool(forKey: UserDefaultsKeys.shouldStopRecording),
-            "isRecording": defaults.bool(forKey: UserDefaultsKeys.isRecording),
-            "lastRecordingTimestamp": defaults.double(forKey: UserDefaultsKeys.lastRecordingTimestamp),
-            "transcribedText": defaults.string(forKey: UserDefaultsKeys.transcribedText) ?? "",
-            "transcriptionStatus": defaults.string(forKey: UserDefaultsKeys.transcriptionStatus) ?? "idle",
-            "keyboardSessionActive": defaults.bool(forKey: UserDefaultsKeys.keyboardSessionActive),
-            "keyboardSessionExpiryTime": defaults.double(forKey: UserDefaultsKeys.keyboardSessionExpiryTime),
-            "keyboardSessionRemainingSeconds": keyboardSessionRemainingSeconds,
-
-            // Add stop hot mic debug info
-            "stopHotMicRequested": defaults.bool(forKey: "stopHotMicRequested"),
-            "stopHotMicRequestedTimestamp": defaults.double(forKey: "stopHotMicRequestedTimestamp"),
-
-            "appGroupIdentifier": appGroupId
-        ]
     }
 }
 

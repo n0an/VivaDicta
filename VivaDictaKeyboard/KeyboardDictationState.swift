@@ -33,7 +33,7 @@ final class KeyboardDictationState {
         self.isRecording = AppGroupCoordinator.shared.isRecording
         self.isSessionActive = AppGroupCoordinator.shared.isKeyboardSessionActive
         self.transcriptionStatus = AppGroupCoordinator.shared.transcriptionStatus
-        self.isPaused = AppGroupCoordinator.shared.isPaused
+//        self.isPaused = AppGroupCoordinator.shared.isPaused
     }
 
     // MARK: - UI Derivations
@@ -135,8 +135,8 @@ final class KeyboardDictationState {
     }
     func requestStopRecording() { AppGroupCoordinator.shared.requestStopRecording() }
     func requestCancelRecording() { AppGroupCoordinator.shared.requestCancelRecording() }
-    func requestPauseRecording() { AppGroupCoordinator.shared.requestPauseRecording() }
-    func requestResumeRecording() { AppGroupCoordinator.shared.requestResumeRecording() }
+//    func requestPauseRecording() { AppGroupCoordinator.shared.requestPauseRecording() }
+//    func requestResumeRecording() { AppGroupCoordinator.shared.requestResumeRecording() }
 
     // MARK: - Error Auto-dismiss
     private func autoDismissError() {
