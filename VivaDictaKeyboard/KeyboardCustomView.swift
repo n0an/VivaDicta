@@ -31,7 +31,7 @@ struct KeyboardCustomView: View {
 
             case .processing:
                 ProcessingStateView(
-                    processingStage: $processingStage,
+                    processingStage: processingStage,
                     onCancel: {
                         // Cancel processing
                         dictationState.errorMessage = nil
@@ -95,5 +95,45 @@ struct KeyboardCustomView: View {
         default:
             processingStage = .waitingToStart
         }
+    }
+}
+
+
+
+// MARK: - Error State View
+struct ErrorStateView: View {
+    let errorMessage: String
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            // Error icon
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 50))
+                .foregroundColor(.orange)
+                .padding(.bottom, 10)
+
+            // Error message
+            Text("Error")
+                .font(.system(size: 24, weight: .semibold))
+
+            Text(errorMessage)
+                .font(.system(size: 16))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
+            // Dismiss button
+            Button(action: onDismiss) {
+                Text("Dismiss")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 120, height: 44)
+                    .background(Color.blue)
+                    .cornerRadius(22)
+            }
+            .padding(.top, 20)
+        }
+        .padding()
     }
 }

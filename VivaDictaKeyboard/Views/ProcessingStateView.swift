@@ -33,7 +33,7 @@ public enum ProcessingStage {
 
 // MARK: - ProcessingStateView
 struct ProcessingStateView: View {
-    @Binding var processingStage: ProcessingStage
+    let processingStage: ProcessingStage
     let onCancel: () -> Void
 
     // Get the keyboard appearance from environment
@@ -96,21 +96,21 @@ struct ProcessingStateView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ProcessingStateView(
-                processingStage: .constant(.transcribing),
+                processingStage: .transcribing,
                 onCancel: {}
             )
             .previewDisplayName("Transcribing - Light")
             .preferredColorScheme(.light)
 
             ProcessingStateView(
-                processingStage: .constant(.enhancingWithAI),
+                processingStage: .enhancingWithAI,
                 onCancel: {}
             )
             .previewDisplayName("Enhancing - Dark")
             .preferredColorScheme(.dark)
 
             ProcessingStateView(
-                processingStage: .constant(.error("Failed to process")),
+                processingStage: .error("Failed to process"),
                 onCancel: {}
             )
             .previewDisplayName("Error State")
