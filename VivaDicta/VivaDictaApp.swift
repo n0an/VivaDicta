@@ -19,6 +19,9 @@ struct VivaDictaApp: App {
     init() {
         // Initialize app directories
         FileManager.createAppDirectories()
+
+        // Reset session state on app launch to prevent stale state issues
+        AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
     }
 
     var body: some Scene {
