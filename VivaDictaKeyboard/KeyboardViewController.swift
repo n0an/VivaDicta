@@ -56,17 +56,6 @@ class KeyboardViewController: KeyboardInputViewController {
                 .environment(self?.dictationState ?? KeyboardDictationState())
         }
     }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        // Remove any height constraints to allow natural sizing
-        view.constraints.filter { constraint in
-            constraint.firstAttribute == .height || constraint.secondAttribute == .height
-        }.forEach { constraint in
-            constraint.isActive = false
-        }
-    }
-    
     
     deinit {
         dictationState.stop()
