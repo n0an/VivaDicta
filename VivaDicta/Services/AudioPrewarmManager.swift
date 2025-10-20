@@ -37,6 +37,9 @@ final class AudioPrewarmManager {
     // Audio level for visualization (0.0 to 1.0)
     private(set) var currentAudioLevel: Float = 0.0
 
+    // Observable property for session state
+    private(set) var isSessionActiveObservable: Bool = false
+
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
 
     /// Returns true if the prewarm session is active
@@ -96,6 +99,9 @@ final class AudioPrewarmManager {
         // Setup session timeout
         scheduleSessionTimeout()
 
+        // Update observable state
+        isSessionActiveObservable = true
+
         logger.logInfo("🎙️ Prewarm session started successfully")
     }
 
@@ -132,6 +138,9 @@ final class AudioPrewarmManager {
         expiryTimer = nil
 
         sessionStartTime = nil
+
+        // Update observable state
+        isSessionActiveObservable = false
 
         #if !os(macOS)
         do {
