@@ -45,7 +45,7 @@ extension CloudModel {
     var apiKey: String? {
         get {
             // API keys need to be shared with keyboard extension
-            return UserDefaultsStorage.shared.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+            return UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
         }
     }
 }

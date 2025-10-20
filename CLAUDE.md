@@ -163,6 +163,14 @@ When filtering optional fields in SwiftData predicates, use this proven pattern:
 - Don't use NavigationView {}, use modern NavigationStack instead
 - Use `foregroundStyle` instead of deprecated `foregroundColor` (iOS 17+)
 
+## Multi-Target File Management
+
+When creating files that need to be added to multiple targets (main app, widgets, keyboard extension, etc.):
+- **STOP and notify the user** to manually add the file to the appropriate targets in Xcode
+- Do not attempt to programmatically modify target membership
+- Wait for confirmation that the file has been added to targets before continuing
+- This prevents issues with entities being unavailable across different targets
+
 ## AI-Powered PR Review
 
 The repository includes automated GitHub Actions workflow for AI-powered code review with iOS test execution. TypeScript scripts in `/lib/agents/` orchestrate code review generation and test running using either OpenAI or Anthropic APIs.

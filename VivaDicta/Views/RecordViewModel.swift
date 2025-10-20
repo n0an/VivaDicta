@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import AVFoundation
+@preconcurrency import AVFAudio
 import SwiftData
 import os
 
@@ -75,7 +76,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordViewModel")
 
     var animationTimer: Timer?
-    var recordingHeartbeatTimer: Timer?
 
     weak var appState: AppState?
     public var transcriptionManager: TranscriptionManager {
@@ -101,7 +101,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     init(appState: AppState) {
         self.appState = appState
         super.init()
-        setupDarwinNotificationObservers()
+        setupKeyboardRecordingHandlers()
     }
 
     // Note: No deinit cleanup needed for Darwin observers
@@ -111,12 +111,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var transcribingSpeechTask: Task<Void, Never>?
     
     var captureURL: URL {
-        FileManager.appDirectory(for: .audio).appendingPathComponent("recording.m4a")
+        FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
     }
     
     var recordingState: RecordingState = .idle {
         didSet {
-            logger.info("📱 Recording state changed: \(String(describing: self.recordingState))")
+            logger.logInfo("📱 Recording state changed: \(String(describing: self.recordingState))")
             // Save recording state to shared UserDefaults for keyboard extension
             let isRecording = (recordingState == .recording)
             UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
@@ -162,35 +162,30 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { @MainActor in
             // Guard against duplicate starts
             guard recordingState != .recording else {
-                logger.info("📱 Already recording, ignoring duplicate start request")
+                logger.logInfo("📱 Already recording, ignoring duplicate start request")
                 return
             }
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
-                logger.info("🎙️ Using prewarm session for recording")
+                logger.logInfo("🎙️ Using prewarm session for recording")
 
                 resetValues()
                 recordingState = .recording
-                startRecordingHeartbeat()  // Start heartbeat when recording starts
+
+                // Notify keyboard that recording has started
+                AppGroupCoordinator.shared.updateRecordingState(true)
 
                 do {
-                    // Use prewarm manager's parallel real recorder
-                    // This will start recording alongside the dummy recorder
+                    // Use prewarm manager's AVAudioEngine for recording
                     try prewarmManager.startRealCapture(to: captureURL)
 
-                    // Set audioRecorder reference to prewarm's real recorder for metering
-                    audioRecorder = prewarmManager.activeRealRecorder
-
-                    // Start metering timer for visualization
+                    // Update audio levels from prewarmManager for visualization
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            guard self?.audioRecorder != nil else { return }
-                            self?.audioRecorder.updateMeters()
-                            if let audioRecorder = self?.audioRecorder {
-                                let power = min(1, max(0, 1 - abs(Double(audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                                self?.audioPower = power
-                            }
+                            guard let self = self else { return }
+                            let level = Double(self.prewarmManager.currentAudioLevel)
+                            self.audioPower = level
                         }
                     })
 
@@ -202,7 +197,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             } else {
                 // Normal recording flow (not from keyboard)
-                logger.info("🎙️ Using normal recording flow")
+                logger.logInfo("🎙️ Using normal recording flow")
 
                 
                 do {
@@ -220,7 +215,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 recordingState = .recording
-                startRecordingHeartbeat()  // Start heartbeat when recording starts
+
+                // Notify keyboard that recording has started (even in normal mode)
+                AppGroupCoordinator.shared.updateRecordingState(true)
 
                 do {
                     let settings: [String : Any] = [
@@ -278,7 +275,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     func stopCaptureAudio(modelContext: ModelContext) {
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
-            logger.info("🎙️ Stopping real capture in prewarm mode (dummy continues)")
+            logger.logInfo("🎙️ Stopping real capture in prewarm mode (dummy continues)")
             prewarmManager.stopRealCapture()
 
             // In prewarm mode, we need a small delay to ensure file is flushed to disk
@@ -287,49 +284,139 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
 
                 resetValues()
-                stopRecordingHeartbeat()  // Stop heartbeat when recording stops
 
-                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+                // Notify keyboard that recording has stopped
+                AppGroupCoordinator.shared.updateRecordingState(false)
+
+                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
                 do {
                     try FileManager.default.moveItem(at: captureURL, to: finalURL)
                     transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
                 } catch {
-                    logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                    logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
                 }
             }
         } else {
             // Normal mode
             resetValues()
-            stopRecordingHeartbeat()  // Stop heartbeat when recording stops
-            
 
-            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
+            // Notify keyboard that recording has stopped
+            AppGroupCoordinator.shared.updateRecordingState(false)
+
+            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
             do {
                 try FileManager.default.moveItem(at: captureURL, to: finalURL)
                 transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
             } catch {
-                logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
+                logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
             }
         }
     }
     
+    /// Downsample audio file to 16kHz mono for optimal transcription
+    private func downsampleTo16kHzMono(inputURL: URL, outputURL: URL) async throws {
+        // 1) Open source file
+        let inFile = try AVAudioFile(forReading: inputURL)
+        let inFmt = inFile.processingFormat
+
+        // 2) Target format: 16kHz, mono, PCM Int16
+        guard let outFmt = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: 16_000,
+            channels: 1,
+            interleaved: false
+        ) else {
+            throw RecordError.other
+        }
+
+        // 3) Create converter with quality settings
+        guard let converter = AVAudioConverter(from: inFmt, to: outFmt) else {
+            throw RecordError.other
+        }
+        converter.sampleRateConverterQuality = AVAudioQuality.max.rawValue
+
+        // 4) Read entire input file
+        let frameCount = AVAudioFrameCount(inFile.length)
+        guard let inputBuffer = AVAudioPCMBuffer(pcmFormat: inFmt, frameCapacity: frameCount) else {
+            throw RecordError.other
+        }
+        try inFile.read(into: inputBuffer)
+
+        // 5) Calculate output buffer size
+        let outputFrameCount = AVAudioFrameCount(Double(frameCount) * (16000.0 / inFmt.sampleRate))
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outFmt, frameCapacity: outputFrameCount) else {
+            throw RecordError.other
+        }
+
+        // 6) Convert
+        var error: NSError?
+        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
+            outStatus.pointee = .haveData
+            return inputBuffer
+        }
+
+        if let error = error {
+            throw error
+        }
+
+        // 7) Write output file
+        let outFile = try AVAudioFile(forWriting: outputURL, settings: outFmt.settings, commonFormat: outFmt.commonFormat, interleaved: false)
+        try outFile.write(from: outputBuffer)
+    }
+
     func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext) -> Task<Void, Never> {
         Task { @MainActor in
             do {
                 self.recordingState = .transcribing
 
                 // Notify keyboard that transcription has started
-                AppGroupCoordinator.shared.notifyTranscriptionStarted()
+                AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
+
+                // Check if file needs downsampling (keyboard recordings are 48kHz)
+                var audioURLToTranscribe = recordURL
+
+                // Detect sample rate
+                let tempFile = try AVAudioFile(forReading: recordURL)
+                let sampleRate = tempFile.processingFormat.sampleRate
+
+                if sampleRate > 16000 {
+                    logger.logInfo("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
+                    // Use .wav extension for cross-platform PCM support
+                    let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
+
+                    do {
+                        try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
+
+                        // Verify the output file was created and has content
+                        let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
+                        let fileSize = attributes[.size] as? Int64 ?? 0
+
+                        if fileSize > 1000 {  // At least 1KB
+                            // Delete original high-rate file to save space
+                            try? FileManager.default.removeItem(at: recordURL)
+
+                            // Use downsampled file for transcription
+                            audioURLToTranscribe = downsampledURL
+                            logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
+                        } else {
+                            logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
+                            try? FileManager.default.removeItem(at: downsampledURL)
+                        }
+                    } catch {
+                        logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
+                        // Continue with original file if downsampling fails
+                    }
+                }
 
                 let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
+                let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURLToTranscribe)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
-                
-                let audioAsset = AVURLAsset(url: recordURL)
+
+                let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
                 // Notify keyboard that transcription has ended
-                AppGroupCoordinator.shared.notifyTranscriptionEnded()
+//                AppGroupCoordinator.shared.notifyTranscriptionEnded()
                 
                 var enhancedText: String? = nil
                 var promptName: String? = nil
@@ -338,13 +425,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
                     // Notify keyboard that AI enhancement has started
-                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
-                        
-                        // Notify keyboard that AI enhancement has ended
-                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
                         
                         enhancedText = enhanced
                         promptName = prompt
@@ -352,7 +436,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         
                     } catch {
                         // Enhancement failed
-                        logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
+                        logger.logWarning("📱 AI enhancement failed: \(error.localizedDescription)")
                         try Task.checkCancellation()
                         self.recordingState = .idle
                     }
@@ -363,7 +447,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     text: transcribedText,
                     enhancedText: enhancedText,
                     audioDuration: audioDuration,
-                    audioFileName: recordURL.lastPathComponent,
+                    audioFileName: audioURLToTranscribe.lastPathComponent,
                     transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                     aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
                     promptName: promptName,
@@ -373,14 +457,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 modelContext.insert(transcription)
                 try modelContext.save()
-                
+
+                // Share transcribed text with keyboard (enhanced text if available, otherwise original)
+                let textToShare = enhancedText ?? transcribedText
+                AppGroupCoordinator.shared.shareTranscribedText(textToShare)
+
                 try Task.checkCancellation()
                 self.recordingState = .idle
-                
+
             } catch {
                 if Task.isCancelled { return }
                 recordingState = .error(.transcribe)
                 resetValues()
+
+                // Notify keyboard of error
+                AppGroupCoordinator.shared.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
             }
         }
     }
@@ -408,8 +499,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
         resetValues()
-        stopRecordingHeartbeat()  // Stop heartbeat when canceling
         recordingState = .idle
+
+        // Notify keyboard that recording was canceled
+        AppGroupCoordinator.shared.updateRecordingState(false)
+        AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
     }
     
     func resetValues() {
@@ -446,265 +540,77 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
 
-    // MARK: - Recording Heartbeat
+    // MARK: - Keyboard Recording Handlers
 
-    private func startRecordingHeartbeat() {
-        // Guard against duplicate starts
-        guard recordingHeartbeatTimer == nil else {
-            logger.info("💙 Recording heartbeat timer already running, skipping duplicate start")
-            return
-        }
+    private func setupKeyboardRecordingHandlers() {
+        // Handle start recording request from keyboard
+        AppGroupCoordinator.shared.onStartRecordingRequested = { [weak self] in
+            guard let self = self else { return }
 
-        // Send initial heartbeat
-        updateRecordingHeartbeat()
+            // Only start if prewarm session is active and not already recording
+            if self.prewarmManager.isSessionActive && self.recordingState != .recording {
+                self.logger.logInfo("📱 Starting recording from keyboard request")
 
-        // Start new heartbeat timer
-        recordingHeartbeatTimer = Timer.scheduledTimer(withTimeInterval: AppGroupConfig.recordingHeartbeatInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateRecordingHeartbeat()
-            }
-        }
-
-        logger.info("💙 Started recording heartbeat timer")
-    }
-
-    private func stopRecordingHeartbeat() {
-        recordingHeartbeatTimer?.invalidate()
-        recordingHeartbeatTimer = nil
-
-        // Clear the heartbeat timestamp and recording flag to indicate recording has stopped
-        UserDefaultsStorage.shared.set(0.0, forKey: AppGroupConfig.recordingHeartbeatKey)
-        UserDefaultsStorage.shared.set(false, forKey: "isRecording")  // Explicitly clear the recording flag
-        UserDefaultsStorage.shared.synchronize()
-
-        logger.info("💙 Stopped recording heartbeat timer and cleared recording flag")
-    }
-
-    private func updateRecordingHeartbeat() {
-        let currentTime = Date().timeIntervalSince1970
-        UserDefaultsStorage.shared.set(currentTime, forKey: AppGroupConfig.recordingHeartbeatKey)
-        UserDefaultsStorage.shared.synchronize()
-
-        logger.debug("💙 Updated recording heartbeat: \(String(format: "%.1f", currentTime))")
-    }
-
-    // MARK: - Darwin Notification Handling
-
-    private func setupDarwinNotificationObservers() {
-        // Observe start recording request from keyboard
-        AppGroupCoordinator.shared.observeStartRecording { [weak self] in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.logger.info("📱 Received Darwin notification: Start Recording from keyboard")
-
-                // Check if already recording
-                guard self.recordingState != .recording else {
-                    self.logger.info("📱 Already recording, ignoring start request")
-                    return
+                // Reload the selected FlowMode from keyboard before starting
+                self.appState?.aiService.reloadSelectedModeFromKeyboard()
+                // Update TranscriptionManager with the reloaded mode
+                if let selectedMode = self.appState?.aiService.selectedMode {
+                    self.appState?.transcriptionManager.setCurrentMode(selectedMode)
                 }
 
-                // Start recording
                 self.startCaptureAudio()
-
-                // Notify keyboard that recording has started
-                AppGroupCoordinator.shared.notifyRecordingStarted()
             }
         }
 
-        // Observe stop recording request from keyboard
-        AppGroupCoordinator.shared.observeStopRecording { [weak self] in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.logger.info("📱 Received Darwin notification: Stop Recording from keyboard")
+        // Handle stop recording request from keyboard
+        AppGroupCoordinator.shared.onStopRecordingRequested = { [weak self] in
+            guard let self = self else { return }
 
-                // Check if actually recording
-                guard self.recordingState == .recording else {
-                    self.logger.info("📱 Not recording, ignoring stop request")
-                    return
+            if self.recordingState == .recording {
+                self.logger.logInfo("📱 Stopping recording from keyboard request")
+
+                // Reload the selected FlowMode from keyboard before transcription
+                self.appState?.aiService.reloadSelectedModeFromKeyboard()
+                // Update TranscriptionManager with the reloaded mode
+                if let selectedMode = self.appState?.aiService.selectedMode {
+                    self.appState?.transcriptionManager.setCurrentMode(selectedMode)
                 }
 
-                // Stop recording and handle transcription for keyboard
-                self.stopCaptureAudioForKeyboard()
-            }
-        }
-
-        // Observe cancel recording request from keyboard (no transcription)
-        AppGroupCoordinator.shared.observeCancelRecording { [weak self] in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.logger.info("📱 Received Darwin notification: Cancel Recording from keyboard")
-
-                // Check if actually recording
-                guard self.recordingState == .recording else {
-                    self.logger.info("📱 Not recording, ignoring cancel request")
-                    return
-                }
-
-                // Cancel recording without transcription
-                self.cancelCaptureAudioForKeyboard()
-            }
-        }
-    }
-
-    private func cancelCaptureAudioForKeyboard() {
-        logger.info("📱 Canceling recording from keyboard - no transcription")
-
-        // Stop recording without transcription
-        resetValues()
-        stopRecordingHeartbeat()  // Stop heartbeat when keyboard cancels recording
-
-        // Notify keyboard that recording has stopped
-        AppGroupCoordinator.shared.notifyRecordingStopped()
-
-        // Clear recording state to prevent transcription
-        recordingState = .idle
-    }
-
-    private func stopCaptureAudioForKeyboard() {
-        // Stop real recorder if in prewarm mode (dummy continues running)
-        if prewarmManager.isSessionActive {
-            logger.info("🎙️ Stopping real capture in prewarm mode for keyboard (dummy continues)")
-            prewarmManager.stopRealCapture()
-
-            // In prewarm mode, we need a small delay to ensure file is flushed to disk
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
-
-                resetValues()
-                stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
-
-                // Notify keyboard that recording has stopped
-                AppGroupCoordinator.shared.notifyRecordingStopped()
-
-                // Don't schedule session deactivation - prewarm session continues
-
-                // Save the audio file
-                let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
-                do {
-                    try FileManager.default.moveItem(at: captureURL, to: finalURL)
-
-                    // Start transcription task that will save to both UserDefaults and SwiftData
-                    transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
-                } catch {
-                    logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
-                    recordingState = .error(.recordError)
-                }
-            }
-        } else {
-            // TODO: - probably safe to delete - if there's no prewarm session, we can't catch darwin notification
-            // Normal mode (not using prewarm)
-            resetValues()
-            stopRecordingHeartbeat()  // Stop heartbeat when keyboard stops recording
-
-            // Notify keyboard that recording has stopped
-            AppGroupCoordinator.shared.notifyRecordingStopped()
-
-            // Save the audio file
-            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).m4a")
-            do {
-                try FileManager.default.moveItem(at: captureURL, to: finalURL)
-
-                // Start transcription task that will save to both UserDefaults and SwiftData
-                
-                // TODO: Disabling transcription and Setting Debug Error, this path should never happen
-//                transcribingSpeechTask = transcribeSpeechTaskForKeyboard(recordURL: finalURL)
-                recordingState = .error(.debugError)
-            } catch {
-                logger.error("📱 Failed to move audio file: \(error.localizedDescription)")
-                recordingState = .error(.recordError)
-            }
-        }
-    }
-
-    private func transcribeSpeechTaskForKeyboard(recordURL: URL) -> Task<Void, Never> {
-        Task { @MainActor in
-            do {
-                self.recordingState = .transcribing
-
-                // Notify keyboard that transcription has started
-                AppGroupCoordinator.shared.notifyTranscriptionStarted()
-
-                let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(audioURL: recordURL)
-                let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
-
-                // Get audio duration
-                let audioAsset = AVURLAsset(url: recordURL)
-                let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
-
-                // Notify keyboard that transcription has ended
-                AppGroupCoordinator.shared.notifyTranscriptionEnded()
-                
-                // Load the selected flow mode from shared UserDefaults (set by keyboard)
-                if let selectedModeName = UserDefaultsStorage.shared.string(forKey: AppGroupConfig.selectedAIModeKey) {
-                    logger.info("📱 Loading flow mode from keyboard: \(selectedModeName)")
-                    // Update the AI service's selected mode to match what was selected in keyboard
-                    aiService.selectedModeName = selectedModeName
-                }
-                
-                // Check if AI Enhancement is configured
-                var enhancedText: String? = nil
-                var promptName: String? = nil
-                var enhancementDur: TimeInterval? = nil
-
-                if aiService.isProperlyConfigured() {
-                    // Notify keyboard that AI enhancement has started
-                    AppGroupCoordinator.shared.notifyAIEnhancementStarted()
-
-                    do {
-                        let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
-                        enhancedText = enhanced
-                        promptName = prompt
-                        enhancementDur = enhancementDuration
-
-                        // Notify keyboard that AI enhancement has ended
-                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
-                    } catch {
-                        logger.warning("📱 AI enhancement failed: \(error.localizedDescription)")
-                        // Notify keyboard that AI enhancement has ended (even on failure)
-                        AppGroupCoordinator.shared.notifyAIEnhancementEnded()
-                    }
-                }
-
-                // Save the ENHANCED text (if available) or original text to shared UserDefaults for keyboard
-                let textToInsert = enhancedText ?? transcribedText
-                UserDefaultsStorage.shared.set(textToInsert, forKey: "lastTranscription")
-                UserDefaultsStorage.shared.synchronize()
-
-                // Also save to SwiftData using Persistence.container
+                // Create a new ModelContext from Persistence container
                 let context = ModelContext(Persistence.container)
+                self.stopCaptureAudio(modelContext: context)
+            }
+        }
 
-                // Create and save transcription to SwiftData
-                let transcription = Transcription(
-                    text: transcribedText,
-                    enhancedText: enhancedText,
-                    audioDuration: audioDuration,
-                    audioFileName: recordURL.lastPathComponent,
-                    transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                    aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
-                    promptName: promptName,
-                    transcriptionDuration: transcriptionDuration,
-                    enhancementDuration: enhancementDur
-                )
+        // Handle cancel recording request from keyboard
+        AppGroupCoordinator.shared.onCancelRecordingRequested = { [weak self] in
+            guard let self = self else { return }
 
-                context.insert(transcription)
-                try context.save()
-                
-                // Notify keyboard that transcription is ready
-                AppGroupCoordinator.shared.notifyTranscriptionReady()
+            if self.recordingState == .recording {
+                self.logger.logInfo("📱 Canceling recording from keyboard request")
+                self.cancelTranscribe()
+            }
+        }
 
-                self.recordingState = .idle
+        // Handle pause recording request from keyboard
+        AppGroupCoordinator.shared.onPauseRecordingRequested = { [weak self] in
+            guard let self = self else { return }
 
-                let savedTextType = enhancedText != nil ? "enhanced" : "original"
-                logger.info("📱 Transcription (\(savedTextType)) saved to UserDefaults and SwiftData, notification sent to keyboard")
-            } catch {
-                self.recordingState = .error(.transcribe)
+            if self.recordingState == .recording {
+                self.logger.logInfo("📱 Pausing recording from keyboard request")
+                // TODO: Implement pause functionality if needed
+            }
+        }
 
-                // Notify keyboard about error
-                AppGroupCoordinator.shared.notifyRecordingError()
+        // Handle resume recording request from keyboard
+        AppGroupCoordinator.shared.onResumeRecordingRequested = { [weak self] in
+            guard let self = self else { return }
 
-                logger.error("📱 Transcription failed: \(error.localizedDescription)")
+            if self.recordingState == .recording {
+                self.logger.logInfo("📱 Resuming recording from keyboard request")
+                // TODO: Implement resume functionality if needed
             }
         }
     }
+
 }

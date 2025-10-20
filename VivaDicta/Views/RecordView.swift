@@ -10,8 +10,12 @@ import SiriWaveView
 
 struct RecordView: View {
     @Environment(\.modelContext) var modelContext
-    @State var vm: RecordViewModel
+    @Bindable var appState: AppState
     @State var isSymbolAnimating = false
+
+    private var vm: RecordViewModel {
+        appState.recordViewModel
+    }
 
     var body: some View {
         if vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
@@ -28,7 +32,7 @@ struct RecordView: View {
     }
 
     init(appState: AppState) {
-        self._vm = State(wrappedValue: RecordViewModel(appState: appState))
+        self.appState = appState
     }
     
     var modelSelectedView: some View {
@@ -36,22 +40,22 @@ struct RecordView: View {
             modePicker
             whisperKitPerformanceInfo
             Spacer()
-            SiriWaveView(power: $vm.audioPower)
+            SiriWaveView(power: $appState.recordViewModel.audioPower)
                 .opacity(vm.siriWaveFormOpacity)
                 .frame(height: 256)
                 .overlay { overlayView }
             Spacer()
-            
-            switch vm.recordingState {
+
+            switch vm.recordingState { 
             case .recording:
                 stopRecordingButton
-                
+
             case .transcribing:
                 cancelTranscribingButton
-                
+
             default: EmptyView()
             }
-            
+
             if case let .error(error) = vm.recordingState {
                 Text(error.localizedDescription)
                     .foregroundStyle(.red)
@@ -59,7 +63,7 @@ struct RecordView: View {
                     .lineLimit(2)
             }
         }
-        .alert(isPresented: $vm.isShowingAlert, error: vm.recordError) { recordError in
+        .alert(isPresented: $appState.recordViewModel.isShowingAlert, error: vm.recordError) { recordError in
             
             switch recordError {
             case .userDenied:
@@ -134,7 +138,7 @@ struct RecordView: View {
         HStack {
             Spacer()
 
-            Picker("Mode", selection: $vm.selectedModeName) {
+            Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
                 ForEach(vm.availableModes, id: \.name) { mode in
                     Text(mode.name)
                         .tag(mode.name)

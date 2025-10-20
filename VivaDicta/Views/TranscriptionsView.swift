@@ -97,7 +97,7 @@ struct TranscriptionsView: View {
                     filteredTranscriptions = results
                 }
             } catch {
-                logger.error("Search was cancelled or failed: \(error.localizedDescription)")
+                logger.logError("Search was cancelled or failed: \(error.localizedDescription)")
             }
         }
     }
@@ -117,7 +117,7 @@ struct TranscriptionsView: View {
         do {
             try modelContext.save()
         } catch {
-            logger.error("Failed to save after deletion: \(error.localizedDescription)")
+            logger.logError("Failed to save after deletion: \(error.localizedDescription)")
         }
     }
 

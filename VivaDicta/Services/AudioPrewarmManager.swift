@@ -3,16 +3,17 @@
 //  VivaDicta
 //
 //  Manages audio pre-warming session for keyboard recording
-//  Uses continuous dummy recorder + parallel real recorder approach
+//  Uses continuous AVAudioEngine with installTap
+//  Switches between discarding buffers (armed) and writing to file (capturing)
 //
 
 import Foundation
 import AVFoundation
 import os
+@preconcurrency import AVFAudio
 
 @Observable
 final class AudioPrewarmManager {
-    
     static let shared = AudioPrewarmManager()
     
     // MARK: - Properties
@@ -27,28 +28,30 @@ final class AudioPrewarmManager {
         }
     }
 
-    private var dummyRecorder: AVAudioRecorder?
-    private var realRecorder: AVAudioRecorder?
     private var sessionStartTime: Date?
-    private var sessionTimeoutDuration: TimeInterval = AppGroupConfig.audioPrewarmSessionTimeout
     private var expiryTimer: Timer?
-    private var dummyFileURL: URL?
+
+    var audioEngine: AVAudioEngine?
+    private var captureContext: AudioCaptureContext?
+
+    // Audio level for visualization (0.0 to 1.0)
+    private(set) var currentAudioLevel: Float = 0.0
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
 
+    /// Returns true if the prewarm session is active
+    /// - Session is active if audio engine is running AND either:
+    ///   1. We're within the timeout period, OR
+    ///   2. Real recording is currently active (no timeout during real recording)
     var isSessionActive: Bool {
-        dummyRecorder?.isRecording == true && isWithinSessionTimeout()
+        audioEngine?.isRunning == true &&
+        (isWithinSessionTimeout() || captureContext?.isCapturing == true)
     }
 
     var timeoutRemaining: TimeInterval {
         guard let startTime = sessionStartTime else { return 0 }
         let elapsed = Date().timeIntervalSince(startTime)
-        return max(0, sessionTimeoutDuration - elapsed)
-    }
-
-    /// Public getter for real recorder (for metering in RecordViewModel)
-    var activeRealRecorder: AVAudioRecorder? {
-        realRecorder
+        return max(0, TimeInterval(audioSessionTimeout) - elapsed)
     }
 
     private init() {}
@@ -56,21 +59,22 @@ final class AudioPrewarmManager {
     // MARK: - Session Management
 
     /// Starts pre-warm session - activates audio session and starts continuous dummy recorder
-    /// - Parameter timeout: Session duration in seconds (uses AudioSessionManager timeout if not specified)
+    /// - Parameter timeout: Session duration in seconds (uses configured timeout if not specified)
     func startPrewarmSession(timeout: TimeInterval? = nil) throws {
         // If session is already active, just extend it
         if isSessionActive {
-            logger.info("🎙️ Prewarm session already active, extending timeout")
+            logger.logInfo("🎙️ Prewarm session already active, extending timeout")
             extendSession(timeout: timeout)
             return
         }
 
-        // Use AudioSessionManager timeout if not specified
-        let sessionTimeout = timeout ?? TimeInterval(audioSessionTimeout)
+        // Update timeout if specified, otherwise use existing setting
+        if let timeout = timeout {
+            audioSessionTimeout = Int(timeout)
+        }
         sessionStartTime = Date()
-        sessionTimeoutDuration = sessionTimeout
 
-        logger.info("🎙️ Starting prewarm session (timeout: \(sessionTimeout)s)")
+        logger.logInfo("🎙️ Starting prewarm session (timeout: \(self.audioSessionTimeout)s)")
 
         // Configure audio session
         #if !os(macOS)
@@ -84,94 +88,119 @@ final class AudioPrewarmManager {
         #endif
 
         // Start continuous dummy recorder
-        try startDummyRecording()
+        Task {
+            
+            try await startDummyRecording()
+        }
 
         // Setup session timeout
         scheduleSessionTimeout()
 
-        logger.info("🎙️ Prewarm session started successfully")
+        logger.logInfo("🎙️ Prewarm session started successfully")
     }
 
     /// Extends the current session timeout (called from deeplink if session already active)
     private func extendSession(timeout: TimeInterval?) {
         guard isSessionActive else { return }
 
-        let newTimeout = timeout ?? TimeInterval(audioSessionTimeout)
+        // Update timeout if specified
+        if let timeout = timeout {
+            audioSessionTimeout = Int(timeout)
+        }
         sessionStartTime = Date()
-        sessionTimeoutDuration = newTimeout
 
         // Reschedule timeout
         scheduleSessionTimeout()
 
-        logger.info("🎙️ Prewarm session extended (new timeout: \(newTimeout)s)")
+        logger.logInfo("🎙️ Prewarm session extended (new timeout: \(self.audioSessionTimeout)s)")
     }
 
     /// Ends the prewarm session and cleans up all resources
     func endSession() {
-        logger.info("🎙️ Ending prewarm session")
+        logger.logInfo("🎙️ Ending prewarm session")
 
-        dummyRecorder?.stop()
-        realRecorder?.stop()
-        dummyRecorder = nil
-        realRecorder = nil
+        // Stop capturing if active
+        captureContext?.isCapturing = false
+        captureContext?.audioFile = nil
+        captureContext = nil
+
+        // Stop audio engine
+        audioEngine?.stop()
+        audioEngine = nil
 
         expiryTimer?.invalidate()
         expiryTimer = nil
 
         sessionStartTime = nil
 
-        // Clean up dummy file
-        if let url = dummyFileURL {
-            cleanupDummyFile(url)
-            dummyFileURL = nil
-        }
-
         #if !os(macOS)
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         } catch {
-            logger.error("⚠️ Failed to deactivate audio session: \(error.localizedDescription)")
+            logger.logError("⚠️ Failed to deactivate audio session: \(error.localizedDescription)")
         }
         #endif
 
-        logger.info("🎙️ Prewarm session ended")
+        // Deactivate keyboard session to notify keyboard that hot mic has ended
+        AppGroupCoordinator.shared.deactivateKeyboardSession()
+
+        logger.logInfo("🎙️ Prewarm session and keyboard session ended")
     }
 
-    // MARK: - Dummy Recorder (Continuous)
+    // MARK: - Audio Engine (Continuous)
 
-    private func startDummyRecording() throws {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("dummy_\(Date().timeIntervalSince1970).m4a")
+    private func startDummyRecording() async throws {
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else {
+            throw PrewarmError.recorderNotActive
+        }
 
-        dummyFileURL = tempURL
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        // Use EXACT SAME settings as RecordViewModel for consistency
-        // This ensures both recorders can coexist without format conflicts
-        let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatLinearPCM),
-            AVSampleRateKey: 16000.0,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-        ]
+        // Create capture context for controlling real recordings
+        let captureContext = AudioCaptureContext()
+        self.captureContext = captureContext
 
-        dummyRecorder = try AVAudioRecorder(url: tempURL, settings: settings)
-        dummyRecorder?.record()
+        // Install tap on background queue to avoid inheriting actor context
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                installInputTapNonisolated(
+                    inputNode: inputNode,
+                    format: recordingFormat,
+                    captureContext: captureContext,
+                    onLevelUpdate: { [weak self] level in
+                        Task { @MainActor [weak self] in
+                            self?.currentAudioLevel = level
+                        }
+                    }
+                )
+                continuation.resume()
+            }
+        }
 
-        logger.info("🎙️ Dummy recorder started (keeps app alive, orange dot visible)")
+        // Start the audio engine
+        try audioEngine.start()
+
+        logger.logInfo("🎙️ Audio engine started (tap installed, ready for real capture)")
     }
 
     private func scheduleSessionTimeout() {
         expiryTimer?.invalidate()
 
-        expiryTimer = Timer.scheduledTimer(withTimeInterval: sessionTimeoutDuration, repeats: false) { [weak self] _ in
-            
+        expiryTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(audioSessionTimeout), repeats: false) { [weak self] _ in
+
             Task { @MainActor [weak self] in
-                self?.logger.info("⏰ Prewarm session timeout reached")
-                self?.endSession()
+                guard let self = self else { return }
+
+                // Simply end the session when timeout is reached
+                // Real recording will have already invalidated this timer if active
+                self.logger.logInfo("⏰ Prewarm session timeout reached - ending session")
+                self.endSession()
             }
         }
 
-        logger.info("⏰ Session timeout scheduled for \(self.sessionTimeoutDuration)s from now")
+        logger.logInfo("⏰ Session timeout scheduled for \(self.audioSessionTimeout)s from now")
     }
 
     // MARK: - Real Recorder (Parallel)
@@ -183,35 +212,84 @@ final class AudioPrewarmManager {
             throw PrewarmError.sessionExpired
         }
 
-        logger.info("🎙️ Starting real capture (dummy keeps running)")
+        guard let captureContext = captureContext else {
+            throw PrewarmError.recorderNotActive
+        }
 
-        // IMPORTANT: Don't stop dummy recorder - it keeps running!
-        // Use SAME settings as RecordViewModel normal flow for compatibility
-        let settings: [String : Any] = [
+        guard let audioEngine = audioEngine, audioEngine.isRunning else {
+            throw PrewarmError.recorderNotActive
+        }
+
+        logger.logInfo("🎙️ Starting real capture to file (audio already flowing through tap)")
+
+        // Invalidate timeout timer while real recording is active
+        expiryTimer?.invalidate()
+        expiryTimer = nil
+        logger.logInfo("⏰ Invalidated timeout - will continue indefinitely while recording")
+
+        // Get the actual format from the audio engine's input node
+        let inputNode = audioEngine.inputNode
+        let engineFormat = inputNode.outputFormat(forBus: 0)
+
+        // Check if format is float or integer
+        let isFloat = engineFormat.commonFormat == .pcmFormatFloat32 ||
+                      engineFormat.commonFormat == .pcmFormatFloat64
+
+        logger.logInfo("🎙️ Engine format: \(engineFormat.sampleRate)Hz, \(engineFormat.channelCount) channels, isFloat: \(isFloat), commonFormat: \(engineFormat.commonFormat.rawValue)")
+
+        // Create settings based on engine's actual format to avoid sample rate mismatch
+        // Use the engine's native sample rate and format
+        let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 16_000.0,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
+            AVSampleRateKey: engineFormat.sampleRate,
+            AVNumberOfChannelsKey: engineFormat.channelCount,
+            AVLinearPCMBitDepthKey: isFloat ? 32 : 16,
             AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
+            AVLinearPCMIsFloatKey: isFloat
         ]
 
-        realRecorder = try AVAudioRecorder(url: url, settings: settings)
-        realRecorder?.isMeteringEnabled = true  // Enable metering for visualization
-        realRecorder?.record()
+        let audioFile = try AVAudioFile(forWriting: url, settings: settings)
 
-        logger.info("🎙️ Real recorder started (parallel with dummy)")
+        // Atomically start capturing to the new file
+        captureContext.audioFile = audioFile
+        captureContext.isCapturing = true
+
+        logger.logInfo("🎙️ Real capture started (buffers now writing to disk)")
     }
 
-    /// Stops real recording (dummy continues running)
+    /// Stops real recording and restarts the pre-warm session timeout
     func stopRealCapture() {
-        logger.info("🎙️ Stopping real capture (dummy continues)")
+        logger.logInfo("🎙️ Stopping real capture and restarting session timeout")
 
-        realRecorder?.stop()
-        realRecorder = nil
+        // Stop writing to file atomically
+        captureContext?.isCapturing = false
+        captureContext?.audioFile = nil
 
-        // Dummy keeps running - no switching, no orange dot disappearing
-        // Session continues until timeout
+        // Audio engine keeps running (no check needed)
+        guard audioEngine?.isRunning == true else {
+            logger.logError("❌ Unexpected: Audio engine not running after real recording!")
+
+            do {
+                try startPrewarmSession()
+                logger.logInfo("🔧 Recovery: Successfully restarted pre-warm session")
+            } catch {
+                logger.logError("❌ Recovery failed: \(error.localizedDescription)")
+            }
+            return
+        }
+
+        // Reset the session start time
+        sessionStartTime = Date()
+
+        // Restart the timeout timer
+        scheduleSessionTimeout()
+
+        // Refresh keyboard session expiry
+        AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(
+            timeoutSeconds: audioSessionTimeout
+        )
+
+        logger.logInfo("🎙️ Restarted pre-warm session timeout: \(self.audioSessionTimeout)s from now")
     }
 
     // MARK: - Private Helpers
@@ -219,16 +297,7 @@ final class AudioPrewarmManager {
     private func isWithinSessionTimeout() -> Bool {
         guard let startTime = sessionStartTime else { return false }
         let elapsed = Date().timeIntervalSince(startTime)
-        return elapsed < sessionTimeoutDuration
-    }
-
-    private func cleanupDummyFile(_ url: URL) {
-        do {
-            try FileManager.default.removeItem(at: url)
-            logger.info("🗑️ Cleaned up dummy recording file")
-        } catch {
-            logger.error("⚠️ Failed to cleanup dummy file: \(error.localizedDescription)")
-        }
+        return elapsed < TimeInterval(audioSessionTimeout)
     }
 }
 
@@ -237,4 +306,126 @@ final class AudioPrewarmManager {
 enum PrewarmError: Error {
     case sessionExpired
     case recorderNotActive
+}
+
+
+
+
+nonisolated private func installInputTapNonisolated(
+    inputNode: AVAudioInputNode,
+    format: AVAudioFormat,
+    captureContext: AudioCaptureContext,
+    onLevelUpdate: @escaping (Float) -> Void
+) {
+    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "installInputTapNonisolated")
+
+    inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+        // This runs on audio thread - context handles thread-safety
+        captureContext.writeBufferIfCapturing(buffer, updateLevel: onLevelUpdate)
+    }
+
+    logger.logError("🎙️ Input tap installed on audio thread")
+}
+
+
+
+/// Thread-safe capture context for audio recording
+nonisolated private final class AudioCaptureContext: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _isCapturing = false
+    private var _audioFile: AVAudioFile?
+    private var _currentAudioLevel: Float = 0.0
+
+    nonisolated init() {}
+
+    var isCapturing: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _isCapturing
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _isCapturing = newValue
+        }
+    }
+
+    var audioFile: AVAudioFile? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _audioFile
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _audioFile = newValue
+        }
+    }
+
+    var currentAudioLevel: Float {
+        lock.lock()
+        defer { lock.unlock() }
+        return _currentAudioLevel
+    }
+
+    nonisolated func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer, updateLevel: @escaping (Float) -> Void) {
+        // Calculate audio level from PCM buffer
+        let level = calculateAudioLevel(from: buffer)
+
+        // Update level immediately (outside lock to avoid potential issues)
+        updateLevel(level)
+
+        // Now handle file writing with lock
+        lock.lock()
+        defer { lock.unlock() }
+
+        _currentAudioLevel = level
+
+        guard _isCapturing, let file = _audioFile else { return }
+
+        do {
+            try file.write(from: buffer)
+        } catch {
+            // Log error but don't crash audio thread
+            print("Failed to write audio buffer: \(error)")
+        }
+    }
+
+    private func calculateAudioLevel(from buffer: AVAudioPCMBuffer) -> Float {
+        // Try float32 format first (most common for AVAudioEngine)
+        if let floatData = buffer.floatChannelData {
+            let channelData = floatData.pointee
+            var sum: Float = 0
+            for i in 0..<Int(buffer.frameLength) {
+                let sample = channelData[i]
+                sum += sample * sample
+            }
+
+            let rms = sqrt(sum / Float(buffer.frameLength))
+            let avgPower = 20 * log10(rms)
+            // Normalize to 0...1 range (assuming -50dB to 0dB range)
+            let normalizedPower = max(0, min(1, 1 - abs(avgPower / 50)))
+            return normalizedPower
+        }
+
+        // Fallback to int16 format
+        if let int16Data = buffer.int16ChannelData {
+            let channelData = int16Data.pointee
+            var sum: Float = 0
+            for i in 0..<Int(buffer.frameLength) {
+                let sample = Float(channelData[i]) / 32768.0  // Normalize to -1.0...1.0
+                sum += sample * sample
+            }
+
+            let rms = sqrt(sum / Float(buffer.frameLength))
+            let avgPower = 20 * log10(rms)
+            // Normalize to 0...1 range (assuming -50dB to 0dB range)
+            let normalizedPower = max(0, min(1, 1 - abs(avgPower / 50)))
+            return normalizedPower
+        }
+
+        return 0
+    }
 }

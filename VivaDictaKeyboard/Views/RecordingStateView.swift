@@ -9,10 +9,10 @@ import SwiftUI
 import KeyboardKit
 
 struct RecordingStateView: View {
-    
+
     @State var isSymbolAnimating = false
-    
-    let stateManager: KeyboardStateManager
+
+    @Bindable var flowModeManager: FlowModeManager
     let onCancelTapped: () -> Void
     let onStopTapped: () -> Void
     
@@ -41,11 +41,8 @@ struct RecordingStateView: View {
             
             // Flow Mode Picker
             VStack(spacing: 20) {
-                Picker("Flow Mode", selection: Binding(
-                    get: { stateManager.selectedFlowMode },
-                    set: { stateManager.selectFlowMode($0) }
-                )) {
-                    ForEach(stateManager.availableFlowModes, id: \.id) { mode in
+                Picker("Flow Mode", selection: $flowModeManager.selectedFlowMode) {
+                    ForEach(flowModeManager.availableFlowModes, id: \.id) { mode in
                         Text(mode.name).tag(mode)
                     }
                 }
@@ -54,8 +51,8 @@ struct RecordingStateView: View {
                 .frame(minWidth: 120)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                
-                // Recording indicator dots (placeholder for now)
+
+                // Recording indicator
                 
                 Image(systemName: "microphone.circle.fill")
                     .foregroundStyle(Color.green)
@@ -93,10 +90,10 @@ struct RecordingStateView: View {
 }
 
 // MARK: - Preview
-
+//
 #Preview {
     RecordingStateView(
-        stateManager: KeyboardStateManager(),
+        flowModeManager: FlowModeManager(),
         onCancelTapped: {},
         onStopTapped: {}
     )

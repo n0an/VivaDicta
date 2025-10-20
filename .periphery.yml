@@ -1,0 +1,5 @@
+project: VivaDicta.xcodeproj
+schemes:
+- VivaDicta
+- VivaDictaKeyboard
+- VivaDictaWidgetExtension

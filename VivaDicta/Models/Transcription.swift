@@ -58,6 +58,38 @@ class Transcription {
         guard transcriptionDuration > 0 else { return "N/A" }
         return (audioDuration / transcriptionDuration).formatted(.number.precision(.fractionLength(0...1)))
     }
+
+    /// Get the audio file size in bytes
+    nonisolated func getAudioFileSize() -> Int64? {
+        guard let audioFileName = audioFileName else { return nil }
+
+        // Construct audio directory path directly to avoid MainActor isolation issues
+        let documentsDirectory = URL.documentsDirectory
+        let audioDirectory = documentsDirectory.appendingPathComponent("Audio")
+        let audioURL = audioDirectory.appendingPathComponent(audioFileName)
+
+        guard FileManager.default.fileExists(atPath: audioURL.path) else { return nil }
+
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: audioURL.path)
+            return attributes[.size] as? Int64
+        } catch {
+            return nil
+        }
+    }
+
+    /// Format file size in human-readable format (KB, MB)
+    nonisolated func getAudioFileSizeFormatted() -> String {
+        guard let bytes = getAudioFileSize() else { return "N/A" }
+
+        let kb = Double(bytes) / 1024.0
+        if kb < 1024 {
+            return String(format: "%.0f KB", kb)
+        }
+
+        let mb = kb / 1024.0
+        return String(format: "%.1f MB", mb)
+    }
 }
 
 extension Transcription {

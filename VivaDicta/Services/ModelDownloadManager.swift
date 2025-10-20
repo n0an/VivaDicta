@@ -44,7 +44,7 @@ class ModelDownloadManager: @unchecked Sendable {
             downloadProgress.removeValue(forKey: model.name + "_coreml")
             downloadProgress.removeValue(forKey: model.name)
         }
-        logger.error("Error downloading model \(model.name): \(error.localizedDescription)")
+        logger.logError("Error downloading model \(model.name): \(error.localizedDescription)")
     }
 
     public func currentProgress(for model: any TranscriptionModel) -> Double {
@@ -72,7 +72,7 @@ class ModelDownloadManager: @unchecked Sendable {
             downloadProgress[model.name] = 0.0
         }
 
-        logger.notice("📥 Starting download of \(model.displayName)")
+        logger.logNotice("📥 Starting download of \(model.displayName)")
 
         // Start progress simulation - declare outside do block to ensure cleanup
         let progressTask = Task { @MainActor in
@@ -102,7 +102,7 @@ class ModelDownloadManager: @unchecked Sendable {
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
-                logger.notice("✅ Successfully downloaded \(model.displayName)")
+                logger.logNotice("✅ Successfully downloaded \(model.displayName)")
             }
 
             try? await Task.sleep(for: .seconds(0.5))
@@ -118,7 +118,7 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress.removeValue(forKey: model.name)
             }
 
-            logger.error("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
+            logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
         }
     }
@@ -131,7 +131,7 @@ class ModelDownloadManager: @unchecked Sendable {
             downloadProgress[model.name] = 0.0
         }
 
-        logger.notice("📥 Starting download and preparation of \(model.displayName)")
+        logger.logNotice("📥 Starting download and preparation of \(model.displayName)")
 
         do {
             // Initialize WhisperKit without auto-loading
@@ -149,7 +149,7 @@ class ModelDownloadManager: @unchecked Sendable {
             let modelFolder = WhisperKitModel.modelPath(for: model.whisperKitModelName)
 
             if !FileManager.default.fileExists(atPath: modelFolder.path) {
-                logger.notice("📥 Downloading model: \(model.whisperKitModelName)")
+                logger.logNotice("📥 Downloading model: \(model.whisperKitModelName)")
 
                 // Download the model with real progress tracking
                 let downloadedFolder = try await WhisperKit.download(
@@ -173,27 +173,27 @@ class ModelDownloadManager: @unchecked Sendable {
             }
 
             // Prewarm models with animated progress (critical for first-time performance)
-            logger.notice("🔥 Prewarming model: \(model.whisperKitModelName)")
+            logger.logNotice("🔥 Prewarming model: \(model.whisperKitModelName)")
             await MainActor.run {
                 self.downloadProgress[model.name] = 0.75
             }
 
             // Start progress animation for pre-warming phase
             let progressTask = Task { @MainActor in
-                logger.notice("📊 Starting pre-warm progress animation from 75% to 90%")
+                logger.logNotice("📊 Starting pre-warm progress animation from 75% to 90%")
                 await self.animateProgressExponentially(
                     for: model.name,
                     from: 0.75,
                     to: 0.9,
                     maxDuration: 240.0 // 4 minutes max
                 )
-                logger.notice("📊 Pre-warm progress animation completed or cancelled")
+                logger.logNotice("📊 Pre-warm progress animation completed or cancelled")
             }
 
             let prewarmStart = Date()
             try await whisperKit.prewarmModels()
             let prewarmDuration = Date().timeIntervalSince(prewarmStart)
-            logger.notice("✅ Model prewarmed in \(String(format: "%.2f", prewarmDuration)) seconds")
+            logger.logNotice("✅ Model prewarmed in \(String(format: "%.2f", prewarmDuration)) seconds")
 
             // Cancel the animation task and set final progress
             progressTask.cancel()
@@ -202,7 +202,7 @@ class ModelDownloadManager: @unchecked Sendable {
             }
 
             // Load models with animated progress
-            logger.notice("📚 Loading model: \(model.whisperKitModelName)")
+            logger.logNotice("📚 Loading model: \(model.whisperKitModelName)")
 
             // Start progress animation for loading phase
             let loadProgressTask = Task {
@@ -217,15 +217,15 @@ class ModelDownloadManager: @unchecked Sendable {
             let loadStart = Date()
             try await whisperKit.loadModels()
             let loadDuration = Date().timeIntervalSince(loadStart)
-            logger.notice("✅ Model loaded in \(String(format: "%.2f", loadDuration)) seconds")
+            logger.logNotice("✅ Model loaded in \(String(format: "%.2f", loadDuration)) seconds")
 
             // Cancel the animation task and set final progress
             loadProgressTask.cancel()
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
-                logger.notice("✅ Successfully downloaded and prepared \(model.displayName)")
-                logger.notice("⏱️ Preparation time: prewarm: \(String(format: "%.2f", prewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s")
+                logger.logNotice("✅ Successfully downloaded and prepared \(model.displayName)")
+                logger.logNotice("⏱️ Preparation time: prewarm: \(String(format: "%.2f", prewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s")
             }
 
             // Unload models after download to free memory
@@ -245,7 +245,7 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress.removeValue(forKey: model.name)
             }
 
-            logger.error("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
+            logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
         }
     }
@@ -266,7 +266,7 @@ class ModelDownloadManager: @unchecked Sendable {
         let decayConstant = -log(0.01) / Float(maxDuration) // -log(0.01) ≈ 4.605
         let startTime = Date()
 
-        logger.info("🎯 Starting progress animation: \(initialProgress) -> \(targetProgress) over \(maxDuration)s")
+        logger.logInfo("🎯 Starting progress animation: \(initialProgress) -> \(targetProgress) over \(maxDuration)s")
         var updateCount = 0
 
         while !Task.isCancelled {
@@ -281,13 +281,13 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress[modelName] = Double(currentProgress)
                 updateCount += 1
                 if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
-                    logger.info("📊 Progress update #\(updateCount): \(String(format: "%.1f", currentProgress * 100))%")
+                    logger.logInfo("📊 Progress update #\(updateCount): \(String(format: "%.1f", currentProgress * 100))%")
                 }
             }
 
             // Stop when we're close enough to target or time limit exceeded
             if currentProgress >= targetProgress - 0.001 || elapsedTime >= maxDuration {
-                logger.info("🏁 Animation ended: final progress \(String(format: "%.1f", currentProgress * 100))%")
+                logger.logInfo("🏁 Animation ended: final progress \(String(format: "%.1f", currentProgress * 100))%")
                 break
             }
 

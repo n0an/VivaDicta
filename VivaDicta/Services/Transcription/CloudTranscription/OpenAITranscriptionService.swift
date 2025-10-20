@@ -29,7 +29,7 @@ struct OpenAITranscriptionService {
         
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.error("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage, privacy: .public)")
+            logger.logError("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
         
@@ -37,7 +37,7 @@ struct OpenAITranscriptionService {
             let transcriptionResponse = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
             return transcriptionResponse.text
         } catch {
-            logger.error("Failed to decode Groq API response: \(error.localizedDescription)")
+            logger.logError("Failed to decode Groq API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }
@@ -61,8 +61,8 @@ struct OpenAITranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
         
-        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
-        let prompt = UserDefaultsStorage.shared.string(forKey: Constants.kTranscriptionPrompt) ?? ""
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+        let prompt = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranscriptionPrompt) ?? ""
         
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)

@@ -27,9 +27,9 @@ class ParakeetTranscriptionService: TranscriptionService {
             try await manager.initialize(models: models)
             
             self.asrManager = manager
-            logger.notice("✅ Parakeet ASR model loaded successfully")
+            logger.logNotice("✅ Parakeet ASR model loaded successfully")
         } catch {
-            logger.error("❌ Failed to load Parakeet model: \(error.localizedDescription)")
+            logger.logError("❌ Failed to load Parakeet model: \(error.localizedDescription)")
             throw error
         }
     }
@@ -42,17 +42,17 @@ class ParakeetTranscriptionService: TranscriptionService {
         try await loadModel(modelsDirectory: parakeetModel.modelsDirectory)
         
         guard let asrManager = asrManager else {
-            logger.notice("🦜 ASR manager not initialized, cannot transcribe")
+            logger.logNotice("🦜 ASR manager not initialized, cannot transcribe")
             throw TranscriptionError.modelLoadFailed
         }
         
-        logger.notice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
+        logger.logNotice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
 
         // Read and convert audio to 16kHz mono Float32
         let audioSamples = try await readAndConvertAudio(from: audioURL)
         let durationSeconds = Double(audioSamples.count) / 16000.0
 
-        logger.notice("📊 Audio duration: \(String(format: "%.2f", durationSeconds)) seconds")
+        logger.logNotice("📊 Audio duration: \(String(format: "%.2f", durationSeconds)) seconds")
 
         // Apply VAD for recordings longer than 20 seconds
         // VAD setting should be shared with keyboard extension
@@ -63,7 +63,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         if durationSeconds < 20.0 || !isVADEnabled {
             speechAudio = audioSamples
         } else {
-            logger.notice("🎙️ Applying VAD for long audio (> 20s)")
+            logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
             speechAudio = try await applyVAD(to: audioSamples, modelsDirectory: parakeetModel.modelsDirectory)
         }
         
@@ -75,9 +75,9 @@ class ParakeetTranscriptionService: TranscriptionService {
         
         self.asrManager = nil
         self.vadManager = nil
-        logger.notice("🦜 Parakeet ASR models cleaned up from memory")
+        logger.logNotice("🦜 Parakeet ASR models cleaned up from memory")
         
-        logger.notice("✅ Parakeet transcription completed successfully")
+        logger.logNotice("✅ Parakeet transcription completed successfully")
         return result.text
     }
 
@@ -100,7 +100,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         }
 
         guard let vadManager = vadManager else {
-            logger.warning("⚠️ VAD manager initialization failed, using full audio")
+            logger.logWarning("⚠️ VAD manager initialization failed, using full audio")
             return audioSamples
         }
 
@@ -109,17 +109,17 @@ class ParakeetTranscriptionService: TranscriptionService {
             let segments = try await vadManager.segmentSpeechAudio(audioSamples)
 
             if segments.isEmpty {
-                logger.warning("⚠️ VAD found no speech segments, using full audio")
+                logger.logWarning("⚠️ VAD found no speech segments, using full audio")
                 return audioSamples
             }
 
             // Concatenate all speech segments
             let totalSamples = segments.reduce(0) { $0 + $1.count }
-            logger.notice("📊 VAD extracted \(segments.count) segments, total: \(String(format: "%.2f", Double(totalSamples) / 16000.0))s")
+            logger.logNotice("📊 VAD extracted \(segments.count) segments, total: \(String(format: "%.2f", Double(totalSamples) / 16000.0))s")
 
             return segments.flatMap { $0 }
         } catch {
-            logger.warning("⚠️ VAD processing failed: \(error.localizedDescription), using full audio")
+            logger.logWarning("⚠️ VAD processing failed: \(error.localizedDescription), using full audio")
             return audioSamples
         }
     }

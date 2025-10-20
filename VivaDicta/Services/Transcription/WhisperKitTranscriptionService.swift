@@ -30,13 +30,13 @@ class WhisperKitTranscriptionService: TranscriptionService {
     private func loadModel(modelPath: String) async throws {
         // If the same model is already loaded, return early
         if currentModelName == modelPath && modelState == .loaded {
-            logger.notice("Model \(modelPath) already loaded, skipping reload")
+            logger.logNotice("Model \(modelPath) already loaded, skipping reload")
             return
         }
 
         // If a different model is loaded, unload it first
         if currentModelName != modelPath && whisperKit != nil {
-            logger.notice("Unloading previous model: \(self.currentModelName ?? "unknown")")
+            logger.logNotice("Unloading previous model: \(self.currentModelName ?? "unknown")")
             await whisperKit?.unloadModels()
             whisperKit = nil
             modelState = .unloaded
@@ -44,7 +44,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
         do {
             let totalStartTime = Date()
-            logger.notice("🚀 Starting WhisperKit initialization for model: \(modelPath)")
+            logger.logNotice("🚀 Starting WhisperKit initialization for model: \(modelPath)")
 
             // Initialize WhisperKit without auto-loading
             let config = WhisperKitConfig(
@@ -66,8 +66,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             // Check if model exists locally
             if !FileManager.default.fileExists(atPath: modelFolder.path) {
-                logger.error("❌ Model not found at path: \(modelFolder.path)")
-                logger.error("Please download the model first using ModelDownloadManager")
+                logger.logError("❌ Model not found at path: \(modelFolder.path)")
+                logger.logError("Please download the model first using ModelDownloadManager")
                 throw TranscriptionError.modelNotDownloaded
             }
 
@@ -75,7 +75,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
             modelState = .downloaded
 
             // Prewarm models (THIS IS THE KEY STEP!)
-            logger.notice("🔥 Prewarming model: \(modelPath)")
+            logger.logNotice("🔥 Prewarming model: \(modelPath)")
             modelState = .prewarming
 
             let prewarmStart = Date()
@@ -84,10 +84,10 @@ class WhisperKitTranscriptionService: TranscriptionService {
             lastPrewarmDuration = prewarmDuration
 
             modelState = .prewarmed
-            logger.notice("✅ Model prewarmed successfully in \(String(format: "%.2f", prewarmDuration)) seconds")
+            logger.logNotice("✅ Model prewarmed successfully in \(String(format: "%.2f", prewarmDuration)) seconds")
 
             // Load models
-            logger.notice("📚 Loading model: \(modelPath)")
+            logger.logNotice("📚 Loading model: \(modelPath)")
             modelState = .loading
 
             let loadStart = Date()
@@ -100,14 +100,14 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             let totalDuration = Date().timeIntervalSince(totalStartTime)
             lastTotalInitDuration = totalDuration
-            logger.notice("✅ WhisperKit model loaded and ready in \(String(format: "%.2f", loadDuration)) seconds: \(modelPath)")
-            logger.notice("⏱️ Total initialization time: \(String(format: "%.2f", totalDuration)) seconds (prewarm: \(String(format: "%.2f", self.lastPrewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s)")
+            logger.logNotice("✅ WhisperKit model loaded and ready in \(String(format: "%.2f", loadDuration)) seconds: \(modelPath)")
+            logger.logNotice("⏱️ Total initialization time: \(String(format: "%.2f", totalDuration)) seconds (prewarm: \(String(format: "%.2f", self.lastPrewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s)")
 
         } catch {
             modelState = .unloaded
             whisperKit = nil
             currentModelName = nil
-            logger.error("❌ Failed to load WhisperKit model: \(error.localizedDescription)")
+            logger.logError("❌ Failed to load WhisperKit model: \(error.localizedDescription)")
             throw error
         }
     }
@@ -126,11 +126,11 @@ class WhisperKitTranscriptionService: TranscriptionService {
             throw TranscriptionError.modelLoadFailed
         }
 
-        logger.notice("🎯 Starting WhisperKit transcription with model: \(whisperKitModel.displayName)")
+        logger.logNotice("🎯 Starting WhisperKit transcription with model: \(whisperKitModel.displayName)")
 
         do {
             // Get selected language if not auto-detect (shared with keyboard)
-            let language = UserDefaultsStorage.shared.string(forKey: Constants.kSelectedLanguageKey) ?? "auto"
+            let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
             let decodingOptions = DecodingOptions(language: language == "auto" ? nil : language)
 
             // Perform transcription
@@ -141,11 +141,11 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             // NOTE: We NO LONGER clean up models after transcription
             // Models stay loaded in memory for faster subsequent transcriptions
-            logger.notice("✅ WhisperKit transcription completed, model kept in memory for faster future use")
+            logger.logNotice("✅ WhisperKit transcription completed, model kept in memory for faster future use")
 
             return transcribedText
         } catch {
-            logger.error("❌ WhisperKit transcription failed: \(error.localizedDescription)")
+            logger.logError("❌ WhisperKit transcription failed: \(error.localizedDescription)")
             throw TranscriptionError.transcriptionFailed
         }
     }
@@ -153,7 +153,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
     // Add method to explicitly unload model when needed
     func unloadModel() async {
         if whisperKit != nil {
-            logger.notice("🧹 Manually unloading WhisperKit model")
+            logger.logNotice("🧹 Manually unloading WhisperKit model")
             await whisperKit?.unloadModels()
             whisperKit = nil
             currentModelName = nil
@@ -171,24 +171,24 @@ class WhisperKitTranscriptionService: TranscriptionService {
         // Check if model is already downloaded
         let modelFolder = WhisperKitModel.modelPath(for: modelPath)
         guard FileManager.default.fileExists(atPath: modelFolder.path) else {
-            logger.notice("⏭️ Skipping preload: Model \(modelPath) not downloaded")
+            logger.logNotice("⏭️ Skipping preload: Model \(modelPath) not downloaded")
             return
         }
 
         // Check if model is already loaded
         if currentModelName == modelPath && modelState == .loaded {
-            logger.notice("✅ Model \(modelPath) already loaded, no preload needed")
+            logger.logNotice("✅ Model \(modelPath) already loaded, no preload needed")
             return
         }
 
-        logger.notice("🚀 Preloading WhisperKit model: \(modelPath)")
+        logger.logNotice("🚀 Preloading WhisperKit model: \(modelPath)")
 
         do {
             // Load model without progress callback (background operation)
             try await loadModel(modelPath: modelPath)
-            logger.notice("✅ Successfully preloaded WhisperKit model: \(modelPath)")
+            logger.logNotice("✅ Successfully preloaded WhisperKit model: \(modelPath)")
         } catch {
-            logger.error("⚠️ Failed to preload WhisperKit model: \(error.localizedDescription)")
+            logger.logError("⚠️ Failed to preload WhisperKit model: \(error.localizedDescription)")
             // Don't throw - preload failure is non-critical
         }
     }

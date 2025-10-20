@@ -86,7 +86,7 @@ struct AddAPIKeyView: View {
         }
         .onAppear {
             // Load existing API key if available (needs to be shared with keyboard)
-            apiKey = UserDefaultsStorage.shared.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) ?? ""
+            apiKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) ?? ""
         }
         .padding(.top, 32)
         .padding()

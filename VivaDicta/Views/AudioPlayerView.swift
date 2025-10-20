@@ -81,7 +81,7 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
                 }
             }
         } catch {
-            logger.error("❌ Error loading audio: \(error.localizedDescription)")
+            logger.logError("❌ Error loading audio: \(error.localizedDescription)")
         }
     }
     

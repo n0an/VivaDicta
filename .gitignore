@@ -77,6 +77,10 @@ appcenter-post-build.sh
 
 # Logs
 *.log
+logs/
+
+# mcpli
+.mcpli/
 
 # Node.js / TypeScript
 /node_modules

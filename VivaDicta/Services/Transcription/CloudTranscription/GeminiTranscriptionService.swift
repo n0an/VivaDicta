@@ -14,7 +14,7 @@ class GeminiTranscriptionService {
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)
         
-        logger.notice("Starting Gemini transcription with model: \(model.name, privacy: .public)")
+        logger.logNotice("Starting Gemini transcription with model: \(model.name)")
         
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
@@ -25,7 +25,7 @@ class GeminiTranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
         
-        logger.notice("Audio file loaded, size: \(audioData.count) bytes")
+        logger.logNotice("Audio file loaded, size: \(audioData.count) bytes")
         
         let base64AudioData = audioData.base64EncodedString()
         
@@ -48,9 +48,9 @@ class GeminiTranscriptionService {
         do {
             let jsonData = try JSONEncoder().encode(requestBody)
             request.httpBody = jsonData
-            logger.notice("Request body encoded, sending to Gemini API")
+            logger.logNotice("Request body encoded, sending to Gemini API")
         } catch {
-            logger.error("Failed to encode Gemini request: \(error.localizedDescription)")
+            logger.logError("Failed to encode Gemini request: \(error.localizedDescription)")
             throw CloudTranscriptionError.dataEncodingError
         }
         
@@ -61,7 +61,7 @@ class GeminiTranscriptionService {
         
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.error("Gemini API request failed with status \(httpResponse.statusCode): \(errorMessage, privacy: .public)")
+            logger.logError("Gemini API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
         
@@ -70,13 +70,13 @@ class GeminiTranscriptionService {
             guard let candidate = transcriptionResponse.candidates.first,
                   let part = candidate.content.parts.first,
                   !part.text.isEmpty else {
-                logger.error("No transcript found in Gemini response")
+                logger.logError("No transcript found in Gemini response")
                 throw CloudTranscriptionError.noTranscriptionReturned
             }
-            logger.notice("Gemini transcription successful, text length: \(part.text.count)")
+            logger.logNotice("Gemini transcription successful, text length: \(part.text.count)")
             return part.text.trimmingCharacters(in: .whitespacesAndNewlines)
         } catch {
-            logger.error("Failed to decode Gemini API response: \(error.localizedDescription)")
+            logger.logError("Failed to decode Gemini API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }

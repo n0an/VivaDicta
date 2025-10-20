@@ -20,7 +20,8 @@ class AppState {
 
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
-    private let lifecycleManager = AppLifecycleManager.shared
+    var recordViewModel: RecordViewModel!
+//    private let lifecycleManager = AppLifecycleManager.shared
 
     var selectedTab: TabTag = .record
     var shouldNavigateToModels: Bool = false
@@ -28,6 +29,7 @@ class AppState {
     init() {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()
+        recordViewModel = RecordViewModel(appState: self)
 
         // Set up callbacks to coordinate between services
         aiService.onModeChange = { [weak self] newMode in
@@ -42,7 +44,7 @@ class AppState {
         transcriptionManager.setCurrentMode(aiService.selectedMode)
 
         // Start app lifecycle tracking
-        lifecycleManager.startTracking()
+//        lifecycleManager.startTracking()
 
         // Preload WhisperKit model if conditions are met
         Task {
@@ -80,7 +82,7 @@ class AppState {
     
     func startLiveActivity() {
         // Ensure lifecycle tracking is active when launched from keyboard
-        lifecycleManager.startTracking()
+//        lifecycleManager.startTracking()
 
         guard liveActivity == nil else { return }
 
@@ -108,7 +110,7 @@ class AppState {
             }
 
         } catch {
-            logger.error("🤺 Error starting Live Activity \(error.localizedDescription)")
+            logger.logError("🤺 Error starting Live Activity \(error.localizedDescription)")
         }
     }
 
@@ -124,7 +126,7 @@ class AppState {
 
         self.liveActivity = nil
         self.liveActivityStartTime = nil
-        logger.info("Live Activity ended")
+        logger.logInfo("Live Activity ended")
     }
 
     /// Check if the Live Activity is stale and end it if necessary
@@ -137,14 +139,14 @@ class AppState {
         let maxDuration: TimeInterval = 600 // 10 minutes in seconds
 
         if elapsed >= maxDuration {
-            logger.info("Live Activity is stale (elapsed: \(elapsed) seconds), ending it")
+            logger.logInfo("Live Activity is stale (elapsed: \(elapsed) seconds), ending it")
             Task {
                 await endLiveActivity()
             }
         } else {
             // Reschedule the timer for the remaining time
             let remainingTime = maxDuration - elapsed
-            logger.info("Live Activity still valid. Rescheduling timer for \(remainingTime) seconds")
+            logger.logInfo("Live Activity still valid. Rescheduling timer for \(remainingTime) seconds")
 
             // Cancel existing timer and create a new one
             liveActivityTimer?.invalidate()

@@ -38,7 +38,7 @@ class AIService {
 
     
     init() {
-        self.selectedModeName = userDefaults.string(forKey: Constants.kSelectedAIMode) ?? FlowMode.defaultMode.name
+        self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
@@ -54,11 +54,21 @@ class AIService {
     public func getMode(name: String) -> FlowMode {
         return modes.first { $0.name == name } ?? FlowMode.defaultMode
     }
+
+    /// Reload the selected mode from UserDefaults (used when keyboard extension changes the mode)
+    public func reloadSelectedModeFromKeyboard() {
+        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
+        if savedModeName != selectedModeName {
+            logger.logInfo("📱 Reloading FlowMode from keyboard: \(savedModeName)")
+            selectedModeName = savedModeName
+            selectedMode = getMode(name: savedModeName)
+        }
+    }
     
     public func addMode(_ mode: FlowMode) {
         modes.append(mode)
         saveModes()
-        logger.info("Added new mode: \(mode.name)")
+        logger.logInfo("Added new mode: \(mode.name)")
     }
     
     public func updateMode(_ mode: FlowMode) {
@@ -70,13 +80,13 @@ class AIService {
                 selectedMode = mode
             }
             
-            logger.info("Updated mode: \(mode.name)")
+            logger.logInfo("Updated mode: \(mode.name)")
         }
     }
     
     public func deleteMode(_ mode: FlowMode) {
         guard modes.count > 1 else {
-            logger.warning("Cannot delete last mode")
+            logger.logWarning("Cannot delete last mode")
             return
         }
 
@@ -88,13 +98,13 @@ class AIService {
         }
 
         saveModes()
-        logger.info("Deleted mode: \(mode.name)")
+        logger.logInfo("Deleted mode: \(mode.name)")
     }
 
     public func updateDefaultModeIfNeeded(provider: TranscriptionModelProvider, modelName: String) {
         // Find the default mode
         guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }) else {
-            logger.warning("Default mode not found")
+            logger.logWarning("Default mode not found")
             return
         }
 
@@ -124,34 +134,34 @@ class AIService {
                 selectedMode = updatedMode
             }
 
-            logger.info("Updated default mode with first available model: \(modelName) from provider: \(provider.rawValue)")
+            logger.logInfo("Updated default mode with first available model: \(modelName) from provider: \(provider.rawValue)")
         }
     }
 
     private func loadModes() {
-        if let savedModesData = userDefaults.data(forKey: AppGroupConfig.aiEnhanceModesKey),
+        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.aiEnhanceModesKey),
            let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             modes = savedModes
         } else {
             modes = [FlowMode.defaultMode]
         }
 
-        logger.info("Loaded \(self.modes.count) Flow Modes")
+        logger.logInfo("Loaded \(self.modes.count) Flow Modes")
     }
 
     private func saveModes() {
         guard let encoded = try? JSONEncoder().encode(modes) else {
-            logger.error("Failed to encode Flow Modes")
+            logger.logError("Failed to encode Flow Modes")
             return
         }
-        userDefaults.set(encoded, forKey: AppGroupConfig.aiEnhanceModesKey)
+        userDefaults.set(encoded, forKey: AppGroupCoordinator.aiEnhanceModesKey)
         userDefaults.synchronize() // Force immediate write to disk
-        logger.info("Saved \(self.modes.count) Flow Modes to shared storage")
+        logger.logInfo("Saved \(self.modes.count) Flow Modes to shared storage")
     }
     
     private func saveSelectedModeName(_ modeName: String) {
-        userDefaults.setValue(modeName, forKey: Constants.kSelectedAIMode)
-        logger.info("Saved Flow Mode: \(modeName)")
+        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedAIModeKey)
+        logger.logInfo("Saved Flow Mode: \(modeName)")
     }
     
     private func loadSavedOpenRouterModels() {
@@ -168,36 +178,36 @@ class AIService {
     public func isProperlyConfigured() -> Bool {
         // Check if AI enhancement is enabled
         guard selectedMode.aiEnhanceEnabled else {
-            logger.info("AI enhancement is disabled for mode: \(self.selectedMode.name)")
+            logger.logInfo("AI enhancement is disabled for mode: \(self.selectedMode.name)")
             return false
         }
 
         // Check if AI provider is selected
         guard let aiProvider = selectedMode.aiProvider else {
-            logger.warning("No AI provider selected for mode: \(self.selectedMode.name)")
+            logger.logWarning("No AI provider selected for mode: \(self.selectedMode.name)")
             return false
         }
 
         // Check if AI model is selected (not empty)
         guard !selectedMode.aiModel.isEmpty else {
-            logger.warning("No AI model selected for mode: \(self.selectedMode.name)")
+            logger.logWarning("No AI model selected for mode: \(self.selectedMode.name)")
             return false
         }
 
         // Check if API key exists for the selected provider
         guard getAPIKey(for: aiProvider) != nil else {
-            logger.warning("No API key configured for provider: \(aiProvider.rawValue)")
+            logger.logWarning("No API key configured for provider: \(aiProvider.rawValue)")
             return false
         }
 
         // Check if a prompt is selected
         guard let userPrompt = selectedMode.userPrompt,
               !userPrompt.promptInstructions.isEmpty else {
-            logger.warning("No prompt selected or prompt is empty for mode: \(self.selectedMode.name)")
+            logger.logWarning("No prompt selected or prompt is empty for mode: \(self.selectedMode.name)")
             return false
         }
 
-        logger.info("AI enhancement is properly configured for mode: \(self.selectedMode.name)")
+        logger.logInfo("AI enhancement is properly configured for mode: \(self.selectedMode.name)")
         return true
     }
 
@@ -230,8 +240,8 @@ class AIService {
         let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
         let systemMessage = getSystemMessage()
         
-        logger.notice("AI Enhancement - System Message: \(systemMessage, privacy: .public)")
-        logger.notice("AI Enhancement - User Message: \(formattedText, privacy: .public)")
+        logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
+        logger.logNotice("AI Enhancement - User Message: \(formattedText)")
         
         switch aiProvider {
         case .anthropic:
@@ -356,7 +366,7 @@ class AIService {
     // MARK: - API Keys methods
     public func refreshConnectedProviders() {
         connectedProviders = AIProvider.allCases.filter { provider in
-            return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue) != nil
+            return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) != nil
         }
     }
     
@@ -365,7 +375,7 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                self.userDefaults.set(key, forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+                self.userDefaults.set(key, forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
                 
                 // Refresh connected providers to trigger UI update
                 self.refreshConnectedProviders()
@@ -381,7 +391,7 @@ class AIService {
     }
     
     private func getAPIKey(for provider: AIProvider) -> String? {
-        return userDefaults.string(forKey: Constants.kAPIKeyTemplate + provider.rawValue)
+        return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
     }
     
     private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
@@ -415,31 +425,31 @@ class AIService {
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
         
-        logger.notice("🔑 Verifying API key for \(provider.rawValue, privacy: .public) provider at \(url.absoluteString, privacy: .public)")
+        logger.logNotice("🔑 Verifying API key for \(provider.rawValue) provider at \(url.absoluteString)")
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public): Invalid response")
+                logger.logNotice("🔑 API key verification failed for \(provider.rawValue): Invalid response")
                 return false
             }
-            
+
             let isValid = httpResponse.statusCode == 200
-            
+
             if !isValid {
                 // Log the exact API error response
                 if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
+                    logger.logNotice("🔑 API key verification failed for \(provider.rawValue) - Status: \(httpResponse.statusCode) - \(exactAPIError)")
                 } else {
-                    logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public) - Status: \(httpResponse.statusCode)")
+                    logger.logNotice("🔑 API key verification failed for \(provider.rawValue) - Status: \(httpResponse.statusCode)")
                 }
             }
             
             return isValid
             
         } catch {
-            logger.notice("🔑 API key verification failed for \(provider.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.logNotice("🔑 API key verification failed for \(provider.rawValue): \(error.localizedDescription)")
             return false
         }
     }
@@ -490,7 +500,7 @@ class AIService {
             let isValid = (response as? HTTPURLResponse)?.statusCode == 200
 
             if let body = String(data: data, encoding: .utf8) {
-                logger.info("ElevenLabs verification response: \(body)")
+                logger.logInfo("ElevenLabs verification response: \(body)")
             }
 
             return isValid
@@ -516,7 +526,7 @@ class AIService {
             return httpResponse.statusCode == 200
             
         } catch {
-            logger.error("Deepgram API key verification failed: \(error.localizedDescription)")
+            logger.logError("Deepgram API key verification failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -538,30 +548,30 @@ class AIService {
         
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
         
-        logger.notice("🔑 Verifying Grok API key at \(url.absoluteString, privacy: .public)")
-        
+        logger.logNotice("🔑 Verifying Grok API key at \(url.absoluteString)")
+
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            
+
             guard let httpResponse = response as? HTTPURLResponse else {
-                logger.notice("🔑 Grok API key verification failed: Invalid response")
+                logger.logNotice("🔑 Grok API key verification failed: Invalid response")
                 return false
             }
-            
+
             let isValid = httpResponse.statusCode == 200
-            
+
             if !isValid {
                 if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError, privacy: .public)")
+                    logger.logNotice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError)")
                 } else {
-                    logger.notice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode)")
+                    logger.logNotice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode)")
                 }
             }
-            
+
             return isValid
-            
+
         } catch {
-            logger.notice("🔑 Grok API key verification failed: \(error.localizedDescription, privacy: .public)")
+            logger.logNotice("🔑 Grok API key verification failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -584,34 +594,34 @@ class AIService {
             let (data, response) = try await URLSession.shared.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                logger.error("Failed to fetch OpenRouter models: Invalid HTTP response")
-                await MainActor.run { 
+                logger.logError("Failed to fetch OpenRouter models: Invalid HTTP response")
+                await MainActor.run {
                     self.openRouterModels = []
                     self.saveOpenRouterModels()
                 }
                 return
             }
-            
-            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any], 
+
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let dataArray = jsonResponse["data"] as? [[String: Any]] else {
-                logger.error("Failed to parse OpenRouter models JSON")
-                await MainActor.run { 
+                logger.logError("Failed to parse OpenRouter models JSON")
+                await MainActor.run {
                     self.openRouterModels = []
                     self.saveOpenRouterModels()
                 }
                 return
             }
-            
+
             let models = dataArray.compactMap { $0["id"] as? String }
-            await MainActor.run { 
+            await MainActor.run {
                 self.openRouterModels = models.sorted()
                 self.saveOpenRouterModels()
             }
-            logger.info("Successfully fetched \(models.count) OpenRouter models.")
-            
+            logger.logInfo("Successfully fetched \(models.count) OpenRouter models.")
+
         } catch {
-            logger.error("Error fetching OpenRouter models: \(error.localizedDescription)")
-            await MainActor.run { 
+            logger.logError("Error fetching OpenRouter models: \(error.localizedDescription)")
+            await MainActor.run {
                 self.openRouterModels = []
                 self.saveOpenRouterModels()
             }
