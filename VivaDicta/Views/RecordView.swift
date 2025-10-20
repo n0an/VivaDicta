@@ -95,6 +95,17 @@ struct RecordView: View {
 
                 Text("Transcribing...")
             }
+        case .enhancing:
+            VStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), value: isSymbolAnimating)
+                    .font(.system(size: 80))
+                    .foregroundStyle(.blue)
+                    .onAppear { isSymbolAnimating = true }
+                    .onDisappear { isSymbolAnimating = false }
+
+                Text("Enhancing with AI...")
+            }
         default: EmptyView()
         }
     }
