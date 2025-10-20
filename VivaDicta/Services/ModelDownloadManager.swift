@@ -65,11 +65,6 @@ class ModelDownloadManager: @unchecked Sendable {
 
 
     // MARK: - Parakeet Model Download
-//    
-//    private func parakeetVersion(for modelName: String) -> AsrModelVersion {
-//        modelName.lowercased().contains("v2") ? .v2 : .v3
-//    }
-
     private func downloadParakeetModel(_ model: ParakeetModel) async throws {
         await MainActor.run {
             downloadStatuses[model.name] = .downloading
