@@ -11,10 +11,14 @@ struct SettingsView: View {
 
     var appState: AppState
     @State var promptsManager = PromptsManager()
-    
+
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
+    @State private var prewarmManager = AudioPrewarmManager.shared
+    @State private var currentTime = Date()
+    @State private var showPrewarmError = false
+    @State private var prewarmErrorMessage = ""
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -93,26 +97,59 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Audio") {
-                    Picker("Session Timeout", selection: $audioSessionTimeout) {
-                        Text("Immediate").tag(0)
-                        Text("15 seconds").tag(15)
-                        Text("30 seconds").tag(30)
-                        Text("60 seconds").tag(60)
-                        Text("90 seconds").tag(90)
-                        Text("2 minutes").tag(120)
-                        Text("3 minutes").tag(180)
-                        Text("5 minutes").tag(300)
-                        Text("15 minutes").tag(900)
-                        Text("30 minutes").tag(1800)
-                        Text("1 hour").tag(3600)
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
+                Section("Keyboard") {
+                    Button(action: activateKeyboardRecordingSession) {
+                        HStack {
+                            Image(systemName: "keyboard")
+                                .foregroundStyle(.blue)
+                                .font(.body)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Enable Keyboard Recording Session")
+                                    .foregroundStyle(.blue)
+                                    .font(.body)
 
-                    Text("Keep microphone session active after recording stops to prevent activation errors during consecutive recordings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                                if prewarmManager.isSessionActive {
+                                    HStack {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 6)
+                                            
+                                        Text("Session active")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                    }
+                                    
+                                }
+                            }
+
+                            Spacer()
+                        }
+                    }
+                    .disabled(prewarmManager.isSessionActive)
+                    .buttonStyle(.plain)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Session Timeout", selection: $audioSessionTimeout) {
+                            Text("Immediate").tag(0)
+                            Text("15 seconds").tag(15)
+                            Text("30 seconds").tag(30)
+                            Text("60 seconds").tag(60)
+                            Text("90 seconds").tag(90)
+                            Text("2 minutes").tag(120)
+                            Text("3 minutes").tag(180)
+                            Text("5 minutes").tag(300)
+                            Text("15 minutes").tag(900)
+                            Text("30 minutes").tag(1800)
+                            Text("1 hour").tag(3600)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
+
+                        Text("Keep microphone session active to allow recording from keyboard")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationDestination(for: FlowMode.self) { mode in
@@ -138,14 +175,78 @@ struct SettingsView: View {
                 appState.shouldNavigateToModels = false
                 navigationPath.append(SettingsDestination.transcriptionModels)
             }
+            startSessionUpdateTimer()
+        }
+        .onDisappear {
+            stopSessionUpdateTimer()
+        }
+        .alert("Prewarm Session Error", isPresented: $showPrewarmError) {
+            Button("OK") {
+                showPrewarmError = false
+            }
+        } message: {
+            Text(prewarmErrorMessage)
         }
     }
     
     private func deleteMode(_ mode: FlowMode) {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
-        
+
         appState.aiService.deleteMode(mode)
+    }
+
+    // MARK: - Keyboard Recording Session Actions
+
+    private func activateKeyboardRecordingSession() {
+        do {
+            // Start the pre-warm session (same as when receiving deep link)
+            try prewarmManager.startPrewarmSession()
+
+            // Activate keyboard session to notify keyboard that hot mic is ready
+            AppGroupCoordinator.shared.activateKeyboardSession(
+                timeoutSeconds: prewarmManager.audioSessionTimeout
+            )
+
+            // Start timer to update UI
+            startSessionUpdateTimer()
+
+        } catch {
+            prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
+            showPrewarmError = true
+        }
+    }
+
+    private func endKeyboardRecordingSession() {
+        prewarmManager.endSession()
+        stopSessionUpdateTimer()
+    }
+
+    private func startSessionUpdateTimer() {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                // Update time to trigger view refresh
+                currentTime = Date()
+            }
+        }
+    }
+
+    private func stopSessionUpdateTimer() {
+        // Timer will be automatically invalidated when view disappears
+    }
+
+    private func formatTimeout(_ seconds: Int) -> String {
+        if seconds == 0 {
+            return "immediate"
+        } else if seconds < 60 {
+            return "\(seconds) seconds"
+        } else if seconds < 3600 {
+            let minutes = seconds / 60
+            return minutes == 1 ? "1 minute" : "\(minutes) minutes"
+        } else {
+            let hours = seconds / 3600
+            return hours == 1 ? "1 hour" : "\(hours) hours"
+        }
     }
 }
 
