@@ -21,6 +21,7 @@ final class KeyboardDictationState {
     // MARK: - FlowMode Manager
     let flowModeManager = FlowModeManager()
     
+    // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
 
     // MARK: - Auto-dismiss timer
@@ -34,15 +35,23 @@ final class KeyboardDictationState {
     }
 
     // MARK: - UI Derivations
-    enum UIState { case notReady, ready, recording, processing, error }
+    enum UIState {
+        case notReady,
+             ready,
+             recording,
+             processing,
+             error
+    }
 
     var uiState: UIState {
         if isRecording { return .recording }
+        
         switch transcriptionStatus {
         case .transcribing, .enhancing: return .processing
         case .error: return .error
         default: break
         }
+        
         return isSessionActive ? .ready : .notReady
     }
 
@@ -61,6 +70,7 @@ final class KeyboardDictationState {
         // Refresh FlowModes when keyboard starts
         flowModeManager.refreshFlowModes()
 
+        // TODO: Refactor to Task all below
         AppGroupCoordinator.shared.onRecordingStateChanged = { [weak self] state in
             DispatchQueue.main.async { self?.isRecording = state }
         }
@@ -115,7 +125,8 @@ final class KeyboardDictationState {
 
         if AppGroupCoordinator.shared.isKeyboardSessionActive {
             AppGroupCoordinator.shared.requestStartRecording()
-
+            
+            // TODO: why delay? Refactor to Task
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 guard let self = self else { return }
                 if !self.isRecording {
@@ -139,6 +150,7 @@ final class KeyboardDictationState {
     private func autoDismissError() {
         errorDismissTimer?.invalidate()
         errorDismissTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
+            // TODO: Refactor to Task
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 if self.transcriptionStatus == .error && self.errorMessage != nil {
