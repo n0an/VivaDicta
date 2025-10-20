@@ -18,6 +18,8 @@ struct SettingsView: View {
     @State private var prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
+    @State private var isSessionActive = false
+    @State private var sessionCheckTimer: Timer?
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -108,24 +110,24 @@ struct SettingsView: View {
                                     .foregroundStyle(.blue)
                                     .font(.body)
 
-                                if prewarmManager.isSessionActive {
+                                if isSessionActive {
                                     HStack {
                                         Circle()
                                             .fill(.green)
                                             .frame(width: 6)
-                                            
+
                                         Text("Session active")
                                             .font(.caption)
                                             .foregroundStyle(.green)
                                     }
-                                    
+
                                 }
                             }
 
                             Spacer()
                         }
                     }
-                    .disabled(prewarmManager.isSessionActive)
+                    .disabled(isSessionActive)
                     .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -174,6 +176,12 @@ struct SettingsView: View {
                 appState.shouldNavigateToModels = false
                 navigationPath.append(SettingsDestination.transcriptionModels)
             }
+            // Check initial session state
+            isSessionActive = prewarmManager.isSessionActive
+            startSessionMonitoring()
+        }
+        .onDisappear {
+            stopSessionMonitoring()
         }
         .alert("Prewarm Session Error", isPresented: $showPrewarmError) {
             Button("OK") {
@@ -203,10 +211,31 @@ struct SettingsView: View {
                 timeoutSeconds: prewarmManager.audioSessionTimeout
             )
 
+            // Update local state to trigger UI update
+            isSessionActive = true
+
         } catch {
             prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
             showPrewarmError = true
         }
+    }
+
+    private func startSessionMonitoring() {
+        stopSessionMonitoring()
+        // Check session status every second
+        sessionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                let currentStatus = AudioPrewarmManager.shared.isSessionActive
+                if isSessionActive != currentStatus {
+                    isSessionActive = currentStatus
+                }
+            }
+        }
+    }
+
+    private func stopSessionMonitoring() {
+        sessionCheckTimer?.invalidate()
+        sessionCheckTimer = nil
     }
 }
 
