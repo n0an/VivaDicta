@@ -920,16 +920,16 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/alfianlosari/SiriWaveView";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.0;
+				kind = exactVersion;
+				version = 1.1.0;
 			};
 		};
 		18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/KeyboardKit/KeyboardKit.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 10.0.0;
+				kind = exactVersion;
+				version = 10.0.4;
 			};
 		};
 		18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
