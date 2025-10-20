@@ -56,7 +56,7 @@ struct RecordingStateView: View {
                 
                 Image(systemName: "microphone.circle.fill")
                     .foregroundStyle(Color.green)
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.5)), value: isSymbolAnimating)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), value: isSymbolAnimating)
                     .font(.system(size: 30))
                     .onAppear { isSymbolAnimating = true }
                     .onDisappear { isSymbolAnimating = false }
