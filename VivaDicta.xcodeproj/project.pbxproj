@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
-		18351FD22E65934600944940 /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = 18351FD12E65934600944940 /* Zip */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -178,7 +177,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				18E328622E87C7620026327D /* FluidAudio in Frameworks */,
-				18351FD22E65934600944940 /* Zip in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */,
@@ -270,7 +268,6 @@
 			name = VivaDicta;
 			packageProductDependencies = (
 				181D0D002E42355600D357A6 /* SiriWaveView */,
-				18351FD12E65934600944940 /* Zip */,
 				18E328612E87C7620026327D /* FluidAudio */,
 				18E328F62E894C3D0026327D /* WhisperKit */,
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
@@ -383,7 +380,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */,
-				18351FD02E65934600944940 /* XCRemoteSwiftPackageReference "Zip" */,
 				18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
@@ -928,14 +924,6 @@
 				minimumVersion = 1.1.0;
 			};
 		};
-		18351FD02E65934600944940 /* XCRemoteSwiftPackageReference "Zip" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/marmelroy/Zip";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.2;
-			};
-		};
 		18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/KeyboardKit/KeyboardKit.git";
@@ -967,11 +955,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */;
 			productName = SiriWaveView;
-		};
-		18351FD12E65934600944940 /* Zip */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18351FD02E65934600944940 /* XCRemoteSwiftPackageReference "Zip" */;
-			productName = Zip;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
