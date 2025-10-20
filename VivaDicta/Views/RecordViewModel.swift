@@ -16,6 +16,7 @@ enum RecordingState: Equatable {
     case idle
     case recording
     case transcribing
+    case enhancing
     case error(RecordError)
 }
 
@@ -424,6 +425,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
+                    // Update state to show enhancing animation
+                    self.recordingState = .enhancing
+
                     // Notify keyboard that AI enhancement has started
                     AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
 
