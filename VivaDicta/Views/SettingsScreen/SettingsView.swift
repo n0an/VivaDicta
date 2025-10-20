@@ -15,7 +15,7 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
-    @State private var prewarmManager = AudioPrewarmManager.shared
+    private let prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
     
