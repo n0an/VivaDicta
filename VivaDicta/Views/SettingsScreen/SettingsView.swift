@@ -11,10 +11,13 @@ struct SettingsView: View {
 
     var appState: AppState
     @State var promptsManager = PromptsManager()
-    
+
     @State var navigationPath = NavigationPath()
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
+    private let prewarmManager = AudioPrewarmManager.shared
+    @State private var showPrewarmError = false
+    @State private var prewarmErrorMessage = ""
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -93,26 +96,59 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Audio") {
-                    Picker("Session Timeout", selection: $audioSessionTimeout) {
-                        Text("Immediate").tag(0)
-                        Text("15 seconds").tag(15)
-                        Text("30 seconds").tag(30)
-                        Text("60 seconds").tag(60)
-                        Text("90 seconds").tag(90)
-                        Text("2 minutes").tag(120)
-                        Text("3 minutes").tag(180)
-                        Text("5 minutes").tag(300)
-                        Text("15 minutes").tag(900)
-                        Text("30 minutes").tag(1800)
-                        Text("1 hour").tag(3600)
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
+                Section("Keyboard") {
+                    Button(action: activateKeyboardRecordingSession) {
+                        HStack {
+                            Image(systemName: "keyboard")
+                                .foregroundStyle(.blue)
+                                .font(.body)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Enable Keyboard Recording Session")
+                                    .foregroundStyle(.blue)
+                                    .font(.body)
 
-                    Text("Keep microphone session active after recording stops to prevent activation errors during consecutive recordings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                                if prewarmManager.isSessionActiveObservable {
+                                    HStack {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 6)
+
+                                        Text("Session active")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                    }
+
+                                }
+                            }
+
+                            Spacer()
+                        }
+                    }
+                    .disabled(prewarmManager.isSessionActiveObservable)
+                    .buttonStyle(.plain)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Session Timeout", selection: $audioSessionTimeout) {
+                            Text("Immediate").tag(0)
+                            Text("15 seconds").tag(15)
+                            Text("30 seconds").tag(30)
+                            Text("60 seconds").tag(60)
+                            Text("90 seconds").tag(90)
+                            Text("2 minutes").tag(120)
+                            Text("3 minutes").tag(180)
+                            Text("5 minutes").tag(300)
+                            Text("15 minutes").tag(900)
+                            Text("30 minutes").tag(1800)
+                            Text("1 hour").tag(3600)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
+
+                        Text("Keep microphone session active to allow recording from keyboard")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationDestination(for: FlowMode.self) { mode in
@@ -139,13 +175,38 @@ struct SettingsView: View {
                 navigationPath.append(SettingsDestination.transcriptionModels)
             }
         }
+        .alert("Prewarm Session Error", isPresented: $showPrewarmError) {
+            Button("OK") {
+                showPrewarmError = false
+            }
+        } message: {
+            Text(prewarmErrorMessage)
+        }
     }
     
     private func deleteMode(_ mode: FlowMode) {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
-        
+
         appState.aiService.deleteMode(mode)
+    }
+
+    // MARK: - Keyboard Recording Session Actions
+
+    private func activateKeyboardRecordingSession() {
+        do {
+            // Start the pre-warm session (same as when receiving deep link)
+            try prewarmManager.startPrewarmSession()
+
+            // Activate keyboard session to notify keyboard that hot mic is ready
+            AppGroupCoordinator.shared.activateKeyboardSession(
+                timeoutSeconds: prewarmManager.audioSessionTimeout
+            )
+
+        } catch {
+            prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
+            showPrewarmError = true
+        }
     }
 }
 
