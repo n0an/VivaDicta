@@ -16,16 +16,16 @@ class ParakeetTranscriptionService: TranscriptionService {
 
     init() {}
 
-    func loadModel(modelsDirectory: URL) async throws {
+    func loadModel(model: ParakeetModel) async throws {
         guard asrManager == nil else {
             return
         }
-        
+
         do {
             let manager = AsrManager(config: .default)
-            let models = try await AsrModels.load(from: modelsDirectory)
+            let models = try await AsrModels.load(from: model.modelsDirectory, version: model.version)
             try await manager.initialize(models: models)
-            
+
             self.asrManager = manager
             logger.logNotice("✅ Parakeet ASR model loaded successfully")
         } catch {
@@ -39,7 +39,7 @@ class ParakeetTranscriptionService: TranscriptionService {
             throw TranscriptionError.unsupportedModel
         }
         
-        try await loadModel(modelsDirectory: parakeetModel.modelsDirectory)
+        try await loadModel(model: parakeetModel)
         
         guard let asrManager = asrManager else {
             logger.logNotice("🦜 ASR manager not initialized, cannot transcribe")
