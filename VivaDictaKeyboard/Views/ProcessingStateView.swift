@@ -14,6 +14,17 @@ public enum ProcessingStage {
     case enhancingWithAI
     case completed
     case error(String)
+    
+    var statusIcon: String {
+        switch self {
+        case .transcribing:
+            "pencil.and.scribble"
+        case .enhancingWithAI:
+            "sparkles"
+        default:
+            ""
+        }
+    }
 
     var statusText: String {
         switch self {
@@ -35,6 +46,8 @@ public enum ProcessingStage {
 struct ProcessingStateView: View {
     let processingStage: ProcessingStage
     let onCancel: () -> Void
+    
+    @State var isSymbolAnimating: Bool = false
 
     // Get the keyboard appearance from environment
     @Environment(\.colorScheme) var colorScheme
@@ -60,17 +73,15 @@ struct ProcessingStateView: View {
             
             Spacer()
             
-            // Center area with progress indicator and status label
+            // Center area with icon and status label
             VStack(spacing: 20) {
-                // Progress indicator
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle())
-                    .scaleEffect(1.5)
-                    .tint(.blue)
+                Image(systemName: processingStage.statusIcon)
+                    .foregroundStyle(Color.blue)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+                    .font(.system(size: 30))
+                    .onAppear { isSymbolAnimating = true }
+                    .onDisappear { isSymbolAnimating = false }
                     .padding(.vertical, 20)
-                    .padding(.horizontal, 20)
-                    .background(.blue.opacity(0.1), in: .circle)
-                
                 
                 // Processing status label
                 Text(processingStage.statusText)
