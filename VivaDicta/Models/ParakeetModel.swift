@@ -6,7 +6,7 @@
 //
 
 import Foundation
-//import FluidAudio
+import FluidAudio
 
 struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
     static func == (lhs: ParakeetModel, rhs: ParakeetModel) -> Bool {
@@ -22,17 +22,29 @@ struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
     let accuracy: Double
     let ramUsage: Double
 
-    let supportManyLanguages = true
+    var supportManyLanguages: Bool {
+        supportedLanguages.count > 1
+    }
 
     let supportedLanguages: [String: String]
 }
 
 // MARK: - Download & File Management
 extension ParakeetModel {
-    var modelsDirectory: URL {
-        FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
+    var version: AsrModelVersion {
+        name.lowercased().contains("v2") ? .v2 : .v3
     }
-
+    
+    var modelsDirectory: URL {
+        switch version {
+        case .v2:
+            FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v2-coreml")
+        case .v3:
+            FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
+        }
+        
+    }
+    
     var isDownloaded: Bool {
         FileManager.default.fileExists(atPath: modelsDirectory.path)
     }
