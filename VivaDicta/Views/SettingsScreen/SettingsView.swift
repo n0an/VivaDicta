@@ -16,7 +16,6 @@ struct SettingsView: View {
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
     @State private var prewarmManager = AudioPrewarmManager.shared
-    @State private var currentTime = Date()
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
     
@@ -175,10 +174,6 @@ struct SettingsView: View {
                 appState.shouldNavigateToModels = false
                 navigationPath.append(SettingsDestination.transcriptionModels)
             }
-            startSessionUpdateTimer()
-        }
-        .onDisappear {
-            stopSessionUpdateTimer()
         }
         .alert("Prewarm Session Error", isPresented: $showPrewarmError) {
             Button("OK") {
@@ -208,44 +203,9 @@ struct SettingsView: View {
                 timeoutSeconds: prewarmManager.audioSessionTimeout
             )
 
-            // Start timer to update UI
-            startSessionUpdateTimer()
-
         } catch {
             prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
             showPrewarmError = true
-        }
-    }
-
-    private func endKeyboardRecordingSession() {
-        prewarmManager.endSession()
-        stopSessionUpdateTimer()
-    }
-
-    private func startSessionUpdateTimer() {
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            Task { @MainActor in
-                // Update time to trigger view refresh
-                currentTime = Date()
-            }
-        }
-    }
-
-    private func stopSessionUpdateTimer() {
-        // Timer will be automatically invalidated when view disappears
-    }
-
-    private func formatTimeout(_ seconds: Int) -> String {
-        if seconds == 0 {
-            return "immediate"
-        } else if seconds < 60 {
-            return "\(seconds) seconds"
-        } else if seconds < 3600 {
-            let minutes = seconds / 60
-            return minutes == 1 ? "1 minute" : "\(minutes) minutes"
-        } else {
-            let hours = seconds / 3600
-            return hours == 1 ? "1 hour" : "\(hours) hours"
         }
     }
 }
