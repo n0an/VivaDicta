@@ -115,6 +115,9 @@ Refer to these docs when working with Apple frameworks or implementing new featu
 - **Concurrency**: All UI updates properly isolated to `@MainActor` with Swift 6 strict concurrency
 - **Memory Management**: Efficient model loading and unloading patterns for on-device transcription models (WhisperKit/Parakeet)
 
+
+- When you create some file that has to be added to more than one targets of ios project - for example this file has to be added to main app target, to widgets target, to keyboard extension target - stop and tell me to add this file to targets manually. Because it can be tricky to do this from code side by yourself. I'll do it and then you'll continue working. Otherwise we can screw the entire task (because some entities are unavailable from another target etc).
+
 ## Code Review Guidelines
 
 When reviewing code for this project, keep in mind:

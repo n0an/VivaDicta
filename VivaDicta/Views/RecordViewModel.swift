@@ -187,6 +187,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             guard let self = self else { return }
                             let level = Double(self.prewarmManager.currentAudioLevel)
                             self.audioPower = level
+                            AppGroupCoordinator.shared.updateAudioLevel(level)
                         }
                     })
 
@@ -244,8 +245,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                             if let audioRecorder = self?.audioRecorder {
                                 let power = min(1, max(0, 1 - abs(Double(audioRecorder.averagePower(forChannel: 0)) / 50) ))
                                 self?.audioPower = power
+                                AppGroupCoordinator.shared.updateAudioLevel(power)
                             }
-                            
+
                         }
                     })
             
@@ -494,6 +496,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 if let audioPlayer = self?.audioPlayer {
                     let power = min(1, max(0, 1 - abs(Double(audioPlayer.averagePower(forChannel: 0)) / 160) ))
                     self?.audioPower = power
+                    AppGroupCoordinator.shared.updateAudioLevel(power)
                 }
             }
         })
@@ -512,7 +515,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     func resetValues() {
         audioPower = 0
-        
+        AppGroupCoordinator.shared.updateAudioLevel(0)
+
         audioRecorder?.stop()
         audioRecorder = nil
         

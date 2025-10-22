@@ -19,15 +19,7 @@ struct KeyboardCustomView: View {
         Group {
             switch dictationState.uiState {
             case .recording:
-                RecordingStateView(
-                    flowModeManager: dictationState.flowModeManager,
-                    onCancelTapped: {
-                        dictationState.requestCancelRecording()
-                    },
-                    onStopTapped: {
-                        dictationState.requestStopRecording()
-                    }
-                )
+                RecordingStateView(dictationState: dictationState)
 
             case .processing:
                 ProcessingStateView(

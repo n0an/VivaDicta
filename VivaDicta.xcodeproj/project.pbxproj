@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
+		186E2F922EA690DF00B19EDF /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 186E2F912EA690DF00B19EDF /* SiriWaveView */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -195,6 +196,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
+				186E2F922EA690DF00B19EDF /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -317,6 +319,7 @@
 			name = VivaDictaKeyboard;
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
+				186E2F912EA690DF00B19EDF /* SiriWaveView */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -952,6 +955,11 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		181D0D002E42355600D357A6 /* SiriWaveView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */;
+			productName = SiriWaveView;
+		};
+		186E2F912EA690DF00B19EDF /* SiriWaveView */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */;
 			productName = SiriWaveView;

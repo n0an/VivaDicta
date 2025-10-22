@@ -7,14 +7,13 @@
 
 import SwiftUI
 import KeyboardKit
+import SiriWaveView
 
 struct RecordingStateView: View {
 
     @State var isSymbolAnimating = false
 
-    @Bindable var flowModeManager: FlowModeManager
-    let onCancelTapped: () -> Void
-    let onStopTapped: () -> Void
+    @Bindable var dictationState: KeyboardDictationState
     
     
     var body: some View {
@@ -25,7 +24,7 @@ struct RecordingStateView: View {
                 Spacer()
                 
                 // Cancel button (X)
-                Button(action: onCancelTapped) {
+                Button(action: { dictationState.requestCancelRecording() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.secondary)
@@ -41,8 +40,8 @@ struct RecordingStateView: View {
             
             // Flow Mode Picker
             VStack(spacing: 20) {
-                Picker("Flow Mode", selection: $flowModeManager.selectedFlowMode) {
-                    ForEach(flowModeManager.availableFlowModes, id: \.id) { mode in
+                Picker("Flow Mode", selection: $dictationState.flowModeManager.selectedFlowMode) {
+                    ForEach(dictationState.flowModeManager.availableFlowModes, id: \.id) { mode in
                         Text(mode.name).tag(mode)
                     }
                 }
@@ -52,21 +51,25 @@ struct RecordingStateView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
 
-                // Recording indicator
-                
-                Image(systemName: "microphone.circle.fill")
-                    .foregroundStyle(Color.green)
+                // Recording indicator with audio level visualization
+                VStack(spacing: 12) {
+                    Image(systemName: "microphone.circle.fill")
+                        .foregroundStyle(Color.green)
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), value: isSymbolAnimating)
-                    .font(.system(size: 30))
+                        .font(.system(size: 30))
                     .onAppear { isSymbolAnimating = true }
                     .onDisappear { isSymbolAnimating = false }
-                    .padding(.vertical, 20)
+                    
+                    SiriWaveView(power: .constant(dictationState.currentAudioLevel))
+                        .frame(height: 80)
+                }
+                .padding(.vertical, 20)
             }
             
             Spacer()
             
             // Stop Button
-            Button(action: onStopTapped) {
+            Button(action: { dictationState.requestStopRecording() }) {
                 HStack(spacing: 8) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 18, weight: .semibold))
@@ -93,8 +96,6 @@ struct RecordingStateView: View {
 //
 #Preview {
     RecordingStateView(
-        flowModeManager: FlowModeManager(),
-        onCancelTapped: {},
-        onStopTapped: {}
+        dictationState: KeyboardDictationState()
     )
 }
