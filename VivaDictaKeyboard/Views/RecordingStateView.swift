@@ -13,10 +13,7 @@ struct RecordingStateView: View {
 
     @State var isSymbolAnimating = false
 
-    @Bindable var flowModeManager: FlowModeManager
-    let dictationState: KeyboardDictationState
-    let onCancelTapped: () -> Void
-    let onStopTapped: () -> Void
+    @Bindable var dictationState: KeyboardDictationState
     
     
     var body: some View {
@@ -27,7 +24,7 @@ struct RecordingStateView: View {
                 Spacer()
                 
                 // Cancel button (X)
-                Button(action: onCancelTapped) {
+                Button(action: { dictationState.requestCancelRecording() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.secondary)
@@ -43,8 +40,8 @@ struct RecordingStateView: View {
             
             // Flow Mode Picker
             VStack(spacing: 20) {
-                Picker("Flow Mode", selection: $flowModeManager.selectedFlowMode) {
-                    ForEach(flowModeManager.availableFlowModes, id: \.id) { mode in
+                Picker("Flow Mode", selection: $dictationState.flowModeManager.selectedFlowMode) {
+                    ForEach(dictationState.flowModeManager.availableFlowModes, id: \.id) { mode in
                         Text(mode.name).tag(mode)
                     }
                 }
@@ -72,7 +69,7 @@ struct RecordingStateView: View {
             Spacer()
             
             // Stop Button
-            Button(action: onStopTapped) {
+            Button(action: { dictationState.requestStopRecording() }) {
                 HStack(spacing: 8) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 18, weight: .semibold))
@@ -99,9 +96,6 @@ struct RecordingStateView: View {
 //
 #Preview {
     RecordingStateView(
-        flowModeManager: FlowModeManager(),
-        dictationState: KeyboardDictationState(),
-        onCancelTapped: {},
-        onStopTapped: {}
+        dictationState: KeyboardDictationState()
     )
 }

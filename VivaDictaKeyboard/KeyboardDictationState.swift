@@ -22,7 +22,7 @@ final class KeyboardDictationState {
     var currentAudioLevel: CGFloat = 0.0
 
     // MARK: - FlowMode Manager
-    let flowModeManager = FlowModeManager()
+    var flowModeManager = FlowModeManager()
     
     // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
