@@ -21,6 +21,7 @@ struct KeyboardCustomView: View {
             case .recording:
                 RecordingStateView(
                     flowModeManager: dictationState.flowModeManager,
+                    dictationState: dictationState,
                     onCancelTapped: {
                         dictationState.requestCancelRecording()
                     },

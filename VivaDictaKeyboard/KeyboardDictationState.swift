@@ -18,6 +18,9 @@ final class KeyboardDictationState {
         }
     }
 
+    // Audio level from main app recording (0.0 to 1.0)
+    var currentAudioLevel: CGFloat = 0.0
+
     // MARK: - FlowMode Manager
     let flowModeManager = FlowModeManager()
     
@@ -98,6 +101,9 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onTranscriptionErrorMessage = { [weak self] message in
             DispatchQueue.main.async { self?.errorMessage = message }
         }
+        AppGroupCoordinator.shared.onAudioLevelUpdated = { [weak self] level in
+            DispatchQueue.main.async { self?.currentAudioLevel = level }
+        }
     }
     
     nonisolated func stop() {
@@ -110,6 +116,7 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
             AppGroupCoordinator.shared.onTranscriptionCompleted = nil
             AppGroupCoordinator.shared.onTranscriptionError = nil
+            AppGroupCoordinator.shared.onAudioLevelUpdated = nil
             errorDismissTimer?.invalidate()
             errorDismissTimer = nil
         }

@@ -7,12 +7,14 @@
 
 import SwiftUI
 import KeyboardKit
+import SiriWaveView
 
 struct RecordingStateView: View {
 
     @State var isSymbolAnimating = false
 
     @Bindable var flowModeManager: FlowModeManager
+    let dictationState: KeyboardDictationState
     let onCancelTapped: () -> Void
     let onStopTapped: () -> Void
     
@@ -52,15 +54,19 @@ struct RecordingStateView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
 
-                // Recording indicator
-                
-                Image(systemName: "microphone.circle.fill")
-                    .foregroundStyle(Color.green)
+                // Recording indicator with audio level visualization
+                VStack(spacing: 12) {
+                    Image(systemName: "microphone.circle.fill")
+                        .foregroundStyle(Color.green)
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), value: isSymbolAnimating)
-                    .font(.system(size: 30))
+                        .font(.system(size: 30))
                     .onAppear { isSymbolAnimating = true }
                     .onDisappear { isSymbolAnimating = false }
-                    .padding(.vertical, 20)
+                    
+                    SiriWaveView(power: .constant(dictationState.currentAudioLevel))
+                        .frame(height: 80)
+                }
+                .padding(.vertical, 20)
             }
             
             Spacer()
@@ -94,6 +100,7 @@ struct RecordingStateView: View {
 #Preview {
     RecordingStateView(
         flowModeManager: FlowModeManager(),
+        dictationState: KeyboardDictationState(),
         onCancelTapped: {},
         onStopTapped: {}
     )
