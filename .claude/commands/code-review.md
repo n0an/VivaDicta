@@ -12,39 +12,17 @@ Perform a comprehensive code review of the current changes (git diff) in the rep
 
 ## Instructions
 
-1. **Examine changes**: Run `git diff` and `git status` to understand what changed
+Use the `code-reviewer` agent to perform the review. The agent is specifically configured to:
+- Review against VivaDicta project standards (CLAUDE.md)
+- Verify Swift 6, SwiftUI, and SwiftData best practices
+- Check architecture patterns (@Observable, TranscriptionService, etc.)
+- Assess code quality, performance, security, and testing
 
-2. **Review against project standards**:
-   - Refer to `CLAUDE.md` for project-specific guidelines, architecture patterns, and best practices
-   - Use `/docs/` directory references mentioned in CLAUDE.md for Swift/SwiftUI/SwiftData best practices
-   - Pay special attention to the "Code Review Guidelines" section in CLAUDE.md
+Launch the agent with any additional context provided in $ARGUMENTS.
 
-3. **Focus areas**:
-   - **Code Quality**: Logic errors, edge cases, error handling
-   - **Swift 6 Compliance**: Proper concurrency, @MainActor isolation
-   - **Architecture**: Adherence to VivaDicta patterns (@Observable, SwiftData models, etc.)
-   - **Performance**: State management optimization, memory usage
-   - **Security**: API key handling, data validation
-   - **Testing**: Coverage for new functionality
-
-4. **Provide structured feedback**:
-
-### 📊 Change Summary
-Brief overview of what changed
-
-### ✅ Positive Aspects
-What's done well
-
-### 🔍 Issues Found
-- **🔴 Critical**: Must fix before merging
-- **🟡 Important**: Should address
-- **🔵 Minor**: Nice to have improvements
-
-### 💡 Suggestions
-Specific improvements with code examples
-
-### ✨ Overall Assessment
-Final verdict and merge readiness
-
-## Important
-Always cross-reference with CLAUDE.md for current project conventions and the `/docs/` directory for Apple framework best practices.
+The `code-reviewer` agent will provide structured feedback including:
+- Change summary
+- Strengths and positive aspects
+- Issues found (Critical/Important/Minor)
+- Specific suggestions with code examples
+- Overall assessment and merge readiness
