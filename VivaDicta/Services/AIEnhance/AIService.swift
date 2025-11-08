@@ -311,12 +311,17 @@ class AIService {
                 ["role": "user", "content": formattedText]
             ]
 
-            let requestBody: [String: Any] = [
+            var requestBody: [String: Any] = [
                 "model": selectedMode.aiModel,
                 "messages": messages,
                 "temperature": selectedMode.aiModel.lowercased().hasPrefix("gpt-5") ? 1.0 : 0.3,
                 "stream": false
             ]
+            
+            // Add reasoning_effort parameter if the model supports it
+            if let reasoningEffort = ReasoningConfig.getReasoningParameter(for: selectedMode.aiModel) {
+                requestBody["reasoning_effort"] = reasoningEffort
+            }
 
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
