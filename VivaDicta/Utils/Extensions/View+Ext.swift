@@ -141,7 +141,7 @@ struct FancyBadgeStyle: BadgeStyle {
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
             .background(background)
-            .containerShape(Capsule(style: .continuous))
+            .containerShape(.capsule(style: .continuous))
     }
 }
 

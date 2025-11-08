@@ -153,7 +153,7 @@ struct WaveformView: View {
                     .frame(maxHeight: .infinity)
                 }
             }
-            .contentShape(Rectangle())
+            .contentShape(.rect)
             .onTapGesture { location in
                 if !isLoading {
                     let progress = location.x / geometry.size.width

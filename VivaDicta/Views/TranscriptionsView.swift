@@ -122,7 +122,7 @@ struct TranscriptionsView: View {
     }
 
     private var emptyFilteredStateView: some View {
-        ContentUnavailableView.search(text: searchText)
+        ContentUnavailableView.search
     }
 
     private var emptyAllStateView: some View {

@@ -77,7 +77,7 @@ struct VivaDictaKeyboardToolbarView: View {
                     .foregroundColor(dictationState.micColor)
                     .frame(width: 32, height: 32)
                     .background(toolbarBackgroundColor)
-                    .clipShape(Circle())
+                    .clipShape(.circle)
             }
         }
         .padding(.horizontal, 16)

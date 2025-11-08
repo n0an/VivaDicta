@@ -156,7 +156,7 @@ struct PromptRowView: View {
             Spacer()
         }
         .padding(.vertical, 8)
-        .contentShape(Rectangle())
+        .contentShape(.rect)
     }
 }
 
