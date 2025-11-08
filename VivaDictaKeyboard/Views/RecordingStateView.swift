@@ -10,6 +10,10 @@ import KeyboardKit
 import SiriWaveView
 
 struct RecordingStateView: View {
+    
+    
+    
+    
 
     @State var isSymbolAnimating = false
 
