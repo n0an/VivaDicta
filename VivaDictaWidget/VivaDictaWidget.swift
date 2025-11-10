@@ -2,11 +2,12 @@
 //  VivaDictaWidget.swift
 //  VivaDictaWidget
 //
-//  Created by Anton Novoselov on 02.10.2025.
+//  Created by Anton Novoselov on 2025.10.02
 //
 
 import WidgetKit
 import SwiftUI
+
 
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
@@ -46,11 +47,9 @@ struct VivaDictaWidgetEntryView : View {
 
     var body: some View {
         VStack {
-            Text("Time:")
-            Text(entry.date, style: .time)
-
-            Text("Favorite Emoji:")
-            Text(entry.configuration.favoriteEmoji)
+            Image(systemName: "mic.circle")
+                .symbolRenderingMode(.multicolor)
+                .font(.system(size: 80))
         }
     }
 }
@@ -63,6 +62,7 @@ struct VivaDictaWidget: Widget {
             VivaDictaWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
+        .supportedFamilies([.systemSmall])
     }
 }
 
