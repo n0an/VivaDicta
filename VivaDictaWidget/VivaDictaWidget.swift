@@ -46,8 +46,11 @@ struct VivaDictaWidgetEntryView : View {
         }
         .containerBackground(for: .widget) {
             ContainerRelativeShape()
-                .fill(entry.configuration.widgetColor.opacity(0.1).gradient)
+                .fill(entry.configuration.widgetColor.gradient.opacity(0.9))
+                .colorInvert()
+                .saturation(0.2)
         }
+        
     }
 }
 
