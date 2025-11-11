@@ -12,10 +12,6 @@ import AppIntents
 struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Configuration"
     static let description: IntentDescription = "Select color"
-
-//    // An example configurable parameter.
-//    @Parameter(title: "Color", default: "WidgetColorOrange")
-//    var widgetColorString: String
     
     @Parameter(title: "Color", optionsProvider: ColorOptionsProvider())
     var widgetColorString: String?
@@ -27,7 +23,7 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
 
 struct ColorOptionsProvider: DynamicOptionsProvider {
     func results() async throws -> [String] {
-        return WidgetColor.allCases.map {$0.rawValue}
+        return WidgetColor.allCases.map { $0.rawValue }
     }
 
     func defaultResult() async -> String? { WidgetColor.def.rawValue }
