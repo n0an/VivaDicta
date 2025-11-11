@@ -48,7 +48,8 @@ struct VivaDictaWidgetEntryView : View {
     var body: some View {
         VStack {
             Image(systemName: "mic.circle")
-                .symbolRenderingMode(.multicolor)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(entry.configuration.widgetColor)
                 .font(.system(size: 80))
         }
     }
@@ -67,15 +68,15 @@ struct VivaDictaWidget: Widget {
 }
 
 extension ConfigurationAppIntent {
-    fileprivate static var smiley: ConfigurationAppIntent {
+    fileprivate static var def: ConfigurationAppIntent {
         let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "😀"
+        intent.widgetColorString = WidgetColor.def.rawValue
         return intent
     }
     
-    fileprivate static var starEyes: ConfigurationAppIntent {
+    fileprivate static var red: ConfigurationAppIntent {
         let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "🤩"
+        intent.widgetColorString = WidgetColor.red.rawValue
         return intent
     }
 }
@@ -83,6 +84,6 @@ extension ConfigurationAppIntent {
 #Preview(as: .systemSmall) {
     VivaDictaWidget()
 } timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-    SimpleEntry(date: .now, configuration: .starEyes)
+    SimpleEntry(date: .now, configuration: .def)
+    SimpleEntry(date: .now, configuration: .red)
 }

@@ -6,13 +6,24 @@
 //
 
 import WidgetKit
+import SwiftUI
 import AppIntents
 
 struct ConfigurationAppIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Configuration" }
-    static var description: IntentDescription { "This is an example widget." }
+    static let title: LocalizedStringResource = "Configuration"
+    static let description: IntentDescription = "Select color"
 
     // An example configurable parameter.
-    @Parameter(title: "Favorite Emoji", default: "😃")
-    var favoriteEmoji: String
+    @Parameter(title: "Color", default: "WidgetColorOrange")
+    var widgetColorString: String
+    
+    var widgetColor: Color {
+        return Color(widgetColorString)
+    }
+}
+
+enum WidgetColor: String {
+    case def = "WidgetColorOrange"
+    case red = "WidgetColorRed"
+    case blue = "WidgetColorBlue"
 }
