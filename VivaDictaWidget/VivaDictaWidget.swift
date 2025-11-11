@@ -19,17 +19,9 @@ struct Provider: AppIntentTimelineProvider {
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
-        }
-
-        return Timeline(entries: entries, policy: .atEnd)
+        let entry = SimpleEntry(date: .now, configuration: configuration)
+        
+        return Timeline(entries: [entry], policy: .never)
     }
 
 //    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
@@ -49,8 +41,12 @@ struct VivaDictaWidgetEntryView : View {
         VStack {
             Image(systemName: "mic.circle")
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(entry.configuration.widgetColor)
+                .foregroundStyle(entry.configuration.widgetColor.gradient)
                 .font(.system(size: 80))
+        }
+        .containerBackground(for: .widget) {
+            ContainerRelativeShape()
+                .fill(entry.configuration.widgetColor.opacity(0.1).gradient)
         }
     }
 }
@@ -61,7 +57,6 @@ struct VivaDictaWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VivaDictaWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
         }
         .supportedFamilies([.systemSmall])
     }
