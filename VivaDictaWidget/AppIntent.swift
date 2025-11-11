@@ -13,17 +13,29 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Configuration"
     static let description: IntentDescription = "Select color"
 
-    // An example configurable parameter.
-    @Parameter(title: "Color", default: "WidgetColorOrange")
-    var widgetColorString: String
+//    // An example configurable parameter.
+//    @Parameter(title: "Color", default: "WidgetColorOrange")
+//    var widgetColorString: String
+    
+    @Parameter(title: "Color", optionsProvider: ColorOptionsProvider())
+    var widgetColorString: String?
     
     var widgetColor: Color {
-        return Color(widgetColorString)
+        return Color("WidgetColor\(widgetColorString ?? WidgetColor.def.rawValue)")
     }
 }
 
-enum WidgetColor: String {
-    case def = "WidgetColorOrange"
-    case red = "WidgetColorRed"
-    case blue = "WidgetColorBlue"
+struct ColorOptionsProvider: DynamicOptionsProvider {
+    func results() async throws -> [String] {
+        return WidgetColor.allCases.map {$0.rawValue}
+    }
+
+    func defaultResult() async -> String? { WidgetColor.def.rawValue }
+}
+
+enum WidgetColor: String, CaseIterable {
+    case def = "Orange"
+    case red = "Red"
+    case blue = "Blue"
+    case green = "Green"
 }
