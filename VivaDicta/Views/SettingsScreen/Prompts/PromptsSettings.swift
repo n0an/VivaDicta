@@ -32,7 +32,7 @@ struct PromptsSettings: View {
                 .navigationTitle("Select Template")
                 .navigationBarTitleDisplayMode(.inline)
 
-                .scrollContentBackground(.hidden)
+                .scrollContentBackground(.visible)
             }
             .navigationTransition(
                 .zoom(sourceID: "info", in: transition)

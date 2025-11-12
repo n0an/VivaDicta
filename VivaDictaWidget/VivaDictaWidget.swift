@@ -35,8 +35,32 @@ struct SimpleEntry: TimelineEntry {
 }
 
 struct VivaDictaWidgetEntryView : View {
+    @Environment(\.widgetFamily) var family
+    
     var entry: Provider.Entry
 
+    var body: some View {
+        
+        switch family {
+        case .systemSmall:
+            WidgetViewSmall(entry: entry)
+        case .accessoryCircular:
+            LockScreenCircularView()
+        case .accessoryRectangular:
+            LockScreenRectangularView()
+        case .accessoryInline:
+            Label("Start record", systemImage: "microphone.circle.fill")
+                .widgetURL(URL(string: "startRecordFromWidget"))
+        case .systemMedium, .systemLarge, .systemExtraLarge:
+            EmptyView()
+        @unknown default:
+            EmptyView()
+        }
+    }
+}
+
+private struct WidgetViewSmall: View {
+    var entry: SimpleEntry
     var body: some View {
         VStack {
             Image(systemName: "mic.circle")
@@ -50,9 +74,46 @@ struct VivaDictaWidgetEntryView : View {
                 .colorInvert()
                 .saturation(0.2)
         }
-        
     }
 }
+
+private struct LockScreenCircularView: View {
+    var body: some View {
+        
+        VStack {
+            Image(systemName: "mic.circle")
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.orange.gradient)
+                .font(.system(size: 40))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .background {
+            ContainerRelativeShape()
+                .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
+                                     startPoint: .bottom, endPoint: .top))
+        }
+        .containerBackground(for: .widget) { }
+    }
+}
+
+private struct LockScreenRectangularView: View {
+    var body: some View {
+        
+        VStack {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "mic.circle")
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.orange.gradient)
+                    .font(.system(size: 40))
+                
+                Text("VivaDicta")
+            }
+        }
+        
+        .containerBackground(for: .widget) { }
+    }
+}
+
 
 struct VivaDictaWidget: Widget {
     let kind: String = "VivaDictaWidget"
@@ -61,7 +122,12 @@ struct VivaDictaWidget: Widget {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             VivaDictaWidgetEntryView(entry: entry)
         }
-        .supportedFamilies([.systemSmall])
+        .configurationDisplayName("VivaDicta")
+        .description("Record Note in VivaDicta")
+        .supportedFamilies([.systemSmall,
+                            .accessoryRectangular,
+                            .accessoryCircular,
+                            .accessoryInline])
     }
 }
 
@@ -79,7 +145,7 @@ extension ConfigurationAppIntent {
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .accessoryCircular) {
     VivaDictaWidget()
 } timeline: {
     SimpleEntry(date: .now, configuration: .def)
