@@ -44,10 +44,13 @@ struct VivaDictaWidgetEntryView : View {
         switch family {
         case .systemSmall:
             WidgetViewSmall(entry: entry)
+                .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryCircular:
             LockScreenCircularView()
+                .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryRectangular:
             LockScreenRectangularView()
+                .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryInline:
             Label("Start record", systemImage: "microphone.circle.fill")
                 .widgetURL(URL(string: "startRecordFromWidget"))
