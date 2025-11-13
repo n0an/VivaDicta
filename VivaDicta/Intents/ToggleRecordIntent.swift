@@ -9,25 +9,33 @@ import AppIntents
 import SwiftUI
 
 struct ToggleRecordIntent: AppIntent {
-    
-    static let title: LocalizedStringResource = "Start Recording"
-    static let description = IntentDescription("Start recording in VivaDicta")
+
+    static let title: LocalizedStringResource = "Toggle Recording"
+    static let description = IntentDescription("Toggle recording in VivaDicta")
 
     static let openAppWhenRun: Bool = true
-    
+
     @available(iOS 26.0, *)
     static let supportedModes: IntentModes = .foreground(.immediate)
 
 
     func perform() async throws -> some IntentResult {
-        // Use Darwin notification to communicate with the main app
-        // This is consistent with how keyboard extension communicates
-        Task { @MainActor in
-            AppGroupCoordinator.shared.requestStartRecordingFromControl()
+        // Check current recording state and toggle accordingly
+        await MainActor.run {
+            let coordinator = AppGroupCoordinator.shared
+            let isCurrentlyRecording = coordinator.isRecording
+
+            if isCurrentlyRecording {
+                // If recording, stop it
+                coordinator.requestStopRecording()
+            } else {
+                // If not recording, start it from Control Center
+                coordinator.requestStartRecordingFromControl()
+            }
         }
 
         // The app will open due to openAppWhenRun = true
-        // and will receive the notification to start recording
+        // and will receive the appropriate notification
 
         return .result()
     }
