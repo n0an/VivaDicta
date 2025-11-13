@@ -14,6 +14,9 @@ struct ToggleRecordIntent: AppIntent {
     static let description = IntentDescription("Start recording in VivaDicta")
 
     static let openAppWhenRun: Bool = true
+    
+    @available(iOS 26.0, *)
+    static let supportedModes: IntentModes = .foreground(.immediate)
 
 
     func perform() async throws -> some IntentResult {
