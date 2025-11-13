@@ -74,8 +74,17 @@ struct VivaDictaApp: App {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
         } else if url.absoluteString == "startRecordFromWidget" {
-            logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
-            
+            logger.logInfo("📱 Recognized as widget recording request")
+
+            // Navigate to the Record tab
+            appState.selectedTab = .record
+
+            // Start recording automatically after a small delay to ensure UI is ready
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+                appState.recordViewModel.startCaptureAudio()
+                logger.logInfo("🎙️ Started recording from widget deeplink")
+            }
         } else {
             logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }
