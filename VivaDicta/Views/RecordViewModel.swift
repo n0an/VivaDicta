@@ -619,6 +619,27 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // TODO: Implement resume functionality if needed
             }
         }
+
+        // Handle start recording request from Control Center
+        AppGroupCoordinator.shared.onStartRecordingFromControl = { [weak self] in
+            guard let self = self else { return }
+
+            self.logger.logInfo("📱 Starting recording from Control Center request")
+
+            // Navigate to the Record tab
+            self.appState?.selectedTab = .record
+
+            // Start recording after a small delay to ensure UI is ready
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+
+                // Only start if not already recording
+                if self.recordingState != .recording {
+                    self.startCaptureAudio()
+                    self.logger.logInfo("🎙️ Started recording from Control Center")
+                }
+            }
+        }
     }
 
 }
