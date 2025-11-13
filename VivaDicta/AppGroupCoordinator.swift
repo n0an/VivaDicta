@@ -55,6 +55,7 @@ public final class AppGroupCoordinator {
         static let transcriptionError = "com.antonnovoselov.VivaDicta.transcriptionError"
         static let audioLevelUpdated = "com.antonnovoselov.VivaDicta.audioLevelUpdated"
         static let stopHotMicFromWidget = "com.antonnovoselov.VivaDicta.stopHotMicFromWidget"
+        static let startRecordingFromControl = "com.antonnovoselov.VivaDicta.startRecordingFromControl"
     }
 
     public enum TranscriptionStatus: String {
@@ -85,6 +86,7 @@ public final class AppGroupCoordinator {
     @MainActor var onAudioLevelUpdated: ((CGFloat) -> Void)?
     @MainActor var onRecordingStateChanged: ((Bool) -> Void)?
     @MainActor var onStopHotMicFromWidget: (() -> Void)?
+    @MainActor var onStartRecordingFromControl: (() -> Void)?
 
     // MARK: - Initialization
     private init() {
@@ -120,6 +122,10 @@ public final class AppGroupCoordinator {
         let timestamp = Date().timeIntervalSince1970
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.startRecording)
+    }
+
+    public func requestStartRecordingFromControl() {
+        postDarwinNotification(NotificationNames.startRecordingFromControl)
     }
 
     public func requestStopRecording() {
@@ -487,6 +493,19 @@ public final class AppGroupCoordinator {
             nil,
             .deliverImmediately
         )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleStartRecordingFromControlNotification()
+            },
+            NotificationNames.startRecordingFromControl as CFString,
+            nil,
+            .deliverImmediately
+        )
     }
 
     nonisolated private func removeNotificationObservers() {
@@ -596,6 +615,12 @@ public final class AppGroupCoordinator {
         // Trust the notification and stop immediately
         Task { @MainActor in
             await onStopHotMicFromWidget?()
+        }
+    }
+
+    nonisolated private func handleStartRecordingFromControlNotification() {
+        Task { @MainActor in
+            await onStartRecordingFromControl?()
         }
     }
 }

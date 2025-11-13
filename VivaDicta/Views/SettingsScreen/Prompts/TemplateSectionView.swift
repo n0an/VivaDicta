@@ -30,5 +30,6 @@ struct TemplateSelectionView: View {
             }
             .buttonStyle(PlainButtonStyle())
         }
+        .scrollContentBackground(.visible)
     }
 }

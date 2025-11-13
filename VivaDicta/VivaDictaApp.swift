@@ -55,25 +55,36 @@ struct VivaDictaApp: App {
         if url.absoluteString == "vivadicta://record-for-keyboard" {
             logger.logInfo("📱 Recognized as keyboard recording request")
             
-//            appState.startLiveActivity()
+            //            appState.startLiveActivity()
             
-
+            
             // Start audio prewarm session to keep app alive in background
             do {
-//                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
+                //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
                 try AudioPrewarmManager.shared.startPrewarmSession()
-
+                
                 // Activate keyboard session to notify keyboard that hot mic is ready
                 AppGroupCoordinator.shared.activateKeyboardSession(
                     timeoutSeconds: AudioPrewarmManager.shared.audioSessionTimeout
                 )
-
+                
                 logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
-
+                
             } catch {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
+        } else if url.absoluteString == "startRecordFromWidget" {
+            logger.logInfo("📱 Recognized as widget recording request")
 
+            // Navigate to the Record tab
+            appState.selectedTab = .record
+
+            // Start recording automatically after a small delay to ensure UI is ready
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+                appState.recordViewModel.startCaptureAudio()
+                logger.logInfo("🎙️ Started recording from widget deeplink")
+            }
         } else {
             logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }

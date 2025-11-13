@@ -2,7 +2,7 @@
 //  VivaDictaWidgetBundle.swift
 //  VivaDictaWidget
 //
-//  Created by Anton Novoselov on 02.10.2025.
+//  Created by Anton Novoselov on 2025.10.02
 //
 
 import WidgetKit

@@ -56,6 +56,7 @@ struct ModelsView: View {
                     }
                 }
             }
+            .scrollContentBackground(.visible)
         }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(

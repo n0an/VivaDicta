@@ -50,7 +50,7 @@ struct VivaDictaLiveActivity: Widget {
                 Image(systemName: "microphone.square.fill")
                     .foregroundStyle(.green)
             }
-            .widgetURL(URL(string: "http://www.apple.com"))
+//            .widgetURL(URL(string: "http://www.apple.com"))
             .keylineTint(Color.red)
         }
     }
