@@ -20,35 +20,24 @@ struct RecordingSheetView: View {
     }
 
     var body: some View {
-        VStack(spacing: 40) {
-            // Drag indicator and spacing
-            Capsule()
-                .fill(Color.secondary.opacity(0.3))
-                .frame(width: 36, height: 5)
-                .padding(.top, 8)
-
-            Spacer(minLength: 20)
-
-            // SiriWaveView for audio visualization
+        VStack(spacing: 12) {
+            Spacer()
             SiriWaveView(power: $appState.recordViewModel.audioPower)
-                .frame(height: 200)
+                .frame(height: 80)
                 .padding(.horizontal, 20)
-
-            // Stop button
+            Spacer()
+            
             Button {
                 stopRecordingAndDismiss()
             } label: {
                 Image(systemName: "stop.circle.fill")
-                    .font(.system(size: 72))
+                    .font(.system(size: 56))
                     .foregroundStyle(.red)
             }
             .disabled(vm.recordingState != .recording)
-
-            Spacer(minLength: 40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(UIColor.systemBackground))
-        .presentationDetents([.medium])
+        .presentationDetents([.height(200)])
         .presentationDragIndicator(.hidden) // We use custom drag indicator
         .interactiveDismissDisabled(vm.recordingState == .recording) // Prevent dismissal during recording
         .onAppear {

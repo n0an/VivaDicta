@@ -15,6 +15,8 @@ struct MainView: View {
     @State private var searchText = ""
     @State private var isSearchFieldExpanded = false
     
+    @Namespace private var recordSheetTransition
+    
     var body: some View {
         NavigationStack {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
@@ -53,6 +55,7 @@ struct MainView: View {
                             
                             
                         }
+                        .matchedTransitionSource(id: "RecordSheetTransition", in: recordSheetTransition)
                     } else {
                         ToolbarItem(placement: .bottomBar) {
                             Button("") {
@@ -67,6 +70,7 @@ struct MainView: View {
                         appState: appState,
                         isPresented: $showingRecordingSheet
                     )
+                    .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: recordSheetTransition))
                 }
                 .navigationDestination(isPresented: $showingSettings) {
                     SettingsView(appState: appState)
