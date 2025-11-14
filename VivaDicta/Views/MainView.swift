@@ -9,6 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct MainView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     @Bindable var appState: AppState
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
@@ -90,11 +92,23 @@ struct MainView: View {
                             .toolbar {
                                 if #available(iOS 26.0, *) {
                                     ToolbarItem(placement: .topBarLeading) {
-                                        Button("Close", systemImage: "xmark") {
-                                            showingSettings = false
-                                        }
-                                        .buttonStyle(.glassProminent)
-                                        .tint(.clear)
+                                        Button {
+                                              showingSettings = false
+                                          } label: {
+                                              Label {
+                                                  Text("Close")
+                                              } icon: {
+                                                  if colorScheme == .dark {
+                                                      Image(systemName: "xmark")
+                                                  } else {
+                                                      Image("xmark_black")
+                                                  }
+                                                  
+                                              }
+                                          }
+                                          .buttonStyle(.glassProminent)
+                                          .tint(.clear)
+                                        
                                     }
                                 } else {
                                     ToolbarItem(placement: .topBarLeading) {
