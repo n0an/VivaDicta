@@ -132,7 +132,7 @@ struct TranscriptionsView: View {
             Text("Tap Start Recording to capture your first transcription.")
         } actions: {
             Button("Start recording") {
-                appState.selectedTab = .record
+                appState.shouldPresentRecordingSheet = true
             }
         }
     }

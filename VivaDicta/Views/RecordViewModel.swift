@@ -626,20 +626,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             self.logger.logInfo("📱 Starting recording from Control Center request")
 
-            // Navigate to the Record tab
-            self.appState?.selectedTab = .record
-
-            // Start recording after a small delay to ensure UI is ready
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
-
-                // Only start if not already recording
-                if self.recordingState != .recording {
-                    self.startCaptureAudio()
-                    self.logger.logInfo("🎙️ Started recording from Control Center")
-                }
-            }
+            // Present the recording sheet
+            self.appState?.shouldPresentRecordingSheet = true
+            self.logger.logInfo("🎙️ Presenting recording sheet from Control Center")
         }
     }
-
 }

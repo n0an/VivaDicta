@@ -24,7 +24,6 @@ struct RecordView: View {
         } else {
             Button {
                 vm.appState?.shouldNavigateToModels = true
-                vm.appState?.selectedTab = .settings
             } label: {
                 Text("Select transcription model")
             }
