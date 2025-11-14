@@ -1,0 +1,140 @@
+//
+//  TranscriptionsContentView.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2025.11.14
+//
+
+import os
+import SwiftData
+import SwiftUI
+
+struct TranscriptionsContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
+
+    @Binding var searchText: String
+    @State private var filteredTranscriptions: [Transcription] = []
+    @State private var searchTask: Task<Void, Never>?
+
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
+
+    var appState: AppState
+
+    init(appState: AppState, searchText: Binding<String>) {
+        self.appState = appState
+        self._searchText = searchText
+    }
+
+    var body: some View {
+        VStack {
+            if allTranscriptions.isEmpty {
+                emptyAllStateView
+            } else if filteredTranscriptions.isEmpty && !searchText.isEmpty {
+                emptyFilteredStateView
+            } else {
+                List {
+                    ForEach(displayedTranscriptions) { transcription in
+                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
+                            TranscriptionRowView(transcription: transcription)
+                        }
+                    }
+                    .onDelete(perform: deleteTranscription)
+                }
+                .listStyle(.plain)
+            }
+        }
+        .navigationTitle("Transcriptions")
+        .onAppear {
+            filteredTranscriptions = allTranscriptions
+        }
+        .onChange(of: searchText) { _, newValue in
+            performDebouncedSearch(with: newValue)
+        }
+        .onChange(of: allTranscriptions) { _, _ in
+            if searchText.isEmpty {
+                filteredTranscriptions = allTranscriptions
+            } else {
+                performDebouncedSearch(with: searchText)
+            }
+        }
+    }
+
+    private var displayedTranscriptions: [Transcription] {
+        searchText.isEmpty ? allTranscriptions : filteredTranscriptions
+    }
+
+    private func performDebouncedSearch(with searchTerm: String) {
+        // Cancel previous search task
+        searchTask?.cancel()
+
+        // Create new debounced search task
+        searchTask = Task {
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+
+                guard !searchTerm.isEmpty else {
+                    await MainActor.run {
+                        filteredTranscriptions = allTranscriptions
+                    }
+                    return
+                }
+
+                var descriptor = FetchDescriptor<Transcription>(
+                    sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+                )
+                descriptor.predicate = #Predicate<Transcription> { transcription in
+                    transcription.text.localizedStandardContains(searchTerm) ||
+                        (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
+                }
+
+                let results = try modelContext.fetch(descriptor)
+
+                await MainActor.run {
+                    filteredTranscriptions = results
+                }
+            } catch {
+                logger.logError("Search was cancelled or failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func deleteTranscription(at offsets: IndexSet) {
+        for index in offsets {
+            let transcription = displayedTranscriptions[index]
+
+            if let audioFileName = transcription.audioFileName {
+                let audioURL = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
+                try? FileManager.default.removeItem(at: audioURL)
+            }
+
+            modelContext.delete(transcription)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            logger.logError("Failed to save after deletion: \(error.localizedDescription)")
+        }
+    }
+
+    private var emptyFilteredStateView: some View {
+        ContentUnavailableView.search
+    }
+
+    private var emptyAllStateView: some View {
+        ContentUnavailableView {
+            Label("No Transcriptions yet", systemImage: "waveform")
+        } description: {
+            Text("Tap the record button to capture your first transcription.")
+        }
+    }
+}
+
+#Preview(traits: .transcriptionsMockData) {
+    @Previewable @State var appState = AppState()
+    @Previewable @State var searchText = ""
+    NavigationStack {
+        TranscriptionsContentView(appState: appState, searchText: $searchText)
+    }
+}

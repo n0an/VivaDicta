@@ -1,0 +1,83 @@
+//
+//  MainView.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2025.11.14
+//
+
+import SwiftUI
+import SwiftData
+
+struct MainView: View {
+    @Bindable var appState: AppState
+    @State private var showingRecordingSheet = false
+    @State private var showingSettings = false
+    @State private var searchText = ""
+    @State private var isSearchFieldExpanded = false
+
+    var body: some View {
+        NavigationStack {
+            TranscriptionsContentView(appState: appState, searchText: $searchText)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    // Top trailing - Settings button
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+                .toolbar {
+                    // Bottom toolbar with search and record
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        // Search field
+                        SearchFieldToolbarItem(
+                            searchText: $searchText,
+                            isExpanded: $isSearchFieldExpanded
+                        )
+
+                        Spacer()
+
+                        // Record button
+                        Button {
+                            showingRecordingSheet = true
+                        } label: {
+                            Image(systemName: "mic.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                }
+                .sheet(isPresented: $showingRecordingSheet) {
+                    RecordingSheetView(
+                        appState: appState,
+                        isPresented: $showingRecordingSheet
+                    )
+                }
+                .navigationDestination(isPresented: $showingSettings) {
+                    SettingsView(appState: appState)
+                        .navigationBarBackButtonHidden(false)
+                }
+        }
+        .onChange(of: appState.shouldPresentRecordingSheet) { _, newValue in
+            if newValue {
+                showingRecordingSheet = true
+                appState.shouldPresentRecordingSheet = false
+            }
+        }
+        .onChange(of: appState.shouldNavigateToModels) { _, newValue in
+            if newValue {
+                showingSettings = true
+                // The SettingsView should handle navigation to models internally
+            }
+        }
+    }
+}
+
+#Preview(traits: .transcriptionsMockData) {
+    @State @Previewable var appState = AppState()
+    MainView(appState: appState)
+}
