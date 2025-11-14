@@ -85,9 +85,29 @@ struct MainView: View {
                     
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
-                    SettingsView(appState: appState)
-                        .interactiveDismissDisabled(true)
-                        .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: recordSheetTransition))
+                    NavigationStack {
+                        SettingsView(appState: appState)
+                            .toolbar {
+                                if #available(iOS 26.0, *) {
+                                    ToolbarItem(placement: .topBarLeading) {
+                                        Button("Close", systemImage: "xmark") {
+                                            showingSettings = false
+                                        }
+                                        .buttonStyle(.glassProminent)
+                                        .tint(.clear)
+                                    }
+                                } else {
+                                    ToolbarItem(placement: .topBarLeading) {
+                                        Button("Close", systemImage: "xmark") {
+                                            showingSettings = false
+                                        }
+                                    }
+                                }
+                            }
+                    }
+                    
+                    .interactiveDismissDisabled(true)
+                    .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: recordSheetTransition))
                 }
         }
         .onChange(of: appState.shouldPresentRecordingSheet) { _, newValue in
