@@ -9,6 +9,8 @@ import os
 import SwiftData
 import SwiftUI
 
+// TODO: - Deprecated file. Delete it.
+
 struct TranscriptionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]

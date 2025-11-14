@@ -44,7 +44,6 @@ struct TranscriptionsContentView: View {
                 .listStyle(.plain)
             }
         }
-        .navigationTitle("Transcriptions")
         .onAppear {
             filteredTranscriptions = allTranscriptions
         }
