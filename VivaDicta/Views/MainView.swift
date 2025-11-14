@@ -34,19 +34,24 @@ struct MainView: View {
                     }
                 }
             
+            
                 .toolbar {
                     if #available(iOS 26.0, *) {
                         DefaultToolbarItem(kind: .search, placement: .bottomBar)
                         ToolbarSpacer(.flexible, placement: .bottomBar)
                         
                         ToolbarItem(placement: .bottomBar) {
+                            
                             Button {
-                                showingRecordingSheet = true
-                            } label: {
-                                Image(systemName: "mic.circle.fill")
-                                    .font(.system(size: 36))
-                                    .foregroundStyle(.blue)
-                            }
+                                  showingRecordingSheet = true
+                              } label: {
+                                  Image(systemName: "microphone.circle")
+                                      .font(.system(size: 24))
+                              }
+                              .buttonStyle(.glassProminent)
+                              .tint(.orange)
+                            
+                            
                         }
                     } else {
                         ToolbarItem(placement: .bottomBar) {
