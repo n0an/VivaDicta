@@ -38,8 +38,8 @@ struct RecordingSheetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .presentationDetents([.height(220)])
-        .presentationDragIndicator(.hidden) // We use custom drag indicator
-        .interactiveDismissDisabled(vm.recordingState == .recording) // Prevent dismissal during recording
+        .presentationDragIndicator(.hidden)
+        .interactiveDismissDisabled(vm.recordingState == .recording)
         .onAppear {
             startRecordingImmediately()
         }
@@ -73,7 +73,8 @@ struct RecordingSheetView: View {
         if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
             // Dismiss sheet and navigate to settings/models
             isPresented = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
                 appState.shouldNavigateToModels = true
             }
             return
@@ -95,7 +96,8 @@ struct RecordingSheetView: View {
             case .idle:
                 // Recording → Transcribing → Idle means success
                 // Give a small delay for user to see the completion
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(300))
                     isPresented = false
                     hasStartedRecording = false
                 }
