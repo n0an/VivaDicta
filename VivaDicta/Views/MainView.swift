@@ -14,10 +14,13 @@ struct MainView: View {
     @State private var showingSettings = false
     @State private var searchText = ""
     @State private var isSearchFieldExpanded = false
-
+    
     var body: some View {
         NavigationStack {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
+                .searchable(text: $searchText, placement: .toolbar)
+                .minimizedSearch()
+            
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     // Top trailing - Settings button
@@ -30,24 +33,30 @@ struct MainView: View {
                         }
                     }
                 }
+            
                 .toolbar {
-                    // Bottom toolbar with search and record
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        // Search field
-                        SearchFieldToolbarItem(
-                            searchText: $searchText,
-                            isExpanded: $isSearchFieldExpanded
-                        )
-
-                        Spacer()
-
-                        // Record button
-                        Button {
-                            showingRecordingSheet = true
-                        } label: {
-                            Image(systemName: "mic.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundStyle(.blue)
+                    if #available(iOS 26.0, *) {
+                        DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                        ToolbarSpacer(.flexible, placement: .bottomBar)
+                        
+                        ToolbarItem(placement: .bottomBar) {
+                            Button {
+                                showingRecordingSheet = true
+                            } label: {
+                                Image(systemName: "mic.circle.fill")
+                                    .font(.system(size: 36))
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    } else {
+                        ToolbarItem(placement: .bottomBar) {
+                            Button {
+                                showingRecordingSheet = true
+                            } label: {
+                                Image(systemName: "mic.circle.fill")
+                                    .font(.system(size: 36))
+                                    .foregroundStyle(.blue)
+                            }
                         }
                     }
                 }
@@ -81,3 +90,5 @@ struct MainView: View {
     @State @Previewable var appState = AppState()
     MainView(appState: appState)
 }
+
+

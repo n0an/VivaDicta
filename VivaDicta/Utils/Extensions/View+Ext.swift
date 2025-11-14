@@ -259,3 +259,13 @@ extension View {
         modifier(AnimatedCopyButtonStyle(color: color, colorPressed: colorPressed, isPressed: isPressed))
     }
 }
+
+
+
+extension View {
+    @ViewBuilder func minimizedSearch() -> some View {
+        if #available(iOS 26.0, *) {
+            self.searchToolbarBehavior(.minimize)
+        } else { self }
+    }
+}
