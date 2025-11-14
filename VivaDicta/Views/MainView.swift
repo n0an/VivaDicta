@@ -92,31 +92,9 @@ struct MainView: View {
                             .navigationTitle("Settings")
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
-                                if #available(iOS 26.0, *) {
-                                    ToolbarItem(placement: .topBarLeading) {
-                                        Button {
-                                              showingSettings = false
-                                          } label: {
-                                              Label {
-                                                  Text("Close")
-                                              } icon: {
-                                                  if colorScheme == .dark {
-                                                      Image(systemName: "xmark")
-                                                  } else {
-                                                      Image("xmark_black")
-                                                  }
-                                                  
-                                              }
-                                          }
-                                          .buttonStyle(.glassProminent)
-                                          .tint(.clear)
-                                        
-                                    }
-                                } else {
-                                    ToolbarItem(placement: .topBarLeading) {
-                                        Button("Close", systemImage: "xmark") {
-                                            showingSettings = false
-                                        }
+                                ToolbarItem(placement: .topBarLeading) {
+                                    Button("Close", systemImage: "xmark") {
+                                        showingSettings = false
                                     }
                                 }
                             }
