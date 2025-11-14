@@ -58,9 +58,11 @@ struct MainView: View {
                             Button {
                                 showingRecordingSheet = true
                             } label: {
-                                Image(systemName: "mic.circle.fill")
-                                    .font(.system(size: 36))
-                                    .foregroundStyle(.blue)
+                                Image(systemName: "microphone.circle")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(.white)
+                                    .padding(8)
+                                    .background(.orange.gradient, in: .circle)
                             }
                         }
                     }
