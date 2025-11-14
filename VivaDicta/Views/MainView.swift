@@ -89,6 +89,8 @@ struct MainView: View {
                 .fullScreenCover(isPresented: $showingSettings) {
                     NavigationStack {
                         SettingsView(appState: appState)
+                            .navigationTitle("Settings")
+                            .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
                                 if #available(iOS 26.0, *) {
                                     ToolbarItem(placement: .topBarLeading) {
