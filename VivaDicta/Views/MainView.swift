@@ -25,15 +25,27 @@ struct MainView: View {
             
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    // Top trailing - Settings button
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            showingSettings = true
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .foregroundStyle(.primary)
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button {
+                                showingSettings = true
+                            } label: {
+                                Image(systemName: "gearshape.fill")
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+                        .matchedTransitionSource(id: "SettingsSheetTransition", in: recordSheetTransition)
+                    } else {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button {
+                                showingSettings = true
+                            } label: {
+                                Image(systemName: "gearshape.fill")
+                                    .foregroundStyle(.primary)
+                            }
                         }
                     }
+
                 }
             
             
@@ -70,11 +82,12 @@ struct MainView: View {
                         appState: appState,
                         isPresented: $showingRecordingSheet
                     )
-                    .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: recordSheetTransition))
+                    
                 }
-                .navigationDestination(isPresented: $showingSettings) {
+                .fullScreenCover(isPresented: $showingSettings) {
                     SettingsView(appState: appState)
-                        .navigationBarBackButtonHidden(false)
+                        .interactiveDismissDisabled(true)
+                        .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: recordSheetTransition))
                 }
         }
         .onChange(of: appState.shouldPresentRecordingSheet) { _, newValue in
