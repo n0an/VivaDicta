@@ -33,7 +33,6 @@ struct MainView: View {
                                 showingSettings = true
                             } label: {
                                 Image(systemName: "gearshape.fill")
-                                    .foregroundStyle(.primary)
                             }
                         }
                         .matchedTransitionSource(id: "SettingsSheetTransition", in: recordSheetTransition)
@@ -43,8 +42,8 @@ struct MainView: View {
                                 showingSettings = true
                             } label: {
                                 Image(systemName: "gearshape.fill")
-                                    .foregroundStyle(.primary)
                             }
+                            .tint(.primary)
                         }
                     }
 
@@ -66,8 +65,6 @@ struct MainView: View {
                               }
                               .buttonStyle(.glassProminent)
                               .tint(.orange)
-                            
-                            
                         }
                         .matchedTransitionSource(id: "RecordSheetTransition", in: recordSheetTransition)
                     } else {
@@ -92,9 +89,18 @@ struct MainView: View {
                             .navigationTitle("Settings")
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
-                                ToolbarItem(placement: .topBarLeading) {
-                                    Button("Close", systemImage: "xmark") {
-                                        showingSettings = false
+                                
+                                if #available(iOS 26.0, *) {
+                                    ToolbarItem(placement: .topBarLeading) {
+                                        Button("Close", systemImage: "xmark") {
+                                            showingSettings = false
+                                        }
+                                    }
+                                } else {
+                                    ToolbarItem(placement: .topBarLeading) {
+                                        Button("Close") {
+                                            showingSettings = false
+                                        }
                                     }
                                 }
                             }
