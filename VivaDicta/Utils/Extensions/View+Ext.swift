@@ -260,12 +260,23 @@ extension View {
     }
 }
 
-
-
 extension View {
     @ViewBuilder func minimizedSearch() -> some View {
         if #available(iOS 26.0, *) {
             self.searchToolbarBehavior(.minimize)
         } else { self }
+    }
+}
+
+
+struct RecordButtonButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Image(systemName: "microphone.circle")
+            .font(.system(size: 28))
+            .foregroundStyle(.white)
+            .padding(8)
+            .background(.orange.gradient, in: .circle)
+            .scaleEffect(configuration.isPressed ? 1.5 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }

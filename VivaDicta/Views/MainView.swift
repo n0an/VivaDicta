@@ -55,15 +55,10 @@ struct MainView: View {
                         }
                     } else {
                         ToolbarItem(placement: .bottomBar) {
-                            Button {
+                            Button("") {
                                 showingRecordingSheet = true
-                            } label: {
-                                Image(systemName: "microphone.circle")
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(.white)
-                                    .padding(8)
-                                    .background(.orange.gradient, in: .circle)
                             }
+                            .buttonStyle(RecordButtonButtonStyle())
                         }
                     }
                 }
