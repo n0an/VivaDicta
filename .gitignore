@@ -5,6 +5,8 @@
 Icon?
 ._*
 
+meta/
+
 # Xcode
 build/
 DerivedData/
