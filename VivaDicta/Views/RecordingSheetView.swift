@@ -37,7 +37,7 @@ struct RecordingSheetView: View {
             .disabled(vm.recordingState != .recording)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationDetents([.height(200)])
+        .presentationDetents([.height(220)])
         .presentationDragIndicator(.hidden) // We use custom drag indicator
         .interactiveDismissDisabled(vm.recordingState == .recording) // Prevent dismissal during recording
         .onAppear {
