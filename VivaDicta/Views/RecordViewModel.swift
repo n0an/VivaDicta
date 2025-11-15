@@ -626,9 +626,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             self.logger.logInfo("📱 Starting recording from Control Center request")
 
-            // Present the recording sheet
-            self.appState?.shouldPresentRecordingSheet = true
-            self.logger.logInfo("🎙️ Presenting recording sheet from Control Center")
+            // Start recording
+            self.appState?.shouldStartRecording = true
+            self.logger.logInfo("🎙️ Starting recording from Control Center")
         }
     }
 }

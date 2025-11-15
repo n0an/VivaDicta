@@ -25,7 +25,7 @@ class AppState {
 
     // Navigation state
     var shouldNavigateToModels: Bool = false
-    var shouldPresentRecordingSheet: Bool = false
+    var shouldStartRecording: Bool = false
 
     init() {
         transcriptionManager = TranscriptionManager()

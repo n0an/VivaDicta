@@ -10,9 +10,8 @@ import SwiftData
 
 struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
-    
+
     @Bindable var appState: AppState
-    @State private var showingRecordingSheet = false
     @State private var showingSettings = false
     @State private var searchText = ""
     @State private var isSearchFieldExpanded = false
@@ -56,9 +55,9 @@ struct MainView: View {
                         ToolbarSpacer(.flexible, placement: .bottomBar)
                         
                         ToolbarItem(placement: .bottomBar) {
-                            
+
                             Button {
-                                  showingRecordingSheet = true
+                                  startRecording()
                               } label: {
                                   Image(systemName: "microphone.circle")
                                       .font(.system(size: 24))
@@ -70,18 +69,16 @@ struct MainView: View {
                     } else {
                         ToolbarItem(placement: .bottomBar) {
                             Button("") {
-                                showingRecordingSheet = true
+                                startRecording()
                             }
                             .buttonStyle(RecordButtonButtonStyle())
                         }
                     }
                 }
-                .sheet(isPresented: $showingRecordingSheet) {
-                    RecordingSheetView(
-                        appState: appState,
-                        isPresented: $showingRecordingSheet
-                    )
-                    
+                .sheet(isPresented: .constant(appState.recordViewModel.recordingState == .recording ||
+                                               appState.recordViewModel.recordingState == .transcribing ||
+                                               appState.recordViewModel.recordingState == .enhancing)) {
+                    RecordingSheetView(appState: appState)
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
                     NavigationStack {
@@ -110,10 +107,10 @@ struct MainView: View {
                     .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: recordSheetTransition))
                 }
         }
-        .onChange(of: appState.shouldPresentRecordingSheet) { _, newValue in
+        .onChange(of: appState.shouldStartRecording) { _, newValue in
             if newValue {
-                showingRecordingSheet = true
-                appState.shouldPresentRecordingSheet = false
+                startRecording()
+                appState.shouldStartRecording = false
             }
         }
         .onChange(of: appState.shouldNavigateToModels) { _, newValue in
@@ -122,6 +119,20 @@ struct MainView: View {
                 // The SettingsView should handle navigation to models internally
             }
         }
+    }
+
+    private func startRecording() {
+        guard let vm = appState.recordViewModel else { return }
+
+        // Check if we have a transcription model selected
+        if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+            // Navigate to settings/models
+            appState.shouldNavigateToModels = true
+            return
+        }
+
+        // Start recording directly
+        vm.startCaptureAudio()
     }
 }
 

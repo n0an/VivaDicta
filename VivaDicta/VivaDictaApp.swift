@@ -76,9 +76,9 @@ struct VivaDictaApp: App {
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
 
-            // Present the recording sheet
-            appState.shouldPresentRecordingSheet = true
-            logger.logInfo("🎙️ Presenting recording sheet from widget deeplink")
+            // Start recording
+            appState.shouldStartRecording = true
+            logger.logInfo("🎙️ Starting recording from widget deeplink")
         } else {
             logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }
