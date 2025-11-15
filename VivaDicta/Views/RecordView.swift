@@ -8,6 +8,8 @@
 import SwiftUI
 import SiriWaveView
 
+// TODO: Old file , not used, kept for reference for animations for transcribe and enhance states
+
 struct RecordView: View {
     @Environment(\.modelContext) var modelContext
     @Bindable var appState: AppState
