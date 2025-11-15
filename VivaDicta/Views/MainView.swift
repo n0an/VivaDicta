@@ -17,7 +17,7 @@ struct MainView: View {
     @State private var searchText = ""
     @State private var isSearchFieldExpanded = false
     
-    @Namespace private var recordSheetTransition
+    @Namespace private var sheetTransitions
     
     var body: some View {
         NavigationStack {
@@ -35,7 +35,7 @@ struct MainView: View {
                                 Image(systemName: "gearshape.fill")
                             }
                         }
-                        .matchedTransitionSource(id: "SettingsSheetTransition", in: recordSheetTransition)
+                        .matchedTransitionSource(id: "SettingsSheetTransition", in: sheetTransitions)
                     } else {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button {
@@ -66,7 +66,7 @@ struct MainView: View {
                               .buttonStyle(.glassProminent)
                               .tint(.orange)
                         }
-                        .matchedTransitionSource(id: "RecordSheetTransition", in: recordSheetTransition)
+                        .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
                     } else {
                         ToolbarItem(placement: .bottomBar) {
                             Button("") {
@@ -78,6 +78,8 @@ struct MainView: View {
                 }
                 .sheet(isPresented: $showingRecordingSheet) {
                     RecordingSheetView(appState: appState)
+                        .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
+
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
                     NavigationStack {
@@ -103,7 +105,7 @@ struct MainView: View {
                     }
                     
                     .interactiveDismissDisabled(true)
-                    .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: recordSheetTransition))
+                    .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
         }
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
