@@ -15,7 +15,6 @@ struct MainView: View {
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
     @State private var searchText = ""
-    @State private var isSearchFieldExpanded = false
     
     @Namespace private var sheetTransitions
     
@@ -77,9 +76,12 @@ struct MainView: View {
                     }
                 }
                 .sheet(isPresented: $showingRecordingSheet) {
-                    RecordingSheetView(appState: appState)
-                        .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
-
+                    if #available(iOS 26.0, *) {
+                        RecordingSheetView(appState: appState)
+                            .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
+                    } else {
+                        RecordingSheetView(appState: appState)
+                    }
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
                     NavigationStack {
@@ -87,7 +89,7 @@ struct MainView: View {
                             .navigationTitle("Settings")
                             .navigationBarTitleDisplayMode(.inline)
                             .toolbar {
-                                
+
                                 if #available(iOS 26.0, *) {
                                     ToolbarItem(placement: .topBarLeading) {
                                         Button("Close", systemImage: "xmark") {
@@ -103,7 +105,7 @@ struct MainView: View {
                                 }
                             }
                     }
-                    
+
                     .interactiveDismissDisabled(true)
                     .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
