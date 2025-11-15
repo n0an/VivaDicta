@@ -20,6 +20,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
 class SceneDelegate: NSObject, UIWindowSceneDelegate {
 
+    // Store reference to AppState for quick action handling
+    static weak var appState: AppState?
+
     func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
         handleShortcutItem(shortcutItem)
         completionHandler(true)
@@ -33,9 +36,11 @@ class SceneDelegate: NSObject, UIWindowSceneDelegate {
 
     func handleShortcutItem(_ shortcutItem: UIApplicationShortcutItem) {
         if shortcutItem.type == QuickActionType.startRecord.rawValue {
-            // TODO: Start record
-            
-            
+            // Trigger recording through AppState
+            if let appState = SceneDelegate.appState {
+                // Set flag to trigger recording when the app finishes launching
+                appState.shouldStartRecording = true
+            }
         }
     }
 }

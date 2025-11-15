@@ -31,6 +31,12 @@ struct VivaDictaApp: App {
     var body: some Scene {
         WindowGroup {
             MainView(appState: appState)
+                .onAppear {
+                    // Set the AppState reference for quick actions
+#if !os(macOS)
+                    SceneDelegate.appState = appState
+#endif
+                }
                 .onOpenURL { url in
                     handleDeepLink(url)
                 }
