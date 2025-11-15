@@ -78,6 +78,7 @@ struct MainView: View {
                 .sheet(isPresented: $showingRecordingSheet) {
                     if #available(iOS 26.0, *) {
                         RecordingSheetView(appState: appState)
+                            .scrollContentBackground(.hidden)
                             .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
                     } else {
                         RecordingSheetView(appState: appState)

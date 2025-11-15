@@ -11,6 +11,10 @@ import os
 
 @main
 struct VivaDictaApp: App {
+#if !os(macOS)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+#endif
+    
     @State var appState = AppState()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -39,6 +43,7 @@ struct VivaDictaApp: App {
                         logger.logInfo("🎬 App became inactive")
                     case .background:
                         logger.logInfo("🎬 App went to background")
+                        updateShortcutItems()
                     @unknown default:
                         break
                     }
@@ -83,4 +88,21 @@ struct VivaDictaApp: App {
             logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }
     }
+    
+    
+    func updateShortcutItems() {
+        let recordAction = UIApplicationShortcutItem(
+            type: QuickActionType.startRecord.rawValue,
+            localizedTitle: "Start Record",
+            localizedSubtitle: nil,
+            icon: UIApplicationShortcutIcon(systemImageName: "microphone.circle.fill"),
+            userInfo: [:])
+        UIApplication.shared.shortcutItems = [recordAction]
+    }
+}
+
+
+
+enum QuickActionType: String {
+    case startRecord
 }
