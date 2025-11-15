@@ -54,7 +54,6 @@ public final class AppGroupCoordinator {
         static let transcriptionEnhancing = "com.antonnovoselov.VivaDicta.transcriptionEnhancing"
         static let transcriptionError = "com.antonnovoselov.VivaDicta.transcriptionError"
         static let audioLevelUpdated = "com.antonnovoselov.VivaDicta.audioLevelUpdated"
-        static let stopHotMicFromWidget = "com.antonnovoselov.VivaDicta.stopHotMicFromWidget"
         static let startRecordingFromControl = "com.antonnovoselov.VivaDicta.startRecordingFromControl"
     }
 
@@ -85,7 +84,6 @@ public final class AppGroupCoordinator {
     @MainActor var onKeyboardSessionExpired: (() -> Void)?
     @MainActor var onAudioLevelUpdated: ((CGFloat) -> Void)?
     @MainActor var onRecordingStateChanged: ((Bool) -> Void)?
-    @MainActor var onStopHotMicFromWidget: (() -> Void)?
     @MainActor var onStartRecordingFromControl: (() -> Void)?
 
     // MARK: - Initialization
@@ -487,19 +485,6 @@ public final class AppGroupCoordinator {
             { (center, observer, name, object, userInfo) in
                 guard let observer = observer else { return }
                 let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
-                coordinator.handleStopHotMicFromWidgetNotification()
-            },
-            NotificationNames.stopHotMicFromWidget as CFString,
-            nil,
-            .deliverImmediately
-        )
-
-        CFNotificationCenterAddObserver(
-            center,
-            Unmanaged.passUnretained(self).toOpaque(),
-            { (center, observer, name, object, userInfo) in
-                guard let observer = observer else { return }
-                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
                 coordinator.handleStartRecordingFromControlNotification()
             },
             NotificationNames.startRecordingFromControl as CFString,
@@ -608,13 +593,6 @@ public final class AppGroupCoordinator {
     nonisolated private func handleKeyboardSessionExpiredNotification() {
         Task { @MainActor in
             await onKeyboardSessionExpired?()
-        }
-    }
-
-    nonisolated private func handleStopHotMicFromWidgetNotification() {
-        // Trust the notification and stop immediately
-        Task { @MainActor in
-            await onStopHotMicFromWidget?()
         }
     }
 
