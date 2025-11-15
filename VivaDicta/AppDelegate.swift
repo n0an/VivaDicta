@@ -17,8 +17,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 
-
-class SceneDelegate: NSObject, UIWindowSceneDelegate {
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    private var defferedQuickAction: UIApplicationShortcutItem? = nil
 
     // Store reference to AppState for quick action handling
     static weak var appState: AppState?
@@ -27,10 +27,16 @@ class SceneDelegate: NSObject, UIWindowSceneDelegate {
         handleShortcutItem(shortcutItem)
         completionHandler(true)
     }
+    
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        if let shortcut = defferedQuickAction {
+            let _ = handleShortcutItem(shortcut)
+        }
+    }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         if let shortcutItem = connectionOptions.shortcutItem {
-            handleShortcutItem(shortcutItem)
+            defferedQuickAction = shortcutItem
         }
     }
 

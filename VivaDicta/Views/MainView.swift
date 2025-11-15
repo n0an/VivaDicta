@@ -48,7 +48,6 @@ struct MainView: View {
 
                 }
             
-            
                 .toolbar {
                     if #available(iOS 26.0, *) {
                         DefaultToolbarItem(kind: .search, placement: .bottomBar)
