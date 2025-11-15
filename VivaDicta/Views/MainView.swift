@@ -12,6 +12,7 @@ struct MainView: View {
     @Environment(\.colorScheme) var colorScheme
 
     @Bindable var appState: AppState
+    @State private var showingRecordingSheet = false
     @State private var showingSettings = false
     @State private var searchText = ""
     @State private var isSearchFieldExpanded = false
@@ -75,9 +76,7 @@ struct MainView: View {
                         }
                     }
                 }
-                .sheet(isPresented: .constant(appState.recordViewModel.recordingState == .recording ||
-                                               appState.recordViewModel.recordingState == .transcribing ||
-                                               appState.recordViewModel.recordingState == .enhancing)) {
+                .sheet(isPresented: $showingRecordingSheet) {
                     RecordingSheetView(appState: appState)
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
@@ -106,6 +105,10 @@ struct MainView: View {
                     .interactiveDismissDisabled(true)
                     .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: recordSheetTransition))
                 }
+        }
+        .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
+            // Show sheet only during active recording, not during transcribing or enhancing
+            showingRecordingSheet = (newState == .recording)
         }
         .onChange(of: appState.shouldStartRecording) { _, newValue in
             if newValue {

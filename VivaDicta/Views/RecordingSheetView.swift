@@ -56,6 +56,8 @@ struct RecordingSheetView: View {
 
     private func stopRecordingAndDismiss() {
         vm.stopCaptureAudio(modelContext: modelContext)
+        // Sheet will automatically dismiss when recordingState changes from .recording
+        // This happens via the onChange modifier in MainView
     }
 }
 
