@@ -23,8 +23,9 @@ class AppState {
     var recordViewModel: RecordViewModel!
 //    private let lifecycleManager = AppLifecycleManager.shared
 
-    var selectedTab: TabTag = .record
+    // Navigation state
     var shouldNavigateToModels: Bool = false
+    var shouldStartRecording: Bool = false
 
     init() {
         transcriptionManager = TranscriptionManager()
@@ -157,11 +158,4 @@ class AppState {
             }
         }
     }
-}
-
-// MARK: - Global
-enum TabTag {
-    case record
-    case transcriptions
-    case settings
 }

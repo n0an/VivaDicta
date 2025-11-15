@@ -26,7 +26,7 @@ struct VivaDictaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabBarView(appState: appState)
+            MainView(appState: appState)
                 .onOpenURL { url in
                     handleDeepLink(url)
                 }
@@ -76,15 +76,9 @@ struct VivaDictaApp: App {
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
 
-            // Navigate to the Record tab
-            appState.selectedTab = .record
-
-            // Start recording automatically after a small delay to ensure UI is ready
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
-                appState.recordViewModel.startCaptureAudio()
-                logger.logInfo("🎙️ Started recording from widget deeplink")
-            }
+            // Start recording
+            appState.shouldStartRecording = true
+            logger.logInfo("🎙️ Starting recording from widget deeplink")
         } else {
             logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }

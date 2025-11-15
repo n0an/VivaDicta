@@ -1,64 +1,60 @@
 //
-//  TranscriptionsView.swift
+//  TranscriptionsContentView.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2025.08.11
+//  Created by Anton Novoselov on 2025.11.14
 //
 
 import os
 import SwiftData
 import SwiftUI
 
-struct TranscriptionsView: View {
+struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
 
-    @State var selectedTranscription: Transcription?
-    @State var searchText: String = ""
+    @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
 
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsView")
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
 
     var appState: AppState
 
-    init(appState: AppState) {
+    init(appState: AppState, searchText: Binding<String>) {
         self.appState = appState
+        self._searchText = searchText
     }
 
     var body: some View {
-        NavigationStack {
-            VStack {
-                if allTranscriptions.isEmpty {
-                    emptyAllStateView
-                } else if filteredTranscriptions.isEmpty && !searchText.isEmpty {
-                    emptyFilteredStateView
-                } else {
-                    List {
-                        ForEach(displayedTranscriptions) { transcription in
-                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
-                                TranscriptionRowView(transcription: transcription)
-                            }
+        VStack {
+            if allTranscriptions.isEmpty {
+                emptyAllStateView
+            } else if filteredTranscriptions.isEmpty && !searchText.isEmpty {
+                emptyFilteredStateView
+            } else {
+                List {
+                    ForEach(displayedTranscriptions) { transcription in
+                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
+                            TranscriptionRowView(transcription: transcription)
                         }
-                        .onDelete(perform: deleteTranscription)
                     }
-                    .listStyle(.plain)
+                    .onDelete(perform: deleteTranscription)
                 }
+                .listStyle(.plain)
             }
-            .navigationTitle("Transcriptions")
-            .searchable(text: $searchText, placement: .navigationBarDrawer)
-            .onAppear {
+        }
+        .onAppear {
+            filteredTranscriptions = allTranscriptions
+        }
+        .onChange(of: searchText) { _, newValue in
+            performDebouncedSearch(with: newValue)
+        }
+        .onChange(of: allTranscriptions) { _, _ in
+            if searchText.isEmpty {
                 filteredTranscriptions = allTranscriptions
-            }
-            .onChange(of: searchText) { _, newValue in
-                performDebouncedSearch(with: newValue)
-            }
-            .onChange(of: allTranscriptions) { _, _ in
-                if searchText.isEmpty {
-                    filteredTranscriptions = allTranscriptions
-                } else {
-                    performDebouncedSearch(with: searchText)
-                }
+            } else {
+                performDebouncedSearch(with: searchText)
             }
         }
     }
@@ -105,15 +101,15 @@ struct TranscriptionsView: View {
     private func deleteTranscription(at offsets: IndexSet) {
         for index in offsets {
             let transcription = displayedTranscriptions[index]
-            
+
             if let audioFileName = transcription.audioFileName {
                 let audioURL = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
                 try? FileManager.default.removeItem(at: audioURL)
             }
-            
+
             modelContext.delete(transcription)
         }
-        
+
         do {
             try modelContext.save()
         } catch {
@@ -129,16 +125,15 @@ struct TranscriptionsView: View {
         ContentUnavailableView {
             Label("No Transcriptions yet", systemImage: "waveform")
         } description: {
-            Text("Tap Start Recording to capture your first transcription.")
-        } actions: {
-            Button("Start recording") {
-                appState.selectedTab = .record
-            }
+            Text("Tap the record button to capture your first transcription.")
         }
     }
 }
 
 #Preview(traits: .transcriptionsMockData) {
     @Previewable @State var appState = AppState()
-    TranscriptionsView(appState: appState)
+    @Previewable @State var searchText = ""
+    NavigationStack {
+        TranscriptionsContentView(appState: appState, searchText: $searchText)
+    }
 }

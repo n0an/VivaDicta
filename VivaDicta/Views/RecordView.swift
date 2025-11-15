@@ -8,6 +8,8 @@
 import SwiftUI
 import SiriWaveView
 
+// TODO: Old file , not used, kept for reference for animations for transcribe and enhance states
+
 struct RecordView: View {
     @Environment(\.modelContext) var modelContext
     @Bindable var appState: AppState
@@ -24,7 +26,6 @@ struct RecordView: View {
         } else {
             Button {
                 vm.appState?.shouldNavigateToModels = true
-                vm.appState?.selectedTab = .settings
             } label: {
                 Text("Select transcription model")
             }

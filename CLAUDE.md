@@ -116,7 +116,7 @@ Refer to these docs when working with Apple frameworks or implementing new featu
 - **Memory Management**: Efficient model loading and unloading patterns for on-device transcription models (WhisperKit/Parakeet)
 
 
-- When you create some file that has to be added to more than one targets of ios project - for example this file has to be added to main app target, to widgets target, to keyboard extension target - stop and tell me to add this file to targets manually. Because it can be tricky to do this from code side by yourself. I'll do it and then you'll continue working. Otherwise we can screw the entire task (because some entities are unavailable from another target etc).
+- **Xcode Target Management**: When an EXISTING file needs to be added to ADDITIONAL targets (e.g., adding an existing model file to both widget and keyboard extension targets), notify the user to manually add it in Xcode. This is a simple one-click operation for the user but complex to do programmatically via .xcodeproj file manipulation. NEW files are automatically added to the main app target by default and don't require manual intervention unless they specifically need to be in multiple targets.
 
 ## Code Review Guidelines
 
@@ -166,13 +166,6 @@ When filtering optional fields in SwiftData predicates, use this proven pattern:
 - Don't use NavigationView {}, use modern NavigationStack instead
 - Use `foregroundStyle` instead of deprecated `foregroundColor` (iOS 17+)
 
-## Multi-Target File Management
-
-When creating files that need to be added to multiple targets (main app, widgets, keyboard extension, etc.):
-- **STOP and notify the user** to manually add the file to the appropriate targets in Xcode
-- Do not attempt to programmatically modify target membership
-- Wait for confirmation that the file has been added to targets before continuing
-- This prevents issues with entities being unavailable across different targets
 
 ## AI-Powered PR Review
 
