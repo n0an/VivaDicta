@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import os
+import AppIntents
 
 @main
 struct VivaDictaApp: App {
@@ -26,6 +27,8 @@ struct VivaDictaApp: App {
 
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
+        
+        ShortcutsProvider.updateAppShortcutParameters()
     }
 
     var body: some Scene {
