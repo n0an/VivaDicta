@@ -226,6 +226,13 @@ class AIService {
             throw error
         }
     }
+
+    // TODO: Add method to generate tags/keywords for transcriptions
+    // public func generateTags(for text: String, maxTags: Int = 10) async throws -> [String] {
+    //     // Use LLM to analyze text and extract key topics, themes, entities
+    //     // Return array of meaningful tags for Spotlight indexing
+    //     // Consider using a specific prompt optimized for tag extraction
+    // }
     
     private func makeRequest(text: String) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider,

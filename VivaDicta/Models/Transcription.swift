@@ -22,6 +22,9 @@ class Transcription {
     var promptName: String?
     var transcriptionDuration: TimeInterval?
     var enhancementDuration: TimeInterval?
+
+    // TODO: Add tags/keywords property for LLM-generated tags
+    // var tags: [String]? = nil  // LLM-generated keywords/tags for better Spotlight search
     
     init(text: String,
          enhancedText: String? = nil,
@@ -166,7 +169,12 @@ extension Transcription {
         if let aiModel = aiEnhancementModelName {
             keywords.append(aiModel)
         }
-        
+
+        // TODO: Add LLM-generated tags to keywords when available
+        // if let tags = tags {
+        //     keywords.append(contentsOf: tags)
+        // }
+
         attributes.keywords = keywords
 
         // Duration and dates

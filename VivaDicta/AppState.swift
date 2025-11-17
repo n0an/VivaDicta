@@ -168,6 +168,12 @@ class AppState {
         }
     }
     
+    // TODO: Add method to update a single transcription in Spotlight
+    // func updateSpotlightItem(for transcription: Transcription) async {
+    //     // Update individual item when tags are generated
+    //     // More efficient than re-indexing everything
+    // }
+
     func updateSpotlightIndex() async {
         guard CSSearchableIndex.isIndexingAvailable() else {
             logger.logError("[Spotlight] Indexing is unavailable")
