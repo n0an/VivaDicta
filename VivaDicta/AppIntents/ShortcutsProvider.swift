@@ -8,9 +8,7 @@
 import AppIntents
 
 final class ShortcutsProvider: AppShortcutsProvider {
-    static var shortcutTileColor: ShortcutTileColor {
-        return .orange
-    }
+    static let shortcutTileColor = ShortcutTileColor.tangerine
     
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

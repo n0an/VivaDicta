@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppIntents
 
 struct SettingsView: View {
 
@@ -18,6 +19,8 @@ struct SettingsView: View {
     private let prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
+    
+    @AppStorage("displaySiriTip") private var displaySiriTip: Bool = true
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -150,6 +153,8 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                
+//                ShortcutsLink()
             }
             .navigationDestination(for: FlowMode.self) { mode in
                 ModeEditView(
@@ -175,6 +180,12 @@ struct SettingsView: View {
                 navigationPath.append(SettingsDestination.transcriptionModels)
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            SiriTipView(intent: ToggleRecordIntent(), isVisible: $displaySiriTip)
+            .padding(.horizontal)
+//            .background(.ultraThinMaterial)
+        }
+        
         .alert("Prewarm Session Error", isPresented: $showPrewarmError) {
             Button("OK") {
                 showPrewarmError = false
