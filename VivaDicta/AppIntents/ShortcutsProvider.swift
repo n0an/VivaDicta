@@ -8,21 +8,23 @@
 import AppIntents
 
 final class ShortcutsProvider: AppShortcutsProvider {
-    static let shortcutTileColor = ShortcutTileColor.tangerine
+    static let shortcutTileColor = ShortcutTileColor.lime
     
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: ToggleRecordIntent(),
             phrases: [
                 "Record in \(.applicationName)",
-                "Start record in \(.applicationName)",
-                "\(.applicationName)",
-                "\(.applicationName) record",
-                "\(.applicationName) note",
-                "\(.applicationName) memo",
-                "Note in \(.applicationName)",
-                "Memo in \(.applicationName)",
-                "Dictate in \(.applicationName)"
+                "Start recording in \(.applicationName)",
+                "Start a recording in \(.applicationName)",
+                "Open \(.applicationName)",
+                "\(.applicationName) recording",
+                "Take a note in \(.applicationName)",
+                "Create a memo in \(.applicationName)",
+                "Dictate in \(.applicationName)",
+                "New recording in \(.applicationName)",
+                "Voice note in \(.applicationName)",
+                "Quick note in \(.applicationName)"
             ],
             shortTitle: LocalizedStringResource("Record Note"),
             systemImageName: "microphone.circle.fill"
