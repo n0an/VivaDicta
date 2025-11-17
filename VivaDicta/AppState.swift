@@ -28,6 +28,7 @@ class AppState {
     // Navigation state
     var shouldNavigateToModels: Bool = false
     var shouldStartRecording: Bool = false
+    var selectedTranscriptionID: UUID? = nil  // For Spotlight navigation
 
     init() {
         transcriptionManager = TranscriptionManager()

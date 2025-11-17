@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import os
 import AppIntents
+import CoreSpotlight
 
 @main
 struct VivaDictaApp: App {
@@ -42,6 +43,9 @@ struct VivaDictaApp: App {
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
+                }
+                .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+                    handleSpotlightSearch(userActivity)
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     switch newPhase {
@@ -107,6 +111,25 @@ struct VivaDictaApp: App {
             icon: UIApplicationShortcutIcon(systemImageName: "microphone.circle.fill"),
             userInfo: [:])
         UIApplication.shared.shortcutItems = [recordAction]
+    }
+
+    private func handleSpotlightSearch(_ userActivity: NSUserActivity) {
+        logger.logInfo("🔍 Handling Spotlight search activity")
+
+        guard let uniqueIdentifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String else {
+            logger.logError("🔍 No unique identifier found in Spotlight activity")
+            return
+        }
+
+        logger.logInfo("🔍 Spotlight item identifier: \(uniqueIdentifier)")
+
+        // Convert string identifier to UUID
+        if let transcriptionID = UUID(uuidString: uniqueIdentifier) {
+            appState.selectedTranscriptionID = transcriptionID
+            logger.logInfo("🔍 Set selected transcription ID: \(transcriptionID)")
+        } else {
+            logger.logError("🔍 Failed to parse UUID from identifier: \(uniqueIdentifier)")
+        }
     }
 }
 

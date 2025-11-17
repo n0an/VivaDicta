@@ -16,6 +16,7 @@ struct TranscriptionsContentView: View {
     @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
+    @State private var navigationPath = NavigationPath()
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
 
