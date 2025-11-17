@@ -9,6 +9,8 @@ import Foundation
 import SwiftUI
 import ActivityKit
 import os
+import CoreSpotlight
+import SwiftData
 
 @Observable
 class AppState {
@@ -51,6 +53,12 @@ class AppState {
         Task {
             await preloadWhisperKitModelIfNeeded()
         }
+        
+    #if canImport(CoreSpotlight)
+        Task {
+            await updateSpotlightIndex()
+        }
+    #endif
     }
 
     // This method is called when AIService changes its mode
@@ -156,6 +164,48 @@ class AppState {
                     await self?.endLiveActivity()
                 }
             }
+        }
+    }
+    
+    func updateSpotlightIndex() async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
+
+        let container = Persistence.container
+
+        do {
+            // Create a fetch descriptor for non-empty transcriptions
+            let descriptor = FetchDescriptor<Transcription>(
+                predicate: #Predicate { transcription in
+                    transcription.text != "" ||
+                    (transcription.enhancedText != nil && transcription.enhancedText != "")
+                },
+                sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+            )
+
+            let transcriptions = try container.mainContext.fetch(descriptor)
+
+            let searchableItems = transcriptions.map { transcription in
+                let item = CSSearchableItem(
+                    uniqueIdentifier: transcription.id.uuidString,
+                    domainIdentifier: "com.antonnovoselov.VivaDicta.transcription",
+                    attributeSet: transcription.searchableAttributes
+                )
+
+                // Set expiration date (optional - e.g., 90 days)
+                item.expirationDate = Date().addingTimeInterval(90 * 24 * 60 * 60)
+
+                return item
+            }
+
+            // Add the transcriptions to the search index so people can find them through Spotlight.
+            let index = CSSearchableIndex.default()
+            try await index.indexSearchableItems(searchableItems)
+            logger.logInfo("[Spotlight] Successfully indexed \(searchableItems.count) transcriptions")
+        } catch {
+            logger.logError("[Spotlight] Failed to index transcriptions. Reason: \(error.localizedDescription)")
         }
     }
 }

@@ -7,9 +7,11 @@
 
 import Foundation
 import SwiftData
+import CoreSpotlight
 
 @Model
 class Transcription {
+    var id: UUID = UUID()
     var text: String
     var enhancedText: String?
     var timestamp: Date
@@ -122,4 +124,18 @@ extension Transcription {
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8)
     ]
+}
+
+extension Transcription {
+    var searchableAttributes: CSSearchableItemAttributeSet {
+        let attributes = CSSearchableItemAttributeSet()
+        
+        attributes.title = text + (enhancedText ?? "")
+        
+        if let promptName {
+            attributes.keywords = [promptName]
+        }
+        
+        return attributes
+    }
 }
