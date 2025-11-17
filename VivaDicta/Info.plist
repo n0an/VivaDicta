@@ -19,5 +19,27 @@
 	<array>
 		<string>audio</string>
 	</array>
+    <key>INAlternativeAppNames</key>
+    <array>
+        <dict>
+            <key>INAlternativeAppName</key>
+            <string>Viva Notes</string>
+            <key>INAlternativeAppNamePronunciationHint</key>
+            <string>Viva Nots</string>
+        </dict>
+    </array>
+    <key>CFBundleIcons</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>NSAppIconActionTintColorName</key>
+            <string>AccentColor</string>
+            <key>NSAppIconComplementingColorNames</key>
+            <array>
+                <string>ComplementingGradientColor1</string>
+                <string>ComplementingGradientColor2</string>
+            </array>
+        </dict>
+    </dict>
 </dict>
 </plist>
