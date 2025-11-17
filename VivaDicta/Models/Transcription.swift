@@ -128,14 +128,71 @@ extension Transcription {
 
 extension Transcription {
     var searchableAttributes: CSSearchableItemAttributeSet {
-        let attributes = CSSearchableItemAttributeSet()
-        
-        attributes.title = text + (enhancedText ?? "")
-        
-        if let promptName {
-            attributes.keywords = [promptName]
+        let attributes = CSSearchableItemAttributeSet(contentType: .audio)
+
+        // Title: First 100 characters of the transcription or a date-based title
+        let textPreview = String(text.prefix(100))
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        dateFormatter.timeStyle = .short
+        let dateString = dateFormatter.string(from: timestamp)
+
+        if text.count > 100 {
+            attributes.title = "\(textPreview)..."
+        } else if !text.isEmpty {
+            attributes.title = textPreview
+        } else {
+            attributes.title = "Recording - \(dateString)"
+        }
+
+        // Content: Full text for searching (original + enhanced)
+        var fullContent = text
+        if let enhancedText = enhancedText, !enhancedText.isEmpty {
+            fullContent += "\n\n" + enhancedText
+        }
+        attributes.contentDescription = fullContent
+
+        // Keywords: Model names, prompt, and meaningful terms
+        var keywords = [String]()
+
+        if let promptName = promptName {
+            keywords.append(promptName)
+        }
+
+        if let transcriptionModel = transcriptionModelName {
+            keywords.append(transcriptionModel)
+        }
+
+        if let aiModel = aiEnhancementModelName {
+            keywords.append(aiModel)
         }
         
+        attributes.keywords = keywords
+
+        // Duration and dates
+        attributes.duration = NSNumber(value: audioDuration)
+        attributes.contentCreationDate = timestamp
+        attributes.contentModificationDate = timestamp
+
+        // Additional metadata
+        attributes.kind = "Voice Transcription"
+        attributes.identifier = id.uuidString
+
+        // Audio metadata (if we have it)
+        if audioDuration > 0 {
+            let durationCategory: String
+            switch audioDuration {
+            case 0..<30:
+                durationCategory = "Short recording"
+            case 30..<120:
+                durationCategory = "Medium recording"
+            default:
+                durationCategory = "Long recording"
+            }
+            attributes.comment = durationCategory
+        }
+
         return attributes
     }
+
 }
