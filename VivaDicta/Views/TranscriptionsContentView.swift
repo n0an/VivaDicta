@@ -102,6 +102,7 @@ struct TranscriptionsContentView: View {
     private func deleteTranscription(at offsets: IndexSet) {
         for index in offsets {
             let transcription = displayedTranscriptions[index]
+            let transcriptionID = transcription.id
 
             if let audioFileName = transcription.audioFileName {
                 let audioURL = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
@@ -109,6 +110,11 @@ struct TranscriptionsContentView: View {
             }
 
             modelContext.delete(transcription)
+
+            // Remove from Spotlight index
+            Task {
+                await appState.removeTranscriptionFromSpotlight(transcriptionID)
+            }
         }
 
         do {

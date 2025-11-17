@@ -67,6 +67,8 @@ enum RecordError: LocalizedError, Equatable {
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
+    private var lastSavedTranscriptionID: UUID?
+    private var lastSavedTranscription: Transcription?
     
 //    private let sessionManager = AudioSessionManager.shared
 #if !os(macOS)
@@ -122,6 +124,17 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             let isRecording = (recordingState == .recording)
             UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
             UserDefaultsStorage.shared.synchronize()
+
+            // Index to Spotlight when transcription completes
+            if recordingState == .idle && oldValue != .idle {
+                if let transcription = lastSavedTranscription, let appState = appState {
+                    Task {
+                        await appState.indexTranscriptionToSpotlight(transcription)
+                    }
+                    lastSavedTranscription = nil
+                    lastSavedTranscriptionID = nil
+                }
+            }
         }
     }
     
@@ -464,14 +477,18 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 modelContext.insert(transcription)
                 try modelContext.save()
 
+                // Store the transcription ID for Spotlight indexing
+                self.lastSavedTranscriptionID = transcription.id
+                self.lastSavedTranscription = transcription
+
                 // TODO: Generate tags after saving transcription
                 // Task {
                 //     if let tags = try? await aiService.generateTags(for: enhancedText ?? transcribedText) {
                 //         transcription.tags = tags
                 //         try? modelContext.save()
                 //
-                //         // Update Spotlight index with new tags
-                //         await appState.updateSpotlightIndex()
+                //         // Update the existing Spotlight item with new tags
+                //         await appState.updateTranscriptionInSpotlight(transcription)
                 //     }
                 // }
 

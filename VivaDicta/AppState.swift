@@ -54,12 +54,9 @@ class AppState {
         Task {
             await preloadWhisperKitModelIfNeeded()
         }
-        
-    #if canImport(CoreSpotlight)
-        Task {
-            await updateSpotlightIndex()
-        }
-    #endif
+
+        // Note: Spotlight indexing is now done on-demand when transcriptions are created/deleted
+        // No longer doing batch indexing on app startup
     }
 
     // This method is called when AIService changes its mode
@@ -168,12 +165,54 @@ class AppState {
         }
     }
     
-    // TODO: Add method to update a single transcription in Spotlight
-    // func updateSpotlightItem(for transcription: Transcription) async {
-    //     // Update individual item when tags are generated
-    //     // More efficient than re-indexing everything
-    // }
+    /// Index a single transcription in Spotlight
+    func indexTranscriptionToSpotlight(_ transcription: Transcription) async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
 
+        let item = CSSearchableItem(
+            uniqueIdentifier: transcription.id.uuidString,
+            domainIdentifier: "com.antonnovoselov.VivaDicta.transcription",
+            attributeSet: transcription.searchableAttributes
+        )
+
+        // Set expiration date to 30 days (reduced from 90)
+        item.expirationDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
+
+        do {
+            let index = CSSearchableIndex.default()
+            try await index.indexSearchableItems([item])
+            logger.logInfo("[Spotlight] Indexed transcription: \(transcription.id.uuidString)")
+        } catch {
+            logger.logError("[Spotlight] Failed to index transcription: \(error.localizedDescription)")
+        }
+    }
+
+    /// Remove a transcription from Spotlight index
+    func removeTranscriptionFromSpotlight(_ transcriptionID: UUID) async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
+
+        do {
+            let index = CSSearchableIndex.default()
+            try await index.deleteSearchableItems(withIdentifiers: [transcriptionID.uuidString])
+            logger.logInfo("[Spotlight] Removed transcription from index: \(transcriptionID.uuidString)")
+        } catch {
+            logger.logError("[Spotlight] Failed to remove transcription: \(error.localizedDescription)")
+        }
+    }
+
+    // TODO: Add method to update a single transcription in Spotlight when tags are generated
+    func updateTranscriptionInSpotlight(_ transcription: Transcription) async {
+        // Reindexing with the same identifier will update the existing item
+        await indexTranscriptionToSpotlight(transcription)
+    }
+
+    // Legacy batch indexing method - kept for manual rebuild if needed
     func updateSpotlightIndex() async {
         guard CSSearchableIndex.isIndexingAvailable() else {
             logger.logError("[Spotlight] Indexing is unavailable")
@@ -201,8 +240,8 @@ class AppState {
                     attributeSet: transcription.searchableAttributes
                 )
 
-                // Set expiration date (optional - e.g., 90 days)
-                item.expirationDate = Date().addingTimeInterval(90 * 24 * 60 * 60)
+                // Set expiration date to 30 days
+                item.expirationDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
 
                 return item
             }
