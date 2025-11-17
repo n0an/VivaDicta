@@ -14,7 +14,15 @@ final class ShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: ToggleRecordIntent(),
             phrases: [
-                "Record in \(.applicationName)"
+                "Record in \(.applicationName)",
+                "Start record in \(.applicationName)",
+                "\(.applicationName)",
+                "\(.applicationName) record",
+                "\(.applicationName) note",
+                "\(.applicationName) memo",
+                "Note in \(.applicationName)",
+                "Memo in \(.applicationName)",
+                "Dictate in \(.applicationName)"
             ],
             shortTitle: LocalizedStringResource("Record Note"),
             systemImageName: "microphone.circle.fill"
