@@ -67,8 +67,6 @@ enum RecordError: LocalizedError, Equatable {
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
-    private var lastSavedTranscriptionID: UUID?
-    private var lastSavedTranscription: Transcription?
     
 //    private let sessionManager = AudioSessionManager.shared
 #if !os(macOS)
@@ -125,16 +123,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
             UserDefaultsStorage.shared.synchronize()
 
-            // Index to Spotlight when transcription completes
-            if recordingState == .idle && oldValue != .idle {
-                if let transcription = lastSavedTranscription, let appState = appState {
-                    Task {
-                        await appState.indexTranscriptionToSpotlight(transcription)
-                    }
-                    lastSavedTranscription = nil
-                    lastSavedTranscriptionID = nil
-                }
-            }
         }
     }
     
@@ -477,9 +465,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 modelContext.insert(transcription)
                 try modelContext.save()
 
-                // Store the transcription ID for Spotlight indexing
-                self.lastSavedTranscriptionID = transcription.id
-                self.lastSavedTranscription = transcription
+                // Index the new transcription in Spotlight
+                await self.appState?.indexTranscriptionToSpotlight(transcription)
 
                 // TODO: Generate tags after saving transcription
                 // Task {
