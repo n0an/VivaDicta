@@ -15,6 +15,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case groq
     case elevenLabs
     case deepgram
+    case mistral
     case gemini
     
     var id: Self { self }
@@ -114,6 +115,27 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .deepgram,
                 speed: 0.9,
                 accuracy: 0.93,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "nova-3-medical",
+                displayName: "Nova-3 Medical (Deepgram)",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.965,
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+            
+            CloudModel(
+                name: "voxtral-mini-latest",
+                displayName: "Voxtral Mini (Mistral)",
+                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context",
+                provider: .mistral,
+                speed: 0.85,
+                accuracy: 0.95,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
