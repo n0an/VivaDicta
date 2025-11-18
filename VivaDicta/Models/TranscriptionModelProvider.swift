@@ -70,7 +70,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "openai-gpt-4o",
                 displayName: "OpenAI GPT-4o Transcribe",
-                description: "OpenAI Speech-to-text model powered by GPT-4o",
+                description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
                 provider: .openAI,
                 speed: 0.7,
                 accuracy: 0.96,
@@ -80,30 +80,30 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "whisper-large-v3-turbo",
                 displayName: "Whisper Large v3 Turbo (Groq)",
-                description: "Whisper Large v3 Turbo model with Groq's lightning-speed inference",
+                description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed",
                 provider: .groq,
-                speed: 0.65,
-                accuracy: 0.96,
+                speed: 0.95,
+                accuracy: 0.92,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
             CloudModel(
                 name: "scribe_v1",
                 displayName: "Scribe v1 (ElevenLabs)",
-                description: "ElevenLabs' Scribe model for fast and accurate transcription.",
+                description: "Industry-leading accuracy with excellent accent handling for batch transcription",
                 provider: .elevenLabs,
                 speed: 0.7,
-                accuracy: 0.98,
+                accuracy: 0.965,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
             CloudModel(
                 name: "nova-2",
                 displayName: "Nova (Deepgram)",
-                description: "Deepgram's Nova model for fast, accurate, and cost-effective transcription.",
+                description: "Industry-leading low-latency model optimized for real-time streaming applications",
                 provider: .deepgram,
                 speed: 0.9,
-                accuracy: 0.95,
+                accuracy: 0.93,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -112,7 +112,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-2.5-pro",
                 displayName: "Gemini 2.5 Pro",
-                description: "Google's advanced multimodal model with high-quality transcription capabilities.",
+                description: "Google's advanced model with superior noise filtering and speaker diarization",
                 provider: .gemini,
                 speed: 0.7,
                 accuracy: 0.96,
@@ -122,7 +122,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-2.5-flash",
                 displayName: "Gemini 2.5 Flash",
-                description: "Google's optimized model for low-latency transcription with multimodal support.",
+                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing",
                 provider: .gemini,
                 speed: 0.9,
                 accuracy: 0.94,
@@ -140,7 +140,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v3",
-                displayName: "Parakeet V3",
+                displayName: "Nvidia Parakeet V3",
                 description: "NVIDIA's ultra-fast multilingual model supporting 25 languages with automatic language detection",
                 size: "494 MB",
                 speed: 0.99,
@@ -150,7 +150,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v2",
-                displayName: "Parakeet V2",
+                displayName: "Nvidia Parakeet V2",
                 description: "NVIDIA's blazing-fast English model with superior accuracy for real-time transcription",
                 size: "474 MB",
                 speed: 0.99,
@@ -165,7 +165,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             WhisperKitModel(
                 name: "whisperkit-tiny",
-                displayName: "Tiny",
+                displayName: "Whisper Tiny",
                 description: "Smallest and fastest Whisper model, suitable for quick transcriptions",
                 size: "76 MB",
                 speed: 0.95,
@@ -176,7 +176,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             WhisperKitModel(
                 name: "whisperkit-tiny.en",
-                displayName: "Tiny (English)",
+                displayName: "Whisper Tiny (English)",
                 description: "English-optimized tiny model for fast English transcription",
                 size: "76 MB",
                 speed: 0.95,
@@ -188,7 +188,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             WhisperKitModel(
                 name: "whisperkit-base",
-                displayName: "Base",
+                displayName: "Whisper Base",
                 description: "Balanced model offering good speed and accuracy, supports multiple languages",
                 size: "140 MB",
                 speed: 0.85,
@@ -199,7 +199,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             WhisperKitModel(
                 name: "whisperkit-base.en",
-                displayName: "Base (English)",
+                displayName: "Whisper Base (English)",
                 description: "Base model optimized for English, good balance between speed and accuracy",
                 size: "140 MB",
                 speed: 0.85,
@@ -211,7 +211,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_626MB",
-                displayName: "Large",
+                displayName: "Whisper Large",
                 description: "Highest accuracy model with comprehensive language support",
                 size: "626 MB",
                 speed: 0.60,
@@ -223,7 +223,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_turbo_632MB",
-                displayName: "Large Turbo",
+                displayName: "Whisper Large Turbo",
                 description: "Optimized large model with faster speed and excellent accuracy",
                 size: "632 MB",
                 speed: 0.75,
