@@ -174,7 +174,7 @@ class AppState {
 
         let item = CSSearchableItem(
             uniqueIdentifier: transcription.id.uuidString,
-            domainIdentifier: "com.antonnovoselov.VivaDicta.transcription",
+            domainIdentifier: "com.antonnovoselov.VivaDicta",
             attributeSet: transcription.searchableAttributes
         )
 
@@ -236,7 +236,7 @@ class AppState {
             let searchableItems = transcriptions.map { transcription in
                 let item = CSSearchableItem(
                     uniqueIdentifier: transcription.id.uuidString,
-                    domainIdentifier: "com.antonnovoselov.VivaDicta.transcription",
+                    domainIdentifier: "com.antonnovoselov.VivaDicta",
                     attributeSet: transcription.searchableAttributes
                 )
 

@@ -130,8 +130,8 @@ extension Transcription {
 }
 
 extension Transcription {
-    var searchableAttributes: CSSearchableItemAttributeSet {
-        let attributes = CSSearchableItemAttributeSet(contentType: .plainText)
+    nonisolated var searchableAttributes: CSSearchableItemAttributeSet {
+        let attributes = CSSearchableItemAttributeSet(contentType: .text)
 
         // Title: First 100 characters of the transcription or a date-based title
         let textPreview = String(text.prefix(100))
@@ -203,4 +203,8 @@ extension Transcription {
         return attributes
     }
 
+}
+
+extension UTType {
+    public static let transcription = UTType(exportedAs: "com.antonnovoselov.VivaDicta")
 }
