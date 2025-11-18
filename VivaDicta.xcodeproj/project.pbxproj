@@ -112,6 +112,7 @@
 			membershipExceptions = (
 				AppGroupCoordinator.swift,
 				AppIntents/ShortcutsProvider.swift,
+				AppIntents/ToggleKeyboardFlowIntent.swift,
 				AppIntents/ToggleRecordIntent.swift,
 				Models/VivaDictaLiveActivityAttributes.swift,
 				Utilities/LoggerExtension.swift,

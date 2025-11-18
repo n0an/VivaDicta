@@ -29,5 +29,18 @@ final class ShortcutsProvider: AppShortcutsProvider {
             shortTitle: LocalizedStringResource("Record Note"),
             systemImageName: "microphone.circle.fill"
         )
+        AppShortcut(
+            intent: ToggleKeyboardFlowIntent(),
+            phrases: [
+                "Start flow in \(.applicationName)",
+                "Toggle flow in \(.applicationName)",
+                "Flow in \(.applicationName)",
+                "Keyboard session in \(.applicationName)",
+                "Start a keyboard session in \(.applicationName)",
+                "\(.applicationName) flow"
+            ],
+            shortTitle: LocalizedStringResource("Start Keyboard Flow"),
+            systemImageName: "keyboard.fill"
+        )
     }
 }
