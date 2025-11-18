@@ -61,6 +61,9 @@ struct VivaDictaApp: App {
                 .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
                     handleSpotlightSearch(userActivity)
                 }
+                .onContinueUserActivity("com.antonnovoselov.VivaDicta.viewTranscription") { userActivity in
+                    handleTranscriptionActivity(userActivity)
+                }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     switch newPhase {
                     case .active:
@@ -143,6 +146,19 @@ struct VivaDictaApp: App {
             logger.logInfo("🔍 Set selected transcription ID: \(transcriptionID)")
         } else {
             logger.logError("🔍 Failed to parse UUID from identifier: \(uniqueIdentifier)")
+        }
+    }
+
+    private func handleTranscriptionActivity(_ userActivity: NSUserActivity) {
+        logger.logInfo("📱 Handling transcription view activity (Handoff/Siri)")
+
+        // Try to get the transcription ID from userInfo
+        if let transcriptionIDString = userActivity.userInfo?["id"] as? String,
+           let transcriptionID = UUID(uuidString: transcriptionIDString) {
+            appState.selectedTranscriptionID = transcriptionID
+            logger.logInfo("📱 Opening transcription from user activity: \(transcriptionID)")
+        } else {
+            logger.logError("📱 Failed to get transcription ID from user activity")
         }
     }
 }

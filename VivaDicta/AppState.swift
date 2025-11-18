@@ -257,7 +257,7 @@ class AppState {
     
     
     func userActivity(for transcription: Transcription) -> NSUserActivity {
-        let activity = NSUserActivity(activityType: "com.antonnovoselov.VivaDicta")
+        let activity = NSUserActivity(activityType: "com.antonnovoselov.VivaDicta.viewTranscription")
 
         // Use the same attribute set we use for Spotlight
         let attributes = transcription.searchableAttributes

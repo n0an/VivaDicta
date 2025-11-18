@@ -468,6 +468,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Index the new transcription in Spotlight
                 await self.appState?.indexTranscriptionToSpotlight(transcription)
 
+                // Create and donate user activity for Siri predictions
+                if let appState = self.appState {
+                    let activity = appState.userActivity(for: transcription)
+                    activity.becomeCurrent()
+                }
+
                 // TODO: Generate tags after saving transcription
                 // Task {
                 //     if let tags = try? await aiService.generateTags(for: enhancedText ?? transcribedText) {
