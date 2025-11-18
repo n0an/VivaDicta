@@ -131,7 +131,7 @@ extension Transcription {
 
 extension Transcription {
     var searchableAttributes: CSSearchableItemAttributeSet {
-        let attributes = CSSearchableItemAttributeSet(contentType: .audio)
+        let attributes = CSSearchableItemAttributeSet(contentType: .plainText)
 
         // Title: First 100 characters of the transcription or a date-based title
         let textPreview = String(text.prefix(100))
