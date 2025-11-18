@@ -57,9 +57,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .elevenLabs
         case .deepgram:
             return .deepgram
+        case .mistral:
+            return .mistral
         case .gemini:
             return .gemini
-        case .parakeet, .whisperKit:
+        default:
             return nil
         }
     }

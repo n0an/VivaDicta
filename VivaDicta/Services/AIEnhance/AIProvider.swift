@@ -18,6 +18,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case grok
     case elevenLabs
     case deepgram
+    case mistral
+    case soniox
     
     var baseURL: String {
         switch self {
@@ -37,6 +39,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.elevenlabs.io/v1/speech-to-text"
         case .deepgram:
             return "https://api.deepgram.com/v1/listen"
+        case .mistral:
+            return "https://api.mistral.ai/v1/chat/completions"
+        case .soniox:
+            return "https://api.soniox.com/v1"
+            
         }
     }
     
@@ -56,8 +63,12 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "scribe_v1"
         case .deepgram:
             return "whisper-1"
+        case .mistral:
+            return "mistral-large-latest"
         case .openRouter:
             return "openai/gpt-oss-120b"
+        case .soniox:
+            return "stt-async-v3"
         }
     }
     
@@ -105,6 +116,15 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return ["scribe_v1", "scribe_v1_experimental"]
         case .deepgram:
             return ["whisper-1"]
+        case .mistral:
+            return [
+                "mistral-large-latest",
+                "mistral-medium-latest",
+                "mistral-small-latest",
+                "mistral-saba-latest"
+            ]
+        case .soniox:
+            return ["stt-async-v3"]
         case .openRouter:
             return []
         }
