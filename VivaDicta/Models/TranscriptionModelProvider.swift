@@ -98,6 +98,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
             CloudModel(
+                name: "scribe_v2",
+                displayName: "Scribe v2 (ElevenLabs)",
+                description: "Enhanced accuracy model supporting 92+ languages with improved accent handling",
+                provider: .elevenLabs,
+                speed: 0.75,
+                accuracy: 0.97,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "nova-2",
                 displayName: "Nova (Deepgram)",
                 description: "Industry-leading low-latency model optimized for real-time streaming applications",
