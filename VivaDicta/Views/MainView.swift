@@ -15,11 +15,14 @@ struct MainView: View {
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
     @State private var searchText = ""
-    
+    @State private var navigationPath = NavigationPath()
+
     @Namespace private var sheetTransitions
+
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
                 .searchable(text: $searchText, placement: .toolbar)
                 .minimizedSearch()
@@ -109,6 +112,9 @@ struct MainView: View {
                     .interactiveDismissDisabled(true)
                     .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
+                .navigationDestination(for: Transcription.self) { transcription in
+                    TranscriptionDetailView(transcription: transcription, appState: appState)
+                }
         }
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
             // Show sheet only during active recording, not during transcribing or enhancing
@@ -124,6 +130,23 @@ struct MainView: View {
             if newValue {
                 showingSettings = true
                 // The SettingsView should handle navigation to models internally
+            }
+        }
+        .onChange(of: appState.selectedTranscriptionID) { _, newID in
+            if let transcriptionID = newID {
+                // Find the transcription with the matching ID
+                let descriptor = FetchDescriptor<Transcription>(
+                    predicate: #Predicate { transcription in
+                        transcription.id == transcriptionID
+                    }
+                )
+
+                if let transcription = try? modelContext.fetch(descriptor).first {
+                    // Navigate to the transcription detail view
+                    navigationPath.append(transcription)
+                    // Reset the selectedTranscriptionID
+                    appState.selectedTranscriptionID = nil
+                }
             }
         }
     }

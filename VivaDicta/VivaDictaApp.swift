@@ -8,6 +8,8 @@
 import SwiftUI
 import SwiftData
 import os
+import AppIntents
+import CoreSpotlight
 
 @main
 struct VivaDictaApp: App {
@@ -26,6 +28,22 @@ struct VivaDictaApp: App {
 
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
+
+        ShortcutsProvider.updateAppShortcutParameters()
+
+        // Set up handler for keyboard session activation from intent
+        AppGroupCoordinator.shared.onKeyboardSessionActivated = {
+            let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+            logger.logInfo("🎙️ Keyboard session activated - starting prewarm")
+
+            // Start audio prewarm session when keyboard session is activated
+            do {
+                try AudioPrewarmManager.shared.startPrewarmSession()
+                logger.logInfo("🎙️ Hot Mic activated from keyboard session")
+            } catch {
+                logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+            }
+        }
     }
 
     var body: some Scene {
@@ -39,6 +57,12 @@ struct VivaDictaApp: App {
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
+                }
+                .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+                    handleSpotlightSearch(userActivity)
+                }
+                .onContinueUserActivity("com.antonnovoselov.VivaDicta.viewTranscription") { userActivity in
+                    handleTranscriptionActivity(userActivity)
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     switch newPhase {
@@ -104,6 +128,38 @@ struct VivaDictaApp: App {
             icon: UIApplicationShortcutIcon(systemImageName: "microphone.circle.fill"),
             userInfo: [:])
         UIApplication.shared.shortcutItems = [recordAction]
+    }
+
+    private func handleSpotlightSearch(_ userActivity: NSUserActivity) {
+        logger.logInfo("🔍 Handling Spotlight search activity")
+
+        guard let uniqueIdentifier = userActivity.userInfo?[CSSearchableItemActivityIdentifier] as? String else {
+            logger.logError("🔍 No unique identifier found in Spotlight activity")
+            return
+        }
+
+        logger.logInfo("🔍 Spotlight item identifier: \(uniqueIdentifier)")
+
+        // Convert string identifier to UUID
+        if let transcriptionID = UUID(uuidString: uniqueIdentifier) {
+            appState.selectedTranscriptionID = transcriptionID
+            logger.logInfo("🔍 Set selected transcription ID: \(transcriptionID)")
+        } else {
+            logger.logError("🔍 Failed to parse UUID from identifier: \(uniqueIdentifier)")
+        }
+    }
+
+    private func handleTranscriptionActivity(_ userActivity: NSUserActivity) {
+        logger.logInfo("📱 Handling transcription view activity (Handoff/Siri)")
+
+        // Try to get the transcription ID from userInfo
+        if let transcriptionIDString = userActivity.userInfo?["id"] as? String,
+           let transcriptionID = UUID(uuidString: transcriptionIDString) {
+            appState.selectedTranscriptionID = transcriptionID
+            logger.logInfo("📱 Opening transcription from user activity: \(transcriptionID)")
+        } else {
+            logger.logError("📱 Failed to get transcription ID from user activity")
+        }
     }
 }
 

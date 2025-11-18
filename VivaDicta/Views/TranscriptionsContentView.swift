@@ -16,6 +16,7 @@ struct TranscriptionsContentView: View {
     @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
+    @State private var navigationPath = NavigationPath()
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
 
@@ -35,7 +36,7 @@ struct TranscriptionsContentView: View {
             } else {
                 List {
                     ForEach(displayedTranscriptions) { transcription in
-                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
+                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
                             TranscriptionRowView(transcription: transcription)
                         }
                     }
@@ -101,6 +102,7 @@ struct TranscriptionsContentView: View {
     private func deleteTranscription(at offsets: IndexSet) {
         for index in offsets {
             let transcription = displayedTranscriptions[index]
+            let transcriptionID = transcription.id
 
             if let audioFileName = transcription.audioFileName {
                 let audioURL = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
@@ -108,6 +110,11 @@ struct TranscriptionsContentView: View {
             }
 
             modelContext.delete(transcription)
+
+            // Remove from Spotlight index
+            Task {
+                await appState.removeTranscriptionFromSpotlight(transcriptionID)
+            }
         }
 
         do {

@@ -9,6 +9,8 @@ import Foundation
 import SwiftUI
 import ActivityKit
 import os
+import CoreSpotlight
+import SwiftData
 
 @Observable
 class AppState {
@@ -26,6 +28,7 @@ class AppState {
     // Navigation state
     var shouldNavigateToModels: Bool = false
     var shouldStartRecording: Bool = false
+    var selectedTranscriptionID: UUID? = nil  // For Spotlight navigation
 
     init() {
         transcriptionManager = TranscriptionManager()
@@ -51,6 +54,9 @@ class AppState {
         Task {
             await preloadWhisperKitModelIfNeeded()
         }
+
+        // Note: Spotlight indexing is now done on-demand when transcriptions are created/deleted
+        // No longer doing batch indexing on app startup
     }
 
     // This method is called when AIService changes its mode
@@ -157,5 +163,119 @@ class AppState {
                 }
             }
         }
+    }
+    
+    /// Index a single transcription in Spotlight
+    func indexTranscriptionToSpotlight(_ transcription: Transcription) async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
+
+        let item = CSSearchableItem(
+            uniqueIdentifier: transcription.id.uuidString,
+            domainIdentifier: "com.antonnovoselov.VivaDicta",
+            attributeSet: transcription.searchableAttributes
+        )
+
+        // Set expiration date to 30 days (reduced from 90)
+        item.expirationDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
+
+        do {
+            let index = CSSearchableIndex.default()
+            try await index.indexSearchableItems([item])
+            logger.logInfo("[Spotlight] Indexed transcription: \(transcription.id.uuidString)")
+        } catch {
+            logger.logError("[Spotlight] Failed to index transcription: \(error.localizedDescription)")
+        }
+    }
+
+    /// Remove a transcription from Spotlight index
+    func removeTranscriptionFromSpotlight(_ transcriptionID: UUID) async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
+
+        do {
+            let index = CSSearchableIndex.default()
+            try await index.deleteSearchableItems(withIdentifiers: [transcriptionID.uuidString])
+            logger.logInfo("[Spotlight] Removed transcription from index: \(transcriptionID.uuidString)")
+        } catch {
+            logger.logError("[Spotlight] Failed to remove transcription: \(error.localizedDescription)")
+        }
+    }
+
+    // TODO: Add method to update a single transcription in Spotlight when tags are generated
+    func updateTranscriptionInSpotlight(_ transcription: Transcription) async {
+        // Reindexing with the same identifier will update the existing item
+        await indexTranscriptionToSpotlight(transcription)
+    }
+
+    // Legacy batch indexing method - kept for manual rebuild if needed
+    func updateSpotlightIndex() async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
+
+        let container = Persistence.container
+
+        do {
+            // Create a fetch descriptor for non-empty transcriptions
+            let descriptor = FetchDescriptor<Transcription>(
+                predicate: #Predicate { transcription in
+                    transcription.text != "" ||
+                    (transcription.enhancedText != nil && transcription.enhancedText != "")
+                },
+                sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+            )
+
+            let transcriptions = try container.mainContext.fetch(descriptor)
+
+            let searchableItems = transcriptions.map { transcription in
+                let item = CSSearchableItem(
+                    uniqueIdentifier: transcription.id.uuidString,
+                    domainIdentifier: "com.antonnovoselov.VivaDicta",
+                    attributeSet: transcription.searchableAttributes
+                )
+
+                // Set expiration date to 30 days
+                item.expirationDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
+
+                return item
+            }
+
+            // Add the transcriptions to the search index so people can find them through Spotlight.
+            let index = CSSearchableIndex.default()
+            try await index.indexSearchableItems(searchableItems)
+            logger.logInfo("[Spotlight] Successfully indexed \(searchableItems.count) transcriptions")
+        } catch {
+            logger.logError("[Spotlight] Failed to index transcriptions. Reason: \(error.localizedDescription)")
+        }
+    }
+    
+    
+    func userActivity(for transcription: Transcription) -> NSUserActivity {
+        let activity = NSUserActivity(activityType: "com.antonnovoselov.VivaDicta.viewTranscription")
+
+        // Use the same attribute set we use for Spotlight
+        let attributes = transcription.searchableAttributes
+
+        activity.title = attributes.title
+        activity.userInfo = ["id": transcription.id.uuidString]
+        activity.persistentIdentifier = transcription.id.uuidString
+        activity.isEligibleForSearch = true
+        activity.isEligibleForPrediction = true
+
+        // Use keywords from the searchable attributes
+        if let keywords = attributes.keywords {
+            activity.keywords = Set(keywords)
+        }
+
+        // Reuse the same content attribute set for consistency
+        activity.contentAttributeSet = attributes
+
+        return activity
     }
 }

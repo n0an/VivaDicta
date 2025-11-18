@@ -111,6 +111,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppGroupCoordinator.swift,
+				AppIntents/ToggleKeyboardFlowIntent.swift,
 				AppIntents/ToggleRecordIntent.swift,
 				Models/VivaDictaLiveActivityAttributes.swift,
 				Utilities/LoggerExtension.swift,

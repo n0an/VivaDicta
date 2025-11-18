@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import CoreSpotlight
 
 struct TranscriptionDetailView: View {
-    
+
     var transcription: Transcription
-    
+    var appState: AppState
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let audioFileName = transcription.audioFileName {
@@ -101,6 +103,10 @@ struct TranscriptionDetailView: View {
             Spacer()
         }
         .padding()
+        .onAppear {
+            let activity = appState.userActivity(for: transcription)
+            activity.becomeCurrent()
+        }
     }
     
     private func metadataRow(icon: String, label: String, value: String) -> some View {
@@ -122,5 +128,8 @@ struct TranscriptionDetailView: View {
 }
 
 #Preview {
-    TranscriptionDetailView(transcription: Transcription.mockData[2])
+    TranscriptionDetailView(
+        transcription: Transcription.mockData[2],
+        appState: AppState()
+    )
 }

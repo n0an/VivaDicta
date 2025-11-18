@@ -7,9 +7,11 @@
 
 import Foundation
 import SwiftData
+import CoreSpotlight
 
 @Model
 class Transcription {
+    var id: UUID = UUID()
     var text: String
     var enhancedText: String?
     var timestamp: Date
@@ -20,6 +22,9 @@ class Transcription {
     var promptName: String?
     var transcriptionDuration: TimeInterval?
     var enhancementDuration: TimeInterval?
+
+    // TODO: Add tags/keywords property for LLM-generated tags
+    // var tags: [String]? = nil  // LLM-generated keywords/tags for better Spotlight search
     
     init(text: String,
          enhancedText: String? = nil,
@@ -122,4 +127,90 @@ extension Transcription {
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8)
     ]
+}
+
+extension Transcription {
+    nonisolated var searchableAttributes: CSSearchableItemAttributeSet {
+        let attributes = CSSearchableItemAttributeSet(contentType: .text)
+
+        // Title: First 100 characters of the transcription or a date-based title
+        let textPreview = String(text.prefix(100))
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        dateFormatter.timeStyle = .short
+        let dateString = dateFormatter.string(from: timestamp)
+
+        var title = ""
+        
+        if text.count > 100 {
+            title = "\(textPreview)..."
+        } else if !text.isEmpty {
+            title = textPreview
+        } else {
+            title = "Recording - \(dateString)"
+        }
+        
+        attributes.title = title
+        attributes.displayName = title
+
+        // Content: Full text for searching (original + enhanced)
+        var fullContent = text
+        if let enhancedText = enhancedText, !enhancedText.isEmpty {
+            fullContent += "\n\n" + enhancedText
+        }
+        attributes.contentDescription = fullContent
+
+        // Keywords: Model names, prompt, and meaningful terms
+        var keywords = [String]()
+
+        if let promptName = promptName {
+            keywords.append(promptName)
+        }
+
+        if let transcriptionModel = transcriptionModelName {
+            keywords.append(transcriptionModel)
+        }
+
+        if let aiModel = aiEnhancementModelName {
+            keywords.append(aiModel)
+        }
+
+        // TODO: Add LLM-generated tags to keywords when available
+        // if let tags = tags {
+        //     keywords.append(contentsOf: tags)
+        // }
+
+        attributes.keywords = keywords
+
+        // Duration and dates
+        attributes.duration = NSNumber(value: audioDuration)
+        attributes.contentCreationDate = timestamp
+        attributes.contentModificationDate = timestamp
+
+        // Additional metadata
+        attributes.kind = "Voice Transcription"
+        attributes.identifier = id.uuidString
+        attributes.relatedUniqueIdentifier = id.uuidString
+
+        // Audio metadata (if we have it)
+        if audioDuration > 0 {
+            let durationCategory: String
+            switch audioDuration {
+            case 0..<30:
+                durationCategory = "Short recording"
+            case 30..<120:
+                durationCategory = "Medium recording"
+            default:
+                durationCategory = "Long recording"
+            }
+            attributes.comment = durationCategory
+        }
+
+        return attributes
+    }
+
+}
+
+extension UTType {
+    public static let transcription = UTType(exportedAs: "com.antonnovoselov.VivaDicta")
 }

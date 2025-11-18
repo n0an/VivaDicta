@@ -122,6 +122,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             let isRecording = (recordingState == .recording)
             UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
             UserDefaultsStorage.shared.synchronize()
+
         }
     }
     
@@ -463,6 +464,26 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 modelContext.insert(transcription)
                 try modelContext.save()
+
+                // Index the new transcription in Spotlight
+                await self.appState?.indexTranscriptionToSpotlight(transcription)
+
+                // Create and donate user activity for Siri predictions
+                if let appState = self.appState {
+                    let activity = appState.userActivity(for: transcription)
+                    activity.becomeCurrent()
+                }
+
+                // TODO: Generate tags after saving transcription
+                // Task {
+                //     if let tags = try? await aiService.generateTags(for: enhancedText ?? transcribedText) {
+                //         transcription.tags = tags
+                //         try? modelContext.save()
+                //
+                //         // Update the existing Spotlight item with new tags
+                //         await appState.updateTranscriptionInSpotlight(transcription)
+                //     }
+                // }
 
                 // Share transcribed text with keyboard (enhanced text if available, otherwise original)
                 let textToShare = enhancedText ?? transcribedText
