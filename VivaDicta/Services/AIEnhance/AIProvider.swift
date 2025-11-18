@@ -10,6 +10,7 @@ import Foundation
 enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var id: Self { self }
     
+    case cerebras
     case groq
     case gemini
     case anthropic
@@ -21,8 +22,20 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case mistral
     case soniox
     
+    static let generalProviders: [AIProvider] = [
+        .cerebras,
+        .groq,
+        .gemini,
+        .anthropic,
+        .openAI,
+        .grok,
+        .mistral,
+        .openRouter]
+    
     var baseURL: String {
         switch self {
+        case .cerebras:
+            return "https://api.cerebras.ai/v1/chat/completions"
         case .groq:
             return "https://api.groq.com/openai/v1/chat/completions"
         case .gemini:
@@ -49,6 +62,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     
     var defaultModel: String {
         switch self {
+        case .cerebras:
+            return "gpt-oss-120b"
         case .groq:
             return "qwen/qwen3-32b"
         case .gemini:
@@ -74,6 +89,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     
     var availableModels: [String] {
         switch self {
+        case .cerebras:
+            return [
+                "llama-4-scout-17b-16e-instruct",
+                "llama-3.3-70b",
+                "gpt-oss-120b",
+                "qwen-3-32b",
+                "qwen-3-235b-a22b-instruct-2507"
+            ]
         case .groq:
             return [
                 "llama-3.1-8b-instant",
