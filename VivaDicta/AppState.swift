@@ -240,9 +240,6 @@ class AppState {
                     attributeSet: transcription.searchableAttributes
                 )
 
-                // Set expiration date to 30 days
-                item.expirationDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
-
                 return item
             }
 
