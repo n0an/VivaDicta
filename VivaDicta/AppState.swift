@@ -254,4 +254,28 @@ class AppState {
             logger.logError("[Spotlight] Failed to index transcriptions. Reason: \(error.localizedDescription)")
         }
     }
+    
+    
+    func userActivity(for transcription: Transcription) -> NSUserActivity {
+        let activity = NSUserActivity(activityType: "com.antonnovoselov.VivaDicta")
+
+        // Use the same attribute set we use for Spotlight
+        let attributes = transcription.searchableAttributes
+
+        activity.title = attributes.title
+        activity.userInfo = ["id": transcription.id.uuidString]
+        activity.persistentIdentifier = transcription.id.uuidString
+        activity.isEligibleForSearch = true
+        activity.isEligibleForPrediction = true
+
+        // Use keywords from the searchable attributes
+        if let keywords = attributes.keywords {
+            activity.keywords = Set(keywords)
+        }
+
+        // Reuse the same content attribute set for consistency
+        activity.contentAttributeSet = attributes
+
+        return activity
+    }
 }
