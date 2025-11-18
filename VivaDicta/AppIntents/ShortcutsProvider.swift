@@ -35,9 +35,10 @@ final class ShortcutsProvider: AppShortcutsProvider {
                 "Start flow in \(.applicationName)",
                 "Toggle flow in \(.applicationName)",
                 "Flow in \(.applicationName)",
-                "Keyboard session in \(.applicationName)",
-                "Start a keyboard session in \(.applicationName)",
-                "\(.applicationName) flow"
+                "Keyboard flow in \(.applicationName)",
+                "Start keyboard flow in \(.applicationName)",
+                "Toggle keyboard flow in \(.applicationName)",
+                "\(.applicationName) keyboard flow"
             ],
             shortTitle: LocalizedStringResource("Start Keyboard Flow"),
             systemImageName: "keyboard.fill"

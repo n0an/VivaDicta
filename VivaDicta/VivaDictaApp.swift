@@ -28,8 +28,22 @@ struct VivaDictaApp: App {
 
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
-        
+
         ShortcutsProvider.updateAppShortcutParameters()
+
+        // Set up handler for keyboard session activation from intent
+        AppGroupCoordinator.shared.onKeyboardSessionActivated = {
+            let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+            logger.logInfo("🎙️ Keyboard session activated - starting prewarm")
+
+            // Start audio prewarm session when keyboard session is activated
+            do {
+                try AudioPrewarmManager.shared.startPrewarmSession()
+                logger.logInfo("🎙️ Hot Mic activated from keyboard session")
+            } catch {
+                logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+            }
+        }
     }
 
     var body: some Scene {
