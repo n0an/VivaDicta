@@ -140,13 +140,18 @@ extension Transcription {
         dateFormatter.timeStyle = .short
         let dateString = dateFormatter.string(from: timestamp)
 
+        var title = ""
+        
         if text.count > 100 {
-            attributes.title = "\(textPreview)..."
+            title = "\(textPreview)..."
         } else if !text.isEmpty {
-            attributes.title = textPreview
+            title = textPreview
         } else {
-            attributes.title = "Recording - \(dateString)"
+            title = "Recording - \(dateString)"
         }
+        
+        attributes.title = title
+        attributes.displayName = title
 
         // Content: Full text for searching (original + enhanced)
         var fullContent = text
@@ -185,6 +190,7 @@ extension Transcription {
         // Additional metadata
         attributes.kind = "Voice Transcription"
         attributes.identifier = id.uuidString
+        attributes.relatedUniqueIdentifier = id.uuidString
 
         // Audio metadata (if we have it)
         if audioDuration > 0 {
