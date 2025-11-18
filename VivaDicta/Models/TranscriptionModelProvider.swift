@@ -141,20 +141,20 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v3",
                 displayName: "Parakeet V3",
-                description: "NVIDIA's Parakeet V3 model with multilingual support across English and 25 European languages.",
+                description: "NVIDIA's ultra-fast multilingual model supporting 25 languages with automatic language detection",
                 size: "494 MB",
                 speed: 0.99,
-                accuracy: 0.94,
+                accuracy: 0.88,
                 ramUsage: 0.8,
                 supportedLanguages: allLanguages
             ),
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v2",
                 displayName: "Parakeet V2",
-                description: "NVIDIA's Parakeet V2 model optimized for lightning-fast English-only transcription.",
+                description: "NVIDIA's blazing-fast English model with superior accuracy for real-time transcription",
                 size: "474 MB",
                 speed: 0.99,
-                accuracy: 0.94,
+                accuracy: 0.90,
                 ramUsage: 0.8,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
