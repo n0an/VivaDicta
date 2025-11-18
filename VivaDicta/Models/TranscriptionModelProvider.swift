@@ -17,6 +17,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case deepgram
     case mistral
     case gemini
+    case soniox
     
     var id: Self { self }
     
@@ -161,6 +162,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
+            CloudModel(
+                name: "stt-async-v3",
+                displayName: "Soniox Async v3",
+                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
+                provider: .soniox,
+                speed: 0.8,
+                accuracy: 0.935,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            )
         ]
     }
     
