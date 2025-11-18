@@ -11,7 +11,7 @@ import CoreSpotlight
 struct TranscriptionDetailView: View {
 
     var transcription: Transcription
-    @Environment(AppState.self) private var appState
+    var appState: AppState
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -128,5 +128,8 @@ struct TranscriptionDetailView: View {
 }
 
 #Preview {
-    TranscriptionDetailView(transcription: Transcription.mockData[2])
+    TranscriptionDetailView(
+        transcription: Transcription.mockData[2],
+        appState: AppState()
+    )
 }

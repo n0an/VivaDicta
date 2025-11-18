@@ -113,7 +113,7 @@ struct MainView: View {
                     .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
                 .navigationDestination(for: Transcription.self) { transcription in
-                    TranscriptionDetailView(transcription: transcription)
+                    TranscriptionDetailView(transcription: transcription, appState: appState)
                 }
         }
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in

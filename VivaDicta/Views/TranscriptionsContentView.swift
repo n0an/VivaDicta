@@ -36,7 +36,7 @@ struct TranscriptionsContentView: View {
             } else {
                 List {
                     ForEach(displayedTranscriptions) { transcription in
-                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription)) {
+                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
                             TranscriptionRowView(transcription: transcription)
                         }
                     }
