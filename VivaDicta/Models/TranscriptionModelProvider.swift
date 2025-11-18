@@ -165,18 +165,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             WhisperKitModel(
                 name: "whisperkit-tiny",
-                displayName: "WhisperKit Tiny",
-                description: "Smallest and fastest WhisperKit model, suitable for quick transcriptions",
+                displayName: "Tiny",
+                description: "Smallest and fastest Whisper model, suitable for quick transcriptions",
                 size: "76 MB",
                 speed: 0.95,
-                accuracy: 0.65,
+                accuracy: 0.6,
                 ramUsage: 0.3,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-tiny"
             ),
             WhisperKitModel(
                 name: "whisperkit-tiny.en",
-                displayName: "WhisperKit Tiny (English)",
+                displayName: "Tiny (English)",
                 description: "English-optimized tiny model for fast English transcription",
                 size: "76 MB",
                 speed: 0.95,
@@ -188,70 +188,47 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             WhisperKitModel(
                 name: "whisperkit-base",
-                displayName: "WhisperKit Base",
-                description: "Balanced model offering good speed and accuracy",
+                displayName: "Base",
+                description: "Balanced model offering good speed and accuracy, supports multiple languages",
                 size: "140 MB",
                 speed: 0.85,
-                accuracy: 0.75,
+                accuracy: 0.72,
                 ramUsage: 0.5,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-base"
             ),
             WhisperKitModel(
                 name: "whisperkit-base.en",
-                displayName: "WhisperKit Base (English)",
-                description: "English-optimized base model with good balance",
+                displayName: "Base (English)",
+                description: "Base model optimized for English, good balance between speed and accuracy",
                 size: "140 MB",
                 speed: 0.85,
-                accuracy: 0.78,
+                accuracy: 0.75,
                 ramUsage: 0.5,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
                 whisperKitModelName: "openai_whisper-base.en"
             ),
             
             WhisperKitModel(
-                name: "whisperkit-small",
-                displayName: "WhisperKit Small",
-                description: "More accurate model with reasonable speed",
-                size: "487 MB",
-                speed: 0.70,
-                accuracy: 0.85,
-                ramUsage: 1.0,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "openai_whisper-small"
-            ),
-            WhisperKitModel(
-                name: "whisperkit-small.en",
-                displayName: "WhisperKit Small (English)",
-                description: "English-optimized small model with improved accuracy",
-                size: "487 MB",
-                speed: 0.70,
-                accuracy: 0.88,
-                ramUsage: 1.0,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
-                whisperKitModelName: "openai_whisper-small.en"
-            ),
-            
-            WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_626MB",
-                displayName: "WhisperKit Large v3 v20240930 626 MB",
-                description: "Most accurate WhisperKit model with state-of-the-art performance",
+                displayName: "Large",
+                description: "Most accurate model",
                 size: "626 MB",
-                speed: 0.80,
+                speed: 0.60,
                 accuracy: 0.98,
-                ramUsage: 3.0,
+                ramUsage: 1.2,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_626MB"
             ),
             
             WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_turbo_632MB",
-                displayName: "WhisperKit Large v3 Turbo v20240930 Optimized 632 MB",
-                description: "Optimized for streaming with turbo inference, optimized size 632 MB",
+                displayName: "Large Turbo",
+                description: "Large model with state-of-the-art performance",
                 size: "632 MB",
-                speed: 0.95,
-                accuracy: 0.96,
-                ramUsage: 2.0,
+                speed: 0.75,
+                accuracy: 0.95,
+                ramUsage: 1.0,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo_632MB"
             ),
