@@ -212,11 +212,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_626MB",
                 displayName: "Large",
-                description: "Most accurate model",
+                description: "Highest accuracy model with comprehensive language support",
                 size: "626 MB",
                 speed: 0.60,
                 accuracy: 0.98,
-                ramUsage: 1.2,
+                ramUsage: 2.0,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_626MB"
             ),
@@ -224,11 +224,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_turbo_632MB",
                 displayName: "Large Turbo",
-                description: "Large model with state-of-the-art performance",
+                description: "Optimized large model with faster speed and excellent accuracy",
                 size: "632 MB",
                 speed: 0.75,
                 accuracy: 0.95,
-                ramUsage: 1.0,
+                ramUsage: 1.2,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo_632MB"
             ),
