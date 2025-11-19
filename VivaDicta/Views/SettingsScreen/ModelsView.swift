@@ -42,14 +42,21 @@ struct ModelsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     ForEach(filteredModels, id: \.id) { model in
-                        UnifiedModelCard(
-                            model: model,
-                            modelType: modelType,
-                            downloadManager: downloadManager,
-                            onConfigure: { cloudModel in
-                                configureCloudModel(model: cloudModel)
+                        Group {
+                            if modelType == .local {
+                                LocalModelCard(
+                                    model: model,
+                                    downloadManager: downloadManager
+                                )
+                            } else if let cloudModel = model as? CloudModel {
+                                CloudModelCard(
+                                    model: cloudModel,
+                                    onConfigure: { cloudModel in
+                                        configureCloudModel(model: cloudModel)
+                                    }
+                                )
                             }
-                        )
+                        }
                         .padding(.horizontal)
                     }
                 }
