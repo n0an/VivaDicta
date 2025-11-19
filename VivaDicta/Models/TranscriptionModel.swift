@@ -13,6 +13,7 @@ protocol TranscriptionModel: Identifiable, Hashable {
     var displayName: String { get }
     var description: String { get }
     var provider: TranscriptionModelProvider { get }
+    var recommended: Bool { get }
     
     // Language capabilities
     var supportManyLanguages: Bool { get }

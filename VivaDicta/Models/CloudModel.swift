@@ -13,7 +13,8 @@ struct CloudModel: @MainActor TranscriptionModel {
     let displayName: String
     let description: String
     let provider: TranscriptionModelProvider
-
+    let recommended: Bool
+    
     let speed: Double
     let accuracy: Double
     let supportManyLanguages: Bool
@@ -24,6 +25,7 @@ struct CloudModel: @MainActor TranscriptionModel {
          displayName: String,
          description: String,
          provider: TranscriptionModelProvider,
+         recommended: Bool = false,
          speed: Double,
          accuracy: Double,
          supportManyLanguages: Bool,
@@ -34,6 +36,7 @@ struct CloudModel: @MainActor TranscriptionModel {
         self.displayName = displayName
         self.description = description
         self.provider = provider
+        self.recommended = recommended
         self.speed = speed
         self.accuracy = accuracy
         self.supportManyLanguages = supportManyLanguages

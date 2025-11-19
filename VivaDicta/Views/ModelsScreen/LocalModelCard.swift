@@ -57,12 +57,7 @@ struct LocalModelCard: View {
         }
         return nil
     }
-
-    private var isRecommended: Bool {
-        // Logic to determine if model is recommended
-        model.name.contains("tiny") || model.name.contains("turbo")
-    }
-
+    
     private var modelSpeed: Double {
         if let whisperModel = model as? WhisperKitModel {
             return whisperModel.speed
@@ -95,7 +90,7 @@ struct LocalModelCard: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if isRecommended {
+                if model.recommended {
                     Text("Recommended")
                         .font(.caption)
                         .fontWeight(.medium)

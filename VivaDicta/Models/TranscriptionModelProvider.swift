@@ -72,35 +72,17 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static var allCloudModels: [CloudModel] {
         [
             CloudModel(
-                name: "openai-gpt-4o",
-                displayName: "GPT-4o Transcribe",
-                description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
-                provider: .openAI,
-                speed: 0.7,
-                accuracy: 0.96,
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            CloudModel(
                 name: "whisper-large-v3-turbo",
                 displayName: "Whisper Large v3 Turbo",
                 description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed",
                 provider: .groq,
+                recommended: true,
                 speed: 0.95,
                 accuracy: 0.92,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            CloudModel(
-                name: "scribe_v1",
-                displayName: "Scribe v1",
-                description: "Industry-leading accuracy with excellent accent handling for batch transcription",
-                provider: .elevenLabs,
-                speed: 0.7,
-                accuracy: 0.965,
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
+            
             CloudModel(
                 name: "scribe_v2",
                 displayName: "Scribe v2",
@@ -111,6 +93,29 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
+            
+            CloudModel(
+                name: "scribe_v1",
+                displayName: "Scribe v1",
+                description: "Industry-leading accuracy with excellent accent handling for batch transcription",
+                provider: .elevenLabs,
+                speed: 0.7,
+                accuracy: 0.965,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "openai-gpt-4o",
+                displayName: "GPT-4o Transcribe",
+                description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
+                provider: .openAI,
+                speed: 0.7,
+                accuracy: 0.96,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
             CloudModel(
                 name: "nova-2",
                 displayName: "Nova",
@@ -187,6 +192,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 name: "parakeet-tdt-0.6b-v3",
                 displayName: "Nvidia Parakeet V3",
                 description: "NVIDIA's ultra-fast multilingual model supporting 25 languages with automatic language detection",
+                recommended: true,
                 size: "494 MB",
                 speed: 0.99,
                 accuracy: 0.88,
@@ -270,6 +276,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 name: "whisperkit-large-v3-v20240930_turbo_632MB",
                 displayName: "Whisper Large Turbo",
                 description: "Optimized large model with faster speed and excellent accuracy",
+                recommended: true,
                 size: "632 MB",
                 speed: 0.75,
                 accuracy: 0.95,
@@ -277,7 +284,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo_632MB"
             ),
-        ]
+        ].reversed()
     }
 
     static let allLanguages = [

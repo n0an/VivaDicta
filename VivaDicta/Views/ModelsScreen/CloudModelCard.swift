@@ -13,11 +13,6 @@ struct CloudModelCard: View {
 
     @State private var selectedTab: TranscriptionModelType = .cloud
 
-    private var isRecommended: Bool {
-        // Logic to determine if model is recommended
-        model.name.contains("scribe-1") || model.name.contains("whisper-1")
-    }
-
     private var isAPIConfigured: Bool {
         model.apiKey != nil
     }
@@ -37,7 +32,7 @@ struct CloudModelCard: View {
                     Label(model.language, systemImage: "globe")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    if true {
+                    if model.recommended {
                         Text("Recommended")
                             .font(.caption)
                             .fontWeight(.medium)
