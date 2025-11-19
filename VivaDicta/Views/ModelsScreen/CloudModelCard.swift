@@ -69,27 +69,30 @@ struct CloudModelCard: View {
                 Spacer()
 
                 // Cloud model configuration button
-                VStack(spacing: -8) {
+                
                     Button(action: {
                         onConfigure(model)
                     }) {
-                        Image(systemName: isAPIConfigured ? "key.circle.fill" : "key.circle")
-                            .foregroundStyle(isAPIConfigured ? .green : .blue)
-                            .font(.system(size: 30))
-                            .frame(width: 56, height: 56)
+                        VStack(alignment: .center, spacing: 0) {
+                            Image(systemName: isAPIConfigured ? "key.circle.fill" : "key.circle")
+                                .foregroundStyle(isAPIConfigured ? .green : .blue)
+                                .font(.system(size: 30))
+                            
+                            if !isAPIConfigured {
+                                Text(isAPIConfigured ? "Configured" : "Add API Key")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
-                    Text(isAPIConfigured ? "Configured" : "Add API Key")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
+                    .frame(width: 60)
+                    .buttonStyle(.plain)
             }
 
             // Description
             Text(model.description)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .lineLimit(4)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(20)
         .background(.white)
