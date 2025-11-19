@@ -144,10 +144,9 @@ struct LocalModelCard: View {
                     case .download:
                         downloadLocalModel()
                     case .downloading:
-                        // TODO: - add cancel method
+                        cancelDownload()
                     case .downloaded:
-                        // TODO: - add delete method
-
+                        deleteModel()
                     }
                 } label: {
                     Image(systemName: downloadStatus.actionButtonImage)
@@ -155,44 +154,6 @@ struct LocalModelCard: View {
                         .font(.system(size: 30))
                         .frame(width: 56, height: 56)
                 }
-                
-                
-                
-                
-//                switch downloadStatus {
-//                case .download:
-//                    Button(action: {
-//                        downloadLocalModel()
-//                    }) {
-//                        Image(systemName: "arrow.down.circle.fill")
-//                            .foregroundStyle(.blue)
-//                            .font(.system(size: 30))
-//                            .frame(width: 56, height: 56)
-//                    }
-//                case .downloading:
-//                    VStack(spacing: 4) {
-//                        ZStack {
-//                            Circle()
-//                                .stroke(Color.gray.opacity(0.2), lineWidth: 4)
-//                                .frame(width: 56, height: 56)
-//
-//                            Circle()
-//                                .trim(from: 0, to: currentProgress)
-//                                .stroke(Color.blue, lineWidth: 4)
-//                                .rotationEffect(.degrees(-90))
-//                                .frame(width: 56, height: 56)
-//
-//                            Text("\(Int(currentProgress * 100))%")
-//                                .font(.caption2)
-//                                .fontWeight(.medium)
-//                        }
-//                    }
-//                case .downloaded:
-//                    Image(systemName: "checkmark.circle.fill")
-//                        .font(.title2)
-//                        .foregroundStyle(.green)
-//                        .frame(width: 56, height: 56)
-//                }
             }
 
             // Description
@@ -221,6 +182,20 @@ struct LocalModelCard: View {
                 } else if let parakeetModel = model as? ParakeetModel {
                     await downloadManager.handleModelDownloadError(parakeetModel, error)
                 }
+            }
+        }
+    }
+
+    private func cancelDownload() {
+        downloadManager.cancelDownload(for: model)
+    }
+
+    private func deleteModel() {
+        Task {
+            do {
+                try await downloadManager.deleteModel(model)
+            } catch {
+                print("Error deleting model: \(error)")
             }
         }
     }

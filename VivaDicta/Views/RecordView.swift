@@ -90,6 +90,7 @@ struct RecordView: View {
             VStack(spacing: 12) {
                 Image(systemName: "pencil.and.scribble")
                     .symbolEffect(.bounce.byLayer, options: .repeat(.periodic(delay: 0.3)), value: isSymbolAnimating)
+                    
                     .font(.system(size: 80))
                     .onAppear { isSymbolAnimating = true }
                     .onDisappear { isSymbolAnimating = false }

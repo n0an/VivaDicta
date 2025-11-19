@@ -48,5 +48,11 @@ extension ParakeetModel {
     var isDownloaded: Bool {
         FileManager.default.fileExists(atPath: modelsDirectory.path)
     }
+
+    func deleteModel() throws {
+        if isDownloaded {
+            try FileManager.default.removeItem(at: modelsDirectory)
+        }
+    }
 }
 

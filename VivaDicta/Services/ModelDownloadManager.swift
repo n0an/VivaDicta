@@ -43,19 +43,32 @@ class ModelDownloadManager: @unchecked Sendable {
     public var downloadProgress: [String: Double] = [:]
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
+    private var downloadTasks: [String: Task<Void, any Error>] = [:]
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ModelDownloadManager")
     public var onModelDownloaded: ((any TranscriptionModel) -> Void)?
 
     // MARK: - Public Interface
 
     public func downloadModel(_ model: any TranscriptionModel) async throws {
-        if let parakeetModel = model as? ParakeetModel {
-            try await downloadParakeetModel(parakeetModel)
-        } else if let whisperKitModel = model as? WhisperKitModel {
-            try await downloadWhisperKitModel(whisperKitModel)
-        } else {
-            throw ModelDownloadError.unsupportedModelType
+        let task = Task {
+            if let parakeetModel = model as? ParakeetModel {
+                try await downloadParakeetModel(parakeetModel)
+            } else if let whisperKitModel = model as? WhisperKitModel {
+                try await downloadWhisperKitModel(whisperKitModel)
+            } else {
+                throw ModelDownloadError.unsupportedModelType
+            }
         }
+
+        // Store the task for potential cancellation
+        downloadTasks[model.name] = task
+
+        // Wait for the task to complete and clean up
+        defer {
+            downloadTasks.removeValue(forKey: model.name)
+        }
+
+        try await task.value
     }
 
     public func handleModelDownloadError(_ model: any TranscriptionModel, _ error: any Error) async {
@@ -82,6 +95,42 @@ class ModelDownloadManager: @unchecked Sendable {
             return downloadStatuses[model.name] ?? (whisperKitModel.isDownloaded ? .downloaded : .download)
         }
         return .download
+    }
+
+    public func cancelDownload(for model: any TranscriptionModel) {
+        // Cancel the download task if it exists
+        if let task = downloadTasks[model.name] {
+            task.cancel()
+            downloadTasks.removeValue(forKey: model.name)
+        }
+
+        // Reset status and progress
+        Task { @MainActor in
+            downloadStatuses[model.name] = .download
+            downloadProgress.removeValue(forKey: model.name)
+            downloadProgress.removeValue(forKey: model.name + "_main")
+            downloadProgress.removeValue(forKey: model.name + "_coreml")
+        }
+
+        logger.logNotice("❌ Cancelled download of \(model.name)")
+    }
+
+    public func deleteModel(_ model: any TranscriptionModel) async throws {
+        if let parakeetModel = model as? ParakeetModel {
+            try parakeetModel.deleteModel()
+            await MainActor.run {
+                downloadStatuses[model.name] = .download
+            }
+            logger.logNotice("🗑️ Deleted model \(model.name)")
+        } else if let whisperKitModel = model as? WhisperKitModel {
+            try whisperKitModel.deleteModel()
+            await MainActor.run {
+                downloadStatuses[model.name] = .download
+            }
+            logger.logNotice("🗑️ Deleted model \(model.name)")
+        } else {
+            throw ModelDownloadError.unsupportedModelType
+        }
     }
 
 
