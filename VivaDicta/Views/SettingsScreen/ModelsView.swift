@@ -80,9 +80,28 @@ struct ModelsView: View {
     var filteredModels: [any TranscriptionModel] {
         switch modelType {
         case .local:
-            appState.transcriptionManager.allAvailableModels.filter { $0.provider == .parakeet || $0.provider == .whisperKit }
+            let localModels = appState.transcriptionManager.allAvailableModels.filter { $0.provider == .parakeet || $0.provider == .whisperKit }
+
+            // Custom ordering for local models
+            let modelOrder = [
+                "parakeet-tdt-0.6b-v3",
+                "whisperkit-large-v3-v20240930_turbo_632MB",
+                "parakeet-tdt-0.6b-v2",
+                "whisperkit-large-v3-v20240930_626MB",
+                "whisperkit-base",
+                "whisperkit-base.en",
+                "whisperkit-tiny",
+                "whisperkit-tiny.en",
+            ]
+
+            return localModels.sorted { first, second in
+                let firstIndex = modelOrder.firstIndex(of: first.name) ?? Int.max
+                let secondIndex = modelOrder.firstIndex(of: second.name) ?? Int.max
+                return firstIndex < secondIndex
+            }
+
         case .cloud:
-            appState.transcriptionManager.allAvailableModels.filter { $0.provider != .parakeet && $0.provider != .whisperKit }
+            return appState.transcriptionManager.allAvailableModels.filter { $0.provider != .parakeet && $0.provider != .whisperKit }
         }
     }
 

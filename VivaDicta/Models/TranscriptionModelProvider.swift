@@ -284,7 +284,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo_632MB"
             ),
-        ].reversed()
+        ]
     }
 
     static let allLanguages = [
