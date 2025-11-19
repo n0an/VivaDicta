@@ -193,12 +193,34 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
-                name: "openai-gpt-4o",
+                name: "gpt-4o-transcribe",
                 displayName: "GPT-4o Transcribe",
                 description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
                 provider: .openAI,
                 speed: 0.7,
                 accuracy: 0.95,
+                cost: 0.9,  // $0.006/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "gpt-4o-mini-transcribe",
+                displayName: "GPT-4o Mini Transcribe",
+                description: "Cost-effective OpenAI model for high-volume transcription with good accuracy",
+                provider: .openAI,
+                speed: 0.75,
+                accuracy: 0.9,
+                cost: 0.4,  // $0.003/min - half the price of GPT-4o
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "whisper-1",
+                displayName: "Whisper",
+                description: "OpenAI's legacy Whisper model with proven reliability for general transcription",
+                provider: .openAI,
+                speed: 0.7,
+                accuracy: 0.93,
                 cost: 0.9,  // $0.006/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
