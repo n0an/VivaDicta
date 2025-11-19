@@ -371,7 +371,7 @@ class AIService {
     
     private func getSystemMessage() -> String {
         let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        return String(format: PromptsTemplates.systemPrompt, promptInstructions)
+        return PromptsTemplates.systemPrompt(with: promptInstructions)
     }
     
     

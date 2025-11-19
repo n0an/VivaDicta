@@ -13,7 +13,7 @@ struct ModelPerformanceStatsDots: View {
     var body: some View {
         HStack(spacing: 8) {
             progressDots(value: value)
-            Text(String(format: "%.1f", value))
+            Text(value.formatted(.number.precision(.fractionLength(1))))
                 .font(.caption2.weight(.medium).monospaced())
                 .foregroundStyle(.secondary)
         }

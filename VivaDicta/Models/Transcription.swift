@@ -89,11 +89,11 @@ class Transcription {
 
         let kb = Double(bytes) / 1024.0
         if kb < 1024 {
-            return String(format: "%.0f KB", kb)
+            return "\(kb.formatted(.number.precision(.fractionLength(0)))) KB"
         }
 
         let mb = kb / 1024.0
-        return String(format: "%.1f MB", mb)
+        return "\(mb.formatted(.number.precision(.fractionLength(1)))) MB"
     }
 }
 

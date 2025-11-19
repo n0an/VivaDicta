@@ -176,21 +176,21 @@ struct RecordView: View {
                     .foregroundStyle(.secondary)
 
                 HStack {
-                    Text("Prewarm: \(String(format: "%.2fs", vm.transcriptionManager.whisperKitPrewarmDuration))")
+                    Text("Prewarm: \(vm.transcriptionManager.whisperKitPrewarmDuration.formatted(.number.precision(.fractionLength(2))))s")
                         .font(.caption2)
                         .foregroundStyle(.green)
 
                     Text("•")
                         .foregroundStyle(.secondary)
 
-                    Text("Load: \(String(format: "%.2fs", vm.transcriptionManager.whisperKitLoadDuration))")
+                    Text("Load: \(vm.transcriptionManager.whisperKitLoadDuration.formatted(.number.precision(.fractionLength(2))))s")
                         .font(.caption2)
                         .foregroundStyle(.blue)
 
                     Text("•")
                         .foregroundStyle(.secondary)
 
-                    Text("Total: \(String(format: "%.2fs", vm.transcriptionManager.whisperKitTotalInitDuration))")
+                    Text("Total: \(vm.transcriptionManager.whisperKitTotalInitDuration.formatted(.number.precision(.fractionLength(2))))s")
                         .font(.caption2)
                         .foregroundStyle(.primary)
                 }
