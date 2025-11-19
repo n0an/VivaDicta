@@ -74,9 +74,21 @@ struct CloudModelCard: View {
                         onConfigure(model)
                     }) {
                         VStack(alignment: .center, spacing: 0) {
-                            Image(systemName: isAPIConfigured ? "key.circle.fill" : "key.circle")
-                                .foregroundStyle(isAPIConfigured ? .green : .blue)
-                                .font(.system(size: 30))
+                            
+                            if #available(iOS 26.0, *) {
+                                Image(systemName: isAPIConfigured ? "key.circle.fill" : "key.circle")
+                                    .foregroundStyle(isAPIConfigured ? .green : .blue)
+                                    .font(.system(size: 30))
+                            } else {
+                                Image(systemName: "key.fill")
+                                    .foregroundStyle(isAPIConfigured ? .green : .blue)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .padding(6)
+                                    .background {
+                                        Circle()
+                                            .stroke(isAPIConfigured ? .green : .blue, lineWidth: 2)
+                                    }
+                            }
                             
                             if !isAPIConfigured {
                                 Text(isAPIConfigured ? "Configured" : "Add API Key")
@@ -84,6 +96,8 @@ struct CloudModelCard: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        
+                        
                     }
                     .frame(width: 60)
                     .buttonStyle(.plain)
