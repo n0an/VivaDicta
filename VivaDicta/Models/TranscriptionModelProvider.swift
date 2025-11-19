@@ -87,23 +87,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "voxtral-mini-latest",
                 displayName: "Voxtral Mini",
-                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context",
+                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context. New signups get $500 free credits (~500,000 mins)",
                 provider: .mistral,
                 speed: 0.85,
                 accuracy: 0.95,
-                cost: 0.15,  // $0.001/min - very cheap
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
-            CloudModel(
-                name: "stt-async-v3",
-                displayName: "Soniox Async v3",
-                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
-                provider: .soniox,
-                speed: 0.8,
-                accuracy: 0.935,
-                cost: 0.25,  // $0.00167/min
+                cost: 0.15,  // $0.001/min - New signups get $500 free credits (~500,000 mins = 8,333 hours!)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -112,22 +100,22 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-2.5-pro",
                 displayName: "Gemini 2.5 Pro",
-                description: "Google's advanced model with superior noise filtering and speaker diarization",
+                description: "Google's advanced model with superior noise filtering and speaker diarization. Free tier available + $300 Google Cloud credits",
                 provider: .gemini,
                 speed: 0.7,
                 accuracy: 0.96,
-                cost: 0.3,  // $0.002/min
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
             CloudModel(
                 name: "gemini-2.5-flash",
                 displayName: "Gemini 2.5 Flash",
-                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing",
+                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing. Free tier available + $300 Google Cloud credits",
                 provider: .gemini,
                 speed: 0.9,
                 accuracy: 0.7,
-                cost: 0.3,  // $0.002/min
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -155,7 +143,19 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: false,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
-
+            
+            CloudModel(
+                name: "nova-3-medical",
+                displayName: "Nova 3 Medical",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise. New signups get $200 free credits (~25,974 mins)",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.97,
+                cost: 1.0,  // $0.0077/min - New signups get $200 free credits (~25,974 mins)
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+            
             CloudModel(
                 name: "nova-2",
                 displayName: "Nova 2",
@@ -171,11 +171,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "scribe_v2",
                 displayName: "Scribe v2",
-                description: "Enhanced accuracy model supporting 92+ languages with improved accent handling",
+                description: "Enhanced accuracy model supporting 92+ languages with improved accent handling. Free tier: ~150 mins/month",
                 provider: .elevenLabs,
                 speed: 0.75,
                 accuracy: 1.0,
-                cost: 0.95,  // $0.0067/min
+                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -183,11 +183,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "scribe_v1",
                 displayName: "Scribe v1",
-                description: "Industry-leading accuracy with excellent accent handling for batch transcription",
+                description: "Industry-leading accuracy with excellent accent handling for batch transcription. Free tier: ~150 mins/month",
                 provider: .elevenLabs,
                 speed: 0.7,
                 accuracy: 1.0,
-                cost: 0.95,  // $0.0067/min
+                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -205,15 +205,15 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             
             CloudModel(
-                name: "nova-3-medical",
-                displayName: "Nova 3 Medical",
-                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise. New signups get $200 free credits (~25,974 mins)",
-                provider: .deepgram,
-                speed: 0.9,
-                accuracy: 0.97,
-                cost: 1.0,  // $0.0077/min - New signups get $200 free credits (~25,974 mins)
-                supportManyLanguages: false,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+                name: "stt-async-v3",
+                displayName: "Soniox Async v3",
+                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
+                provider: .soniox,
+                speed: 0.8,
+                accuracy: 0.935,
+                cost: 0.25,  // $0.00167/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
             ),
         ]
     }
