@@ -77,39 +77,80 @@ struct LocalModelCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Header with name and badge
+        VStack(alignment: .leading, spacing: 16) {
+            
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(model.displayName)
                         .font(.title3)
                         .fontWeight(.semibold)
 
-                    Text(model.language)
+                    Label(model.language, systemImage: "globe")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    
+                    if model.recommended {
+                        Text("Recommended")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.15))
+                            .cornerRadius(12)
+                    }
                 }
 
-                if model.recommended {
-                    Text("Recommended")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.blue)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.15))
-                        .cornerRadius(12)
-                }
-
+                
                 Spacer()
 
-                if let size = modelSize {
-                    Text(size)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(Color(.systemGray6), in: .capsule)
+                HStack(spacing: 8) {
+                    if let size = modelSize {
+                        Label(size, systemImage: "internaldrive")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                            .background(Color(.systemGray6), in: .capsule)
+                    }
+                    
+                    
+                    Button {
+                        switch downloadStatus {
+                        case .download:
+                            downloadLocalModel()
+                        case .downloading:
+                            cancelDownload()
+                        case .downloaded:
+                            deleteModel()
+                        }
+                    } label: {
+                        if #available(iOS 26.0, *) {
+                            Image(systemName: downloadStatus.actionButtonImage, variableValue: downloadStatus == .downloading ? currentProgress : 1)
+                                .symbolVariableValueMode(.draw)
+                                .foregroundStyle(downloadStatus.actionButtonColor)
+                                .font(.system(size: 30))
+                        } else {
+                            
+                            if downloadStatus == .downloading {
+                                Image(systemName: "xmark")
+                                    .foregroundStyle(downloadStatus.actionButtonColor)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .padding(8)
+                                    .background {
+                                        Circle()
+                                            .trim(from: 0, to: currentProgress)
+                                            .stroke(.black, lineWidth: 3)
+                                            .rotationEffect(.degrees(-90))
+                                    }
+                            } else {
+                                Image(systemName: downloadStatus.actionButtonImage)
+                                    .foregroundStyle(downloadStatus.actionButtonColor)
+                                    .font(.system(size: 30))
+                            }
+                            
+                        }
+                    }
                 }
             }
 
@@ -129,47 +170,6 @@ struct LocalModelCard: View {
                     )
                 }
 
-                Spacer()
-
-                // Local model download/status button
-                
-                
-                Button {
-                    switch downloadStatus {
-                    case .download:
-                        downloadLocalModel()
-                    case .downloading:
-                        cancelDownload()
-                    case .downloaded:
-                        deleteModel()
-                    }
-                } label: {
-                    if #available(iOS 26.0, *) {
-                        Image(systemName: downloadStatus.actionButtonImage, variableValue: downloadStatus == .downloading ? currentProgress : 1)
-                            .symbolVariableValueMode(.draw)
-                            .foregroundStyle(downloadStatus.actionButtonColor)
-                            .font(.system(size: 30))
-                    } else {
-                        
-                        if downloadStatus == .downloading {
-                            Image(systemName: "xmark")
-                                .foregroundStyle(downloadStatus.actionButtonColor)
-                                .font(.system(size: 16, weight: .bold))
-                                .padding(8)
-                                .background {
-                                    Circle()
-                                        .trim(from: 0, to: currentProgress)
-                                        .stroke(.black, lineWidth: 3)
-                                        .rotationEffect(.degrees(-90))
-                                }
-                        } else {
-                            Image(systemName: downloadStatus.actionButtonImage)
-                                .foregroundStyle(downloadStatus.actionButtonColor)
-                                .font(.system(size: 30))
-                        }
-                        
-                    }
-                }
             }
 
             // Description

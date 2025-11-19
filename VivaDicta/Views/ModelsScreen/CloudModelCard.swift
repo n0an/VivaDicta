@@ -96,9 +96,6 @@ struct CloudModelCard: View {
                         color: .orange
                     )
                 }
-
-                Spacer()
-
             }
 
             // Description
