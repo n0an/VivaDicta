@@ -178,13 +178,13 @@ struct LocalModelCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 ModelMetricRow(
                     label: "Speed",
-                    value: Int(modelSpeed * 10),
+                    value: modelSpeed * 10,
                     color: speedColor
                 )
 
                 ModelMetricRow(
                     label: "Accuracy",
-                    value: Int(modelAccuracy * 10),
+                    value: modelAccuracy * 10,
                     color: accuracyColor
                 )
             }

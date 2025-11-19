@@ -115,19 +115,19 @@ struct CloudModelCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 ModelMetricRow(
                     label: "Speed",
-                    value: Int(model.speed * 10),
+                    value: model.speed * 10,
                     color: speedColor
                 )
 
                 ModelMetricRow(
                     label: "Accuracy",
-                    value: Int(model.accuracy * 10),
+                    value: model.accuracy * 10,
                     color: accuracyColor
                 )
 
                 ModelMetricRow(
                     label: "Cost",
-                    value: Int(model.cost * 10),
+                    value: model.cost * 10,
                     color: costColor
                 )
             }
