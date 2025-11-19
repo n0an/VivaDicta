@@ -13,79 +13,67 @@ struct LocalModelCard: View {
 
     @State private var selectedTab: TranscriptionModelType = .local
 
-    // MARK: - Cached Model Type (Performance Optimization)
-
-    /// Cache the typed model to avoid repeated type casting in computed properties
-    private enum TypedModel {
-        case whisperKit(WhisperKitModel)
-        case parakeet(ParakeetModel)
-        case unknown
+    private var isWhisperKit: Bool {
+        model is WhisperKitModel
     }
 
-    private var typedModel: TypedModel {
+    private var isParakeet: Bool {
+        model is ParakeetModel
+    }
+
+    private var isDownloaded: Bool {
         if let whisperModel = model as? WhisperKitModel {
-            return .whisperKit(whisperModel)
+            return downloadManager.downloadStatus(for: whisperModel) == .downloaded
         } else if let parakeetModel = model as? ParakeetModel {
-            return .parakeet(parakeetModel)
+            return downloadManager.downloadStatus(for: parakeetModel) == .downloaded
         }
-        return .unknown
+        return false
     }
-
-    // MARK: - Model Properties
 
     private var downloadStatus: DownloadStatus {
-        switch typedModel {
-        case .whisperKit(let whisperModel):
+        if let whisperModel = model as? WhisperKitModel {
             return downloadManager.downloadStatus(for: whisperModel)
-        case .parakeet(let parakeetModel):
+        } else if let parakeetModel = model as? ParakeetModel {
             return downloadManager.downloadStatus(for: parakeetModel)
-        case .unknown:
-            return .download
         }
+        return .download
     }
+    
 
     private var currentProgress: Double {
-        switch typedModel {
-        case .whisperKit(let whisperModel):
+        if let whisperModel = model as? WhisperKitModel {
             return downloadManager.currentProgress(for: whisperModel)
-        case .parakeet(let parakeetModel):
+        } else if let parakeetModel = model as? ParakeetModel {
             return downloadManager.currentProgress(for: parakeetModel)
-        case .unknown:
-            return 0
         }
+        return 0
     }
 
     private var modelSize: String? {
-        switch typedModel {
-        case .whisperKit(let whisperModel):
+        if let whisperModel = model as? WhisperKitModel {
             return whisperModel.size
-        case .parakeet(let parakeetModel):
+        } else if let parakeetModel = model as? ParakeetModel {
             return parakeetModel.size
-        case .unknown:
-            return nil
         }
+        return nil
     }
-
+    
     private var modelSpeed: Double {
-        switch typedModel {
-        case .whisperKit(let whisperModel):
+        if let whisperModel = model as? WhisperKitModel {
             return whisperModel.speed
-        case .parakeet(let parakeetModel):
+        } else if let parakeetModel = model as? ParakeetModel {
             return parakeetModel.speed
-        case .unknown:
-            return 0.5
         }
+        return 0.5
     }
 
     private var modelAccuracy: Double {
-        switch typedModel {
-        case .whisperKit(let whisperModel):
+        if let whisperModel = model as? WhisperKitModel {
             return whisperModel.accuracy
-        case .parakeet(let parakeetModel):
+        } else if let parakeetModel = model as? ParakeetModel {
             return parakeetModel.accuracy
-        case .unknown:
-            return 0.5
         }
+        return 0.5
     }
 
     private var speedColor: Color {
