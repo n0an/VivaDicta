@@ -74,12 +74,12 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "whisper-large-v3-turbo",
                 displayName: "Whisper Large v3 Turbo",
-                description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed",
+                description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed. Free tier with generous daily limits",
                 provider: .groq,
                 recommended: true,
                 speed: 1.0,
                 accuracy: 0.92,
-                cost: 0.1,  // $0.000667/min - cheapest
+                cost: 0.05,  // $0.000667/min paid tier - Free tier available with 30K tokens/min, 14.4K requests/day (refreshes daily, basically free for personal use)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -135,35 +135,35 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "nova-3-multilingual",
                 displayName: "Nova 3 Multilingual",
-                description: "First AI model with real-time multilingual code-switching across 10+ languages",
+                description: "First AI model with real-time multilingual code-switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
                 provider: .deepgram,
                 speed: 0.95,
                 accuracy: 0.95,
-                cost: 0.75,  // $0.0052/min
+                cost: 0.75,  // $0.0052/min - New signups get $200 free credits (~38,460 mins)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
             CloudModel(
                 name: "nova-3",
                 displayName: "Nova 3",
-                description: "Latest generation model with improved accuracy and speed for English transcription",
+                description: "Latest generation model with improved accuracy and speed for English transcription. New signups get $200 free credits (~46,511 mins)",
                 provider: .deepgram,
                 speed: 0.95,
                 accuracy: 0.95,
-                cost: 0.65,  // $0.0043/min
+                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
                 supportManyLanguages: false,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
-            
+
             CloudModel(
                 name: "nova-2",
                 displayName: "Nova 2",
-                description: "Industry-leading low-latency model optimized for real-time streaming applications",
+                description: "Industry-leading low-latency model optimized for real-time streaming applications. New signups get $200 free credits (~46,511 mins)",
                 provider: .deepgram,
                 speed: 0.9,
                 accuracy: 0.93,
-                cost: 0.65,  // $0.0043/min
+                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -207,11 +207,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "nova-3-medical",
                 displayName: "Nova 3 Medical",
-                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise. New signups get $200 free credits (~25,974 mins)",
                 provider: .deepgram,
                 speed: 0.9,
                 accuracy: 0.97,
-                cost: 1.0,  // $0.0077/min - most expensive
+                cost: 1.0,  // $0.0077/min - New signups get $200 free credits (~25,974 mins)
                 supportManyLanguages: false,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
