@@ -77,9 +77,22 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed",
                 provider: .groq,
                 recommended: true,
-                speed: 0.95,
+                speed: 1.0,
                 accuracy: 0.92,
                 cost: 0.1,  // $0.000667/min - cheapest
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            
+            CloudModel(
+                name: "voxtral-mini-latest",
+                displayName: "Voxtral Mini",
+                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context",
+                provider: .mistral,
+                speed: 0.85,
+                accuracy: 0.95,
+                cost: 0.15,  // $0.001/min - very cheap
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -90,7 +103,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "Enhanced accuracy model supporting 92+ languages with improved accent handling",
                 provider: .elevenLabs,
                 speed: 0.75,
-                accuracy: 0.97,
+                accuracy: 1.0,
                 cost: 1.0,  // $0.0067/min - most expensive
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
@@ -102,7 +115,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "Industry-leading accuracy with excellent accent handling for batch transcription",
                 provider: .elevenLabs,
                 speed: 0.7,
-                accuracy: 0.965,
+                accuracy: 1.0,
                 cost: 1.0,  // $0.0067/min - most expensive
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
@@ -114,7 +127,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
                 provider: .openAI,
                 speed: 0.7,
-                accuracy: 0.96,
+                accuracy: 0.95,
                 cost: 0.9,  // $0.006/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
@@ -137,24 +150,12 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
                 provider: .deepgram,
                 speed: 0.9,
-                accuracy: 0.965,
+                accuracy: 0.96,
                 cost: 0.65,  // $0.0043/min
                 supportManyLanguages: false,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             
-            CloudModel(
-                name: "voxtral-mini-latest",
-                displayName: "Voxtral Mini",
-                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context",
-                provider: .mistral,
-                speed: 0.85,
-                accuracy: 0.95,
-                cost: 0.15,  // $0.001/min - very cheap
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-
             // Gemini Models
             CloudModel(
                 name: "gemini-2.5-pro",
@@ -178,6 +179,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
+            
             CloudModel(
                 name: "stt-async-v3",
                 displayName: "Soniox Async v3",
@@ -204,8 +206,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "NVIDIA's ultra-fast multilingual model supporting 25 languages with automatic language detection",
                 recommended: true,
                 size: "494 MB",
-                speed: 0.99,
-                accuracy: 0.88,
+                speed: 0.95,
+                accuracy: 0.8,
                 ramUsage: 0.8,
                 supportedLanguages: allLanguages
             ),
@@ -229,7 +231,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 displayName: "Whisper Tiny",
                 description: "Smallest and fastest Whisper model, suitable for quick transcriptions",
                 size: "76 MB",
-                speed: 0.95,
+                speed: 1.0,
                 accuracy: 0.6,
                 ramUsage: 0.3,
                 supportedLanguages: allLanguages,
@@ -240,7 +242,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 displayName: "Whisper Tiny (English)",
                 description: "English-optimized tiny model for fast English transcription",
                 size: "76 MB",
-                speed: 0.95,
+                speed: 1.0,
                 accuracy: 0.70,
                 ramUsage: 0.3,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
@@ -252,7 +254,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 displayName: "Whisper Base",
                 description: "Balanced model offering good speed and accuracy, supports multiple languages",
                 size: "140 MB",
-                speed: 0.85,
+                speed: 0.9,
                 accuracy: 0.72,
                 ramUsage: 0.5,
                 supportedLanguages: allLanguages,
@@ -263,7 +265,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 displayName: "Whisper Base (English)",
                 description: "Base model optimized for English, good balance between speed and accuracy",
                 size: "140 MB",
-                speed: 0.85,
+                speed: 0.9,
                 accuracy: 0.75,
                 ramUsage: 0.5,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
@@ -275,8 +277,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 displayName: "Whisper Large",
                 description: "Highest accuracy model with comprehensive language support",
                 size: "626 MB",
-                speed: 0.60,
-                accuracy: 0.98,
+                speed: 0.50,
+                accuracy: 1.0,
                 ramUsage: 2.0,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_626MB"
