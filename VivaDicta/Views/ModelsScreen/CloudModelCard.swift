@@ -17,6 +17,37 @@ struct CloudModelCard: View {
         model.apiKey != nil
     }
 
+    private var speedColor: Color {
+        if model.speed >= 0.75 {
+            return .green  // good
+        } else if model.speed >= 0.6 {
+            return .orange  // medium
+        } else {
+            return .red  // bad
+        }
+    }
+
+    private var accuracyColor: Color {
+        if model.accuracy >= 0.75 {
+            return .green  // good
+        } else if model.accuracy >= 0.6 {
+            return .orange  // medium
+        } else {
+            return .red  // bad
+        }
+    }
+
+    private var costColor: Color {
+        // Cost is reversed - lower is better
+        if model.cost < 0.6 {
+            return .green  // good (cheap)
+        } else if model.cost < 0.75 {
+            return .orange  // medium
+        } else {
+            return .red  // bad (expensive)
+        }
+    }
+
     var body: some View {
         
         VStack(alignment: .leading, spacing: 16) {
@@ -81,27 +112,24 @@ struct CloudModelCard: View {
                     .buttonStyle(.plain)
             }
             
-            HStack(spacing: 0) {
-                // Metrics Section
-                VStack(spacing: 8) {
-                    ModelMetricRow(
-                        label: "Speed",
-                        value: Int(model.speed * 10),
-                        color: .green
-                    )
+            VStack(alignment: .leading, spacing: 8) {
+                ModelMetricRow(
+                    label: "Speed",
+                    value: Int(model.speed * 10),
+                    color: speedColor
+                )
 
-                    ModelMetricRow(
-                        label: "Accuracy",
-                        value: Int(model.accuracy * 10),
-                        color: .orange
-                    )
+                ModelMetricRow(
+                    label: "Accuracy",
+                    value: Int(model.accuracy * 10),
+                    color: accuracyColor
+                )
 
-                    ModelMetricRow(
-                        label: "Cost",
-                        value: Int(model.cost * 10),
-                        color: .red
-                    )
-                }
+                ModelMetricRow(
+                    label: "Cost",
+                    value: Int(model.cost * 10),
+                    color: costColor
+                )
             }
 
             // Description

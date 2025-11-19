@@ -154,22 +154,19 @@ struct LocalModelCard: View {
                 }
             }
 
-            HStack(spacing: 0) {
-                // Metrics Section
-                VStack(spacing: 8) {
-                    ModelMetricRow(
-                        label: "Speed",
-                        value: Int(modelSpeed * 10),
-                        color: .green
-                    )
+            // Metrics Section
+            VStack(spacing: 8) {
+                ModelMetricRow(
+                    label: "Speed",
+                    value: Int(modelSpeed * 10),
+                    color: .green
+                )
 
-                    ModelMetricRow(
-                        label: "Accuracy",
-                        value: Int(modelAccuracy * 10),
-                        color: .orange
-                    )
-                }
-
+                ModelMetricRow(
+                    label: "Accuracy",
+                    value: Int(modelAccuracy * 10),
+                    color: .orange
+                )
             }
 
             // Description

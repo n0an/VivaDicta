@@ -126,7 +126,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing",
                 provider: .gemini,
                 speed: 0.9,
-                accuracy: 0.94,
+                accuracy: 0.7,
                 cost: 0.3,  // $0.002/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
