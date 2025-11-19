@@ -31,7 +31,7 @@ enum DownloadStatus: String {
         case .download:
                 .blue
         case .downloading:
-                .black
+                .primary
         case .downloaded:
                 .red
         }

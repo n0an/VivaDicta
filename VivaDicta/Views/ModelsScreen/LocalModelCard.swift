@@ -195,7 +195,7 @@ struct LocalModelCard: View {
                 .foregroundStyle(.secondary)
         }
         .padding(20)
-        .background(.white)
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(20)
     }
 
