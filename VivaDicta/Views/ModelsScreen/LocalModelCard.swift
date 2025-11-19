@@ -149,10 +149,31 @@ struct LocalModelCard: View {
                         deleteModel()
                     }
                 } label: {
-                    Image(systemName: downloadStatus.actionButtonImage)
-                        .foregroundStyle(downloadStatus.actionButtonColor)
-                        .font(.system(size: 30))
-                        .frame(width: 56, height: 56)
+                    if #available(iOS 26.0, *) {
+                        Image(systemName: downloadStatus.actionButtonImage, variableValue: downloadStatus == .downloading ? currentProgress : 1)
+                            .symbolVariableValueMode(.draw)
+                            .foregroundStyle(downloadStatus.actionButtonColor)
+                            .font(.system(size: 30))
+                    } else {
+                        
+                        if downloadStatus == .downloading {
+                            Image(systemName: "xmark")
+                                .foregroundStyle(downloadStatus.actionButtonColor)
+                                .font(.system(size: 16, weight: .bold))
+                                .padding(8)
+                                .background {
+                                    Circle()
+                                        .trim(from: 0, to: currentProgress)
+                                        .stroke(.black, lineWidth: 3)
+                                        .rotationEffect(.degrees(-90))
+                                }
+                        } else {
+                            Image(systemName: downloadStatus.actionButtonImage)
+                                .foregroundStyle(downloadStatus.actionButtonColor)
+                                .font(.system(size: 30))
+                        }
+                        
+                    }
                 }
             }
 
@@ -160,8 +181,6 @@ struct LocalModelCard: View {
             Text(model.description)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .lineLimit(4)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(20)
         .background(.white)
