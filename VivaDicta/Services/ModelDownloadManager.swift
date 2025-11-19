@@ -20,7 +20,7 @@ enum DownloadStatus: String {
         case .download:
             "arrow.down.circle.fill"
         case .downloading:
-            "xmark.circle.fill"
+            "xmark.circle"
         case .downloaded:
             "trash.circle"
         }
