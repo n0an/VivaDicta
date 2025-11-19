@@ -23,8 +23,9 @@ struct CloudModelCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Header with name and badge
+        
+        VStack(alignment: .leading, spacing: 16) {
+            
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(model.provider.rawValue.capitalized)
@@ -36,40 +37,20 @@ struct CloudModelCard: View {
                     Label(model.language, systemImage: "globe")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    if true {
+                        Text("Recommended")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.15))
+                            .cornerRadius(12)
+                    }
                 }
-
-                if isRecommended {
-                    Text("Recommended")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.blue)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.15))
-                        .cornerRadius(12)
-                }
-
+                
                 Spacer()
-            }
-
-            HStack(spacing: 0) {
-                // Metrics Section
-                VStack(spacing: 8) {
-                    ModelMetricRow(
-                        label: "Speed",
-                        value: Int(model.speed * 10),
-                        color: .green
-                    )
-
-                    ModelMetricRow(
-                        label: "Accuracy",
-                        value: Int(model.accuracy * 10),
-                        color: .orange
-                    )
-                }
-
-                Spacer()
-
+                
                 // Cloud model configuration button
                 
                     Button(action: {
@@ -103,6 +84,26 @@ struct CloudModelCard: View {
                     }
                     .frame(width: 60)
                     .buttonStyle(.plain)
+            }
+            
+            HStack(spacing: 0) {
+                // Metrics Section
+                VStack(spacing: 8) {
+                    ModelMetricRow(
+                        label: "Speed",
+                        value: Int(model.speed * 10),
+                        color: .green
+                    )
+
+                    ModelMetricRow(
+                        label: "Accuracy",
+                        value: Int(model.accuracy * 10),
+                        color: .orange
+                    )
+                }
+
+                Spacer()
+
             }
 
             // Description
