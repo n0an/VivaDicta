@@ -58,7 +58,7 @@ struct ModelMetricRow: View {
 
             ModelProgressBars(value: value, color: color)
 
-            Text(value.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(value))/10" : String(format: "%.1f/10", value))
+            Text(value.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(value))/10" : "\(value.formatted(.number.precision(.fractionLength(1))))/10")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
