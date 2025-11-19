@@ -17,35 +17,40 @@ struct CloudModelCard: View {
         model.apiKey != nil
     }
 
-    private var speedColor: Color {
-        if model.speed >= 0.75 {
+    // MARK: - Metric Colors
+
+    /// Returns color based on metric value (higher is better)
+    private func metricColor(for value: Double, highThreshold: Double = 0.75, mediumThreshold: Double = 0.6) -> Color {
+        if value >= highThreshold {
             return .green  // good
-        } else if model.speed >= 0.6 {
+        } else if value >= mediumThreshold {
             return .orange  // medium
         } else {
             return .red  // bad
         }
     }
 
-    private var accuracyColor: Color {
-        if model.accuracy >= 0.75 {
-            return .green  // good
-        } else if model.accuracy >= 0.6 {
-            return .orange  // medium
-        } else {
-            return .red  // bad
-        }
-    }
-
-    private var costColor: Color {
-        // Cost is reversed - lower is better
-        if model.cost < 0.6 {
+    /// Returns color based on cost (lower is better - inverted scale)
+    private func costMetricColor(for value: Double, lowThreshold: Double = 0.6, mediumThreshold: Double = 0.75) -> Color {
+        if value < lowThreshold {
             return .green  // good (cheap)
-        } else if model.cost < 0.75 {
+        } else if value < mediumThreshold {
             return .orange  // medium
         } else {
             return .red  // bad (expensive)
         }
+    }
+
+    private var speedColor: Color {
+        metricColor(for: model.speed)
+    }
+
+    private var accuracyColor: Color {
+        metricColor(for: model.accuracy)
+    }
+
+    private var costColor: Color {
+        costMetricColor(for: model.cost)
     }
 
     var body: some View {
