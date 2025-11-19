@@ -5,7 +5,7 @@
 //  Created by Anton Novoselov on 2025.09.02
 //
 
-import Foundation
+import SwiftUI
 import FluidAudio
 import WhisperKit
 import os
@@ -14,6 +14,28 @@ enum DownloadStatus: String {
     case download
     case downloading
     case downloaded
+    
+    var actionButtonImage: String {
+        switch self {
+        case .download:
+            "arrow.down.circle.fill"
+        case .downloading:
+            "xmark.circle.fill"
+        case .downloaded:
+            "trash.circle"
+        }
+    }
+    
+    var actionButtonColor: Color {
+        switch self {
+        case .download:
+                .blue
+        case .downloading:
+                .black
+        case .downloaded:
+                .red
+        }
+    }
 }
 
 @Observable

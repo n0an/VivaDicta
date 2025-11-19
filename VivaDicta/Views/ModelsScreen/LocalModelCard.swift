@@ -38,6 +38,7 @@ struct LocalModelCard: View {
         }
         return .download
     }
+    
 
     private var currentProgress: Double {
         if let whisperModel = model as? WhisperKitModel {
@@ -136,40 +137,62 @@ struct LocalModelCard: View {
                 Spacer()
 
                 // Local model download/status button
-                switch downloadStatus {
-                case .download:
-                    Button(action: {
+                
+                
+                Button {
+                    switch downloadStatus {
+                    case .download:
                         downloadLocalModel()
-                    }) {
-                        Image(systemName: "arrow.down.circle.fill")
-                            .foregroundStyle(.blue)
-                            .font(.system(size: 30))
-                            .frame(width: 56, height: 56)
-                    }
-                case .downloading:
-                    VStack(spacing: 4) {
-                        ZStack {
-                            Circle()
-                                .stroke(Color.gray.opacity(0.2), lineWidth: 4)
-                                .frame(width: 56, height: 56)
+                    case .downloading:
+                        // TODO: - add cancel method
+                    case .downloaded:
+                        // TODO: - add delete method
 
-                            Circle()
-                                .trim(from: 0, to: currentProgress)
-                                .stroke(Color.blue, lineWidth: 4)
-                                .rotationEffect(.degrees(-90))
-                                .frame(width: 56, height: 56)
-
-                            Text("\(Int(currentProgress * 100))%")
-                                .font(.caption2)
-                                .fontWeight(.medium)
-                        }
                     }
-                case .downloaded:
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.green)
+                } label: {
+                    Image(systemName: downloadStatus.actionButtonImage)
+                        .foregroundStyle(downloadStatus.actionButtonColor)
+                        .font(.system(size: 30))
                         .frame(width: 56, height: 56)
                 }
+                
+                
+                
+                
+//                switch downloadStatus {
+//                case .download:
+//                    Button(action: {
+//                        downloadLocalModel()
+//                    }) {
+//                        Image(systemName: "arrow.down.circle.fill")
+//                            .foregroundStyle(.blue)
+//                            .font(.system(size: 30))
+//                            .frame(width: 56, height: 56)
+//                    }
+//                case .downloading:
+//                    VStack(spacing: 4) {
+//                        ZStack {
+//                            Circle()
+//                                .stroke(Color.gray.opacity(0.2), lineWidth: 4)
+//                                .frame(width: 56, height: 56)
+//
+//                            Circle()
+//                                .trim(from: 0, to: currentProgress)
+//                                .stroke(Color.blue, lineWidth: 4)
+//                                .rotationEffect(.degrees(-90))
+//                                .frame(width: 56, height: 56)
+//
+//                            Text("\(Int(currentProgress * 100))%")
+//                                .font(.caption2)
+//                                .fontWeight(.medium)
+//                        }
+//                    }
+//                case .downloaded:
+//                    Image(systemName: "checkmark.circle.fill")
+//                        .font(.title2)
+//                        .foregroundStyle(.green)
+//                        .frame(width: 56, height: 56)
+//                }
             }
 
             // Description
