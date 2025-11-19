@@ -76,6 +76,26 @@ struct LocalModelCard: View {
         return 0.5
     }
 
+    private var speedColor: Color {
+        if modelSpeed >= 0.75 {
+            return .green  // good
+        } else if modelSpeed >= 0.6 {
+            return .orange  // medium
+        } else {
+            return .red  // bad
+        }
+    }
+
+    private var accuracyColor: Color {
+        if modelAccuracy >= 0.75 {
+            return .green  // good
+        } else if modelAccuracy >= 0.6 {
+            return .orange  // medium
+        } else {
+            return .red  // bad
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             
@@ -155,17 +175,17 @@ struct LocalModelCard: View {
             }
 
             // Metrics Section
-            VStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
                 ModelMetricRow(
                     label: "Speed",
                     value: Int(modelSpeed * 10),
-                    color: .green
+                    color: speedColor
                 )
 
                 ModelMetricRow(
                     label: "Accuracy",
                     value: Int(modelAccuracy * 10),
-                    color: .orange
+                    color: accuracyColor
                 )
             }
 
