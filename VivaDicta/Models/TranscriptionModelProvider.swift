@@ -73,7 +73,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             CloudModel(
                 name: "openai-gpt-4o",
-                displayName: "OpenAI GPT-4o Transcribe",
+                displayName: "GPT-4o Transcribe",
                 description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
                 provider: .openAI,
                 speed: 0.7,
@@ -83,7 +83,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             CloudModel(
                 name: "whisper-large-v3-turbo",
-                displayName: "Whisper Large v3 Turbo (Groq)",
+                displayName: "Whisper Large v3 Turbo",
                 description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed",
                 provider: .groq,
                 speed: 0.95,
@@ -93,7 +93,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             CloudModel(
                 name: "scribe_v1",
-                displayName: "Scribe v1 (ElevenLabs)",
+                displayName: "Scribe v1",
                 description: "Industry-leading accuracy with excellent accent handling for batch transcription",
                 provider: .elevenLabs,
                 speed: 0.7,
@@ -103,7 +103,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             CloudModel(
                 name: "scribe_v2",
-                displayName: "Scribe v2 (ElevenLabs)",
+                displayName: "Scribe v2",
                 description: "Enhanced accuracy model supporting 92+ languages with improved accent handling",
                 provider: .elevenLabs,
                 speed: 0.75,
@@ -113,7 +113,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             CloudModel(
                 name: "nova-2",
-                displayName: "Nova (Deepgram)",
+                displayName: "Nova",
                 description: "Industry-leading low-latency model optimized for real-time streaming applications",
                 provider: .deepgram,
                 speed: 0.9,
@@ -123,7 +123,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             CloudModel(
                 name: "nova-3-medical",
-                displayName: "Nova-3 Medical (Deepgram)",
+                displayName: "Nova-3 Medical",
                 description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
                 provider: .deepgram,
                 speed: 0.9,
@@ -134,7 +134,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             CloudModel(
                 name: "voxtral-mini-latest",
-                displayName: "Voxtral Mini (Mistral)",
+                displayName: "Voxtral Mini",
                 description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context",
                 provider: .mistral,
                 speed: 0.85,

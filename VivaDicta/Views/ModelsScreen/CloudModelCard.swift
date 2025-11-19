@@ -27,11 +27,13 @@ struct CloudModelCard: View {
             // Header with name and badge
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(model.displayName)
+                    Text(model.provider.rawValue.capitalized)
                         .font(.title3)
                         .fontWeight(.semibold)
-
-                    Text(model.language)
+                    Text(model.displayName)
+                        .font(.title3)
+                        .fontWeight(.regular)
+                    Label(model.language, systemImage: "globe")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
