@@ -133,8 +133,32 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             
             CloudModel(
+                name: "nova-3-multilingual",
+                displayName: "Nova 3 Multilingual",
+                description: "First AI model with real-time multilingual code-switching across 10+ languages",
+                provider: .deepgram,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.75,  // $0.0052/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "nova-3",
+                displayName: "Nova 3",
+                description: "Latest generation model with improved accuracy and speed for English transcription",
+                provider: .deepgram,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.65,  // $0.0043/min
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+            
+            CloudModel(
                 name: "nova-2",
-                displayName: "Nova",
+                displayName: "Nova 2",
                 description: "Industry-leading low-latency model optimized for real-time streaming applications",
                 provider: .deepgram,
                 speed: 0.9,
@@ -142,17 +166,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 cost: 0.65,  // $0.0043/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
-            ),
-            CloudModel(
-                name: "nova-3-medical",
-                displayName: "Nova-3 Medical",
-                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
-                provider: .deepgram,
-                speed: 0.9,
-                accuracy: 0.96,
-                cost: 0.65,  // $0.0043/min
-                supportManyLanguages: false,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             
             CloudModel(
@@ -162,7 +175,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .elevenLabs,
                 speed: 0.75,
                 accuracy: 1.0,
-                cost: 1.0,  // $0.0067/min - most expensive
+                cost: 0.95,  // $0.0067/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -174,7 +187,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .elevenLabs,
                 speed: 0.7,
                 accuracy: 1.0,
-                cost: 1.0,  // $0.0067/min - most expensive
+                cost: 0.95,  // $0.0067/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -189,6 +202,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 cost: 0.9,  // $0.006/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "nova-3-medical",
+                displayName: "Nova 3 Medical",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.97,
+                cost: 1.0,  // $0.0077/min - most expensive
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
         ]
     }
