@@ -2,126 +2,170 @@
 //  CloudModelCard.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2025.09.03
+//  Created by Anton Novoselov on 2025.11.18
 //
 
 import SwiftUI
 
 struct CloudModelCard: View {
-    private var model: CloudModel
-    private var onConfigure: (CloudModel) -> Void
-    
+    let model: CloudModel
+    let onConfigure: (CloudModel) -> Void
+
+    @State private var selectedTab: TranscriptionModelType = .cloud
+
     private var isAPIConfigured: Bool {
         model.apiKey != nil
     }
-    
-    init(model: CloudModel,
-         onConfigure: @escaping (CloudModel) -> Void) {
-        self.model = model
-        self.onConfigure = onConfigure
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center, spacing: 8) {
-                VStack(alignment: .leading, spacing: 8) {
-                    header
-                    metadataSection
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                actionSection
-            }
-            descriptionSection
-        }
-        .padding(16)
-        .background(.gray.opacity(0.1), in: .rect(cornerRadius: 16))
-    }
-    
-    private var header: some View {
-        HStack {
-            Text(model.displayName)
-                .font(.headline.weight(.semibold))
-            statusBadge
-            Spacer()
-        }
-    }
-    
-    private var metadataSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    Text(model.provider.rawValue.capitalized)
-                    Image(systemName: "cloud")
-                }
-                
-                HStack(spacing: 4) {
-                    Text(model.language)
-                    Image(systemName: "globe")
-                }
-            }
-            .foregroundStyle(.secondary)
-            .font(.caption)
-            
-            HStack(spacing: 3) {
-                Text("Accuracy")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                ModelPerformanceStatsDots(value: model.accuracy * 10)
-            }
-        }
-    }
-    
-    private var statusBadge: some View {
-        Group {
-            if !isAPIConfigured {
-                Text("Add API key")
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(.orange, in: .rect(cornerRadius: 16))
-            }
-        }
-    }
-    
-    private var descriptionSection: some View {
-        Text(model.description)
-            .multilineTextAlignment(.leading)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .lineLimit(2)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, 4)
-    }
-    
-    private var actionSection: some View {
-        VStack {
-            configureButton
-        }
-        .font(.callout.weight(.semibold))
-    }
-    
-    var configureButton: some View {
-        Button {
-            onConfigure(model)
-        } label: {
-            HStack(spacing: 4) {
-                Text("Configure")
-                Image(systemName: "gear")
-            }
-        }
 
-        .foregroundStyle(.white)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
-        .background(.blue, in: .capsule)
+    private var speedColor: Color {
+        if model.speed >= 0.75 {
+            return .green  // good
+        } else if model.speed >= 0.6 {
+            return .orange  // medium
+        } else {
+            return .red  // bad
+        }
+    }
+
+    private var accuracyColor: Color {
+        if model.accuracy >= 0.75 {
+            return .green  // good
+        } else if model.accuracy >= 0.6 {
+            return .orange  // medium
+        } else {
+            return .red  // bad
+        }
+    }
+
+    private var costColor: Color {
+        // Cost is reversed - lower is better
+        if model.cost < 0.6 {
+            return .green  // good (cheap)
+        } else if model.cost < 0.75 {
+            return .orange  // medium
+        } else {
+            return .red  // bad (expensive)
+        }
+    }
+
+    var body: some View {
+        
+        VStack(alignment: .leading, spacing: 16) {
+            
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(model.provider.rawValue.capitalized)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    Text(model.displayName)
+                        .font(.title3)
+                        .fontWeight(.regular)
+                    Label(model.language, systemImage: "globe")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if model.recommended {
+                        Text("Recommended")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.15))
+                            .cornerRadius(12)
+                    }
+                }
+                
+                Spacer()
+                
+                // Cloud model configuration button
+                
+                    Button(action: {
+                        onConfigure(model)
+                    }) {
+                        VStack(alignment: .center, spacing: 0) {
+                            
+                            if #available(iOS 26.0, *) {
+                                Image(systemName: isAPIConfigured ? "key.circle.fill" : "key.circle")
+                                    .foregroundStyle(isAPIConfigured ? .green : .blue)
+                                    .font(.system(size: 30))
+                            } else {
+                                Image(systemName: "key.fill")
+                                    .foregroundStyle(isAPIConfigured ? .green : .blue)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .padding(6)
+                                    .background {
+                                        Circle()
+                                            .stroke(isAPIConfigured ? .green : .blue, lineWidth: 2)
+                                    }
+                            }
+                            
+                            if !isAPIConfigured {
+                                Text(isAPIConfigured ? "Configured" : "Add API Key")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        
+                    }
+                    .frame(width: 60)
+                    .buttonStyle(.plain)
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
+                ModelMetricRow(
+                    label: "Speed",
+                    value: model.speed * 10,
+                    color: speedColor
+                )
+
+                ModelMetricRow(
+                    label: "Accuracy",
+                    value: model.accuracy * 10,
+                    color: accuracyColor
+                )
+
+                ModelMetricRow(
+                    label: "Cost",
+                    value: model.cost * 10,
+                    color: costColor
+                )
+            }
+
+            // Description
+            Text(model.description)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .shadow(color: .primary.opacity(0.5), radius: 2, x: 2, y: 2)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(.primary.opacity(0.3), lineWidth: 0.5)
+        }
     }
 }
 
 #Preview {
-    CloudModelCard(
-        model: TranscriptionModelProvider.allCloudModels[0],
-        onConfigure: {_ in print("configure") }
-    )
-}
+    VStack(spacing: 20) {
+        // Preview with unconfigured cloud model
+        if let cloudModel = TranscriptionModelProvider.allCloudModels.first {
+            CloudModelCard(
+                model: cloudModel,
+                onConfigure: { _ in print("Configure") }
+            )
+        }
 
+        // Preview with configured cloud model (simulated)
+        if let cloudModel = TranscriptionModelProvider.allCloudModels.last {
+            CloudModelCard(
+                model: cloudModel,
+                onConfigure: { _ in print("Configure") }
+            )
+        }
+    }
+    .padding()
+//    .background(.gray)
+}

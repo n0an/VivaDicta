@@ -120,7 +120,7 @@ struct ModeEditView: View {
                     
                     if viewModel.aiEnhanceEnabled {
                         Picker(selection: $viewModel.aiProvider) {
-                            ForEach(AIProvider.allCases) { provider in
+                            ForEach(AIProvider.generalProviders) { provider in
                                 Text(provider.rawValue.capitalized).tag(provider)
                             }
                             

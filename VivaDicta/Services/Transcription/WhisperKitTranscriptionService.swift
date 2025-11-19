@@ -84,7 +84,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
             lastPrewarmDuration = prewarmDuration
 
             modelState = .prewarmed
-            logger.logNotice("✅ Model prewarmed successfully in \(String(format: "%.2f", prewarmDuration)) seconds")
+            logger.logNotice("✅ Model prewarmed successfully in \(prewarmDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
 
             // Load models
             logger.logNotice("📚 Loading model: \(modelPath)")
@@ -100,8 +100,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             let totalDuration = Date().timeIntervalSince(totalStartTime)
             lastTotalInitDuration = totalDuration
-            logger.logNotice("✅ WhisperKit model loaded and ready in \(String(format: "%.2f", loadDuration)) seconds: \(modelPath)")
-            logger.logNotice("⏱️ Total initialization time: \(String(format: "%.2f", totalDuration)) seconds (prewarm: \(String(format: "%.2f", self.lastPrewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s)")
+            logger.logNotice("✅ WhisperKit model loaded and ready in \(loadDuration.formatted(.number.precision(.fractionLength(2)))) seconds: \(modelPath)")
+            logger.logNotice("⏱️ Total initialization time: \(totalDuration.formatted(.number.precision(.fractionLength(2)))) seconds (prewarm: \(self.lastPrewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s)")
 
         } catch {
             modelState = .unloaded

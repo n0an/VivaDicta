@@ -15,7 +15,9 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case groq
     case elevenLabs
     case deepgram
+    case mistral
     case gemini
+    case soniox
     
     var id: Self { self }
     
@@ -55,9 +57,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .elevenLabs
         case .deepgram:
             return .deepgram
+        case .mistral:
+            return .mistral
         case .gemini:
             return .gemini
-        case .parakeet, .whisperKit:
+        default:
             return nil
         }
     }
@@ -68,42 +72,26 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static var allCloudModels: [CloudModel] {
         [
             CloudModel(
-                name: "openai-gpt-4o",
-                displayName: "OpenAI GPT-4o Transcribe",
-                description: "OpenAI Speech-to-text model powered by GPT-4o",
-                provider: .openAI,
-                speed: 0.7,
-                accuracy: 0.96,
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            CloudModel(
                 name: "whisper-large-v3-turbo",
-                displayName: "Whisper Large v3 Turbo (Groq)",
-                description: "Whisper Large v3 Turbo model with Groq's lightning-speed inference",
+                displayName: "Whisper Large v3 Turbo",
+                description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed. Free tier with generous daily limits",
                 provider: .groq,
-                speed: 0.65,
-                accuracy: 0.96,
+                recommended: true,
+                speed: 1.0,
+                accuracy: 0.92,
+                cost: 0.05,  // $0.000667/min paid tier - Free tier available with 30K tokens/min, 14.4K requests/day (refreshes daily, basically free for personal use)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
+            
             CloudModel(
-                name: "scribe_v1",
-                displayName: "Scribe v1 (ElevenLabs)",
-                description: "ElevenLabs' Scribe model for fast and accurate transcription.",
-                provider: .elevenLabs,
-                speed: 0.7,
-                accuracy: 0.98,
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            CloudModel(
-                name: "nova-2",
-                displayName: "Nova (Deepgram)",
-                description: "Deepgram's Nova model for fast, accurate, and cost-effective transcription.",
-                provider: .deepgram,
-                speed: 0.9,
+                name: "voxtral-mini-latest",
+                displayName: "Voxtral Mini",
+                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context. New signups get $500 free credits (~500,000 mins)",
+                provider: .mistral,
+                speed: 0.85,
                 accuracy: 0.95,
+                cost: 0.15,  // $0.001/min - New signups get $500 free credits (~500,000 mins = 8,333 hours!)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -112,20 +100,140 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-2.5-pro",
                 displayName: "Gemini 2.5 Pro",
-                description: "Google's advanced multimodal model with high-quality transcription capabilities.",
+                description: "Google's advanced model with superior noise filtering and speaker diarization. Free tier available + $300 Google Cloud credits",
                 provider: .gemini,
                 speed: 0.7,
                 accuracy: 0.96,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
             CloudModel(
                 name: "gemini-2.5-flash",
                 displayName: "Gemini 2.5 Flash",
-                description: "Google's optimized model for low-latency transcription with multimodal support.",
+                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing. Free tier available + $300 Google Cloud credits",
                 provider: .gemini,
                 speed: 0.9,
-                accuracy: 0.94,
+                accuracy: 0.7,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "nova-3-multilingual",
+                displayName: "Nova 3 Multilingual",
+                description: "First AI model with real-time multilingual code-switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
+                provider: .deepgram,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.75,  // $0.0052/min - New signups get $200 free credits (~38,460 mins)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "nova-3",
+                displayName: "Nova 3",
+                description: "Latest generation model with improved accuracy and speed for English transcription. New signups get $200 free credits (~46,511 mins)",
+                provider: .deepgram,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+            
+            CloudModel(
+                name: "nova-3-medical",
+                displayName: "Nova 3 Medical",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise. New signups get $200 free credits (~25,974 mins)",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.97,
+                cost: 1.0,  // $0.0077/min - New signups get $200 free credits (~25,974 mins)
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+            
+            CloudModel(
+                name: "nova-2",
+                displayName: "Nova 2",
+                description: "Industry-leading low-latency model optimized for real-time streaming applications. New signups get $200 free credits (~46,511 mins)",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.93,
+                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "scribe_v2",
+                displayName: "Scribe v2",
+                description: "Enhanced accuracy model supporting 92+ languages with improved accent handling. Free tier: ~150 mins/month",
+                provider: .elevenLabs,
+                speed: 0.75,
+                accuracy: 1.0,
+                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "scribe_v1",
+                displayName: "Scribe v1",
+                description: "Industry-leading accuracy with excellent accent handling for batch transcription. Free tier: ~150 mins/month",
+                provider: .elevenLabs,
+                speed: 0.7,
+                accuracy: 1.0,
+                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "gpt-4o-transcribe",
+                displayName: "GPT-4o Transcribe",
+                description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
+                provider: .openAI,
+                speed: 0.7,
+                accuracy: 0.95,
+                cost: 0.9,  // $0.006/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "gpt-4o-mini-transcribe",
+                displayName: "GPT-4o Mini Transcribe",
+                description: "Cost-effective OpenAI model for high-volume transcription with good accuracy",
+                provider: .openAI,
+                speed: 0.75,
+                accuracy: 0.9,
+                cost: 0.4,  // $0.003/min - half the price of GPT-4o
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "whisper-1",
+                displayName: "Whisper",
+                description: "OpenAI's legacy Whisper model with proven reliability for general transcription",
+                provider: .openAI,
+                speed: 0.7,
+                accuracy: 0.93,
+                cost: 0.9,  // $0.006/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "stt-async-v3",
+                displayName: "Soniox Async v3",
+                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
+                provider: .soniox,
+                speed: 0.8,
+                accuracy: 0.935,
+                cost: 0.25,  // $0.00167/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -140,21 +248,22 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v3",
-                displayName: "Parakeet V3",
-                description: "NVIDIA's Parakeet V3 model with multilingual support across English and 25 European languages.",
+                displayName: "Nvidia Parakeet V3",
+                description: "NVIDIA's ultra-fast multilingual model supporting 25 languages with automatic language detection",
+                recommended: true,
                 size: "494 MB",
-                speed: 0.99,
-                accuracy: 0.94,
+                speed: 0.95,
+                accuracy: 0.8,
                 ramUsage: 0.8,
                 supportedLanguages: allLanguages
             ),
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v2",
-                displayName: "Parakeet V2",
-                description: "NVIDIA's Parakeet V2 model optimized for lightning-fast English-only transcription.",
+                displayName: "Nvidia Parakeet V2",
+                description: "NVIDIA's blazing-fast English model with superior accuracy for real-time transcription",
                 size: "474 MB",
                 speed: 0.99,
-                accuracy: 0.94,
+                accuracy: 0.90,
                 ramUsage: 0.8,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
@@ -165,21 +274,21 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             WhisperKitModel(
                 name: "whisperkit-tiny",
-                displayName: "WhisperKit Tiny",
-                description: "Smallest and fastest WhisperKit model, suitable for quick transcriptions",
+                displayName: "Whisper Tiny",
+                description: "Smallest and fastest Whisper model, suitable for quick transcriptions",
                 size: "76 MB",
-                speed: 0.95,
-                accuracy: 0.65,
+                speed: 1.0,
+                accuracy: 0.6,
                 ramUsage: 0.3,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-tiny"
             ),
             WhisperKitModel(
                 name: "whisperkit-tiny.en",
-                displayName: "WhisperKit Tiny (English)",
+                displayName: "Whisper Tiny (English)",
                 description: "English-optimized tiny model for fast English transcription",
                 size: "76 MB",
-                speed: 0.95,
+                speed: 1.0,
                 accuracy: 0.70,
                 ramUsage: 0.3,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
@@ -188,70 +297,48 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             WhisperKitModel(
                 name: "whisperkit-base",
-                displayName: "WhisperKit Base",
-                description: "Balanced model offering good speed and accuracy",
+                displayName: "Whisper Base",
+                description: "Balanced model offering good speed and accuracy, supports multiple languages",
                 size: "140 MB",
-                speed: 0.85,
-                accuracy: 0.75,
+                speed: 0.9,
+                accuracy: 0.72,
                 ramUsage: 0.5,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-base"
             ),
             WhisperKitModel(
                 name: "whisperkit-base.en",
-                displayName: "WhisperKit Base (English)",
-                description: "English-optimized base model with good balance",
+                displayName: "Whisper Base (English)",
+                description: "Base model optimized for English, good balance between speed and accuracy",
                 size: "140 MB",
-                speed: 0.85,
-                accuracy: 0.78,
+                speed: 0.9,
+                accuracy: 0.75,
                 ramUsage: 0.5,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
                 whisperKitModelName: "openai_whisper-base.en"
             ),
             
             WhisperKitModel(
-                name: "whisperkit-small",
-                displayName: "WhisperKit Small",
-                description: "More accurate model with reasonable speed",
-                size: "487 MB",
-                speed: 0.70,
-                accuracy: 0.85,
-                ramUsage: 1.0,
-                supportedLanguages: allLanguages,
-                whisperKitModelName: "openai_whisper-small"
-            ),
-            WhisperKitModel(
-                name: "whisperkit-small.en",
-                displayName: "WhisperKit Small (English)",
-                description: "English-optimized small model with improved accuracy",
-                size: "487 MB",
-                speed: 0.70,
-                accuracy: 0.88,
-                ramUsage: 1.0,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false),
-                whisperKitModelName: "openai_whisper-small.en"
-            ),
-            
-            WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_626MB",
-                displayName: "WhisperKit Large v3 v20240930 626 MB",
-                description: "Most accurate WhisperKit model with state-of-the-art performance",
+                displayName: "Whisper Large",
+                description: "Highest accuracy model with comprehensive language support",
                 size: "626 MB",
-                speed: 0.80,
-                accuracy: 0.98,
-                ramUsage: 3.0,
+                speed: 0.50,
+                accuracy: 1.0,
+                ramUsage: 2.0,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_626MB"
             ),
             
             WhisperKitModel(
                 name: "whisperkit-large-v3-v20240930_turbo_632MB",
-                displayName: "WhisperKit Large v3 Turbo v20240930 Optimized 632 MB",
-                description: "Optimized for streaming with turbo inference, optimized size 632 MB",
+                displayName: "Whisper Large Turbo",
+                description: "Optimized large model with faster speed and excellent accuracy",
+                recommended: true,
                 size: "632 MB",
-                speed: 0.95,
-                accuracy: 0.96,
-                ramUsage: 2.0,
+                speed: 0.75,
+                accuracy: 0.95,
+                ramUsage: 1.2,
                 supportedLanguages: allLanguages,
                 whisperKitModelName: "openai_whisper-large-v3-v20240930_turbo_632MB"
             ),

@@ -5,7 +5,7 @@
 //  Created by Anton Novoselov on 2025.09.02
 //
 
-import Foundation
+import SwiftUI
 import FluidAudio
 import WhisperKit
 import os
@@ -14,6 +14,28 @@ enum DownloadStatus: String {
     case download
     case downloading
     case downloaded
+    
+    var actionButtonImage: String {
+        switch self {
+        case .download:
+            "arrow.down.circle.fill"
+        case .downloading:
+            "xmark.circle"
+        case .downloaded:
+            "trash.circle"
+        }
+    }
+    
+    var actionButtonColor: Color {
+        switch self {
+        case .download:
+                .blue
+        case .downloading:
+                .primary
+        case .downloaded:
+                .red
+        }
+    }
 }
 
 @Observable
@@ -21,19 +43,32 @@ class ModelDownloadManager: @unchecked Sendable {
     public var downloadProgress: [String: Double] = [:]
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
+    private var downloadTasks: [String: Task<Void, any Error>] = [:]
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ModelDownloadManager")
     public var onModelDownloaded: ((any TranscriptionModel) -> Void)?
 
     // MARK: - Public Interface
 
     public func downloadModel(_ model: any TranscriptionModel) async throws {
-        if let parakeetModel = model as? ParakeetModel {
-            try await downloadParakeetModel(parakeetModel)
-        } else if let whisperKitModel = model as? WhisperKitModel {
-            try await downloadWhisperKitModel(whisperKitModel)
-        } else {
-            throw ModelDownloadError.unsupportedModelType
+        let task = Task {
+            if let parakeetModel = model as? ParakeetModel {
+                try await downloadParakeetModel(parakeetModel)
+            } else if let whisperKitModel = model as? WhisperKitModel {
+                try await downloadWhisperKitModel(whisperKitModel)
+            } else {
+                throw ModelDownloadError.unsupportedModelType
+            }
         }
+
+        // Store the task for potential cancellation
+        downloadTasks[model.name] = task
+
+        // Wait for the task to complete and clean up
+        defer {
+            downloadTasks.removeValue(forKey: model.name)
+        }
+
+        try await task.value
     }
 
     public func handleModelDownloadError(_ model: any TranscriptionModel, _ error: any Error) async {
@@ -60,6 +95,42 @@ class ModelDownloadManager: @unchecked Sendable {
             return downloadStatuses[model.name] ?? (whisperKitModel.isDownloaded ? .downloaded : .download)
         }
         return .download
+    }
+
+    public func cancelDownload(for model: any TranscriptionModel) {
+        // Cancel the download task if it exists
+        if let task = downloadTasks[model.name] {
+            task.cancel()
+            downloadTasks.removeValue(forKey: model.name)
+        }
+
+        // Reset status and progress
+        Task { @MainActor in
+            downloadStatuses[model.name] = .download
+            downloadProgress.removeValue(forKey: model.name)
+            downloadProgress.removeValue(forKey: model.name + "_main")
+            downloadProgress.removeValue(forKey: model.name + "_coreml")
+        }
+
+        logger.logNotice("❌ Cancelled download of \(model.name)")
+    }
+
+    public func deleteModel(_ model: any TranscriptionModel) async throws {
+        if let parakeetModel = model as? ParakeetModel {
+            try parakeetModel.deleteModel()
+            await MainActor.run {
+                downloadStatuses[model.name] = .download
+            }
+            logger.logNotice("🗑️ Deleted model \(model.name)")
+        } else if let whisperKitModel = model as? WhisperKitModel {
+            try whisperKitModel.deleteModel()
+            await MainActor.run {
+                downloadStatuses[model.name] = .download
+            }
+            logger.logNotice("🗑️ Deleted model \(model.name)")
+        } else {
+            throw ModelDownloadError.unsupportedModelType
+        }
     }
 
 
@@ -191,7 +262,7 @@ class ModelDownloadManager: @unchecked Sendable {
             let prewarmStart = Date()
             try await whisperKit.prewarmModels()
             let prewarmDuration = Date().timeIntervalSince(prewarmStart)
-            logger.logNotice("✅ Model prewarmed in \(String(format: "%.2f", prewarmDuration)) seconds")
+            logger.logNotice("✅ Model prewarmed in \(prewarmDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
 
             // Cancel the animation task and set final progress
             progressTask.cancel()
@@ -215,7 +286,7 @@ class ModelDownloadManager: @unchecked Sendable {
             let loadStart = Date()
             try await whisperKit.loadModels()
             let loadDuration = Date().timeIntervalSince(loadStart)
-            logger.logNotice("✅ Model loaded in \(String(format: "%.2f", loadDuration)) seconds")
+            logger.logNotice("✅ Model loaded in \(loadDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
 
             // Cancel the animation task and set final progress
             loadProgressTask.cancel()
@@ -223,7 +294,7 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
                 logger.logNotice("✅ Successfully downloaded and prepared \(model.displayName)")
-                logger.logNotice("⏱️ Preparation time: prewarm: \(String(format: "%.2f", prewarmDuration))s, load: \(String(format: "%.2f", loadDuration))s")
+                logger.logNotice("⏱️ Preparation time: prewarm: \(prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s")
             }
 
             // Unload models after download to free memory
@@ -279,13 +350,13 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.downloadProgress[modelName] = Double(currentProgress)
                 updateCount += 1
                 if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
-                    logger.logInfo("📊 Progress update #\(updateCount): \(String(format: "%.1f", currentProgress * 100))%")
+                    logger.logInfo("📊 Progress update #\(updateCount): \((currentProgress * 100).formatted(.number.precision(.fractionLength(1))))%")
                 }
             }
 
             // Stop when we're close enough to target or time limit exceeded
             if currentProgress >= targetProgress - 0.001 || elapsedTime >= maxDuration {
-                logger.logInfo("🏁 Animation ended: final progress \(String(format: "%.1f", currentProgress * 100))%")
+                logger.logInfo("🏁 Animation ended: final progress \((currentProgress * 100).formatted(.number.precision(.fractionLength(1))))%")
                 break
             }
 

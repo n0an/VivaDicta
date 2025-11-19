@@ -9,8 +9,6 @@ import SwiftUI
 import SwiftData
 
 struct MainView: View {
-    @Environment(\.colorScheme) var colorScheme
-
     @Bindable var appState: AppState
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false

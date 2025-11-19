@@ -371,7 +371,7 @@ class AIService {
     
     private func getSystemMessage() -> String {
         let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        return String(format: PromptsTemplates.systemPrompt, promptInstructions)
+        return PromptsTemplates.systemPrompt(with: promptInstructions)
     }
     
     
@@ -416,6 +416,10 @@ class AIService {
             return await verifyElevenLabsAPIKey(key)
         case .deepgram:
             return await verifyDeepgramAPIKey(key)
+        case .mistral:
+            return await verifyMistralAPIKey(key)
+        case .soniox:
+            return await verifySonioxAPIKey(key)
         default:
             return await verifyOpenAICompatibleAPIKey(key, provider: provider)
         }
@@ -539,6 +543,59 @@ class AIService {
             
         } catch {
             logger.logError("Deepgram API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+    
+    private func verifyMistralAPIKey(_ key: String) async -> Bool {
+        let url = URL(string: "https://api.mistral.ai/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.logError("Mistral API key verification failed: Invalid response from server.")
+                return false
+            }
+
+            if httpResponse.statusCode == 200 {
+                return true
+            } else {
+                if let body = String(data: data, encoding: .utf8) {
+                    logger.logError("Mistral API key verification failed with status code \(httpResponse.statusCode): \(body)")
+                } else {
+                    logger.logError("Mistral API key verification failed with status code \(httpResponse.statusCode) and no response body.")
+                }
+                return false
+            }
+        } catch {
+            logger.logError("Mistral API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+    
+    private func verifySonioxAPIKey(_ key: String) async -> Bool {
+        guard let url = URL(string: "https://api.soniox.com/v1/files") else {
+            return false
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+
+            return httpResponse.statusCode == 200
+        } catch {
+            logger.logError("Soniox API key verification failed: \(error.localizedDescription)")
             return false
         }
     }

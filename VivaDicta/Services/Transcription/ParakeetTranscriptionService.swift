@@ -52,7 +52,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         let audioSamples = try await readAndConvertAudio(from: audioURL)
         let durationSeconds = Double(audioSamples.count) / 16000.0
 
-        logger.logNotice("📊 Audio duration: \(String(format: "%.2f", durationSeconds)) seconds")
+        logger.logNotice("📊 Audio duration: \(durationSeconds.formatted(.number.precision(.fractionLength(2)))) seconds")
 
         // Apply VAD for recordings longer than 20 seconds
         // VAD setting should be shared with keyboard extension
@@ -115,7 +115,7 @@ class ParakeetTranscriptionService: TranscriptionService {
 
             // Concatenate all speech segments
             let totalSamples = segments.reduce(0) { $0 + $1.count }
-            logger.logNotice("📊 VAD extracted \(segments.count) segments, total: \(String(format: "%.2f", Double(totalSamples) / 16000.0))s")
+            logger.logNotice("📊 VAD extracted \(segments.count) segments, total: \((Double(totalSamples) / 16000.0).formatted(.number.precision(.fractionLength(2))))s")
 
             return segments.flatMap { $0 }
         } catch {
