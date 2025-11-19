@@ -138,8 +138,13 @@ struct CloudModelCard: View {
                 .foregroundStyle(.secondary)
         }
         .padding(20)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(20)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+                .stroke(.primary, lineWidth: 0.5)
+                .shadow(color: .secondary, radius: 2, x: 4, y: 4)
+        }
+        
     }
 }
 
@@ -162,5 +167,5 @@ struct CloudModelCard: View {
         }
     }
     .padding()
-    .background(.gray)
+//    .background(.gray)
 }
