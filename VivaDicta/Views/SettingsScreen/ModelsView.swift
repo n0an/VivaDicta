@@ -28,7 +28,8 @@ struct ModelsView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            // Main segmented control at the top
             Picker("Model type", selection: $modelType) {
                 ForEach(TranscriptionModelType.allCases, id: \.self) {
                     Text($0.rawValue.capitalized)
@@ -36,27 +37,26 @@ struct ModelsView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
+            .padding(.vertical, 12)
 
             ScrollView {
-                ForEach(filteredModels, id: \.id) { model in
-                    if let model = model as? ParakeetModel {
-                        ParakeetModelCard(
+                VStack(spacing: 16) {
+                    ForEach(filteredModels, id: \.id) { model in
+                        UnifiedModelCard(
                             model: model,
-                            downloadManager: downloadManager)
-                    } else if let model = model as? WhisperKitModel {
-                        WhisperKitModelCard(
-                            model: model,
-                            downloadManager: downloadManager)
-                    } else if let model = model as? CloudModel {
-                        CloudModelCard(
-                            model: model,
-                            onConfigure: { model in
-                                configureCloudModel(model: model)
-                            })
+                            modelType: modelType,
+                            downloadManager: downloadManager,
+                            onConfigure: { cloudModel in
+                                configureCloudModel(model: cloudModel)
+                            }
+                        )
+                        .padding(.horizontal)
                     }
                 }
+                .padding(.vertical)
             }
-            .scrollContentBackground(.visible)
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemGroupedBackground))
         }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(
@@ -67,6 +67,7 @@ struct ModelsView: View {
         })
         .navigationTitle("Transcription Models")
         .navigationBarTitleDisplayMode(.large)
+        .background(Color(.systemGroupedBackground))
     }
 
     var filteredModels: [any TranscriptionModel] {
