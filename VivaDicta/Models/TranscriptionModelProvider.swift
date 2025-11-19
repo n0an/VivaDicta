@@ -84,7 +84,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
             
-            
             CloudModel(
                 name: "voxtral-mini-latest",
                 displayName: "Voxtral Mini",
@@ -95,6 +94,65 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 cost: 0.15,  // $0.001/min - very cheap
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "stt-async-v3",
+                displayName: "Soniox Async v3",
+                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
+                provider: .soniox,
+                speed: 0.8,
+                accuracy: 0.935,
+                cost: 0.25,  // $0.00167/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            // Gemini Models
+            CloudModel(
+                name: "gemini-2.5-pro",
+                displayName: "Gemini 2.5 Pro",
+                description: "Google's advanced model with superior noise filtering and speaker diarization",
+                provider: .gemini,
+                speed: 0.7,
+                accuracy: 0.96,
+                cost: 0.3,  // $0.002/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "gemini-2.5-flash",
+                displayName: "Gemini 2.5 Flash",
+                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing",
+                provider: .gemini,
+                speed: 0.9,
+                accuracy: 0.94,
+                cost: 0.3,  // $0.002/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
+            CloudModel(
+                name: "nova-2",
+                displayName: "Nova",
+                description: "Industry-leading low-latency model optimized for real-time streaming applications",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.93,
+                cost: 0.65,  // $0.0043/min
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "nova-3-medical",
+                displayName: "Nova-3 Medical",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.96,
+                cost: 0.65,  // $0.0043/min
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
             
             CloudModel(
@@ -132,65 +190,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-
-            CloudModel(
-                name: "nova-2",
-                displayName: "Nova",
-                description: "Industry-leading low-latency model optimized for real-time streaming applications",
-                provider: .deepgram,
-                speed: 0.9,
-                accuracy: 0.93,
-                cost: 0.65,  // $0.0043/min
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            CloudModel(
-                name: "nova-3-medical",
-                displayName: "Nova-3 Medical",
-                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise",
-                provider: .deepgram,
-                speed: 0.9,
-                accuracy: 0.96,
-                cost: 0.65,  // $0.0043/min
-                supportManyLanguages: false,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
-            ),
-            
-            // Gemini Models
-            CloudModel(
-                name: "gemini-2.5-pro",
-                displayName: "Gemini 2.5 Pro",
-                description: "Google's advanced model with superior noise filtering and speaker diarization",
-                provider: .gemini,
-                speed: 0.7,
-                accuracy: 0.96,
-                cost: 0.3,  // $0.002/min
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            CloudModel(
-                name: "gemini-2.5-flash",
-                displayName: "Gemini 2.5 Flash",
-                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing",
-                provider: .gemini,
-                speed: 0.9,
-                accuracy: 0.94,
-                cost: 0.3,  // $0.002/min
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
-            CloudModel(
-                name: "stt-async-v3",
-                displayName: "Soniox Async v3",
-                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
-                provider: .soniox,
-                speed: 0.8,
-                accuracy: 0.935,
-                cost: 0.25,  // $0.00167/min
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            )
         ]
     }
     
