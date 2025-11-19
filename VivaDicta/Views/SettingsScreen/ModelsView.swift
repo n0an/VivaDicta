@@ -63,7 +63,6 @@ struct ModelsView: View {
                 .padding(.vertical)
             }
             .scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground))
         }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(
@@ -74,7 +73,6 @@ struct ModelsView: View {
         })
         .navigationTitle("Transcription Models")
         .navigationBarTitleDisplayMode(.large)
-        .background(Color(.systemGroupedBackground))
     }
 
     var filteredModels: [any TranscriptionModel] {
