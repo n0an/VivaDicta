@@ -79,6 +79,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 recommended: true,
                 speed: 0.95,
                 accuracy: 0.92,
+                cost: 0.1,  // $0.000667/min - cheapest
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -90,10 +91,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .elevenLabs,
                 speed: 0.75,
                 accuracy: 0.97,
+                cost: 1.0,  // $0.0067/min - most expensive
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
             CloudModel(
                 name: "scribe_v1",
                 displayName: "Scribe v1",
@@ -101,10 +103,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .elevenLabs,
                 speed: 0.7,
                 accuracy: 0.965,
+                cost: 1.0,  // $0.0067/min - most expensive
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
             CloudModel(
                 name: "openai-gpt-4o",
                 displayName: "GPT-4o Transcribe",
@@ -112,10 +115,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .openAI,
                 speed: 0.7,
                 accuracy: 0.96,
+                cost: 0.9,  // $0.006/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
             CloudModel(
                 name: "nova-2",
                 displayName: "Nova",
@@ -123,6 +127,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .deepgram,
                 speed: 0.9,
                 accuracy: 0.93,
+                cost: 0.65,  // $0.0043/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -133,6 +138,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .deepgram,
                 speed: 0.9,
                 accuracy: 0.965,
+                cost: 0.65,  // $0.0043/min
                 supportManyLanguages: false,
                 supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
@@ -144,10 +150,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .mistral,
                 speed: 0.85,
                 accuracy: 0.95,
+                cost: 0.15,  // $0.001/min - very cheap
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
             // Gemini Models
             CloudModel(
                 name: "gemini-2.5-pro",
@@ -156,6 +163,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .gemini,
                 speed: 0.7,
                 accuracy: 0.96,
+                cost: 0.3,  // $0.002/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -166,6 +174,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .gemini,
                 speed: 0.9,
                 accuracy: 0.94,
+                cost: 0.3,  // $0.002/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
@@ -176,6 +185,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .soniox,
                 speed: 0.8,
                 accuracy: 0.935,
+                cost: 0.25,  // $0.00167/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             )

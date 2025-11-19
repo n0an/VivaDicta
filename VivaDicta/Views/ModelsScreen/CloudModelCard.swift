@@ -95,6 +95,12 @@ struct CloudModelCard: View {
                         value: Int(model.accuracy * 10),
                         color: .orange
                     )
+
+                    ModelMetricRow(
+                        label: "Cost",
+                        value: Int(model.cost * 10),
+                        color: .red
+                    )
                 }
             }
 

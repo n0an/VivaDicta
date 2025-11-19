@@ -14,9 +14,10 @@ struct CloudModel: @MainActor TranscriptionModel {
     let description: String
     let provider: TranscriptionModelProvider
     let recommended: Bool
-    
+
     let speed: Double
     let accuracy: Double
+    let cost: Double  // 0-1 scale: 0.1 = very cheap, 1.0 = expensive
     let supportManyLanguages: Bool
     let supportedLanguages: [String: String]
 
@@ -28,6 +29,7 @@ struct CloudModel: @MainActor TranscriptionModel {
          recommended: Bool = false,
          speed: Double,
          accuracy: Double,
+         cost: Double = 0.5,
          supportManyLanguages: Bool,
          supportedLanguages: [String: String])
     {
@@ -39,6 +41,7 @@ struct CloudModel: @MainActor TranscriptionModel {
         self.recommended = recommended
         self.speed = speed
         self.accuracy = accuracy
+        self.cost = cost
         self.supportManyLanguages = supportManyLanguages
         self.supportedLanguages = supportedLanguages
     }
