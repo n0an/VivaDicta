@@ -82,7 +82,7 @@ struct ActivateButton: View {
                 .colorInvert()
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(.gray, in: .capsule(style: .continuous))
+                .background(.gray.gradient, in: .capsule(style: .continuous))
             
                 .background {
                     Capsule(style: .continuous)
@@ -129,7 +129,7 @@ struct MicButton: View {
                 .foregroundColor(.primary)
                 .font(.system(size: fontSize))
                 .padding(padding)
-                .background(backgroundColor, in: .circle)
+                .background(backgroundColor.gradient, in: .circle)
                 
                 .background {
                     Circle()
