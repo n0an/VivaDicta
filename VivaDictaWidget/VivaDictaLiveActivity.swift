@@ -50,7 +50,7 @@ struct VivaDictaLiveActivity: Widget {
                         Text("VivaDicta")
                             .foregroundColor(.primary)
                             .font(.system(size: 20, weight: .semibold))
-                        Text("On")
+                        Text(context.state.state.statusText)
                             .foregroundStyle(.secondary)
                             .font(.system(size: 16, weight: .regular))
                     }
@@ -76,12 +76,14 @@ struct VivaDictaLiveActivity: Widget {
             } compactLeading: {
                 EmptyView()
             } compactTrailing: {
-                Image(systemName: "microphone.circle.fill")
-                    .foregroundColor(.orange)
+                Image(systemName: context.state.state.iconName)
+                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             } minimal: {
-                Image(systemName: "microphone.circle.fill")
-                    .foregroundColor(.orange)
+                Image(systemName: context.state.state.iconName)
+                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             }
+            
+            
             //            .keylineTint(Color.red)
         }
     }
@@ -91,6 +93,8 @@ struct VivaDictaLiveActivity: Widget {
 #Preview("Notification", as: .content, using: VivaDictaLiveActivityAttributes.preview) {
    VivaDictaLiveActivity()
 } contentStates: {
-    VivaDictaLiveActivityAttributes.ContentState.smiley
-    VivaDictaLiveActivityAttributes.ContentState.starEyes
+    VivaDictaLiveActivityAttributes.ContentState.idle
+    VivaDictaLiveActivityAttributes.ContentState.recording
+    VivaDictaLiveActivityAttributes.ContentState.transcribing
+    VivaDictaLiveActivityAttributes.ContentState.enhancing
 }

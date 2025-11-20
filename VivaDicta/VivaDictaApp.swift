@@ -94,6 +94,31 @@ struct VivaDictaApp: App {
                             await appState.endLiveActivity()
                         }
                     }
+
+                    // Set up handler for recording state changes
+                    AppGroupCoordinator.shared.onRecordingStateChanged = { isRecording in
+                        Task { @MainActor in
+                            if isRecording {
+                                await appState.updateLiveActivityState(.recording)
+                            } else {
+                                await appState.updateLiveActivityState(.idle)
+                            }
+                        }
+                    }
+
+                    // Set up handler for transcription processing
+                    AppGroupCoordinator.shared.onTranscriptionTranscribing = {
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.transcribing)
+                        }
+                    }
+
+                    // Set up handler for AI enhancement
+                    AppGroupCoordinator.shared.onTranscriptionEnhancing = {
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.enhancing)
+                        }
+                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)

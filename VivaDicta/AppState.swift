@@ -96,11 +96,11 @@ class AppState {
         // Cancel any existing timer
         liveActivityTimer?.invalidate()
 
-        let attributes = VivaDictaLiveActivityAttributes(name: "testName")
+        let attributes = VivaDictaLiveActivityAttributes(name: "VivaDicta")
         do {
             // Set both staleDate (for system UI hints) and dismissalPolicy
             let activityContent = ActivityContent(
-                state: VivaDictaLiveActivityAttributes.ContentState(emoji: "smile"),
+                state: VivaDictaLiveActivityAttributes.ContentState(state: .idle),
                 staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
             )
 
@@ -134,6 +134,19 @@ class AppState {
         self.liveActivity = nil
         self.liveActivityStartTime = nil
         logger.logInfo("Live Activity ended")
+    }
+
+    /// Update the Live Activity state (recording, transcribing, enhancing, etc.)
+    func updateLiveActivityState(_ state: LiveActivityState) async {
+        guard let liveActivity else { return }
+
+        let updatedContent = ActivityContent(
+            state: VivaDictaLiveActivityAttributes.ContentState(state: state),
+            staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+        )
+
+        await liveActivity.update(updatedContent)
+        logger.logInfo("📱 Updated Live Activity state to: \(state.rawValue)")
     }
 
     /// Check if the Live Activity is stale and end it if necessary
