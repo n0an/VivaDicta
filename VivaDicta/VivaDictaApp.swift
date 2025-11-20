@@ -44,6 +44,7 @@ struct VivaDictaApp: App {
 
         ShortcutsProvider.updateAppShortcutParameters()
 
+        // TODO: - It's not working, keeping for reference. It was presumed to work with ToggleKeyboardFlowIntent.
         // Set up handler for keyboard session activation from intent
         AppGroupCoordinator.shared.onKeyboardSessionActivated = {
             let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
@@ -82,6 +83,16 @@ struct VivaDictaApp: App {
                         }
 
                         logger.logInfo("🔴 Terminated audio session and Live Activity")
+                    }
+
+                    // Set up handler for keyboard session expiration (timeout)
+                    AppGroupCoordinator.shared.onKeyboardSessionExpired = {
+                        logger.logInfo("⏰ Keyboard session expired - cleaning up Live Activity")
+
+                        // End Live Activity when session times out
+                        Task { @MainActor in
+                            await appState.endLiveActivity()
+                        }
                     }
                 }
                 .onOpenURL { url in
