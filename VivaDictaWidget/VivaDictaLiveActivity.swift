@@ -19,15 +19,11 @@ struct VivaDictaLiveActivity: Widget {
                     Spacer()
                     
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("VivaDicta")
-                                .foregroundColor(.primary)
-                                .font(.system(size: 20, weight: .semibold))
-                            Text("On")
-                                .foregroundStyle(.secondary)
-                                .font(.system(size: 16, weight: .regular))
-                        }
-                        .padding(.leading, 24)
+                        
+                        Text("VivaDicta")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 20, weight: .semibold))
+                            .padding(.leading, 24)
                         
                         Spacer()
                         
