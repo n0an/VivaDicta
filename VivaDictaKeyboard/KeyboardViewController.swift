@@ -170,11 +170,9 @@ struct VivaDictaKeyboardToolbarView: View {
                 if #available(iOS 26.0, *) {
                     ActivateButton(borderWidth: 0)
                         .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
-                        .padding(.top, 16)
                     
                 } else {
                     ActivateButton(borderWidth: 0.5)
-                        .padding(.top, 16)
                 }
                 
             } else {
@@ -188,7 +186,6 @@ struct VivaDictaKeyboardToolbarView: View {
                         onTapAction: handleMic)
                     
                         .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
-                        .padding(.top, 16)
                     
                 } else {
                     
@@ -199,11 +196,11 @@ struct VivaDictaKeyboardToolbarView: View {
                         borderWidth: 0.5,
                         onTapAction: handleMic)
 
-                    .padding(.top, 16)
                 }
             }
         }
         .padding(.horizontal, 16)
+        .padding(.top, 16)
         .padding(.bottom, 8)
     }
 
