@@ -63,15 +63,55 @@ class KeyboardViewController: KeyboardInputViewController {
 
 }
 
+
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
+    
+    @State var isAnimating = false
 
     var body: some View {
         HStack(spacing: 0) {
             Spacer()
             
             if dictationState.uiState == .notReady {
+                
+                Button {
+                    handleMic()
+                } label: {
+                    
+                    Label("Activate", systemImage: "mic.slash")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(.gray, in: .capsule(style: .continuous))
+
+                        .background {
+                            Capsule(style: .continuous)
+
+                                .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
+                                .blur(radius: 10)
+                                .onAppear {
+                                    withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                        isAnimating = true
+                                    }
+                                }
+                                .onDisappear {
+                                    isAnimating = false
+                                }
+                        }
+                        
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .stroke(.black.opacity(0.5), lineWidth: 0.5)
+                        }
+                }
+                .padding(.top, 16)
+                
+                
+                // Glass Button For Reference
+                /*
                 if #available(iOS 26.0, *) {
                     Button(action: handleMic) {
                         Label("Activate", systemImage: "mic.slash")
@@ -92,6 +132,8 @@ struct VivaDictaKeyboardToolbarView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.gray)
                 }
+                */
+                
             } else {
                 
                 if #available(iOS 26.0, *) {
@@ -103,7 +145,7 @@ struct VivaDictaKeyboardToolbarView: View {
                     }
                     
                     .glassEffect(.regular.tint(.orange.opacity(0.7)).interactive())
-                    .padding(.top, 4)
+                    .padding(.top, 8)
                     
                 } else {
                     Button(action: handleMic) {
@@ -116,7 +158,6 @@ struct VivaDictaKeyboardToolbarView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 4)
         .padding(.bottom, 8)
     }
 
