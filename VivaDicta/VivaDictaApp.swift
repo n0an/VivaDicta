@@ -119,6 +119,20 @@ struct VivaDictaApp: App {
                             await appState.updateLiveActivityState(.enhancing)
                         }
                     }
+
+                    // Set up handler for transcription completion - return to idle
+                    AppGroupCoordinator.shared.onTranscriptionCompleted = { _ in
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.idle)
+                        }
+                    }
+
+                    // Set up handler for transcription error - return to idle
+                    AppGroupCoordinator.shared.onTranscriptionError = {
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.idle)
+                        }
+                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
