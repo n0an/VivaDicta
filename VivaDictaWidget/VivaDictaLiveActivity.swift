@@ -54,18 +54,17 @@ struct VivaDictaLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     Spacer()
                     
-                    Toggle(isOn: .constant(true)) {
-                        Text("test")
+                    Button {
+                        // TODO: Disable Keyboard session from here
+                    } label: {
+                        Image(systemName: "power.circle.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(.orange)
+
                     }
+                    .buttonStyle(.plain)
                     .padding(.trailing, 12)
                     
-//                    Toggle("", isOn: .constant(true))
-//                        .padding(.trailing, 12)
-                    
-                    
-                    //                    Image(systemName: "microphone.circle.fill")
-                    //                        .font(.system(size: 30, weight: .semibold))
-                    //                        .foregroundColor(.orange)
                     Spacer()
                 }
                 
