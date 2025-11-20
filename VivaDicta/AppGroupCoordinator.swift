@@ -55,6 +55,7 @@ public final class AppGroupCoordinator {
         static let transcriptionError = "com.antonnovoselov.VivaDicta.transcriptionError"
         static let audioLevelUpdated = "com.antonnovoselov.VivaDicta.audioLevelUpdated"
         static let startRecordingFromControl = "com.antonnovoselov.VivaDicta.startRecordingFromControl"
+        static let terminateSessionFromLiveActivity = "com.antonnovoselov.VivaDicta.terminateSessionFromLiveActivity"
     }
 
     public enum TranscriptionStatus: String {
@@ -85,6 +86,7 @@ public final class AppGroupCoordinator {
     @MainActor var onAudioLevelUpdated: ((CGFloat) -> Void)?
     @MainActor var onRecordingStateChanged: ((Bool) -> Void)?
     @MainActor var onStartRecordingFromControl: (() -> Void)?
+    @MainActor var onTerminateSessionFromLiveActivity: (() -> Void)?
 
     // MARK: - Initialization
     private init() {
@@ -136,6 +138,11 @@ public final class AppGroupCoordinator {
         let timestamp = Date().timeIntervalSince1970
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.cancelRecording)
+    }
+
+    public func requestTerminateSessionFromLiveActivity() {
+        postDarwinNotification(NotificationNames.terminateSessionFromLiveActivity)
+        logger.logError("📡 Requested session termination from Live Activity")
     }
 
     var isRecording: Bool {
@@ -491,6 +498,19 @@ public final class AppGroupCoordinator {
             nil,
             .deliverImmediately
         )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleTerminateSessionFromLiveActivityNotification()
+            },
+            NotificationNames.terminateSessionFromLiveActivity as CFString,
+            nil,
+            .deliverImmediately
+        )
     }
 
     nonisolated private func removeNotificationObservers() {
@@ -599,6 +619,12 @@ public final class AppGroupCoordinator {
     nonisolated private func handleStartRecordingFromControlNotification() {
         Task { @MainActor in
             await onStartRecordingFromControl?()
+        }
+    }
+
+    nonisolated private func handleTerminateSessionFromLiveActivityNotification() {
+        Task { @MainActor in
+            await onTerminateSessionFromLiveActivity?()
         }
     }
 }

@@ -8,50 +8,83 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 struct VivaDictaLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: VivaDictaLiveActivityAttributes.self) { context in
             // Lock screen/banner UI goes here
-            VStack {
-                Spacer()
-                HStack {
+            
+                VStack {
                     Spacer()
-                    Text("VivaDicta")
-                        .foregroundStyle(.black)
                     
-                    Image(systemName: "microphone.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(.indigo)
+                    HStack {
+                        
+                        Text("VivaDicta")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 20, weight: .semibold))
+                            .padding(.leading, 24)
+                        
+                        Spacer()
+                        
+                        Button(intent: ToggleSessionIntent(isSessionActive: false)) {
+                            Image(systemName: "power.circle.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.orange)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 24)
+                    }
                     
                     Spacer()
                 }
-                Spacer()
-            }
-            .padding()
-            .activityBackgroundTint(Color.yellow)
-            .activitySystemActionForegroundColor(Color.black)
+                .activityBackgroundTint(.clear)
+                
+            
 
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("VivaDicta")
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("VivaDicta")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 20, weight: .semibold))
+                        Text(context.state.state.statusText)
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 16, weight: .regular))
+                    }
+                    .padding(.leading, 12)
+                    
+                    Spacer()
                 }
+                
                 DynamicIslandExpandedRegion(.trailing) {
-                    Image(systemName: "microphone.badge.plus.fill")
-                        .foregroundStyle(.cyan)
+                    Spacer()
+                    
+                    Button(intent: ToggleSessionIntent(isSessionActive: false)) {
+                        Image(systemName: "power.circle.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(.orange)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 12)
+                    
+                    Spacer()
                 }
+                
             } compactLeading: {
                 EmptyView()
             } compactTrailing: {
-                Image(systemName: "microphone.and.signal.meter")
-                    .foregroundStyle(.purple)
+                Image(systemName: context.state.state.iconName)
+                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             } minimal: {
-                Image(systemName: "microphone.square.fill")
-                    .foregroundStyle(.green)
+                Image(systemName: context.state.state.iconName)
+                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             }
-//            .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color.red)
+            
+            
+            //            .keylineTint(Color.red)
         }
     }
 }
@@ -60,6 +93,8 @@ struct VivaDictaLiveActivity: Widget {
 #Preview("Notification", as: .content, using: VivaDictaLiveActivityAttributes.preview) {
    VivaDictaLiveActivity()
 } contentStates: {
-    VivaDictaLiveActivityAttributes.ContentState.smiley
-    VivaDictaLiveActivityAttributes.ContentState.starEyes
+    VivaDictaLiveActivityAttributes.ContentState.idle
+    VivaDictaLiveActivityAttributes.ContentState.recording
+    VivaDictaLiveActivityAttributes.ContentState.transcribing
+    VivaDictaLiveActivityAttributes.ContentState.enhancing
 }

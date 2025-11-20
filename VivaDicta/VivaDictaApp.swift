@@ -10,6 +10,7 @@ import SwiftData
 import os
 import AppIntents
 import CoreSpotlight
+import ActivityKit
 
 @main
 struct VivaDictaApp: App {
@@ -26,11 +27,24 @@ struct VivaDictaApp: App {
         // Initialize app directories
         FileManager.createAppDirectories()
 
+        // Clean up any stuck Live Activities from previous session on cold start
+        Task {
+            let activityCount = Activity<VivaDictaLiveActivityAttributes>.activities.count
+            for activity in Activity<VivaDictaLiveActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            if activityCount > 0 {
+                let cleanupLogger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+                cleanupLogger.logInfo("🧹 Cleaned up \(activityCount) stuck Live Activities on cold start")
+            }
+        }
+
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
 
         ShortcutsProvider.updateAppShortcutParameters()
 
+        // TODO: - It's not working, keeping for reference. It was presumed to work with ToggleKeyboardFlowIntent.
         // Set up handler for keyboard session activation from intent
         AppGroupCoordinator.shared.onKeyboardSessionActivated = {
             let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
@@ -44,6 +58,7 @@ struct VivaDictaApp: App {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
         }
+
     }
 
     var body: some Scene {
@@ -54,6 +69,70 @@ struct VivaDictaApp: App {
 #if !os(macOS)
                     SceneDelegate.appState = appState
 #endif
+
+                    // Set up handler for session termination from Live Activity
+                    AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
+                        logger.logInfo("🔴 Session termination requested from Live Activity")
+
+                        // End audio prewarm session
+                        AudioPrewarmManager.shared.endSession()
+
+                        // End Live Activity
+                        Task { @MainActor in
+                            await appState.endLiveActivity()
+                        }
+
+                        logger.logInfo("🔴 Terminated audio session and Live Activity")
+                    }
+
+                    // Set up handler for keyboard session expiration (timeout)
+                    AppGroupCoordinator.shared.onKeyboardSessionExpired = {
+                        logger.logInfo("⏰ Keyboard session expired - cleaning up Live Activity")
+
+                        // End Live Activity when session times out
+                        Task { @MainActor in
+                            await appState.endLiveActivity()
+                        }
+                    }
+
+                    // Set up handler for recording state changes
+                    AppGroupCoordinator.shared.onRecordingStateChanged = { isRecording in
+                        Task { @MainActor in
+                            if isRecording {
+                                await appState.updateLiveActivityState(.recording)
+                            } else {
+                                await appState.updateLiveActivityState(.idle)
+                            }
+                        }
+                    }
+
+                    // Set up handler for transcription processing
+                    AppGroupCoordinator.shared.onTranscriptionTranscribing = {
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.transcribing)
+                        }
+                    }
+
+                    // Set up handler for AI enhancement
+                    AppGroupCoordinator.shared.onTranscriptionEnhancing = {
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.enhancing)
+                        }
+                    }
+
+                    // Set up handler for transcription completion - return to idle
+                    AppGroupCoordinator.shared.onTranscriptionCompleted = { _ in
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.idle)
+                        }
+                    }
+
+                    // Set up handler for transcription error - return to idle
+                    AppGroupCoordinator.shared.onTranscriptionError = {
+                        Task { @MainActor in
+                            await appState.updateLiveActivityState(.idle)
+                        }
+                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)
@@ -90,7 +169,7 @@ struct VivaDictaApp: App {
         if url.absoluteString == "vivadicta://record-for-keyboard" {
             logger.logInfo("📱 Recognized as keyboard recording request")
             
-            //            appState.startLiveActivity()
+            appState.startLiveActivity()
             
             
             // Start audio prewarm session to keep app alive in background
