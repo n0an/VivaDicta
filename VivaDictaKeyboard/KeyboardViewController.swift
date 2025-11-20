@@ -106,6 +106,56 @@ struct ActivateButton: View {
     }
 }
 
+struct MicButton: View {
+    @State var isAnimating = false
+    
+    var fontSize: CGFloat
+    var padding: CGFloat
+    var backgroundColor: Color
+    var borderWidth: CGFloat
+    
+    var onTapAction: () -> Void
+    
+    
+    var body: some View {
+        
+        
+        Button {
+            onTapAction()
+        } label: {
+            
+            Image(systemName: "microphone.circle")
+                .foregroundColor(.primary)
+                .font(.system(size: fontSize))
+                .padding(padding)
+                .background(backgroundColor, in: .circle)
+                
+                .background {
+                    Circle()
+                    
+                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
+                        .blur(radius: 10)
+                        .onAppear {
+                            withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isAnimating = false
+                        }
+                }
+            
+                .overlay {
+                    Circle()
+                        .stroke(.black.opacity(0.5), lineWidth: borderWidth)
+                }
+        }
+        
+        
+        
+    }
+}
+
 
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
@@ -157,23 +207,42 @@ struct VivaDictaKeyboardToolbarView: View {
             } else {
                 
                 if #available(iOS 26.0, *) {
-                    Button(action: handleMic) {
-                        Image(systemName: "microphone.circle")
-                            .foregroundColor(.primary)
-                            .font(.system(size: 34))
-                            .padding(6)
-                    }
                     
-                    .glassEffect(.regular.tint(.orange.opacity(0.7)).interactive())
-                    .padding(.top, 8)
+                    
+                    MicButton(
+                        fontSize: 34,
+                        padding: 6,
+                        backgroundColor: .orange.opacity(0.5),
+                        borderWidth: 0,
+                        onTapAction: handleMic)
+                    
+//                    Button(action: handleMic) {
+//                        Image(systemName: "microphone.circle")
+//                            .foregroundColor(.primary)
+//                            .font(.system(size: 34))
+//                            .padding(6)
+//                    }
+                    
+                        .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
+                        .padding(.top, 16)
                     
                 } else {
-                    Button(action: handleMic) {
-                        Image(systemName: "microphone.circle")
-                            .foregroundColor(.primary)
-                            .font(.system(size: 36))
-                    }
-                    .prominentButton(color: .orange)
+                    
+                    MicButton(
+                        fontSize: 36,
+                        padding: 0,
+                        backgroundColor: .orange,
+                        borderWidth: 0.5,
+                        onTapAction: handleMic)
+
+                    
+//                    Button(action: handleMic) {
+//                        Image(systemName: "microphone.circle")
+//                            .foregroundColor(.primary)
+//                            .font(.system(size: 36))
+//                    }
+//                    .prominentButton(color: .orange)
+                    .padding(.top, 16)
                 }
             }
         }
