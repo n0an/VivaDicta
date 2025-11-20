@@ -71,18 +71,7 @@ struct VivaDictaKeyboardToolbarView: View {
         HStack(spacing: 0) {
             Spacer()
             
-//            Button {
-//                startRecording()
-//            } label: {
-//                Image(systemName: "microphone.circle")
-//                    .font(.system(size: 24))
-//            }
-//            .buttonStyle(.glassProminent)
-//            .tint(.orange)
-            
-            
             if dictationState.uiState == .notReady {
-                
                 if #available(iOS 26.0, *) {
                     Button(action: handleMic) {
                         Label("Activate", systemImage: "mic.slash")
@@ -103,40 +92,28 @@ struct VivaDictaKeyboardToolbarView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.gray)
                 }
-                
-                
-                
             } else {
-                Button(action: handleMic) {
+                
+                if #available(iOS 26.0, *) {
+                    Button(action: handleMic) {
+                        Image(systemName: "microphone.circle")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 34))
+                            .padding(6)
+                    }
                     
+                    .glassEffect(.regular.tint(.orange.opacity(0.7)).interactive())
+                    .padding(.top, 4)
                     
-                    Image(systemName: "mic.circle.fill")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundColor(dictationState.micColor)
-                        .frame(width: 44, height: 44)
-                        .debugBorder()
-                    
-                    
-                    
-                    
-                    //                    Image(systemName: dictationState.uiState == .notReady ? "mic.slash" : "mic.fill")
-                    //                        .font(.system(size: 18, weight: .bold))
-                    //                        .foregroundColor(dictationState.micColor)
-                    ////                        .frame(width: 32, height: 32)
-                    //                        .debugBorder()
-                    //                        .background(toolbarBackgroundColor)
-                    //                        .clipShape(.circle)
-                    //                        .debugBorder()
-                    
-                    
-                    
-                    
+                } else {
+                    Button(action: handleMic) {
+                        Image(systemName: "microphone.circle")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 36))
+                    }
+                    .prominentButton(color: .orange)
                 }
             }
-            
-            
-
-            
         }
         .padding(.horizontal, 16)
         .padding(.top, 4)
