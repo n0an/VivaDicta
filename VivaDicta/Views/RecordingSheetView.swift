@@ -24,13 +24,13 @@ struct RecordingSheetView: View {
                 Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
                     ForEach(vm.availableModes, id: \.id) { mode in
                         Text(mode.name)
-                            .tag(mode)
+                            .tag(mode.name)
                     }
                 }
                 .pickerStyle(.menu)
                 .tint(.primary)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 12)
+                .padding(.vertical, 16)
+                .padding(.horizontal, 16)
                 
                 Spacer()
                 
@@ -44,8 +44,8 @@ struct RecordingSheetView: View {
                         .background(.gray.opacity(0.1), in: .circle)
                         .contentShape(.rect)
                 }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 12)
+                .padding(.vertical, 16)
+                .padding(.horizontal, 16)
                 
             }
             
