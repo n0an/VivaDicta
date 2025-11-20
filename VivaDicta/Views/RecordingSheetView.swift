@@ -20,6 +20,35 @@ struct RecordingSheetView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            HStack {
+                Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
+                    ForEach(vm.availableModes, id: \.id) { mode in
+                        Text(mode.name)
+                            .tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(.primary)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                
+                Spacer()
+                
+                // Cancel button (X)
+                
+                Button(action: { vm.cancelTranscribe() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.secondary)
+                        .frame(width: 44, height: 44)
+                        .background(.gray.opacity(0.1), in: .circle)
+                        .contentShape(.rect)
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                
+            }
+            
             Spacer()
             SiriWaveView(power: $appState.recordViewModel.audioPower)
                 .frame(height: 80)
@@ -36,7 +65,7 @@ struct RecordingSheetView: View {
             .disabled(vm.recordingState != .recording)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationDetents([.height(220)])
+        .presentationDetents([.height(300)])
         .presentationDragIndicator(.hidden)
         .interactiveDismissDisabled(vm.recordingState == .recording)
         .alert(isPresented: $appState.recordViewModel.isShowingAlert, error: vm.recordError) { recordError in
