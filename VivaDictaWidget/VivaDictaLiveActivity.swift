@@ -17,18 +17,29 @@ struct VivaDictaLiveActivity: Widget {
             
                 VStack {
                     Spacer()
-                    HStack(spacing: 20) {
-                        Image(systemName: "microphone.circle.fill")
-                            .font(.system(size: 30, weight: .semibold))
-                            .foregroundColor(.orange)
-                            .padding(.leading, 24)
-                        
-                        Text("VivaDicta")
-                            .foregroundColor(.primary)
-                            .font(.system(size: 20, weight: .semibold))
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("VivaDicta")
+                                .foregroundColor(.primary)
+                                .font(.system(size: 20, weight: .semibold))
+                            Text("On")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 16, weight: .regular))
+                        }
+                        .padding(.leading, 24)
                         
                         Spacer()
+                        
+                        Button(intent: ToggleSessionIntent(isSessionActive: false)) {
+                            Image(systemName: "power.circle.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.orange)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 24)
                     }
+                    
                     Spacer()
                 }
                 .activityBackgroundTint(.clear)
