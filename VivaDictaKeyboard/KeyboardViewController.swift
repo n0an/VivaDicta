@@ -67,6 +67,7 @@ struct ActivateButton: View {
     @Environment(\.openURL) private var openURL
     @State var isAnimating = false
     
+    var borderWidth: CGFloat
     
     var body: some View {
         Button {
@@ -100,7 +101,7 @@ struct ActivateButton: View {
             
                 .overlay {
                     Capsule(style: .continuous)
-                        .stroke(.black.opacity(0.5), lineWidth: 0.5)
+                        .stroke(.black.opacity(0.5), lineWidth: borderWidth)
                 }
         }
     }
@@ -161,67 +162,30 @@ struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
     
-    
-
     var body: some View {
         HStack(spacing: 0) {
             Spacer()
             
             if dictationState.uiState == .notReady {
-                
                 if #available(iOS 26.0, *) {
-                    ActivateButton()
+                    ActivateButton(borderWidth: 0)
                         .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
                         .padding(.top, 16)
                     
                 } else {
-                    ActivateButton()
+                    ActivateButton(borderWidth: 0.5)
                         .padding(.top, 16)
                 }
-
-                
-                // Glass Button For Reference
-                /*
-                if #available(iOS 26.0, *) {
-                    Button(action: handleMic) {
-                        Label("Activate", systemImage: "mic.slash")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                    }
-                    .glassEffect(.regular.tint(.gray.opacity(0.7)).interactive())
-                } else {
-                    Button(action: handleMic) {
-                        Label("Activate", systemImage: "mic.slash")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.gray)
-                }
-                */
                 
             } else {
                 
                 if #available(iOS 26.0, *) {
-                    
-                    
                     MicButton(
                         fontSize: 34,
                         padding: 6,
                         backgroundColor: .orange.opacity(0.5),
                         borderWidth: 0,
                         onTapAction: handleMic)
-                    
-//                    Button(action: handleMic) {
-//                        Image(systemName: "microphone.circle")
-//                            .foregroundColor(.primary)
-//                            .font(.system(size: 34))
-//                            .padding(6)
-//                    }
                     
                         .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
                         .padding(.top, 16)
@@ -235,13 +199,6 @@ struct VivaDictaKeyboardToolbarView: View {
                         borderWidth: 0.5,
                         onTapAction: handleMic)
 
-                    
-//                    Button(action: handleMic) {
-//                        Image(systemName: "microphone.circle")
-//                            .foregroundColor(.primary)
-//                            .font(.system(size: 36))
-//                    }
-//                    .prominentButton(color: .orange)
                     .padding(.top, 16)
                 }
             }
