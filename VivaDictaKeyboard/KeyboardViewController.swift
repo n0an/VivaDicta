@@ -70,17 +70,60 @@ struct VivaDictaKeyboardToolbarView: View {
     var body: some View {
         HStack(spacing: 0) {
             Spacer()
-
-            Button(action: handleMic) {
-                Image(systemName: dictationState.uiState == .notReady ? "mic.slash" : "mic.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(dictationState.micColor)
-                    .frame(width: 32, height: 32)
-                    .background(toolbarBackgroundColor)
-                    .clipShape(.circle)
+            
+//            Button {
+//                startRecording()
+//            } label: {
+//                Image(systemName: "microphone.circle")
+//                    .font(.system(size: 24))
+//            }
+//            .buttonStyle(.glassProminent)
+//            .tint(.orange)
+            
+            
+            if dictationState.uiState == .notReady {
+                Button(action: handleMic) {
+                    Label("Activate", systemImage: "mic.slash")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                }
+                .prominentButton(color: .gray)
+            } else {
+                Button(action: handleMic) {
+                    
+                    
+                    Image(systemName: "mic.circle.fill")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(dictationState.micColor)
+                        .frame(width: 44, height: 44)
+                        .debugBorder()
+                    
+                    
+                    
+                    
+                    //                    Image(systemName: dictationState.uiState == .notReady ? "mic.slash" : "mic.fill")
+                    //                        .font(.system(size: 18, weight: .bold))
+                    //                        .foregroundColor(dictationState.micColor)
+                    ////                        .frame(width: 32, height: 32)
+                    //                        .debugBorder()
+                    //                        .background(toolbarBackgroundColor)
+                    //                        .clipShape(.circle)
+                    //                        .debugBorder()
+                    
+                    
+                    
+                    
+                }
             }
+            
+            
+
+            
         }
         .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 
     private func handleMic() {

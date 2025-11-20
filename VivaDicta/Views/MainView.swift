@@ -57,13 +57,13 @@ struct MainView: View {
                         ToolbarItem(placement: .bottomBar) {
 
                             Button {
-                                  startRecording()
-                              } label: {
-                                  Image(systemName: "microphone.circle")
-                                      .font(.system(size: 24))
-                              }
-                              .buttonStyle(.glassProminent)
-                              .tint(.orange)
+                                startRecording()
+                            } label: {
+                                Image(systemName: "microphone.circle")
+                                    .font(.system(size: 24))
+                            }
+                            .buttonStyle(.glassProminent)
+                            .tint(.orange)
                         }
                         .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
                     } else {
