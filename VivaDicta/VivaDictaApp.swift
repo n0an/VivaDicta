@@ -44,6 +44,7 @@ struct VivaDictaApp: App {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
         }
+
     }
 
     var body: some Scene {
@@ -54,6 +55,21 @@ struct VivaDictaApp: App {
 #if !os(macOS)
                     SceneDelegate.appState = appState
 #endif
+
+                    // Set up handler for session termination from Live Activity
+                    AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
+                        logger.logInfo("🔴 Session termination requested from Live Activity")
+
+                        // End audio prewarm session
+                        AudioPrewarmManager.shared.endSession()
+
+                        // End Live Activity
+                        Task { @MainActor in
+                            await appState.endLiveActivity()
+                        }
+
+                        logger.logInfo("🔴 Terminated audio session and Live Activity")
+                    }
                 }
                 .onOpenURL { url in
                     handleDeepLink(url)

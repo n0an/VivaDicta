@@ -8,6 +8,7 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 struct VivaDictaLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -54,13 +55,10 @@ struct VivaDictaLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     Spacer()
                     
-                    Button {
-                        // TODO: Disable Keyboard session from here
-                    } label: {
+                    Button(intent: ToggleSessionIntent(isSessionActive: false)) {
                         Image(systemName: "power.circle.fill")
                             .font(.system(size: 40))
                             .foregroundColor(.orange)
-
                     }
                     .buttonStyle(.plain)
                     .padding(.trailing, 12)
