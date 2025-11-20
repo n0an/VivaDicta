@@ -13,45 +13,72 @@ struct VivaDictaLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: VivaDictaLiveActivityAttributes.self) { context in
             // Lock screen/banner UI goes here
-            VStack {
-                Spacer()
-                HStack {
+            
+                VStack {
                     Spacer()
-                    Text("VivaDicta")
-                        .foregroundStyle(.black)
-                    
-                    Image(systemName: "microphone.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(.indigo)
-                    
+                    HStack(spacing: 20) {
+                        Image(systemName: "microphone.circle.fill")
+                            .font(.system(size: 30, weight: .semibold))
+                            .foregroundColor(.orange)
+                            .padding(.leading, 24)
+                        
+                        Text("VivaDicta")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 20, weight: .semibold))
+                        
+                        Spacer()
+                    }
                     Spacer()
                 }
-                Spacer()
-            }
-            .padding()
-            .activityBackgroundTint(Color.yellow)
-            .activitySystemActionForegroundColor(Color.black)
+                .activityBackgroundTint(.clear)
+                
+            
 
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Text("VivaDicta")
+                    Spacer()
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("VivaDicta")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 20, weight: .semibold))
+                        Text("On")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 16, weight: .regular))
+                    }
+                    .padding(.leading, 12)
+                    
+                    Spacer()
                 }
+                
                 DynamicIslandExpandedRegion(.trailing) {
-                    Image(systemName: "microphone.badge.plus.fill")
-                        .foregroundStyle(.cyan)
+                    Spacer()
+                    
+                    Toggle(isOn: .constant(true)) {
+                        Text("test")
+                    }
+                    .padding(.trailing, 12)
+                    
+//                    Toggle("", isOn: .constant(true))
+//                        .padding(.trailing, 12)
+                    
+                    
+                    //                    Image(systemName: "microphone.circle.fill")
+                    //                        .font(.system(size: 30, weight: .semibold))
+                    //                        .foregroundColor(.orange)
+                    Spacer()
                 }
+                
             } compactLeading: {
                 EmptyView()
             } compactTrailing: {
-                Image(systemName: "microphone.and.signal.meter")
-                    .foregroundStyle(.purple)
+                Image(systemName: "microphone.circle.fill")
+                    .foregroundColor(.orange)
             } minimal: {
-                Image(systemName: "microphone.square.fill")
-                    .foregroundStyle(.green)
+                Image(systemName: "microphone.circle.fill")
+                    .foregroundColor(.orange)
             }
-//            .widgetURL(URL(string: "http://www.apple.com"))
-            .keylineTint(Color.red)
+            //            .keylineTint(Color.red)
         }
     }
 }

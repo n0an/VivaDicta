@@ -90,7 +90,7 @@ struct VivaDictaApp: App {
         if url.absoluteString == "vivadicta://record-for-keyboard" {
             logger.logInfo("📱 Recognized as keyboard recording request")
             
-            //            appState.startLiveActivity()
+            appState.startLiveActivity()
             
             
             // Start audio prewarm session to keep app alive in background
