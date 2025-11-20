@@ -49,16 +49,11 @@ struct ProcessingStateView: View {
     
     @State var isSymbolAnimating: Bool = false
 
-    // Get the keyboard appearance from environment
-    @Environment(\.colorScheme) var colorScheme
-
     var body: some View {
         VStack(spacing: 0) {
             // Top area with cancel button
             HStack {
                 Spacer()
-                
-                // Cancel button (X)
                 Button(action: onCancel) {
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .medium))
@@ -68,8 +63,8 @@ struct ProcessingStateView: View {
                         .contentShape(.rect)
                 }
                 .padding(.horizontal, 8)
-                .padding(.top, 8)
             }
+            .padding(.bottom, 15)
             
             Spacer()
             
@@ -79,9 +74,9 @@ struct ProcessingStateView: View {
                     .foregroundStyle(Color.blue)
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                     .font(.system(size: 30))
+                    .frame(height: 50)
                     .onAppear { isSymbolAnimating = true }
                     .onDisappear { isSymbolAnimating = false }
-                    .padding(.vertical, 20)
                 
                 // Processing status label
                 Text(processingStage.statusText)
@@ -89,14 +84,13 @@ struct ProcessingStateView: View {
                     .foregroundStyle(.primary)
                     .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
             }
-            .padding(.horizontal, 20)
             
             Spacer()
             
             // Bottom padding to match keyboard height
             Rectangle()
                 .fill(Color.clear)
-                .frame(height: 100)
+                .frame(height: 63)
         }
     }
 }
