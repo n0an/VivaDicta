@@ -29,11 +29,13 @@ struct VivaDictaApp: App {
 
         // Clean up any stuck Live Activities from previous session on cold start
         Task {
+            let activityCount = Activity<VivaDictaLiveActivityAttributes>.activities.count
             for activity in Activity<VivaDictaLiveActivityAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
-            if !Activity<VivaDictaLiveActivityAttributes>.activities.isEmpty {
-                logger.logInfo("🧹 Cleaned up \(Activity<VivaDictaLiveActivityAttributes>.activities.count) stuck Live Activities on cold start")
+            if activityCount > 0 {
+                let cleanupLogger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+                cleanupLogger.logInfo("🧹 Cleaned up \(activityCount) stuck Live Activities on cold start")
             }
         }
 
