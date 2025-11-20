@@ -16,6 +16,7 @@ struct CloudModelConfigurationView: View {
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
     @State private var aiService = AIService()
+    @State private var showDeleteConfirmation: Bool = false
     
     var body: some View {
         
@@ -59,13 +60,40 @@ struct CloudModelConfigurationView: View {
             .background(.blue, in: .capsule)
             .padding(.top, 16)
             .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
-                Spacer()
+
+            // Delete API Key button - only show if there's an existing key
+            if model.apiKey != nil {
+                Button(action: {
+                    showDeleteConfirmation = true
+                }) {
+                    Text("Delete API Key")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.red)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .overlay {
+                    Capsule()
+                        .stroke(Color.red, lineWidth: 1.5)
+                }
+                .padding(.top, 8)
+            }
+
+            Spacer()
         }
         .onAppear {
             apiKey = model.apiKey ?? ""
         }
         .padding(.top, 32)
         .padding()
+        .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteAPIKey()
+            }
+        } message: {
+            Text("Are you sure you want to delete the API key for \(model.provider.rawValue.capitalized)? This action cannot be undone.")
+        }
     }
     
     
@@ -95,6 +123,23 @@ struct CloudModelConfigurationView: View {
                 }
             }
         }
+    }
+
+    func deleteAPIKey() {
+        // Remove the API key from UserDefaults
+        let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
+        UserDefaultsStorage.shared.removeObject(forKey: keyName)
+
+        // Clear the text field
+        apiKey = ""
+
+        // Refresh AI service if applicable
+        if model.provider.mappedAIProvider != nil {
+            aiService.refreshConnectedProviders()
+        }
+
+        // Notify parent view to refresh
+        onSave(model)
     }
 }
 
