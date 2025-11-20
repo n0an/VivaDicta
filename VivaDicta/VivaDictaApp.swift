@@ -10,6 +10,7 @@ import SwiftData
 import os
 import AppIntents
 import CoreSpotlight
+import ActivityKit
 
 @main
 struct VivaDictaApp: App {
@@ -25,6 +26,16 @@ struct VivaDictaApp: App {
     init() {
         // Initialize app directories
         FileManager.createAppDirectories()
+
+        // Clean up any stuck Live Activities from previous session on cold start
+        Task {
+            for activity in Activity<VivaDictaLiveActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            if !Activity<VivaDictaLiveActivityAttributes>.activities.isEmpty {
+                logger.logInfo("🧹 Cleaned up \(Activity<VivaDictaLiveActivityAttributes>.activities.count) stuck Live Activities on cold start")
+            }
+        }
 
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
