@@ -202,6 +202,15 @@ struct LocalModelCard: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(.primary.opacity(0.3), lineWidth: 0.5)
         }
+        .contextMenu {
+            if isDownloaded {
+                Button(role: .destructive) {
+                    deleteModel()
+                } label: {
+                    Label("Delete Model", systemImage: "trash")
+                }
+            }
+        }
     }
 
     private func downloadLocalModel() {
