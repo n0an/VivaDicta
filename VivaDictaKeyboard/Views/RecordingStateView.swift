@@ -17,29 +17,8 @@ struct RecordingStateView: View {
     
     
     var body: some View {
-        
         VStack(spacing: 0) {
-            // Top Bar with Cancel Button
             HStack {
-                Spacer()
-                
-                // Cancel button (X)
-                Button(action: { dictationState.requestCancelRecording() }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Color.secondary)
-                        .frame(width: 44, height: 44)
-                        .background(.gray.opacity(0.1), in: .circle)
-                        .contentShape(.rect)
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
-            
-            Spacer()
-            
-            // Flow Mode Picker
-            VStack(spacing: 20) {
                 Picker("Flow Mode", selection: $dictationState.flowModeManager.selectedFlowMode) {
                     ForEach(dictationState.flowModeManager.availableFlowModes, id: \.id) { mode in
                         Text(mode.name).tag(mode)
@@ -47,29 +26,26 @@ struct RecordingStateView: View {
                 }
                 .tint(.primary)
                 .pickerStyle(.menu)
-                .frame(minWidth: 120)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-
-                // Recording indicator with audio level visualization
-                VStack(spacing: 12) {
-                    Image(systemName: "microphone.circle.fill")
-                        .foregroundStyle(Color.green)
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), value: isSymbolAnimating)
-                        .font(.system(size: 30))
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
-                    
-                    SiriWaveView(power: .constant(dictationState.currentAudioLevel))
-                        .frame(height: 80)
+                
+                Spacer()
+                
+                // Cancel button (X)
+                Button(action: { dictationState.requestCancelRecording() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color.secondary)
+                        .frame(width: 44, height: 44)
+                        .background(.gray.opacity(0.1), in: .circle)
+                        .contentShape(.rect)
                 }
-                .padding(.vertical, 20)
+                .padding(.trailing, 8)
             }
             
-            Spacer()
+            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
+                .frame(height: 140)
             
             // Stop Button
-            Button(action: { dictationState.requestStopRecording() }) {
+            Button(action: dictationState.requestStopRecording) {
                 HStack(spacing: 8) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 18, weight: .semibold))
@@ -81,12 +57,8 @@ struct RecordingStateView: View {
                 }
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
-                .background(
-                    Capsule()
-                        .fill(Color.red)
-                )
+                .background(.red, in: .capsule)
             }
-            .padding(.bottom, 30)
         }
         
     }
