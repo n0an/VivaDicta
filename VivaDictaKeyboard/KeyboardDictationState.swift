@@ -61,7 +61,7 @@ final class KeyboardDictationState {
     var micColor: Color {
         switch uiState {
         case .notReady: return .secondary
-        case .ready: return .green
+        case .ready: return .orange
         case .recording: return .red
         case .processing: return .primary
         case .error: return .orange

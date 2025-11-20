@@ -63,24 +63,145 @@ class KeyboardViewController: KeyboardInputViewController {
 
 }
 
+struct ActivateButton: View {
+    @Environment(\.openURL) private var openURL
+    @State var isAnimating = false
+    
+    var borderWidth: CGFloat
+    
+    var body: some View {
+        Button {
+            if let url = URL(string: "vivadicta://record-for-keyboard") {
+                openURL(url)
+            }
+        } label: {
+            
+            Label("Activate", systemImage: "mic.slash")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(Color.primary)
+                .colorInvert()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.gray, in: .capsule(style: .continuous))
+            
+                .background {
+                    Capsule(style: .continuous)
+                    
+                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
+                        .blur(radius: 10)
+                        .onAppear {
+                            withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isAnimating = false
+                        }
+                }
+            
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(.black.opacity(0.5), lineWidth: borderWidth)
+                }
+        }
+    }
+}
+
+struct MicButton: View {
+    @State var isAnimating = false
+    
+    var fontSize: CGFloat
+    var padding: CGFloat
+    var backgroundColor: Color
+    var borderWidth: CGFloat
+    
+    var onTapAction: () -> Void
+    
+    
+    var body: some View {
+        
+        
+        Button {
+            onTapAction()
+        } label: {
+            
+            Image(systemName: "microphone.circle")
+                .foregroundColor(.primary)
+                .font(.system(size: fontSize))
+                .padding(padding)
+                .background(backgroundColor, in: .circle)
+                
+                .background {
+                    Circle()
+                    
+                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
+                        .blur(radius: 10)
+                        .onAppear {
+                            withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isAnimating = false
+                        }
+                }
+            
+                .overlay {
+                    Circle()
+                        .stroke(.black.opacity(0.5), lineWidth: borderWidth)
+                }
+        }
+        
+        
+        
+    }
+}
+
+
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
-
+    
     var body: some View {
         HStack(spacing: 0) {
             Spacer()
+            
+            if dictationState.uiState == .notReady {
+                if #available(iOS 26.0, *) {
+                    ActivateButton(borderWidth: 0)
+                        .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
+                    
+                } else {
+                    ActivateButton(borderWidth: 0.5)
+                }
+                
+            } else {
+                
+                if #available(iOS 26.0, *) {
+                    MicButton(
+                        fontSize: 34,
+                        padding: 6,
+                        backgroundColor: .orange.opacity(0.5),
+                        borderWidth: 0,
+                        onTapAction: handleMic)
+                    
+                        .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
+                    
+                } else {
+                    
+                    MicButton(
+                        fontSize: 36,
+                        padding: 0,
+                        backgroundColor: .orange,
+                        borderWidth: 0.5,
+                        onTapAction: handleMic)
 
-            Button(action: handleMic) {
-                Image(systemName: dictationState.uiState == .notReady ? "mic.slash" : "mic.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(dictationState.micColor)
-                    .frame(width: 32, height: 32)
-                    .background(toolbarBackgroundColor)
-                    .clipShape(.circle)
+                }
             }
         }
         .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 8)
     }
 
     private func handleMic() {

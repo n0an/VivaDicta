@@ -134,6 +134,8 @@
 				Services/AIEnhance/FlowMode.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Utilities/LoggerExtension.swift,
+				"Utils/Extensions/Color+Ext.swift",
+				"Utils/Extensions/View+Ext.swift",
 				Utils/UserDefaultsStorage.swift,
 			);
 			target = 18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */;
