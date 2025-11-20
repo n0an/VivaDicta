@@ -53,6 +53,9 @@ struct ModelsView: View {
                                     model: cloudModel,
                                     onConfigure: { cloudModel in
                                         configureCloudModel(model: cloudModel)
+                                    },
+                                    onDeleteAPIKey: { cloudModel in
+                                        handleAPIKeyDeletion(for: cloudModel)
                                     }
                                 )
                             }
@@ -112,6 +115,14 @@ struct ModelsView: View {
         appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
         appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
+    }
+
+    func handleAPIKeyDeletion(for model: CloudModel) {
+        // Refresh the AI service to update connected providers
+        appState.aiService.refreshConnectedProviders()
+
+        // Update cloud models to reflect the change
+        appState.transcriptionManager.updateCloudModels()
     }
 }
 

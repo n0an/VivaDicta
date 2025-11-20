@@ -10,6 +10,7 @@ import SwiftUI
 struct CloudModelCard: View {
     let model: CloudModel
     let onConfigure: (CloudModel) -> Void
+    let onDeleteAPIKey: ((CloudModel) -> Void)?
 
     @State private var selectedTab: TranscriptionModelType = .cloud
 
@@ -145,6 +146,24 @@ struct CloudModelCard: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(.primary.opacity(0.3), lineWidth: 0.5)
         }
+        .contextMenu {
+            if isAPIConfigured {
+                Button(role: .destructive) {
+                    deleteAPIKey()
+                } label: {
+                    Label("Delete API Key", systemImage: "key.slash")
+                }
+            }
+        }
+    }
+
+    private func deleteAPIKey() {
+        // Remove the API key from UserDefaults
+        let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
+        UserDefaultsStorage.shared.removeObject(forKey: keyName)
+
+        // Notify parent view about the deletion
+        onDeleteAPIKey?(model)
     }
 }
 
@@ -154,7 +173,8 @@ struct CloudModelCard: View {
         if let cloudModel = TranscriptionModelProvider.allCloudModels.first {
             CloudModelCard(
                 model: cloudModel,
-                onConfigure: { _ in print("Configure") }
+                onConfigure: { _ in print("Configure") },
+                onDeleteAPIKey: { _ in print("Delete API Key") }
             )
         }
 
@@ -162,7 +182,8 @@ struct CloudModelCard: View {
         if let cloudModel = TranscriptionModelProvider.allCloudModels.last {
             CloudModelCard(
                 model: cloudModel,
-                onConfigure: { _ in print("Configure") }
+                onConfigure: { _ in print("Configure") },
+                onDeleteAPIKey: { _ in print("Delete API Key") }
             )
         }
     }
