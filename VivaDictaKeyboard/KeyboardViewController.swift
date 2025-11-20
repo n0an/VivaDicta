@@ -63,12 +63,55 @@ class KeyboardViewController: KeyboardInputViewController {
 
 }
 
+struct ActivateButton: View {
+    @Environment(\.openURL) private var openURL
+    @State var isAnimating = false
+    
+    
+    var body: some View {
+        Button {
+            if let url = URL(string: "vivadicta://record-for-keyboard") {
+                openURL(url)
+            }
+        } label: {
+            
+            Label("Activate", systemImage: "mic.slash")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(Color.primary)
+                .colorInvert()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.gray, in: .capsule(style: .continuous))
+            
+                .background {
+                    Capsule(style: .continuous)
+                    
+                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
+                        .blur(radius: 10)
+                        .onAppear {
+                            withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isAnimating = false
+                        }
+                }
+            
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(.black.opacity(0.5), lineWidth: 0.5)
+                }
+        }
+    }
+}
+
 
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
     
-    @State var isAnimating = false
+    
 
     var body: some View {
         HStack(spacing: 0) {
@@ -76,39 +119,16 @@ struct VivaDictaKeyboardToolbarView: View {
             
             if dictationState.uiState == .notReady {
                 
-                Button {
-                    handleMic()
-                } label: {
+                if #available(iOS 26.0, *) {
+                    ActivateButton()
+                        .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
+                        .padding(.top, 16)
                     
-                    Label("Activate", systemImage: "mic.slash")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(.gray, in: .capsule(style: .continuous))
-
-                        .background {
-                            Capsule(style: .continuous)
-
-                                .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
-                                .blur(radius: 10)
-                                .onAppear {
-                                    withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
-                                        isAnimating = true
-                                    }
-                                }
-                                .onDisappear {
-                                    isAnimating = false
-                                }
-                        }
-                        
-                        .overlay {
-                            Capsule(style: .continuous)
-                                .stroke(.black.opacity(0.5), lineWidth: 0.5)
-                        }
+                } else {
+                    ActivateButton()
+                        .padding(.top, 16)
                 }
-                .padding(.top, 16)
-                
+
                 
                 // Glass Button For Reference
                 /*
