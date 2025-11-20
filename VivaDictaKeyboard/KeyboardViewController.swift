@@ -82,14 +82,30 @@ struct VivaDictaKeyboardToolbarView: View {
             
             
             if dictationState.uiState == .notReady {
-                Button(action: handleMic) {
-                    Label("Activate", systemImage: "mic.slash")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                
+                if #available(iOS 26.0, *) {
+                    Button(action: handleMic) {
+                        Label("Activate", systemImage: "mic.slash")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                    }
+                    .glassEffect(.regular.tint(.gray.opacity(0.7)).interactive())
+                } else {
+                    Button(action: handleMic) {
+                        Label("Activate", systemImage: "mic.slash")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.gray)
                 }
-                .prominentButton(color: .gray)
+                
+                
+                
             } else {
                 Button(action: handleMic) {
                     
@@ -123,6 +139,7 @@ struct VivaDictaKeyboardToolbarView: View {
             
         }
         .padding(.horizontal, 16)
+        .padding(.top, 4)
         .padding(.bottom, 8)
     }
 
