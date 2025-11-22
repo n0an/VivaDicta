@@ -24,40 +24,42 @@ struct KeyboardFlowSheet: View {
             Text("Keyboard Flow Activated")
                 .font(.title)
                 .fontWeight(.bold)
-                .padding(.horizontal)
-                .padding(.top, 40)
+//                .padding(.horizontal)
+                .padding(.top, 20)
+//                .debugBorder()
 
             Spacer()
 
             // Swipe back instruction with arrow icon
             VStack(spacing: 20) {
                 Image(systemName: "arrow.uturn.backward.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.blue)
+                    .font(.system(size: 40))
+                    .foregroundStyle(.orange)
 
                 Text("Swipe back to start using\nVivaDicta dictation")
                     .font(.title3)
                     .fontWeight(.medium)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+//                    .padding(.horizontal)
             }
+//            .debugBorder()
 
             Spacer()
 
             // Bottom swipe indicator
-            VStack(spacing: 8) {
+            VStack(spacing: 0) {
                 Text("Swipe right from here")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                
+
 //                Spacer()
-                
+
                 Capsule()
                     .fill(Color.blue.opacity(0.5))
                     .frame(width: 134, height: 5)
                     .padding(.top, 8)
 //                    .padding(.bottom, 20)
-                
+
                 //                Capsule()
                 //                    .background(.blue)
 //                    .frame(height: 6)
@@ -68,10 +70,14 @@ struct KeyboardFlowSheet: View {
 //                    .scaleEffect(y: 1.5)
 //                    .frame(maxWidth: 200)
             }
-//            .padding(.bottom, 40)
+//            .debugBorder()
+//            .padding(.bottom, 20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground))
+        .debugBorder()
+//        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
+//        .debugBorder()
+//        .background(Color(.systemGroupedBackground))
         .onAppear {
             // Auto-dismiss after a delay if needed
             DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
@@ -79,10 +85,28 @@ struct KeyboardFlowSheet: View {
             }
         }
     }
+    
 }
 
-#Preview {
+
+
+#Preview(traits: .transcriptionsMockData) {
     @State @Previewable var appState = AppState()
-
-    KeyboardFlowSheet(appState: appState)
+    MainView(appState: appState)
+        .sheet(isPresented: .constant(true)) {
+            KeyboardFlowSheet(appState: appState)
+                .presentationDetents([.fraction(0.3)])
+                .presentationDragIndicator(.hidden)
+//                .interactiveDismissDisabled(false)
+        }
 }
+
+
+
+//#Preview {
+//    @State @Previewable var appState = AppState()
+//    
+//    
+//
+//    KeyboardFlowSheet(appState: appState)
+//}
