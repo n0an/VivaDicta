@@ -179,24 +179,24 @@ struct VivaDictaApp: App {
             logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
 
             // Delay slightly to ensure audio session is properly activated
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                Task { @MainActor in
-                    if await UIApplication.shared.canOpenURL(url) {
-                        await UIApplication.shared.open(url, options: [:], completionHandler: { success in
-                            if success {
-                                self.logger.logInfo("✅ Successfully opened host app: \(hostId)")
-                                // Success - no need to show the keyboard flow sheet
-                            } else {
-                                self.logger.logError("❌ Failed to open host app: \(hostId)")
-                                // Failed to open - show the keyboard flow sheet as fallback
-//                                self.appState.showKeyboardFlowSheet = true
-                            }
-                        })
-                    } else {
-                        self.logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                        // Can't open URL - show the keyboard flow sheet as fallback
-                        self.appState.showKeyboardFlowSheet = true
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+
+                if UIApplication.shared.canOpenURL(url) {
+                    UIApplication.shared.open(url, options: [:]) { success in
+                        if success {
+                            self.logger.logInfo("✅ Successfully opened host app: \(hostId)")
+                            // Success - no need to show the keyboard flow sheet
+                        } else {
+                            self.logger.logError("❌ Failed to open host app: \(hostId)")
+                            // Failed to open - show the keyboard flow sheet as fallback
+                            // self.appState.showKeyboardFlowSheet = true
+                        }
                     }
+                } else {
+                    self.logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
+                    // Can't open URL - show the keyboard flow sheet as fallback
+                    self.appState.showKeyboardFlowSheet = true
                 }
             }
         } else {
