@@ -17,11 +17,15 @@ struct VivaDictaApp: App {
 #if !os(macOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
-    
+
     @State var appState = AppState()
     @Environment(\.scenePhase) private var scenePhase
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+
+    // Thread-safe flag for keyboard request processing
+    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
+    private static var isProcessingKeyboardRequest = false
 
     init() {
         // Initialize app directories
@@ -167,6 +171,7 @@ struct VivaDictaApp: App {
     
 
     private func attemptReturnToHost(hostId: String) {
+        logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
         logger.logInfo("🔄 Attempting to return to host: \(hostId)")
 
         if let urlScheme = getURLSchemeForBundleId(hostId),
@@ -184,7 +189,7 @@ struct VivaDictaApp: App {
                             } else {
                                 self.logger.logError("❌ Failed to open host app: \(hostId)")
                                 // Failed to open - show the keyboard flow sheet as fallback
-                                self.appState.showKeyboardFlowSheet = true
+//                                self.appState.showKeyboardFlowSheet = true
                             }
                         })
                     } else {
@@ -199,16 +204,38 @@ struct VivaDictaApp: App {
             // No URL scheme found - show the keyboard flow sheet as fallback
             appState.showKeyboardFlowSheet = true
         }
-        
-        
-        
-        
+    }
+
     private func handleDeepLink(_ url: URL) {
         logger.logInfo("📱 Received deep link: \(url.absoluteString)")
 
         // Handle deep links from keyboard extension
         if url.absoluteString.starts(with: "vivadicta://record-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard recording request")
+
+            // Thread-safe check to prevent multiple simultaneous processing
+            var shouldProcess = false
+            Self.processingQueue.sync {
+                if !Self.isProcessingKeyboardRequest {
+                    Self.isProcessingKeyboardRequest = true
+                    shouldProcess = true
+                }
+            }
+
+            guard shouldProcess else {
+                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
+                return
+            }
+
+            logger.logInfo("🔒 Processing keyboard request (thread-safe)")
+
+            // Ensure we reset the flag when done
+            defer {
+                Self.processingQueue.sync {
+                    Self.isProcessingKeyboardRequest = false
+                }
+                logger.logInfo("🔓 Keyboard request processing completed")
+            }
 
             // Extract hostId from URL query parameters
             let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
@@ -218,32 +245,54 @@ struct VivaDictaApp: App {
                 logger.logInfo("📱 Detected host bundle ID from URL: \(hostId)")
             }
 
+            logger.logInfo("🔍 DEBUG: hostId before starting services: \(hostId ?? "nil")")
+
+            logger.logInfo("🔍 DEBUG: About to call startLiveActivity")
             appState.startLiveActivity()
+            logger.logInfo("🔍 DEBUG: startLiveActivity completed")
 
             // Start audio prewarm session to keep app alive in background
             do {
                 //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
+                logger.logInfo("🔍 DEBUG: About to start prewarm session")
                 try AudioPrewarmManager.shared.startPrewarmSession()
-
-                // Activate keyboard session to notify keyboard that hot mic is ready
-                AppGroupCoordinator.shared.activateKeyboardSession(
-                    timeoutSeconds: AudioPrewarmManager.shared.audioSessionTimeout
-                )
-
-                logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
-
+                logger.logInfo("🔍 DEBUG: Prewarm session started successfully")
+                
+                
+                logger.logInfo("🔍 DEBUG: About to check hostId: \(hostId ?? "nil")")
                 // Attempt to return to the host application if we have the hostId
                 if let hostId = hostId {
+                    logger.logInfo("✅ DEBUG: hostId is not nil, calling attemptReturnToHost with: \(hostId)")
                     attemptReturnToHost(hostId: hostId)
                 } else {
+                    logger.logInfo("⚠️ DEBUG: hostId is nil, showing keyboard flow sheet")
                     // No host ID available, show the keyboard flow sheet as fallback
                     appState.showKeyboardFlowSheet = true
                 }
                 
-               
+                
+
+                // Activate keyboard session to notify keyboard that hot mic is ready
+                logger.logInfo("🔍 DEBUG: About to call activateKeyboardSession")
+                let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
+                logger.logInfo("🔍 DEBUG: Timeout seconds: \(timeoutSeconds)")
+
+                AppGroupCoordinator.shared.activateKeyboardSession(
+                    timeoutSeconds: timeoutSeconds
+                )
+
+                logger.logInfo("🔍 DEBUG: activateKeyboardSession completed")
+
+                logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
+
+
+
 
             } catch {
+                logger.logError("⚠️ DEBUG: Exception caught in do-catch block")
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+                logger.logError("⚠️ DEBUG: Error type: \(type(of: error))")
+                logger.logError("⚠️ DEBUG: Full error: \(String(describing: error))")
             }
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
@@ -272,7 +321,8 @@ struct VivaDictaApp: App {
             "com.atebits.Tweetie2": "twitter://",
             "com.toyopagroup.picaboo": "snapchat://",
             "com.burbn.instagram": "instagram://",
-            "net.whatsapp.WhatsApp": "whatsapp://",
+            "net.whatsapp.WhatsApp": "whatsapp-consumer://",
+            "net.whatsapp.WhatsAppSMB": "whatsapp://",
             "com.telegram.telegram-ios": "telegram://",
             "ph.telegra.Telegraph": "telegram://",
             "com.spotify.client": "spotify://",

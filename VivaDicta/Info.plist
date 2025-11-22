@@ -19,27 +19,51 @@
 	<array>
 		<string>audio</string>
 	</array>
-    <key>INAlternativeAppNames</key>
-    <array>
-        <dict>
-            <key>INAlternativeAppName</key>
-            <string>Viva Notes</string>
-            <key>INAlternativeAppNamePronunciationHint</key>
-            <string>Viva Nots</string>
-        </dict>
-    </array>
-    <key>CFBundleIcons</key>
-    <dict>
-        <key>CFBundlePrimaryIcon</key>
-        <dict>
-            <key>NSAppIconActionTintColorName</key>
-            <string>AccentColor</string>
-            <key>NSAppIconComplementingColorNames</key>
-            <array>
-                <string>ComplementingGradientColor1</string>
-                <string>ComplementingGradientColor2</string>
-            </array>
-        </dict>
-    </dict>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Viva Notes</string>
+			<key>INAlternativeAppNamePronunciationHint</key>
+			<string>Viva Nots</string>
+		</dict>
+	</array>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>NSAppIconActionTintColorName</key>
+			<string>AccentColor</string>
+			<key>NSAppIconComplementingColorNames</key>
+			<array>
+				<string>ComplementingGradientColor1</string>
+				<string>ComplementingGradientColor2</string>
+			</array>
+		</dict>
+	</dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mobilenotes</string>
+		<string>sms</string>
+		<string>message</string>
+		<string>x-web-search</string>
+		<string>ms-word</string>
+		<string>things</string>
+		<string>googlegmail</string>
+		<string>messenger</string>
+		<string>twitter</string>
+		<string>snapchat</string>
+		<string>instagram</string>
+		<string>whatsapp</string>
+		<string>whatsapp-consumer</string>
+		<string>telegram</string>
+		<string>spotify</string>
+		<string>pages</string>
+		<string>numbers</string>
+		<string>keynote</string>
+		<string>googlechrome</string>
+		<string>ms-outlook</string>
+		<string>dbapi-1</string>
+	</array>
 </dict>
 </plist>
