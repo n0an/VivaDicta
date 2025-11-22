@@ -73,17 +73,11 @@ struct KeyboardFlowSheet: View {
 //            .debugBorder()
 //            .padding(.bottom, 20)
         }
-        .debugBorder()
-//        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea()
-//        .debugBorder()
-//        .background(Color(.systemGroupedBackground))
-        .onAppear {
-            // Auto-dismiss after a delay if needed
-            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-//                appState.showKeyboardFlowSheet = false
-            }
+        .contentShape(.rect)
+        .onTapGesture {
+            appState.showKeyboardFlowSheet = false
         }
+        .ignoresSafeArea()
     }
     
 }
