@@ -29,6 +29,7 @@ class AppState {
     var shouldNavigateToModels: Bool = false
     var shouldStartRecording: Bool = false
     var selectedTranscriptionID: UUID? = nil  // For Spotlight navigation
+    var showKeyboardFlowSheet: Bool = false  // For showing keyboard flow activation sheet
 
     init() {
         transcriptionManager = TranscriptionManager()
@@ -152,6 +153,7 @@ class AppState {
     /// Check if the Live Activity is stale and end it if necessary
     /// Called when the app returns to foreground
     public func checkAndEndStaleLiveActivity() {
+        
         guard liveActivity != nil,
               let startTime = liveActivityStartTime else { return }
 

@@ -147,6 +147,11 @@ struct MainView: View {
                 }
             }
         }
+        .sheet(isPresented: $appState.showKeyboardFlowSheet) {
+            KeyboardFlowSheet(appState: appState)
+                .presentationDetents([.fraction(0.3)])
+                .presentationDragIndicator(.hidden)
+        }
     }
 
     private func startRecording() {

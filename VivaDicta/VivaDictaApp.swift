@@ -144,6 +144,10 @@ struct VivaDictaApp: App {
                     handleTranscriptionActivity(userActivity)
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
+                    if oldPhase == .active && newPhase == .inactive {
+                        appState.showKeyboardFlowSheet = false
+                    }
+
                     switch newPhase {
                     case .active:
                         logger.logInfo("🎬 App became active - checking for stale Live Activity")
@@ -168,22 +172,24 @@ struct VivaDictaApp: App {
         // Handle deep links from keyboard extension
         if url.absoluteString == "vivadicta://record-for-keyboard" {
             logger.logInfo("📱 Recognized as keyboard recording request")
-            
+
             appState.startLiveActivity()
-            
-            
+
+            // Show the keyboard flow sheet
+            appState.showKeyboardFlowSheet = true
+
             // Start audio prewarm session to keep app alive in background
             do {
                 //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
                 try AudioPrewarmManager.shared.startPrewarmSession()
-                
+
                 // Activate keyboard session to notify keyboard that hot mic is ready
                 AppGroupCoordinator.shared.activateKeyboardSession(
                     timeoutSeconds: AudioPrewarmManager.shared.audioSessionTimeout
                 )
-                
+
                 logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
-                
+
             } catch {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
