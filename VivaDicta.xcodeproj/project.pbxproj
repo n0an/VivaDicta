@@ -950,7 +950,7 @@
 			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
 			requirement = {
 				kind = exactVersion;
-				version = 0.14.1;
+				version = 0.15.0;
 			};
 		};
 		18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
