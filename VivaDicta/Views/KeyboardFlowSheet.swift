@@ -9,8 +9,6 @@ import SwiftUI
 
 struct KeyboardFlowSheet: View {
     @Bindable var appState: AppState
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
