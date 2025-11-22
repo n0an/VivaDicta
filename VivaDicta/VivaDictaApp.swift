@@ -144,6 +144,10 @@ struct VivaDictaApp: App {
                     handleTranscriptionActivity(userActivity)
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
+                    if oldPhase == .active && newPhase == .inactive {
+                        appState.showKeyboardFlowSheet = false
+                    }
+
                     switch newPhase {
                     case .active:
                         logger.logInfo("🎬 App became active - checking for stale Live Activity")

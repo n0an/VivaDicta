@@ -153,6 +153,7 @@ class AppState {
     /// Check if the Live Activity is stale and end it if necessary
     /// Called when the app returns to foreground
     public func checkAndEndStaleLiveActivity() {
+        
         guard liveActivity != nil,
               let startTime = liveActivityStartTime else { return }
 
