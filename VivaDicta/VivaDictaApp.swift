@@ -24,8 +24,8 @@ struct VivaDictaApp: App {
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
 
     // Thread-safe flag for keyboard request processing
-    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
-    private static var isProcessingKeyboardRequest = false
+//    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
+//    private static var isProcessingKeyboardRequest = false
 
     init() {
         // Initialize app directories
@@ -214,38 +214,30 @@ struct VivaDictaApp: App {
             logger.logInfo("📱 Recognized as keyboard recording request")
 
             // Thread-safe check to prevent multiple simultaneous processing
-            var shouldProcess = false
-            Self.processingQueue.sync {
-                if !Self.isProcessingKeyboardRequest {
-                    Self.isProcessingKeyboardRequest = true
-                    shouldProcess = true
-                }
-            }
+//            var shouldProcess = false
+//            Self.processingQueue.sync {
+//                if !Self.isProcessingKeyboardRequest {
+//                    Self.isProcessingKeyboardRequest = true
+//                    shouldProcess = true
+//                }
+//            }
 
-            guard shouldProcess else {
-                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
-                return
-            }
+//            guard shouldProcess else {
+//                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
+//                return
+//            }
 
             logger.logInfo("🔒 Processing keyboard request (thread-safe)")
 
             // Ensure we reset the flag when done
-            defer {
-                Self.processingQueue.sync {
-                    Self.isProcessingKeyboardRequest = false
-                }
-                logger.logInfo("🔓 Keyboard request processing completed")
-            }
+//            defer {
+//                Self.processingQueue.sync {
+//                    Self.isProcessingKeyboardRequest = false
+//                }
+//                logger.logInfo("🔓 Keyboard request processing completed")
+//            }
 
-            // Extract hostId from URL query parameters
-            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
-
-            if let hostId = hostId {
-                logger.logInfo("📱 Detected host bundle ID from URL: \(hostId)")
-            }
-
-            logger.logInfo("🔍 DEBUG: hostId before starting services: \(hostId ?? "nil")")
+            
 
             logger.logInfo("🔍 DEBUG: About to call startLiveActivity")
             appState.startLiveActivity()
@@ -259,7 +251,13 @@ struct VivaDictaApp: App {
                 logger.logInfo("🔍 DEBUG: Prewarm session started successfully")
                 
                 
+                
+                // Extract hostId from URL query parameters
+                let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
+                
                 logger.logInfo("🔍 DEBUG: About to check hostId: \(hostId ?? "nil")")
+                
                 // Attempt to return to the host application if we have the hostId
                 if let hostId = hostId {
                     logger.logInfo("✅ DEBUG: hostId is not nil, calling attemptReturnToHost with: \(hostId)")
