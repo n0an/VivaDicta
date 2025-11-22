@@ -53,7 +53,7 @@ struct KeyboardCustomView: View {
                 // Show normal keyboard for idle and ready states
                 VStack(spacing: 0) {
                     KeyboardView(
-                        state: controller.state,
+//                        state: controller.state,
                         services: controller.services,
                         buttonContent: { $0.view },
                         buttonView: { $0.view },
