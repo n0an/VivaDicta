@@ -68,10 +68,21 @@ struct ActivateButton: View {
     @State var isAnimating = false
     
     var borderWidth: CGFloat
+    weak var controller: KeyboardViewController?
     
     var body: some View {
         Button {
-            if let url = URL(string: "vivadicta://record-for-keyboard") {
+            // Build URL with hostId as query parameter
+            var urlString = "vivadicta://record-for-keyboard"
+            if let hostId = controller?.hostApplicationBundleId {
+                // URL encode the hostId to handle special characters
+                if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                    urlString += "?hostId=\(encodedHostId)"
+                }
+            }
+
+            if let url = URL(string: urlString) {
+                controller?.logger.logInfo("📱 Opening main app with URL: \(url.absoluteString)")
                 openURL(url)
             }
         } label: {
@@ -161,18 +172,20 @@ struct MicButton: View {
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
-    
+
+    weak var controller: KeyboardViewController?
+
     var body: some View {
         HStack(spacing: 0) {
             Spacer()
             
             if dictationState.uiState == .notReady {
                 if #available(iOS 26.0, *) {
-                    ActivateButton(borderWidth: 0)
+                    ActivateButton(borderWidth: 0, controller: controller)
                         .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
                     
                 } else {
-                    ActivateButton(borderWidth: 0.5)
+                    ActivateButton(borderWidth: 0.5, controller: controller)
                 }
                 
             } else {
@@ -224,7 +237,17 @@ struct VivaDictaKeyboardToolbarView: View {
     }
 
     private func openMainAppForHotMic() {
-        if let url = URL(string: "vivadicta://record-for-keyboard") {
+        // Build URL with hostId as query parameter
+        var urlString = "vivadicta://record-for-keyboard"
+        if let hostId = controller?.hostApplicationBundleId {
+            // URL encode the hostId to handle special characters
+            if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                urlString += "?hostId=\(encodedHostId)"
+            }
+        }
+
+        if let url = URL(string: urlString) {
+            controller?.logger.logInfo("📱 Opening main app with URL: \(url.absoluteString)")
             openURL(url)
         }
     }

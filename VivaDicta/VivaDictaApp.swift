@@ -166,17 +166,59 @@ struct VivaDictaApp: App {
     }
     
 
+    private func attemptReturnToHost(hostId: String) {
+        logger.logInfo("🔄 Attempting to return to host: \(hostId)")
+
+        if let urlScheme = getURLSchemeForBundleId(hostId),
+            let url = URL(string: urlScheme) {
+            logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
+
+            // Delay slightly to ensure audio session is properly activated
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task { @MainActor in
+                    if await UIApplication.shared.canOpenURL(url) {
+                        await UIApplication.shared.open(url, options: [:], completionHandler: { success in
+                            if success {
+                                self.logger.logInfo("✅ Successfully opened host app: \(hostId)")
+                                // Success - no need to show the keyboard flow sheet
+                            } else {
+                                self.logger.logError("❌ Failed to open host app: \(hostId)")
+                                // Failed to open - show the keyboard flow sheet as fallback
+                                self.appState.showKeyboardFlowSheet = true
+                            }
+                        })
+                    } else {
+                        self.logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
+                        // Can't open URL - show the keyboard flow sheet as fallback
+                        self.appState.showKeyboardFlowSheet = true
+                    }
+                }
+            }
+        } else {
+            logger.logInfo("❌ No URL scheme available for host: \(hostId)")
+            // No URL scheme found - show the keyboard flow sheet as fallback
+            appState.showKeyboardFlowSheet = true
+        }
+        
+        
+        
+        
     private func handleDeepLink(_ url: URL) {
         logger.logInfo("📱 Received deep link: \(url.absoluteString)")
 
         // Handle deep links from keyboard extension
-        if url.absoluteString == "vivadicta://record-for-keyboard" {
+        if url.absoluteString.starts(with: "vivadicta://record-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard recording request")
 
-            appState.startLiveActivity()
+            // Extract hostId from URL query parameters
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
 
-            // Show the keyboard flow sheet
-            appState.showKeyboardFlowSheet = true
+            if let hostId = hostId {
+                logger.logInfo("📱 Detected host bundle ID from URL: \(hostId)")
+            }
+
+            appState.startLiveActivity()
 
             // Start audio prewarm session to keep app alive in background
             do {
@@ -189,6 +231,16 @@ struct VivaDictaApp: App {
                 )
 
                 logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
+
+                // Attempt to return to the host application if we have the hostId
+                if let hostId = hostId {
+                    attemptReturnToHost(hostId: hostId)
+                } else {
+                    // No host ID available, show the keyboard flow sheet as fallback
+                    appState.showKeyboardFlowSheet = true
+                }
+                
+               
 
             } catch {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
@@ -204,6 +256,37 @@ struct VivaDictaApp: App {
         }
     }
     
+    
+    private func getURLSchemeForBundleId(_ bundleId: String) -> String? {
+        // Map of common apps and their URL schemes
+        // Note: This is not comprehensive and many apps don't have public URL schemes
+        let knownSchemes: [String: String] = [
+            "com.apple.mobilenotes": "mobilenotes://",
+            "com.apple.MobileSMS": "sms://",
+            "com.apple.mobilemail": "message://",
+            "com.apple.mobilesafari": "x-web-search://",
+            "com.microsoft.Office.Word": "ms-word://",
+            "com.culturedcode.ThingsiPhone": "things://",
+            "com.google.Gmail": "googlegmail://",
+            "com.facebook.Messenger": "messenger://",
+            "com.atebits.Tweetie2": "twitter://",
+            "com.toyopagroup.picaboo": "snapchat://",
+            "com.burbn.instagram": "instagram://",
+            "net.whatsapp.WhatsApp": "whatsapp://",
+            "com.telegram.telegram-ios": "telegram://",
+            "ph.telegra.Telegraph": "telegram://",
+            "com.spotify.client": "spotify://",
+            "com.apple.Pages": "pages://",
+            "com.apple.Numbers": "numbers://",
+            "com.apple.Keynote": "keynote://",
+            "com.google.chrome.ios": "googlechrome://",
+            "com.microsoft.Office.Outlook": "ms-outlook://",
+            "com.getdropbox.Dropbox": "dbapi-1://",
+            // Add more as needed
+        ]
+
+        return knownSchemes[bundleId]
+    }
     
     func updateShortcutItems() {
         let recordAction = UIApplicationShortcutItem(

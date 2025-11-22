@@ -60,7 +60,7 @@ struct KeyboardCustomView: View {
                         collapsedView: { $0.view },
                         emojiKeyboard: { $0.view },
                         toolbar: { _ in
-                            VivaDictaKeyboardToolbarView()
+                            VivaDictaKeyboardToolbarView(controller: controller as? KeyboardViewController)
                                 .environment(self.dictationState)
                         }
                     )
