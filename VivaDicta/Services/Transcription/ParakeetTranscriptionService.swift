@@ -88,7 +88,7 @@ class ParakeetTranscriptionService: TranscriptionService {
     }
 
     private func applyVAD(to audioSamples: [Float], modelsDirectory: URL) async throws -> [Float] {
-        let vadConfig = VadConfig(threshold: 0.7)
+        let vadConfig = VadConfig(defaultThreshold: 0.7)
 
         // Initialize VAD manager if needed
         if vadManager == nil {

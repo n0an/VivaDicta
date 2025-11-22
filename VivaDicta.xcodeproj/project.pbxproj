@@ -15,8 +15,9 @@
 		18E1C7FC2E8E793E00BE8A11 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */; };
 		18E1C7FE2E8E793E00BE8A11 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
 		18E1C80F2E8E793F00BE8A11 /* VivaDictaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		18E328622E87C7620026327D /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328612E87C7620026327D /* FluidAudio */; };
 		18E328F72E894C3D0026327D /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328F62E894C3D0026327D /* WhisperKit */; };
+		18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD6B22ED1FBFB00C0041E /* FluidAudio */; };
+		18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD7982ED1FCC600C0041E /* FluidAudio */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -184,7 +185,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18E328622E87C7620026327D /* FluidAudio in Frameworks */,
+				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */,
@@ -203,6 +204,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
+				18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */,
 				186E2F922EA690DF00B19EDF /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -277,9 +279,9 @@
 			name = VivaDicta;
 			packageProductDependencies = (
 				181D0D002E42355600D357A6 /* SiriWaveView */,
-				18E328612E87C7620026327D /* FluidAudio */,
 				18E328F62E894C3D0026327D /* WhisperKit */,
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
+				18EBD6B22ED1FBFB00C0041E /* FluidAudio */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -327,6 +329,7 @@
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
 				186E2F912EA690DF00B19EDF /* SiriWaveView */,
+				18EBD7982ED1FCC600C0041E /* FluidAudio */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -390,9 +393,9 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */,
-				18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
+				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -942,20 +945,20 @@
 				version = 10.0.4;
 			};
 		};
-		18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/FluidInference/FluidAudio";
-			requirement = {
-				kind = exactVersion;
-				version = 0.7.2;
-			};
-		};
 		18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
 			requirement = {
 				kind = exactVersion;
 				version = 0.14.1;
+			};
+		};
+		18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/FluidInference/FluidAudio";
+			requirement = {
+				kind = exactVersion;
+				version = 0.7.9;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -981,15 +984,20 @@
 			package = 18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */;
 			productName = KeyboardKit;
 		};
-		18E328612E87C7620026327D /* FluidAudio */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18E328602E87C7620026327D /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
-		};
 		18E328F62E894C3D0026327D /* WhisperKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
+		};
+		18EBD6B22ED1FBFB00C0041E /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
+		};
+		18EBD7982ED1FCC600C0041E /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
