@@ -33,6 +33,7 @@ struct HudView: View {
         
         VStack(spacing: 12) {
             Image(systemName: statusIcon)
+                .contentTransition(.symbolEffect(.replace))
                 .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                 .font(.system(size: 50, weight: .semibold))
                 .onAppear { isSymbolAnimating = true }
@@ -91,6 +92,8 @@ struct HudView: View {
 
 
 #Preview {
-    HudView(state: .transcribing)
-    HudView(state: .enhancing)
+    VStack(spacing: 60) {
+        HudView(state: .transcribing)
+        HudView(state: .enhancing)
+    }
 }
