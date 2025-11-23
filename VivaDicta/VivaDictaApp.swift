@@ -359,6 +359,7 @@ struct VivaDictaApp: App {
             "com.getdropbox.Dropbox": "dbapi-1://",
             "com.google.Translate": "googletranslate://",
             "com.linkedin.LinkedIn": "linkedin://",
+            "com.openai.chat": "com.openai.chat://",
             // Add more as needed
         ]
 
