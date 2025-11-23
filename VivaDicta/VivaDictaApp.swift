@@ -360,7 +360,8 @@ struct VivaDictaApp: App {
             "com.google.Translate": "googletranslate://",
             "com.linkedin.LinkedIn": "linkedin://",
             "com.openai.chat": "com.openai.chat://",
-            "ai.perplexity.app": "perplexity-app://"
+            "ai.perplexity.app": "perplexity-app://",
+            "com.anthropic.claude": "claude://"
             // Add more as needed
         ]
 
