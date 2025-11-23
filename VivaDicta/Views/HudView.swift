@@ -3,6 +3,26 @@ import SwiftUI
 
 struct HudView: View {
     
+    @Environment(\.colorScheme) var colorScheme
+    
+    var state: RecordingState
+    
+    
+    var body: some View {
+        
+        if colorScheme == .light {
+            HudViewLight(state: state)
+        } else {
+            HudViewDark(state: state)
+        }
+    }
+    
+}
+
+
+
+struct HudViewDark: View {
+    
     var state: RecordingState
     
     var statusIcon: String {
@@ -45,6 +65,84 @@ struct HudView: View {
         }
         .foregroundColor(.white)
         .padding()
+        
+        .background(
+            AnimatedMeshGradient()
+                .mask(
+                    RoundedRectangle(cornerRadius: 30)
+                        .stroke(lineWidth: 20)
+                        .blur(radius: 10)
+                )
+                .blendMode(.lighten)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 30)
+                .stroke(lineWidth: 3)
+                .fill(Color.white)
+                .blur(radius: 2)
+                .blendMode(.overlay)
+        )
+        
+        .overlay(
+            RoundedRectangle(cornerRadius: 30)
+                .stroke(lineWidth: 1)
+                .fill(Color.white)
+                .blur(radius: 1)
+                .blendMode(.overlay)
+        )
+        .background(.black)
+        .mask(RoundedRectangle(cornerRadius: 30, style: .continuous))
+        
+    }
+}
+
+
+
+struct HudViewLight: View {
+    
+    var state: RecordingState
+    
+    var statusIcon: String {
+        switch state {
+        case .transcribing:
+            return "pencil.and.scribble"
+        case .enhancing:
+            return "sparkles"
+        default:
+            return "microphone.circle.fill"
+        }
+    }
+    
+    var statusText: String {
+        switch state {
+        case .transcribing:
+            return "Transcribing"
+        case .enhancing:
+            return "Enhancing"
+        default:
+            return ""
+        }
+    }
+    
+    @State var isSymbolAnimating = false
+    
+    var body: some View {
+        
+        VStack(spacing: 12) {
+            Image(systemName: statusIcon)
+                .contentTransition(.symbolEffect(.replace))
+                .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+                .font(.system(size: 50, weight: .semibold))
+                .onAppear { isSymbolAnimating = true }
+                .onDisappear { isSymbolAnimating = false }
+            
+            Text(statusText)
+                .font(.system(size: 17, weight: .semibold))
+                .animation(.easeInOut(duration: 0.3), value: statusText)
+        }
+        .foregroundColor(.white)
+        .padding()
+        
         .background(
             ZStack {
                 AnimatedMeshGradient()
@@ -53,7 +151,7 @@ struct HudView: View {
                             .stroke(lineWidth: 16)
                             .blur(radius: 8)
                     )
-                
+
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(lineWidth: 3)
@@ -68,7 +166,7 @@ struct HudView: View {
                             .blur(radius: 1)
                             .blendMode(.overlay)
                     )
-                
+
             }
         )
         .background(
@@ -91,9 +189,21 @@ struct HudView: View {
 }
 
 
-#Preview {
+
+#Preview("Light") {
     VStack(spacing: 60) {
         HudView(state: .transcribing)
         HudView(state: .enhancing)
     }
+}
+
+#Preview("Dark") {
+    VStack(spacing: 60) {
+        
+        HudViewDark(state: .transcribing)
+        HudViewDark(state: .enhancing)
+        
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(.black)
 }
