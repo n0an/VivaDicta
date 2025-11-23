@@ -7,24 +7,6 @@ struct HudView: View {
     
     var state: RecordingState
     
-    
-    var body: some View {
-        
-        if colorScheme == .light {
-            HudViewLight(state: state)
-        } else {
-            HudViewDark(state: state)
-        }
-    }
-    
-}
-
-
-
-struct HudViewDark: View {
-    
-    var state: RecordingState
-    
     var statusIcon: String {
         switch state {
         case .transcribing:
@@ -46,6 +28,25 @@ struct HudViewDark: View {
             return ""
         }
     }
+    
+    
+    var body: some View {
+        
+        if colorScheme == .light {
+            HudViewLight(statusIcon: statusIcon, statusText: statusText)
+        } else {
+            HudViewDark(statusIcon: statusIcon, statusText: statusText)
+        }
+    }
+    
+}
+
+
+
+struct HudViewDark: View {
+    
+    var statusIcon: String
+    var statusText: String
     
     @State var isSymbolAnimating = false
     
@@ -96,33 +97,10 @@ struct HudViewDark: View {
     }
 }
 
-
-
 struct HudViewLight: View {
     
-    var state: RecordingState
-    
-    var statusIcon: String {
-        switch state {
-        case .transcribing:
-            return "pencil.and.scribble"
-        case .enhancing:
-            return "sparkles"
-        default:
-            return "microphone.circle.fill"
-        }
-    }
-    
-    var statusText: String {
-        switch state {
-        case .transcribing:
-            return "Transcribing"
-        case .enhancing:
-            return "Enhancing"
-        default:
-            return ""
-        }
-    }
+    var statusIcon: String
+    var statusText: String
     
     @State var isSymbolAnimating = false
     
@@ -166,7 +144,6 @@ struct HudViewLight: View {
                             .blur(radius: 1)
                             .blendMode(.overlay)
                     )
-
             }
         )
         .background(
@@ -188,22 +165,18 @@ struct HudViewLight: View {
     }
 }
 
-
-
 #Preview("Light") {
     VStack(spacing: 60) {
         HudView(state: .transcribing)
         HudView(state: .enhancing)
     }
+    .preferredColorScheme(.light)
 }
 
 #Preview("Dark") {
     VStack(spacing: 60) {
-        
-        HudViewDark(state: .transcribing)
-        HudViewDark(state: .enhancing)
-        
+        HudView(state: .transcribing)
+        HudView(state: .enhancing)
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(.black)
+    .preferredColorScheme(.dark)
 }
