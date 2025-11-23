@@ -17,6 +17,8 @@ struct TranscriptionsContentView: View {
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
     @State private var navigationPath = NavigationPath()
+    @State private var newlyInsertedIDs: Set<UUID> = []
+    @State private var previousTranscriptionCount = 0
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
 
@@ -37,7 +39,10 @@ struct TranscriptionsContentView: View {
                 List {
                     ForEach(displayedTranscriptions) { transcription in
                         NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
-                            TranscriptionRowView(transcription: transcription)
+                            TranscriptionRowView(
+                                transcription: transcription,
+                                isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                            )
                         }
                     }
                     .onDelete(perform: deleteTranscription)
@@ -47,11 +52,32 @@ struct TranscriptionsContentView: View {
         }
         .onAppear {
             filteredTranscriptions = allTranscriptions
+            previousTranscriptionCount = allTranscriptions.count
         }
         .onChange(of: searchText) { _, newValue in
             performDebouncedSearch(with: newValue)
         }
-        .onChange(of: allTranscriptions) { _, _ in
+        .onChange(of: allTranscriptions) { oldValue, newValue in
+            // Detect newly inserted transcriptions
+            if newValue.count > previousTranscriptionCount {
+                // Find the newly added transcription(s)
+                // Since the query is sorted by timestamp in reverse, new ones appear at the beginning
+                let newTranscriptions = newValue.prefix(newValue.count - previousTranscriptionCount)
+                for transcription in newTranscriptions {
+                    newlyInsertedIDs.insert(transcription.id)
+
+                    // Remove from the set after animation completes (1 second)
+                    Task {
+                        try? await Task.sleep(for: .seconds(1))
+                        await MainActor.run {
+                            _ = newlyInsertedIDs.remove(transcription.id)
+                        }
+                    }
+                }
+            }
+            previousTranscriptionCount = newValue.count
+
+            // Update filtered results
             if searchText.isEmpty {
                 filteredTranscriptions = allTranscriptions
             } else {

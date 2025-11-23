@@ -28,7 +28,9 @@ struct AnimatedMeshGradient: View {
         ])
         .onAppear {
             timer = Timer.scheduledTimer(withTimeInterval: 0.002, repeats: true) { _ in
-                t += 0.02
+                Task { @MainActor in
+                    t += 0.02
+                }
             }
         }
         .background(.black)
@@ -67,7 +69,9 @@ struct AnimatedMeshGradient2: View {
         ])
         .onAppear {
             timer = Timer.scheduledTimer(withTimeInterval: 0.002, repeats: true) { _ in
-                t += 0.02
+                Task { @MainActor in
+                    t += 0.02
+                }
             }
         }
         .background(.black)
