@@ -72,7 +72,6 @@
 		<string>linkedin</string>
 		<string>com.openai.chat</string>
 		<string>perplexity-app</string>
-		<string>com.anthropic.claude</string>
 		<string>claude</string>
 	</array>
 </dict>
