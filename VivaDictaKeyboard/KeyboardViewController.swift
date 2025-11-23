@@ -241,6 +241,7 @@ struct VivaDictaKeyboardToolbarView: View {
         var urlString = "vivadicta://record-for-keyboard"
         if let hostId = controller?.hostApplicationBundleId {
             // URL encode the hostId to handle special characters
+            // Doc - https://docs.keyboardkit.com/documentation/keyboardkit/host-article#Host-Application-Bundle-Identifier
             if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
                 urlString += "?hostId=\(encodedHostId)"
             }
