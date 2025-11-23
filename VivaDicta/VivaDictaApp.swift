@@ -357,6 +357,8 @@ struct VivaDictaApp: App {
             "com.google.chrome.ios": "googlechrome://",
             "com.microsoft.Office.Outlook": "ms-outlook://",
             "com.getdropbox.Dropbox": "dbapi-1://",
+            "com.google.Translate": "googletranslate://",
+            "com.linkedin.LinkedIn": "linkedin://",
             // Add more as needed
         ]
 

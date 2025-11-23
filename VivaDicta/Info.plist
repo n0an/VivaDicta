@@ -68,6 +68,8 @@
 		<string>googlechrome</string>
 		<string>ms-outlook</string>
 		<string>dbapi-1</string>
+		<string>googletranslate</string>
+		<string>linkedin</string>
 	</array>
 </dict>
 </plist>
