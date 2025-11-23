@@ -16,7 +16,7 @@ extension Logger {
 
     /// Log info level with optional print statement
     nonisolated func logInfo(_ message: String) {
-        self.info("\(message)")
+        self.info("\(message, privacy: .public)")
 
         if Self.printLogsEnabled {
             print(message)
@@ -25,7 +25,7 @@ extension Logger {
 
     /// Log debug level with optional print statement
     nonisolated func logDebug(_ message: String) {
-        self.debug("\(message)")
+        self.debug("\(message, privacy: .public)")
 
         if Self.printLogsEnabled {
             print(message)
@@ -34,7 +34,7 @@ extension Logger {
 
     /// Log error level with optional print statement
     nonisolated func logError(_ message: String) {
-        self.error("\(message)")
+        self.error("\(message, privacy: .public)")
 
         if Self.printLogsEnabled {
             print(message)
@@ -43,7 +43,7 @@ extension Logger {
 
     /// Log warning level with optional print statement
     nonisolated func logWarning(_ message: String) {
-        self.warning("\(message)")
+        self.warning("\(message, privacy: .public)")
 
         if Self.printLogsEnabled {
             print(message)
@@ -52,7 +52,7 @@ extension Logger {
 
     /// Log notice level with optional print statement
     nonisolated func logNotice(_ message: String) {
-        self.notice("\(message)")
+        self.notice("\(message, privacy: .public)")
 
         if Self.printLogsEnabled {
             print(message)

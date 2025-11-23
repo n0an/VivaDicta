@@ -17,11 +17,15 @@ struct VivaDictaApp: App {
 #if !os(macOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
-    
+
     @State var appState = AppState()
     @Environment(\.scenePhase) private var scenePhase
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+
+    // Thread-safe flag for keyboard request processing
+//    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
+//    private static var isProcessingKeyboardRequest = false
 
     init() {
         // Initialize app directories
@@ -166,29 +170,141 @@ struct VivaDictaApp: App {
     }
     
 
+    private func attemptReturnToHost(hostId: String) {
+        // Keyboard session flow:
+        // 1. If we CAN return to host app: Start recording → Return to host
+        //    User sees recording already happening when they arrive
+        // 2. If we CANNOT return: Show keyboard flow sheet → User manually switches
+        //    User will manually start recording after switching
+
+        logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
+        logger.logInfo("🔄 Attempting to return to host: \(hostId)")
+
+        if let urlScheme = getURLSchemeForBundleId(hostId),
+            let url = URL(string: urlScheme) {
+            logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
+
+            // Check if we can open the URL before starting recording
+            Task { @MainActor in
+                if UIApplication.shared.canOpenURL(url) {
+                    // We can return to host - start actual recording first
+                    logger.logInfo("🎙️ Starting recording before returning to host app")
+
+                    // Check if we have a transcription model selected
+                    guard let vm = appState.recordViewModel else {
+                        logger.logError("❌ RecordViewModel not available")
+                        appState.showKeyboardFlowSheet = true
+                        return
+                    }
+
+                    if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+                        logger.logWarning("⚠️ No transcription model selected - showing keyboard flow sheet")
+                        appState.showKeyboardFlowSheet = true
+                        return
+                    }
+
+                    // Start the actual recording
+                    vm.startCaptureAudio()
+
+                    // Small delay to ensure recording is fully started
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+                    // Now return to the host app
+                    UIApplication.shared.open(url, options: [:]) { success in
+                        if success {
+                            self.logger.logInfo("✅ Successfully opened host app: \(hostId) with recording started")
+                        } else {
+                            self.logger.logError("❌ Failed to open host app: \(hostId)")
+                            // Failed to open - recording is already started, user can continue
+                        }
+                    }
+                } else {
+                    logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
+                    // Can't open URL - don't start recording, show keyboard flow sheet
+                    appState.showKeyboardFlowSheet = true
+                }
+            }
+        } else {
+            logger.logInfo("❌ No URL scheme available for host: \(hostId)")
+            // No URL scheme found - show the keyboard flow sheet as fallback
+            appState.showKeyboardFlowSheet = true
+
+            // TODO: Log to Firebase Analytics when we show keyboard flow sheet due to missing URL scheme mapping
+            // This helps us track which apps users are trying to use but we don't have URL schemes for yet
+            // We can then add popular apps to the knownSchemes dictionary
+            // Bundle ID to log: \(hostId)
+            // Linear issue: https://linear.app/antonnovoselov/issue/VIV-175/firebase-analytics-add-logging-what-app-was-not-added-to-predefined
+        }
+    }
+
     private func handleDeepLink(_ url: URL) {
         logger.logInfo("📱 Received deep link: \(url.absoluteString)")
 
         // Handle deep links from keyboard extension
-        if url.absoluteString == "vivadicta://record-for-keyboard" {
+        if url.absoluteString.starts(with: "vivadicta://record-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard recording request")
 
-            appState.startLiveActivity()
+            // Thread-safe check to prevent multiple simultaneous processing
+//            var shouldProcess = false
+//            Self.processingQueue.sync {
+//                if !Self.isProcessingKeyboardRequest {
+//                    Self.isProcessingKeyboardRequest = true
+//                    shouldProcess = true
+//                }
+//            }
 
-            // Show the keyboard flow sheet
-            appState.showKeyboardFlowSheet = true
+//            guard shouldProcess else {
+//                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
+//                return
+//            }
+
+            logger.logInfo("🔒 Processing keyboard request (thread-safe)")
+
+            // Ensure we reset the flag when done
+//            defer {
+//                Self.processingQueue.sync {
+//                    Self.isProcessingKeyboardRequest = false
+//                }
+//                logger.logInfo("🔓 Keyboard request processing completed")
+//            }
+
+            
+
+            appState.startLiveActivity()
 
             // Start audio prewarm session to keep app alive in background
             do {
                 //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
                 try AudioPrewarmManager.shared.startPrewarmSession()
+                
+                
+                
+                // Extract hostId from URL query parameters
+                let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
+                
+                // Attempt to return to the host application if we have the hostId
+                if let hostId = hostId {
+                    attemptReturnToHost(hostId: hostId)
+                } else {
+                    // No host ID available, show the keyboard flow sheet as fallback
+                    appState.showKeyboardFlowSheet = true
+                }
+                
+                
 
                 // Activate keyboard session to notify keyboard that hot mic is ready
+                let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
+
                 AppGroupCoordinator.shared.activateKeyboardSession(
-                    timeoutSeconds: AudioPrewarmManager.shared.audioSessionTimeout
+                    timeoutSeconds: timeoutSeconds
                 )
 
+
                 logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
+
+
+
 
             } catch {
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
@@ -204,6 +320,46 @@ struct VivaDictaApp: App {
         }
     }
     
+    
+    private func getURLSchemeForBundleId(_ bundleId: String) -> String? {
+        // Map of common apps and their URL schemes
+        // Note: This is not comprehensive and many apps don't have public URL schemes
+        let knownSchemes: [String: String] = [
+            "com.apple.mobilenotes": "mobilenotes://",
+            "com.apple.MobileSMS": "sms://",
+            "com.apple.mobilemail": "message://",
+            "com.apple.mobilesafari": "x-web-search://",
+            "com.microsoft.Office.Word": "ms-word://",
+            "com.culturedcode.ThingsiPhone": "things://",
+            "com.google.Gmail": "googlegmail://",
+            "com.facebook.Facebook": "fb://",
+            "com.facebook.Messenger": "fb-messenger://",
+            "com.atebits.Tweetie2": "twitter://",
+            "com.toyopagroup.picaboo": "snapchat://",
+            "com.burbn.instagram": "instagram://",
+            "net.whatsapp.WhatsApp": "whatsapp-consumer://",
+            "net.whatsapp.WhatsAppSMB": "whatsapp://",
+            "com.telegram.telegram-ios": "tg://",
+            "ph.telegra.Telegraph": "tg://",
+            "com.viber": "viber://",
+            "com.spotify.client": "spotify://",
+            "com.apple.Pages": "pages://",
+            "com.apple.Numbers": "numbers://",
+            "com.apple.Keynote": "keynote://",
+            "com.google.chrome.ios": "googlechrome://",
+            "com.microsoft.Office.Outlook": "ms-outlook://",
+            "com.getdropbox.Dropbox": "dbapi-1://",
+            "com.google.Translate": "googletranslate://",
+            "com.linkedin.LinkedIn": "linkedin://",
+            "com.openai.chat": "com.openai.chat://",
+            "ai.perplexity.app": "perplexity-app://",
+            "com.anthropic.claude": "claude://",
+            "md.obsidian": "obsidian://"
+            // Add more as needed
+        ]
+
+        return knownSchemes[bundleId]
+    }
     
     func updateShortcutItems() {
         let recordAction = UIApplicationShortcutItem(
