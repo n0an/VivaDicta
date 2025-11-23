@@ -7,9 +7,15 @@
 
 import SwiftUI
 
+enum HudState {
+    case transcribing
+    case enhancing
+}
+
 struct HudView: View {
     
-    var state: RecordingState
+    
+    var state: HudState
     
     var statusIcon: String {
         switch state {
@@ -17,29 +23,19 @@ struct HudView: View {
             return "pencil.and.scribble"
         case .enhancing:
             return "sparkles"
-        default:
-            return "microphone.circle.fill"
         }
     }
     
     var statusText: String {
         switch state {
-        case .idle:
-            return "Ready"
-        case .recording:
-            return "Recording"
         case .transcribing:
             return "Transcribing"
         case .enhancing:
             return "Enhancing"
-        default:
-            return ""
         }
     }
     
     @State var isSymbolAnimating = false
-    
-    
     
     var body: some View {
         
@@ -60,7 +56,6 @@ struct HudView: View {
         }
         .padding()
         .background(.gray.opacity(0.2), in: .rect(cornerRadius: 20))
-        
     }
 }
 

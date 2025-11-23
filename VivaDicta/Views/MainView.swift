@@ -127,9 +127,14 @@ struct MainView: View {
                     .ignoresSafeArea()
             }
         }
-//        .overlay {
-//            HudView(state: appState.recordViewModel?.recordingState)
-//        }
+        .overlay {
+            
+            if appState.recordViewModel?.recordingState == .transcribing ||
+                appState.recordViewModel?.recordingState == .enhancing {
+                HudView(state: appState.recordViewModel?.recordingState == .transcribing ? HudState.transcribing : HudState.enhancing)
+            }
+            
+        }
         .animation(.default, value: appState.recordViewModel?.recordingState)
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
             // Show sheet only during active recording, not during transcribing or enhancing
@@ -190,5 +195,3 @@ struct MainView: View {
     @State @Previewable var appState = AppState()
     MainView(appState: appState)
 }
-
-
