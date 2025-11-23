@@ -73,6 +73,7 @@
 		<string>com.openai.chat</string>
 		<string>perplexity-app</string>
 		<string>claude</string>
+		<string>obsidian</string>
 	</array>
 </dict>
 </plist>

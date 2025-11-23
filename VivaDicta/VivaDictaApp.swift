@@ -228,6 +228,12 @@ struct VivaDictaApp: App {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - show the keyboard flow sheet as fallback
             appState.showKeyboardFlowSheet = true
+
+            // TODO: Log to Firebase Analytics when we show keyboard flow sheet due to missing URL scheme mapping
+            // This helps us track which apps users are trying to use but we don't have URL schemes for yet
+            // We can then add popular apps to the knownSchemes dictionary
+            // Bundle ID to log: \(hostId)
+            // Linear issue: https://linear.app/antonnovoselov/issue/VIV-175/firebase-analytics-add-logging-what-app-was-not-added-to-predefined
         }
     }
 
@@ -264,16 +270,12 @@ struct VivaDictaApp: App {
 
             
 
-            logger.logInfo("🔍 DEBUG: About to call startLiveActivity")
             appState.startLiveActivity()
-            logger.logInfo("🔍 DEBUG: startLiveActivity completed")
 
             // Start audio prewarm session to keep app alive in background
             do {
                 //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
-                logger.logInfo("🔍 DEBUG: About to start prewarm session")
                 try AudioPrewarmManager.shared.startPrewarmSession()
-                logger.logInfo("🔍 DEBUG: Prewarm session started successfully")
                 
                 
                 
@@ -281,14 +283,10 @@ struct VivaDictaApp: App {
                 let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                 let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
                 
-                logger.logInfo("🔍 DEBUG: About to check hostId: \(hostId ?? "nil")")
-                
                 // Attempt to return to the host application if we have the hostId
                 if let hostId = hostId {
-                    logger.logInfo("✅ DEBUG: hostId is not nil, calling attemptReturnToHost with: \(hostId)")
                     attemptReturnToHost(hostId: hostId)
                 } else {
-                    logger.logInfo("⚠️ DEBUG: hostId is nil, showing keyboard flow sheet")
                     // No host ID available, show the keyboard flow sheet as fallback
                     appState.showKeyboardFlowSheet = true
                 }
@@ -296,15 +294,12 @@ struct VivaDictaApp: App {
                 
 
                 // Activate keyboard session to notify keyboard that hot mic is ready
-                logger.logInfo("🔍 DEBUG: About to call activateKeyboardSession")
                 let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
-                logger.logInfo("🔍 DEBUG: Timeout seconds: \(timeoutSeconds)")
 
                 AppGroupCoordinator.shared.activateKeyboardSession(
                     timeoutSeconds: timeoutSeconds
                 )
 
-                logger.logInfo("🔍 DEBUG: activateKeyboardSession completed")
 
                 logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
 
@@ -312,10 +307,7 @@ struct VivaDictaApp: App {
 
 
             } catch {
-                logger.logError("⚠️ DEBUG: Exception caught in do-catch block")
                 logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
-                logger.logError("⚠️ DEBUG: Error type: \(type(of: error))")
-                logger.logError("⚠️ DEBUG: Full error: \(String(describing: error))")
             }
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
@@ -361,7 +353,8 @@ struct VivaDictaApp: App {
             "com.linkedin.LinkedIn": "linkedin://",
             "com.openai.chat": "com.openai.chat://",
             "ai.perplexity.app": "perplexity-app://",
-            "com.anthropic.claude": "claude://"
+            "com.anthropic.claude": "claude://",
+            "md.obsidian": "obsidian://"
             // Add more as needed
         ]
 
