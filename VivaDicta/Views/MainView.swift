@@ -127,6 +127,9 @@ struct MainView: View {
                     .ignoresSafeArea()
             }
         }
+//        .overlay {
+//            HudView(state: appState.recordViewModel?.recordingState)
+//        }
         .animation(.default, value: appState.recordViewModel?.recordingState)
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
             // Show sheet only during active recording, not during transcribing or enhancing
