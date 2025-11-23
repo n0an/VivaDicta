@@ -71,6 +71,7 @@
 		<string>googletranslate</string>
 		<string>linkedin</string>
 		<string>com.openai.chat</string>
+		<string>perplexity-app</string>
 	</array>
 </dict>
 </plist>
