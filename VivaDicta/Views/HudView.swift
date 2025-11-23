@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HudView: View {
     
-    var state: RecordingState = .transcribing
+    var state: RecordingState
     
     var statusIcon: String {
         switch state {
@@ -58,6 +58,8 @@ struct HudView: View {
                 .foregroundStyle(.primary)
                 .animation(.easeInOut(duration: 0.3), value: statusText)
         }
+        .padding()
+        .background(.gray.opacity(0.2), in: .rect(cornerRadius: 20))
         
     }
 }
@@ -65,4 +67,5 @@ struct HudView: View {
 
 #Preview {
     HudView(state: .transcribing)
+    HudView(state: .enhancing)
 }
