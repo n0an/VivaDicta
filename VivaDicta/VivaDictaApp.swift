@@ -171,6 +171,12 @@ struct VivaDictaApp: App {
     
 
     private func attemptReturnToHost(hostId: String) {
+        // Keyboard session flow:
+        // 1. If we CAN return to host app: Start recording → Return to host
+        //    User sees recording already happening when they arrive
+        // 2. If we CANNOT return: Show keyboard flow sheet → User manually switches
+        //    User will manually start recording after switching
+
         logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
         logger.logInfo("🔄 Attempting to return to host: \(hostId)")
 
@@ -178,25 +184,44 @@ struct VivaDictaApp: App {
             let url = URL(string: urlScheme) {
             logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
 
-            // Delay slightly to ensure audio session is properly activated
+            // Check if we can open the URL before starting recording
             Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
                 if UIApplication.shared.canOpenURL(url) {
+                    // We can return to host - start actual recording first
+                    logger.logInfo("🎙️ Starting recording before returning to host app")
+
+                    // Check if we have a transcription model selected
+                    guard let vm = appState.recordViewModel else {
+                        logger.logError("❌ RecordViewModel not available")
+                        appState.showKeyboardFlowSheet = true
+                        return
+                    }
+
+                    if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+                        logger.logWarning("⚠️ No transcription model selected - showing keyboard flow sheet")
+                        appState.showKeyboardFlowSheet = true
+                        return
+                    }
+
+                    // Start the actual recording
+                    vm.startCaptureAudio()
+
+                    // Small delay to ensure recording is fully started
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+                    // Now return to the host app
                     UIApplication.shared.open(url, options: [:]) { success in
                         if success {
-                            self.logger.logInfo("✅ Successfully opened host app: \(hostId)")
-                            // Success - no need to show the keyboard flow sheet
+                            self.logger.logInfo("✅ Successfully opened host app: \(hostId) with recording started")
                         } else {
                             self.logger.logError("❌ Failed to open host app: \(hostId)")
-                            // Failed to open - show the keyboard flow sheet as fallback
-                            // self.appState.showKeyboardFlowSheet = true
+                            // Failed to open - recording is already started, user can continue
                         }
                     }
                 } else {
-                    self.logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                    // Can't open URL - show the keyboard flow sheet as fallback
-                    self.appState.showKeyboardFlowSheet = true
+                    logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
+                    // Can't open URL - don't start recording, show keyboard flow sheet
+                    appState.showKeyboardFlowSheet = true
                 }
             }
         } else {
