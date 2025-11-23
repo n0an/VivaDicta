@@ -115,7 +115,9 @@ struct MainView: View {
                 }
         }
         .overlay {
-            if appState.recordViewModel?.recordingState != .idle {
+            if appState.recordViewModel?.recordingState == .recording ||
+                appState.recordViewModel?.recordingState == .transcribing ||
+                appState.recordViewModel?.recordingState == .enhancing {
                 AnimatedMeshGradient()
                     .mask(
                         RoundedRectangle(cornerRadius: 44, style: .continuous)
