@@ -131,7 +131,7 @@ struct MainView: View {
             
             if appState.recordViewModel?.recordingState == .transcribing ||
                 appState.recordViewModel?.recordingState == .enhancing {
-                HudView(state: appState.recordViewModel?.recordingState == .transcribing ? HudState.transcribing : HudState.enhancing)
+                HudView(state: appState.recordViewModel?.recordingState ?? .idle)
             }
             
         }

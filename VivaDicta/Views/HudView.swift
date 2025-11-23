@@ -1,21 +1,9 @@
-//
-//  HudView.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.11.23
-//
 
 import SwiftUI
 
-enum HudState {
-    case transcribing
-    case enhancing
-}
-
 struct HudView: View {
     
-    
-    var state: HudState
+    var state: RecordingState
     
     var statusIcon: String {
         switch state {
@@ -23,6 +11,8 @@ struct HudView: View {
             return "pencil.and.scribble"
         case .enhancing:
             return "sparkles"
+        default:
+            return "microphone.circle.fill"
         }
     }
     
@@ -32,10 +22,14 @@ struct HudView: View {
             return "Transcribing"
         case .enhancing:
             return "Enhancing"
+        default:
+            return ""
         }
     }
     
     @State var isSymbolAnimating = false
+    
+    
     
     var body: some View {
         
@@ -56,6 +50,7 @@ struct HudView: View {
         }
         .padding()
         .background(.gray.opacity(0.2), in: .rect(cornerRadius: 20))
+        
     }
 }
 
