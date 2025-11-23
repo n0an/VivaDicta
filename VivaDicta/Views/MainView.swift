@@ -114,6 +114,18 @@ struct MainView: View {
                     TranscriptionDetailView(transcription: transcription, appState: appState)
                 }
         }
+        .overlay {
+            if appState.recordViewModel?.recordingState != .idle {
+                AnimatedMeshGradient()
+                    .mask(
+                        RoundedRectangle(cornerRadius: 44, style: .continuous)
+                            .stroke(lineWidth: 44)
+                            .blur(radius: 22)
+                    )
+                    .ignoresSafeArea()
+            }
+        }
+        .animation(.default, value: appState.recordViewModel?.recordingState)
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
             // Show sheet only during active recording, not during transcribing or enhancing
             showingRecordingSheet = (newState == .recording)
