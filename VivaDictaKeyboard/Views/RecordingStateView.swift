@@ -11,7 +11,7 @@ import SiriWaveView
 
 struct RecordingStateView: View {
     
-    @State private var maskTimer: Float = 0.0
+    @State private var maskTimer: CGFloat = 0.0
 
     @State var isSymbolAnimating = false
 
@@ -19,11 +19,11 @@ struct RecordingStateView: View {
     
     @State var timer: Timer?
 
-    private var rectangleSpeed: Float {
+    private var rectangleSpeed: CGFloat {
         
         switch dictationState.uiState {
         case .recording:
-            0.03
+            dictationState.currentAudioLevel / 2
         case .processing:
             0.03
         default:
@@ -88,10 +88,13 @@ struct RecordingStateView: View {
             if dictationState.uiState == .recording || dictationState.uiState == .processing {
                 AnimatedMeshGradient()
                     .mask(
-                        AnimatedRectangle(size: .init(width: 80, height: 80), cornerRadius: 20, t: CGFloat(maskTimer))
+                        AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer))
+                            .blur(radius: 20)
+
                     )
-                    .frame(width: 80, height: 80)
-                    .ignoresSafeArea()
+
+                    .frame(width: 100, height: 100)
+//                    .ignoresSafeArea()
             }
         }
         .onAppear {
