@@ -111,13 +111,36 @@ struct AnimatedRectangle: Shape {
 }
 
 
-#Preview {
+//#Preview {
+//    
+//    @Previewable @State var maskTimer: CGFloat = 0
+//    @Previewable @State var timer: Timer?
+//    
+//    AnimatedRectangle(size: .init(width: 80, height: 80), cornerRadius: 20, t: maskTimer)
+//        .fill(.blue)
+//        .onAppear {
+//             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
+//                Task { @MainActor in
+//                    maskTimer += 0.1
+//                }
+//            }
+//        }
+//        .onDisappear {
+//            timer?.invalidate()
+//        }
+//    
+//}
+
+#Preview("clipShape") {
     
     @Previewable @State var maskTimer: CGFloat = 0
     @Previewable @State var timer: Timer?
-
-    AnimatedRectangle(size: .init(width: 80, height: 80), cornerRadius: 20, t: maskTimer)
-        .fill(.blue)
+    
+    AnimatedMeshGradient()
+        .clipShape(AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer)))
+//        .blur(radius: 28)
+        .padding(40)
+    
         .onAppear {
              timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
                 Task { @MainActor in
@@ -128,5 +151,31 @@ struct AnimatedRectangle: Shape {
         .onDisappear {
             timer?.invalidate()
         }
+}
+
+#Preview("mask") {
     
+    @Previewable @State var maskTimer: CGFloat = 0
+    @Previewable @State var timer: Timer?
+    
+    AnimatedMeshGradient()
+        .mask(
+            AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer))
+            
+            
+        )
+//        .blur(radius: 28)
+        .padding(40)
+
+    
+        .onAppear {
+             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
+                Task { @MainActor in
+                    maskTimer += 0.1
+                }
+            }
+        }
+        .onDisappear {
+            timer?.invalidate()
+        }
 }

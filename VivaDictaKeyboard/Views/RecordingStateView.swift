@@ -87,14 +87,17 @@ struct RecordingStateView: View {
         .overlay {
             if dictationState.uiState == .recording || dictationState.uiState == .processing {
                 AnimatedMeshGradient()
-                    .mask(
-                        AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer))
-                            .blur(radius: 20)
-
-                    )
+                    .clipShape(AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer)))
+                
+                
+//                AnimatedMeshGradient()
+//                    .mask(
+//                        AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer))
+//                            
+//
+//                    )
 
                     .frame(width: 100, height: 100)
-//                    .ignoresSafeArea()
             }
         }
         .onAppear {
