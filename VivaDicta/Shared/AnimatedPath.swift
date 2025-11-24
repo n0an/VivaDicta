@@ -112,6 +112,21 @@ struct AnimatedRectangle: Shape {
 
 
 #Preview {
-    AnimatedRectangle(size: .init(width: 200, height: 400), cornerRadius: 20, t: 10)
+    
+    @Previewable @State var maskTimer: CGFloat = 0
+    @Previewable @State var timer: Timer?
+
+    AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: maskTimer)
         .fill(.blue)
+        .onAppear {
+             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
+                Task { @MainActor in
+                    maskTimer += 0.08
+                }
+            }
+        }
+        .onDisappear {
+            timer?.invalidate()
+        }
+    
 }
