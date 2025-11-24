@@ -20,16 +20,21 @@ struct RecordingStateView: View {
     @State var timer: Timer?
 
     private var rectangleSpeed: CGFloat {
-        
+
         switch dictationState.uiState {
         case .recording:
-            dictationState.currentAudioLevel / 2
+            // Logarithmic scaling: fast growth initially, then slower
+            // Using log(1 + x*k) / log(1 + k) to map [0,1] to [0,1] logarithmically
+            let k: CGFloat = 4.0 // Controls the curve shape (higher = steeper initial growth)
+            let normalizedLevel = min(max(dictationState.currentAudioLevel, 0), 1) // Ensure 0-1 range
+            let logarithmicLevel = log(1 + normalizedLevel * k) / log(1 + k)
+            return logarithmicLevel * 0.2 // Scale to appropriate speed range
         case .processing:
-            0.03
+            return 0.03
         default:
-            0
+            return 0
         }
-        
+
     }
     
     var body: some View {

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import SiriWaveView
+import Charts
 
 struct OrbView: View {
     @State var isRotating = false
@@ -61,21 +63,150 @@ struct OrbView: View {
 
 #Preview {
     
+    
+    
     @Previewable @State var maskTimer: CGFloat = 0
     @Previewable @State var timer: Timer?
+    
+    @Previewable @State var currentAudioLevel = 0.0
+    
+    var rectangleSpeed: CGFloat {
+        
+        
+        
+        // Logarithmic scaling: fast growth initially, then slower
+        // Using log(1 + x*k) / log(1 + k) to map [0,1] to [0,1] logarithmically
+        let k: CGFloat = 4.0 // Controls the curve shape (higher = steeper initial growth)
+        let normalizedLevel = min(max(currentAudioLevel, 0), 1) // Ensure 0-1 range
+        let logarithmicLevel = log(1 + normalizedLevel * k) / log(1 + k)
+        return logarithmicLevel * 0.2 // Scale to appropriate speed range
+        
+
+    }
     
     var edgeLength: CGFloat = 100
     var delta: CGFloat = 30
     
-    OrbView(maskTimer: maskTimer)
-        .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
-                Task { @MainActor in
-                    maskTimer += 0.1
+    var tick = 1
+    
+    VStack {
+        Text("\(currentAudioLevel)")
+            .foregroundStyle(.red)
+        SiriWaveView(power: .constant(currentAudioLevel))
+            .frame(height: 140)
+    }
+    .padding()
+    .border(.red, width: 1)
+    
+    VStack {
+        Text("\(rectangleSpeed)")
+            .foregroundStyle(.blue)
+        OrbView(maskTimer: maskTimer)
+            .onAppear {
+                timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
+                    Task { @MainActor in
+//                        print("currentAudioLevel = \(currentAudioLevel)")
+//                        print("rectangleSpeed = \(rectangleSpeed)\n")
+
+                        tick += 1
+                        if tick % 60 == 0 {
+                            currentAudioLevel += 0.05
+                            
+                            if currentAudioLevel > 1 {
+                                currentAudioLevel = 0
+                            }
+                        }
+                        
+                        maskTimer += rectangleSpeed
+                        
+                        
+                    }
                 }
             }
+            .onDisappear {
+                timer?.invalidate()
+            }
+    }
+//    .border(.blue, width: 1)
+    
+}
+
+
+struct ChartDataPoint: Identifiable {
+    let id = UUID()
+    let audioLevel: Double
+    let logarithmicSpeed: Double
+    let linearSpeed: Double
+}
+
+#Preview("chart") {
+    // Generate data points for the chart
+    let dataPoints: [ChartDataPoint] = (0...100).map { i in
+        let level = Double(i) / 100.0
+
+        // Logarithmic scaling
+        let k: Double = 4.0
+        let normalizedLevel = min(max(level, 0), 1)
+        let logarithmicLevel = log(1 + normalizedLevel * k) / log(1 + k)
+        let logSpeed = logarithmicLevel * 0.2
+
+        // Linear scaling for comparison
+        let linSpeed = normalizedLevel
+
+        return ChartDataPoint(
+            audioLevel: level,
+            logarithmicSpeed: logSpeed,
+            linearSpeed: linSpeed
+        )
+    }
+
+    VStack {
+        Text("Audio Level to Animation Speed Mapping")
+            .font(.headline)
+            .padding(.bottom)
+
+        Chart(dataPoints) { point in
+            // Logarithmic curve
+            BarMark(
+                x: .value("Audio Level", point.audioLevel),
+                y: .value("Speed", point.logarithmicSpeed)
+            )
+            .foregroundStyle(Color.blue)
+//            .lineStyle(StrokeStyle(lineWidth: 3))
+            .symbolSize(0)
+
+            // Linear curve for comparison
+            LineMark(
+                x: .value("Audio Level", point.audioLevel),
+                y: .value("Speed", point.linearSpeed)
+            )
+            .foregroundStyle(Color.red.opacity(0.7))
+//            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
+            .symbolSize(0)
         }
-        .onDisappear {
-            timer?.invalidate()
+        .frame(height: 350)
+        .padding()
+        .chartXAxisLabel("Audio Level (0 to 1)")
+        .chartYAxisLabel("Animation Speed")
+        .chartXScale(domain: 0...1)
+        .chartYScale(domain: 0...1)
+        .chartLegend(position: .top) {
+            HStack(spacing: 20) {
+                Label("Logarithmic (k=9.0)", systemImage: "circle.fill")
+                    .foregroundStyle(.blue)
+                    .font(.caption)
+                Label("Linear (old)", systemImage: "circle.fill")
+                    .foregroundStyle(.red.opacity(0.7))
+                    .font(.caption)
+            }
         }
+
+        // Show the difference
+        Text("The logarithmic curve rises quickly for quiet sounds (0.0-0.3),\nthen levels off for louder sounds (0.7-1.0)")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.top)
+    }
+    .padding()
 }
