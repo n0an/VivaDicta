@@ -63,9 +63,14 @@ final class AudioPrewarmManager {
 
     /// Starts pre-warm session - activates audio session and starts continuous dummy recorder
     /// - Parameter timeout: Session duration in seconds (uses configured timeout if not specified)
-    func startPrewarmSession(timeout: TimeInterval? = nil) throws {
+    func startPrewarmSession(timeout: TimeInterval? = nil) async throws {
         // If session is already active, just extend it
         if isSessionActive {
+            // Don't extend if we're actively recording
+            if captureContext?.isCapturing == true {
+                logger.logInfo("🎙️ Prewarm session already active with recording - no action needed")
+                return
+            }
             logger.logInfo("🎙️ Prewarm session already active, extending timeout")
             extendSession(timeout: timeout)
             return
@@ -90,11 +95,8 @@ final class AudioPrewarmManager {
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         #endif
 
-        // Start continuous dummy recorder
-        Task {
-            
-            try await startDummyRecording()
-        }
+        // Start continuous dummy recorder and wait for it to complete
+        try await startDummyRecording()
 
         // Setup session timeout
         scheduleSessionTimeout()
@@ -108,6 +110,12 @@ final class AudioPrewarmManager {
     /// Extends the current session timeout (called from deeplink if session already active)
     private func extendSession(timeout: TimeInterval?) {
         guard isSessionActive else { return }
+
+        // Don't reschedule timeout if we're actively recording
+        if captureContext?.isCapturing == true {
+            logger.logInfo("🎙️ Prewarm session extend request ignored - recording in progress")
+            return
+        }
 
         // Update timeout if specified
         if let timeout = timeout {
@@ -278,11 +286,13 @@ final class AudioPrewarmManager {
         guard audioEngine?.isRunning == true else {
             logger.logError("❌ Unexpected: Audio engine not running after real recording!")
 
-            do {
-                try startPrewarmSession()
-                logger.logInfo("🔧 Recovery: Successfully restarted pre-warm session")
-            } catch {
-                logger.logError("❌ Recovery failed: \(error.localizedDescription)")
+            Task {
+                do {
+                    try await startPrewarmSession()
+                    logger.logInfo("🔧 Recovery: Successfully restarted pre-warm session")
+                } catch {
+                    logger.logError("❌ Recovery failed: \(error.localizedDescription)")
+                }
             }
             return
         }

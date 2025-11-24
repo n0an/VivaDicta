@@ -205,18 +205,20 @@ struct SettingsView: View {
     // MARK: - Keyboard Recording Session Actions
 
     private func activateKeyboardRecordingSession() {
-        do {
-            // Start the pre-warm session (same as when receiving deep link)
-            try prewarmManager.startPrewarmSession()
+        Task {
+            do {
+                // Start the pre-warm session (same as when receiving deep link)
+                try await prewarmManager.startPrewarmSession()
 
-            // Activate keyboard session to notify keyboard that hot mic is ready
-            AppGroupCoordinator.shared.activateKeyboardSession(
-                timeoutSeconds: prewarmManager.audioSessionTimeout
-            )
+                // Activate keyboard session to notify keyboard that hot mic is ready
+                AppGroupCoordinator.shared.activateKeyboardSession(
+                    timeoutSeconds: prewarmManager.audioSessionTimeout
+                )
 
-        } catch {
-            prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
-            showPrewarmError = true
+            } catch {
+                prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
+                showPrewarmError = true
+            }
         }
     }
 }

@@ -55,11 +55,13 @@ struct VivaDictaApp: App {
             logger.logInfo("🎙️ Keyboard session activated - starting prewarm")
 
             // Start audio prewarm session when keyboard session is activated
-            do {
-                try AudioPrewarmManager.shared.startPrewarmSession()
-                logger.logInfo("🎙️ Hot Mic activated from keyboard session")
-            } catch {
-                logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+            Task {
+                do {
+                    try await AudioPrewarmManager.shared.startPrewarmSession()
+                    logger.logInfo("🎙️ Hot Mic activated from keyboard session")
+                } catch {
+                    logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+                }
             }
         }
 
@@ -272,42 +274,41 @@ struct VivaDictaApp: App {
 
             appState.startLiveActivity()
 
-            // Start audio prewarm session to keep app alive in background
-            do {
-                //                try AudioSessionManager.shared.startHotMicSession(timeoutSeconds: 180)
-                try AudioPrewarmManager.shared.startPrewarmSession()
-                
-                
-                
-                // Extract hostId from URL query parameters
-                let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
-                
-                // Attempt to return to the host application if we have the hostId
-                if let hostId = hostId {
-                    attemptReturnToHost(hostId: hostId)
-                } else {
-                    // No host ID available, show the keyboard flow sheet as fallback
+            // Start audio prewarm session and wait for it to be ready before recording
+            Task { @MainActor in
+                do {
+                    // Start and await prewarm session to ensure it's fully ready
+                    try await AudioPrewarmManager.shared.startPrewarmSession()
+                    logger.logInfo("🎙️ Prewarm session fully ready")
+
+                    // Extract hostId from URL query parameters
+                    let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                    let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
+
+                    // Activate keyboard session to notify keyboard that hot mic is ready
+                    let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
+                    AppGroupCoordinator.shared.activateKeyboardSession(
+                        timeoutSeconds: timeoutSeconds
+                    )
+
+                    logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
+
+                    // Now that prewarm is ready, attempt to return to host and start recording
+                    if let hostId = hostId {
+                        attemptReturnToHost(hostId: hostId)
+                    } else {
+                        // No host ID available, show the keyboard flow sheet as fallback
+                        appState.showKeyboardFlowSheet = true
+                    }
+
+
+
+
+                } catch {
+                    logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
+                    // If prewarm fails, still try to show keyboard flow sheet as fallback
                     appState.showKeyboardFlowSheet = true
                 }
-                
-                
-
-                // Activate keyboard session to notify keyboard that hot mic is ready
-                let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
-
-                AppGroupCoordinator.shared.activateKeyboardSession(
-                    timeoutSeconds: timeoutSeconds
-                )
-
-
-                logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
-
-
-
-
-            } catch {
-                logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
             }
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
