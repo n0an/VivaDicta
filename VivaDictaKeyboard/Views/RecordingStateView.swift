@@ -32,9 +32,6 @@ struct RecordingStateView: View {
         
     }
     
-    
-    
-    
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -59,9 +56,11 @@ struct RecordingStateView: View {
                 }
                 .padding(.trailing, 8)
             }
+//            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
+//                .frame(height: 140)
             
-            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
-                .frame(height: 140)
+            OrbView(maskTimer: maskTimer)
+                .padding(.bottom, 40)
             
             // Stop Button
             Button(action: dictationState.requestStopRecording) {
@@ -78,9 +77,7 @@ struct RecordingStateView: View {
                 .padding(.vertical, 12)
                 .background(.red, in: .capsule)
             }
-        }
-        .overlay {
-            OrbView(maskTimer: maskTimer)
+            .debugBorder()
         }
         .onAppear {
             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
