@@ -82,7 +82,6 @@ struct RecordingStateView: View {
                 .padding(.vertical, 12)
                 .background(.red, in: .capsule)
             }
-            .debugBorder()
         }
         .onAppear {
             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
