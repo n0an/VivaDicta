@@ -138,7 +138,7 @@ struct AnimatedRectangle: Shape {
     
     AnimatedMeshGradient()
         .clipShape(AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer)))
-//        .blur(radius: 28)
+        .blur(radius: 28)
         .padding(40)
     
         .onAppear {
@@ -155,17 +155,68 @@ struct AnimatedRectangle: Shape {
 
 #Preview("mask") {
     
+    
+    
     @Previewable @State var maskTimer: CGFloat = 0
     @Previewable @State var timer: Timer?
     
-    AnimatedMeshGradient()
-        .mask(
-            AnimatedRectangle(size: .init(width: 100, height: 100), cornerRadius: 20, t: CGFloat(maskTimer))
+    @Previewable @State var isRotating = false
+    
+    var edgeLength: CGFloat = 100
+    var delta: CGFloat = 30
+    ZStack {
+        AnimatedMeshGradient()
+            .mask(
+                AnimatedRectangle(size: .init(width: edgeLength, height: edgeLength), cornerRadius: 20, t: CGFloat(maskTimer))
+                    .frame(width: edgeLength, height: edgeLength)
+                    .rotationEffect(.degrees(isRotating ? -360 : 0))
+                    .animation(
+                        .linear(duration: 10)
+                        .repeatForever(autoreverses: false),
+                        value: isRotating
+                    )
+                    .onAppear {
+                        isRotating = true
+                    }
+                    
+//                    .debugBorder()
+                
+            )
+            .blur(radius: 20)
+//            .frame(width: edgeLength + delta, height: edgeLength + delta)
+//            .debugBorder()
+    //        .padding(40)
+        
+        AnimatedMeshGradient2()
+            .mask(
+                AnimatedRectangle(size: .init(width: edgeLength - delta, height: edgeLength - delta), cornerRadius: 6, t: CGFloat(maskTimer))
+                    .frame(width: edgeLength - delta, height: edgeLength - delta)
+                    .rotationEffect(.degrees(isRotating ? 360 : 0))
+                    .rotation3DEffect(.degrees(isRotating ? 360 : 0), axis: (x: 1, y: 1, z: 1))
+                    .animation(
+                        .linear(duration: 5)
+                        .repeatForever(autoreverses: false),
+                        value: isRotating
+                    )
+                    .onAppear {
+                        isRotating = true
+                    }
+                    .opacity(0.4)
+                    
+//                    .blur(radius: 12)
+                    
+//                    .debugBorder()
+                
+            )
+        
             
-            
-        )
-//        .blur(radius: 28)
-        .padding(40)
+            .blur(radius: 12)
+//            .frame(width: edgeLength + delta, height: edgeLength + delta)
+//            .debugBorder()
+    //        .padding(40)
+    }
+    .frame(width: edgeLength, height: edgeLength)
+
 
     
         .onAppear {

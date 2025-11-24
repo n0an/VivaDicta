@@ -138,6 +138,7 @@
 				Shared/AnimatedMeshGradient.swift,
 				Shared/AnimatedPath.swift,
 				Shared/AppGroupCoordinator.swift,
+				Shared/Orb.swift,
 				Utilities/LoggerExtension.swift,
 				"Utils/Extensions/Color+Ext.swift",
 				"Utils/Extensions/View+Ext.swift",
