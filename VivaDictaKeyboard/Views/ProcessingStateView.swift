@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 
 // MARK: - Processing Stage Enum
 public enum ProcessingStage {
@@ -84,10 +85,13 @@ struct ProcessingStateView: View {
 }
 
 struct InfoView: View {
+    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ToggleKeyboardFlowIntent")
+
     let processingStage: ProcessingStage
     @Environment(\.colorScheme) var colorScheme
     @State var isSymbolAnimating: Bool = false
-    @State var isShowing = true
+    @State var isShowing = false
+    @State var isShowingText = false
     @State var timer: Timer?
     var body: some View {
         
@@ -116,23 +120,58 @@ struct InfoView: View {
             }
             
             // Processing status label
-            Text(processingStage.statusText)
+            
+            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 1)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
+            
+//            Text(processingStage.statusText)
         }
         .onAppear {
             isSymbolAnimating = true
+            isShowingText = true
+            
+            logger.logInfo("=== APPEAR ==========")
+
+            
             timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
                 Task { @MainActor in
-                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
-                        isShowing = false
+                    logger.logInfo("=== fire 🔥🔥🔥🔥")
+                    
+                    isShowing = true
+                    
+//                    withAnimation {
+//                        isShowingText = true
+//                    }
+                    
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.5))
+                        withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+                            isShowing = false
+//                            isShowingText = false
+                        }
                     }
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isShowing = true
-                    }
+                    
+//                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+//                        isShowing = true
+//                    }
+//                    
+//                    
+//                    Task { @MainActor in
+//                        try? await Task.sleep(for: .seconds(0.5))
+//                        isShowing = true
+//                    }
+                    
+                    
+//                    
+//                    
+//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+//                        isShowing = true
+//                    }
                 }
             }
+            timer?.fire()
         }
         .onDisappear {
             isSymbolAnimating = false
