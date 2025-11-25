@@ -88,13 +88,22 @@ struct HudViewDark: View {
                 .animation(.easeInOut(duration: 0.3), value: statusText)
         }
         .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+                
                 Task { @MainActor in
-                    isShowing.toggle()
+                    
+                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+                        isShowing = false
+
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isShowing = true
+                    }
                 }
             }
         }
-        .animation(.default, value: isShowing)
+//        .animation(.default, value: isShowing)
         .foregroundColor(.white)
         .padding()
         
@@ -172,13 +181,21 @@ struct HudViewLight: View {
                 .animation(.easeInOut(duration: 0.3), value: statusText)
         }
         .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+                
                 Task { @MainActor in
-                    isShowing.toggle()
+                    
+                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+                        isShowing = false
+
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isShowing = true
+                    }
                 }
             }
         }
-        .animation(.default, value: isShowing)
         .foregroundColor(.white)
         .padding()
         
