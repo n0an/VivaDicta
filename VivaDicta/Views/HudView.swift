@@ -51,7 +51,7 @@ struct HudViewDark: View {
     @State var isSymbolAnimating = false
     
     
-    @State var isShowing = true
+    @State var isShowing = false
     
     @State var timer: Timer?
     
@@ -144,9 +144,11 @@ struct HudViewLight: View {
     
     @State var isSymbolAnimating = false
     
-    @State var isShowing = true
+    @State var isShowing = false
+    @State var isShowingText = false
     
     @State var timer: Timer?
+    @State var textRenderEffectTimer: Timer?
     
     var body: some View {
         
@@ -155,46 +157,79 @@ struct HudViewLight: View {
                 
                 if isShowing {
                     Image(systemName: statusIcon)
-                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.5))))
+                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
                         .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+//                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                         .font(.system(size: 50, weight: .semibold))
-                        .onAppear { isSymbolAnimating = true }
-                        .onDisappear { isSymbolAnimating = false }
+//                        .onAppear { isSymbolAnimating = true }
+//                        .onDisappear { isSymbolAnimating = false }
                 } else {
                     Image(systemName: statusIcon)
                         .font(.system(size: 50, weight: .semibold))
                         .opacity(0)
                 }
                 
-            } else {
+            } else { // iOS 18 option
                 Image(systemName: statusIcon)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                     .font(.system(size: 50, weight: .semibold))
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
+//                    .onAppear { isSymbolAnimating = true }
+//                    .onDisappear { isSymbolAnimating = false }
             }
             
-            Text(statusText)
+//            
+            // Processing status label
+            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
+                .frame(width: 108, height: 24)
+                .debugBorder()
                 .font(.system(size: 17, weight: .semibold))
-                .animation(.easeInOut(duration: 0.3), value: statusText)
+                .foregroundStyle(.primary)
+            
+//            Text(statusText)
+//                .font(.system(size: 17, weight: .semibold))
+//                .animation(.easeInOut(duration: 0.3), value: statusText)
         }
-        .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
-                
-                Task { @MainActor in
-                    
-                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
-                        isShowing = false
+        .animation(.default, value: isShowingText)
 
-                    }
+        .onAppear {
+            isSymbolAnimating = true
+            isShowingText = true
+            
+            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+                Task { @MainActor in
+                    isShowingText = false
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isShowing = true
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.7))
+                        isShowingText = true
                     }
                 }
             }
+            
+            
+            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+                Task { @MainActor in
+                    
+                    isShowing = true
+                    
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.5))
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isShowing = false
+                        }
+                    }
+                }
+            }
+            timer?.fire()
+            
+        }
+        .onDisappear {
+            isSymbolAnimating = false
+            textRenderEffectTimer?.invalidate()
+            textRenderEffectTimer = nil
+            timer?.invalidate()
+            timer = nil
         }
         .foregroundColor(.white)
         .padding()
