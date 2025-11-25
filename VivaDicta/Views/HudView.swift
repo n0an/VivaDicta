@@ -50,19 +50,49 @@ struct HudViewDark: View {
     
     @State var isSymbolAnimating = false
     
+    
+    @State var isShowing = true
+    
+    @State var timer: Timer?
+    
     var body: some View {
-        
         VStack(spacing: 12) {
-            Image(systemName: statusIcon)
-                .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-                .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-                .font(.system(size: 50, weight: .semibold))
-                .onAppear { isSymbolAnimating = true }
-                .onDisappear { isSymbolAnimating = false }
+            if #available(iOS 26.0, *) {
+                
+                if isShowing {
+                    Image(systemName: statusIcon)
+                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity))
+                        .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
+                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+                        .font(.system(size: 50, weight: .semibold))
+                        .onAppear { isSymbolAnimating = true }
+                        .onDisappear { isSymbolAnimating = false }
+                } else {
+                    Image(systemName: statusIcon)
+                        .font(.system(size: 50, weight: .semibold))
+                        .opacity(0)
+                }
+                
+            } else {
+                Image(systemName: statusIcon)
+                    .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+                    .font(.system(size: 50, weight: .semibold))
+                    .onAppear { isSymbolAnimating = true }
+                    .onDisappear { isSymbolAnimating = false }
+            }
+            
             
             Text(statusText)
                 .font(.system(size: 17, weight: .semibold))
                 .animation(.easeInOut(duration: 0.3), value: statusText)
+        }
+        .onAppear {
+            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+                Task { @MainActor in
+                    isShowing.toggle()
+                }
+            }
         }
         .foregroundColor(.white)
         .padding()
