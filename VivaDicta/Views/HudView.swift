@@ -75,22 +75,37 @@ struct HudContentView: View {
             }
 
             // Processing status label
-            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
-                .frame(width: 108, height: 24)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
+            
+            if isShowingText {
+                Text(statusText)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .customAttribute(EmphasisAttribute())
+                    .transition(TextTransition())
+                    .frame(width: 108, height: 24)
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .frame(width: 108, height: 24)
+            }
+            
+            
+//            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
+//                .frame(width: 108, height: 24)
+//                .font(.system(size: 17, weight: .semibold))
+//                .foregroundStyle(.primary)
         }
         .animation(.default, value: isShowingText)
         .onAppear {
             isSymbolAnimating = true
             isShowingText = true
 
-            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { _ in
                 Task { @MainActor in
                     isShowingText = false
 
                     Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(0.7))
+                        try? await Task.sleep(for: .seconds(1.2))
                         isShowingText = true
                     }
                 }

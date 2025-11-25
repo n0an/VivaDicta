@@ -122,11 +122,27 @@ struct InfoView: View {
             }
             
             // Processing status label
-            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 0.5)
-                .frame(width: 150, height: 20)
-                .debugBorder()
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
+            
+            
+            if isShowingText {
+                Text(processingStage.statusText)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .customAttribute(EmphasisAttribute())
+                    .transition(TextTransition())
+                    .frame(width: 150, height: 20)
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .frame(width: 150, height: 20)
+            }
+            
+            
+//            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 0.5)
+//                .frame(width: 150, height: 20)
+//                .debugBorder()
+//                .font(.system(size: 17, weight: .semibold))
+//                .foregroundStyle(.primary)
             
         }
         .animation(.default, value: isShowingText)
@@ -139,7 +155,7 @@ struct InfoView: View {
                     isShowingText = false
                     
                     Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(0.7))
+                        try? await Task.sleep(for: .seconds(1.2))
                         isShowingText = true
                     }
                 }
