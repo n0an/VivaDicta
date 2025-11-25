@@ -93,6 +93,8 @@ struct InfoView: View {
     @State var isShowing = false
     @State var isShowingText = false
     @State var timer: Timer?
+    @State var textRenderEffectTimer: Timer?
+
     var body: some View {
         
         VStack(spacing: 20) {
@@ -120,62 +122,48 @@ struct InfoView: View {
             }
             
             // Processing status label
-            
-            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 1)
+            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 0.5)
+                .frame(width: 150, height: 20)
+                .debugBorder()
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
             
-//            Text(processingStage.statusText)
         }
+        .animation(.default, value: isShowingText)
         .onAppear {
             isSymbolAnimating = true
             isShowingText = true
             
-            logger.logInfo("=== APPEAR ==========")
-
+            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+                Task { @MainActor in
+                    isShowingText = false
+                    
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.7))
+                        isShowingText = true
+                    }
+                }
+            }
             
             timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
                 Task { @MainActor in
-                    logger.logInfo("=== fire 🔥🔥🔥🔥")
                     
                     isShowing = true
-                    
-//                    withAnimation {
-//                        isShowingText = true
-//                    }
                     
                     Task { @MainActor in
                         try? await Task.sleep(for: .seconds(0.5))
                         withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
                             isShowing = false
-//                            isShowingText = false
                         }
                     }
-                    
-                    
-//                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
-//                        isShowing = true
-//                    }
-//                    
-//                    
-//                    Task { @MainActor in
-//                        try? await Task.sleep(for: .seconds(0.5))
-//                        isShowing = true
-//                    }
-                    
-                    
-//                    
-//                    
-//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-//                        isShowing = true
-//                    }
                 }
             }
             timer?.fire()
         }
         .onDisappear {
             isSymbolAnimating = false
-            
+            textRenderEffectTimer?.invalidate()
+            textRenderEffectTimer = nil
             timer?.invalidate()
             timer = nil
         }
