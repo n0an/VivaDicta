@@ -47,6 +47,8 @@ struct ProcessingStateView: View {
     let processingStage: ProcessingStage
     let onCancel: () -> Void
     
+    @Environment(\.colorScheme) var colorScheme
+    
     @State var isSymbolAnimating: Bool = false
 
     var body: some View {
@@ -68,21 +70,13 @@ struct ProcessingStateView: View {
             
             Spacer()
             
-            // Center area with icon and status label
-            VStack(spacing: 20) {
-                Image(systemName: processingStage.statusIcon)
-                    .foregroundStyle(Color.blue)
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-                    .font(.system(size: 30))
-                    .frame(height: 50)
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
-                
-                // Processing status label
-                Text(processingStage.statusText)
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(.primary)
-                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
+            iconAndLabel
+            .opacity(0)
+            .overlay {
+                AnimatedMeshGradient2()
+                    .mask {
+                        iconAndLabel
+                    }
             }
             
             Spacer()
@@ -91,6 +85,24 @@ struct ProcessingStateView: View {
             Rectangle()
                 .fill(Color.clear)
                 .frame(height: 63)
+        }
+    }
+    
+    private var iconAndLabel: some View {
+        VStack(spacing: 20) {
+            Image(systemName: processingStage.statusIcon)
+                .foregroundStyle(Color.blue)
+                .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+                .font(.system(size: 30))
+                .frame(height: 50)
+                .onAppear { isSymbolAnimating = true }
+                .onDisappear { isSymbolAnimating = false }
+            
+            // Processing status label
+            Text(processingStage.statusText)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(.primary)
+                .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
         }
     }
 }
