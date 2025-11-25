@@ -66,9 +66,7 @@ struct ProcessingStateView: View {
                 }
                 .padding(.horizontal, 8)
             }
-            .padding(.bottom, 15)
-            
-            Spacer()
+            .padding(.bottom, 23)
             
             iconAndLabel
             .opacity(0)
@@ -79,13 +77,8 @@ struct ProcessingStateView: View {
                     }
             }
             
-            Spacer()
-            
-            // Bottom padding to match keyboard height
-            Rectangle()
-                .fill(Color.clear)
-                .frame(height: 63)
         }
+        .padding(.bottom, 71)
     }
     
     private var iconAndLabel: some View {
