@@ -362,9 +362,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     }
                 }
 
+                // Check for cancellation before starting transcription
+                try Task.checkCancellation()
+
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURLToTranscribe)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+
+                // Check for cancellation after transcription
+                try Task.checkCancellation()
 
                 let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
@@ -378,6 +384,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
+                    // Check for cancellation before starting enhancement
+                    try Task.checkCancellation()
+
                     // Update state to show enhancing animation
                     self.recordingState = .enhancing
 

@@ -22,8 +22,15 @@ class DeepgramTranscriptionService {
         guard let audioData = try? Data(contentsOf: audioURL) else {
             throw CloudTranscriptionError.audioFileNotFound
         }
-        
+
+        // Check for cancellation before making network request
+        try Task.checkCancellation()
+
         let (data, response) = try await URLSession.shared.upload(for: request, from: audioData)
+
+        // Check for cancellation after network request
+        try Task.checkCancellation()
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }
