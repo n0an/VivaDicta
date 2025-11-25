@@ -476,6 +476,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     func cancelTranscribe() {
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
+
+        // Stop real capture and reschedule prewarm session timeout if active
+        if prewarmManager.isSessionActive {
+            logger.logInfo("🎙️ Stopping real capture and rescheduling session timeout on cancel")
+            prewarmManager.stopRealCapture()
+        }
+
         resetValues()
         recordingState = .idle
 
@@ -565,9 +572,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         AppGroupCoordinator.shared.onCancelRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
-            if self.recordingState == .recording {
+            switch self.recordingState {
+            case .recording:
                 self.logger.logInfo("📱 Canceling recording from keyboard request")
                 self.cancelTranscribe()
+            case .transcribing, .enhancing:
+                self.logger.logInfo("📱 Canceling processing from keyboard request")
+                self.cancelTranscribe()
+            default:
+                break
             }
         }
 
