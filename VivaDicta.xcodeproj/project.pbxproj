@@ -145,6 +145,7 @@
 				"Utils/Extensions/View+Ext.swift",
 				Utils/UserDefaultsStorage.swift,
 				Views/HudView.swift,
+				Views/HudViewBounceOnly.swift,
 			);
 			target = 18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */;
 		};
