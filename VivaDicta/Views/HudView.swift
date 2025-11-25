@@ -43,71 +43,93 @@ struct HudView: View {
 
 
 
-struct HudViewDark: View {
-    
+struct HudContentView: View {
+
     var statusIcon: String
     var statusText: String
-    
-    @State var isSymbolAnimating = false
-    
-    
-    @State var isShowing = false
-    
-    @State var timer: Timer?
-    
+
+    @State private var isSymbolAnimating = false
+    @State private var isShowing = false
+    @State private var isShowingText = false
+    @State private var timer: Timer?
+    @State private var textRenderEffectTimer: Timer?
+
     var body: some View {
         VStack(spacing: 12) {
             if #available(iOS 26.0, *) {
-                
                 if isShowing {
                     Image(systemName: statusIcon)
-                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.5))))
+                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
                         .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                         .font(.system(size: 50, weight: .semibold))
-                        .onAppear { isSymbolAnimating = true }
-                        .onDisappear { isSymbolAnimating = false }
                 } else {
                     Image(systemName: statusIcon)
                         .font(.system(size: 50, weight: .semibold))
                         .opacity(0)
                 }
-                
-            } else {
+            } else { // iOS 18 option
                 Image(systemName: statusIcon)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                     .font(.system(size: 50, weight: .semibold))
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
             }
-            
-            
-            Text(statusText)
-                .font(.system(size: 17, weight: .semibold))
-                .animation(.easeInOut(duration: 0.3), value: statusText)
-        }
-        .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
-                
-                Task { @MainActor in
-                    
-                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
-                        isShowing = false
 
-                    }
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isShowing = true
+            // Processing status label
+            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
+                .frame(width: 108, height: 24)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.primary)
+        }
+        .animation(.default, value: isShowingText)
+        .onAppear {
+            isSymbolAnimating = true
+            isShowingText = true
+
+            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+                Task { @MainActor in
+                    isShowingText = false
+
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.7))
+                        isShowingText = true
                     }
                 }
             }
+
+            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+                Task { @MainActor in
+                    isShowing = true
+
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.5))
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isShowing = false
+                        }
+                    }
+                }
+            }
+            timer?.fire()
         }
-//        .animation(.default, value: isShowing)
+        .onDisappear {
+            isSymbolAnimating = false
+            textRenderEffectTimer?.invalidate()
+            textRenderEffectTimer = nil
+            timer?.invalidate()
+            timer = nil
+        }
         .foregroundColor(.white)
         .padding()
-        
-        .background(
+    }
+}
+
+struct HudViewDark: View {
+
+    var statusIcon: String
+    var statusText: String
+
+    var body: some View {
+        HudContentView(statusIcon: statusIcon, statusText: statusText)
+            .background(
             AnimatedMeshGradient()
                 .mask(
                     RoundedRectangle(cornerRadius: 30)
@@ -138,103 +160,13 @@ struct HudViewDark: View {
 }
 
 struct HudViewLight: View {
-    
+
     var statusIcon: String
     var statusText: String
-    
-    @State var isSymbolAnimating = false
-    
-    @State var isShowing = false
-    @State var isShowingText = false
-    
-    @State var timer: Timer?
-    @State var textRenderEffectTimer: Timer?
-    
-    var body: some View {
-        
-        VStack(spacing: 12) {
-            if #available(iOS 26.0, *) {
-                
-                if isShowing {
-                    Image(systemName: statusIcon)
-                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
-                        .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-//                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-                        .font(.system(size: 50, weight: .semibold))
-//                        .onAppear { isSymbolAnimating = true }
-//                        .onDisappear { isSymbolAnimating = false }
-                } else {
-                    Image(systemName: statusIcon)
-                        .font(.system(size: 50, weight: .semibold))
-                        .opacity(0)
-                }
-                
-            } else { // iOS 18 option
-                Image(systemName: statusIcon)
-                    .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-                    .font(.system(size: 50, weight: .semibold))
-//                    .onAppear { isSymbolAnimating = true }
-//                    .onDisappear { isSymbolAnimating = false }
-            }
-            
-//            
-            // Processing status label
-            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
-                .frame(width: 108, height: 24)
-                .debugBorder()
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
-            
-//            Text(statusText)
-//                .font(.system(size: 17, weight: .semibold))
-//                .animation(.easeInOut(duration: 0.3), value: statusText)
-        }
-        .animation(.default, value: isShowingText)
 
-        .onAppear {
-            isSymbolAnimating = true
-            isShowingText = true
-            
-            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
-                Task { @MainActor in
-                    isShowingText = false
-                    
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(0.7))
-                        isShowingText = true
-                    }
-                }
-            }
-            
-            
-            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
-                Task { @MainActor in
-                    
-                    isShowing = true
-                    
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(0.5))
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isShowing = false
-                        }
-                    }
-                }
-            }
-            timer?.fire()
-            
-        }
-        .onDisappear {
-            isSymbolAnimating = false
-            textRenderEffectTimer?.invalidate()
-            textRenderEffectTimer = nil
-            timer?.invalidate()
-            timer = nil
-        }
-        .foregroundColor(.white)
-        .padding()
-        
-        .background(
+    var body: some View {
+        HudContentView(statusIcon: statusIcon, statusText: statusText)
+            .background(
             ZStack {
                 AnimatedMeshGradient()
                     .mask(
