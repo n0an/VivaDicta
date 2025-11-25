@@ -84,6 +84,7 @@ struct ProcessingStateView: View {
     private var iconAndLabel: some View {
         VStack(spacing: 20) {
             Image(systemName: processingStage.statusIcon)
+                .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
                 .foregroundStyle(Color.blue)
                 .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                 .font(.system(size: 30))
