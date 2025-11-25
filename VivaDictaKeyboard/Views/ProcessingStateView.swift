@@ -81,121 +81,64 @@ struct ProcessingStateView: View {
         .padding(.bottom, 71)
     }
     
-//    private var iconAndLabel: some View {
-//        
-//        if #available(iOS 26.0, *) {
-//            VStack(spacing: 20) {
-//                Image(systemName: processingStage.statusIcon)
-//                    .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-//                    .foregroundStyle(Color.blue)
-//                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-//                    .font(.system(size: 30))
-//                    .frame(height: 50)
-//                    .onAppear { isSymbolAnimating = true }
-//                    .onDisappear { isSymbolAnimating = false }
-//                
-//                // Processing status label
-//                Text(processingStage.statusText)
-//                    .font(.system(size: 17, weight: .regular))
-//                    .foregroundStyle(.primary)
-//                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
-//            }
-//        } else {
-//            VStack(spacing: 20) {
-//                Image(systemName: processingStage.statusIcon)
-//                    .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-//                    .foregroundStyle(Color.blue)
-//                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-//                    .font(.system(size: 30))
-//                    .frame(height: 50)
-//                    .onAppear { isSymbolAnimating = true }
-//                    .onDisappear { isSymbolAnimating = false }
-//                
-//                // Processing status label
-//                Text(processingStage.statusText)
-//                    .font(.system(size: 17, weight: .regular))
-//                    .foregroundStyle(.primary)
-//                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
-//            }
-//        }
-//        
-//        
-//        
-//    }
 }
 
-
-
 struct InfoView: View {
-    
     let processingStage: ProcessingStage
-    
     @Environment(\.colorScheme) var colorScheme
-    
     @State var isSymbolAnimating: Bool = false
-    
     @State var isShowing = true
-    
     @State var timer: Timer?
-    
     var body: some View {
-        if #available(iOS 26.0, *) {
-            VStack(spacing: 20) {
-                
+        
+        VStack(spacing: 20) {
+            
+            if #available(iOS 26.0, *) {
                 if isShowing {
                     Image(systemName: processingStage.statusIcon)
-                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.5))))
+                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
                         .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
                         .foregroundStyle(.primary)
-                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                         .font(.system(size: 50, weight: .semibold))
-                        .onAppear { isSymbolAnimating = true }
-                        .onDisappear { isSymbolAnimating = false }
                 } else {
                     Image(systemName: processingStage.statusIcon)
                         .font(.system(size: 50, weight: .semibold))
                         .opacity(0)
                 }
                 
+            } else { // iOS 18 option
                 
-                // Processing status label
-                Text(processingStage.statusText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
-//                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
-            }
-            .onAppear {
-                timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
-                    
-                    Task { @MainActor in
-                        
-                        withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
-                            isShowing = false
-
-                        }
-                        
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            isShowing = true
-                        }
-                    }
-                }
-            }
-        } else {
-            VStack(spacing: 20) {
                 Image(systemName: processingStage.statusIcon)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
                     .foregroundStyle(Color.blue)
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                     .font(.system(size: 50, weight: .semibold))
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
-                
-                // Processing status label
-                Text(processingStage.statusText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
-//                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
             }
+            
+            // Processing status label
+            Text(processingStage.statusText)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.primary)
+        }
+        .onAppear {
+            isSymbolAnimating = true
+            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+                Task { @MainActor in
+                    withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+                        isShowing = false
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isShowing = true
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            isSymbolAnimating = false
+            
+            timer?.invalidate()
+            timer = nil
         }
     }
 }
