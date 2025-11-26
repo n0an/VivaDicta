@@ -19,7 +19,9 @@ struct TranscriptionsContentView: View {
     @State private var navigationPath = NavigationPath()
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
+    @State private var showGoToTopButton = false
 
+    private let topAnchorID = "topAnchor"
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
 
     var appState: AppState
@@ -36,18 +38,43 @@ struct TranscriptionsContentView: View {
             } else if filteredTranscriptions.isEmpty && !searchText.isEmpty {
                 emptyFilteredStateView
             } else {
-                List {
-                    ForEach(displayedTranscriptions) { transcription in
-                        NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
-                            TranscriptionRowView(
-                                transcription: transcription,
-                                isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
-                            )
+                ScrollViewReader { proxy in
+                    List {
+                        EmptyView()
+                            .id(topAnchorID)
+
+                        ForEach(displayedTranscriptions) { transcription in
+                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
+                                TranscriptionRowView(
+                                    transcription: transcription,
+                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                                )
+                            }
+                        }
+                        .onDelete(perform: deleteTranscription)
+                    }
+                    .listStyle(.plain)
+                    .onScrollGeometryChange(for: Bool.self) { geo in
+                        let topPadding: CGFloat = 120
+                        return geo.contentOffset.y >= topPadding
+                    } action: { _, isBeyondThreshold in
+                        withAnimation {
+                            showGoToTopButton = isBeyondThreshold
                         }
                     }
-                    .onDelete(perform: deleteTranscription)
+                    .overlay(alignment: .bottom) {
+                        if showGoToTopButton {
+                            Button("Back to Top") {
+                                withAnimation {
+                                    proxy.scrollTo(topAnchorID, anchor: .top)
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.bottom, 16)
+                            .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .opacity))
+                        }
+                    }
                 }
-                .listStyle(.plain)
             }
         }
         .onAppear {
