@@ -55,7 +55,7 @@ struct TranscriptionsContentView: View {
                     }
                     .listStyle(.plain)
                     .onScrollGeometryChange(for: Bool.self) { geo in
-                        let topPadding: CGFloat = 120
+                        let topPadding: CGFloat = 300
                         return geo.contentOffset.y >= topPadding
                     } action: { _, isBeyondThreshold in
                         withAnimation {
@@ -64,14 +64,14 @@ struct TranscriptionsContentView: View {
                     }
                     .overlay(alignment: .bottom) {
                         if showGoToTopButton {
-                            Button("Back to Top") {
+                            
+                            ScrollToTopButton(backgroundColor: .indigo) {
                                 withAnimation {
                                     proxy.scrollTo(topAnchorID, anchor: .top)
                                 }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .padding(.bottom, 16)
-                            .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .opacity))
+                            .padding(.bottom, 8)
+                            .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
                         }
                     }
                 }
@@ -190,7 +190,7 @@ struct TranscriptionsContentView: View {
     }
 }
 
-#Preview(traits: .transcriptionsMockData) {
+#Preview(traits: .transcriptionsMockDataMany) {
     @Previewable @State var appState = AppState()
     @Previewable @State var searchText = ""
     NavigationStack {

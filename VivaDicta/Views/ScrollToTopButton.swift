@@ -8,24 +8,27 @@
 import SwiftUI
 
 struct ScrollToTopButton: View {
-    let icon: String
+    let backgroundColor: Color
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
+            Image(systemName: "arrow.up")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(Color(.systemBackground))
                 .frame(width: 44, height: 44)
-                .background(.primary)
+                .background(backgroundColor)
                 .clipShape(Circle())
-                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                .shadow(color: .black.opacity(1), radius: 10, x: 0, y: 5)
         }
-        .tint(.primary)
+        .buttonStyle(.plain)
+//        .tint(.primary)
     }
 }
 
 #Preview {
-    ScrollToTopButton(icon: "arrow.up") {}
+    ScrollToTopButton(backgroundColor: .primary, action: {
+        
+    })
         .padding()
 }

@@ -24,3 +24,21 @@ struct TranscriptionsMockData: PreviewModifier {
 extension PreviewTrait where T == Preview.ViewTraits {
     static var transcriptionsMockData: Self = .modifier(TranscriptionsMockData())
 }
+
+
+struct TranscriptionsMockDataMany: PreviewModifier {
+
+    static func makeSharedContext() async throws -> ModelContainer {
+        let container = try ModelContainer(for: Transcription.self, configurations: .init(isStoredInMemoryOnly: true))
+        Transcription.mockDataMany.forEach { container.mainContext.insert($0) }
+        return container
+    }
+
+    func body(content: Content, context: ModelContainer) -> some View {
+        content.modelContainer(context)
+    }
+}
+
+extension PreviewTrait where T == Preview.ViewTraits {
+    static var transcriptionsMockDataMany: Self = .modifier(TranscriptionsMockDataMany())
+}

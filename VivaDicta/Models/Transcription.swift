@@ -127,6 +127,166 @@ extension Transcription {
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8)
     ]
+    
+    nonisolated(unsafe) static let mockDataMany: [Transcription] =
+    [
+        
+        Transcription(
+            text: "hello world. heya how are you. asldjfsldafjasldfjsdf. Faldsjflasdjflsjadf. Flajsdflajsdflajsdfljasdflsaldfjlasdjflsadfjlasdjf. Flajlsdjfalsdjflajsdlfjasldfj. aFljalsdjflajsfdljasf",
+            audioDuration: 5),
+        
+        Transcription(
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
+            audioFileName: "",
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
+        Transcription(
+            text: "knock knock Neo",
+            enhancedText: "Knock-knock Neo!" ,
+            audioDuration: 77,
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8),
+        
+        Transcription(
+            text: "hello world. heya how are you. asldjfsldafjasldfjsdf. Faldsjflasdjflsjadf. Flajsdflajsdflajsdfljasdflsaldfjlasdjflsadfjlasdjf. Flajlsdjfalsdjflajsdlfjasldfj. aFljalsdjflajsfdljasf",
+            audioDuration: 5),
+        
+        Transcription(
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
+            audioFileName: "",
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
+        Transcription(
+            text: "knock knock Neo",
+            enhancedText: "Knock-knock Neo!" ,
+            audioDuration: 77,
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8),
+        
+        Transcription(
+            text: "hello world. heya how are you. asldjfsldafjasldfjsdf. Faldsjflasdjflsjadf. Flajsdflajsdflajsdfljasdflsaldfjlasdjflsadfjlasdjf. Flajlsdjfalsdjflajsdlfjasldfj. aFljalsdjflajsfdljasf",
+            audioDuration: 5),
+        
+        Transcription(
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
+            audioFileName: "",
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
+        Transcription(
+            text: "knock knock Neo",
+            enhancedText: "Knock-knock Neo!" ,
+            audioDuration: 77,
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8),
+        
+        Transcription(
+            text: "hello world. heya how are you. asldjfsldafjasldfjsdf. Faldsjflasdjflsjadf. Flajsdflajsdflajsdfljasdflsaldfjlasdjflsadfjlasdjf. Flajlsdjfalsdjflajsdlfjasldfj. aFljalsdjflajsfdljasf",
+            audioDuration: 5),
+        
+        Transcription(
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
+            audioFileName: "",
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
+        Transcription(
+            text: "knock knock Neo",
+            enhancedText: "Knock-knock Neo!" ,
+            audioDuration: 77,
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8),
+        
+        Transcription(
+            text: "hello world. heya how are you. asldjfsldafjasldfjsdf. Faldsjflasdjflsjadf. Flajsdflajsdflajsdfljasdflsaldfjlasdjflsadfjlasdjf. Flajlsdjfalsdjflajsdlfjasldfj. aFljalsdjflajsfdljasf",
+            audioDuration: 5),
+        
+        Transcription(
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
+            audioFileName: "",
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
+        Transcription(
+            text: "knock knock Neo",
+            enhancedText: "Knock-knock Neo!" ,
+            audioDuration: 77,
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8),
+        
+        Transcription(
+            text: "hello world. heya how are you. asldjfsldafjasldfjsdf. Faldsjflasdjflsjadf. Flajsdflajsdflajsdfljasdflsaldfjlasdjflsadfjlasdjf. Flajlsdjfalsdjflajsdlfjasldfj. aFljalsdjflajsfdljasf",
+            audioDuration: 5),
+        
+        Transcription(
+            text: "heya how are you",
+            enhancedText: "Hello. How are you?" ,
+            audioDuration: 2,
+            audioFileName: "",
+            transcriptionModelName: "Tiny",
+            aiEnhancementModelName: "claude-sonnet-4-0",
+            promptName: "Chat",
+            transcriptionDuration: 0.2,
+            enhancementDuration: 0.8),
+        
+        Transcription(
+            text: "knock knock Neo",
+            enhancedText: "Knock-knock Neo!" ,
+            audioDuration: 77,
+            audioFileName: "",
+            transcriptionModelName: "Large V3 Turbo",
+            aiEnhancementModelName: "openai-gpt-5",
+            promptName: "Note",
+            transcriptionDuration: 1.2,
+            enhancementDuration: 2.8),
+    ]
 }
 
 extension Transcription {
