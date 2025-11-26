@@ -11,6 +11,9 @@ import SiriWaveView
 
 struct RecordingStateView: View {
     
+    @State var rippleEffectOrigin: CGPoint = .zero
+    @State var rippleEffectTrigger = false
+    
     @State private var maskTimer: CGFloat = 0.0
 
     @State var isSymbolAnimating = false
@@ -68,7 +71,13 @@ struct RecordingStateView: View {
                 .padding(.bottom, 40)
             
             // Stop Button
-            Button(action: dictationState.requestStopRecording) {
+            
+            
+            
+            Button(action: {
+//                rippleEffectTrigger.toggle()
+                dictationState.requestStopRecording()
+            }) {
                 HStack(spacing: 8) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 18, weight: .semibold))
@@ -81,8 +90,23 @@ struct RecordingStateView: View {
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
                 .background(.red, in: .capsule)
+//                .onPressingChanged { point in
+//                    if let point {
+//                        rippleEffectOrigin = point
+//                        rippleEffectTrigger.toggle()
+//                    }
+//                    
+//                }
+                
+
             }
         }
+//        .background {
+//            ContainerRelativeShape()
+//                .fill(.clear)
+//                .modifier(RippleEffect(at: rippleEffectOrigin, trigger: rippleEffectTrigger))
+//        }
+        
         .onAppear {
             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
                 Task { @MainActor in

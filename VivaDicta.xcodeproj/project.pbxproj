@@ -140,6 +140,8 @@
 				Shared/AppGroupCoordinator.swift,
 				Shared/Orb.swift,
 				Shared/RecordingState.swift,
+				Shared/RippleEffect.metal,
+				Shared/RippleEffectModifier.swift,
 				Shared/WobbleText.swift,
 				Utilities/LoggerExtension.swift,
 				"Utils/Extensions/Color+Ext.swift",

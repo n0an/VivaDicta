@@ -147,6 +147,11 @@ final class KeyboardDictationState {
     
     func requestStopRecording() {
         AppGroupCoordinator.shared.requestStopRecording()
+        
+//        Task { @MainActor in
+//            try await Task.sleep(for: .seconds(2))
+//            AppGroupCoordinator.shared.requestStopRecording()
+//        }
     }
     
     func requestCancelRecording() {

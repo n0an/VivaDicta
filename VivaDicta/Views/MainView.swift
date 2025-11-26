@@ -14,6 +14,9 @@ struct MainView: View {
     @State private var showingSettings = false
     @State private var searchText = ""
     @State private var navigationPath = NavigationPath()
+    
+    @State var rippleEffectTimer: Timer?
+    @State var rippleEffectTrigger = false
 
     @Namespace private var sheetTransitions
 
@@ -78,6 +81,33 @@ struct MainView: View {
                 .sheet(isPresented: $showingRecordingSheet) {
                     if #available(iOS 26.0, *) {
                         RecordingSheetView(appState: appState)
+                        // TODO: Move inside RecordingSheetView
+                        
+//                            .background {
+//                                                                
+//                                AnimatedMeshGradient()
+//                                    .onAppear {
+//                                        rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+//                                            Task { @MainActor in
+//                                                rippleEffectTrigger.toggle()
+//                                            }
+//                                        })
+//                                        rippleEffectTimer?.fire()
+//                                    }
+//                                    .onDisappear {
+//                                        rippleEffectTimer?.invalidate()
+//                                        rippleEffectTimer = nil
+//                                    }
+//                                    .mask(
+//                                        ContainerRelativeShape()
+//                                            .stroke(lineWidth: 8)
+//                                            .blur(radius: 22)
+//                                    )
+//                                    .ignoresSafeArea()
+//                                    .modifier(RippleEffect(at: .init(x: 100, y: 100), trigger: rippleEffectTrigger))
+//
+//                            }
+                            
                             .scrollContentBackground(.hidden)
                             .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
                     } else {
@@ -119,12 +149,31 @@ struct MainView: View {
                 appState.recordViewModel?.recordingState == .transcribing ||
                 appState.recordViewModel?.recordingState == .enhancing {
                 AnimatedMeshGradient()
+                    .onAppear {
+                        rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+                            Task { @MainActor in
+                                if appState.recordViewModel?.recordingState == .transcribing ||
+                                    appState.recordViewModel?.recordingState == .enhancing {
+                                    rippleEffectTrigger.toggle()
+                                }
+                            }
+                        })
+                        if appState.recordViewModel?.recordingState == .transcribing ||
+                            appState.recordViewModel?.recordingState == .enhancing {
+                            rippleEffectTimer?.fire()
+                        }
+                    }
+                    .onDisappear {
+                        rippleEffectTimer?.invalidate()
+                        rippleEffectTimer = nil
+                    }
                     .mask(
                         RoundedRectangle(cornerRadius: 44, style: .continuous)
                             .stroke(lineWidth: 44)
                             .blur(radius: 22)
                     )
                     .ignoresSafeArea()
+                    .modifier(RippleEffect(at: .init(x: 100, y: 100), trigger: rippleEffectTrigger))
             }
         }
         .overlay {
