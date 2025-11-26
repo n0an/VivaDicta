@@ -10,11 +10,35 @@ import KeyboardKit
 import SiriWaveView
 
 struct RecordingStateView: View {
+    
+    @State var rippleEffectOrigin: CGPoint = .zero
+    @State var rippleEffectTrigger = false
+    
+    @State private var maskTimer: CGFloat = 0.0
 
     @State var isSymbolAnimating = false
 
     @Bindable var dictationState: KeyboardDictationState
     
+    @State var timer: Timer?
+
+    private var rectangleSpeed: CGFloat {
+
+        switch dictationState.uiState {
+        case .recording:
+            // Logarithmic scaling: fast growth initially, then slower
+            // Using log(1 + x*k) / log(1 + k) to map [0,1] to [0,1] logarithmically
+            let k: CGFloat = 4.0 // Controls the curve shape (higher = steeper initial growth)
+            let normalizedLevel = min(max(dictationState.currentAudioLevel, 0), 1) // Ensure 0-1 range
+            let logarithmicLevel = log(1 + normalizedLevel * k) / log(1 + k)
+            return logarithmicLevel * 0.2 // Scale to appropriate speed range
+        case .processing:
+            return 0.03
+        default:
+            return 0
+        }
+
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -40,12 +64,20 @@ struct RecordingStateView: View {
                 }
                 .padding(.trailing, 8)
             }
+//            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
+//                .frame(height: 140)
             
-            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
-                .frame(height: 140)
+            OrbView(maskTimer: maskTimer)
+                .padding(.bottom, 40)
             
             // Stop Button
-            Button(action: dictationState.requestStopRecording) {
+            
+            
+            
+            Button(action: {
+//                rippleEffectTrigger.toggle()
+                dictationState.requestStopRecording()
+            }) {
                 HStack(spacing: 8) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 18, weight: .semibold))
@@ -58,9 +90,35 @@ struct RecordingStateView: View {
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
                 .background(.red, in: .capsule)
+//                .onPressingChanged { point in
+//                    if let point {
+//                        rippleEffectOrigin = point
+//                        rippleEffectTrigger.toggle()
+//                    }
+//                    
+//                }
+                
+
             }
         }
+//        .background {
+//            ContainerRelativeShape()
+//                .fill(.clear)
+//                .modifier(RippleEffect(at: rippleEffectOrigin, trigger: rippleEffectTrigger))
+//        }
         
+        .onAppear {
+            timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
+                Task { @MainActor in
+                    maskTimer += rectangleSpeed
+                }
+            }
+        }
+        .onDisappear {
+            timer?.invalidate()
+            timer = nil
+        }
+
     }
 }
 

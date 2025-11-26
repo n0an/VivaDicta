@@ -21,8 +21,15 @@ struct OpenAITranscriptionService {
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         
         let body = try createOpenAICompatibleRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)
-        
+
+        // Check for cancellation before making network request
+        try Task.checkCancellation()
+
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+
+        // Check for cancellation after network request
+        try Task.checkCancellation()
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }

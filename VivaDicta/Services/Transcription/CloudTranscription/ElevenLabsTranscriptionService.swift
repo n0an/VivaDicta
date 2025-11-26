@@ -20,8 +20,15 @@ class ElevenLabsTranscriptionService {
         request.setValue(config.apiKey, forHTTPHeaderField: "xi-api-key")
         
         let body = try createElevenLabsRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)
-        
+
+        // Check for cancellation before making network request
+        try Task.checkCancellation()
+
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+
+        // Check for cancellation after network request
+        try Task.checkCancellation()
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }

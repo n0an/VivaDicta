@@ -12,56 +12,6 @@ import AVFoundation
 import SwiftData
 import os
 
-enum RecordingState: Equatable {
-    case idle
-    case recording
-    case transcribing
-    case enhancing
-    case error(RecordError)
-}
-
-enum RecordError: LocalizedError, Equatable {
-    case avInitError
-    case userDenied
-    case recordError
-    case transcribe
-    case other
-    case debugError
-
-    var errorDescription: String? {
-        switch self {
-        case .avInitError:
-            "Audio initialization failed"
-        case .userDenied:
-            "Microphone access denied"
-        case .recordError:
-            "Recording failed"
-        case .transcribe:
-            "Transcription failed"
-        case .other:
-            "Unexpected error"
-        case .debugError:
-            "DEBUG ERROR"
-        }
-    }
-
-    var failureReason: String {
-        switch self {
-        case .avInitError:
-            return "Failed to initialize audio recording system. Please restart the app and try again."
-        case .userDenied:
-            return "Microphone access is required for recording. Please go to Settings > Privacy & Security > Microphone and enable access for VivaDicta."
-        case .recordError:
-            return "Failed to record audio. Check that no other app is using the microphone and try again."
-        case .transcribe:
-            return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
-        case .other:
-            return "An unexpected error occurred. Please restart the app and try again."
-        case .debugError:
-            return "DEBUG ERROR"
-        }
-    }
-}
 
 @Observable @MainActor
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
@@ -412,9 +362,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     }
                 }
 
+                // Check for cancellation before starting transcription
+                try Task.checkCancellation()
+
                 let transcriptionStart = Date()
                 let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURLToTranscribe)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+
+                // Check for cancellation after transcription
+                try Task.checkCancellation()
 
                 let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
@@ -428,6 +384,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 
                 // Check if AI Enhancement is properly configured
                 if aiService.isProperlyConfigured() {
+                    // Check for cancellation before starting enhancement
+                    try Task.checkCancellation()
+
                     // Update state to show enhancing animation
                     self.recordingState = .enhancing
 
@@ -526,6 +485,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     func cancelTranscribe() {
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
+
+        // Stop real capture and reschedule prewarm session timeout if active
+        if prewarmManager.isSessionActive {
+            logger.logInfo("🎙️ Stopping real capture and rescheduling session timeout on cancel")
+            prewarmManager.stopRealCapture()
+        }
+
         resetValues()
         recordingState = .idle
 
@@ -615,9 +581,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         AppGroupCoordinator.shared.onCancelRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
-            if self.recordingState == .recording {
+            switch self.recordingState {
+            case .recording:
                 self.logger.logInfo("📱 Canceling recording from keyboard request")
                 self.cancelTranscribe()
+            case .transcribing, .enhancing:
+                self.logger.logInfo("📱 Canceling processing from keyboard request")
+                self.cancelTranscribe()
+            default:
+                break
             }
         }
 

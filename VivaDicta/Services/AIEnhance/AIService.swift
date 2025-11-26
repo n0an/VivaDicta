@@ -270,12 +270,18 @@ class AIService {
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
             
             do {
+                // Check for cancellation before making network request
+                try Task.checkCancellation()
+
                 let (data, response) = try await URLSession.shared.data(for: request)
-                
+
+                // Check for cancellation after network request
+                try Task.checkCancellation()
+
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw EnhancementError.invalidResponse
                 }
-                
+
                 if httpResponse.statusCode == 200 {
                     guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                           let content = jsonResponse["content"] as? [[String: Any]],
@@ -283,7 +289,7 @@ class AIService {
                           let enhancedText = firstContent["text"] as? String else {
                         throw EnhancementError.enhancementFailed
                     }
-                    
+
                     let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
                     return filteredText
                 } else if httpResponse.statusCode == 429 {
@@ -294,7 +300,9 @@ class AIService {
                     let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
                     throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
                 }
-                
+
+            } catch is CancellationError {
+                throw CancellationError()
             } catch let error as EnhancementError {
                 throw error
             } catch let error as URLError {
@@ -333,7 +341,13 @@ class AIService {
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
             do {
+                // Check for cancellation before making network request
+                try Task.checkCancellation()
+
                 let (data, response) = try await URLSession.shared.data(for: request)
+
+                // Check for cancellation after network request
+                try Task.checkCancellation()
 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw EnhancementError.invalidResponse
@@ -359,6 +373,8 @@ class AIService {
                     throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
                 }
 
+            } catch is CancellationError {
+                throw CancellationError()
             } catch let error as EnhancementError {
                 throw error
             } catch let error as URLError {

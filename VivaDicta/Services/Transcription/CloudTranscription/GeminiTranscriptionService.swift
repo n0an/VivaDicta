@@ -53,8 +53,15 @@ class GeminiTranscriptionService {
             logger.logError("Failed to encode Gemini request: \(error.localizedDescription)")
             throw CloudTranscriptionError.dataEncodingError
         }
-        
+
+        // Check for cancellation before making network request
+        try Task.checkCancellation()
+
         let (data, response) = try await URLSession.shared.data(for: request)
+
+        // Check for cancellation after network request
+        try Task.checkCancellation()
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }

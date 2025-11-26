@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 
 // MARK: - Processing Stage Enum
 public enum ProcessingStage {
@@ -29,7 +30,7 @@ public enum ProcessingStage {
     var statusText: String {
         switch self {
         case .waitingToStart:
-            return "Processing..."
+            return ""
         case .transcribing:
             return "Transcribing..."
         case .enhancingWithAI:
@@ -46,6 +47,8 @@ public enum ProcessingStage {
 struct ProcessingStateView: View {
     let processingStage: ProcessingStage
     let onCancel: () -> Void
+    
+    @Environment(\.colorScheme) var colorScheme
     
     @State var isSymbolAnimating: Bool = false
 
@@ -64,33 +67,121 @@ struct ProcessingStateView: View {
                 }
                 .padding(.horizontal, 8)
             }
-            .padding(.bottom, 15)
+            .padding(.bottom, 23)
             
-            Spacer()
-            
-            // Center area with icon and status label
-            VStack(spacing: 20) {
-                Image(systemName: processingStage.statusIcon)
-                    .foregroundStyle(Color.blue)
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-                    .font(.system(size: 30))
-                    .frame(height: 50)
-                    .onAppear { isSymbolAnimating = true }
-                    .onDisappear { isSymbolAnimating = false }
-                
-                // Processing status label
-                Text(processingStage.statusText)
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(.primary)
-                    .animation(.easeInOut(duration: 0.3), value: processingStage.statusText)
+            InfoView(processingStage: processingStage)
+            .opacity(0)
+            .overlay {
+                AnimatedMeshGradient2()
+                    .mask {
+                        InfoView(processingStage: processingStage)
+                    }
             }
             
-            Spacer()
+        }
+        .padding(.bottom, 71)
+    }
+    
+}
+
+struct InfoView: View {
+    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ToggleKeyboardFlowIntent")
+
+    let processingStage: ProcessingStage
+    @Environment(\.colorScheme) var colorScheme
+    @State var isSymbolAnimating: Bool = false
+    @State var isShowing = false
+    @State var isShowingText = false
+    @State var timer: Timer?
+    @State var textRenderEffectTimer: Timer?
+
+    var body: some View {
+        
+        VStack(spacing: 20) {
             
-            // Bottom padding to match keyboard height
-            Rectangle()
-                .fill(Color.clear)
-                .frame(height: 63)
+            if #available(iOS 26.0, *) {
+                if isShowing {
+                    Image(systemName: processingStage.statusIcon)
+                        .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
+                        .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
+                        .foregroundStyle(.primary)
+                        .font(.system(size: 50, weight: .semibold))
+                } else {
+                    Image(systemName: processingStage.statusIcon)
+                        .font(.system(size: 50, weight: .semibold))
+                        .opacity(0)
+                }
+                
+            } else { // iOS 18 option
+                
+                Image(systemName: processingStage.statusIcon)
+                    .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
+                    .foregroundStyle(Color.blue)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
+                    .font(.system(size: 50, weight: .semibold))
+            }
+            
+            // Processing status label
+            
+            
+            if isShowingText {
+                Text(processingStage.statusText)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .customAttribute(EmphasisAttribute())
+                    .transition(TextTransition())
+                    .frame(width: 150, height: 20)
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .frame(width: 150, height: 20)
+            }
+            
+            
+//            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 0.5)
+//                .frame(width: 150, height: 20)
+//                .debugBorder()
+//                .font(.system(size: 17, weight: .semibold))
+//                .foregroundStyle(.primary)
+            
+        }
+        .animation(.default, value: isShowingText)
+        .onAppear {
+            isSymbolAnimating = true
+            isShowingText = true
+            
+            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+                Task { @MainActor in
+                    isShowingText = false
+                    
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(1.2))
+                        isShowingText = true
+                    }
+                }
+            }
+            
+            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+                Task { @MainActor in
+                    
+                    isShowing = true
+                    
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.5))
+                        withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
+                            isShowing = false
+                        }
+                    }
+                }
+            }
+            timer?.fire()
+        }
+        .onDisappear {
+            isSymbolAnimating = false
+            textRenderEffectTimer?.invalidate()
+            textRenderEffectTimer = nil
+            timer?.invalidate()
+            timer = nil
         }
     }
 }

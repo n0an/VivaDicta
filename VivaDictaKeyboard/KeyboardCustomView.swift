@@ -25,10 +25,10 @@ struct KeyboardCustomView: View {
                 ProcessingStateView(
                     processingStage: processingStage,
                     onCancel: {
-                        // Cancel processing
+                        // Cancel processing and notify main app to stop and reschedule session
                         dictationState.errorMessage = nil
                         dictationState.transcriptionStatus = .idle
-                        AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                        dictationState.requestCancelRecording()
                     }
                 )
                 .onAppear {
