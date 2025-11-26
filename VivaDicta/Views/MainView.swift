@@ -148,32 +148,34 @@ struct MainView: View {
             if appState.recordViewModel?.recordingState == .recording ||
                 appState.recordViewModel?.recordingState == .transcribing ||
                 appState.recordViewModel?.recordingState == .enhancing {
-                AnimatedMeshGradient()
-                    .onAppear {
-                        rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
-                            Task { @MainActor in
-                                if appState.recordViewModel?.recordingState == .transcribing ||
-                                    appState.recordViewModel?.recordingState == .enhancing {
-                                    rippleEffectTrigger.toggle()
+                GeometryReader { geometry in
+                    AnimatedMeshGradient()
+                        .onAppear {
+                            rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+                                Task { @MainActor in
+                                    if appState.recordViewModel?.recordingState == .transcribing ||
+                                        appState.recordViewModel?.recordingState == .enhancing {
+                                        rippleEffectTrigger.toggle()
+                                    }
                                 }
+                            })
+                            if appState.recordViewModel?.recordingState == .transcribing ||
+                                appState.recordViewModel?.recordingState == .enhancing {
+                                rippleEffectTimer?.fire()
                             }
-                        })
-                        if appState.recordViewModel?.recordingState == .transcribing ||
-                            appState.recordViewModel?.recordingState == .enhancing {
-                            rippleEffectTimer?.fire()
                         }
-                    }
-                    .onDisappear {
-                        rippleEffectTimer?.invalidate()
-                        rippleEffectTimer = nil
-                    }
-                    .mask(
-                        RoundedRectangle(cornerRadius: 44, style: .continuous)
-                            .stroke(lineWidth: 44)
-                            .blur(radius: 22)
-                    )
-                    .ignoresSafeArea()
-                    .modifier(RippleEffect(at: .init(x: 100, y: 100), trigger: rippleEffectTrigger))
+                        .onDisappear {
+                            rippleEffectTimer?.invalidate()
+                            rippleEffectTimer = nil
+                        }
+                        .mask(
+                            RoundedRectangle(cornerRadius: 44, style: .continuous)
+                                .stroke(lineWidth: 44)
+                                .blur(radius: 22)
+                        )
+                        .ignoresSafeArea()
+                        .modifier(RippleEffect(at: CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), trigger: rippleEffectTrigger))
+                }
             }
         }
         .overlay {
