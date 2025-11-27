@@ -173,12 +173,12 @@ struct SettingsView: View {
                     ModelsView(appState: appState)
                 }
             }
-//            .navigationDestination(for: UserPrompt.self) { prompt in
-//                PromptEditView(
-//                    editingPrompt: prompt,
-//                    promptsManager: promptsManager
-//                )
-//            }
+            .navigationDestination(for: UserPrompt.self) { prompt in
+                PromptEditView(
+                    editingPrompt: prompt,
+                    promptsManager: promptsManager
+                )
+            }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

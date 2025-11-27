@@ -23,12 +23,6 @@ struct PromptsSettings: View {
                 promptsList
             }
         }
-        .navigationDestination(item: $editingPrompt, destination: { prompt in
-            PromptEditView(
-                editingPrompt: prompt,
-                promptsManager: promptsManager
-            )
-        })
         .sheet(isPresented: $showingTemplateSelection) {
             NavigationStack {
                 TemplateSelectionView(
@@ -104,12 +98,9 @@ struct PromptsSettings: View {
     private var promptsList: some View {
         List {
             ForEach(promptsManager.userPrompts) { prompt in
-                Button {
-                    editingPrompt = prompt
-                } label: {
+                NavigationLink(value: prompt) {
                     PromptRowView(prompt: prompt)
                 }
-                .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
                         promptsManager.deletePrompt(prompt)
