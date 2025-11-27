@@ -115,30 +115,9 @@ struct MainView: View {
                     }
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
-                    NavigationStack {
-                        SettingsView(appState: appState)
-                            .navigationTitle("Settings")
-                            .navigationBarTitleDisplayMode(.inline)
-                            .toolbar {
-
-                                if #available(iOS 26.0, *) {
-                                    ToolbarItem(placement: .topBarLeading) {
-                                        Button("Close", systemImage: "xmark") {
-                                            showingSettings = false
-                                        }
-                                    }
-                                } else {
-                                    ToolbarItem(placement: .topBarLeading) {
-                                        Button("Close") {
-                                            showingSettings = false
-                                        }
-                                    }
-                                }
-                            }
-                    }
-
-                    .interactiveDismissDisabled(true)
-                    .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
+                    SettingsView(appState: appState)
+                        .interactiveDismissDisabled(true)
+                        .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
                 .navigationDestination(for: Transcription.self) { transcription in
                     TranscriptionDetailView(transcription: transcription, appState: appState)

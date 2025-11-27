@@ -13,7 +13,9 @@ struct SettingsView: View {
     var appState: AppState
     @State var promptsManager = PromptsManager()
 
+    @Environment(\.dismiss) private var dismiss
     @State var navigationPath = NavigationPath()
+    @Namespace private var promptsTransition
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -167,9 +169,35 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(promptsManager: promptsManager)
+                    PromptsSettings(promptsManager: promptsManager, transition: promptsTransition)
                 case .transcriptionModels:
                     ModelsView(appState: appState)
+                case .promptsTemplates:
+                    TemplateSelectionView(promptsManager: promptsManager)
+                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
+                }
+            }
+            .navigationDestination(for: UserPrompt.self) { prompt in
+                PromptEditView(
+                    editingPrompt: prompt,
+                    promptsManager: promptsManager
+                )
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close", systemImage: "xmark") {
+                            dismiss()
+                        }
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Close") {
+                            dismiss()
+                        }
+                    }
                 }
             }
 

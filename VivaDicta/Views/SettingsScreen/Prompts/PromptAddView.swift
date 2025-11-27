@@ -11,35 +11,56 @@ struct PromptAddView: View {
     @Environment(\.dismiss) var dismiss
     let templateToCreateNewPrompt: PromptsTemplates?
     let promptsManager: PromptsManager
-    
+    var onComplete: (() -> Void)?
+
     @State private var title: String = ""
-    @State private var description: String = ""
     @State private var promptInstructions: String = ""
-    
+    @State private var showInstructionsEditor = false
+
     private var currentTemplate: PromptsTemplates {
         return templateToCreateNewPrompt ?? .regular
     }
-    
+
+    private func savePrompt() {
+        let prompt = UserPrompt(
+            title: title,
+            promptInstructions: promptInstructions)
+
+        promptsManager.addPrompt(prompt)
+        dismissAndComplete()
+    }
+
+    private func dismissAndComplete() {
+        dismiss()
+        onComplete?()
+    }
+
     init(template: PromptsTemplates? = nil,
          editingPrompt: UserPrompt? = nil,
-         promptsManager: PromptsManager) {
+         promptsManager: PromptsManager,
+         onComplete: (() -> Void)? = nil) {
         self.templateToCreateNewPrompt = template
         self.promptsManager = promptsManager
+        self.onComplete = onComplete
     }
     
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Prompt Details")) {
+                Section(header: Text("Prompt Name")) {
                     TextField("Title", text: $title)
-                    
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
                 }
-                
+
                 Section(header: Text("Prompt Instructions")) {
-                    TextEditor(text: $promptInstructions)
-                        .frame(minHeight: 200)
+                    Button {
+                        showInstructionsEditor = true
+                    } label: {
+                        Text(promptInstructions.isEmpty ? "Tap to add instructions" : promptInstructions)
+                            .lineLimit(3)
+                            .foregroundStyle(promptInstructions.isEmpty ? .secondary : .primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .navigationTitle("New \(currentTemplate.displayName) Prompt")
@@ -48,37 +69,25 @@ struct PromptAddView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     if #available(iOS 26, *) {
                         Button(role: .close) {
-                            dismiss()
+                            dismissAndComplete()
                         }
                     } else {
                         Button("Cancel") {
-                            dismiss()
+                            dismissAndComplete()
                         }
                     }
                 }
-                
+
                 ToolbarItem(placement: .topBarTrailing) {
-                    if #available(iOS 26, *){
+                    if #available(iOS 26, *) {
                         Button(role: .confirm) {
-                            let prompt = UserPrompt(
-                                title: title,
-                                description: description,
-                                promptInstructions: promptInstructions)
-                            
-                            promptsManager.addPrompt(prompt)
-                            dismiss()
+                            savePrompt()
                         }
                         .disabled(title.isEmpty)
                         .tint(.blue)
                     } else {
                         Button("Save") {
-                            let prompt = UserPrompt(
-                                title: title,
-                                description: description,
-                                promptInstructions: promptInstructions)
-                            
-                            promptsManager.addPrompt(prompt)
-                            dismiss()
+                            savePrompt()
                         }
                         .disabled(title.isEmpty)
                     }
@@ -88,12 +97,15 @@ struct PromptAddView: View {
         .onAppear {
             if currentTemplate == .custom {
                 title = ""
-                description = ""
                 promptInstructions = ""
             } else {
                 title = currentTemplate.defaultTitle
-                description = currentTemplate.description
                 promptInstructions = currentTemplate.prompt
+            }
+        }
+        .sheet(isPresented: $showInstructionsEditor) {
+            NavigationStack {
+                PromptInstructionsEditorView(instructions: $promptInstructions)
             }
         }
     }

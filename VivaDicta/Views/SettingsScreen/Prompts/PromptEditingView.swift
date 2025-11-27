@@ -13,8 +13,8 @@ struct PromptEditView: View {
     let promptsManager: PromptsManager
     
     @State private var title: String = ""
-    @State private var description: String = ""
     @State private var promptInstructions: String = ""
+    @State private var showInstructionsEditor = false
     
     init(editingPrompt: UserPrompt? = nil,
          promptsManager: PromptsManager) {
@@ -23,83 +23,74 @@ struct PromptEditView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            Form {
-                Section(header: Text("Prompt Details")) {
-                    TextField("Title", text: $title)
-                    
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-                
-                Section(header: Text("Prompt Instructions")) {
-                    TextEditor(text: $promptInstructions)
-                        .frame(minHeight: 200)
-                }
-            }
-            .navigationTitle("Edit Prompt")
-            .toolbarTitleDisplayMode(.inline)
-            
-            
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if #available(iOS 26, *) {
-                        Button(role: .close) {
-                            dismiss()
-                        }
-                    } else {
-                        Button("Cancel") {
-                            dismiss()
-                        }
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    if #available(iOS 26, *){
-                        Button(role: .confirm) {
-                            if let existingPrompt = editingPrompt {
-                                // Update existing prompt
-                                let updatedPrompt = UserPrompt(
-                                    id: existingPrompt.id,
-                                    title: title,
-                                    description: description,
-                                    promptInstructions: promptInstructions,
-                                    createdAt: existingPrompt.createdAt
-                                )
-                                promptsManager.updatePrompt(updatedPrompt)
-                            }
-                            dismiss()
-                        }
-                        .disabled(title.isEmpty)
-                        .tint(.blue)
-                    } else {
-                        Button("Save") {
-                            if let existingPrompt = editingPrompt {
-                                // Update existing prompt
-                                let updatedPrompt = UserPrompt(
-                                    id: existingPrompt.id,
-                                    title: title,
-                                    description: description,
-                                    promptInstructions: promptInstructions,
-                                    createdAt: existingPrompt.createdAt
-                                )
-                                promptsManager.updatePrompt(updatedPrompt)
-                            }
-                            dismiss()
-                        }
-                        .disabled(title.isEmpty)
-                    }
-                }
+        Form {
+            Section(header: Text("Prompt Name")) {
+                TextField("Title", text: $title)
             }
             
+            Section(header: Text("Prompt Instructions")) {
+                Button {
+                    showInstructionsEditor = true
+                } label: {
+                    Text(promptInstructions.isEmpty ? "Tap to add instructions" : promptInstructions)
+                        .lineLimit(3)
+                        .foregroundStyle(promptInstructions.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .navigationTitle("Edit Prompt")
+        .toolbarTitleDisplayMode(.inline)
+        
+        
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if #available(iOS 26, *){
+                    Button(role: .confirm) {
+                        if let existingPrompt = editingPrompt {
+                            // Update existing prompt
+                            let updatedPrompt = UserPrompt(
+                                id: existingPrompt.id,
+                                title: title,
+                                promptInstructions: promptInstructions,
+                                createdAt: existingPrompt.createdAt
+                            )
+                            promptsManager.updatePrompt(updatedPrompt)
+                        }
+                        dismiss()
+                    }
+                    .disabled(title.isEmpty)
+                    .tint(.blue)
+                } else {
+                    Button("Save") {
+                        if let existingPrompt = editingPrompt {
+                            // Update existing prompt
+                            let updatedPrompt = UserPrompt(
+                                id: existingPrompt.id,
+                                title: title,
+                                promptInstructions: promptInstructions,
+                                createdAt: existingPrompt.createdAt
+                            )
+                            promptsManager.updatePrompt(updatedPrompt)
+                        }
+                        dismiss()
+                    }
+                    .disabled(title.isEmpty)
+                }
+            }
         }
         
         .onAppear {
             if let existingPrompt = editingPrompt {
                 // Pre-fill with existing prompt data
                 title = existingPrompt.title
-                description = existingPrompt.description
                 promptInstructions = existingPrompt.promptInstructions
+            }
+        }
+        .sheet(isPresented: $showInstructionsEditor) {
+            NavigationStack {
+                PromptInstructionsEditorView(instructions: $promptInstructions)
             }
         }
     }

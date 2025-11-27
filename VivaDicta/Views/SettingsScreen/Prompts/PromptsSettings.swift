@@ -8,12 +8,8 @@
 import SwiftUI
 
 struct PromptsSettings: View {
-    @Namespace private var transition
-    
     var promptsManager: PromptsManager
-    @State private var showingTemplateSelection = false
-    @State private var selectedTemplate: PromptsTemplates?
-    @State private var editingPrompt: UserPrompt?
+    var transition: Namespace.ID
     
     var body: some View {
         VStack(spacing: 0) {
@@ -23,53 +19,24 @@ struct PromptsSettings: View {
                 promptsList
             }
         }
-        .sheet(isPresented: $showingTemplateSelection) {
-            NavigationStack {
-                TemplateSelectionView(
-                    selectedTemplate: $selectedTemplate,
-                    isPresented: $showingTemplateSelection
-                )
-                .navigationTitle("Select Template")
-                .navigationBarTitleDisplayMode(.inline)
-
-                .scrollContentBackground(.visible)
-            }
-            .navigationTransition(
-                .zoom(sourceID: "info", in: transition)
-            )
-            .presentationDetents([.medium])
-        }
-        .sheet(item: $selectedTemplate) { template in
-            PromptAddView(
-                template: template,
-                promptsManager: promptsManager
-            )
-        }
-        .sheet(item: $editingPrompt) { prompt in
-            PromptEditView(
-                editingPrompt: prompt,
-                promptsManager: promptsManager
-            )
-        }
         .toolbar {
             if #available(iOS 26, *) {
                 ToolbarItem {
-                    Button("Add Data", systemImage: "plus") {
-                        showingTemplateSelection = true
+                    NavigationLink(value: SettingsDestination.promptsTemplates) {
+                        Label("Add Data", systemImage: "plus")
                     }
                     .buttonStyle(.glassProminent)
                     .tint(.blue)
                 }
-                .matchedTransitionSource(id: "info", in: transition)
+                .matchedTransitionSource(id: "addPrompt", in: transition)
             } else {
                 ToolbarItem {
-                    Button("Add Data", systemImage: "plus") {
-                        showingTemplateSelection = true
+                    NavigationLink(value: SettingsDestination.promptsTemplates) {
+                        Label("Add Data", systemImage: "plus")
                     }
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: showingTemplateSelection)
         .toolbarTitleDisplayMode(.inlineLarge)
         .navigationTitle("Prompts")
     }
@@ -98,12 +65,9 @@ struct PromptsSettings: View {
     private var promptsList: some View {
         List {
             ForEach(promptsManager.userPrompts) { prompt in
-                Button(action: {
-                    editingPrompt = prompt
-                }) {
+                NavigationLink(value: prompt) {
                     PromptRowView(prompt: prompt)
                 }
-                .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
                         promptsManager.deletePrompt(prompt)
@@ -141,19 +105,9 @@ struct PromptRowView: View {
     
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(prompt.title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                if !prompt.description.isEmpty {
-                    Text(prompt.description)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
-            Spacer()
+            Text(prompt.title)
+                .font(.headline)
+                .foregroundStyle(.primary)
         }
         .padding(.vertical, 8)
         .contentShape(.rect)
@@ -162,5 +116,6 @@ struct PromptRowView: View {
 
 #Preview {
     @Previewable @State var promptsManager = PromptsManager()
-    PromptsSettings(promptsManager: promptsManager)
+    @Previewable @Namespace var transition
+    PromptsSettings(promptsManager: promptsManager, transition: transition)
 }
