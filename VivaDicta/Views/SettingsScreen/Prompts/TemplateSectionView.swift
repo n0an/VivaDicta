@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TemplateSelectionView: View {
     var promptsManager: PromptsManager
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedTemplate: PromptsTemplates?
 
     var body: some View {
@@ -35,7 +36,10 @@ struct TemplateSelectionView: View {
         .fullScreenCover(item: $selectedTemplate) { template in
             PromptAddView(
                 template: template,
-                promptsManager: promptsManager
+                promptsManager: promptsManager,
+                onComplete: {
+                    dismiss()
+                }
             )
         }
     }

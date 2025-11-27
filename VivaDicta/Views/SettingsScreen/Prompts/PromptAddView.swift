@@ -11,11 +11,12 @@ struct PromptAddView: View {
     @Environment(\.dismiss) var dismiss
     let templateToCreateNewPrompt: PromptsTemplates?
     let promptsManager: PromptsManager
-    
+    var onComplete: (() -> Void)?
+
     @State private var title: String = ""
     @State private var description: String = ""
     @State private var promptInstructions: String = ""
-    
+
     private var currentTemplate: PromptsTemplates {
         return templateToCreateNewPrompt ?? .regular
     }
@@ -27,14 +28,21 @@ struct PromptAddView: View {
             promptInstructions: promptInstructions)
 
         promptsManager.addPrompt(prompt)
-        dismiss()
+        dismissAndComplete()
     }
-    
+
+    private func dismissAndComplete() {
+        dismiss()
+        onComplete?()
+    }
+
     init(template: PromptsTemplates? = nil,
          editingPrompt: UserPrompt? = nil,
-         promptsManager: PromptsManager) {
+         promptsManager: PromptsManager,
+         onComplete: (() -> Void)? = nil) {
         self.templateToCreateNewPrompt = template
         self.promptsManager = promptsManager
+        self.onComplete = onComplete
     }
     
     var body: some View {
@@ -58,11 +66,11 @@ struct PromptAddView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     if #available(iOS 26, *) {
                         Button(role: .close) {
-                            dismiss()
+                            dismissAndComplete()
                         }
                     } else {
                         Button("Cancel") {
-                            dismiss()
+                            dismissAndComplete()
                         }
                     }
                 }
