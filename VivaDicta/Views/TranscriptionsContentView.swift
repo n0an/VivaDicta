@@ -13,10 +13,11 @@ struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
 
+    @Namespace var zoomNamespace
+    
     @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
-    @State private var navigationPath = NavigationPath()
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
     @State private var showGoToTopButton = false
@@ -48,25 +49,20 @@ struct TranscriptionsContentView: View {
                             
                             NavigationLink {
                                 TranscriptionDetailView(transcription: transcription, appState: appState)
+                                    .navigationTransition(.zoom(sourceID: transcription.id, in: zoomNamespace))
+                                
+                                // TODO: - Decide - wether we need to keep drag to dismiss
+//                                    .interactiveDismissDisabled(true)
+                                
+                                
                             } label: {
                                 TranscriptionRowView(
                                     transcription: transcription,
                                     isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
                                 )
-                                
-                                
                             }
+                            .matchedTransitionSource(id: transcription.id, in: zoomNamespace)
 
-//                            
-//                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
-//                                TranscriptionRowView(
-//                                    transcription: transcription,
-//                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
-//                                )
-//                                
-//                                
-//                                
-//                            }
                         }
                         .onDelete(perform: deleteTranscription)
                     }

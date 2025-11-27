@@ -12,6 +12,8 @@ struct ModelsView: View {
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
     @State private var downloadManager: ModelDownloadManager
+    
+    @Namespace var zoomNamespace
 
     init(appState: AppState) {
         self.appState = appState
@@ -48,6 +50,7 @@ struct ModelsView: View {
                                     model: model,
                                     downloadManager: downloadManager
                                 )
+                                
                             } else if let cloudModel = model as? CloudModel {
                                 CloudModelCard(
                                     model: cloudModel,
@@ -58,6 +61,7 @@ struct ModelsView: View {
                                         handleAPIKeyDeletion(for: cloudModel)
                                     }
                                 )
+                                .matchedTransitionSource(id: cloudModel.id, in: zoomNamespace)
                             }
                         }
                         .padding(.horizontal)
@@ -73,6 +77,7 @@ struct ModelsView: View {
                 onSave: { cloudModel in
                     cloudModelConfigured(cloudModel)
                 })
+            .navigationTransition(.zoom(sourceID: model.id, in: zoomNamespace))
         })
         .navigationTitle("Transcription Models")
         .navigationBarTitleDisplayMode(.large)
