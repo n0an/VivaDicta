@@ -61,6 +61,8 @@ struct PromptAddView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Edit prompt instructions")
+                    .accessibilityHint(promptInstructions.isEmpty ? "Double tap to add instructions" : "Current instructions: \(promptInstructions)")
                 }
             }
             .navigationTitle("New \(currentTemplate.displayName) Prompt")
