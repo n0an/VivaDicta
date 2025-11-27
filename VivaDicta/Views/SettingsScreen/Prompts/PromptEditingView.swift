@@ -22,56 +22,56 @@ struct PromptEditView: View {
     }
     
     var body: some View {
-            Form {
-                Section(header: Text("Prompt Details")) {
-                    TextField("Title", text: $title)
-                }
-                
-                Section(header: Text("Prompt Instructions")) {
-                    TextEditor(text: $promptInstructions)
-                        .frame(minHeight: 200)
-                }
+        Form {
+            Section(header: Text("Prompt Name")) {
+                TextField("Title", text: $title)
             }
-            .navigationTitle("Edit Prompt")
-            .toolbarTitleDisplayMode(.inline)
             
-            
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if #available(iOS 26, *){
-                        Button(role: .confirm) {
-                            if let existingPrompt = editingPrompt {
-                                // Update existing prompt
-                                let updatedPrompt = UserPrompt(
-                                    id: existingPrompt.id,
-                                    title: title,
-                                    promptInstructions: promptInstructions,
-                                    createdAt: existingPrompt.createdAt
-                                )
-                                promptsManager.updatePrompt(updatedPrompt)
-                            }
-                            dismiss()
+            Section(header: Text("Prompt Instructions")) {
+                TextEditor(text: $promptInstructions)
+                    .frame(minHeight: 200)
+            }
+        }
+        .navigationTitle("Edit Prompt")
+        .toolbarTitleDisplayMode(.inline)
+        
+        
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if #available(iOS 26, *){
+                    Button(role: .confirm) {
+                        if let existingPrompt = editingPrompt {
+                            // Update existing prompt
+                            let updatedPrompt = UserPrompt(
+                                id: existingPrompt.id,
+                                title: title,
+                                promptInstructions: promptInstructions,
+                                createdAt: existingPrompt.createdAt
+                            )
+                            promptsManager.updatePrompt(updatedPrompt)
                         }
-                        .disabled(title.isEmpty)
-                        .tint(.blue)
-                    } else {
-                        Button("Save") {
-                            if let existingPrompt = editingPrompt {
-                                // Update existing prompt
-                                let updatedPrompt = UserPrompt(
-                                    id: existingPrompt.id,
-                                    title: title,
-                                    promptInstructions: promptInstructions,
-                                    createdAt: existingPrompt.createdAt
-                                )
-                                promptsManager.updatePrompt(updatedPrompt)
-                            }
-                            dismiss()
-                        }
-                        .disabled(title.isEmpty)
+                        dismiss()
                     }
+                    .disabled(title.isEmpty)
+                    .tint(.blue)
+                } else {
+                    Button("Save") {
+                        if let existingPrompt = editingPrompt {
+                            // Update existing prompt
+                            let updatedPrompt = UserPrompt(
+                                id: existingPrompt.id,
+                                title: title,
+                                promptInstructions: promptInstructions,
+                                createdAt: existingPrompt.createdAt
+                            )
+                            promptsManager.updatePrompt(updatedPrompt)
+                        }
+                        dismiss()
+                    }
+                    .disabled(title.isEmpty)
                 }
             }
+        }
         
         .onAppear {
             if let existingPrompt = editingPrompt {
