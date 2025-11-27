@@ -15,6 +15,7 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State var navigationPath = NavigationPath()
+    @Namespace private var promptsTransition
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -168,9 +169,12 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(promptsManager: promptsManager)
+                    PromptsSettings(promptsManager: promptsManager, transition: promptsTransition)
                 case .transcriptionModels:
                     ModelsView(appState: appState)
+                case .promptsTemplates:
+                    TemplateSelectionView(promptsManager: promptsManager)
+                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
                 }
             }
             .navigationDestination(for: UserPrompt.self) { prompt in

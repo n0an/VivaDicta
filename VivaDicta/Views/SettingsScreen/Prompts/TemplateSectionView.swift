@@ -8,19 +8,18 @@
 import SwiftUI
 
 struct TemplateSelectionView: View {
-    @Binding var selectedTemplate: PromptsTemplates?
-    @Binding var isPresented: Bool
-    
+    var promptsManager: PromptsManager
+    @State private var selectedTemplate: PromptsTemplates?
+
     var body: some View {
         List(PromptsTemplates.allCases) { template in
-            Button(action: {
+            Button {
                 selectedTemplate = template
-                isPresented = false
-            }) {
+            } label: {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(template.displayName)
                         .font(.headline)
-                    
+
                     Text(template.description)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -28,8 +27,16 @@ struct TemplateSelectionView: View {
                 }
                 .padding(.vertical, 4)
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.plain)
         }
+        .navigationTitle("Select Template")
+        .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.visible)
+        .fullScreenCover(item: $selectedTemplate) { template in
+            PromptAddView(
+                template: template,
+                promptsManager: promptsManager
+            )
+        }
     }
 }

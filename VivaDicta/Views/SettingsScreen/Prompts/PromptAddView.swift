@@ -19,6 +19,16 @@ struct PromptAddView: View {
     private var currentTemplate: PromptsTemplates {
         return templateToCreateNewPrompt ?? .regular
     }
+
+    private func savePrompt() {
+        let prompt = UserPrompt(
+            title: title,
+            description: description,
+            promptInstructions: promptInstructions)
+
+        promptsManager.addPrompt(prompt)
+        dismiss()
+    }
     
     init(template: PromptsTemplates? = nil,
          editingPrompt: UserPrompt? = nil,
@@ -32,11 +42,11 @@ struct PromptAddView: View {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)
-                    
+
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3...6)
                 }
-                
+
                 Section(header: Text("Prompt Instructions")) {
                     TextEditor(text: $promptInstructions)
                         .frame(minHeight: 200)
@@ -56,29 +66,17 @@ struct PromptAddView: View {
                         }
                     }
                 }
-                
+
                 ToolbarItem(placement: .topBarTrailing) {
-                    if #available(iOS 26, *){
+                    if #available(iOS 26, *) {
                         Button(role: .confirm) {
-                            let prompt = UserPrompt(
-                                title: title,
-                                description: description,
-                                promptInstructions: promptInstructions)
-                            
-                            promptsManager.addPrompt(prompt)
-                            dismiss()
+                            savePrompt()
                         }
                         .disabled(title.isEmpty)
                         .tint(.blue)
                     } else {
                         Button("Save") {
-                            let prompt = UserPrompt(
-                                title: title,
-                                description: description,
-                                promptInstructions: promptInstructions)
-                            
-                            promptsManager.addPrompt(prompt)
-                            dismiss()
+                            savePrompt()
                         }
                         .disabled(title.isEmpty)
                     }
