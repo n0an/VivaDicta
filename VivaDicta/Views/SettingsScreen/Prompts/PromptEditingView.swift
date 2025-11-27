@@ -14,6 +14,7 @@ struct PromptEditView: View {
     
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
+    @State private var showInstructionsEditor = false
     
     init(editingPrompt: UserPrompt? = nil,
          promptsManager: PromptsManager) {
@@ -28,13 +29,15 @@ struct PromptEditView: View {
             }
             
             Section(header: Text("Prompt Instructions")) {
-                NavigationLink {
-                    PromptInstructionsEditorView(instructions: $promptInstructions)
+                Button {
+                    showInstructionsEditor = true
                 } label: {
                     Text(promptInstructions.isEmpty ? "Tap to add instructions" : promptInstructions)
                         .lineLimit(3)
                         .foregroundStyle(promptInstructions.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .buttonStyle(.plain)
             }
         }
         .navigationTitle("Edit Prompt")
@@ -83,6 +86,11 @@ struct PromptEditView: View {
                 // Pre-fill with existing prompt data
                 title = existingPrompt.title
                 promptInstructions = existingPrompt.promptInstructions
+            }
+        }
+        .sheet(isPresented: $showInstructionsEditor) {
+            NavigationStack {
+                PromptInstructionsEditorView(instructions: $promptInstructions)
             }
         }
     }

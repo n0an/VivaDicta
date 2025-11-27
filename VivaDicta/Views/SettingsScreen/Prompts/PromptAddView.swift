@@ -15,6 +15,7 @@ struct PromptAddView: View {
 
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
+    @State private var showInstructionsEditor = false
 
     private var currentTemplate: PromptsTemplates {
         return templateToCreateNewPrompt ?? .regular
@@ -51,13 +52,15 @@ struct PromptAddView: View {
                 }
 
                 Section(header: Text("Prompt Instructions")) {
-                    NavigationLink {
-                        PromptInstructionsEditorView(instructions: $promptInstructions)
+                    Button {
+                        showInstructionsEditor = true
                     } label: {
                         Text(promptInstructions.isEmpty ? "Tap to add instructions" : promptInstructions)
                             .lineLimit(3)
                             .foregroundStyle(promptInstructions.isEmpty ? .secondary : .primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .navigationTitle("New \(currentTemplate.displayName) Prompt")
@@ -98,6 +101,11 @@ struct PromptAddView: View {
             } else {
                 title = currentTemplate.defaultTitle
                 promptInstructions = currentTemplate.prompt
+            }
+        }
+        .sheet(isPresented: $showInstructionsEditor) {
+            NavigationStack {
+                PromptInstructionsEditorView(instructions: $promptInstructions)
             }
         }
     }
