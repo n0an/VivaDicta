@@ -46,7 +46,7 @@ struct PromptAddView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Prompt Details")) {
+                Section(header: Text("Prompt Name")) {
                     TextField("Title", text: $title)
                 }
 
