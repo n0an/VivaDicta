@@ -51,8 +51,13 @@ struct PromptAddView: View {
                 }
 
                 Section(header: Text("Prompt Instructions")) {
-                    TextEditor(text: $promptInstructions)
-                        .frame(minHeight: 200)
+                    NavigationLink {
+                        PromptInstructionsEditorView(instructions: $promptInstructions)
+                    } label: {
+                        Text(promptInstructions.isEmpty ? "Tap to add instructions" : promptInstructions)
+                            .lineLimit(3)
+                            .foregroundStyle(promptInstructions.isEmpty ? .secondary : .primary)
+                    }
                 }
             }
             .navigationTitle("New \(currentTemplate.displayName) Prompt")
