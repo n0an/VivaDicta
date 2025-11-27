@@ -18,7 +18,6 @@ struct TranscriptionsContentView: View {
     @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
-    @State private var navigationPath = NavigationPath()
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
     @State private var showGoToTopButton = false
