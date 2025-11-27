@@ -17,6 +17,7 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @Namespace private var promptsTransition
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
+    @AppStorage("IsTextFormattingEnabled") private var isTextFormattingEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
     private let prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
@@ -89,6 +90,16 @@ struct SettingsView: View {
                             Text("Voice Activity Detection")
                                 .font(.body)
                             Text("Improves accuracy by detecting speech segments")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Toggle(isOn: $isTextFormattingEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Automatic Text Formatting")
+                                .font(.body)
+                            Text("Splits transcription into readable paragraphs")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
