@@ -13,6 +13,8 @@ struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
 
+    @Namespace var zoomNamespace
+    
     @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
@@ -48,6 +50,9 @@ struct TranscriptionsContentView: View {
                             
                             NavigationLink {
                                 TranscriptionDetailView(transcription: transcription, appState: appState)
+                                    .navigationTransition(.zoom(sourceID: transcription.id, in: zoomNamespace))
+                                
+                                
                             } label: {
                                 TranscriptionRowView(
                                     transcription: transcription,
@@ -55,7 +60,9 @@ struct TranscriptionsContentView: View {
                                 )
                                 
                                 
+                                
                             }
+                            .matchedTransitionSource(id: transcription.id, in: zoomNamespace)
 
 //                            
 //                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
