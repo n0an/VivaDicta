@@ -93,20 +93,41 @@ struct ModeEditView: View {
                         .foregroundStyle(.blue)
                     } else {
                         if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
-                            NavigationLink(destination: AddAPIKeyView(
-                                provider: mappedProvider,
-                                aiService: viewModel.aiService,
-                                onSave: { _ in
-                                    let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
-                                    if let firstModel = availableModels.first {
-                                        viewModel.transcriptionModel = firstModel
-                                    }
-                                })) {
-                                    HStack {
-                                        Image(systemName: "key")
-                                        Text("Add API Key")
-                                    }
+                            
+                            
+                            NavigationLink {
+                                AddAPIKeyView(
+                                    provider: mappedProvider,
+                                    aiService: viewModel.aiService,
+                                    onSave: { _ in
+                                        let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
+                                        if let firstModel = availableModels.first {
+                                            viewModel.transcriptionModel = firstModel
+                                        }
+                                    })
+                            } label: {
+                                HStack {
+                                    Image(systemName: "key")
+                                    Text("Add API Key")
                                 }
+                            }
+
+                            
+                            
+//                            NavigationLink(destination: AddAPIKeyView(
+//                                provider: mappedProvider,
+//                                aiService: viewModel.aiService,
+//                                onSave: { _ in
+//                                    let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
+//                                    if let firstModel = availableModels.first {
+//                                        viewModel.transcriptionModel = firstModel
+//                                    }
+//                                })) {
+//                                    HStack {
+//                                        Image(systemName: "key")
+//                                        Text("Add API Key")
+//                                    }
+//                                }
                         }
                     }
                 }
@@ -155,16 +176,32 @@ struct ModeEditView: View {
                                 }
                                 
                             } else {
-                                NavigationLink(destination: AddAPIKeyView(
-                                    provider: provider,
-                                    aiService: viewModel.aiService, onSave: { provider in
-                                        viewModel.updateModel(provider.defaultModel)
-                                    })) {
-                                        HStack {
-                                            Image(systemName: "key")
-                                            Text("Add API Key")
-                                        }
+                                
+                                
+                                NavigationLink {
+                                    AddAPIKeyView(
+                                        provider: provider,
+                                        aiService: viewModel.aiService, onSave: { provider in
+                                            viewModel.updateModel(provider.defaultModel)
+                                        })
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "key")
+                                        Text("Add API Key")
                                     }
+                                }
+
+                                
+//                                NavigationLink(destination: AddAPIKeyView(
+//                                    provider: provider,
+//                                    aiService: viewModel.aiService, onSave: { provider in
+//                                        viewModel.updateModel(provider.defaultModel)
+//                                    })) {
+//                                        HStack {
+//                                            Image(systemName: "key")
+//                                            Text("Add API Key")
+//                                        }
+//                                    }
                             }
                         }
                         

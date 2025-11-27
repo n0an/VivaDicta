@@ -44,12 +44,29 @@ struct TranscriptionsContentView: View {
                             .id(topAnchorID)
 
                         ForEach(displayedTranscriptions) { transcription in
-                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
+                            
+                            
+                            NavigationLink {
+                                TranscriptionDetailView(transcription: transcription, appState: appState)
+                            } label: {
                                 TranscriptionRowView(
                                     transcription: transcription,
                                     isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
                                 )
+                                
+                                
                             }
+
+//                            
+//                            NavigationLink(destination: TranscriptionDetailView(transcription: transcription, appState: appState)) {
+//                                TranscriptionRowView(
+//                                    transcription: transcription,
+//                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+//                                )
+//                                
+//                                
+//                                
+//                            }
                         }
                         .onDelete(perform: deleteTranscription)
                     }
