@@ -23,7 +23,6 @@ struct PromptEditView: View {
     }
     
     var body: some View {
-//        NavigationStack {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)
@@ -91,8 +90,6 @@ struct PromptEditView: View {
                     }
                 }
             }
-            
-//        }
         
         .onAppear {
             if let existingPrompt = editingPrompt {
