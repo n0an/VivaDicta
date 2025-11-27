@@ -14,7 +14,6 @@ struct PromptAddView: View {
     var onComplete: (() -> Void)?
 
     @State private var title: String = ""
-    @State private var description: String = ""
     @State private var promptInstructions: String = ""
 
     private var currentTemplate: PromptsTemplates {
@@ -24,7 +23,6 @@ struct PromptAddView: View {
     private func savePrompt() {
         let prompt = UserPrompt(
             title: title,
-            description: description,
             promptInstructions: promptInstructions)
 
         promptsManager.addPrompt(prompt)
@@ -50,9 +48,6 @@ struct PromptAddView: View {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)
-
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
                 }
 
                 Section(header: Text("Prompt Instructions")) {
@@ -94,11 +89,9 @@ struct PromptAddView: View {
         .onAppear {
             if currentTemplate == .custom {
                 title = ""
-                description = ""
                 promptInstructions = ""
             } else {
                 title = currentTemplate.defaultTitle
-                description = currentTemplate.description
                 promptInstructions = currentTemplate.prompt
             }
         }

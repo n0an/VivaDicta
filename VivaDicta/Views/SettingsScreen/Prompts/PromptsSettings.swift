@@ -105,19 +105,9 @@ struct PromptRowView: View {
     
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(prompt.title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                if !prompt.description.isEmpty {
-                    Text(prompt.description)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
-            Spacer()
+            Text(prompt.title)
+                .font(.headline)
+                .foregroundStyle(.primary)
         }
         .padding(.vertical, 8)
         .contentShape(.rect)

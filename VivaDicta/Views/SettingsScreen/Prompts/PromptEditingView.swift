@@ -13,7 +13,6 @@ struct PromptEditView: View {
     let promptsManager: PromptsManager
     
     @State private var title: String = ""
-    @State private var description: String = ""
     @State private var promptInstructions: String = ""
     
     init(editingPrompt: UserPrompt? = nil,
@@ -26,9 +25,6 @@ struct PromptEditView: View {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)
-                    
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
                 }
                 
                 Section(header: Text("Prompt Instructions")) {
@@ -41,18 +37,6 @@ struct PromptEditView: View {
             
             
             .toolbar {
-//                ToolbarItem(placement: .topBarLeading) {
-//                    if #available(iOS 26, *) {
-//                        Button(role: .close) {
-//                            dismiss()
-//                        }
-//                    } else {
-//                        Button("Cancel") {
-//                            dismiss()
-//                        }
-//                    }
-//                }
-                
                 ToolbarItem(placement: .topBarTrailing) {
                     if #available(iOS 26, *){
                         Button(role: .confirm) {
@@ -61,7 +45,6 @@ struct PromptEditView: View {
                                 let updatedPrompt = UserPrompt(
                                     id: existingPrompt.id,
                                     title: title,
-                                    description: description,
                                     promptInstructions: promptInstructions,
                                     createdAt: existingPrompt.createdAt
                                 )
@@ -78,7 +61,6 @@ struct PromptEditView: View {
                                 let updatedPrompt = UserPrompt(
                                     id: existingPrompt.id,
                                     title: title,
-                                    description: description,
                                     promptInstructions: promptInstructions,
                                     createdAt: existingPrompt.createdAt
                                 )
@@ -95,7 +77,6 @@ struct PromptEditView: View {
             if let existingPrompt = editingPrompt {
                 // Pre-fill with existing prompt data
                 title = existingPrompt.title
-                description = existingPrompt.description
                 promptInstructions = existingPrompt.promptInstructions
             }
         }
