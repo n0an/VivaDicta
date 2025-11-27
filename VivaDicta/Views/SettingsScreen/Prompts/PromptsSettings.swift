@@ -23,6 +23,12 @@ struct PromptsSettings: View {
                 promptsList
             }
         }
+        .navigationDestination(item: $editingPrompt, destination: { prompt in
+            PromptEditView(
+                editingPrompt: prompt,
+                promptsManager: promptsManager
+            )
+        })
         .sheet(isPresented: $showingTemplateSelection) {
             NavigationStack {
                 TemplateSelectionView(
@@ -45,12 +51,12 @@ struct PromptsSettings: View {
                 promptsManager: promptsManager
             )
         }
-        .sheet(item: $editingPrompt) { prompt in
-            PromptEditView(
-                editingPrompt: prompt,
-                promptsManager: promptsManager
-            )
-        }
+//        .sheet(item: $editingPrompt) { prompt in
+//            PromptEditView(
+//                editingPrompt: prompt,
+//                promptsManager: promptsManager
+//            )
+//        }
         .toolbar {
             if #available(iOS 26, *) {
                 ToolbarItem {
@@ -98,9 +104,9 @@ struct PromptsSettings: View {
     private var promptsList: some View {
         List {
             ForEach(promptsManager.userPrompts) { prompt in
-                Button(action: {
+                Button {
                     editingPrompt = prompt
-                }) {
+                } label: {
                     PromptRowView(prompt: prompt)
                 }
                 .buttonStyle(.plain)

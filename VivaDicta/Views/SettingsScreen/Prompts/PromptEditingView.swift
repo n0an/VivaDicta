@@ -23,7 +23,7 @@ struct PromptEditView: View {
     }
     
     var body: some View {
-        NavigationStack {
+//        NavigationStack {
             Form {
                 Section(header: Text("Prompt Details")) {
                     TextField("Title", text: $title)
@@ -42,17 +42,17 @@ struct PromptEditView: View {
             
             
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if #available(iOS 26, *) {
-                        Button(role: .close) {
-                            dismiss()
-                        }
-                    } else {
-                        Button("Cancel") {
-                            dismiss()
-                        }
-                    }
-                }
+//                ToolbarItem(placement: .topBarLeading) {
+//                    if #available(iOS 26, *) {
+//                        Button(role: .close) {
+//                            dismiss()
+//                        }
+//                    } else {
+//                        Button("Cancel") {
+//                            dismiss()
+//                        }
+//                    }
+//                }
                 
                 ToolbarItem(placement: .topBarTrailing) {
                     if #available(iOS 26, *){
@@ -92,7 +92,7 @@ struct PromptEditView: View {
                 }
             }
             
-        }
+//        }
         
         .onAppear {
             if let existingPrompt = editingPrompt {
