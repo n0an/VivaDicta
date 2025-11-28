@@ -99,10 +99,9 @@ class AppState {
 
         let attributes = VivaDictaLiveActivityAttributes(name: "VivaDicta")
         do {
-            // Set both staleDate (for system UI hints) and dismissalPolicy
             let activityContent = ActivityContent(
                 state: VivaDictaLiveActivityAttributes.ContentState(state: .idle),
-                staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+                staleDate: nil
             )
 
             liveActivity = try Activity.request(attributes: attributes, content: activityContent)
@@ -143,7 +142,7 @@ class AppState {
 
         let updatedContent = ActivityContent(
             state: VivaDictaLiveActivityAttributes.ContentState(state: state),
-            staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+            staleDate: nil
         )
 
         await liveActivity.update(updatedContent)
