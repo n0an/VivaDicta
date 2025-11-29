@@ -26,7 +26,10 @@ class KeyboardViewController: KeyboardInputViewController {
         }
 
         textDocumentProxy.insertText(finalText)
-        UIPasteboard.general.string = finalText
+
+        if AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled {
+            ClipboardManager.copyToClipboard(finalText)
+        }
     }
     
     

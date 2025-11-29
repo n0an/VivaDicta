@@ -28,6 +28,7 @@ public final class AppGroupCoordinator {
     public static let kAPIKeyTemplate = "apiKeyTemplate"
     public static let kTranscriptionPrompt = "TranscriptionPrompt"
     public static let kSmartFormattingOnPaste = "smartFormattingOnPaste"
+    public static let kKeepTranscriptInClipboard = "keepTranscriptInClipboard"
     
     
     nonisolated private enum UserDefaultsKeys {
@@ -327,6 +328,21 @@ public final class AppGroupCoordinator {
         }
         set {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kSmartFormattingOnPaste)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// Whether to copy transcription to clipboard after inserting
+    /// Defaults to true if not set
+    public var isKeepTranscriptInClipboardEnabled: Bool {
+        get {
+            if sharedDefaults?.object(forKey: AppGroupCoordinator.kKeepTranscriptInClipboard) == nil {
+                return true
+            }
+            return sharedDefaults?.bool(forKey: AppGroupCoordinator.kKeepTranscriptInClipboard) ?? true
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kKeepTranscriptInClipboard)
             sharedDefaults?.synchronize()
         }
     }

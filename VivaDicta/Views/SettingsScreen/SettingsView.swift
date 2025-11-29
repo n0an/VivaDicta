@@ -25,6 +25,7 @@ struct SettingsView: View {
     
     @AppStorage("displaySiriTip") private var displaySiriTip: Bool = true
     @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
+    @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -178,6 +179,19 @@ struct SettingsView: View {
                     }
                     .onChange(of: isSmartFormattingEnabled) { _, newValue in
                         AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
+                    }
+
+                    Toggle(isOn: $isKeepInClipboardEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Copy to Clipboard")
+                                .font(.body)
+                            Text("Keep transcript in clipboard after inserting")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isKeepInClipboardEnabled) { _, newValue in
+                        AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled = newValue
                     }
                 }
                 
