@@ -27,6 +27,7 @@ public final class AppGroupCoordinator {
     public static let kSelectedLanguageKey = "selectedLanguageKey"
     public static let kAPIKeyTemplate = "apiKeyTemplate"
     public static let kTranscriptionPrompt = "TranscriptionPrompt"
+    public static let kSmartFormattingOnPaste = "smartFormattingOnPaste"
     
     
     nonisolated private enum UserDefaultsKeys {
@@ -310,6 +311,24 @@ public final class AppGroupCoordinator {
         sharedDefaults?.set(modeName, forKey: AppGroupCoordinator.selectedAIModeKey)
         sharedDefaults?.synchronize()
         logger.logInfo("📱 Keyboard Extension set selected FlowMode: \(modeName)")
+    }
+
+    // MARK: - Smart Formatting Setting
+
+    /// Whether to apply smart formatting (spacing, capitalization) when pasting transcription
+    /// Defaults to true if not set
+    public var isSmartFormattingOnPasteEnabled: Bool {
+        get {
+            // Return true by default if the key doesn't exist
+            if sharedDefaults?.object(forKey: AppGroupCoordinator.kSmartFormattingOnPaste) == nil {
+                return true
+            }
+            return sharedDefaults?.bool(forKey: AppGroupCoordinator.kSmartFormattingOnPaste) ?? true
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kSmartFormattingOnPaste)
+            sharedDefaults?.synchronize()
+        }
     }
 
     // MARK: - Darwin Notifications (Real-time Communication)

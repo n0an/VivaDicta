@@ -24,7 +24,8 @@ struct SettingsView: View {
     @State private var prewarmErrorMessage = ""
     
     @AppStorage("displaySiriTip") private var displaySiriTip: Bool = true
-    
+    @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Form {
@@ -164,6 +165,19 @@ struct SettingsView: View {
                         Text("Keep microphone session active to allow recording from keyboard")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+
+                    Toggle(isOn: $isSmartFormattingEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Smart Insert")
+                                .font(.body)
+                            Text("Auto-adjust spacing and capitalization when inserting text")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isSmartFormattingEnabled) { _, newValue in
+                        AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
                     }
                 }
                 

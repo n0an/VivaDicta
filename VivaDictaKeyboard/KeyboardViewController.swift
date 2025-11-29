@@ -17,11 +17,16 @@ class KeyboardViewController: KeyboardInputViewController {
     private func handleTranscription(_ text: String) {
         guard !text.isEmpty else { return }
 
-        let context = TextInsertionFormatter.getInsertionContext(from: textDocumentProxy)
-        let formattedText = TextInsertionFormatter.formatTextForInsertion(text, context: context)
+        let finalText: String
+        if AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled {
+            let context = TextInsertionFormatter.getInsertionContext(from: textDocumentProxy)
+            finalText = TextInsertionFormatter.formatTextForInsertion(text, context: context)
+        } else {
+            finalText = text
+        }
 
-        textDocumentProxy.insertText(formattedText)
-        UIPasteboard.general.string = formattedText
+        textDocumentProxy.insertText(finalText)
+        UIPasteboard.general.string = finalText
     }
     
     
