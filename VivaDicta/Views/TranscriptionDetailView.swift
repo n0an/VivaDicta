@@ -106,6 +106,11 @@ struct TranscriptionDetailView: View {
         .onAppear {
             let activity = appState.userActivity(for: transcription)
             activity.becomeCurrent()
+
+            // Update Spotlight ranking for frequently accessed items
+            Task {
+                await appState.updateSpotlightRanking(for: transcription)
+            }
         }
     }
     
