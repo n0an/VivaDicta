@@ -140,7 +140,7 @@ struct CloudModelCard: View {
         }
         .padding(20)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(.rect(cornerRadius: 20, style: .continuous))
         .shadow(color: .primary.opacity(0.5), radius: 2, x: 2, y: 2)
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)

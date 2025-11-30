@@ -66,7 +66,7 @@ struct HudViewLightBounceOnly: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         )
         .background(.black)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(.rect(cornerRadius: 16))
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(.primary.opacity(0.5), lineWidth: 1)

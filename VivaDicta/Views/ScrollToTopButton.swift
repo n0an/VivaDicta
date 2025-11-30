@@ -18,7 +18,7 @@ struct ScrollToTopButton: View {
                 .foregroundColor(Color(.systemBackground))
                 .frame(width: 44, height: 44)
                 .background(backgroundColor)
-                .clipShape(Circle())
+                .clipShape(.circle)
                 .shadow(color: .black.opacity(1), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(.plain)
