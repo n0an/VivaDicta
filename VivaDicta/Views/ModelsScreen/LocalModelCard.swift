@@ -158,6 +158,7 @@ struct LocalModelCard: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .padding(8)
                                     .background {
+                                        // TODO: Use ProgressView with style .circular
                                         Circle()
                                             .trim(from: 0, to: currentProgress)
                                             .stroke(.black, lineWidth: 3)
