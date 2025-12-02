@@ -19,6 +19,7 @@ struct TranscriptionDetailView: View {
     var appState: AppState
 
     @State private var selectedTextType: TextDisplayType = .enhanced
+    @State private var spotlightTask: Task<Void, Never>?
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -105,9 +106,13 @@ struct TranscriptionDetailView: View {
             activity.becomeCurrent()
 
             // Update Spotlight ranking for frequently accessed items
-            Task {
+            spotlightTask = Task {
                 await appState.updateSpotlightRanking(for: transcription)
             }
+        }
+        .onDisappear {
+            spotlightTask?.cancel()
+            spotlightTask = nil
         }
     }
 
