@@ -8,9 +8,8 @@
 import UIKit
 
 struct ClipboardManager {
-    static func copyToClipboard(_ text: String) -> Bool {
+    static func copyToClipboard(_ text: String) {
         UIPasteboard.general.string = text
-        return true
     }
     
     static func getClipboardContent() -> String? {

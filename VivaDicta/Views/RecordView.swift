@@ -124,7 +124,7 @@ struct RecordView: View {
     }
     
     var stopRecordingButton: some View {
-        Button(role: .destructive) {
+        Button(role: .cancel) {
             vm.stopCaptureAudio(modelContext: modelContext)
         } label: {
             Image(systemName: "stop.circle.fill")
@@ -137,7 +137,7 @@ struct RecordView: View {
     }
     
     var cancelTranscribingButton: some View {
-        Button(role: .destructive) {
+        Button(role: .cancel) {
             vm.cancelTranscribe()
         } label: {
             Image(systemName: "xmark.circle.fill")

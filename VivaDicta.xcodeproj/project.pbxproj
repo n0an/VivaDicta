@@ -144,6 +144,7 @@
 				Shared/RippleEffectModifier.swift,
 				Shared/WobbleText.swift,
 				Utilities/LoggerExtension.swift,
+				Utils/ClipboardManager.swift,
 				"Utils/Extensions/Color+Ext.swift",
 				"Utils/Extensions/View+Ext.swift",
 				Utils/UserDefaultsStorage.swift,

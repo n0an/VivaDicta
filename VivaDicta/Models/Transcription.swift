@@ -290,7 +290,7 @@ extension Transcription {
 }
 
 extension Transcription {
-    nonisolated var searchableAttributes: CSSearchableItemAttributeSet {
+    nonisolated func searchableAttributes(lastUsedDate: Date? = nil) -> CSSearchableItemAttributeSet {
         let attributes = CSSearchableItemAttributeSet(contentType: .text)
 
         // Title: First 100 characters of the transcription or a date-based title
@@ -364,6 +364,11 @@ extension Transcription {
                 durationCategory = "Long recording"
             }
             attributes.comment = durationCategory
+        }
+
+        // Set lastUsedDate for Spotlight ranking (frequently accessed items rank higher)
+        if let lastUsedDate {
+            attributes.lastUsedDate = lastUsedDate
         }
 
         return attributes

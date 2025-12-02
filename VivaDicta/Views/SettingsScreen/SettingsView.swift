@@ -17,13 +17,16 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @Namespace private var promptsTransition
     @AppStorage("IsVADEnabled") private var isVADEnabled = true
+    @AppStorage("IsTextFormattingEnabled") private var isTextFormattingEnabled = true
     @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
     private let prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
     
     @AppStorage("displaySiriTip") private var displaySiriTip: Bool = true
-    
+    @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
+    @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Form {
@@ -93,6 +96,16 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+
+                    Toggle(isOn: $isTextFormattingEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Automatic Text Formatting")
+                                .font(.body)
+                            Text("Splits transcription into readable paragraphs")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 
                 Section("AI Enhancement") {
@@ -153,6 +166,32 @@ struct SettingsView: View {
                         Text("Keep microphone session active to allow recording from keyboard")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+
+                    Toggle(isOn: $isSmartFormattingEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Smart Insert")
+                                .font(.body)
+                            Text("Auto-adjust spacing and capitalization when inserting text")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isSmartFormattingEnabled) { _, newValue in
+                        AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
+                    }
+
+                    Toggle(isOn: $isKeepInClipboardEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Copy to Clipboard")
+                                .font(.body)
+                            Text("Keep transcript in clipboard after inserting")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isKeepInClipboardEnabled) { _, newValue in
+                        AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled = newValue
                     }
                 }
                 

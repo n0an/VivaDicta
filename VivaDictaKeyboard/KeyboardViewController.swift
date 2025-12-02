@@ -16,8 +16,20 @@ class KeyboardViewController: KeyboardInputViewController {
 
     private func handleTranscription(_ text: String) {
         guard !text.isEmpty else { return }
-        textDocumentProxy.insertText(text)
-        UIPasteboard.general.string = text
+
+        let finalText: String
+        if AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled {
+            let context = TextInsertionFormatter.getInsertionContext(from: textDocumentProxy)
+            finalText = TextInsertionFormatter.formatTextForInsertion(text, context: context)
+        } else {
+            finalText = text
+        }
+
+        textDocumentProxy.insertText(finalText)
+
+        if AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled {
+            ClipboardManager.copyToClipboard(finalText)
+        }
     }
     
     

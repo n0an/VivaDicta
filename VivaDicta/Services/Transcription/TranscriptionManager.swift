@@ -113,7 +113,14 @@ class TranscriptionManager {
             transcriptionService = cloudTranscriptionService
         }
         let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
-        return TranscriptionOutputFilter.filter(text)
+        
+        var result = TranscriptionOutputFilter.filter(text)
+        
+        if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
+            result = TextFormatter.format(result)
+        }
+        
+        return result
     }
 
     // Preload WhisperKit model on app startup if conditions are met

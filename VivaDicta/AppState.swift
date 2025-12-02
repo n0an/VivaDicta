@@ -99,10 +99,9 @@ class AppState {
 
         let attributes = VivaDictaLiveActivityAttributes(name: "VivaDicta")
         do {
-            // Set both staleDate (for system UI hints) and dismissalPolicy
             let activityContent = ActivityContent(
                 state: VivaDictaLiveActivityAttributes.ContentState(state: .idle),
-                staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+                staleDate: nil
             )
 
             liveActivity = try Activity.request(attributes: attributes, content: activityContent)
@@ -143,7 +142,7 @@ class AppState {
 
         let updatedContent = ActivityContent(
             state: VivaDictaLiveActivityAttributes.ContentState(state: state),
-            staleDate: Calendar.current.date(byAdding: .minute, value: 10, to: .now)
+            staleDate: nil
         )
 
         await liveActivity.update(updatedContent)
@@ -190,11 +189,8 @@ class AppState {
         let item = CSSearchableItem(
             uniqueIdentifier: transcription.id.uuidString,
             domainIdentifier: "com.antonnovoselov.VivaDicta",
-            attributeSet: transcription.searchableAttributes
+            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
         )
-
-        // Set expiration date to 30 days (reduced from 90)
-        item.expirationDate = Date().addingTimeInterval(30 * 24 * 60 * 60)
 
         do {
             let index = CSSearchableIndex.default()
@@ -227,6 +223,25 @@ class AppState {
         await indexTranscriptionToSpotlight(transcription)
     }
 
+    /// Update Spotlight ranking when user views a transcription
+    /// This helps frequently accessed items appear higher in Spotlight results
+    func updateSpotlightRanking(for transcription: Transcription) async {
+        guard CSSearchableIndex.isIndexingAvailable() else { return }
+
+        let item = CSSearchableItem(
+            uniqueIdentifier: transcription.id.uuidString,
+            domainIdentifier: "com.antonnovoselov.VivaDicta",
+            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
+        )
+        item.isUpdate = true
+
+        do {
+            try await CSSearchableIndex.default().indexSearchableItems([item])
+        } catch {
+            logger.logError("[Spotlight] Failed to update ranking: \(error.localizedDescription)")
+        }
+    }
+
     // Legacy batch indexing method - kept for manual rebuild if needed
     func updateSpotlightIndex() async {
         guard CSSearchableIndex.isIndexingAvailable() else {
@@ -249,13 +264,11 @@ class AppState {
             let transcriptions = try container.mainContext.fetch(descriptor)
 
             let searchableItems = transcriptions.map { transcription in
-                let item = CSSearchableItem(
+                CSSearchableItem(
                     uniqueIdentifier: transcription.id.uuidString,
                     domainIdentifier: "com.antonnovoselov.VivaDicta",
-                    attributeSet: transcription.searchableAttributes
+                    attributeSet: transcription.searchableAttributes()
                 )
-
-                return item
             }
 
             // Add the transcriptions to the search index so people can find them through Spotlight.
@@ -272,7 +285,7 @@ class AppState {
         let activity = NSUserActivity(activityType: "com.antonnovoselov.VivaDicta.viewTranscription")
 
         // Use the same attribute set we use for Spotlight
-        let attributes = transcription.searchableAttributes
+        let attributes = transcription.searchableAttributes()
 
         activity.title = attributes.title
         activity.userInfo = ["id": transcription.id.uuidString]

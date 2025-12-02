@@ -344,6 +344,23 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
         ]
     }
+    
+    enum AppLanguage: String, CaseIterable, Identifiable {
+        case en, fr, jp, ko, zhHans = "zh-Hans", zhHant = "zh-Hant"
+        
+        var id: String { rawValue }
+        
+        var displayName: String {
+            switch self {
+            case .en: return "English"
+            case .fr: return "French"
+            case .jp: return "Japanese"
+            case .ko: return "Korean"
+            case .zhHans: return "Simplified Chinese"
+            case .zhHant: return "Traditional Chinese"
+            }
+        }
+    }
 
     static let allLanguages = [
         "auto": "Auto-detect",
