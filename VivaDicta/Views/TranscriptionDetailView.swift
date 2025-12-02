@@ -8,101 +8,140 @@
 import SwiftUI
 import CoreSpotlight
 
+private enum TextDisplayType: String, CaseIterable {
+    case original = "Original"
+    case enhanced = "Enhanced"
+}
+
 struct TranscriptionDetailView: View {
 
     var transcription: Transcription
     var appState: AppState
 
+    @State private var selectedTextType: TextDisplayType = .enhanced
+
+    private var hasEnhancedText: Bool {
+        transcription.enhancedText != nil
+    }
+
+    private var displayedText: String {
+        if selectedTextType == .enhanced, let enhancedText = transcription.enhancedText {
+            return enhancedText
+        }
+        return transcription.text
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let audioFileName = transcription.audioFileName {
-                AudioPlayerView(audioFileName: audioFileName)
-                    .padding(.bottom, 8)
+        VStack(alignment: .leading, spacing: 0) {
+            // Fixed header section
+            VStack(alignment: .leading, spacing: 8) {
+                if let audioFileName = transcription.audioFileName {
+                    AudioPlayerView(audioFileName: audioFileName)
+                        .padding(.bottom, 8)
+                }
+
+                HStack {
+                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+
+                    Text(transcription.getDurationFormatted(transcription.audioDuration))
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.1))
+                        .foregroundStyle(.blue)
+                        .cornerRadius(6)
+                }
+
+                // Segmented control - only show if enhanced text exists
+                if hasEnhancedText {
+                    Picker("Text type", selection: $selectedTextType) {
+                        ForEach(TextDisplayType.allCases, id: \.self) { type in
+                            if type == .enhanced {
+                                Label(type.rawValue, systemImage: "sparkles")
+                            } else {
+                                Text(type.rawValue)
+                            }
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.top, 4)
+                    .padding(.bottom, 12)
+                }
             }
+            .padding(.horizontal)
+            .padding(.top)
+
+            // Scrollable text section
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(displayedText)
+                        .font(.system(size: 15, weight: .regular, design: .default))
+                        .lineSpacing(2)
+                        .textSelection(.enabled)
+
+                }
+//                .background(.green)
+                .padding(.horizontal)
+//                .padding(.vertical, 12)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+//            .background(.red)
             
             HStack {
-                Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                
-                Text(transcription.getDurationFormatted(transcription.audioDuration))
-                    .font(.subheadline.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.1))
-                    .foregroundStyle(.blue)
-                    .cornerRadius(6)
-            }
-            
-            // Original text section
-            VStack(alignment: .leading, spacing: 8) {
-                Text(transcription.text)
-                    .font(.system(size: 15, weight: .regular, design: .default))
-                    .lineSpacing(2)
-                
-                HStack {
+                if selectedTextType == .enhanced && hasEnhancedText {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.blue)
+                        Text("Enhanced")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.blue)
+                    }
+                } else {
                     Text("Original")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Spacer()
-                    AnimatedCopyButton(textToCopy: transcription.text)
                 }
+                Spacer()
+                AnimatedCopyButton(textToCopy: displayedText)
             }
-            
-            if let enhancedText = transcription.enhancedText {
+            .padding(.horizontal)
+            .padding(.top, 6)
+            .padding(.bottom, 12)
+
+            // Fixed metadata section at bottom
+            VStack(spacing: 0) {
                 Divider()
-                    .padding(.vertical, 8)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(enhancedText)
-                        .font(.system(size: 15, weight: .regular, design: .default))
-                        .lineSpacing(2)
-                    
-                    HStack {
-                        HStack(spacing: 4) {
-                            Image(systemName: "sparkles")
-                                .foregroundStyle(.blue)
-                            Text("Enhanced")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.blue)
-                        }
-                        Spacer()
-                        AnimatedCopyButton(textToCopy: enhancedText)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
+                    if transcription.audioFileName != nil {
+                        metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
+                    }
+                    if let modelName = transcription.transcriptionModelName {
+                        metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
+                    }
+                    if let aiModel = transcription.aiEnhancementModelName {
+                        metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
+                    }
+                    if let promptName = transcription.promptName {
+                        metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
+                    }
+                    if let duration = transcription.transcriptionDuration {
+                        metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
+                        metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
+                    }
+                    if let duration = transcription.enhancementDuration {
+                        metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
                     }
                 }
+                .padding()
             }
-            
-            Divider()
-                .padding(.vertical, 8)
-            
-            VStack(alignment: .leading, spacing: 10) {
-                metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
-                if transcription.audioFileName != nil {
-                    metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
-                }
-                if let modelName = transcription.transcriptionModelName {
-                    metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
-                }
-                if let aiModel = transcription.aiEnhancementModelName {
-                    metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
-                }
-                if let promptName = transcription.promptName {
-                    metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
-                }
-                if let duration = transcription.transcriptionDuration {
-                    metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
-                    metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
-                }
-                if let duration = transcription.enhancementDuration {
-                    metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
-                }
-            }
-
-            
+            .background(Color(uiColor: .systemBackground))
             Spacer()
         }
-        .padding()
         .onAppear {
             let activity = appState.userActivity(for: transcription)
             activity.becomeCurrent()

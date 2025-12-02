@@ -49,10 +49,10 @@ struct TranscriptionsContentView: View {
                             
                             NavigationLink {
                                 TranscriptionDetailView(transcription: transcription, appState: appState)
+                                    .interactiveDismissDisabled(true)
+
                                     .navigationTransition(.zoom(sourceID: transcription.id, in: zoomNamespace))
                                 
-                                // TODO: - Decide - wether we need to keep drag to dismiss
-//                                    .interactiveDismissDisabled(true)
                                 
                                 
                             } label: {
@@ -62,6 +62,7 @@ struct TranscriptionsContentView: View {
                                 )
                             }
                             .matchedTransitionSource(id: transcription.id, in: zoomNamespace)
+                            
 
                         }
                         .onDelete(perform: deleteTranscription)
