@@ -72,13 +72,14 @@ struct TranscriptionDetailView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top)
+            .padding(.vertical)
 
             // ViewThatFits chooses the layout that fits available space
             ViewThatFits(in: .vertical) {
                 // Option 1: Everything fits - no scroll, metadata flows below text
                 VStack(alignment: .leading, spacing: 0) {
                     textContentView
+                    copyButton
                     metadataSection
                     Spacer()
                 }
@@ -90,7 +91,10 @@ struct TranscriptionDetailView: View {
                         textContentView
                             .padding(.horizontal)
                     }
-
+                    
+                    copyButton
+                        .padding(.horizontal)
+                    
                     metadataSection
                         .padding(.horizontal)
                 }
@@ -113,27 +117,29 @@ struct TranscriptionDetailView: View {
                 .font(.system(size: 16, weight: .regular, design: .default))
                 .lineSpacing(2)
                 .textSelection(.enabled)
-
-            HStack {
-                if selectedTextType == .enhanced && hasEnhancedText {
-                    HStack(spacing: 4) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(.blue)
-                        Text("Enhanced")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.blue)
-                    }
-                } else {
-                    Text("Original")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                AnimatedCopyButton(textToCopy: displayedText)
-            }
-            .padding(.top, 6)
-            .padding(.bottom, 12)
         }
+    }
+    
+    private var copyButton: some View {
+        HStack {
+            if selectedTextType == .enhanced && hasEnhancedText {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(.blue)
+                    Text("Enhanced")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.blue)
+                }
+            } else {
+                Text("Original")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            AnimatedCopyButton(textToCopy: displayedText)
+        }
+        .padding(.top, 6)
+        .padding(.bottom, 12)
     }
 
     private var metadataSection: some View {
@@ -162,7 +168,7 @@ struct TranscriptionDetailView: View {
                     metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
                 }
             }
-            .padding(.top)
+            .padding(.vertical)
         }
     }
 
