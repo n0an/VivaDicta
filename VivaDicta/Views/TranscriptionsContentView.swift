@@ -49,7 +49,7 @@ struct TranscriptionsContentView: View {
                             
                             NavigationLink {
                                 TranscriptionDetailView(transcription: transcription, appState: appState)
-                                    .interactiveDismissDisabled(true)
+//                                    .interactiveDismissDisabled(true)
 
                                     .navigationTransition(.zoom(sourceID: transcription.id, in: zoomNamespace))
                                 
