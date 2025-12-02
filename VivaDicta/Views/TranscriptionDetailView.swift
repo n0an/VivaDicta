@@ -74,19 +74,46 @@ struct TranscriptionDetailView: View {
             .padding(.horizontal)
             .padding(.top)
 
-            // Scrollable text section - only scrolls when content overflows
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(displayedText)
-                        .font(.system(size: 16, weight: .regular, design: .default))
-                        .lineSpacing(2)
-                        .textSelection(.enabled)
+            // ViewThatFits chooses the layout that fits available space
+            ViewThatFits(in: .vertical) {
+                // Option 1: Everything fits - no scroll, metadata flows below text
+                VStack(alignment: .leading, spacing: 0) {
+                    textContentView
+                    metadataSection
+                    Spacer()
                 }
                 .padding(.horizontal)
+
+                // Option 2: Content too tall - text scrolls, metadata fixed at bottom
+                VStack(spacing: 0) {
+                    ScrollView {
+                        textContentView
+                            .padding(.horizontal)
+                    }
+
+                    metadataSection
+                        .padding(.horizontal)
+                }
             }
-//            .fixedSize(horizontal: false, vertical: true)
-            .scrollBounceBehavior(.basedOnSize)
-            
+        }
+        .onAppear {
+            let activity = appState.userActivity(for: transcription)
+            activity.becomeCurrent()
+
+            // Update Spotlight ranking for frequently accessed items
+            Task {
+                await appState.updateSpotlightRanking(for: transcription)
+            }
+        }
+    }
+
+    private var textContentView: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(displayedText)
+                .font(.system(size: 16, weight: .regular, design: .default))
+                .lineSpacing(2)
+                .textSelection(.enabled)
+
             HStack {
                 if selectedTextType == .enhanced && hasEnhancedText {
                     HStack(spacing: 4) {
@@ -104,52 +131,41 @@ struct TranscriptionDetailView: View {
                 Spacer()
                 AnimatedCopyButton(textToCopy: displayedText)
             }
-            .padding(.horizontal)
             .padding(.top, 6)
             .padding(.bottom, 12)
-
-            // Fixed metadata section at bottom
-            VStack(spacing: 0) {
-                Divider()
-
-                VStack(alignment: .leading, spacing: 10) {
-                    metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
-                    if transcription.audioFileName != nil {
-                        metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
-                    }
-                    if let modelName = transcription.transcriptionModelName {
-                        metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
-                    }
-                    if let aiModel = transcription.aiEnhancementModelName {
-                        metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
-                    }
-                    if let promptName = transcription.promptName {
-                        metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
-                    }
-                    if let duration = transcription.transcriptionDuration {
-                        metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
-                        metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
-                    }
-                    if let duration = transcription.enhancementDuration {
-                        metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
-                    }
-                }
-                .padding()
-            }
-//            .background(Color(uiColor: .systemBackground))
-            Spacer()
-        }
-        .onAppear {
-            let activity = appState.userActivity(for: transcription)
-            activity.becomeCurrent()
-
-            // Update Spotlight ranking for frequently accessed items
-            Task {
-                await appState.updateSpotlightRanking(for: transcription)
-            }
         }
     }
-    
+
+    private var metadataSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10) {
+                metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
+                if transcription.audioFileName != nil {
+                    metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
+                }
+                if let modelName = transcription.transcriptionModelName {
+                    metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
+                }
+                if let aiModel = transcription.aiEnhancementModelName {
+                    metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
+                }
+                if let promptName = transcription.promptName {
+                    metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
+                }
+                if let duration = transcription.transcriptionDuration {
+                    metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
+                    metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
+                }
+                if let duration = transcription.enhancementDuration {
+                    metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
+                }
+            }
+            .padding(.top)
+        }
+    }
+
     private func metadataRow(icon: String, label: String, value: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
