@@ -78,7 +78,7 @@ struct TranscriptionDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(displayedText)
-                        .font(.system(size: 15, weight: .regular, design: .default))
+                        .font(.system(size: 16, weight: .regular, design: .default))
                         .lineSpacing(2)
                         .textSelection(.enabled)
 
@@ -139,7 +139,7 @@ struct TranscriptionDetailView: View {
                 }
                 .padding()
             }
-            .background(Color(uiColor: .systemBackground))
+//            .background(Color(uiColor: .systemBackground))
             Spacer()
         }
         .onAppear {
