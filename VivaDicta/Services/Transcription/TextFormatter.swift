@@ -9,111 +9,103 @@ import Foundation
 import NaturalLanguage
 
 struct TextFormatter {
+    private static let targetWordCount = 50
+    private static let maxSentencesPerChunk = 4
+    private static let minWordsForSignificantSentence = 4
+
     static func format(_ text: String) -> String {
-        let TARGET_WORD_COUNT = 50
-        let MAX_SENTENCES_PER_CHUNK = 4
-        let MIN_WORDS_FOR_SIGNIFICANT_SENTENCE = 4
-
-        var finalFormattedText = ""
-
         let detectedLanguage = NLLanguageRecognizer.dominantLanguage(for: text)
         let tokenizerLanguage = detectedLanguage ?? .english
 
+        // Reusable tokenizers - created once, reused for all sentences
         let sentenceTokenizer = NLTokenizer(unit: .sentence)
         sentenceTokenizer.string = text
         sentenceTokenizer.setLanguage(tokenizerLanguage)
 
-        var allSentencesFromInput = [String]()
+        let wordTokenizer = NLTokenizer(unit: .word)
+        wordTokenizer.setLanguage(tokenizerLanguage)
+
+        var allSentences = [String]()
         sentenceTokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { sentenceRange, _ in
             let rawSentence = String(text[sentenceRange])
-            allSentencesFromInput.append(rawSentence.trimmingCharacters(in: .whitespacesAndNewlines))
+            allSentences.append(rawSentence.trimmingCharacters(in: .whitespacesAndNewlines))
             return true
         }
 
-        guard !allSentencesFromInput.isEmpty else {
+        guard !allSentences.isEmpty else {
             return ""
         }
 
-        var processedSentenceGlobalIndex = 0
+        // Pre-compute word counts for all sentences (avoids repeated tokenization)
+        let wordCounts = allSentences.map { countWords(in: $0, using: wordTokenizer) }
 
-        while processedSentenceGlobalIndex < allSentencesFromInput.count {
-            var currentChunkTentativeSentences = [String]()
-            var currentChunkWordCount = 0
-            var currentChunkSignificantSentenceCount = 0
+        var chunks = [String]()
+        var processedIndex = 0
 
-            for i in processedSentenceGlobalIndex..<allSentencesFromInput.count {
-                let sentence = allSentencesFromInput[i]
+        while processedIndex < allSentences.count {
+            var tentativeSentences = [(sentence: String, wordCount: Int)]()
+            var chunkWordCount = 0
+            var significantSentenceCount = 0
 
-                let wordTokenizer = NLTokenizer(unit: .word)
-                wordTokenizer.string = sentence
-                wordTokenizer.setLanguage(tokenizerLanguage)
-                var wordsInSentence = 0
-                wordTokenizer.enumerateTokens(in: sentence.startIndex..<sentence.endIndex) { _, _ in
-                    wordsInSentence += 1
-                    return true
+            for i in processedIndex..<allSentences.count {
+                let sentence = allSentences[i]
+                let wordCount = wordCounts[i]
+
+                tentativeSentences.append((sentence, wordCount))
+                chunkWordCount += wordCount
+
+                if wordCount >= minWordsForSignificantSentence {
+                    significantSentenceCount += 1
                 }
 
-                currentChunkTentativeSentences.append(sentence)
-                currentChunkWordCount += wordsInSentence
-
-                if wordsInSentence >= MIN_WORDS_FOR_SIGNIFICANT_SENTENCE {
-                    currentChunkSignificantSentenceCount += 1
-                }
-
-                if currentChunkWordCount >= TARGET_WORD_COUNT {
+                if chunkWordCount >= targetWordCount {
                     break
                 }
             }
 
-            var sentencesForThisFinalChunk = [String]()
-            if currentChunkSignificantSentenceCount > MAX_SENTENCES_PER_CHUNK {
-                var significantSentencesCountedInTrim = 0
-                for sentenceInTentativeChunk in currentChunkTentativeSentences {
-                    sentencesForThisFinalChunk.append(sentenceInTentativeChunk)
-
-                    let wordTokenizerForTrimCheck = NLTokenizer(unit: .word)
-                    wordTokenizerForTrimCheck.string = sentenceInTentativeChunk
-                    wordTokenizerForTrimCheck.setLanguage(tokenizerLanguage)
-                    var wordsInCurrentSentenceForTrim = 0
-                    wordTokenizerForTrimCheck.enumerateTokens(in: sentenceInTentativeChunk.startIndex..<sentenceInTentativeChunk.endIndex) { _, _ in
-                        wordsInCurrentSentenceForTrim += 1
-                        return true
-                    }
-
-                    if wordsInCurrentSentenceForTrim >= MIN_WORDS_FOR_SIGNIFICANT_SENTENCE {
-                        significantSentencesCountedInTrim += 1
-                        if significantSentencesCountedInTrim >= MAX_SENTENCES_PER_CHUNK {
-                            break
-                        }
-                    }
-                }
+            let finalSentences: [String]
+            if significantSentenceCount > maxSentencesPerChunk {
+                // Trim to maxSentencesPerChunk significant sentences
+                finalSentences = trimToMaxSignificantSentences(tentativeSentences)
             } else {
-                sentencesForThisFinalChunk = currentChunkTentativeSentences
+                finalSentences = tentativeSentences.map(\.sentence)
             }
 
-            if !sentencesForThisFinalChunk.isEmpty {
-                let segmentStringToAppend = sentencesForThisFinalChunk.joined(separator: " ")
-
-                if !finalFormattedText.isEmpty {
-                    finalFormattedText += "\n\n"
-                }
-                finalFormattedText += segmentStringToAppend
-
-                processedSentenceGlobalIndex += sentencesForThisFinalChunk.count
+            if !finalSentences.isEmpty {
+                chunks.append(finalSentences.joined(separator: " "))
+                processedIndex += finalSentences.count
             } else {
-                if processedSentenceGlobalIndex >= allSentencesFromInput.count && currentChunkTentativeSentences.isEmpty {
-                    break
-                } else if sentencesForThisFinalChunk.isEmpty && !currentChunkTentativeSentences.isEmpty {
-                    processedSentenceGlobalIndex += currentChunkTentativeSentences.count
-                } else if sentencesForThisFinalChunk.isEmpty && currentChunkTentativeSentences.isEmpty && processedSentenceGlobalIndex < allSentencesFromInput.count {
-                    processedSentenceGlobalIndex = allSentencesFromInput.count
-                    break
-                } else if sentencesForThisFinalChunk.isEmpty {
+                // Skip any remaining sentences if we can't form a chunk
+                processedIndex += max(tentativeSentences.count, 1)
+            }
+        }
+
+        return chunks.joined(separator: "\n\n")
+    }
+
+    private static func countWords(in text: String, using tokenizer: NLTokenizer) -> Int {
+        tokenizer.string = text
+        var count = 0
+        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { _, _ in
+            count += 1
+            return true
+        }
+        return count
+    }
+
+    private static func trimToMaxSignificantSentences(_ sentences: [(sentence: String, wordCount: Int)]) -> [String] {
+        var result = [String]()
+        var significantCount = 0
+
+        for (sentence, wordCount) in sentences {
+            result.append(sentence)
+            if wordCount >= minWordsForSignificantSentence {
+                significantCount += 1
+                if significantCount >= maxSentencesPerChunk {
                     break
                 }
             }
         }
-
-        return finalFormattedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return result
     }
 }
