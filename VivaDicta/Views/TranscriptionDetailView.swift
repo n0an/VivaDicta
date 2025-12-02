@@ -74,21 +74,18 @@ struct TranscriptionDetailView: View {
             .padding(.horizontal)
             .padding(.top)
 
-            // Scrollable text section
+            // Scrollable text section - only scrolls when content overflows
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(displayedText)
                         .font(.system(size: 16, weight: .regular, design: .default))
                         .lineSpacing(2)
                         .textSelection(.enabled)
-
                 }
-//                .background(.green)
                 .padding(.horizontal)
-//                .padding(.vertical, 12)
             }
-            .fixedSize(horizontal: false, vertical: true)
-//            .background(.red)
+//            .fixedSize(horizontal: false, vertical: true)
+            .scrollBounceBehavior(.basedOnSize)
             
             HStack {
                 if selectedTextType == .enhanced && hasEnhancedText {
