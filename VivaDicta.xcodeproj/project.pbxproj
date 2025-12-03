@@ -117,6 +117,7 @@
 				Shared/AppGroupCoordinator.swift,
 				Utilities/LoggerExtension.swift,
 				"Utils/Extensions/Color+Ext.swift",
+				Utils/Extensions/GlowShape.swift,
 				"Utils/Extensions/View+Ext.swift",
 			);
 			target = 18E1C7F92E8E793E00BE8A11 /* VivaDictaWidgetExtension */;
@@ -146,6 +147,7 @@
 				Utilities/LoggerExtension.swift,
 				Utils/ClipboardManager.swift,
 				"Utils/Extensions/Color+Ext.swift",
+				Utils/Extensions/GlowShape.swift,
 				"Utils/Extensions/View+Ext.swift",
 				Utils/UserDefaultsStorage.swift,
 				Views/HudView.swift,
