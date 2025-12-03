@@ -207,8 +207,64 @@ extension View {
 }
 
 
-// MARK: - Button
+// MARK: - minimizedSearch
+extension View {
+    @ViewBuilder func minimizedSearch() -> some View {
+        if #available(iOS 26.0, *) {
+            self.searchToolbarBehavior(.minimize)
+        } else { self }
+    }
+}
 
+// MARK: - glassEffectClear
+struct GlassEffectClearModifier: ViewModifier {
+    
+    var isInteractive: Bool
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *){
+            content
+                .glassEffect(.clear.interactive(isInteractive))
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func glassEffectClear(isInteractive: Bool = true) -> some View {
+        modifier(GlassEffectClearModifier(isInteractive: isInteractive))
+    }
+}
+
+struct GlassEffectColorModifier: ViewModifier {
+    var isInteractive: Bool
+    var color: Color
+    var opacity: CGFloat
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *){
+            content
+                .glassEffect(.regular.tint(color.opacity(opacity)).interactive(isInteractive))
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func glassEffectColor(isInteractive: Bool = true,
+                          color: Color = .clear,
+                          opacity: CGFloat = 1.0) -> some View {
+        modifier(GlassEffectColorModifier(
+            isInteractive: isInteractive,
+            color: color,
+            opacity: opacity))
+    }
+}
+
+// MARK: - ButtonStyle
+// MARK: prominentButton
 struct ProminentButton: ViewModifier {
 
     var color: Color
@@ -233,6 +289,7 @@ extension View {
 }
 
 
+// MARK: - animatedCopyButtonStyle
 struct AnimatedCopyButtonStyle: ViewModifier {
     var color: Color
     var colorPressed: Color
@@ -259,15 +316,6 @@ extension View {
         modifier(AnimatedCopyButtonStyle(color: color, colorPressed: colorPressed, isPressed: isPressed))
     }
 }
-
-extension View {
-    @ViewBuilder func minimizedSearch() -> some View {
-        if #available(iOS 26.0, *) {
-            self.searchToolbarBehavior(.minimize)
-        } else { self }
-    }
-}
-
 
 struct RecordButtonButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
