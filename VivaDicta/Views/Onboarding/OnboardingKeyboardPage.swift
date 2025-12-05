@@ -75,6 +75,9 @@ struct OnboardingKeyboardPage: View {
 // MARK: - Keyboard Illustration
 
 private struct KeyboardIllustration: View {
+    
+    @State var animate: Bool = false
+    
     private let keySpacing: CGFloat = 6
     private let keyHeight: CGFloat = 42
     private let keyWidth: CGFloat = 33
@@ -92,6 +95,22 @@ private struct KeyboardIllustration: View {
                     borderWidth: 0.5,
                     onTapAction: {}
                 )
+                .scaleEffect(animate ? 1.5 : 1.0)
+                .onAppear {
+                    withAnimation(.spring.delay(1.0)) {
+                        
+                        animate = true
+                        
+                        Task { @MainActor in
+                            try await Task.sleep(for: .seconds(1.3))
+                            withAnimation {
+                                animate = false
+                            }
+                        }
+                    }
+                    
+                    
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
@@ -114,11 +133,13 @@ private struct KeyboardIllustration: View {
             .padding(.bottom, 12)
         }
         .padding(.horizontal, 4)
-        .background(Color(.systemGray4).opacity(0.5))
+        .background(Color(.secondarySystemBackground))
     }
 }
 
 private struct KeyCap: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let letter: String
     var width: CGFloat = 32
     var height: CGFloat = 44
@@ -128,15 +149,16 @@ private struct KeyCap: View {
             .font(.system(size: 22, weight: .regular))
             .foregroundStyle(.primary)
             .frame(width: width, height: height)
-            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 5))
-            .shadow(color: .black.opacity(0.15), radius: 0.5, y: 1)
+            .background(keyBackground, in: RoundedRectangle(cornerRadius: 5))
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 0.5, y: 1)
+    }
+
+    private var keyBackground: Color {
+        colorScheme == .dark ? Color(.systemGray5) : Color(.systemBackground)
     }
 }
 
 #Preview {
     OnboardingKeyboardPage()
         .background(Color(.systemGroupedBackground))
-    
-    
-//    KeyboardIllustration()
 }
