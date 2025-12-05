@@ -23,6 +23,9 @@ struct MainView: View {
     @Environment(\.modelContext) private var modelContext
     
     var body: some View {
+        let _ = Self._printChanges()
+        let _ = print("Executing <MainView> body")
+        
         NavigationStack(path: $navigationPath) {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
                 .searchable(text: $searchText, placement: .toolbar)
