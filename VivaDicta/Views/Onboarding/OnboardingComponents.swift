@@ -214,9 +214,10 @@ struct OnboardingPrivacyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: "shield.fill")
-                    .foregroundStyle(.red.opacity(0.8))
-
+                Image(systemName: "lock.shield")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.green.opacity(1), .red.opacity(0.8))
+                    
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(.red.opacity(0.8))
@@ -252,14 +253,19 @@ struct OnboardingCard<Content: View>: View {
 #Preview("Feature Row") {
     VStack(spacing: 16) {
         OnboardingFeatureRow(
-            icon: "shield.checkmark.fill",
+            icon: "checkmark.shield.fill",
             iconColor: .green,
             text: "Complete privacy - your data stays on device"
         )
         OnboardingFeatureRow(
-            icon: "cpu.fill",
+            icon: "waveform",
             iconColor: .blue,
-            text: "Advanced AI models for perfect accuracy"
+            text: "Advanced transcription models for perfect accuracy"
+        )
+        
+        OnboardingPrivacyCard(
+            title: "Privacy Guaranteed",
+            description: "Audio never leaves your device unless you choose cloud enhancement."
         )
     }
     .padding()

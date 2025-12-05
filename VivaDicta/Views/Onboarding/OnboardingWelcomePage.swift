@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct OnboardingWelcomePage: View {
-    var onContinue: () -> Void
-
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -41,15 +39,15 @@ struct OnboardingWelcomePage: View {
             // Features
             VStack(spacing: 20) {
                 OnboardingFeatureRow(
-                    icon: "shield.checkmark.fill",
+                    icon: "checkmark.shield.fill",
                     iconColor: .green,
                     text: "Complete privacy - your data stays on device"
                 )
 
                 OnboardingFeatureRow(
-                    icon: "cpu.fill",
+                    icon: "waveform",
                     iconColor: .blue,
-                    text: "Advanced AI models for perfect accuracy"
+                    text: "Advanced transcription models for perfect accuracy"
                 )
 
                 OnboardingFeatureRow(
@@ -61,13 +59,11 @@ struct OnboardingWelcomePage: View {
             .padding(.horizontal, 32)
 
             Spacer()
-            Spacer()
-
         }
     }
 }
 
 #Preview {
-    OnboardingWelcomePage(onContinue: {})
+    OnboardingWelcomePage()
         .background(Color(.systemGroupedBackground))
 }
