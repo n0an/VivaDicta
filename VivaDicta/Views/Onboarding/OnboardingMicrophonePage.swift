@@ -38,7 +38,7 @@ struct OnboardingMicrophonePage: View {
                 // Privacy Card
                 OnboardingPrivacyCard(
                     title: "Privacy Guaranteed",
-                    description: "Audio never leaves your device unless you choose cloud enhancement."
+                    description: "Audio never leaves your device unless you choose cloud models."
                 )
             }
             .padding(.horizontal, 24)

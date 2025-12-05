@@ -12,10 +12,13 @@ struct OnboardingKeyboardPage: View {
         ScrollView {
             VStack(spacing: 24) {
                 // Keyboard Illustration
-                KeyboardIllustration()
-                    .padding(.top, 16)
+                
+                
+                
+//                KeyboardIllustration()
+//                    .padding(.top, 16)
 
-                // Title
+//                // Title
                 VStack(spacing: 4) {
                     Text("Record Anywhere ")
                         .font(.title.weight(.bold))
@@ -25,6 +28,12 @@ struct OnboardingKeyboardPage: View {
                         .font(.title.weight(.bold))
                         .foregroundStyle(.blue)
                 }
+                .padding(.top, 36)
+                
+                Image("keyboard")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 200)
 
                 // Subtitle
                 Text("Use VivaDicta keyboard to transcribe in any app")
@@ -32,23 +41,23 @@ struct OnboardingKeyboardPage: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-                // Feature Cards
-                VStack(spacing: 12) {
-                    OnboardingFeatureCard(
-                        icon: "record.circle",
-                        iconColor: .red,
-                        backgroundColor: Color(.systemGray6),
-                        text: "Quick voice input in any text field"
-                    )
-
-                    OnboardingFeatureCard(
-                        icon: "keyboard",
-                        iconColor: .blue,
-                        backgroundColor: Color(.systemGray6),
-                        text: "Full keyboard with recording button"
-                    )
-                }
-                .padding(.horizontal, 24)
+//                // Feature Cards
+//                VStack(spacing: 12) {
+//                    OnboardingFeatureCard(
+//                        icon: "record.circle",
+//                        iconColor: .red,
+//                        backgroundColor: Color(.systemGray6),
+//                        text: "Quick voice input in any text field"
+//                    )
+//
+//                    OnboardingFeatureCard(
+//                        icon: "keyboard",
+//                        iconColor: .blue,
+//                        backgroundColor: Color(.systemGray6),
+//                        text: "Full keyboard with recording button"
+//                    )
+//                }
+//                .padding(.horizontal, 24)
 
                 // Setup Instructions
                 OnboardingCard {
@@ -57,10 +66,10 @@ struct OnboardingKeyboardPage: View {
                             .font(.headline)
 
                         VStack(alignment: .leading, spacing: 12) {
-                            OnboardingInstructionRow(number: 1, text: "Tap 'Open Settings' below")
-                            OnboardingInstructionRow(number: 2, text: "Go to Keyboards → Keyboards")
-                            OnboardingInstructionRow(number: 3, text: "Add VivaDicta Keyboard")
-                            OnboardingInstructionRow(number: 4, text: "Enable 'Allow Full Access'")
+                            OnboardingInstructionRow(number: 1, text: "Tap **Open Settings** below")
+                            OnboardingInstructionRow(number: 2, text: "Go to **Keyboards** section")
+                            OnboardingInstructionRow(number: 3, text: "Enable **VivaDicta** Keyboard")
+                            OnboardingInstructionRow(number: 4, text: "Enable **Allow Full Access**")
                         }
 
                         OnboardingInfoBox(

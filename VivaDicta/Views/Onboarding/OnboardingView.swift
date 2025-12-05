@@ -13,7 +13,7 @@ struct OnboardingView: View {
 
     @State private var currentPage = 0
     @State private var permissionState: MicrophonePermissionState = .undetermined
-    @State private var showingFullAccessInfo = false
+//    @State private var showingFullAccessInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -113,10 +113,11 @@ struct OnboardingView: View {
                     .padding(.top, 12)
 
                     OnboardingSecondaryButton(title: "Set Up Later", action: onComplete)
+                        .buttonStyle(.plain)
 
-                    OnboardingTextLink(title: "Why Full Access?") {
-                        showingFullAccessInfo = true
-                    }
+//                    OnboardingTextLink(title: "Why Full Access?") {
+//                        showingFullAccessInfo = true
+//                    }
 
                 default:
                     EmptyView()
@@ -131,11 +132,11 @@ struct OnboardingView: View {
         .onAppear {
             checkMicrophonePermission()
         }
-        .alert("Why Full Access?", isPresented: $showingFullAccessInfo) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Full Access allows VivaDicta Keyboard to use the microphone for voice recording. Without it, the keyboard cannot access the microphone.\n\nWe never collect, store, or transmit your keystrokes or personal data. All voice processing happens on your device.")
-        }
+//        .alert("Why Full Access?", isPresented: $showingFullAccessInfo) {
+//            Button("OK", role: .cancel) {}
+//        } message: {
+//            Text("Full Access allows VivaDicta Keyboard to use the microphone for voice recording. Without it, the keyboard cannot access the microphone.\n\nWe never collect, store, or transmit your keystrokes or personal data. All voice processing happens on your device.")
+//        }
     }
 
     // MARK: - Microphone Permission

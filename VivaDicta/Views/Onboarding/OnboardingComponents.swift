@@ -88,12 +88,13 @@ struct OnboardingPrimaryButton: View {
             .background(
                 LinearGradient(
                     colors: [color, color.opacity(0.8)],
-                    startPoint: .leading,
-                    endPoint: .trailing
+                    startPoint: .bottom,
+                    endPoint: .top
                 ),
                 in: RoundedRectangle(cornerRadius: 16)
             )
         }
+        .buttonStyle(.plain)
     }
 }
 
@@ -107,28 +108,32 @@ struct OnboardingSecondaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.primary)
+//                .colorInvert()
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 16))
+                .background(Color.gray.opacity(0.3).gradient, in: .rect(cornerRadius: 16))
+                
         }
+        .buttonStyle(.plain)
+
     }
 }
 
 // MARK: - Text Link Button
 
-struct OnboardingTextLink: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.blue)
-        }
-    }
-}
+//struct OnboardingTextLink: View {
+//    let title: String
+//    let action: () -> Void
+//
+//    var body: some View {
+//        Button(action: action) {
+//            Text(title)
+//                .font(.subheadline)
+//                .foregroundStyle(.blue)
+//        }
+//    }
+//}
 
 // MARK: - Instruction Row
 
@@ -143,7 +148,7 @@ struct OnboardingInstructionRow: View {
                 .foregroundStyle(.blue)
                 .frame(width: 24)
 
-            Text(text)
+            Text(.init(text))
                 .font(.body)
                 .foregroundStyle(.primary)
 
@@ -275,8 +280,10 @@ struct OnboardingCard<Content: View>: View {
     VStack(spacing: 16) {
         OnboardingPrimaryButton(title: "Get Started", action: {})
         OnboardingPrimaryButton(title: "Enable Microphone", icon: "mic.fill", color: .green, action: {})
+        
+        
+        
         OnboardingSecondaryButton(title: "Set Up Later", action: {})
-        OnboardingTextLink(title: "Why Full Access?", action: {})
     }
     .padding()
 }
