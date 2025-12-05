@@ -165,7 +165,7 @@ struct OnboardingAppIcon: View {
                 ),
                 in: RoundedRectangle(cornerRadius: size * 0.22)
             )
-            .shadow(color: gradient.first?.opacity(0.3) ?? .clear, radius: 20, y: 10)
+            .shadow(color: gradient.first?.opacity(0.3) ?? .clear, radius: 20, x: 6, y: 10)
     }
 }
 
@@ -180,20 +180,20 @@ struct OnboardingPrivacyCard: View {
             HStack(spacing: 8) {
                 Image(systemName: "lock.shield")
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.green.opacity(1), .red.opacity(0.8))
+                    .foregroundStyle(.green.opacity(1), .red.opacity(1))
                     
                 Text(title)
                     .font(.headline)
-                    .foregroundStyle(.red.opacity(0.8))
+                    .foregroundStyle(.orange)
             }
 
             Text(description)
                 .font(.subheadline)
-                .foregroundStyle(.red.opacity(0.7))
+                .foregroundStyle(.orange)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.yellow.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -229,7 +229,7 @@ struct OnboardingCard<Content: View>: View {
         
         OnboardingPrivacyCard(
             title: "Privacy Guaranteed",
-            description: "Audio never leaves your device unless you choose cloud enhancement."
+            description: "Audio never leaves your device unless you choose cloud models."
         )
     }
     .padding()
