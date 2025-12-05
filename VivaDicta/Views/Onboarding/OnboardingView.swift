@@ -12,17 +12,15 @@ struct OnboardingView: View {
     var onComplete: () -> Void
 
     @State private var currentPage = 0
+    @State private var isForward = true
     @State private var permissionState: MicrophonePermissionState = .undetermined
-//    @State private var showingFullAccessInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
             // Navigation Bar
             HStack {
                 Button {
-                    withAnimation {
-                        currentPage -= 1
-                    }
+                    navigateTo(currentPage - 1)
                 } label: {
                     Image(systemName: "chevron.backward")
                         .font(.system(size: 24, weight: .medium))
@@ -58,6 +56,7 @@ struct OnboardingView: View {
                     OnboardingWelcomePage()
                 }
             }
+            .transition(pageTransition)
             .animation(.easeInOut(duration: 0.3), value: currentPage)
 
             // Bottom buttons - morph based on current page
@@ -66,9 +65,7 @@ struct OnboardingView: View {
                 case 0:
                     // Welcome page - Get Started
                     OnboardingPrimaryButton(title: "Get Started") {
-                        withAnimation {
-                            currentPage = 1
-                        }
+                        navigateTo(1)
                     }
 
                 case 1:
@@ -80,9 +77,7 @@ struct OnboardingView: View {
                             icon: "checkmark.circle.fill",
                             color: .green
                         ) {
-                            withAnimation {
-                                currentPage = 2
-                            }
+                            navigateTo(2)
                         }
                     case .denied:
                         OnboardingPrimaryButton(
@@ -138,11 +133,6 @@ struct OnboardingView: View {
         .onAppear {
             checkMicrophonePermission()
         }
-//        .alert("Why Full Access?", isPresented: $showingFullAccessInfo) {
-//            Button("OK", role: .cancel) {}
-//        } message: {
-//            Text("Full Access allows VivaDicta Keyboard to use the microphone for voice recording. Without it, the keyboard cannot access the microphone.\n\nWe never collect, store, or transmit your keystrokes or personal data. All voice processing happens on your device.")
-//        }
     }
 
     // MARK: - Microphone Permission
@@ -168,12 +158,26 @@ struct OnboardingView: View {
                 if granted {
                     // Small delay before continuing
                     try? await Task.sleep(nanoseconds: 300_000_000)
-                    withAnimation {
-                        currentPage = 2
-                    }
+                    navigateTo(2)
                 }
             }
         }
+    }
+
+    // MARK: - Navigation
+
+    private func navigateTo(_ page: Int) {
+        isForward = page > currentPage
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentPage = page
+        }
+    }
+
+    private var pageTransition: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: isForward ? .trailing : .leading),
+            removal: .move(edge: isForward ? .leading : .trailing)
+        )
     }
 
     private func openSettings() {
