@@ -30,32 +30,6 @@ struct OnboardingFeatureRow: View {
     }
 }
 
-// MARK: - Feature Card
-
-struct OnboardingFeatureCard: View {
-    let icon: String
-    let iconColor: Color
-    let backgroundColor: Color
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(iconColor, in: RoundedRectangle(cornerRadius: 10))
-
-            Text(text)
-                .font(.body)
-                .foregroundStyle(.primary)
-
-            Spacer()
-        }
-        .padding()
-        .background(backgroundColor, in: RoundedRectangle(cornerRadius: 16))
-    }
-}
 
 // MARK: - Primary Button
 

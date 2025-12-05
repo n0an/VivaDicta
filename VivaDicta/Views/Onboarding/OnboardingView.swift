@@ -115,10 +115,6 @@ struct OnboardingView: View {
                     OnboardingSecondaryButton(title: "Set Up Later", action: onComplete)
                         .buttonStyle(.plain)
 
-//                    OnboardingTextLink(title: "Why Full Access?") {
-//                        showingFullAccessInfo = true
-//                    }
-
                 default:
                     EmptyView()
                 }
@@ -171,6 +167,7 @@ struct OnboardingView: View {
     }
 
     private func openSettings() {
+        
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
         }
