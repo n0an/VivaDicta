@@ -212,6 +212,40 @@ struct OnboardingCard<Content: View>: View {
     }
 }
 
+// MARK: - Page Indicator
+
+struct OnboardingPageIndicator: View {
+    @Namespace private var dotAnimation
+    
+    let currentPage: Int
+    let totalPages: Int
+
+    private let dotSize: CGFloat = 8
+    private let lineWidth: CGFloat = 28
+    private let spacing: CGFloat = 12
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            ForEach(0 ..< totalPages, id: \.self) { index in
+                if index == currentPage {
+                    // Selected: line/pill shape
+                    Capsule()
+                        .fill(Color.blue)
+                        .matchedGeometryEffect(id: "dot", in: dotAnimation)
+                        .frame(width: lineWidth, height: dotSize)
+                    
+                } else {
+                    // Not selected: dot
+                    Circle()
+                        .fill(Color(.systemGray3))
+                        .frame(width: dotSize, height: dotSize)
+                }
+            }
+        }
+        .animation(.spring(duration: 0.3), value: currentPage)
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Feature Row") {
@@ -252,4 +286,13 @@ struct OnboardingCard<Content: View>: View {
         OnboardingAppIcon(gradient: [.blue, .blue.opacity(0.7)])
         OnboardingAppIcon(gradient: [.pink, .cyan], size: 80)
     }
+}
+
+#Preview("Page Indicator") {
+    VStack(spacing: 24) {
+        OnboardingPageIndicator(currentPage: 0, totalPages: 3)
+        OnboardingPageIndicator(currentPage: 1, totalPages: 3)
+        OnboardingPageIndicator(currentPage: 2, totalPages: 3)
+    }
+    .padding()
 }

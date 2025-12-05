@@ -125,9 +125,12 @@ struct OnboardingView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-            .animation(.easeInOut, value: currentPage)
+            .padding(.bottom, 12)
             .animation(.easeInOut, value: permissionState)
+
+            // Page indicator
+            OnboardingPageIndicator(currentPage: currentPage, totalPages: 3)
+                .padding(.bottom, 16)
         }
         .background(Color(.systemGroupedBackground))
         .onAppear {
