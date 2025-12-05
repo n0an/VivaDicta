@@ -29,7 +29,7 @@ struct OnboardingMicrophonePage: View {
                         Text("Microphone Access")
                             .font(.title2.weight(.bold))
 
-                        Text("Required to record your voice for transcription. Your audio is processed locally on your device.")
+                        Text("Required to record your voice for transcription.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
