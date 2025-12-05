@@ -45,18 +45,20 @@ struct OnboardingView: View {
             .padding(.top, 8)
             .animation(.easeInOut, value: currentPage)
 
-            // Swipeable content
-            TabView(selection: $currentPage) {
-                OnboardingWelcomePage()
-                    .tag(0)
-
-                OnboardingMicrophonePage(permissionState: $permissionState)
-                    .tag(1)
-
-                OnboardingKeyboardPage()
-                    .tag(2)
+            // Page content (no swipe - button navigation only)
+            Group {
+                switch currentPage {
+                case 0:
+                    OnboardingWelcomePage()
+                case 1:
+                    OnboardingMicrophonePage(permissionState: $permissionState)
+                case 2:
+                    OnboardingKeyboardPage()
+                default:
+                    OnboardingWelcomePage()
+                }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .animation(.easeInOut(duration: 0.3), value: currentPage)
 
             // Bottom buttons - morph based on current page
             VStack(spacing: 12) {
