@@ -33,6 +33,13 @@ struct VivaDictaApp: App {
         // Initialize app directories
         FileManager.createAppDirectories()
 
+        // Check if user tapped "Open Settings" in onboarding before app was terminated
+        // This handles the case where app terminates when enabling Full Access
+        if UserDefaultsStorage.appPrivate.bool(forKey: "didTapOpenSettingsInOnboarding") {
+            UserDefaultsStorage.appPrivate.set(true, forKey: "hasCompletedOnboarding")
+            UserDefaultsStorage.appPrivate.removeObject(forKey: "didTapOpenSettingsInOnboarding")
+        }
+
         // Clean up any stuck Live Activities from previous session on cold start
         Task {
             let activityCount = Activity<VivaDictaLiveActivityAttributes>.activities.count

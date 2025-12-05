@@ -109,7 +109,9 @@ struct OnboardingView: View {
                         title: "Open Settings",
                         icon: "gear",
                         action: {
-                            onComplete() // Set flag before opening settings (app may terminate when enabling Full Access)
+                            // Set intermediate flag - onboarding will complete on next cold start
+                            // This handles the case where app terminates when enabling Full Access
+                            UserDefaultsStorage.appPrivate.set(true, forKey: "didTapOpenSettingsInOnboarding")
                             openSettings()
                         }
                     )
