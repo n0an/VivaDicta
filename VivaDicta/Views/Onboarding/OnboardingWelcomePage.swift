@@ -20,10 +20,12 @@ struct OnboardingWelcomePage: View {
             VStack(spacing: 4) {
                 Text("Welcome to")
                     .font(.largeTitle.weight(.bold))
+                    .fontDesign(.rounded)
                     .foregroundStyle(.primary)
 
                 Text("VivaDicta")
                     .font(.largeTitle.weight(.bold))
+                    .fontDesign(.rounded)
                     .foregroundStyle(.blue)
             }
             .padding(.bottom, 16)

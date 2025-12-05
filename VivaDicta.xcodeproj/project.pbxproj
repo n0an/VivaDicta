@@ -769,7 +769,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaKeyboard;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -800,7 +800,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaKeyboard;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (

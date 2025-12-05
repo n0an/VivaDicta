@@ -108,7 +108,10 @@ struct OnboardingView: View {
                     OnboardingPrimaryButton(
                         title: "Open Settings",
                         icon: "gear",
-                        action: openSettings
+                        action: {
+                            onComplete() // Set flag before opening settings (app may terminate when enabling Full Access)
+                            openSettings()
+                        }
                     )
                     .padding(.top, 12)
 
