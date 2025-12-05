@@ -14,9 +14,6 @@ struct OnboardingKeyboardPage: View {
                 // Keyboard Illustration
                 
                 
-                
-                KeyboardIllustration()
-                    .padding(.top, 16)
 
 //                // Title
                 VStack(spacing: 4) {
@@ -30,10 +27,15 @@ struct OnboardingKeyboardPage: View {
                 }
                 .padding(.top, 36)
                 
-                Image("keyboard")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 200)
+                
+                
+                KeyboardIllustration()
+                    .padding(.horizontal, 24)
+                
+//                Image("keyboard")
+//                    .resizable()
+//                    .aspectRatio(contentMode: .fit)
+//                    .frame(width: 200)
 
                 // Subtitle
                 Text("Use VivaDicta keyboard to transcribe in any app")
@@ -41,23 +43,6 @@ struct OnboardingKeyboardPage: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-//                // Feature Cards
-//                VStack(spacing: 12) {
-//                    OnboardingFeatureCard(
-//                        icon: "record.circle",
-//                        iconColor: .red,
-//                        backgroundColor: Color(.systemGray6),
-//                        text: "Quick voice input in any text field"
-//                    )
-//
-//                    OnboardingFeatureCard(
-//                        icon: "keyboard",
-//                        iconColor: .blue,
-//                        backgroundColor: Color(.systemGray6),
-//                        text: "Full keyboard with recording button"
-//                    )
-//                }
-//                .padding(.horizontal, 24)
 
                 // Setup Instructions
                 OnboardingCard {
@@ -90,54 +75,68 @@ struct OnboardingKeyboardPage: View {
 // MARK: - Keyboard Illustration
 
 private struct KeyboardIllustration: View {
+    private let keySpacing: CGFloat = 6
+    private let keyHeight: CGFloat = 42
+    private let keyWidth: CGFloat = 33
+
     var body: some View {
-        VStack(spacing: 8) {
-            // Row 1
-            HStack(spacing: 6) {
-                ForEach(["Q", "W", "E", "R", "T", "Y"], id: \.self) { key in
-                    KeyCap(letter: key)
+        VStack(spacing: 0) {
+            // Toolbar with MicButton
+            HStack {
+                Spacer()
+
+                MicButton(
+                    fontSize: 34,
+                    padding: 6,
+                    backgroundColor: .orange.opacity(0.5),
+                    borderWidth: 0.5,
+                    onTapAction: {}
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            // Row 1: QWERTYUIOP
+            HStack(spacing: keySpacing) {
+                ForEach(["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"], id: \.self) { key in
+                    KeyCap(letter: key, width: keyWidth, height: keyHeight)
                 }
             }
+            .padding(.bottom, keySpacing)
 
-            // Row 2
-            HStack(spacing: 6) {
-                ForEach(["A", "S", "D", "F", "G", "H"], id: \.self) { key in
-                    KeyCap(letter: key)
+            // Row 2: ASDFGHJKL
+            HStack(spacing: keySpacing) {
+                ForEach(["A", "S", "D", "F", "G", "H", "J", "K", "L"], id: \.self) { key in
+                    KeyCap(letter: key, width: keyWidth, height: keyHeight)
                 }
             }
-
-            // Row 3 with mic button
-            HStack(spacing: 6) {
-                KeyCap(letter: "space", isWide: true)
-
-                // Mic button
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(.orange, in: RoundedRectangle(cornerRadius: 8))
-            }
+            .padding(.bottom, 12)
         }
-        .padding(16)
-        .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal, 4)
+        .background(Color(.systemGray4).opacity(0.5))
     }
 }
 
 private struct KeyCap: View {
     let letter: String
-    var isWide: Bool = false
+    var width: CGFloat = 32
+    var height: CGFloat = 44
 
     var body: some View {
         Text(letter)
-            .font(.system(size: 14, weight: .medium))
+            .font(.system(size: 22, weight: .regular))
             .foregroundStyle(.primary)
-            .frame(width: isWide ? 80 : 32, height: 36)
-            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 6))
-            .shadow(color: .black.opacity(0.1), radius: 1, y: 1)
+            .frame(width: width, height: height)
+            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 5))
+            .shadow(color: .black.opacity(0.15), radius: 0.5, y: 1)
     }
 }
 
 #Preview {
     OnboardingKeyboardPage()
         .background(Color(.systemGroupedBackground))
+    
+    
+//    KeyboardIllustration()
 }
