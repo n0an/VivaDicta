@@ -15,8 +15,8 @@ struct OnboardingKeyboardPage: View {
                 
                 
                 
-//                KeyboardIllustration()
-//                    .padding(.top, 16)
+                KeyboardIllustration()
+                    .padding(.top, 16)
 
 //                // Title
                 VStack(spacing: 4) {

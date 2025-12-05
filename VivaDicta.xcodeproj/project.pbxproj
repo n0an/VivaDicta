@@ -139,6 +139,7 @@
 				Shared/AnimatedMeshGradient.swift,
 				Shared/AnimatedPath.swift,
 				Shared/AppGroupCoordinator.swift,
+				Shared/MicButton.swift,
 				Shared/Orb.swift,
 				Shared/RecordingState.swift,
 				Shared/RippleEffect.metal,
