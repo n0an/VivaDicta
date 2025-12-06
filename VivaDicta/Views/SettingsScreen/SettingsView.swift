@@ -31,7 +31,7 @@ struct SettingsView: View {
     @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
     @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
 
-    var selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
+    let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
     var body: some View {
         NavigationStack(path: $navigationPath) {

@@ -83,7 +83,7 @@ struct VivaDictaApp: App {
             if hasCompletedOnboarding {
                 MainView(appState: appState)
                     .task {
-//                        try? Tips.resetDatastore()
+                        try? Tips.resetDatastore()
                         
                         try? Tips.configure([
 //                            .displayFrequency(.immediate),

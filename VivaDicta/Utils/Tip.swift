@@ -27,6 +27,7 @@ struct SelectLanguageTip: Tip {
 struct SelectTranscriptionModelTipMainView: Tip {
     var title: Text {
         Text("Select Transcription model")
+            .foregroundStyle(.teal)
     }
     
     var message: Text? {
@@ -42,10 +43,12 @@ struct SelectTranscriptionModelTipMainView: Tip {
 struct SelectTranscriptionModelTipSettingsView: Tip {
     var title: Text {
         Text("Select Transcription model")
+            .foregroundStyle(.teal)
     }
     
     var message: Text? {
         Text("Tap here to download local or select cloud transcription model")
+            .foregroundStyle(.orange)
     }
 
     var image: Image? {
@@ -60,7 +63,7 @@ struct SelectAIEnhacementTip: Tip {
     }
     
     var message: Text? {
-        Text("Tap here to configure AI enhacement")
+        Text("Improve transcriptions with AI")
     }
 
     var image: Image? {
