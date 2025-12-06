@@ -20,6 +20,8 @@ struct VivaDictaApp: App {
 
     @State var appState = AppState()
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
+    private var hasCompletedOnboarding = false
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
 
@@ -30,6 +32,13 @@ struct VivaDictaApp: App {
     init() {
         // Initialize app directories
         FileManager.createAppDirectories()
+
+        // Check if user tapped "Open Settings" in onboarding before app was terminated
+        // This handles the case where app terminates when enabling Full Access
+        if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding) {
+            UserDefaultsStorage.appPrivate.set(true, forKey: UserDefaultsStorage.Keys.hasCompletedOnboarding)
+            UserDefaultsStorage.appPrivate.removeObject(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding)
+        }
 
         // Clean up any stuck Live Activities from previous session on cold start
         Task {
@@ -70,8 +79,9 @@ struct VivaDictaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainView(appState: appState)
-                .onAppear {
+            if hasCompletedOnboarding {
+                MainView(appState: appState)
+                    .onAppear {
                     // Set the AppState reference for quick actions
 #if !os(macOS)
                     SceneDelegate.appState = appState
@@ -168,6 +178,11 @@ struct VivaDictaApp: App {
                         break
                     }
                 }
+            } else {
+                OnboardingView {
+                    hasCompletedOnboarding = true
+                }
+            }
         }
         .modelContainer(Persistence.container)
     }
