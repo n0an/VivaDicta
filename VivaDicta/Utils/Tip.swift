@@ -22,3 +22,49 @@ struct SelectLanguageTip: Tip {
     }
     
 }
+
+
+struct SelectTranscriptionModelTipMainView: Tip {
+    var title: Text {
+        Text("Select Transcription model")
+    }
+    
+    var message: Text? {
+        Text("Tap here to download local or select cloud transcription model")
+    }
+
+    var image: Image? {
+        Image(systemName: "cpu.fill")
+    }
+    
+}
+
+struct SelectTranscriptionModelTipSettingsView: Tip {
+    var title: Text {
+        Text("Select Transcription model")
+    }
+    
+    var message: Text? {
+        Text("Tap here to download local or select cloud transcription model")
+    }
+
+    var image: Image? {
+        Image(systemName: "cpu.fill")
+    }
+    
+}
+
+struct SelectAIEnhacementTip: Tip {
+    var title: Text {
+        Text("Add AI Enhancement")
+    }
+    
+    var message: Text? {
+        Text("Tap here to configure AI enhacement")
+    }
+
+    var image: Image? {
+        Image(systemName: "wand.and.sparkles")
+    }
+    
+}

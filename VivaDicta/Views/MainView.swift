@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import TipKit
 
 struct MainView: View {
     @Bindable var appState: AppState
@@ -22,9 +23,11 @@ struct MainView: View {
 
     @Environment(\.modelContext) private var modelContext
     
+    var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
+    
     var body: some View {
-        let _ = Self._printChanges()
-        let _ = print("Executing <MainView> body")
+//        let _ = Self._printChanges()
+//        let _ = print("Executing <MainView> body")
         
         NavigationStack(path: $navigationPath) {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
@@ -37,9 +40,11 @@ struct MainView: View {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button {
                                 showingSettings = true
+//                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
                             } label: {
                                 Image(systemName: "gearshape.fill")
                             }
+                            .popoverTip(selectTranscriptionModelTipMainView)
                         }
                         .matchedTransitionSource(id: "SettingsSheetTransition", in: sheetTransitions)
                     } else {

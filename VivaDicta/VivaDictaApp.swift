@@ -11,6 +11,7 @@ import os
 import AppIntents
 import CoreSpotlight
 import ActivityKit
+import TipKit
 
 @main
 struct VivaDictaApp: App {
@@ -81,6 +82,13 @@ struct VivaDictaApp: App {
         WindowGroup {
             if hasCompletedOnboarding {
                 MainView(appState: appState)
+                    .task {
+//                        try? Tips.resetDatastore()
+                        
+                        try? Tips.configure([
+//                            .displayFrequency(.immediate),
+                            .datastoreLocation(.applicationDefault)])
+                    }
                     .onAppear {
                     // Set the AppState reference for quick actions
 #if !os(macOS)
