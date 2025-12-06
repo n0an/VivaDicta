@@ -26,5 +26,8 @@ enum UserDefaultsStorage {
     enum Keys {
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let didTapOpenSettingsInOnboarding = "didTapOpenSettingsInOnboarding"
+        static let audioSessionTimeout = "audioSessionTimeout"
+        static let isTextFormattingEnabled = "IsTextFormattingEnabled"
+        static let displaySiriTip = "displaySiriTip"
     }
 }

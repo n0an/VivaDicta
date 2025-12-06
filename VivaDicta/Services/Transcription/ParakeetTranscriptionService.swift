@@ -56,7 +56,7 @@ class ParakeetTranscriptionService: TranscriptionService {
 
         // Apply VAD for recordings longer than 20 seconds
         // VAD setting should be shared with keyboard extension
-        let isVADEnabled = UserDefaultsStorage.shared.object(forKey: "IsVADEnabled") as? Bool ?? true
+        let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
         
         let speechAudio: [Float]
         

@@ -29,6 +29,7 @@ public final class AppGroupCoordinator {
     public static let kTranscriptionPrompt = "TranscriptionPrompt"
     public static let kSmartFormattingOnPaste = "smartFormattingOnPaste"
     public static let kKeepTranscriptInClipboard = "keepTranscriptInClipboard"
+    public static let kIsVADEnabled = "IsVADEnabled"
     
     
     nonisolated private enum UserDefaultsKeys {

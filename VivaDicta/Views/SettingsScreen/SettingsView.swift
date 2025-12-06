@@ -16,14 +16,17 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State var navigationPath = NavigationPath()
     @Namespace private var promptsTransition
-    @AppStorage("IsVADEnabled") private var isVADEnabled = true
-    @AppStorage("IsTextFormattingEnabled") private var isTextFormattingEnabled = true
-    @AppStorage("audioSessionTimeout") private var audioSessionTimeout = 180
+    @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
+    private var isVADEnabled = true
+    @AppStorage(UserDefaultsStorage.Keys.isTextFormattingEnabled)
+    private var isTextFormattingEnabled = true
+    @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
+    private var audioSessionTimeout = 180
     private let prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
     
-    @AppStorage("displaySiriTip") private var displaySiriTip: Bool = true
+    @AppStorage(UserDefaultsStorage.Keys.displaySiriTip) private var displaySiriTip: Bool = true
     @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
     @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
 

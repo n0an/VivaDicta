@@ -116,7 +116,7 @@ class TranscriptionManager {
         
         var result = TranscriptionOutputFilter.filter(text)
         
-        if UserDefaults.standard.object(forKey: "IsTextFormattingEnabled") as? Bool ?? true {
+        if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
             result = TextFormatter.format(result)
         }
         

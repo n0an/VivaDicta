@@ -68,11 +68,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var recordingState: RecordingState = .idle {
         didSet {
             logger.logInfo("📱 Recording state changed: \(String(describing: self.recordingState))")
-            // Save recording state to shared UserDefaults for keyboard extension
-            let isRecording = (recordingState == .recording)
-            UserDefaultsStorage.shared.set(isRecording, forKey: "isRecording")
-            UserDefaultsStorage.shared.synchronize()
-
+            // Recording state is shared with keyboard extension via AppGroupCoordinator.shared.updateRecordingState()
+            // which is called in startCaptureAudio(), stopCaptureAudio(), and cancelTranscribe()
         }
     }
     

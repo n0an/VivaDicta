@@ -21,10 +21,10 @@ final class AudioPrewarmManager {
     
     var audioSessionTimeout: Int {
         get {
-            UserDefaultsStorage.appPrivate.object(forKey: "audioSessionTimeout") as? Int ?? 180 // Default 3 minutes
+            UserDefaultsStorage.appPrivate.object(forKey: UserDefaultsStorage.Keys.audioSessionTimeout) as? Int ?? 180 // Default 3 minutes
         }
         set {
-            UserDefaultsStorage.appPrivate.set(newValue, forKey: "audioSessionTimeout")
+            UserDefaultsStorage.appPrivate.set(newValue, forKey: UserDefaultsStorage.Keys.audioSessionTimeout)
         }
     }
 
