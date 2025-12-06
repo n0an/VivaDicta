@@ -131,7 +131,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
         do {
             // Get selected language if not auto-detect (shared with keyboard)
             let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-            let decodingOptions = DecodingOptions(language: language == "auto" ? nil : language)
+            let decodingOptions = DecodingOptions(language: language == "auto" ? nil : language, detectLanguage: language == "auto")
 
             // Perform transcription
             let result = try await whisperKit.transcribe(audioPath: audioURL.path, decodeOptions: decodingOptions)
