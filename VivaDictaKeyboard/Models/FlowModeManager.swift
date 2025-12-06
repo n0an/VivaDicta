@@ -41,13 +41,13 @@ final class FlowModeManager {
     private func loadFlowModes() {
         logger.logInfo("🎯 Loading flow modes from shared storage...")
 
-        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.aiEnhanceModesKey) {
+        if let savedFlowModesData = userDefaults.data(forKey: AppGroupCoordinator.flowModesKey) {
             logger.logInfo("🎯 Found saved modes data, attempting to decode...")
 
             do {
-                let savedModes = try JSONDecoder().decode([FlowMode].self, from: savedModesData)
-                availableFlowModes = savedModes
-                logger.logInfo("🎯 Successfully loaded \(savedModes.count) flow modes: \(savedModes.map { $0.name }.joined(separator: ", "))")
+                let savedFlowModes = try JSONDecoder().decode([FlowMode].self, from: savedFlowModesData)
+                availableFlowModes = savedFlowModes
+                logger.logInfo("🎯 Successfully loaded \(savedFlowModes.count) flow modes: \(savedFlowModes.map { $0.name }.joined(separator: ", "))")
             } catch {
                 logger.logError("🎯 Failed to decode flow modes: \(error.localizedDescription)")
                 availableFlowModes = [FlowMode.defaultMode]
@@ -59,13 +59,13 @@ final class FlowModeManager {
     }
 
     private func loadSelectedMode() {
-        let selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
-        selectedFlowMode = availableFlowModes.first(where: { $0.name == selectedModeName }) ?? FlowMode.defaultMode
+        let selectedFlowModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedFlowModeKey) ?? FlowMode.defaultMode.name
+        selectedFlowMode = availableFlowModes.first(where: { $0.name == selectedFlowModeName }) ?? FlowMode.defaultMode
         logger.logInfo("🎯 Loaded selected mode: \(selectedFlowMode.name)")
     }
 
     private func saveSelectedMode() {
-        userDefaults.set(selectedFlowMode.name, forKey: AppGroupCoordinator.selectedAIModeKey)
+        userDefaults.set(selectedFlowMode.name, forKey: AppGroupCoordinator.selectedFlowModeKey)
         userDefaults.synchronize() // Force immediate write
         logger.logInfo("🎯 Saved selected mode: \(selectedFlowMode.name)")
     }

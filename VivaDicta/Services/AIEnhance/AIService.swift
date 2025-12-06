@@ -38,7 +38,7 @@ class AIService {
 
     
     init() {
-        self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
+        self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedFlowModeKey) ?? FlowMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
@@ -57,7 +57,7 @@ class AIService {
 
     /// Reload the selected mode from UserDefaults (used when keyboard extension changes the mode)
     public func reloadSelectedModeFromKeyboard() {
-        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedAIModeKey) ?? FlowMode.defaultMode.name
+        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedFlowModeKey) ?? FlowMode.defaultMode.name
         if savedModeName != selectedModeName {
             logger.logInfo("📱 Reloading FlowMode from keyboard: \(savedModeName)")
             selectedModeName = savedModeName
@@ -139,7 +139,7 @@ class AIService {
     }
 
     private func loadModes() {
-        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.aiEnhanceModesKey),
+        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.flowModesKey),
            let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
             modes = savedModes
         } else {
@@ -154,13 +154,13 @@ class AIService {
             logger.logError("Failed to encode Flow Modes")
             return
         }
-        userDefaults.set(encoded, forKey: AppGroupCoordinator.aiEnhanceModesKey)
+        userDefaults.set(encoded, forKey: AppGroupCoordinator.flowModesKey)
         userDefaults.synchronize() // Force immediate write to disk
         logger.logInfo("Saved \(self.modes.count) Flow Modes to shared storage")
     }
     
     private func saveSelectedModeName(_ modeName: String) {
-        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedAIModeKey)
+        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedFlowModeKey)
         logger.logInfo("Saved Flow Mode: \(modeName)")
     }
     
