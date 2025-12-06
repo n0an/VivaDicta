@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import TipKit
 
 struct MainView: View {
     @Bindable var appState: AppState
@@ -22,9 +23,11 @@ struct MainView: View {
 
     @Environment(\.modelContext) private var modelContext
     
+    var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
+    
     var body: some View {
-        let _ = Self._printChanges()
-        let _ = print("Executing <MainView> body")
+//        let _ = Self._printChanges()
+//        let _ = print("Executing <MainView> body")
         
         NavigationStack(path: $navigationPath) {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
@@ -37,8 +40,15 @@ struct MainView: View {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button {
                                 showingSettings = true
+//                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
                             } label: {
                                 Image(systemName: "gearshape.fill")
+                            }
+                            .popoverTip(selectTranscriptionModelTipMainView) { action in
+                                if action.id == "go-to-models" {
+                                    showingSettings = true
+                                    appState.shouldNavigateToModels = true
+                                }
                             }
                         }
                         .matchedTransitionSource(id: "SettingsSheetTransition", in: sheetTransitions)
@@ -50,6 +60,12 @@ struct MainView: View {
                                 Image(systemName: "gearshape.fill")
                             }
                             .tint(.primary)
+                            .popoverTip(selectTranscriptionModelTipMainView) { action in
+                                if action.id == "go-to-models" {
+                                    showingSettings = true
+                                    appState.shouldNavigateToModels = true
+                                }
+                            }
                         }
                     }
 
@@ -206,6 +222,14 @@ struct MainView: View {
             KeyboardFlowSheet(appState: appState)
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
+        }
+        .onAppear {
+            SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+            SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+        }
+        .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
+            SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue
+            SelectTranscriptionModelTipSettingsView.isTranscriptionReady = newValue
         }
     }
 

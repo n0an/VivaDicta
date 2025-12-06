@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppIntents
+import TipKit
 
 struct SettingsView: View {
 
@@ -30,6 +31,8 @@ struct SettingsView: View {
     @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
     @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
 
+    let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
+    
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Form {
@@ -86,9 +89,12 @@ struct SettingsView: View {
                 }
                 
                 Section("Transcription") {
+//                    TipView(selectTranscriptionModelTipSettingsView)
+                    
                     NavigationLink(value: SettingsDestination.transcriptionModels) {
                         Text("Transcription Models")
                     }
+                    .popoverTip(selectTranscriptionModelTipSettingsView)
 
                     Toggle(isOn: $isVADEnabled) {
                         VStack(alignment: .leading, spacing: 4) {

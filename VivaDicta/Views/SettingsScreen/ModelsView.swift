@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct ModelsView: View {
     @Bindable var appState: AppState
@@ -120,6 +121,12 @@ struct ModelsView: View {
         appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
         appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
+        
+        Task {
+            // Hide "Select Transcription model" tips
+            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
+        }
     }
 
     func handleAPIKeyDeletion(for model: CloudModel) {

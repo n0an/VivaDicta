@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct LocalModelCard: View {
     let model: any TranscriptionModel
@@ -222,6 +223,11 @@ struct LocalModelCard: View {
                 } else if let parakeetModel = model as? ParakeetModel {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
+                
+                // Hide "Select Transcription model" tips
+                await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+                await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
+                
             } catch {
                 if let whisperModel = model as? WhisperKitModel {
                     await downloadManager.handleModelDownloadError(whisperModel, error)

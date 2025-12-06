@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct ModeEditView: View {
     @Environment(\.dismiss) private var dismiss
@@ -16,6 +17,11 @@ struct ModeEditView: View {
     
     @State private var showingAlert: Bool = false
     @State private var modeEditViewError: SettingsError = .duplicateModeName("")
+    
+    let selectAIEnhacementTip = SelectAIEnhacementTip()
+    
+    let selectLanguageTip = SelectLanguageTip()
+
     
     init(mode: FlowMode?,
          aiService: AIService,
@@ -75,6 +81,8 @@ struct ModeEditView: View {
                                 Text(value).tag(key)
                             }
                         }
+                        .popoverTip(selectLanguageTip)
+
                     }
                 } else {
                     if viewModel.transcriptionProvider == .parakeet ||
@@ -134,8 +142,14 @@ struct ModeEditView: View {
             }
             
             if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
+                
                 Section(header: Text("AI Enhancement"),
                         footer: Text("Configure how the raw transcription should be processed and refined.")) {
+                    
+                    if !viewModel.aiEnhanceEnabled {
+                        TipView(selectAIEnhacementTip)
+                            .tipBackground(.teal.gradient)
+                    }
                     
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
                     
@@ -231,6 +245,14 @@ struct ModeEditView: View {
             }
             
         }
+        .onChange(of: viewModel.aiEnhanceEnabled, { oldValue, newValue in
+            if newValue == true {
+                selectAIEnhacementTip.invalidate(reason: .actionPerformed)
+            }
+        })
+        .onChange(of: viewModel.transcriptionLanguage, { oldValue, newValue in
+            selectLanguageTip.invalidate(reason: .actionPerformed)
+        })
         .alert(isPresented: $showingAlert,
                error: modeEditViewError,
                actions: { error in
