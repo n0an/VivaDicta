@@ -51,10 +51,10 @@ struct SelectTranscriptionModelTipMainView: Tip {
     }
     
     var rules: [Rule] {
-        #Rule(Self.$isTranscriptionReady) { $0 == false }
+//        #Rule(Self.$isTranscriptionReady) { $0 == false }
         
         #Rule(Self.selectModelEvent) { event in
-            event.donations.count < 10
+            event.donations.count == 0
         }
     }
     
@@ -87,10 +87,10 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
     }
     
     var rules: [Rule] {
-        #Rule(Self.$isTranscriptionReady) { $0 == false }
+//        #Rule(Self.$isTranscriptionReady) { $0 == false }
         
         #Rule(Self.selectModelEvent) { event in
-            event.donations.count < 10
+            event.donations.count == 0
         }
     }
     

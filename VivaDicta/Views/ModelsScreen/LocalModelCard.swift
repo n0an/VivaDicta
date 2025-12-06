@@ -217,16 +217,16 @@ struct LocalModelCard: View {
 
     private func downloadLocalModel() {
         Task {
-            
             do {
-                await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
-                await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
-                
                 if let whisperModel = model as? WhisperKitModel {
                     try await downloadManager.downloadModel(whisperModel)
                 } else if let parakeetModel = model as? ParakeetModel {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
+                
+                // Hide "Select Transcription model" tips
+                await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+                await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
                 
             } catch {
                 if let whisperModel = model as? WhisperKitModel {
