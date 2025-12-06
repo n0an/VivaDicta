@@ -20,6 +20,9 @@ struct ModeEditView: View {
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
     
+    let selectLanguageTip = SelectLanguageTip()
+
+    
     init(mode: FlowMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
@@ -78,6 +81,8 @@ struct ModeEditView: View {
                                 Text(value).tag(key)
                             }
                         }
+                        .popoverTip(selectLanguageTip)
+
                     }
                 } else {
                     if viewModel.transcriptionProvider == .parakeet ||
@@ -242,6 +247,9 @@ struct ModeEditView: View {
             if newValue == true {
                 selectAIEnhacementTip.invalidate(reason: .actionPerformed)
             }
+        })
+        .onChange(of: viewModel.transcriptionLanguage, { oldValue, newValue in
+            selectLanguageTip.invalidate(reason: .actionPerformed)
         })
         .alert(isPresented: $showingAlert,
                error: modeEditViewError,
