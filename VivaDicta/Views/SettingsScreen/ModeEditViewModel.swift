@@ -133,8 +133,20 @@ class ModeEditViewModel {
 
     }
     
+    public struct GroupedLanguages {
+        let recommended: [(key: String, value: String)]  // Auto + user's preferred
+        let other: [(key: String, value: String)]        // Rest alphabetically
+    }
+
     public func getAvailableLanguages() -> [(key: String, value: String)] {
-        guard isLanguageSelectionAvailable() else { return [] }
+        let grouped = getGroupedLanguages()
+        return grouped.recommended + grouped.other
+    }
+
+    public func getGroupedLanguages() -> GroupedLanguages {
+        guard isLanguageSelectionAvailable() else {
+            return GroupedLanguages(recommended: [], other: [])
+        }
 
         let models: [any TranscriptionModel]
         switch transcriptionProvider {
@@ -145,20 +157,42 @@ class ModeEditViewModel {
         }
 
         guard let model = models.first(where: { $0.name == transcriptionModel }) else {
-            return []
+            return GroupedLanguages(recommended: [], other: [])
         }
 
-        return sortLanguages(Array(model.supportedLanguages))
+        return groupLanguages(Array(model.supportedLanguages))
     }
 
-    private func sortLanguages(_ languages: [(key: String, value: String)]) -> [(key: String, value: String)] {
-        // Sort with "auto" first, then alphabetically by value
-        return languages.sorted { lhs, rhs in
-            switch (lhs.key == "auto", rhs.key == "auto") {
-            case (true, false): return true
-            case (false, true): return false
-            default: return lhs.value < rhs.value
+    private func groupLanguages(_ languages: [(key: String, value: String)]) -> GroupedLanguages {
+        let userPreferredCodes = getUserPreferredLanguageCodes()
+
+        var recommended: [(key: String, value: String)] = []
+
+        // First, find "auto" and user's preferred languages
+        if let auto = languages.first(where: { $0.key == "auto" }) {
+            recommended.append(auto)
+        }
+
+        // Add user's preferred languages in order
+        for code in userPreferredCodes {
+            if let lang = languages.first(where: { $0.key == code }) {
+                recommended.append(lang)
             }
+        }
+
+        // Full alphabetical list (excluding auto, but including user's preferred languages)
+        let other = languages
+            .filter { $0.key != "auto" }
+            .sorted { $0.value < $1.value }
+
+        return GroupedLanguages(recommended: recommended, other: other)
+    }
+
+    private func getUserPreferredLanguageCodes() -> [String] {
+        Locale.preferredLanguages.compactMap { identifier in
+            // Extract language code from identifiers like "en-US", "ru-RU", "zh-Hans-CN"
+            let locale = Locale(identifier: identifier)
+            return locale.language.languageCode?.identifier
         }
     }
     

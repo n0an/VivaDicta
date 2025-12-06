@@ -76,8 +76,17 @@ struct ModeEditView: View {
                     }
                     
                     if viewModel.isLanguageSelectionAvailable() {
+                        let grouped = viewModel.getGroupedLanguages()
                         Picker("Language", selection: $viewModel.transcriptionLanguage) {
-                            ForEach(Array(viewModel.getAvailableLanguages()), id: \.key) { key, value in
+                            ForEach(grouped.recommended, id: \.key) { key, value in
+                                Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
+                            }
+
+                            if !grouped.recommended.isEmpty && !grouped.other.isEmpty {
+                                Divider()
+                            }
+
+                            ForEach(grouped.other, id: \.key) { key, value in
                                 Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
                             }
                         }
