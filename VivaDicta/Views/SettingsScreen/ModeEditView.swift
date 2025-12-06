@@ -78,7 +78,7 @@ struct ModeEditView: View {
                     if viewModel.isLanguageSelectionAvailable() {
                         Picker("Language", selection: $viewModel.transcriptionLanguage) {
                             ForEach(Array(viewModel.getAvailableLanguages()), id: \.key) { key, value in
-                                Text(value).tag(key)
+                                Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
                             }
                         }
                         .popoverTip(selectLanguageTip)
