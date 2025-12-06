@@ -23,6 +23,8 @@ struct OnboardingKeyboardPage: View {
                 .padding(.top, 36)
                 
                 KeyboardIllustration()
+                    .compositingGroup()
+                    .shadow(color: .black.opacity(0.2), radius: 10, x: 4, y: 6)
 //                    .padding(.horizontal, 24)
                 
 
@@ -85,6 +87,8 @@ private struct SettingsTogglesPreview: View {
             )
         }
         .background(cellBackground, in: RoundedRectangle(cornerRadius: 10))
+        .compositingGroup()
+        .shadow(color: .black.opacity(0.2), radius: 10, x: 4, y: 6)
     }
 
     private var cellBackground: Color {

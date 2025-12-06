@@ -165,7 +165,8 @@ struct OnboardingAppIcon: View {
                 ),
                 in: RoundedRectangle(cornerRadius: size * 0.22)
             )
-            .shadow(color: gradient.first?.opacity(0.3) ?? .clear, radius: 20, x: 6, y: 10)
+            .compositingGroup()
+            .shadow(color: gradient.first?.opacity(0.8) ?? .clear, radius: 20)
     }
 }
 
