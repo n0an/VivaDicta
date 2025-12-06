@@ -420,7 +420,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "uk": "Ukrainian",
         "ur": "Urdu",
         "vi": "Vietnamese",
-        "cy": "Welsh",
     ]
 
     static let languageFlags: [String: String] = [
@@ -438,7 +437,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "cs": "🇨🇿",
         "da": "🇩🇰",
         "nl": "🇳🇱",
-        "en": "🇬🇧",
+        "en": "🇺🇸",
         "et": "🇪🇪",
         "fi": "🇫🇮",
         "fr": "🇫🇷",
@@ -481,7 +480,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "uk": "🇺🇦",
         "ur": "🇵🇰",
         "vi": "🇻🇳",
-        "cy": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
     ]
 
     static func languageWithFlag(_ code: String, name: String) -> String {
