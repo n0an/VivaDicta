@@ -44,7 +44,12 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "gearshape.fill")
                             }
-                            .popoverTip(selectTranscriptionModelTipMainView)
+                            .popoverTip(selectTranscriptionModelTipMainView) { action in
+                                if action.id == "go-to-models" {
+                                    showingSettings = true
+                                    appState.shouldNavigateToModels = true
+                                }
+                            }
                         }
                         .matchedTransitionSource(id: "SettingsSheetTransition", in: sheetTransitions)
                     } else {
@@ -55,6 +60,12 @@ struct MainView: View {
                                 Image(systemName: "gearshape.fill")
                             }
                             .tint(.primary)
+                            .popoverTip(selectTranscriptionModelTipMainView) { action in
+                                if action.id == "go-to-models" {
+                                    showingSettings = true
+                                    appState.shouldNavigateToModels = true
+                                }
+                            }
                         }
                     }
 
@@ -211,6 +222,14 @@ struct MainView: View {
             KeyboardFlowSheet(appState: appState)
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
+        }
+        .onAppear {
+            SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+            SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+        }
+        .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
+            SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue
+            SelectTranscriptionModelTipSettingsView.isTranscriptionReady = newValue
         }
     }
 

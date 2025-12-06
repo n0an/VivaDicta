@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct CloudModelCard: View {
     let model: CloudModel
@@ -82,6 +83,10 @@ struct CloudModelCard: View {
                 
                     Button(action: {
                         onConfigure(model)
+                        Task {
+                            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+                            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
+                        }
                     }) {
                         VStack(alignment: .center, spacing: 0) {
                             

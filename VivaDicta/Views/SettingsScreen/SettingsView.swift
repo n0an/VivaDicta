@@ -220,12 +220,6 @@ struct SettingsView: View {
                     PromptsSettings(promptsManager: promptsManager, transition: promptsTransition)
                 case .transcriptionModels:
                     ModelsView(appState: appState)
-                        .task {
-                            let selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
-                            selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
-                            selectTranscriptionModelTipSettingsView.invalidate(reason: .actionPerformed)
-
-                        }
                 case .promptsTemplates:
                     TemplateSelectionView(promptsManager: promptsManager)
                         .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
