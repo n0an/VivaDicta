@@ -138,11 +138,6 @@ class ModeEditViewModel {
         let other: [(key: String, value: String)]        // Rest alphabetically
     }
 
-    public func getAvailableLanguages() -> [(key: String, value: String)] {
-        let grouped = getGroupedLanguages()
-        return grouped.recommended + grouped.other
-    }
-
     public func getGroupedLanguages() -> GroupedLanguages {
         guard isLanguageSelectionAvailable() else {
             return GroupedLanguages(recommended: [], other: [])
