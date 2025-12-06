@@ -20,4 +20,11 @@ enum UserDefaultsStorage {
     static var appPrivate: UserDefaults {
         UserDefaults.standard
     }
+
+    // MARK: - App-Private Keys
+
+    enum Keys {
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let didTapOpenSettingsInOnboarding = "didTapOpenSettingsInOnboarding"
+    }
 }

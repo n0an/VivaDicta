@@ -8,10 +8,28 @@
 import SwiftUI
 import AVFoundation
 
+enum OnboardingPage: Int, CaseIterable, Comparable {
+    case welcome
+    case microphone
+    case keyboard
+
+    static func < (lhs: OnboardingPage, rhs: OnboardingPage) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+
+    var previous: OnboardingPage? {
+        OnboardingPage(rawValue: rawValue - 1)
+    }
+
+    var next: OnboardingPage? {
+        OnboardingPage(rawValue: rawValue + 1)
+    }
+}
+
 struct OnboardingView: View {
     var onComplete: () -> Void
 
-    @State private var currentPage = 0
+    @State private var currentPage: OnboardingPage = .welcome
     @State private var isForward = true
     @State private var permissionState: MicrophonePermissionState = .undetermined
 
@@ -20,19 +38,21 @@ struct OnboardingView: View {
             // Navigation Bar
             HStack {
                 Button {
-                    navigateTo(currentPage - 1)
+                    if let previous = currentPage.previous {
+                        navigateTo(previous)
+                    }
                 } label: {
                     Image(systemName: "chevron.backward")
                         .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
-                .opacity(currentPage > 0 ? 1 : 0)
-                .disabled(currentPage == 0)
+                .opacity(currentPage > .welcome ? 1 : 0)
+                .disabled(currentPage == .welcome)
 
                 Spacer()
-                
-                if currentPage == 2 {
+
+                if currentPage == .keyboard {
                     Button("Skip") {
                         onComplete()
                     }
@@ -46,14 +66,12 @@ struct OnboardingView: View {
             // Page content (no swipe - button navigation only)
             Group {
                 switch currentPage {
-                case 0:
+                case .welcome:
                     OnboardingWelcomePage()
-                case 1:
+                case .microphone:
                     OnboardingMicrophonePage(permissionState: $permissionState)
-                case 2:
+                case .keyboard:
                     OnboardingKeyboardPage()
-                default:
-                    OnboardingWelcomePage()
                 }
             }
             .transition(pageTransition)
@@ -62,13 +80,13 @@ struct OnboardingView: View {
             // Bottom buttons - morph based on current page
             VStack(spacing: 12) {
                 switch currentPage {
-                case 0:
+                case .welcome:
                     // Welcome page - Get Started
                     OnboardingPrimaryButton(title: "Get Started") {
-                        navigateTo(1)
+                        navigateTo(.microphone)
                     }
 
-                case 1:
+                case .microphone:
                     // Microphone page
                     switch permissionState {
                     case .granted:
@@ -77,7 +95,7 @@ struct OnboardingView: View {
                             icon: "checkmark.circle.fill",
                             color: .green
                         ) {
-                            navigateTo(2)
+                            navigateTo(.keyboard)
                         }
                     case .denied:
                         OnboardingPrimaryButton(
@@ -100,7 +118,7 @@ struct OnboardingView: View {
                         )
                     }
 
-                case 2:
+                case .keyboard:
                     // Keyboard page
                     OnboardingPrimaryButton(
                         title: "Open Settings",
@@ -108,7 +126,7 @@ struct OnboardingView: View {
                         action: {
                             // Set intermediate flag - onboarding will complete on next cold start
                             // This handles the case where app terminates when enabling Full Access
-                            UserDefaultsStorage.appPrivate.set(true, forKey: "didTapOpenSettingsInOnboarding")
+                            UserDefaultsStorage.appPrivate.set(true, forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding)
                             openSettings()
                         }
                     )
@@ -116,9 +134,6 @@ struct OnboardingView: View {
 
                     OnboardingSecondaryButton(title: "Set Up Later", action: onComplete)
                         .buttonStyle(.plain)
-
-                default:
-                    EmptyView()
                 }
             }
             .padding(.horizontal, 16)
@@ -126,7 +141,7 @@ struct OnboardingView: View {
             .animation(.easeInOut, value: permissionState)
 
             // Page indicator
-            OnboardingPageIndicator(currentPage: currentPage, totalPages: 3)
+            OnboardingPageIndicator(currentPage: currentPage)
                 .padding(.bottom, 16)
         }
         .background(Color(.systemGroupedBackground))
@@ -158,7 +173,7 @@ struct OnboardingView: View {
                 if granted {
                     // Small delay before continuing
                     try? await Task.sleep(nanoseconds: 300_000_000)
-                    navigateTo(2)
+                    navigateTo(.keyboard)
                 }
             }
         }
@@ -166,7 +181,7 @@ struct OnboardingView: View {
 
     // MARK: - Navigation
 
-    private func navigateTo(_ page: Int) {
+    private func navigateTo(_ page: OnboardingPage) {
         isForward = page > currentPage
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPage = page

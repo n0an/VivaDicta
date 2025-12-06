@@ -216,9 +216,8 @@ struct OnboardingCard<Content: View>: View {
 
 struct OnboardingPageIndicator: View {
     @Namespace private var dotAnimation
-    
-    let currentPage: Int
-    let totalPages: Int
+
+    let currentPage: OnboardingPage
 
     private let dotSize: CGFloat = 8
     private let lineWidth: CGFloat = 28
@@ -226,14 +225,14 @@ struct OnboardingPageIndicator: View {
 
     var body: some View {
         HStack(spacing: spacing) {
-            ForEach(0 ..< totalPages, id: \.self) { index in
-                if index == currentPage {
+            ForEach(OnboardingPage.allCases, id: \.self) { page in
+                if page == currentPage {
                     // Selected: line/pill shape
                     Capsule()
                         .fill(Color.blue)
                         .matchedGeometryEffect(id: "dot", in: dotAnimation)
                         .frame(width: lineWidth, height: dotSize)
-                    
+
                 } else {
                     // Not selected: dot
                     Circle()
@@ -290,9 +289,9 @@ struct OnboardingPageIndicator: View {
 
 #Preview("Page Indicator") {
     VStack(spacing: 24) {
-        OnboardingPageIndicator(currentPage: 0, totalPages: 3)
-        OnboardingPageIndicator(currentPage: 1, totalPages: 3)
-        OnboardingPageIndicator(currentPage: 2, totalPages: 3)
+        OnboardingPageIndicator(currentPage: .welcome)
+        OnboardingPageIndicator(currentPage: .microphone)
+        OnboardingPageIndicator(currentPage: .keyboard)
     }
     .padding()
 }

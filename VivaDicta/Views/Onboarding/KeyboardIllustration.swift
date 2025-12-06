@@ -33,6 +33,8 @@ struct KeyboardIllustration: View {
                 )
                 .scaleEffect(animate ? 1.5 : 1.0)
                 .onAppear {
+                    animate = false
+                    
                     withAnimation(.spring.delay(1.0)) {
                         
                         animate = true
