@@ -146,8 +146,10 @@ struct ModeEditView: View {
                 Section(header: Text("AI Enhancement"),
                         footer: Text("Configure how the raw transcription should be processed and refined.")) {
                     
-                    TipView(selectAIEnhacementTip)
-                        .tipBackground(.teal.gradient)
+                    if !viewModel.aiEnhanceEnabled {
+                        TipView(selectAIEnhacementTip)
+                            .tipBackground(.teal.gradient)
+                    }
                     
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
                     
