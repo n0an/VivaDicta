@@ -11,21 +11,19 @@ struct OnboardingKeyboardPage: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                VStack(spacing: 4) {
-                    Text("Record Anywhere ")
-                        .font(.largeTitle.weight(.bold))
-                        .fontDesign(.rounded)
-                        .foregroundStyle(.primary)
-                    +
-                    Text("You Type")
-                        .font(.largeTitle.weight(.bold))
-                        .fontDesign(.rounded)
-                        .foregroundStyle(.blue)
-                }
+                (Text("Record Anywhere ")
+                    .foregroundStyle(.primary)
+                +
+                Text("You\u{00A0}Type")
+                    .foregroundStyle(.blue))
+                .font(.largeTitle.weight(.bold))
+                .fontDesign(.rounded)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
                 .padding(.top, 36)
                 
                 KeyboardIllustration()
-                    .padding(.horizontal, 24)
+//                    .padding(.horizontal, 24)
                 
 
                 // Subtitle
@@ -59,7 +57,7 @@ struct OnboardingKeyboardPage: View {
                         )
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 12)
             }
             .padding(.bottom, 16)
         }
@@ -122,7 +120,7 @@ private struct SettingsToggleRow: View {
                 .labelsHidden()
                 .allowsHitTesting(false)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 12)
     }
 

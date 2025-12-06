@@ -121,8 +121,8 @@ struct OnboardingView: View {
                     EmptyView()
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
             .animation(.easeInOut, value: permissionState)
 
             // Page indicator
