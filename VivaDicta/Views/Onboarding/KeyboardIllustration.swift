@@ -71,7 +71,7 @@ struct KeyboardIllustration: View {
             .padding(.bottom, 12)
         }
         .padding(.horizontal, 4)
-        .background(Color(.secondarySystemBackground))
+        .background(.background.secondary)
     }
 }
 

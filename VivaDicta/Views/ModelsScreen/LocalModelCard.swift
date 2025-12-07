@@ -197,7 +197,7 @@ struct LocalModelCard: View {
                 .foregroundStyle(.secondary)
         }
         .padding(20)
-        .background(Color(.secondarySystemBackground))
+        .background(.background.secondary)
         .clipShape(.rect(cornerRadius: 20, style: .continuous))
         .shadow(color: .primary.opacity(0.5), radius: 2, x: 2, y: 2)
         .overlay {
