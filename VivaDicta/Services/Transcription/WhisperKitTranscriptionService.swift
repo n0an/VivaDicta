@@ -126,13 +126,13 @@ class WhisperKitTranscriptionService: TranscriptionService {
             throw TranscriptionError.modelLoadFailed
         }
 
-        logger.logNotice("🎯 Starting WhisperKit transcription with model: \(whisperKitModel.displayName)")
-
         do {
             // Get selected language if not auto-detect (shared with keyboard)
             let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
             // VAD setting should be shared with keyboard extension
             let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
+
+            logger.logNotice("🎯 Starting WhisperKit transcription with model: \(whisperKitModel.displayName), VAD: \(isVADEnabled)")
             let decodingOptions = DecodingOptions(
                 language: (language == "auto" ? nil : language),
                 detectLanguage: (language == "auto" ? true : nil),
