@@ -11,11 +11,9 @@ struct OnboardingKeyboardPage: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                (Text("Record Anywhere ")
-                    .foregroundStyle(.primary)
-                +
-                Text("You\u{00A0}Type")
-                    .foregroundStyle(.blue))
+                
+                Text("Record Anywhere \(Text("You\u{00A0}Type").foregroundStyle(.blue))")
+                
                 .font(.largeTitle.weight(.bold))
                 .fontDesign(.rounded)
                 .multilineTextAlignment(.center)
