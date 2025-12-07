@@ -131,8 +131,14 @@ class WhisperKitTranscriptionService: TranscriptionService {
         do {
             // Get selected language if not auto-detect (shared with keyboard)
             let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-            let decodingOptions = DecodingOptions(language: language == "auto" ? nil : language, detectLanguage: language == "auto")
-
+            // VAD setting should be shared with keyboard extension
+            let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
+            let decodingOptions = DecodingOptions(
+                language: (language == "auto" ? nil : language),
+                detectLanguage: (language == "auto" ? true : nil),
+                chunkingStrategy: isVADEnabled ? .vad : nil
+            )
+            
             // Perform transcription
             let result = try await whisperKit.transcribe(audioPath: audioURL.path, decodeOptions: decodingOptions)
 
