@@ -28,6 +28,12 @@ class WhisperKitTranscriptionService: TranscriptionService {
     
     // Separate method for loading model without progress callback for backward compatibility
     private func loadModel(modelPath: String) async throws {
+        let spidLoadModel = OSSignpostID(log: SignpostLog.general, object: "WhisperKit loadModel" as AnyObject)
+        let spidPrewarmModel = OSSignpostID(log: SignpostLog.general, object: "WhisperKit prewarm" as AnyObject)
+        
+        os_signpost(.begin, log: SignpostLog.general, name: "WhisperKit loadModelSP", signpostID: spidLoadModel)
+
+
         // If the same model is already loaded, return early
         if currentModelName == modelPath && modelState == .loaded {
             logger.logNotice("Model \(modelPath) already loaded, skipping reload")
@@ -75,6 +81,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
             modelState = .downloaded
 
             // Prewarm models (THIS IS THE KEY STEP!)
+            os_signpost(.begin, log: SignpostLog.general, name: "WhisperKit prewarmSP", signpostID: spidPrewarmModel)
+
             logger.logNotice("🔥 Prewarming model: \(modelPath)")
             modelState = .prewarming
 
@@ -84,6 +92,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
             lastPrewarmDuration = prewarmDuration
 
             modelState = .prewarmed
+            os_signpost(.end, log: SignpostLog.general, name: "WhisperKit prewarmSP", signpostID: spidPrewarmModel, "prewarmed")
+
             logger.logNotice("✅ Model prewarmed successfully in \(prewarmDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
 
             // Load models
@@ -97,6 +107,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
 
             modelState = .loaded
             currentModelName = modelPath
+            
+            os_signpost(.end, log: SignpostLog.general, name: "WhisperKit loadModelSP", signpostID: spidLoadModel, "loaded")
 
             let totalDuration = Date().timeIntervalSince(totalStartTime)
             lastTotalInitDuration = totalDuration
@@ -104,6 +116,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
             logger.logNotice("⏱️ Total initialization time: \(totalDuration.formatted(.number.precision(.fractionLength(2)))) seconds (prewarm: \(self.lastPrewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s)")
 
         } catch {
+            os_signpost(.end, log: SignpostLog.general, name: "WhisperKit loadModelSP", signpostID: spidLoadModel, "failed")
+
             modelState = .unloaded
             whisperKit = nil
             currentModelName = nil
@@ -113,6 +127,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
     }
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+        os_signpost(.event, log: SignpostLog.pointsOfInterest, name: "WhisperKit.transcribe starts")
         guard let whisperKitModel = model as? WhisperKitModel else {
             throw TranscriptionError.unsupportedModel
         }
@@ -148,6 +163,8 @@ class WhisperKitTranscriptionService: TranscriptionService {
             // NOTE: We NO LONGER clean up models after transcription
             // Models stay loaded in memory for faster subsequent transcriptions
             logger.logNotice("✅ WhisperKit transcription completed, model kept in memory for faster future use")
+            
+            os_signpost(.event, log: SignpostLog.pointsOfInterest, name: "WhisperKit.transcribe finishes")
 
             return transcribedText
         } catch {
