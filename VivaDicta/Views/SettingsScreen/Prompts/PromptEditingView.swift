@@ -42,6 +42,7 @@ struct PromptEditView: View {
                 .accessibilityHint(promptInstructions.isEmpty ? "Double tap to add instructions" : "Current instructions: \(promptInstructions)")
             }
         }
+        .scrollDismissesKeyboard(.immediately)
         .navigationTitle("Edit Prompt")
         .toolbarTitleDisplayMode(.inline)
         
