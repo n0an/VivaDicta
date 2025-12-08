@@ -23,7 +23,7 @@ struct TranscriptionsContentView: View {
     @State private var showGoToTopButton = false
 
     private let topAnchorID = "topAnchor"
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionsContentView")
+    private let logger = Logger(category: .transcriptionsContentView)
 
     var appState: AppState
 

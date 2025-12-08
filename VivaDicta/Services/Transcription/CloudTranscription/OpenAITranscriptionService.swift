@@ -9,7 +9,7 @@ import Foundation
 import os
 
 struct OpenAITranscriptionService {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "OpenAITranscriptionService")
+    private let logger = Logger(category: .openAITranscriptionService)
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)

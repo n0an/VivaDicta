@@ -9,7 +9,7 @@ import Foundation
 import os
 
 struct GroqTranscriptionService {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "GroqTranscriptionService")
+    private let logger = Logger(category: .groqTranscriptionService)
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)

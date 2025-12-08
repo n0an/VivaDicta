@@ -9,7 +9,7 @@ import Foundation
 import os
 
 struct TranscriptionOutputFilter {
-    private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionOutputFilter")
+    private static let logger = Logger(category: .transcriptionOutputFilter)
     
     private static let hallucinationPatterns = [
         #"\[.*?\]"#,     // []

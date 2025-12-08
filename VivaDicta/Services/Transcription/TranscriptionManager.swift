@@ -11,7 +11,7 @@ import os
 
 @Observable
 class TranscriptionManager {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionManager")
+    private let logger = Logger(category: .transcriptionManager)
     
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()

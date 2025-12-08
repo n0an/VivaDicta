@@ -10,7 +10,7 @@ import os
 
 @Observable
 class AIService {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AIService")
+    private let logger = Logger(category: .aiService)
 
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []

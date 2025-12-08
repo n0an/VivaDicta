@@ -14,7 +14,7 @@ import SwiftData
 
 @Observable
 class AppState {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppState")
+    private let logger = Logger(category: .appState)
 
     var liveActivity: Activity<VivaDictaLiveActivityAttributes>? = nil
     private var liveActivityTimer: Timer?

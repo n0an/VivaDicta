@@ -9,7 +9,7 @@ import Foundation
 import os
 
 class DeepgramTranscriptionService {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "DeepgramService")
+    private let logger = Logger(category: .deepgramService)
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)

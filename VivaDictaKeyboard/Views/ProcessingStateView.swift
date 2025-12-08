@@ -85,7 +85,7 @@ struct ProcessingStateView: View {
 }
 
 struct InfoView: View {
-    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ToggleKeyboardFlowIntent")
+    let logger = Logger(category: .toggleKeyboardFlowIntent)
 
     let processingStage: ProcessingStage
     @Environment(\.colorScheme) var colorScheme

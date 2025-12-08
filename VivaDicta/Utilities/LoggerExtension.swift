@@ -8,7 +8,60 @@
 import Foundation
 import os
 
-extension Logger {
+/// Centralized log categories for the VivaDicta app
+public enum LogCategory: String {
+    // MARK: - App Core
+    case app = "VivaDictaApp"
+    case appDelegate = "AppDelegate"
+    case sceneDelegate = "SceneDelegate"
+    case appState = "AppState"
+
+    // MARK: - Views
+    case recordViewModel = "RecordViewModel"
+    case transcriptionsContentView = "TranscriptionsContentView"
+    case audioPlayerManager = "AudioPlayerManager"
+    case modeEditViewModel = "ModeEditViewModel"
+
+    // MARK: - Services - Transcription
+    case transcriptionManager = "TranscriptionManager"
+    case whisperKitTranscriptionService = "WhisperKitTranscriptionService"
+    case parakeetTranscriptionService = "ParakeetTranscriptionService"
+    case transcriptionOutputFilter = "TranscriptionOutputFilter"
+
+    // MARK: - Services - Cloud Transcription
+    case openAITranscriptionService = "OpenAITranscriptionService"
+    case elevenLabsTranscriptionService = "ElevenLabsTranscriptionService"
+    case groqTranscriptionService = "GroqTranscriptionService"
+    case deepgramService = "DeepgramService"
+    case geminiService = "GeminiService"
+
+    // MARK: - Services - Other
+    case aiService = "AIService"
+    case modelDownloadManager = "ModelDownloadManager"
+    case audioPrewarmManager = "AudioPrewarmManager"
+    case appGroupCoordinator = "AppGroupCoordinator"
+    case promptsManager = "PromptsManager"
+
+    // MARK: - Keyboard Extension
+    case keyboardExtension = "KeyboardExtension"
+    case flowModeManager = "FlowModeManager"
+    case toggleKeyboardFlowIntent = "ToggleKeyboardFlowIntent"
+
+    // MARK: - Utility
+    case installInputTapNonisolated = "installInputTapNonisolated"
+}
+
+/// The app's subsystem identifier for all loggers
+/// Using the main app bundle ID for consistency across main app and extensions
+private nonisolated(unsafe) let kLoggingSubsystem = "com.antonnovoselov.VivaDicta"
+
+public extension Logger {
+    /// Creates a Logger with the app's bundle identifier as subsystem and the specified category
+    /// - Parameter category: The log category enum value
+    nonisolated init(category: LogCategory) {
+        self.init(subsystem: kLoggingSubsystem, category: category.rawValue)
+    }
+
     /// Check if print logs are enabled via environment variable
     private nonisolated static var printLogsEnabled: Bool {
         ProcessInfo.processInfo.environment["ENABLE_PRINT_LOGS"] == "1"

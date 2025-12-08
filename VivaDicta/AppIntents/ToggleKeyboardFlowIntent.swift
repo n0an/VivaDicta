@@ -16,7 +16,7 @@ struct ToggleKeyboardFlowIntent: AppIntent {
     static let openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult {
-        let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ToggleKeyboardFlowIntent")
+        let logger = Logger(category: .toggleKeyboardFlowIntent)
 
         await MainActor.run {
             let coordinator = AppGroupCoordinator.shared

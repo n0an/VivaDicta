@@ -17,7 +17,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
     private var whisperKit: WhisperKit?
     private var currentModelName: String?
     private var modelState: ModelState = .unloaded
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "WhisperKitTranscriptionService")
+    private let logger = Logger(category: .whisperKitTranscriptionService)
 
     // Public properties for UI display
     public var lastPrewarmDuration: TimeInterval = 0

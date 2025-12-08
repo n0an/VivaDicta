@@ -10,7 +10,7 @@ import os
 
 @Observable
 class ModeEditViewModel {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ModeEditViewModel")
+    private let logger = Logger(category: .modeEditViewModel)
     
     var modeName: String = ""
     

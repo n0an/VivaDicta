@@ -11,7 +11,7 @@ import os
 
 @Observable
 class PromptsManager {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "PromptsManager")
+    private let logger = Logger(category: .promptsManager)
     // User prompts need to be shared with keyboard extension (used in Flow Modes)
     private let userDefaults = UserDefaultsStorage.shared
     private let userPromptsKey = "UserPrompts"

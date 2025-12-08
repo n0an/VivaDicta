@@ -24,7 +24,7 @@ struct VivaDictaApp: App {
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
     private var hasCompletedOnboarding = false
 
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+    private let logger = Logger(category: .app)
 
     // Thread-safe flag for keyboard request processing
 //    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
@@ -48,7 +48,7 @@ struct VivaDictaApp: App {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
             if activityCount > 0 {
-                let cleanupLogger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+                let cleanupLogger = Logger(category: .app)
                 cleanupLogger.logInfo("🧹 Cleaned up \(activityCount) stuck Live Activities on cold start")
             }
         }
@@ -62,7 +62,7 @@ struct VivaDictaApp: App {
         // TODO: - It's not working, keeping for reference. It was presumed to work with ToggleKeyboardFlowIntent.
         // Set up handler for keyboard session activation from intent
         AppGroupCoordinator.shared.onKeyboardSessionActivated = {
-            let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "VivaDictaApp")
+            let logger = Logger(category: .app)
             logger.logInfo("🎙️ Keyboard session activated - starting prewarm")
 
             // Start audio prewarm session when keyboard session is activated

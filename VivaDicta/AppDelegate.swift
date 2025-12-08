@@ -11,7 +11,7 @@ import ActivityKit
 import os
 
 final class AppDelegate: UIResponder, UIApplicationDelegate {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppDelegate")
+    private let logger = Logger(category: .appDelegate)
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
@@ -34,7 +34,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var defferedQuickAction: UIApplicationShortcutItem? = nil
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "SceneDelegate")
+    private let logger = Logger(category: .sceneDelegate)
 
     // Store reference to AppState for quick action handling
     static weak var appState: AppState?

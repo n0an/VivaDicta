@@ -24,7 +24,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 #endif
     
     private let prewarmManager = AudioPrewarmManager.shared
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "RecordViewModel")
+    private let logger = Logger(category: .recordViewModel)
 
     var animationTimer: Timer?
 

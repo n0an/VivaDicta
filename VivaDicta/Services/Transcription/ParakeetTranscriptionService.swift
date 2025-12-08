@@ -12,7 +12,7 @@ import os
 class ParakeetTranscriptionService: TranscriptionService {
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ParakeetTranscriptionService")
+    private let logger = Logger(category: .parakeetTranscriptionService)
 
     init() {}
 

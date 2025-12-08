@@ -55,7 +55,7 @@ struct WaveformGenerator {
 
 @Observable
 class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPlayerManager")
+    private let logger = Logger(category: .audioPlayerManager)
     
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?

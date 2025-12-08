@@ -10,7 +10,7 @@ import os
 
 @Observable
 final class FlowModeManager {
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "FlowModeManager")
+    private let logger = Logger(category: .flowModeManager)
     private let userDefaults = UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)!
 
     // MARK: - Properties

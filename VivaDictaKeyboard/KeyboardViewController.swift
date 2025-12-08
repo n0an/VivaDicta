@@ -34,7 +34,7 @@ class KeyboardViewController: KeyboardInputViewController {
     
     
     // MARK: - Properties
-    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeyboardExtension")
+    let logger = Logger(category: .keyboardExtension)
     
     // MARK: - View Lifecycle
     override func viewDidLoad() {

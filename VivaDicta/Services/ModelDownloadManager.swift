@@ -44,7 +44,7 @@ class ModelDownloadManager: @unchecked Sendable {
     public var downloadStatuses: [String: DownloadStatus] = [:]
     private var observations: [String: NSKeyValueObservation] = [:]
     private var downloadTasks: [String: Task<Void, any Error>] = [:]
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ModelDownloadManager")
+    private let logger = Logger(category: .modelDownloadManager)
     public var onModelDownloaded: ((any TranscriptionModel) -> Void)?
 
     // MARK: - Public Interface

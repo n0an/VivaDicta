@@ -40,7 +40,7 @@ final class AudioPrewarmManager {
     // Observable property for session state
     private(set) var isSessionActiveObservable: Bool = false
 
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AudioPrewarmManager")
+    private let logger = Logger(category: .audioPrewarmManager)
 
     /// Returns true if the prewarm session is active
     /// - Session is active if audio engine is running AND either:
@@ -336,7 +336,7 @@ nonisolated private func installInputTapNonisolated(
     captureContext: AudioCaptureContext,
     onLevelUpdate: @escaping (Float) -> Void
 ) {
-    let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "installInputTapNonisolated")
+    let logger = Logger(category: .installInputTapNonisolated)
 
     inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
         // This runs on audio thread - context handles thread-safety

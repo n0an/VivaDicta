@@ -16,7 +16,7 @@ import os
 public final class AppGroupCoordinator {
     public static let shared = AppGroupCoordinator()
 
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "AppGroupCoordinator")
+    private let logger = Logger(category: .appGroupCoordinator)
 
     
     // MARK: - Constants

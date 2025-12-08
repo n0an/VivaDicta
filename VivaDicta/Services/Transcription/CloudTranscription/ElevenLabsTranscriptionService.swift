@@ -10,7 +10,7 @@ import os
 
 class ElevenLabsTranscriptionService {
     private let apiURL = URL(string: "https://api.elevenlabs.io/v1/speech-to-text")!
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "ElevenLabsTranscriptionService")
+    private let logger = Logger(category: .elevenLabsTranscriptionService)
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         
