@@ -48,5 +48,5 @@ jobs:
           LLM_PROVIDER: anthropic
           LLM_MODEL: claude-opus-4-5-20251101
           # XCODE_VERSION: ${{ secrets.XCODE_VERSION || '26.1.1' }}
-          XCODE_VERSION: 26.0.1
+          XCODE_VERSION: 26.1.1
         run: npx tsx scripts/ai-pr-review.ts
