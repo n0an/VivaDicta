@@ -124,7 +124,7 @@ struct HudContentView: View {
         .onAppear {
             isSymbolAnimating = true
             isShowingText = true
-            startCancelButtonTimer()
+            resetCancelButtonTimer()
 
             textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { _ in
                 Task { @MainActor in
@@ -163,16 +163,6 @@ struct HudContentView: View {
         }
         .foregroundColor(.white)
         .padding()
-    }
-
-    private func startCancelButtonTimer() {
-        showCancelButton = false
-        cancelButtonTimer?.invalidate()
-        cancelButtonTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
-            Task { @MainActor in
-                showCancelButton = true
-            }
-        }
     }
 
     private func resetCancelButtonTimer() {

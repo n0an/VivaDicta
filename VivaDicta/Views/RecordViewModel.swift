@@ -544,7 +544,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             transcribingSpeechTask = nil
 
             // Save the pending transcription if available
+            // Clear immediately to prevent double-save if cancel is called rapidly
             if let pending = pendingTranscription {
+                pendingTranscription = nil
+
                 let transcription = Transcription(
                     text: pending.text,
                     enhancedText: nil,
@@ -572,8 +575,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 } catch {
                     logger.logError("📱 Failed to save transcription: \(error.localizedDescription)")
                 }
-
-                pendingTranscription = nil
             }
 
             resetValues()
