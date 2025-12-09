@@ -676,7 +676,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.cancelTranscribe()
             case .transcribing, .enhancing:
                 self.logger.logInfo("📱 Canceling processing from keyboard request")
-                self.cancelTranscribe()
+                // Use cancelProcessing() for smart cancel behavior:
+                // - Transcribing: cancels everything, no data saved
+                // - Enhancing: saves transcription without enhancement
+                self.cancelProcessing()
             default:
                 break
             }
