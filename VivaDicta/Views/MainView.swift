@@ -177,12 +177,17 @@ struct MainView: View {
             }
         }
         .overlay {
-            
+
             if appState.recordViewModel?.recordingState == .transcribing ||
                 appState.recordViewModel?.recordingState == .enhancing {
-                HudView(state: appState.recordViewModel?.recordingState ?? .idle)
+                HudView(
+                    state: appState.recordViewModel?.recordingState ?? .idle,
+                    onCancel: {
+                        appState.recordViewModel?.cancelProcessing()
+                    }
+                )
             }
-            
+
         }
         .animation(.default, value: appState.recordViewModel?.recordingState)
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in

@@ -2,11 +2,12 @@
 import SwiftUI
 
 struct HudView: View {
-    
+
     @Environment(\.colorScheme) var colorScheme
-    
+
     var state: RecordingState
-    
+    var onCancel: (() -> Void)?
+
     var statusIcon: String {
         switch state {
         case .transcribing:
@@ -17,7 +18,7 @@ struct HudView: View {
             return "microphone.circle.fill"
         }
     }
-    
+
     var statusText: String {
         switch state {
         case .transcribing:
@@ -28,17 +29,17 @@ struct HudView: View {
             return ""
         }
     }
-    
-    
+
+
     var body: some View {
-        
+
         if colorScheme == .light {
-            HudViewLight(statusIcon: statusIcon, statusText: statusText)
+            HudViewLight(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
         } else {
-            HudViewDark(statusIcon: statusIcon, statusText: statusText)
+            HudViewDark(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
         }
     }
-    
+
 }
 
 
@@ -47,12 +48,15 @@ struct HudContentView: View {
 
     var statusIcon: String
     var statusText: String
+    var onCancel: (() -> Void)?
 
     @State private var isSymbolAnimating = false
     @State private var isShowing = false
     @State private var isShowingText = false
+    @State private var showCancelButton = false
     @State private var timer: Timer?
     @State private var textRenderEffectTimer: Timer?
+    @State private var cancelButtonTimer: Timer?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -75,7 +79,7 @@ struct HudContentView: View {
             }
 
             // Processing status label
-            
+
             if isShowingText {
                 Text(statusText)
                     .font(.system(size: 17, weight: .semibold))
@@ -88,17 +92,39 @@ struct HudContentView: View {
                     .fill(.clear)
                     .frame(width: 108, height: 24)
             }
-            
-            
+
+
 //            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
 //                .frame(width: 108, height: 24)
 //                .font(.system(size: 17, weight: .semibold))
 //                .foregroundStyle(.primary)
+
+            // Cancel button - appears after 5 seconds
+            if showCancelButton, let onCancel {
+                Button {
+                    onCancel()
+                } label: {
+                    Text("Cancel")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(.white.opacity(0.2))
+                        .clipShape(Capsule())
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity).combined(with: .scale(0.5)))
+            }
         }
         .animation(.default, value: isShowingText)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: showCancelButton)
+        .onChange(of: statusText) { _, _ in
+            // Reset cancel button timer when state changes (e.g., transcribing -> enhancing)
+            resetCancelButtonTimer()
+        }
         .onAppear {
             isSymbolAnimating = true
             isShowingText = true
+            resetCancelButtonTimer()
 
             textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { _ in
                 Task { @MainActor in
@@ -127,13 +153,26 @@ struct HudContentView: View {
         }
         .onDisappear {
             isSymbolAnimating = false
+            showCancelButton = false
             textRenderEffectTimer?.invalidate()
             textRenderEffectTimer = nil
             timer?.invalidate()
             timer = nil
+            cancelButtonTimer?.invalidate()
+            cancelButtonTimer = nil
         }
         .foregroundColor(.white)
         .padding()
+    }
+
+    private func resetCancelButtonTimer() {
+        showCancelButton = false
+        cancelButtonTimer?.invalidate()
+        cancelButtonTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+            Task { @MainActor in
+                showCancelButton = true
+            }
+        }
     }
 }
 
@@ -141,9 +180,10 @@ struct HudViewDark: View {
 
     var statusIcon: String
     var statusText: String
+    var onCancel: (() -> Void)?
 
     var body: some View {
-        HudContentView(statusIcon: statusIcon, statusText: statusText)
+        HudContentView(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
             .background(
             AnimatedMeshGradient()
                 .mask(
@@ -178,9 +218,10 @@ struct HudViewLight: View {
 
     var statusIcon: String
     var statusText: String
+    var onCancel: (() -> Void)?
 
     var body: some View {
-        HudContentView(statusIcon: statusIcon, statusText: statusText)
+        HudContentView(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
             .background(
             ZStack {
                 AnimatedMeshGradient()

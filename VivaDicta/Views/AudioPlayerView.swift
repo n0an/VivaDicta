@@ -95,6 +95,7 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     private func configureAudioSession() {
         // Don't change session if prewarm recording is active
         if AudioPrewarmManager.shared.isSessionActive {
+            logger.logDebug("Skipping audio session configuration - prewarm session active")
             return
         }
 
