@@ -12,6 +12,15 @@ import AVFoundation
 import SwiftData
 import os
 
+// Data structure to hold pending transcription when enhancement is in progress
+private struct PendingTranscriptionData {
+    let text: String
+    let audioDuration: Double
+    let audioFileName: String
+    let transcriptionModelName: String?
+    let transcriptionDuration: TimeInterval
+    let modelContext: ModelContext
+}
 
 @Observable @MainActor
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
@@ -60,7 +69,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     // removing old observers before adding new ones (see AppGroupCoordinator.addObserver)
     
     var transcribingSpeechTask: Task<Void, Never>?
-    
+
+    // Pending transcription data for saving when enhancement is cancelled
+    private var pendingTranscription: PendingTranscriptionData?
+
     var captureURL: URL {
         FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
     }
@@ -384,6 +396,17 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Check for cancellation before starting enhancement
                     try Task.checkCancellation()
 
+                    // Store pending transcription data before starting enhancement
+                    // This allows saving the transcription if enhancement is cancelled
+                    self.pendingTranscription = PendingTranscriptionData(
+                        text: transcribedText,
+                        audioDuration: audioDuration,
+                        audioFileName: audioURLToTranscribe.lastPathComponent,
+                        transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                        transcriptionDuration: transcriptionDuration,
+                        modelContext: modelContext
+                    )
+
                     // Update state to show enhancing animation
                     self.recordingState = .enhancing
 
@@ -392,14 +415,18 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
-                        
+
                         enhancedText = enhanced
                         promptName = prompt
                         enhancementDur = enhancementDuration
-                        
+
+                        // Clear pending data after successful enhancement
+                        self.pendingTranscription = nil
+
                     } catch {
                         // Enhancement failed
                         logger.logWarning("📱 AI enhancement failed: \(error.localizedDescription)")
+                        self.pendingTranscription = nil
                         try Task.checkCancellation()
                         self.recordingState = .idle
                     }
@@ -482,6 +509,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     func cancelTranscribe() {
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
+        pendingTranscription = nil
 
         // Stop real capture and reschedule prewarm session timeout if active
         if prewarmManager.isSessionActive {
@@ -495,6 +523,70 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         // Notify keyboard that recording was canceled
         AppGroupCoordinator.shared.updateRecordingState(false)
         AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+    }
+
+    /// Cancels the current processing based on state:
+    /// - Transcribing: cancels everything, doesn't save anything
+    /// - Enhancing: cancels enhancement but saves the transcription without enhancement
+    func cancelProcessing() {
+        switch recordingState {
+        case .transcribing:
+            // Cancel during transcribing - don't save anything
+            logger.logInfo("📱 Cancelling transcription - no data will be saved")
+            cancelTranscribe()
+
+        case .enhancing:
+            // Cancel during enhancing - save transcription without enhancement
+            logger.logInfo("📱 Cancelling enhancement - saving transcription without enhancement")
+
+            // Cancel the task first
+            transcribingSpeechTask?.cancel()
+            transcribingSpeechTask = nil
+
+            // Save the pending transcription if available
+            if let pending = pendingTranscription {
+                let transcription = Transcription(
+                    text: pending.text,
+                    enhancedText: nil,
+                    audioDuration: pending.audioDuration,
+                    audioFileName: pending.audioFileName,
+                    transcriptionModelName: pending.transcriptionModelName,
+                    aiEnhancementModelName: nil,
+                    promptName: nil,
+                    transcriptionDuration: pending.transcriptionDuration,
+                    enhancementDuration: nil
+                )
+
+                pending.modelContext.insert(transcription)
+                do {
+                    try pending.modelContext.save()
+                    logger.logInfo("📱 Saved transcription without enhancement")
+
+                    // Index to Spotlight
+                    Task {
+                        await self.appState?.indexTranscriptionToSpotlight(transcription)
+                    }
+
+                    // Share with keyboard
+                    AppGroupCoordinator.shared.shareTranscribedText(pending.text)
+                } catch {
+                    logger.logError("📱 Failed to save transcription: \(error.localizedDescription)")
+                }
+
+                pendingTranscription = nil
+            }
+
+            resetValues()
+            recordingState = .idle
+
+            // Notify keyboard
+            AppGroupCoordinator.shared.updateRecordingState(false)
+            AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+
+        default:
+            // For other states, just use regular cancel
+            cancelTranscribe()
+        }
     }
     
     func resetValues() {
