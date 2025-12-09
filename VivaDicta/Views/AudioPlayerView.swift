@@ -86,9 +86,25 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     }
     
     func play() {
+        configureAudioSession()
         audioPlayer?.play()
         isPlaying = true
         startTimer()
+    }
+
+    private func configureAudioSession() {
+        // Don't change session if prewarm recording is active
+        if AudioPrewarmManager.shared.isSessionActive {
+            return
+        }
+
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default)
+            try session.setActive(true)
+        } catch {
+            logger.logError("❌ Error configuring audio session: \(error.localizedDescription)")
+        }
     }
     
     func pause() {
