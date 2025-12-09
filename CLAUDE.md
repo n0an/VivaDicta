@@ -108,6 +108,9 @@ Additional Xcode documentation is available at:
 
 Refer to these docs when working with Apple frameworks or implementing new features.
 
+There are transcripts of relevand WWDC sessions in the `/docs/wwdc-transcripts`. Use them to find relevant info.
+You can find all WWDC transcripts here - https://gist.github.com/auramagi/9c040c2233dfe71c24c76942e186f788
+
 ## Performance & Best Practices
 
 - **State Management**: Use `@State` with `onChange` modifiers instead of computed properties for expensive filtering operations
