@@ -24,12 +24,13 @@ struct CloudModelConfigurationView: View {
             Text("\(model.provider.rawValue.capitalized) API Key")
                 .font(.title2)
             TextField("API Key", text: $apiKey)
+                .privacySensitive()
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .padding()
                 .background {
                     Capsule()
-                        .strokeBorder(verificationError != nil ? Color.red : Color.black.opacity(0.3), lineWidth: 1.5)
+                        .stroke(verificationError != nil ? .red : .gray, lineWidth: verificationError != nil ? 1.5 : 0.5)
                 }
                 .onChange(of: apiKey) { _, _ in
                     // Clear error when user starts typing
