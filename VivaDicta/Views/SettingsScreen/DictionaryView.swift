@@ -44,7 +44,7 @@ struct DictionaryView: View {
                 customVocabularyService.updateWord(item.word, to: editedWord)
                 wordToEdit = nil
             }
-            .presentationDetents([.height(220)])
+            .presentationDetents([.height(180)])
         }
     }
 
@@ -60,25 +60,28 @@ struct DictionaryView: View {
             } else {
                 List {
                     ForEach(customVocabularyService.words, id: \.self) { word in
-                        Text(word)
-                            .contentShape(.rect)
-                            .onTapGesture {
-                                wordToEdit = EditableWord(word: word)
+                        HStack {
+                            Text(word)
+                            Spacer()
+                        }
+                        .contentShape(.rect)
+                        .onTapGesture {
+                            wordToEdit = EditableWord(word: word)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                customVocabularyService.deleteWord(word)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    customVocabularyService.deleteWord(word)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
 
-                                Button {
-                                    wordToEdit = EditableWord(word: word)
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.blue)
+                            Button {
+                                wordToEdit = EditableWord(word: word)
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
                             }
+                            .tint(.blue)
+                        }
                     }
                 }
                 .listStyle(.plain)
