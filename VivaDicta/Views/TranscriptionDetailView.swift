@@ -21,7 +21,7 @@ struct TranscriptionDetailView: View {
     @State private var selectedTextType: TextDisplayType = .enhanced
     @State private var spotlightTask: Task<Void, Never>?
     
-    @State private var isExpanded: Bool = true
+    @State private var isExpanded: Bool = false
     @Namespace private var namespace
 
     private var hasEnhancedText: Bool {
@@ -121,7 +121,7 @@ struct TranscriptionDetailView: View {
             spotlightTask?.cancel()
             spotlightTask = nil
         }
-        .animation(.linear(duration: 2), value: isExpanded)
+        .animation(.linear, value: isExpanded)
     }
 
     private var textContentView: some View {
@@ -163,46 +163,76 @@ struct TranscriptionDetailView: View {
             Spacer()
             
             if #available(iOS 26.0, *) {
-                GlassEffectContainer(spacing: 26) {
+                GlassEffectContainer(spacing: 18) {
                     
                     
                     if isExpanded {
-                        HStack(spacing: 12) {
+                        
+                        VStack(alignment: .trailing, spacing: 18) {
                             
-                            Button {
-                                isExpanded = false
-                            } label: {
+                            HStack {
+                                Text("Both (Transcribe + Enhance)")
+                                    .transition(.move(edge: .leading))
+                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .frame(width: 200, alignment: .trailing)
                                 
-                                HStack {
+                                Button {
+                                    isExpanded = false
+                                } label: {
+                                    
+                                    Image(systemName: "arrow.clockwise.circle")
+                                        .font(.system(size: 28, weight: .medium))
+                                    
+                                        .frame(width: 40, height: 40)
+                                }
+                                .glassEffect(.regular.tint(.yellow).interactive())
+                                .glassEffectID("pencil", in: namespace)
+                                .buttonStyle(.plain)
+                            }
+                            
+                            
+                            HStack {
+                                Text("Re-Transcribe")
+                                    .transition(.move(edge: .leading))
+                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .frame(width: 100, alignment: .trailing)
+                                
+                                Button {
+                                    isExpanded = false
+                                } label: {
+                                    
                                     Image(systemName: "waveform.mid")
                                         .font(.system(size: 24, weight: .medium))
                                     
-                                    Text("Re-Transcribe")
-                                        .font(.system(size: 14, weight: .medium))
+                                        .frame(width: 40, height: 40)
                                 }
-                                .padding(.horizontal, 8)
-                                .frame(height: 40)
+                                .glassEffect(.regular.tint(.orange).interactive())
+                                .glassEffectID("pencil", in: namespace)
+                                .buttonStyle(.plain)
                             }
-                            .glassEffect(.regular.tint(.orange).interactive())
-                            .glassEffectID("pencil", in: namespace)
-                            .buttonStyle(.plain)
                             
-                            Button {
-                                isExpanded = false
-                            } label: {
-                                HStack {
+                            HStack {
+                                Text("Re-Enhance")
+                                    .transition(.move(edge: .leading))
+                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .frame(width: 100, alignment: .trailing)
+                                
+                                Button {
+                                    isExpanded = false
+                                } label: {
+                                    
                                     Image(systemName: "sparkles")
                                         .font(.system(size: 20, weight: .medium))
-
-                                    Text("Re-Enhance")
-                                        .font(.system(size: 14, weight: .medium))
+                                    
+                                    .frame(width: 40, height: 40)
                                 }
-                                .padding(.horizontal, 8)
-                                .frame(height: 40)
+                                .glassEffect(.regular.tint(.teal).interactive())
+                                .glassEffectID("pencil", in: namespace)
+                                .buttonStyle(.plain)
                             }
-                            .glassEffect(.regular.tint(.teal).interactive())
-                            .glassEffectID("pencil", in: namespace)
-                            .buttonStyle(.plain)
                         }
                         
                     } else {
