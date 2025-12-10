@@ -12,35 +12,36 @@ import os
 @Observable
 class ReplacementsService {
     private let logger = Logger(category: .customVocabulary)
-    private let userDefaults: UserDefaults
-    private let storageKey: String
+    private static let userDefaults: UserDefaults = UserDefaultsStorage.appPrivate
+    private static let storageKey: String = UserDefaultsStorage.Keys.textReplacements
 
     /// Maximum character length for original or replacement text
     static let maxTextLength = 100
 
     /// Ordered array of replacements (newest first)
     private(set) var replacements: [Replacement] = []
+    
+    static func loadAllReplacements() -> [Replacement]? {
+        guard let data = userDefaults.data(forKey: storageKey),
+              let decoded = try? JSONDecoder().decode([Replacement].self, from: data) else {
+            return nil
+        }
+        
+        return decoded
+    }
 
-    init(userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
-         storageKey: String = UserDefaultsStorage.Keys.textReplacements) {
-        self.userDefaults = userDefaults
-        self.storageKey = storageKey
+    init() {
         loadReplacements()
     }
 
     private func loadReplacements() {
-        guard let data = userDefaults.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([Replacement].self, from: data) else {
-            replacements = []
-            return
-        }
-        replacements = decoded
+        replacements = Self.loadAllReplacements() ?? []
         logger.logInfo("Loaded \(self.replacements.count) text replacements")
     }
 
     private func saveReplacements() {
         guard let data = try? JSONEncoder().encode(replacements) else { return }
-        userDefaults.set(data, forKey: storageKey)
+        Self.userDefaults.set(data, forKey: Self.storageKey)
     }
 
     func addReplacement(original: String, replacement: String) {
@@ -116,6 +117,62 @@ class ReplacementsService {
         replacements.remove(atOffsets: offsets)
         saveReplacements()
         logger.logInfo("Deleted \(offsets.count) replacements")
+    }
+
+    // MARK: - Apply Replacements
+
+    /// Applies all stored replacements to the given text (case-insensitive with word boundaries)
+    /// - Parameter text: The text to apply replacements to
+    /// - Returns: The text with all replacements applied
+    static func applyReplacements(to text: String) -> String {
+        guard let replacements = loadAllReplacements(), !replacements.isEmpty else {
+            return text
+        }
+
+        var modifiedText = text
+
+        for replacement in replacements {
+            let original = replacement.original
+            let replacementText = replacement.replacement
+
+            let usesBoundaries = usesWordBoundaries(for: original)
+
+            if usesBoundaries {
+                // Word-boundary regex using Swift native Regex (case-insensitive)
+                let escapedOriginal = NSRegularExpression.escapedPattern(for: original)
+                if let regex = try? Regex("\\b\(escapedOriginal)\\b").ignoresCase() {
+                    modifiedText = modifiedText.replacing(regex, with: replacementText)
+                }
+            } else {
+                // For non-spaced scripts (CJK, Thai, etc.), use simple case-insensitive replacement
+                if let regex = try? Regex(NSRegularExpression.escapedPattern(for: original)).ignoresCase() {
+                    modifiedText = modifiedText.replacing(regex, with: replacementText)
+                }
+            }
+        }
+
+        return modifiedText
+    }
+
+    /// Returns false for languages without spaces (CJK, Thai), true for spaced languages
+    private static func usesWordBoundaries(for text: String) -> Bool {
+        let nonSpacedScripts: [ClosedRange<UInt32>] = [
+            0x3040...0x309F, // Hiragana
+            0x30A0...0x30FF, // Katakana
+            0x4E00...0x9FFF, // CJK Unified Ideographs
+            0xAC00...0xD7AF, // Hangul Syllables
+            0x0E00...0x0E7F  // Thai
+        ]
+
+        for scalar in text.unicodeScalars {
+            for range in nonSpacedScripts {
+                if range.contains(scalar.value) {
+                    return false
+                }
+            }
+        }
+
+        return true
     }
 }
 
