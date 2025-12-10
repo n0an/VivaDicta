@@ -178,7 +178,7 @@ class ReplacementsService {
 
 // MARK: - Replacement Model
 
-struct Replacement: Identifiable, Codable, Equatable, Hashable {
+struct Replacement: Identifiable, Codable, Equatable, Hashable, Sendable {
     var id: UUID
     let original: String
     let replacement: String

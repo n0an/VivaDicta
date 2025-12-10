@@ -16,8 +16,13 @@ struct ReplacementsView: View {
     @State private var editMode = false
     @State private var selectedReplacements: Set<Replacement> = []
 
+    @AppStorage(UserDefaultsStorage.Keys.isReplacementsEnabled)
+    private var isReplacementsEnabled: Bool = true
+
     var body: some View {
         VStack(spacing: 0) {
+            enableToggle
+
             if replacementsService.replacements.isEmpty {
                 emptyStateView
             } else {
@@ -57,6 +62,12 @@ struct ReplacementsView: View {
             }
             .presentationDetents([.height(280)])
         }
+    }
+
+    private var enableToggle: some View {
+        Toggle("Enable Replacements", isOn: $isReplacementsEnabled)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
     }
 
     private var emptyStateView: some View {
@@ -293,8 +304,7 @@ private struct EditReplacementSheet: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .padding(12)
-                    .background(Color(.systemGray5))
-                    .clipShape(.rect(cornerRadius: 10))
+                    .background(Color(.systemGray5), in: .rect(cornerRadius: 10))
                     .onChange(of: editedOriginal) { _, newValue in
                         if newValue.count > ReplacementsService.maxTextLength {
                             editedOriginal = String(newValue.prefix(ReplacementsService.maxTextLength))

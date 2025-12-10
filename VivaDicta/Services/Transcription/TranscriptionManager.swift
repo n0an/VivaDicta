@@ -120,8 +120,10 @@ class TranscriptionManager {
             result = TextFormatter.format(result)
         }
 
-        // Apply text replacements
-        result = ReplacementsService.applyReplacements(to: result)
+        // Apply text replacements if enabled
+        if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isReplacementsEnabled) as? Bool ?? true {
+            result = ReplacementsService.applyReplacements(to: result)
+        }
 
         return result
     }
