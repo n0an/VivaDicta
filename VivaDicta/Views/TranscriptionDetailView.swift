@@ -113,6 +113,10 @@ struct TranscriptionDetailView: View {
                     metadataSection
                 }
                 .padding(.horizontal)
+                .contentShape(.rect)
+                .onTapGesture {
+                    collapseIfExpanded()
+                }
 
                 // Option 2: Content too tall - text scrolls, metadata fixed at bottom
                 VStack(spacing: 0) {
@@ -120,15 +124,24 @@ struct TranscriptionDetailView: View {
                         textContentView
                             .padding(.horizontal)
                     }
-                    
+                    .onScrollPhaseChange { _, newPhase in
+                        if newPhase == .interacting || newPhase == .decelerating {
+                            collapseIfExpanded()
+                        }
+                    }
+
                     copyButton
                         .padding(.horizontal)
-                    
+
                     retranscribeButton
                         .padding(.horizontal)
-                    
+
                     metadataSection
                         .padding(.horizontal)
+                }
+                .contentShape(.rect)
+                .onTapGesture {
+                    collapseIfExpanded()
                 }
             }
         }
@@ -360,6 +373,12 @@ struct TranscriptionDetailView: View {
     }
 
     // MARK: - Actions
+
+    private func collapseIfExpanded() {
+        if isExpanded {
+            isExpanded = false
+        }
+    }
 
     private func retranscribe() {
         guard let audioURL = audioURL else { return }
