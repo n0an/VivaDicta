@@ -20,6 +20,9 @@ struct TranscriptionDetailView: View {
 
     @State private var selectedTextType: TextDisplayType = .enhanced
     @State private var spotlightTask: Task<Void, Never>?
+    
+    @State private var isExpanded: Bool = true
+    @Namespace private var namespace
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -81,6 +84,7 @@ struct TranscriptionDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     textContentView
                     copyButton
+                    retranscribeButton
                     Spacer()
                     metadataSection
                 }
@@ -94,6 +98,9 @@ struct TranscriptionDetailView: View {
                     }
                     
                     copyButton
+                        .padding(.horizontal)
+                    
+                    retranscribeButton
                         .padding(.horizontal)
                     
                     metadataSection
@@ -114,6 +121,7 @@ struct TranscriptionDetailView: View {
             spotlightTask?.cancel()
             spotlightTask = nil
         }
+        .animation(.linear(duration: 2), value: isExpanded)
     }
 
     private var textContentView: some View {
@@ -145,6 +153,93 @@ struct TranscriptionDetailView: View {
         }
         .padding(.top, 6)
         .padding(.bottom, 12)
+    }
+    
+    @ViewBuilder
+    private var retranscribeButton: some View {
+        
+        
+        HStack {
+            Spacer()
+            
+            if #available(iOS 26.0, *) {
+                GlassEffectContainer(spacing: 26) {
+                    
+                    
+                    if isExpanded {
+                        HStack(spacing: 12) {
+                            
+                            Button {
+                                isExpanded = false
+                            } label: {
+                                
+                                HStack {
+                                    Image(systemName: "waveform.mid")
+                                        .font(.system(size: 24, weight: .medium))
+                                    
+                                    Text("Re-Transcribe")
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .padding(.horizontal, 8)
+                                .frame(height: 40)
+                            }
+                            .glassEffect(.regular.tint(.orange).interactive())
+                            .glassEffectID("pencil", in: namespace)
+                            .buttonStyle(.plain)
+                            
+                            Button {
+                                isExpanded = false
+                            } label: {
+                                HStack {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 20, weight: .medium))
+
+                                    Text("Re-Enhance")
+                                        .font(.system(size: 14, weight: .medium))
+                                }
+                                .padding(.horizontal, 8)
+                                .frame(height: 40)
+                            }
+                            .glassEffect(.regular.tint(.teal).interactive())
+                            .glassEffectID("pencil", in: namespace)
+                            .buttonStyle(.plain)
+                        }
+                        
+                    } else {
+                        
+                        Button {
+                            isExpanded = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 20, weight: .medium))
+
+                                Text("Regenerate")
+                                    .font(.system(size: 14, weight: .medium))
+                            }
+                            .padding(.horizontal, 8)
+                            .frame(height: 40)
+                        }
+                        .glassEffect(.regular.tint(.yellow).interactive())
+                        .glassEffectID("pencil", in: namespace)
+                        .buttonStyle(.plain)
+                        
+                        
+                        
+                        .buttonStyle(.plain)
+                    }
+                    
+                    
+                    
+                }
+            } else {
+                // Fallback on earlier versions
+                Text("todo")
+            }
+
+        }
+        
+                
     }
 
     private var metadataSection: some View {
