@@ -81,8 +81,8 @@ struct TranscriptionDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     textContentView
                     copyButton
-                    metadataSection
                     Spacer()
+                    metadataSection
                 }
                 .padding(.horizontal)
 
