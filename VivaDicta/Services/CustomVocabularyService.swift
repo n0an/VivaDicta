@@ -12,24 +12,28 @@ import os
 @Observable
 class CustomVocabularyService {
     private let logger = Logger(category: .customVocabulary)
-    private let userDefaults = UserDefaultsStorage.appPrivate
+    private let userDefaults: UserDefaults
+    private let storageKey: String
 
     /// Maximum character length for a single word
     static let maxWordLength = 50
 
     var words: [String] = []
 
-    init() {
+    init(userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
+         storageKey: String = UserDefaultsStorage.Keys.customVocabularyWords) {
+        self.userDefaults = userDefaults
+        self.storageKey = storageKey
         loadWords()
     }
 
     private func loadWords() {
-        words = userDefaults.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) ?? []
+        words = userDefaults.stringArray(forKey: storageKey) ?? []
         logger.logInfo("Loaded \(self.words.count) vocabulary words")
     }
 
     private func saveWords() {
-        userDefaults.set(words, forKey: UserDefaultsStorage.Keys.customVocabularyWords)
+        userDefaults.set(words, forKey: storageKey)
     }
 
     func addWord(_ word: String) {
