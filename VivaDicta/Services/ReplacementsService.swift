@@ -11,37 +11,31 @@ import os
 
 @Observable
 class ReplacementsService {
-    private let logger = Logger(category: .customVocabulary)
-    private static let userDefaults: UserDefaults = UserDefaultsStorage.appPrivate
-    private static let storageKey: String = UserDefaultsStorage.Keys.textReplacements
+    private let logger = Logger(category: .replacementsService)
+    private let userDefaults: UserDefaults
+    private let storageKey: String
 
     /// Maximum character length for original or replacement text
     static let maxTextLength = 100
 
     /// Ordered array of replacements (newest first)
     private(set) var replacements: [Replacement] = []
-    
-    static func loadAllReplacements() -> [Replacement]? {
-        guard let data = userDefaults.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([Replacement].self, from: data) else {
-            return nil
-        }
-        
-        return decoded
-    }
 
-    init() {
+    init(userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
+         storageKey: String = UserDefaultsStorage.Keys.textReplacements) {
+        self.userDefaults = userDefaults
+        self.storageKey = storageKey
         loadReplacements()
     }
 
     private func loadReplacements() {
-        replacements = Self.loadAllReplacements() ?? []
+        replacements = Self.loadReplacements(from: userDefaults, storageKey: storageKey) ?? []
         logger.logInfo("Loaded \(self.replacements.count) text replacements")
     }
 
     private func saveReplacements() {
         guard let data = try? JSONEncoder().encode(replacements) else { return }
-        Self.userDefaults.set(data, forKey: Self.storageKey)
+        userDefaults.set(data, forKey: storageKey)
     }
 
     func addReplacement(original: String, replacement: String) {
@@ -119,16 +113,34 @@ class ReplacementsService {
         logger.logInfo("Deleted \(offsets.count) replacements")
     }
 
+    // MARK: - Static Methods for Loading
+
+    /// Loads replacements from the specified UserDefaults
+    static func loadReplacements(
+        from userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
+        storageKey: String = UserDefaultsStorage.Keys.textReplacements
+    ) -> [Replacement]? {
+        guard let data = userDefaults.data(forKey: storageKey),
+              let decoded = try? JSONDecoder().decode([Replacement].self, from: data) else {
+            return nil
+        }
+        return decoded
+    }
+
     // MARK: - Apply Replacements
 
     /// Applies all stored replacements to the given text (case-insensitive with word boundaries)
     /// - Parameter text: The text to apply replacements to
     /// - Returns: The text with all replacements applied
     static func applyReplacements(to text: String) -> String {
-        guard let replacements = loadAllReplacements(), !replacements.isEmpty else {
+        guard let replacements = loadReplacements(), !replacements.isEmpty else {
             return text
         }
+        return applyReplacements(replacements, to: text)
+    }
 
+    /// Applies the given replacements to the text (for testing)
+    static func applyReplacements(_ replacements: [Replacement], to text: String) -> String {
         var modifiedText = text
 
         for replacement in replacements {
@@ -155,7 +167,8 @@ class ReplacementsService {
     }
 
     /// Returns false for languages without spaces (CJK, Thai), true for spaced languages
-    private static func usesWordBoundaries(for text: String) -> Bool {
+    /// Made internal for testing
+    static func usesWordBoundaries(for text: String) -> Bool {
         let nonSpacedScripts: [ClosedRange<UInt32>] = [
             0x3040...0x309F, // Hiragana
             0x30A0...0x30FF, // Katakana

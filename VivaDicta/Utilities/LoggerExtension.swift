@@ -42,6 +42,7 @@ public enum LogCategory: String {
     case appGroupCoordinator = "AppGroupCoordinator"
     case promptsManager = "PromptsManager"
     case customVocabulary = "CustomVocabulary"
+    case replacementsService = "ReplacementsService"
 
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"
