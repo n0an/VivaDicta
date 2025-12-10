@@ -61,6 +61,9 @@ struct DictionaryView: View {
                 List {
                     ForEach(customVocabularyService.words, id: \.self) { word in
                         Text(word)
+                            .onTapGesture {
+                                wordToEdit = EditableWord(word: word)
+                            }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     customVocabularyService.deleteWord(word)
@@ -134,6 +137,7 @@ private struct EditVocabularySheet: View {
     let onSave: (String) -> Void
 
     @State private var editedText: String
+    @FocusState private var isTextFieldFocused: Bool
 
     init(wordToEdit: EditableWord, onSave: @escaping (String) -> Void) {
         self.wordToEdit = wordToEdit
@@ -152,6 +156,7 @@ private struct EditVocabularySheet: View {
                 .font(.headline)
 
             TextField("Word", text: $editedText)
+                .focused($isTextFieldFocused)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .padding(12)
@@ -170,6 +175,9 @@ private struct EditVocabularySheet: View {
         }
         .padding()
         .presentationDragIndicator(.hidden)
+        .onAppear {
+            isTextFieldFocused = true
+        }
     }
 }
 
