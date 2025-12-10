@@ -171,7 +171,7 @@ struct TranscriptionDetailView: View {
                         VStack(alignment: .trailing, spacing: 18) {
                             
                             HStack {
-                                Text("Both (Transcribe + Enhance)")
+                                Text("Transcribe + Enhance")
                                     .transition(.move(edge: .leading))
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 14, weight: .medium))
@@ -182,18 +182,18 @@ struct TranscriptionDetailView: View {
                                 } label: {
                                     
                                     Image(systemName: "arrow.clockwise.circle")
+                                        .foregroundStyle(.green)
                                         .font(.system(size: 28, weight: .medium))
-                                    
                                         .frame(width: 40, height: 40)
                                 }
-                                .glassEffect(.regular.tint(.yellow).interactive())
-                                .glassEffectID("pencil", in: namespace)
+                                .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
+                                .glassEffectID("both", in: namespace)
                                 .buttonStyle(.plain)
                             }
                             
                             
                             HStack {
-                                Text("Re-Transcribe")
+                                Text("Transcribe")
                                     .transition(.move(edge: .leading))
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 14, weight: .medium))
@@ -205,16 +205,16 @@ struct TranscriptionDetailView: View {
                                     
                                     Image(systemName: "waveform.mid")
                                         .font(.system(size: 24, weight: .medium))
-                                    
+                                        .foregroundStyle(.orange)
                                         .frame(width: 40, height: 40)
                                 }
-                                .glassEffect(.regular.tint(.orange).interactive())
-                                .glassEffectID("pencil", in: namespace)
+                                .glassEffect(.regular.tint(.orange.opacity(0.2)).interactive())
+                                .glassEffectID("transcribe", in: namespace)
                                 .buttonStyle(.plain)
                             }
                             
                             HStack {
-                                Text("Re-Enhance")
+                                Text("Enhance")
                                     .transition(.move(edge: .leading))
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 14, weight: .medium))
@@ -225,12 +225,12 @@ struct TranscriptionDetailView: View {
                                 } label: {
                                     
                                     Image(systemName: "sparkles")
+                                        .foregroundStyle(.teal)
                                         .font(.system(size: 20, weight: .medium))
-                                    
-                                    .frame(width: 40, height: 40)
+                                        .frame(width: 40, height: 40)
                                 }
-                                .glassEffect(.regular.tint(.teal).interactive())
-                                .glassEffectID("pencil", in: namespace)
+                                .glassEffect(.regular.tint(.teal.opacity(0.2)).interactive())
+                                .glassEffectID("enhance", in: namespace)
                                 .buttonStyle(.plain)
                             }
                         }
@@ -247,11 +247,12 @@ struct TranscriptionDetailView: View {
                                 Text("Regenerate")
                                     .font(.system(size: 14, weight: .medium))
                             }
+                            .foregroundStyle(.green)
                             .padding(.horizontal, 8)
                             .frame(height: 40)
                         }
-                        .glassEffect(.regular.tint(.yellow).interactive())
-                        .glassEffectID("pencil", in: namespace)
+                        .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
+                        .glassEffectID("regenerate", in: namespace)
                         .buttonStyle(.plain)
                         
                         
