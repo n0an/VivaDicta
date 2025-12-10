@@ -13,6 +13,12 @@ private enum TextDisplayType: String, CaseIterable {
     case enhanced = "Enhanced"
 }
 
+private enum ProcessingState: Equatable {
+    case idle
+    case transcribing
+    case enhancing
+}
+
 struct TranscriptionDetailView: View {
 
     var transcription: Transcription
@@ -24,6 +30,9 @@ struct TranscriptionDetailView: View {
     @State private var isExpanded: Bool = false
     @Namespace private var namespace
 
+    @State private var processingState: ProcessingState = .idle
+    @State private var processingTask: Task<Void, Never>?
+
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
     }
@@ -33,6 +42,21 @@ struct TranscriptionDetailView: View {
             return enhancedText
         }
         return transcription.text
+    }
+
+    private var audioURL: URL? {
+        guard let audioFileName = transcription.audioFileName, !audioFileName.isEmpty else { return nil }
+        let audioDirectory = URL.documentsDirectory.appendingPathComponent("Audio")
+        let url = audioDirectory.appendingPathComponent(audioFileName)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    private var canRetranscribe: Bool {
+        audioURL != nil && processingState == .idle
+    }
+
+    private var canEnhance: Bool {
+        !transcription.text.isEmpty && processingState == .idle && appState.aiService.isProperlyConfigured()
     }
 
     var body: some View {
@@ -120,8 +144,10 @@ struct TranscriptionDetailView: View {
         .onDisappear {
             spotlightTask?.cancel()
             spotlightTask = nil
+            processingTask?.cancel()
+            processingTask = nil
         }
-        .animation(.linear, value: isExpanded)
+        .animation(.spring, value: isExpanded)
     }
 
     private var textContentView: some View {
@@ -167,20 +193,21 @@ struct TranscriptionDetailView: View {
                     
                     
                     if isExpanded {
-                        
+
                         VStack(alignment: .trailing, spacing: 18) {
-                            
+
                             HStack {
                                 Text("Transcribe + Enhance")
                                     .transition(.move(edge: .leading))
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 14, weight: .medium))
                                     .frame(width: 200, alignment: .trailing)
-                                
+
                                 Button {
                                     isExpanded = false
+                                    retranscribeAndEnhance()
                                 } label: {
-                                    
+
                                     Image(systemName: "arrow.clockwise.circle")
                                         .foregroundStyle(.green)
                                         .font(.system(size: 28, weight: .medium))
@@ -189,20 +216,22 @@ struct TranscriptionDetailView: View {
                                 .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
                                 .glassEffectID("both", in: namespace)
                                 .buttonStyle(.plain)
+                                .disabled(!canRetranscribe)
                             }
-                            
-                            
+
+
                             HStack {
                                 Text("Transcribe")
                                     .transition(.move(edge: .leading))
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 14, weight: .medium))
                                     .frame(width: 100, alignment: .trailing)
-                                
+
                                 Button {
                                     isExpanded = false
+                                    retranscribe()
                                 } label: {
-                                    
+
                                     Image(systemName: "waveform.mid")
                                         .font(.system(size: 24, weight: .medium))
                                         .foregroundStyle(.orange)
@@ -211,19 +240,21 @@ struct TranscriptionDetailView: View {
                                 .glassEffect(.regular.tint(.orange.opacity(0.2)).interactive())
                                 .glassEffectID("transcribe", in: namespace)
                                 .buttonStyle(.plain)
+                                .disabled(!canRetranscribe)
                             }
-                            
+
                             HStack {
                                 Text("Enhance")
                                     .transition(.move(edge: .leading))
                                     .foregroundStyle(.secondary)
                                     .font(.system(size: 14, weight: .medium))
                                     .frame(width: 100, alignment: .trailing)
-                                
+
                                 Button {
                                     isExpanded = false
+                                    enhance()
                                 } label: {
-                                    
+
                                     Image(systemName: "sparkles")
                                         .foregroundStyle(.teal)
                                         .font(.system(size: 20, weight: .medium))
@@ -232,19 +263,27 @@ struct TranscriptionDetailView: View {
                                 .glassEffect(.regular.tint(.teal.opacity(0.2)).interactive())
                                 .glassEffectID("enhance", in: namespace)
                                 .buttonStyle(.plain)
+                                .disabled(!canEnhance)
                             }
                         }
                         
                     } else {
-                        
+
                         Button {
                             isExpanded = true
                         } label: {
                             HStack {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.system(size: 20, weight: .medium))
+                                if processingState != .idle {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .frame(width: 20, height: 20)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 20, weight: .medium))
+                                }
 
-                                Text("Regenerate")
+                                Text(processingState == .transcribing ? "Transcribing..." :
+                                     processingState == .enhancing ? "Enhancing..." : "Regenerate")
                                     .font(.system(size: 14, weight: .medium))
                             }
                             .foregroundStyle(.green)
@@ -254,10 +293,7 @@ struct TranscriptionDetailView: View {
                         .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
                         .glassEffectID("regenerate", in: namespace)
                         .buttonStyle(.plain)
-                        
-                        
-                        
-                        .buttonStyle(.plain)
+                        .disabled(processingState != .idle)
                     }
                     
                     
@@ -320,6 +356,104 @@ struct TranscriptionDetailView: View {
             Text(value)
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func retranscribe() {
+        guard let audioURL = audioURL else { return }
+
+        processingTask = Task {
+            processingState = .transcribing
+
+            do {
+                let transcriptionStart = Date()
+                let newText = try await appState.transcriptionManager.transcribe(audioURL: audioURL)
+                let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+
+                transcription.text = newText
+                transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
+                transcription.transcriptionDuration = transcriptionDuration
+
+                // Update Spotlight index
+                await appState.updateTranscriptionInSpotlight(transcription)
+
+            } catch {
+                // Handle error silently for now
+            }
+
+            processingState = .idle
+        }
+    }
+
+    private func enhance() {
+        guard !transcription.text.isEmpty else { return }
+
+        processingTask = Task {
+            processingState = .enhancing
+
+            do {
+                let (enhancedText, duration, promptName) = try await appState.aiService.enhance(transcription.text)
+
+                transcription.enhancedText = enhancedText
+                transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
+                transcription.promptName = promptName
+                transcription.enhancementDuration = duration
+
+                // Switch to enhanced view
+                selectedTextType = .enhanced
+
+                // Update Spotlight index
+                await appState.updateTranscriptionInSpotlight(transcription)
+
+            } catch {
+                // Handle error silently for now
+            }
+
+            processingState = .idle
+        }
+    }
+
+    private func retranscribeAndEnhance() {
+        guard let audioURL = audioURL else { return }
+
+        processingTask = Task {
+            processingState = .transcribing
+
+            do {
+                // Step 1: Transcribe
+                let transcriptionStart = Date()
+                let newText = try await appState.transcriptionManager.transcribe(audioURL: audioURL)
+                let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+
+                transcription.text = newText
+                transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
+                transcription.transcriptionDuration = transcriptionDuration
+
+                // Step 2: Enhance (if AI is configured)
+                if appState.aiService.isProperlyConfigured() {
+                    processingState = .enhancing
+
+                    let (enhancedText, duration, promptName) = try await appState.aiService.enhance(newText)
+
+                    transcription.enhancedText = enhancedText
+                    transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
+                    transcription.promptName = promptName
+                    transcription.enhancementDuration = duration
+
+                    // Switch to enhanced view
+                    selectedTextType = .enhanced
+                }
+
+                // Update Spotlight index
+                await appState.updateTranscriptionInSpotlight(transcription)
+
+            } catch {
+                // Handle error silently for now
+            }
+
+            processingState = .idle
         }
     }
 }
