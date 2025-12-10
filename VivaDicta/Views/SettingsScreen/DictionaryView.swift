@@ -19,6 +19,9 @@ struct DictionaryView: View {
     @State private var newWord: String = ""
     @State private var customVocabularyService = CustomVocabularyService()
     @State private var wordToEdit: EditableWord?
+    
+    @State private var editMode = false
+    @State private var selectedWords: [String] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,6 +38,23 @@ struct DictionaryView: View {
                 dictionaryContent
             } else {
                 replacementsContent
+            }
+        }
+        .toolbar {
+            if editMode {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        selectedWords.removeAll()
+                        editMode = false
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Edit") {
+                        editMode = true
+                    }
+                    .disabled(customVocabularyService.words.isEmpty)
+                }
             }
         }
         .navigationTitle("Dictionary")
@@ -58,36 +78,96 @@ struct DictionaryView: View {
                 }
                 .frame(maxHeight: .infinity)
             } else {
+                if editMode {
+                    HStack {
+                        Button(allWordsSelected ? "Deselect All" : "Select All") {
+                            if allWordsSelected {
+                                selectedWords.removeAll()
+                            } else {
+                                selectedWords = customVocabularyService.words
+                            }
+                        }
+
+                        Spacer()
+
+                        if !selectedWords.isEmpty {
+                            Button("Delete", role: .destructive) {
+                                deleteSelectedWords()
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                }
+
                 List {
                     ForEach(customVocabularyService.words, id: \.self) { word in
                         HStack {
+                            if editMode {
+                                Image(systemName: selectedWords.contains(word) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selectedWords.contains(word) ? .blue : .secondary)
+                                    .font(.title2)
+                            }
+
                             Text(word)
                             Spacer()
                         }
                         .contentShape(.rect)
                         .onTapGesture {
-                            wordToEdit = EditableWord(word: word)
+                            if editMode {
+                                toggleSelection(word)
+                            } else {
+                                wordToEdit = EditableWord(word: word)
+                            }
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                customVocabularyService.deleteWord(word)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                            if !editMode {
+                                Button(role: .destructive) {
+                                    customVocabularyService.deleteWord(word)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
 
-                            Button {
-                                wordToEdit = EditableWord(word: word)
-                            } label: {
-                                Label("Edit", systemImage: "pencil")
+                                Button {
+                                    wordToEdit = EditableWord(word: word)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
                             }
-                            .tint(.blue)
                         }
                     }
                 }
                 .listStyle(.plain)
             }
 
-            addWordBar
+            if !editMode {
+                addWordBar
+            }
+        }
+    }
+
+    private var allWordsSelected: Bool {
+        !customVocabularyService.words.isEmpty && selectedWords.count == customVocabularyService.words.count
+    }
+
+    private func toggleSelection(_ word: String) {
+        if selectedWords.contains(word) {
+            selectedWords.removeAll { $0 == word }
+        } else {
+            selectedWords.append(word)
+        }
+    }
+
+    private func deleteSelectedWords() {
+        for word in selectedWords {
+            customVocabularyService.deleteWord(word)
+        }
+        selectedWords.removeAll()
+
+        // Exit edit mode if no words left
+        if customVocabularyService.words.isEmpty {
+            editMode = false
         }
     }
 
