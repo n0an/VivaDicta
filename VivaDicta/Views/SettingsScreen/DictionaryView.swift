@@ -61,6 +61,7 @@ struct DictionaryView: View {
                 List {
                     ForEach(customVocabularyService.words, id: \.self) { word in
                         Text(word)
+                            .contentShape(.rect)
                             .onTapGesture {
                                 wordToEdit = EditableWord(word: word)
                             }
