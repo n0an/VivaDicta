@@ -30,6 +30,7 @@ enum UserDefaultsStorage {
         static let isTextFormattingEnabled = "IsTextFormattingEnabled"
         static let displaySiriTip = "displaySiriTip"
         static let customVocabularyWords = "customVocabularyWords"
-
+        static let textReplacements = "textReplacements"
+        static let isReplacementsEnabled = "isReplacementsEnabled"
     }
 }

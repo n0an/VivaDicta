@@ -115,11 +115,16 @@ class TranscriptionManager {
         let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
         
         var result = TranscriptionOutputFilter.filter(text)
-        
+
         if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
             result = TextFormatter.format(result)
         }
-        
+
+        // Apply text replacements if enabled
+        if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isReplacementsEnabled) as? Bool ?? true {
+            result = ReplacementsService.applyReplacements(to: result)
+        }
+
         return result
     }
 

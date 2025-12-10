@@ -115,9 +115,15 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    
-                    NavigationLink(value: SettingsDestination.dictionary) {
-                        Text("Dictionary")
+                }
+                
+                Section("Dictionary") {
+                    NavigationLink(value: SettingsDestination.correctSpelling) {
+                        Text("Spelling Corrections")
+                    }
+
+                    NavigationLink(value: SettingsDestination.replacements) {
+                        Text("Word Replacements")
                     }
                 }
                 
@@ -227,8 +233,10 @@ struct SettingsView: View {
                 case .promptsTemplates:
                     TemplateSelectionView(promptsManager: promptsManager)
 //                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
-                case .dictionary:
-                    DictionaryView()
+                case .correctSpelling:
+                    WordsDictionaryView()
+                case .replacements:
+                    ReplacementsView()
                 }
             }
             .navigationDestination(for: UserPrompt.self) { prompt in
