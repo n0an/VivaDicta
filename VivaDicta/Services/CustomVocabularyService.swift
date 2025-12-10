@@ -14,6 +14,9 @@ class CustomVocabularyService {
     private let logger = Logger(category: .customVocabulary)
     private let userDefaults = UserDefaultsStorage.appPrivate
 
+    /// Maximum character length for a single word
+    static let maxWordLength = 50
+
     var words: [String] = []
 
     init() {
@@ -30,8 +33,14 @@ class CustomVocabularyService {
     }
 
     func addWord(_ word: String) {
-        let trimmedWord = word.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmedWord = word.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedWord.isEmpty else { return }
+
+        // Truncate word if too long
+        if trimmedWord.count > Self.maxWordLength {
+            trimmedWord = String(trimmedWord.prefix(Self.maxWordLength))
+            logger.logInfo("Truncated word to \(Self.maxWordLength) characters")
+        }
 
         // Check for duplicates (case-insensitive)
         let isDuplicate = words.contains { $0.lowercased() == trimmedWord.lowercased() }
@@ -52,8 +61,14 @@ class CustomVocabularyService {
     }
 
     func updateWord(_ oldWord: String, to newWord: String) {
-        let trimmedWord = newWord.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmedWord = newWord.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedWord.isEmpty else { return }
+
+        // Truncate word if too long
+        if trimmedWord.count > Self.maxWordLength {
+            trimmedWord = String(trimmedWord.prefix(Self.maxWordLength))
+            logger.logInfo("Truncated word to \(Self.maxWordLength) characters")
+        }
 
         // Check for duplicates (case-insensitive), excluding the word being edited
         let isDuplicate = words.contains { $0.lowercased() == trimmedWord.lowercased() && $0 != oldWord }

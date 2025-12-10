@@ -182,22 +182,39 @@ struct DictionaryView: View {
     }
 
     private var addWordBar: some View {
-        HStack {
-            TextField("Enter word", text: $newWord)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .padding(8)
-                .background {
-                    Capsule()
-                        .stroke(.gray, lineWidth: 0.5)
-                }
-                .onSubmit {
-                    addWord()
-                }
+        VStack(spacing: 4) {
+            HStack {
+                TextField("Enter word", text: $newWord)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .padding(8)
+                    .background {
+                        Capsule()
+                            .stroke(.gray, lineWidth: 0.5)
+                    }
+                    .onSubmit {
+                        addWord()
+                    }
+                    .onChange(of: newWord) { _, newValue in
+                        // Limit input to max word length
+                        if newValue.count > CustomVocabularyService.maxWordLength {
+                            newWord = String(newValue.prefix(CustomVocabularyService.maxWordLength))
+                        }
+                    }
 
-            Button("Add", action: addWord)
-                .buttonStyle(.borderedProminent)
-                .disabled(newWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button("Add", action: addWord)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(newWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+
+            if newWord.count > 0 {
+                HStack {
+                    Spacer()
+                    Text("\(newWord.count)/\(CustomVocabularyService.maxWordLength)")
+                        .font(.caption)
+                        .foregroundStyle(newWord.count >= CustomVocabularyService.maxWordLength ? .orange : .secondary)
+                }
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -241,13 +258,24 @@ private struct EditVocabularySheet: View {
             Text("Edit Word")
                 .font(.headline)
 
-            TextField("Word", text: $editedText)
-                .focused($isTextFieldFocused)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .padding(12)
-                .background(Color(.systemGray5))
-                .clipShape(.rect(cornerRadius: 10))
+            VStack(alignment: .trailing, spacing: 4) {
+                TextField("Word", text: $editedText)
+                    .focused($isTextFieldFocused)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .padding(12)
+                    .background(Color(.systemGray5))
+                    .clipShape(.rect(cornerRadius: 10))
+                    .onChange(of: editedText) { _, newValue in
+                        if newValue.count > CustomVocabularyService.maxWordLength {
+                            editedText = String(newValue.prefix(CustomVocabularyService.maxWordLength))
+                        }
+                    }
+
+                Text("\(editedText.count)/\(CustomVocabularyService.maxWordLength)")
+                    .font(.caption)
+                    .foregroundStyle(editedText.count >= CustomVocabularyService.maxWordLength ? .orange : .secondary)
+            }
 
             Button("Save changes") {
                 onSave(editedText)
