@@ -120,6 +120,8 @@ class TranscriptionManager {
             result = TextFormatter.format(result)
         }
         
+        // Let's add replacements here
+        
         return result
     }
 

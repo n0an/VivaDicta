@@ -174,11 +174,64 @@ struct DictionaryView: View {
     }
 
     private var replacementsContent: some View {
+
+        
         ContentUnavailableView {
-            Label("Coming Soon", systemImage: "arrow.left.arrow.right")
+            Label("No Replacements", systemImage: "text.book.closed")
         } description: {
-            Text("Word replacements will be available in a future update")
+            VStack(alignment: .leading) {
+                Text("Add replacement words that should be replaced during transcription")
+                Text(
+    """
+    For example: 
+        "My website link" -> "https://vivadicta.com"
+        "Vivo dicte" -> "VivaDicta"
+    """)
+                
+            }
+            .multilineTextAlignment(.leading)
+            
         }
+        .frame(maxHeight: .infinity)
+    }
+    
+    private var addReplacementBar: some View {
+        VStack(spacing: 4) {
+            HStack {
+                TextField("Enter word", text: $newWord)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .padding(8)
+                    .background {
+                        Capsule()
+                            .stroke(.gray, lineWidth: 0.5)
+                    }
+                    .onSubmit {
+                        addWord()
+                    }
+                    .onChange(of: newWord) { _, newValue in
+                        // Limit input to max word length
+                        if newValue.count > CustomVocabularyService.maxWordLength {
+                            newWord = String(newValue.prefix(CustomVocabularyService.maxWordLength))
+                        }
+                    }
+
+                Button("Add", action: addWord)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(newWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+
+            if newWord.count > 0 {
+                HStack {
+                    Spacer()
+                    Text("\(newWord.count)/\(CustomVocabularyService.maxWordLength)")
+                        .font(.caption)
+                        .foregroundStyle(newWord.count >= CustomVocabularyService.maxWordLength ? .orange : .secondary)
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     private var addWordBar: some View {
