@@ -102,23 +102,25 @@ struct DictionaryView: View {
 
                 List {
                     ForEach(customVocabularyService.words, id: \.self) { word in
-                        HStack {
-                            if editMode {
-                                Image(systemName: selectedWords.contains(word) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selectedWords.contains(word) ? .blue : .secondary)
-                                    .font(.title2)
-                            }
-
-                            Text(word)
-                            Spacer()
-                        }
-                        .contentShape(.rect)
-                        .onTapGesture {
+                        
+                        Button {
                             if editMode {
                                 toggleSelection(word)
                             } else {
                                 wordToEdit = EditableWord(word: word)
                             }
+                        } label: {
+                            HStack {
+                                if editMode {
+                                    Image(systemName: selectedWords.contains(word) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(selectedWords.contains(word) ? .blue : .secondary)
+                                        .font(.title2)
+                                }
+
+                                Text(word)
+                                Spacer()
+                            }
+                            .contentShape(.rect)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if !editMode {

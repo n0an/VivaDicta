@@ -67,28 +67,6 @@ struct PromptsSettings: View {
             }
         }
     }
-//    private var addPromptSection: some View {
-//        VStack {
-//            Spacer()
-//            HStack {
-//                Spacer()
-//                Button {
-//                    showingTemplateSelection = true
-//                } label: {
-//                    Image(systemName: "plus.circle.fill")
-//                        .font(.title2)
-//                        .foregroundStyle(.white)
-//                }
-//                .frame(width: 60, height: 60)
-//                .background(Color.blue, in: .circle)
-//                .matchedTransitionSource(
-//                    id: "info", in: transition
-//                )
-//                .padding(.trailing, 20)
-//            }
-//            .padding(.bottom, 20)
-//        }
-//    }
 }
 
 struct PromptRowView: View {

@@ -74,13 +74,4 @@ class CustomVocabularyService {
         saveWords()
         logger.logInfo("Deleted \(offsets.count) vocabulary words")
     }
-
-    /// Returns a comma-separated string of all vocabulary words for use in AI prompts
-    func getCustomVocabulary() -> String {
-        let vocabularyString = words.joined(separator: ", ")
-        if !vocabularyString.isEmpty {
-            logger.logInfo("Generated vocabulary string with \(self.words.count) words")
-        }
-        return vocabularyString
-    }
 }
