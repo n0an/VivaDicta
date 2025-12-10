@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PromptsSettings: View {
     var promptsManager: PromptsManager
-    var transition: Namespace.ID
+//    var transition: Namespace.ID
     
     var body: some View {
         VStack(spacing: 0) {
@@ -20,22 +20,13 @@ struct PromptsSettings: View {
             }
         }
         .toolbar {
-            if #available(iOS 26, *) {
-                ToolbarItem {
-                    NavigationLink(value: SettingsDestination.promptsTemplates) {
-                        Label("Add Data", systemImage: "plus")
-                    }
-                    .buttonStyle(.glassProminent)
-                    .tint(.blue)
+            ToolbarItem {
+                NavigationLink(value: SettingsDestination.promptsTemplates) {
+                    Label("Add Data", systemImage: "plus")
                 }
-                .matchedTransitionSource(id: "addPrompt", in: transition)
-            } else {
-                ToolbarItem {
-                    NavigationLink(value: SettingsDestination.promptsTemplates) {
-                        Label("Add Data", systemImage: "plus")
-                    }
-                }
+                .prominentButton(color: .blue)
             }
+            
         }
         .toolbarTitleDisplayMode(.inlineLarge)
         .navigationTitle("Prompts")
@@ -116,6 +107,6 @@ struct PromptRowView: View {
 
 #Preview {
     @Previewable @State var promptsManager = PromptsManager()
-    @Previewable @Namespace var transition
-    PromptsSettings(promptsManager: promptsManager, transition: transition)
+//    @Previewable @Namespace var transition
+    PromptsSettings(promptsManager: promptsManager)
 }
