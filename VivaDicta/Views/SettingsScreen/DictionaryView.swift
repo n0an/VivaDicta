@@ -1,5 +1,5 @@
 //
-//  DictionaryView.swift
+//  WordsDictionaryView.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.12.10
@@ -7,66 +7,47 @@
 
 import SwiftUI
 
-struct DictionaryView: View {
-
-    enum DictionaryType: String, CaseIterable, Identifiable {
-        var id: Self { self }
-        case dictionary = "Dictionary"
-        case replacements = "Replacements"
-    }
-
-    @State var dictionaryType: DictionaryType = .dictionary
+struct WordsDictionaryView: View {
     @State private var newWord: String = ""
     @State private var customVocabularyService = CustomVocabularyService()
     @State private var wordToEdit: EditableWord?
-    
+
     @State private var editMode = false
     @State private var selectedWords: [String] = []
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Dictionary Type", selection: $dictionaryType) {
-                ForEach(DictionaryType.allCases) {
-                    Text($0.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-
-            if dictionaryType == .dictionary {
-                dictionaryContent
+            if customVocabularyService.words.isEmpty {
+                emptyStateView
             } else {
-                ReplacementsView()
+                if editMode {
+                    editModeToolbar
+                }
+                wordsList
+            }
+
+            if !editMode {
+                addWordBar
             }
         }
         .toolbar {
-            if dictionaryType == .dictionary {
-                if editMode {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
-                            selectedWords.removeAll()
-                            editMode = false
-                        }
+            if editMode {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        selectedWords.removeAll()
+                        editMode = false
                     }
-                } else {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Edit") {
-                            editMode = true
-                        }
-                        .disabled(customVocabularyService.words.isEmpty)
+                }
+            } else {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Edit") {
+                        editMode = true
                     }
+                    .disabled(customVocabularyService.words.isEmpty)
                 }
             }
         }
-        .navigationTitle("Dictionary")
-        .onChange(of: dictionaryType) { _, _ in
-            // Exit edit mode when switching tabs
-            if editMode {
-                selectedWords.removeAll()
-                editMode = false
-            }
-        }
+        .navigationTitle("Spelling Corrections")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $wordToEdit) { item in
             EditVocabularySheet(wordToEdit: item) { editedWord in
@@ -77,89 +58,82 @@ struct DictionaryView: View {
         }
     }
 
-    private var dictionaryContent: some View {
-        VStack(spacing: 0) {
-            if customVocabularyService.words.isEmpty {
-                ContentUnavailableView {
-                    Label("No Words", systemImage: "text.book.closed")
-                } description: {
-                    Text("Add words that should be recognized correctly during transcription")
+    private var emptyStateView: some View {
+        ContentUnavailableView {
+            Label("No Words", systemImage: "text.book.closed")
+        } description: {
+            Text("Add words that should be recognized correctly during transcription")
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    private var editModeToolbar: some View {
+        HStack {
+            Button(allWordsSelected ? "Deselect All" : "Select All") {
+                if allWordsSelected {
+                    selectedWords.removeAll()
+                } else {
+                    selectedWords = customVocabularyService.words
                 }
-                .frame(maxHeight: .infinity)
-            } else {
-                if editMode {
-                    HStack {
-                        Button(allWordsSelected ? "Deselect All" : "Select All") {
-                            if allWordsSelected {
-                                selectedWords.removeAll()
-                            } else {
-                                selectedWords = customVocabularyService.words
-                            }
-                        }
-
-                        Spacer()
-
-                        if !selectedWords.isEmpty {
-                            Button("Delete", role: .destructive) {
-                                deleteSelectedWords()
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                }
-
-                List {
-                    ForEach(customVocabularyService.words, id: \.self) { word in
-                        
-                        Button {
-                            if editMode {
-                                toggleSelection(word)
-                            } else {
-                                wordToEdit = EditableWord(word: word)
-                            }
-                        } label: {
-                            HStack {
-                                if editMode {
-                                    Image(systemName: selectedWords.contains(word) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selectedWords.contains(word) ? .blue : .secondary)
-                                        .font(.title2)
-                                }
-
-                                Text(word)
-                                Spacer()
-                            }
-                            .contentShape(.rect)
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if !editMode {
-                                Button(role: .destructive) {
-                                    customVocabularyService.deleteWord(word)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-
-                                Button {
-                                    wordToEdit = EditableWord(word: word)
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.blue)
-                            }
-                        }
-                    }
-                }
-                .listStyle(.plain)
             }
 
-            if !editMode {
-                addWordBar
+            Spacer()
+
+            if !selectedWords.isEmpty {
+                Button("Delete", role: .destructive) {
+                    deleteSelectedWords()
+                }
             }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     private var allWordsSelected: Bool {
         !customVocabularyService.words.isEmpty && selectedWords.count == customVocabularyService.words.count
+    }
+
+    private var wordsList: some View {
+        List {
+            ForEach(customVocabularyService.words, id: \.self) { word in
+                Button {
+                    if editMode {
+                        toggleSelection(word)
+                    } else {
+                        wordToEdit = EditableWord(word: word)
+                    }
+                } label: {
+                    HStack {
+                        if editMode {
+                            Image(systemName: selectedWords.contains(word) ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedWords.contains(word) ? .blue : .secondary)
+                                .font(.title2)
+                        }
+
+                        Text(word)
+                        Spacer()
+                    }
+                    .contentShape(.rect)
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    if !editMode {
+                        Button(role: .destructive) {
+                            customVocabularyService.deleteWord(word)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+
+                        Button {
+                            wordToEdit = EditableWord(word: word)
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                    }
+                }
+            }
+        }
+        .listStyle(.plain)
     }
 
     private func toggleSelection(_ word: String) {
@@ -181,7 +155,6 @@ struct DictionaryView: View {
             editMode = false
         }
     }
-    
 
     private var addWordBar: some View {
         VStack(spacing: 4) {
@@ -299,6 +272,6 @@ private struct EditVocabularySheet: View {
 
 #Preview {
     NavigationStack {
-        DictionaryView(dictionaryType: .dictionary)
+        WordsDictionaryView()
     }
 }

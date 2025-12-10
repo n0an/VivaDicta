@@ -53,7 +53,7 @@ struct ReplacementsView: View {
                 }
             }
         }
-        .navigationTitle("Replacements")
+        .navigationTitle("Word Replacements")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $replacementToEdit) { item in
             EditReplacementSheet(replacementToEdit: item) { newOriginal, newReplacement in
