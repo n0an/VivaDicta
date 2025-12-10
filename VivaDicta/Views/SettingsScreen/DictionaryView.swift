@@ -40,7 +40,7 @@ struct DictionaryView: View {
         .navigationTitle("Dictionary")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $wordToEdit) { item in
-            EditVocabularySheet(wordToEdit: item.word) { editedWord in
+            EditVocabularySheet(wordToEdit: item) { editedWord in
                 customVocabularyService.updateWord(item.word, to: editedWord)
                 wordToEdit = nil
             }
@@ -130,19 +130,19 @@ private struct EditableWord: Identifiable {
 // MARK: - Edit Vocabulary Word Sheet
 
 private struct EditVocabularySheet: View {
-    let wordToEdit: String
+    let wordToEdit: EditableWord
     let onSave: (String) -> Void
 
     @State private var editedText: String
 
-    init(wordToEdit: String, onSave: @escaping (String) -> Void) {
+    init(wordToEdit: EditableWord, onSave: @escaping (String) -> Void) {
         self.wordToEdit = wordToEdit
         self.onSave = onSave
-        self._editedText = State(initialValue: wordToEdit)
+        self._editedText = State(initialValue: wordToEdit.word)
     }
 
     private var hasChanges: Bool {
-        editedText.trimmingCharacters(in: .whitespacesAndNewlines) != wordToEdit &&
+        editedText.trimmingCharacters(in: .whitespacesAndNewlines) != wordToEdit.word &&
         !editedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
