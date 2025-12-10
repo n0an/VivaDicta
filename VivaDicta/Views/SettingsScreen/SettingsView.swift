@@ -16,7 +16,7 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State var navigationPath = NavigationPath()
-    @Namespace private var promptsTransition
+//    @Namespace private var promptsTransition
     @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
     private var isVADEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isTextFormattingEnabled)
@@ -114,6 +114,10 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    
+                    NavigationLink(value: SettingsDestination.dictionary) {
+                        Text("Dictionary")
                     }
                 }
                 
@@ -217,12 +221,14 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(promptsManager: promptsManager, transition: promptsTransition)
+                    PromptsSettings(promptsManager: promptsManager)
                 case .transcriptionModels:
                     ModelsView(appState: appState)
                 case .promptsTemplates:
                     TemplateSelectionView(promptsManager: promptsManager)
-                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
+//                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
+                case .dictionary:
+                    DictionaryView()
                 }
             }
             .navigationDestination(for: UserPrompt.self) { prompt in

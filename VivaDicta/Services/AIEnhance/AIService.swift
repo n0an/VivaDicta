@@ -386,8 +386,14 @@ class AIService {
     }
     
     private func getSystemMessage() -> String {
+        var customVocabularySection = ""
+        if let customVocabularyWords = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords), !customVocabularyWords.isEmpty {
+            let vocabularyString = customVocabularyWords.joined(separator: ", ")
+            customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
+        }
+        
         let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        return PromptsTemplates.systemPrompt(with: promptInstructions)
+        return PromptsTemplates.systemPrompt(with: promptInstructions) + customVocabularySection
     }
     
     

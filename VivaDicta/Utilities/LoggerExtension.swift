@@ -41,6 +41,7 @@ public enum LogCategory: String {
     case audioPrewarmManager = "AudioPrewarmManager"
     case appGroupCoordinator = "AppGroupCoordinator"
     case promptsManager = "PromptsManager"
+    case customVocabulary = "CustomVocabulary"
 
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"

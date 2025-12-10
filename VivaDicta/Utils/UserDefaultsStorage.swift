@@ -29,5 +29,7 @@ enum UserDefaultsStorage {
         static let audioSessionTimeout = "audioSessionTimeout"
         static let isTextFormattingEnabled = "IsTextFormattingEnabled"
         static let displaySiriTip = "displaySiriTip"
+        static let customVocabularyWords = "customVocabularyWords"
+
     }
 }
