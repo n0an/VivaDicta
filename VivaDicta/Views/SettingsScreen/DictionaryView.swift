@@ -37,27 +37,36 @@ struct DictionaryView: View {
             if dictionaryType == .dictionary {
                 dictionaryContent
             } else {
-                replacementsContent
+                ReplacementsView()
             }
         }
         .toolbar {
-            if editMode {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        selectedWords.removeAll()
-                        editMode = false
+            if dictionaryType == .dictionary {
+                if editMode {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            selectedWords.removeAll()
+                            editMode = false
+                        }
                     }
-                }
-            } else {
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Edit") {
-                        editMode = true
+                } else {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Edit") {
+                            editMode = true
+                        }
+                        .disabled(customVocabularyService.words.isEmpty)
                     }
-                    .disabled(customVocabularyService.words.isEmpty)
                 }
             }
         }
         .navigationTitle("Dictionary")
+        .onChange(of: dictionaryType) { _, _ in
+            // Exit edit mode when switching tabs
+            if editMode {
+                selectedWords.removeAll()
+                editMode = false
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $wordToEdit) { item in
             EditVocabularySheet(wordToEdit: item) { editedWord in
@@ -172,67 +181,7 @@ struct DictionaryView: View {
             editMode = false
         }
     }
-
-    private var replacementsContent: some View {
-
-        
-        ContentUnavailableView {
-            Label("No Replacements", systemImage: "text.book.closed")
-        } description: {
-            VStack(alignment: .leading) {
-                Text("Add replacement words that should be replaced during transcription")
-                Text(
-    """
-    For example: 
-        "My website link" -> "https://vivadicta.com"
-        "Vivo dicte" -> "VivaDicta"
-    """)
-                
-            }
-            .multilineTextAlignment(.leading)
-            
-        }
-        .frame(maxHeight: .infinity)
-    }
     
-    private var addReplacementBar: some View {
-        VStack(spacing: 4) {
-            HStack {
-                TextField("Enter word", text: $newWord)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .padding(8)
-                    .background {
-                        Capsule()
-                            .stroke(.gray, lineWidth: 0.5)
-                    }
-                    .onSubmit {
-                        addWord()
-                    }
-                    .onChange(of: newWord) { _, newValue in
-                        // Limit input to max word length
-                        if newValue.count > CustomVocabularyService.maxWordLength {
-                            newWord = String(newValue.prefix(CustomVocabularyService.maxWordLength))
-                        }
-                    }
-
-                Button("Add", action: addWord)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(newWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-
-            if newWord.count > 0 {
-                HStack {
-                    Spacer()
-                    Text("\(newWord.count)/\(CustomVocabularyService.maxWordLength)")
-                        .font(.caption)
-                        .foregroundStyle(newWord.count >= CustomVocabularyService.maxWordLength ? .orange : .secondary)
-                }
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-    }
 
     private var addWordBar: some View {
         VStack(spacing: 4) {
