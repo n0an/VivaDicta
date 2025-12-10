@@ -11,4 +11,5 @@ enum SettingsDestination: Hashable {
     case promptsSettings
     case promptsTemplates
     case transcriptionModels
+    case dictionary
 }
