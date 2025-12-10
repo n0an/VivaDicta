@@ -51,6 +51,24 @@ class CustomVocabularyService {
         logger.logInfo("Deleted vocabulary word: \(word)")
     }
 
+    func updateWord(_ oldWord: String, to newWord: String) {
+        let trimmedWord = newWord.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedWord.isEmpty else { return }
+
+        // Check for duplicates (case-insensitive), excluding the word being edited
+        let isDuplicate = words.contains { $0.lowercased() == trimmedWord.lowercased() && $0 != oldWord }
+        guard !isDuplicate else {
+            logger.logWarning("Word already exists: \(trimmedWord)")
+            return
+        }
+
+        if let index = words.firstIndex(of: oldWord) {
+            words[index] = trimmedWord
+            saveWords()
+            logger.logInfo("Updated vocabulary word: \(oldWord) -> \(trimmedWord)")
+        }
+    }
+
     func deleteWords(at offsets: IndexSet) {
         words.remove(atOffsets: offsets)
         saveWords()

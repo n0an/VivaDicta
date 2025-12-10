@@ -18,6 +18,7 @@ struct DictionaryView: View {
     @State var dictionaryType: DictionaryType = .dictionary
     @State private var newWord: String = ""
     @State private var customVocabularyService = CustomVocabularyService()
+    @State private var wordToEdit: EditableWord?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,6 +39,13 @@ struct DictionaryView: View {
         }
         .navigationTitle("Dictionary")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $wordToEdit) { item in
+            EditVocabularySheet(wordToEdit: item.word) { editedWord in
+                customVocabularyService.updateWord(item.word, to: editedWord)
+                wordToEdit = nil
+            }
+            .presentationDetents([.height(220)])
+        }
     }
 
     private var dictionaryContent: some View {
@@ -53,9 +61,20 @@ struct DictionaryView: View {
                 List {
                     ForEach(customVocabularyService.words, id: \.self) { word in
                         Text(word)
-                    }
-                    .onDelete { offsets in
-                        customVocabularyService.deleteWords(at: offsets)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    customVocabularyService.deleteWord(word)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+
+                                Button {
+                                    wordToEdit = EditableWord(word: word)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
                     }
                 }
                 .listStyle(.plain)
@@ -98,6 +117,59 @@ struct DictionaryView: View {
     private func addWord() {
         customVocabularyService.addWord(newWord)
         newWord = ""
+    }
+}
+
+// MARK: - Editable Word
+
+private struct EditableWord: Identifiable {
+    let id = UUID()
+    let word: String
+}
+
+// MARK: - Edit Vocabulary Word Sheet
+
+private struct EditVocabularySheet: View {
+    let wordToEdit: String
+    let onSave: (String) -> Void
+
+    @State private var editedText: String
+
+    init(wordToEdit: String, onSave: @escaping (String) -> Void) {
+        self.wordToEdit = wordToEdit
+        self.onSave = onSave
+        self._editedText = State(initialValue: wordToEdit)
+    }
+
+    private var hasChanges: Bool {
+        editedText.trimmingCharacters(in: .whitespacesAndNewlines) != wordToEdit &&
+        !editedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Edit Word")
+                .font(.headline)
+
+            TextField("Word", text: $editedText)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .padding(12)
+                .background(Color(.systemGray5))
+                .clipShape(.rect(cornerRadius: 10))
+
+            Button("Save changes") {
+                onSave(editedText)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(hasChanges ? Color.blue : Color(.systemGray4))
+            .foregroundStyle(hasChanges ? .white : .secondary)
+            .clipShape(.rect(cornerRadius: 10))
+            .disabled(!hasChanges)
+        }
+        .padding()
+        .presentationDragIndicator(.hidden)
     }
 }
 
