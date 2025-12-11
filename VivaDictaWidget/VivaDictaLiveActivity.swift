@@ -62,28 +62,18 @@ struct VivaDictaLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     Spacer()
                     
-                    Group {
-                        switch context.state.state {
-                        case .recording:
+                    // Note: symbolEffect() is not supported in Live Activities
+                    if context.state.state == .idle {
+                        Button(intent: ToggleSessionIntent(isSessionActive: false)) {
                             Image(systemName: context.state.state.iconName)
-                                .symbolEffect(.variableColor.cumulative.dimInactiveLayers.nonReversing, options: .repeat(.continuous))
                                 .font(.system(size: 40))
                                 .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
-                        case .transcribing:
-                            Image(systemName: context.state.state.iconName)
-                                .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
-                                .font(.system(size: 40))
-                                .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
-                        default:
-                            Button(intent: ToggleSessionIntent(isSessionActive: false)) {
-                                Image(systemName: context.state.state.iconName)
-                                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
-                                    .font(.system(size: 40))
-                                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
-                            }
-                            .buttonStyle(.plain)
-                            
                         }
+                        .buttonStyle(.plain)
+                    } else {
+                        Image(systemName: context.state.state.iconName)
+                            .font(.system(size: 40))
+                            .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
                     }
                     .padding(.trailing, 12)
                     
@@ -94,11 +84,9 @@ struct VivaDictaLiveActivity: Widget {
                 EmptyView()
             } compactTrailing: {
                 Image(systemName: context.state.state.iconName)
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
                     .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             } minimal: {
                 Image(systemName: context.state.state.iconName)
-                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
                     .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             }
             
