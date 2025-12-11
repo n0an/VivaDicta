@@ -397,8 +397,7 @@ struct TranscriptionDetailView: View {
             .padding(.vertical, 10)
             .background(
                 Capsule()
-                    .fill(.ultraThickMaterial)
-                    .overlay(Capsule().fill(.black.opacity(0.3)).blendMode(.softLight))
+                    .fill(.green.opacity(0.2))
                     .shadow(color: .white.opacity(0.2), radius: 0, x: -1, y: -1)
                     .shadow(color: .black.opacity(0.2), radius: 0, x: 1, y: 1)
                     .shadow(color: .black.opacity(0.3), radius: 8, x: 4, y: 4)
