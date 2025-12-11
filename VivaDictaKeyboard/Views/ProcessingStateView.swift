@@ -128,22 +128,25 @@ struct InfoView: View {
                 Text(processingStage.statusText)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.primary)
-                    .customAttribute(EmphasisAttribute())
-                    .transition(TextTransition())
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(
+                                edge: .bottom
+                            ).combined(
+                                with: .scale(
+                                    scale: 0.5
+                                )
+                            ),
+                            removal: .opacity
+                        )
+                    )
+                
                     .frame(width: 150, height: 20)
             } else {
                 Rectangle()
                     .fill(.clear)
                     .frame(width: 150, height: 20)
             }
-            
-            
-//            WobbleText(showText: $isShowingText, text: processingStage.statusText, duration: 0.5)
-//                .frame(width: 150, height: 20)
-//                .debugBorder()
-//                .font(.system(size: 17, weight: .semibold))
-//                .foregroundStyle(.primary)
-            
         }
         .animation(.default, value: isShowingText)
         .onAppear {
