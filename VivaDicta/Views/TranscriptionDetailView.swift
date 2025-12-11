@@ -421,7 +421,7 @@ struct TranscriptionDetailView: View {
             DisclosureGroup("Meta Info") {
                 VStack(alignment: .leading, spacing: 10) {
                     metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
-                    if transcription.audioFileName != nil {
+                    if audioURL != nil {
                         metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
                     }
                     if let modelName = transcription.transcriptionModelName {
