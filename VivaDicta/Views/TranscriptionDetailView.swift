@@ -13,7 +13,7 @@ private enum TextDisplayType: String, CaseIterable {
     case enhanced = "Enhanced"
 }
 
-private enum ProcessingState: Equatable {
+enum ProcessingState: Equatable {
     case idle
     case transcribing
     case enhancing
@@ -201,121 +201,138 @@ struct TranscriptionDetailView: View {
         HStack {
             Spacer()
             
-            if #available(iOS 26.0, *) {
-                GlassEffectContainer(spacing: 18) {
-                    
-                    
-                    if isExpanded {
-
-                        VStack(alignment: .trailing, spacing: 18) {
-
-                            HStack {
-                                Text("Transcribe + Enhance")
-                                    .transition(.move(edge: .leading))
-                                    .foregroundStyle(.secondary)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .frame(width: 200, alignment: .trailing)
-
-                                Button {
-                                    isExpanded = false
-                                    retranscribeAndEnhance()
-                                } label: {
-
-                                    Image(systemName: "arrow.clockwise.circle")
-                                        .foregroundStyle(.green)
-                                        .font(.system(size: 28, weight: .medium))
-                                        .frame(width: 40, height: 40)
-                                }
-                                .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
-                                .glassEffectID("both", in: namespace)
-                                .buttonStyle(.plain)
-                                .disabled(!canRetranscribe)
-                            }
-
-
-                            HStack {
-                                Text("Transcribe")
-                                    .transition(.move(edge: .leading))
-                                    .foregroundStyle(.secondary)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .frame(width: 100, alignment: .trailing)
-
-                                Button {
-                                    isExpanded = false
-                                    retranscribe()
-                                } label: {
-
-                                    Image(systemName: "waveform.mid")
-                                        .font(.system(size: 24, weight: .medium))
-                                        .foregroundStyle(.orange)
-                                        .frame(width: 40, height: 40)
-                                }
-                                .glassEffect(.regular.tint(.orange.opacity(0.2)).interactive())
-                                .glassEffectID("transcribe", in: namespace)
-                                .buttonStyle(.plain)
-                                .disabled(!canRetranscribe)
-                            }
-
-                            HStack {
-                                Text("Enhance")
-                                    .transition(.move(edge: .leading))
-                                    .foregroundStyle(.secondary)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .frame(width: 100, alignment: .trailing)
-
-                                Button {
-                                    isExpanded = false
-                                    enhance()
-                                } label: {
-
-                                    Image(systemName: "sparkles")
-                                        .foregroundStyle(.teal)
-                                        .font(.system(size: 20, weight: .medium))
-                                        .frame(width: 40, height: 40)
-                                }
-                                .glassEffect(.regular.tint(.teal.opacity(0.2)).interactive())
-                                .glassEffectID("enhance", in: namespace)
-                                .buttonStyle(.plain)
-                                .disabled(!canEnhance)
-                            }
-                        }
-                        
-                    } else {
-
-                        Button {
-                            isExpanded = true
-                        } label: {
-                            HStack {
-                                if processingState != .idle {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                        .frame(width: 20, height: 20)
-                                } else {
-                                    Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 20, weight: .medium))
-                                }
-
-                                Text(processingState == .transcribing ? "Transcribing..." :
-                                     processingState == .enhancing ? "Enhancing..." : "Regenerate")
-                                    .font(.system(size: 14, weight: .medium))
-                            }
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 8)
-                            .frame(height: 40)
-                        }
-                        .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
-                        .glassEffectID("regenerate", in: namespace)
-                        .buttonStyle(.plain)
-                        .disabled(processingState != .idle)
+//            if #available(iOS 26.0, *) {
+//                GlassEffectContainer(spacing: 18) {
+//                    
+//                    
+//                    if isExpanded {
+//
+//                        VStack(alignment: .trailing, spacing: 18) {
+//
+//                            HStack {
+//                                Text("Transcribe + Enhance")
+//                                    .transition(.move(edge: .leading))
+//                                    .foregroundStyle(.secondary)
+//                                    .font(.system(size: 14, weight: .medium))
+//                                    .frame(width: 200, alignment: .trailing)
+//
+//                                Button {
+//                                    isExpanded = false
+//                                    retranscribeAndEnhance()
+//                                } label: {
+//
+//                                    Image(systemName: "arrow.clockwise.circle")
+//                                        .foregroundStyle(.green)
+//                                        .font(.system(size: 28, weight: .medium))
+//                                        .frame(width: 40, height: 40)
+//                                }
+//                                .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
+//                                .glassEffectID("both", in: namespace)
+//                                .buttonStyle(.plain)
+//                                .disabled(!canRetranscribe)
+//                            }
+//
+//
+//                            HStack {
+//                                Text("Transcribe")
+//                                    .transition(.move(edge: .leading))
+//                                    .foregroundStyle(.secondary)
+//                                    .font(.system(size: 14, weight: .medium))
+//                                    .frame(width: 100, alignment: .trailing)
+//
+//                                Button {
+//                                    isExpanded = false
+//                                    retranscribe()
+//                                } label: {
+//
+//                                    Image(systemName: "waveform.mid")
+//                                        .font(.system(size: 24, weight: .medium))
+//                                        .foregroundStyle(.orange)
+//                                        .frame(width: 40, height: 40)
+//                                }
+//                                .glassEffect(.regular.tint(.orange.opacity(0.2)).interactive())
+//                                .glassEffectID("transcribe", in: namespace)
+//                                .buttonStyle(.plain)
+//                                .disabled(!canRetranscribe)
+//                            }
+//
+//                            HStack {
+//                                Text("Enhance")
+//                                    .transition(.move(edge: .leading))
+//                                    .foregroundStyle(.secondary)
+//                                    .font(.system(size: 14, weight: .medium))
+//                                    .frame(width: 100, alignment: .trailing)
+//
+//                                Button {
+//                                    isExpanded = false
+//                                    enhance()
+//                                } label: {
+//
+//                                    Image(systemName: "sparkles")
+//                                        .foregroundStyle(.teal)
+//                                        .font(.system(size: 20, weight: .medium))
+//                                        .frame(width: 40, height: 40)
+//                                }
+//                                .glassEffect(.regular.tint(.teal.opacity(0.2)).interactive())
+//                                .glassEffectID("enhance", in: namespace)
+//                                .buttonStyle(.plain)
+//                                .disabled(!canEnhance)
+//                            }
+//                        }
+//                        
+//                    } else {
+//
+//                        Button {
+//                            isExpanded = true
+//                        } label: {
+//                            HStack {
+//                                if processingState != .idle {
+//                                    ProgressView()
+//                                        .scaleEffect(0.8)
+//                                        .frame(width: 20, height: 20)
+//                                } else {
+//                                    Image(systemName: "arrow.clockwise")
+//                                        .font(.system(size: 20, weight: .medium))
+//                                }
+//
+//                                Text(processingState == .transcribing ? "Transcribing..." :
+//                                     processingState == .enhancing ? "Enhancing..." : "Regenerate")
+//                                    .font(.system(size: 14, weight: .medium))
+//                            }
+//                            .foregroundStyle(.green)
+//                            .padding(.horizontal, 8)
+//                            .frame(height: 40)
+//                        }
+//                        .glassEffect(.regular.tint(.green.opacity(0.2)).interactive())
+//                        .glassEffectID("regenerate", in: namespace)
+//                        .buttonStyle(.plain)
+//                        .disabled(processingState != .idle)
+//                    }
+//                    
+//                    
+//                    
+//                }
+//            } else {
+                // iOS 18 fallback using liquid button effect
+                LiquidActionButtonView(
+                    isExpanded: $isExpanded,
+                    processingState: processingState,
+                    canRetranscribe: canRetranscribe,
+                    canEnhance: canEnhance,
+                    onRetranscribeAndEnhance: {
+                        isExpanded = false
+                        retranscribeAndEnhance()
+                    },
+                    onRetranscribe: {
+                        isExpanded = false
+                        retranscribe()
+                    },
+                    onEnhance: {
+                        isExpanded = false
+                        enhance()
                     }
-                    
-                    
-                    
-                }
-            } else {
-                // Fallback on earlier versions
-                Text("todo")
-            }
+                )
+//            }
 
         }
         
