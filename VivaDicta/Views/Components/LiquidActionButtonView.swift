@@ -7,11 +7,17 @@
 
 import SwiftUI
 
+enum LiquidButtonExpandDirection {
+    case up
+    case down
+}
+
 struct LiquidActionButtonView: View {
     @Binding var isExpanded: Bool
     let processingState: ProcessingState
     let canRetranscribe: Bool
     let canEnhance: Bool
+    let expandDirection: LiquidButtonExpandDirection
     let onRetranscribeAndEnhance: () -> Void
     let onRetranscribe: () -> Void
     let onEnhance: () -> Void
@@ -25,8 +31,23 @@ struct LiquidActionButtonView: View {
         isExpanded ? canvasSize : buttonSize
     }
 
+    /// Multiplier for vertical offsets: +1 for down, -1 for up
+    private var verticalDirection: CGFloat {
+        expandDirection == .down ? 1 : -1
+    }
+
+    /// Alignment for the main container based on expand direction
+    private var containerAlignment: Alignment {
+        expandDirection == .down ? .topTrailing : .bottomTrailing
+    }
+
+    /// Y position for drawing circles in canvas
+    private var canvasDrawY: CGFloat {
+        expandDirection == .down ? buttonSize / 2 : canvasSize - buttonSize / 2
+    }
+
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: containerAlignment) {
             // Liquid canvas with material overlay
             Rectangle()
                 .fill(isExpanded ? .ultraThinMaterial : .ultraThickMaterial)
@@ -35,10 +56,10 @@ struct LiquidActionButtonView: View {
                 .shadow(color: .white.opacity(0.2), radius: 0, x: -1, y: -1)
                 .shadow(color: .black.opacity(0.2), radius: 0, x: 1, y: 1)
                 .shadow(color: .black.opacity(0.5), radius: 10, x: 5, y: 5)
-                .overlay(alignment: .topTrailing) {
+                .overlay(alignment: containerAlignment) {
                     iconsOverlay
                 }
-                .background(alignment: .topTrailing) {
+                .background(alignment: containerAlignment) {
                     decorativeCircles
                 }
                 .contentShape(.rect)
@@ -49,7 +70,7 @@ struct LiquidActionButtonView: View {
                     }
                 }
         }
-        .frame(width: canvasSize, height: frameHeight, alignment: .topTrailing)
+        .frame(width: canvasSize, height: frameHeight, alignment: containerAlignment)
     }
 
     private var liquidCanvas: some View {
@@ -59,8 +80,7 @@ struct LiquidActionButtonView: View {
             context.drawLayer { ctx in
                 for index in 1...4 {
                     if let resolvedView = context.resolveSymbol(id: index) {
-                        // Always draw at top-right, buttonSize/2 from edges
-                        ctx.draw(resolvedView, at: CGPoint(x: size.width - buttonSize / 2, y: buttonSize / 2))
+                        ctx.draw(resolvedView, at: CGPoint(x: size.width - buttonSize / 2, y: canvasDrawY))
                     }
                 }
             }
@@ -71,11 +91,11 @@ struct LiquidActionButtonView: View {
                 .frame(width: buttonSize, height: buttonSize)
                 .tag(1)
 
-            // Retranscribe + Enhance (bottom)
+            // Retranscribe + Enhance (vertical)
             Circle()
                 .fill(.black)
                 .frame(width: buttonSize, height: buttonSize)
-                .offset(y: isExpanded ? expandedOffset : 0)
+                .offset(y: isExpanded ? expandedOffset * verticalDirection : 0)
                 .tag(2)
 
             // Retranscribe (left)
@@ -85,19 +105,18 @@ struct LiquidActionButtonView: View {
                 .offset(x: isExpanded ? -expandedOffset : 0)
                 .tag(3)
 
-            // Enhance (diagonal bottom-left)
+            // Enhance (diagonal)
             Circle()
                 .fill(.black)
                 .frame(width: buttonSize, height: buttonSize)
-                .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset : 0)
+                .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset * verticalDirection : 0)
                 .tag(4)
         }
         .frame(width: canvasSize, height: frameHeight)
     }
 
     private var iconsOverlay: some View {
-        // Icons positioned from top-right corner, matching canvas draw point
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: containerAlignment) {
             // Main button icon (arrow.clockwise when collapsed, xmark when expanded)
             Group {
                 if processingState != .idle {
@@ -111,7 +130,7 @@ struct LiquidActionButtonView: View {
             .foregroundStyle(.green)
             .frame(width: buttonSize, height: buttonSize)
 
-            // Retranscribe + Enhance button (bottom)
+            // Retranscribe + Enhance button (vertical)
             Button(action: onRetranscribeAndEnhance) {
                 Image(systemName: "arrow.clockwise.circle")
                     .font(.system(size: 22, weight: .medium))
@@ -123,7 +142,7 @@ struct LiquidActionButtonView: View {
             .opacity(isExpanded ? (canRetranscribe ? 1 : 0.4) : 0)
             .blur(radius: isExpanded ? 0 : 10)
             .scaleEffect(isExpanded ? 1 : 0.5)
-            .offset(y: isExpanded ? expandedOffset : 0)
+            .offset(y: isExpanded ? expandedOffset * verticalDirection : 0)
 
             // Retranscribe button (left)
             Button(action: onRetranscribe) {
@@ -139,7 +158,7 @@ struct LiquidActionButtonView: View {
             .scaleEffect(isExpanded ? 1 : 0.5)
             .offset(x: isExpanded ? -expandedOffset : 0)
 
-            // Enhance button (diagonal bottom-left)
+            // Enhance button (diagonal)
             Button(action: onEnhance) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 20, weight: .medium))
@@ -151,18 +170,21 @@ struct LiquidActionButtonView: View {
             .opacity(isExpanded ? (canEnhance ? 1 : 0.4) : 0)
             .blur(radius: isExpanded ? 0 : 10)
             .scaleEffect(isExpanded ? 1 : 0.5)
-            .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset : 0)
+            .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset * verticalDirection : 0)
         }
     }
 
     private var decorativeCircles: some View {
-        ZStack {
+        let yOffset = expandDirection == .down ? -buttonSize / 2 + 10 : buttonSize / 2 - 10
+        let scaleAnchor: UnitPoint = expandDirection == .down ? .topTrailing : .bottomTrailing
+
+        return ZStack {
             decorativeCircle.frame(width: 160)
             decorativeCircle.frame(width: 50)
             decorativeCircle.frame(width: 65)
         }
-        .offset(x: buttonSize / 2 - 10, y: -buttonSize / 2 + 10)
-        .scaleEffect(isExpanded ? 1 : 0.8, anchor: .topTrailing)
+        .offset(x: buttonSize / 2 - 10, y: yOffset)
+        .scaleEffect(isExpanded ? 1 : 0.8, anchor: scaleAnchor)
         .opacity(isExpanded ? 1 : 0)
         .animation(.easeOut(duration: 0.3), value: isExpanded)
     }
@@ -180,12 +202,45 @@ struct LiquidActionButtonView: View {
     }
 }
 
-#Preview("Collapsed") {
+#Preview("Collapsed - Down") {
     LiquidActionButtonView(
         isExpanded: .constant(false),
         processingState: .idle,
         canRetranscribe: true,
         canEnhance: true,
+        expandDirection: .down,
+        onRetranscribeAndEnhance: {},
+        onRetranscribe: {},
+        onEnhance: {}
+    )
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+    .padding()
+    .background(Color.gray.opacity(0.3))
+}
+
+#Preview("Expanded - Down") {
+    LiquidActionButtonView(
+        isExpanded: .constant(true),
+        processingState: .idle,
+        canRetranscribe: true,
+        canEnhance: true,
+        expandDirection: .down,
+        onRetranscribeAndEnhance: {},
+        onRetranscribe: {},
+        onEnhance: {}
+    )
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+    .padding()
+    .background(Color.gray.opacity(0.3))
+}
+
+#Preview("Collapsed - Up") {
+    LiquidActionButtonView(
+        isExpanded: .constant(false),
+        processingState: .idle,
+        canRetranscribe: true,
+        canEnhance: true,
+        expandDirection: .up,
         onRetranscribeAndEnhance: {},
         onRetranscribe: {},
         onEnhance: {}
@@ -195,12 +250,13 @@ struct LiquidActionButtonView: View {
     .background(Color.gray.opacity(0.3))
 }
 
-#Preview("Expanded") {
+#Preview("Expanded - Up") {
     LiquidActionButtonView(
         isExpanded: .constant(true),
         processingState: .idle,
         canRetranscribe: true,
         canEnhance: true,
+        expandDirection: .up,
         onRetranscribeAndEnhance: {},
         onRetranscribe: {},
         onEnhance: {}
