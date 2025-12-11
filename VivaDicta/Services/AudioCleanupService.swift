@@ -22,9 +22,8 @@ final class AudioCleanupService {
     /// - Parameter modelContext: The SwiftData model context to use for queries
     func performCleanupIfNeeded(modelContext: ModelContext) async {
         // Check if auto cleanup is enabled
-        let isEnabled = UserDefaults.standard.bool(
-            forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled
-        )
+        
+        let isEnabled = UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
 
         guard isEnabled else {
             logger.logInfo("Audio cleanup: Disabled, skipping")
@@ -32,7 +31,8 @@ final class AudioCleanupService {
         }
 
         // Get retention days (default to 7 if not set)
-        let retentionDays = UserDefaults.standard.integer(
+        
+        let retentionDays = UserDefaultsStorage.appPrivate.integer(
             forKey: UserDefaultsStorage.Keys.audioRetentionDays
         )
         let effectiveRetentionDays = retentionDays > 0 ? retentionDays : 7
