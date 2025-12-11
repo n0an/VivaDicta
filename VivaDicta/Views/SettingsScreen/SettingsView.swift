@@ -30,6 +30,8 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.displaySiriTip) private var displaySiriTip: Bool = true
     @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
     @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
+    @State private var isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
+    @State private var isSoundFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
 
     let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
@@ -211,6 +213,36 @@ struct SettingsView: View {
                     }
                     .onChange(of: isKeepInClipboardEnabled) { _, newValue in
                         AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled = newValue
+                    }
+
+                    Toggle(isOn: $isHapticFeedbackEnabled) {
+                        Text("Haptic Feedback")
+                            .font(.body)
+//                        VStack(alignment: .leading, spacing: 4) {
+//                            Text("Haptic Feedback")
+//                                .font(.body)
+//                            Text("Vibrate on key press")
+//                                .font(.caption)
+//                                .foregroundStyle(.secondary)
+//                        }
+                    }
+                    .onChange(of: isHapticFeedbackEnabled) { _, newValue in
+                        AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled = newValue
+                    }
+                    
+                    Toggle(isOn: $isSoundFeedbackEnabled) {
+                        Text("Sound")
+                            .font(.body)
+//                        VStack(alignment: .leading, spacing: 4) {
+//                            Text("Haptic Feedback")
+//                                .font(.body)
+//                            Text("Vibrate on key press")
+//                                .font(.caption)
+//                                .foregroundStyle(.secondary)
+//                        }
+                    }
+                    .onChange(of: isSoundFeedbackEnabled) { _, newValue in
+                        AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
                 }
                 

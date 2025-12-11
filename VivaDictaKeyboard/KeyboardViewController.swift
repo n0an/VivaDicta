@@ -57,6 +57,12 @@ class KeyboardViewController: KeyboardInputViewController {
         setup(for: keyboardApp) { [weak self] result in
             self?.logger.logInfo("Keyboard setup result: \(String(describing: result))")
         }
+
+        // Configure haptic feedback based on user preference
+        state.feedbackContext.settings.isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
+        
+        // Configure sound feedback based on user preference
+        state.feedbackContext.settings.isAudioFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
     }
     
     override func viewWillSetupKeyboardView() {
