@@ -30,6 +30,8 @@ public final class AppGroupCoordinator {
     public static let kSmartFormattingOnPaste = "smartFormattingOnPaste"
     public static let kKeepTranscriptInClipboard = "keepTranscriptInClipboard"
     public static let kIsVADEnabled = "IsVADEnabled"
+    public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
+    public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
     
     
     nonisolated private enum UserDefaultsKeys {
@@ -344,6 +346,36 @@ public final class AppGroupCoordinator {
         }
         set {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kKeepTranscriptInClipboard)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// Whether haptic feedback is enabled for keyboard key presses
+    /// Defaults to true if not set
+    public var isKeyboardHapticFeedbackEnabled: Bool {
+        get {
+            if sharedDefaults?.object(forKey: AppGroupCoordinator.kIsKeyboardHapticFeedbackEnabled) == nil {
+                return true
+            }
+            return sharedDefaults?.bool(forKey: AppGroupCoordinator.kIsKeyboardHapticFeedbackEnabled) ?? true
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsKeyboardHapticFeedbackEnabled)
+            sharedDefaults?.synchronize()
+        }
+    }
+    
+    /// Whether sound feedback is enabled for keyboard key presses
+    /// Defaults to true if not set
+    public var isKeyboardSoundFeedbackEnabled: Bool {
+        get {
+            if sharedDefaults?.object(forKey: AppGroupCoordinator.kIsKeyboardSoundFeedbackEnabled) == nil {
+                return true
+            }
+            return sharedDefaults?.bool(forKey: AppGroupCoordinator.kIsKeyboardSoundFeedbackEnabled) ?? true
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsKeyboardSoundFeedbackEnabled)
             sharedDefaults?.synchronize()
         }
     }
