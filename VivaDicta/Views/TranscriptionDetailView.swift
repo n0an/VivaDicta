@@ -46,8 +46,7 @@ struct TranscriptionDetailView: View {
 
     private var audioURL: URL? {
         guard let audioFileName = transcription.audioFileName, !audioFileName.isEmpty else { return nil }
-        let audioDirectory = URL.documentsDirectory.appendingPathComponent("Audio")
-        let url = audioDirectory.appendingPathComponent(audioFileName)
+        let url = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
@@ -63,8 +62,8 @@ struct TranscriptionDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Fixed header section
             VStack(alignment: .leading, spacing: 8) {
-                if let audioFileName = transcription.audioFileName {
-                    AudioPlayerView(audioFileName: audioFileName)
+                if let audioURL = audioURL {
+                    AudioPlayerView(audioFileName: audioURL.lastPathComponent)
                         .padding(.bottom, 8)
                 }
 
@@ -420,7 +419,7 @@ struct TranscriptionDetailView: View {
             DisclosureGroup("Meta Info") {
                 VStack(alignment: .leading, spacing: 10) {
                     metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
-                    if transcription.audioFileName != nil {
+                    if audioURL != nil {
                         metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
                     }
                     if let modelName = transcription.transcriptionModelName {

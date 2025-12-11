@@ -68,10 +68,10 @@ class Transcription {
     nonisolated func getAudioFileSize() -> Int64? {
         guard let audioFileName = audioFileName else { return nil }
 
-        // Construct audio directory path directly to avoid MainActor isolation issues
-        let documentsDirectory = URL.documentsDirectory
-        let audioDirectory = documentsDirectory.appendingPathComponent("Audio")
-        let audioURL = audioDirectory.appendingPathComponent(audioFileName)
+        // Construct path directly to avoid MainActor isolation of FileManager.appDirectory
+        let audioURL = URL.documentsDirectory
+            .appendingPathComponent("Audio")
+            .appendingPathComponent(audioFileName)
 
         guard FileManager.default.fileExists(atPath: audioURL.path) else { return nil }
 
