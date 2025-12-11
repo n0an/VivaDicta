@@ -80,7 +80,7 @@ struct TranscriptionDetailView: View {
                         .padding(.vertical, 4)
                         .background(Color.blue.opacity(0.1))
                         .foregroundStyle(.blue)
-                        .cornerRadius(6)
+                        .clipShape(.rect(cornerRadius: 6))
                 }
 
                 // Segmented control - only show if enhanced text exists
