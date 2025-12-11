@@ -63,17 +63,19 @@ struct VivaDictaLiveActivity: Widget {
                     Spacer()
                     
                     // Note: symbolEffect() is not supported in Live Activities
-                    if context.state.state == .idle {
-                        Button(intent: ToggleSessionIntent(isSessionActive: false)) {
+                    Group {
+                        if context.state.state == .idle {
+                            Button(intent: ToggleSessionIntent(isSessionActive: false)) {
+                                Image(systemName: context.state.state.iconName)
+                                    .font(.system(size: 40))
+                                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
                             Image(systemName: context.state.state.iconName)
                                 .font(.system(size: 40))
                                 .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        Image(systemName: context.state.state.iconName)
-                            .font(.system(size: 40))
-                            .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
                     }
                     .padding(.trailing, 12)
                     
