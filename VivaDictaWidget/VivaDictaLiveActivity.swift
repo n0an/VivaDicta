@@ -62,12 +62,29 @@ struct VivaDictaLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     Spacer()
                     
-                    Button(intent: ToggleSessionIntent(isSessionActive: false)) {
-                        Image(systemName: "power.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(.orange)
+                    Group {
+                        switch context.state.state {
+                        case .recording:
+                            Image(systemName: context.state.state.iconName)
+                                .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(.continuous))
+                                .font(.system(size: 40))
+                                .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                        case .transcribing:
+                            Image(systemName: context.state.state.iconName)
+                                .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(.continuous))
+                                .font(.system(size: 40))
+                                .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                        default:
+                            Button(intent: ToggleSessionIntent(isSessionActive: false)) {
+                                Image(systemName: context.state.state.iconName)
+                                    .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(.continuous))
+                                    .font(.system(size: 40))
+                                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                            }
+                            .buttonStyle(.plain)
+                            
+                        }
                     }
-                    .buttonStyle(.plain)
                     .padding(.trailing, 12)
                     
                     Spacer()
@@ -77,9 +94,11 @@ struct VivaDictaLiveActivity: Widget {
                 EmptyView()
             } compactTrailing: {
                 Image(systemName: context.state.state.iconName)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
                     .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             } minimal: {
                 Image(systemName: context.state.state.iconName)
+                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
                     .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             }
             
