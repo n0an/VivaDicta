@@ -33,6 +33,11 @@ struct SettingsView: View {
     @State private var isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
     @State private var isSoundFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
 
+    @AppStorage(UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
+    private var isAutoAudioCleanupEnabled = false
+    @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
+    private var audioRetentionDays = 7
+
     let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
     var body: some View {
@@ -116,6 +121,28 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    
+                    Toggle(isOn: $isAutoAudioCleanupEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Automatic Audio Cleanup")
+                                .font(.body)
+                            Text("Automatically delete old audio files to save space")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if isAutoAudioCleanupEnabled {
+                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
+                            Text("1 day").tag(1)
+                            Text("3 days").tag(3)
+                            Text("7 days").tag(7)
+                            Text("14 days").tag(14)
+                            Text("30 days").tag(30)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
                     }
                 }
                 

@@ -32,5 +32,7 @@ enum UserDefaultsStorage {
         static let customVocabularyWords = "customVocabularyWords"
         static let textReplacements = "textReplacements"
         static let isReplacementsEnabled = "isReplacementsEnabled"
+        static let isAutoAudioCleanupEnabled = "isAutoAudioCleanupEnabled"
+        static let audioRetentionDays = "audioRetentionDays"
     }
 }
