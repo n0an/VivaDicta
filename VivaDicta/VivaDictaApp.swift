@@ -53,12 +53,6 @@ struct VivaDictaApp: App {
             }
         }
 
-        // Clean up old audio files on cold start (based on user settings)
-        Task { @MainActor in
-            let context = Persistence.container.mainContext
-            await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: context)
-        }
-
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
 

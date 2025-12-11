@@ -89,15 +89,14 @@ final class AudioCleanupService {
             let predicate = #Predicate<Transcription> { transcription in
                 transcription.timestamp < cutoffDate && transcription.audioFileName != nil
             }
-
             let descriptor = FetchDescriptor<Transcription>(predicate: predicate)
             let transcriptions = try modelContext.fetch(descriptor)
-
+            
             guard !transcriptions.isEmpty else {
                 logger.logInfo("Audio cleanup: No old audio files to clean up")
                 return
             }
-
+            
             logger.logInfo("Audio cleanup: Found \(transcriptions.count) transcriptions with old audio files")
 
             var deletedCount = 0

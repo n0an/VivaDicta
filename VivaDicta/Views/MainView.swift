@@ -232,6 +232,11 @@ struct MainView: View {
             SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
             SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
         }
+        .task {
+            // Clean up old audio files (based on user settings)
+            // Called here instead of app init to ensure SwiftData is fully initialized
+            await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
+        }
         .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
             SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue
             SelectTranscriptionModelTipSettingsView.isTranscriptionReady = newValue
