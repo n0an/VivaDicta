@@ -75,17 +75,11 @@ final class AudioCleanupService {
 
             let audioDirectory = FileManager.appDirectory(for: .audio)
             var deletedCount = 0
-            var freedBytes: Int64 = 0
 
             for transcription in transcriptions {
                 guard let audioFileName = transcription.audioFileName else { continue }
 
                 let audioURL = audioDirectory.appendingPathComponent(audioFileName)
-
-                // Get file size before deletion for logging
-                if let fileSize = transcription.getAudioFileSize() {
-                    freedBytes += fileSize
-                }
 
                 // Delete the file
                 if FileManager.default.fileExists(atPath: audioURL.path) {
@@ -104,8 +98,7 @@ final class AudioCleanupService {
             // Save changes
             try modelContext.save()
 
-            let freedMB = Double(freedBytes) / 1_048_576.0
-            logger.logInfo("Audio cleanup: Deleted \(deletedCount) files, freed \(freedMB.formatted(.number.precision(.fractionLength(1)))) MB")
+            logger.logInfo("Audio cleanup: Deleted \(deletedCount) files")
 
         } catch {
             logger.logError("Audio cleanup: Failed to fetch transcriptions: \(error.localizedDescription)")
