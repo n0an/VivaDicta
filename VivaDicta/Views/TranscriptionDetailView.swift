@@ -379,7 +379,7 @@ struct TranscriptionDetailView: View {
 
 #Preview {
     TranscriptionDetailView(
-        transcription: Transcription.mockData[0],
+        transcription: Transcription.mockData[2],
         appState: AppState()
     )
 }

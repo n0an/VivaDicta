@@ -25,10 +25,23 @@ struct LiquidActionButtonView: View {
     private let buttonSize: CGFloat = 56
     private let expandedOffset: CGFloat = 80
     private let diagonalOffset: CGFloat = 65
-    private let canvasSize: CGFloat = 200
+
+    /// Height needed when expanded: main button center + offset + half button for the furthest button
+    private var expandedHeight: CGFloat {
+        buttonSize / 2 + expandedOffset + buttonSize / 2
+    }
+
+    /// Width needed: main button center + offset + half button for the left button
+    private var expandedWidth: CGFloat {
+        buttonSize / 2 + expandedOffset + buttonSize / 2
+    }
 
     private var frameHeight: CGFloat {
-        isExpanded ? canvasSize : buttonSize
+        isExpanded ? expandedHeight : buttonSize
+    }
+
+    private var frameWidth: CGFloat {
+        isExpanded ? expandedWidth : buttonSize
     }
 
     /// Multiplier for vertical offsets: +1 for down, -1 for up
@@ -70,7 +83,7 @@ struct LiquidActionButtonView: View {
                     }
                 }
         }
-        .frame(width: canvasSize, height: frameHeight, alignment: containerAlignment)
+        .frame(width: frameWidth, height: frameHeight, alignment: containerAlignment)
     }
 
     private var liquidCanvas: some View {
@@ -112,7 +125,7 @@ struct LiquidActionButtonView: View {
                 .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset * verticalDirection : 0)
                 .tag(4)
         }
-        .frame(width: canvasSize, height: frameHeight)
+        .frame(width: frameWidth, height: frameHeight)
     }
 
     private var iconsOverlay: some View {
@@ -179,9 +192,9 @@ struct LiquidActionButtonView: View {
         let scaleAnchor: UnitPoint = expandDirection == .down ? .topTrailing : .bottomTrailing
 
         return ZStack {
-            decorativeCircle.frame(width: 160)
-            decorativeCircle.frame(width: 50)
-            decorativeCircle.frame(width: 65)
+            decorativeCircle.frame(width: 120)
+            decorativeCircle.frame(width: 40)
+            decorativeCircle.frame(width: 55)
         }
         .offset(x: buttonSize / 2 - 10, y: yOffset)
         .scaleEffect(isExpanded ? 1 : 0.8, anchor: scaleAnchor)
