@@ -40,11 +40,14 @@ final class AudioCleanupService {
         logger.logInfo("Audio cleanup: Starting with \(effectiveRetentionDays) day retention")
 
         // Calculate cutoff date
-        let cutoffDate = Calendar.current.date(
+        guard let cutoffDate = Calendar.current.date(
             byAdding: .day,
             value: -effectiveRetentionDays,
             to: Date()
-        ) ?? Date()
+        ) else {
+            logger.logError("Audio cleanup: Failed to calculate cutoff date, aborting")
+            return
+        }
 
         await cleanupAudioFiles(olderThan: cutoffDate, modelContext: modelContext)
     }
