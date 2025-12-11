@@ -14,19 +14,25 @@ import os
 final class AudioCleanupService {
     static let shared = AudioCleanupService()
 
+    private static let lastCleanupKey = "lastAudioCleanupDate"
+    private static let cleanupIntervalSeconds: TimeInterval = 24 * 60 * 60 // 24 hours
+
     private let logger = Logger(category: .app)
     private let userDefaults: UserDefaults
     private let audioDirectory: URL
     private let fileManager: FileManager
+    private let minimumCleanupInterval: TimeInterval
 
     init(
         userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
         audioDirectory: URL = FileManager.appDirectory(for: .audio),
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        minimumCleanupInterval: TimeInterval = cleanupIntervalSeconds
     ) {
         self.userDefaults = userDefaults
         self.audioDirectory = audioDirectory
         self.fileManager = fileManager
+        self.minimumCleanupInterval = minimumCleanupInterval
     }
 
     /// Performs audio cleanup based on user settings
@@ -38,6 +44,17 @@ final class AudioCleanupService {
         guard isEnabled else {
             logger.logInfo("Audio cleanup: Disabled, skipping")
             return
+        }
+
+        // Check if enough time has passed since last cleanup
+        let lastCleanup = userDefaults.object(forKey: Self.lastCleanupKey) as? Date
+        if let lastCleanup = lastCleanup {
+            let timeSinceLastCleanup = Date().timeIntervalSince(lastCleanup)
+            if timeSinceLastCleanup < minimumCleanupInterval {
+                let hoursRemaining = (minimumCleanupInterval - timeSinceLastCleanup) / 3600
+                logger.logInfo("Audio cleanup: Skipping, last cleanup was \(Int(timeSinceLastCleanup / 3600))h ago (next in \(Int(hoursRemaining))h)")
+                return
+            }
         }
 
         // Get retention days (default to 7 if not set)
@@ -57,6 +74,9 @@ final class AudioCleanupService {
         }
 
         await cleanupAudioFiles(olderThan: cutoffDate, modelContext: modelContext)
+
+        // Update last cleanup timestamp
+        userDefaults.set(Date(), forKey: Self.lastCleanupKey)
     }
 
     /// Deletes audio files for transcriptions older than the specified date

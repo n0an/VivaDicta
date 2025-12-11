@@ -86,7 +86,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -133,7 +134,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -170,7 +172,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -205,7 +208,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -243,7 +247,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -283,7 +288,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -321,7 +327,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -355,7 +362,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup - should complete without errors
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -396,7 +404,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -428,7 +437,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup - should complete without errors
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -469,7 +479,8 @@ struct AudioCleanupServiceTests {
         // Run cleanup
         let service = AudioCleanupService(
             userDefaults: defaults,
-            audioDirectory: audioDir
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
@@ -480,6 +491,162 @@ struct AudioCleanupServiceTests {
             #expect(transcription.audioFileName == nil)
             #expect(transcription.text == "Transcription \(i + 1)")
         }
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: audioDir)
+    }
+
+    // MARK: - Throttling Tests
+
+    @Test func cleanupSkippedWhenRunRecently() async throws {
+        let defaults = makeTestDefaults()
+        let audioDir = try makeTestDirectory()
+        let container = try makeModelContainer()
+        let context = container.mainContext
+
+        // Setup
+        defaults.set(true, forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
+        defaults.set(7, forKey: UserDefaultsStorage.Keys.audioRetentionDays)
+
+        // Set last cleanup to 1 hour ago
+        let oneHourAgo = Date().addingTimeInterval(-3600)
+        defaults.set(oneHourAgo, forKey: "lastAudioCleanupDate")
+
+        let fileName = "old-audio.m4a"
+        try createAudioFile(named: fileName, in: audioDir)
+        let transcription = createTranscription(
+            audioFileName: fileName,
+            daysAgo: 10,
+            in: context
+        )
+        try context.save()
+
+        // Run cleanup with 24 hour interval (default)
+        let service = AudioCleanupService(
+            userDefaults: defaults,
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 24 * 60 * 60
+        )
+        await service.performCleanupIfNeeded(modelContext: context)
+
+        // Verify: file NOT deleted because cleanup ran recently
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(transcription.audioFileName == fileName)
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: audioDir)
+    }
+
+    @Test func cleanupRunsWhenIntervalPassed() async throws {
+        let defaults = makeTestDefaults()
+        let audioDir = try makeTestDirectory()
+        let container = try makeModelContainer()
+        let context = container.mainContext
+
+        // Setup
+        defaults.set(true, forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
+        defaults.set(7, forKey: UserDefaultsStorage.Keys.audioRetentionDays)
+
+        // Set last cleanup to 25 hours ago
+        let twentyFiveHoursAgo = Date().addingTimeInterval(-25 * 3600)
+        defaults.set(twentyFiveHoursAgo, forKey: "lastAudioCleanupDate")
+
+        let fileName = "old-audio.m4a"
+        try createAudioFile(named: fileName, in: audioDir)
+        let transcription = createTranscription(
+            audioFileName: fileName,
+            daysAgo: 10,
+            in: context
+        )
+        try context.save()
+
+        // Run cleanup with 24 hour interval
+        let service = AudioCleanupService(
+            userDefaults: defaults,
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 24 * 60 * 60
+        )
+        await service.performCleanupIfNeeded(modelContext: context)
+
+        // Verify: file deleted because enough time passed
+        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(transcription.audioFileName == nil)
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: audioDir)
+    }
+
+    @Test func cleanupRunsOnFirstLaunch() async throws {
+        let defaults = makeTestDefaults()
+        let audioDir = try makeTestDirectory()
+        let container = try makeModelContainer()
+        let context = container.mainContext
+
+        // Setup - no lastCleanupDate set (first launch)
+        defaults.set(true, forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
+        defaults.set(7, forKey: UserDefaultsStorage.Keys.audioRetentionDays)
+
+        let fileName = "old-audio.m4a"
+        try createAudioFile(named: fileName, in: audioDir)
+        let transcription = createTranscription(
+            audioFileName: fileName,
+            daysAgo: 10,
+            in: context
+        )
+        try context.save()
+
+        // Run cleanup with 24 hour interval
+        let service = AudioCleanupService(
+            userDefaults: defaults,
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 24 * 60 * 60
+        )
+        await service.performCleanupIfNeeded(modelContext: context)
+
+        // Verify: file deleted on first launch
+        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(transcription.audioFileName == nil)
+
+        // Cleanup
+        try? FileManager.default.removeItem(at: audioDir)
+    }
+
+    @Test func cleanupUpdatesLastCleanupTimestamp() async throws {
+        let defaults = makeTestDefaults()
+        let audioDir = try makeTestDirectory()
+        let container = try makeModelContainer()
+        let context = container.mainContext
+
+        // Setup
+        defaults.set(true, forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
+        defaults.set(7, forKey: UserDefaultsStorage.Keys.audioRetentionDays)
+
+        // Verify no timestamp initially
+        #expect(defaults.object(forKey: "lastAudioCleanupDate") == nil)
+
+        let fileName = "old-audio.m4a"
+        try createAudioFile(named: fileName, in: audioDir)
+        _ = createTranscription(
+            audioFileName: fileName,
+            daysAgo: 10,
+            in: context
+        )
+        try context.save()
+
+        let beforeCleanup = Date()
+
+        // Run cleanup
+        let service = AudioCleanupService(
+            userDefaults: defaults,
+            audioDirectory: audioDir,
+            minimumCleanupInterval: 0
+        )
+        await service.performCleanupIfNeeded(modelContext: context)
+
+        // Verify timestamp was set
+        let lastCleanup = defaults.object(forKey: "lastAudioCleanupDate") as? Date
+        #expect(lastCleanup != nil)
+        #expect(lastCleanup! >= beforeCleanup)
 
         // Cleanup
         try? FileManager.default.removeItem(at: audioDir)
