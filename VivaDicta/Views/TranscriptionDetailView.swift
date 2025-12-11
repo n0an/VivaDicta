@@ -63,7 +63,8 @@ struct TranscriptionDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Fixed header section
             VStack(alignment: .leading, spacing: 8) {
-                if let audioFileName = transcription.audioFileName {
+                if let audioURL = audioURL,
+                   let audioFileName = audioURL.lastPathComponent as String? {
                     AudioPlayerView(audioFileName: audioFileName)
                         .padding(.bottom, 8)
                 }
