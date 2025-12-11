@@ -15,15 +15,25 @@ final class AudioCleanupService {
     static let shared = AudioCleanupService()
 
     private let logger = Logger(category: .app)
+    private let userDefaults: UserDefaults
+    private let audioDirectory: URL
+    private let fileManager: FileManager
 
-    private init() {}
+    init(
+        userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
+        audioDirectory: URL = FileManager.appDirectory(for: .audio),
+        fileManager: FileManager = .default
+    ) {
+        self.userDefaults = userDefaults
+        self.audioDirectory = audioDirectory
+        self.fileManager = fileManager
+    }
 
     /// Performs audio cleanup based on user settings
     /// - Parameter modelContext: The SwiftData model context to use for queries
     func performCleanupIfNeeded(modelContext: ModelContext) async {
         // Check if auto cleanup is enabled
-        
-        let isEnabled = UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
+        let isEnabled = userDefaults.bool(forKey: UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
 
         guard isEnabled else {
             logger.logInfo("Audio cleanup: Disabled, skipping")
@@ -31,10 +41,7 @@ final class AudioCleanupService {
         }
 
         // Get retention days (default to 7 if not set)
-        
-        let retentionDays = UserDefaultsStorage.appPrivate.integer(
-            forKey: UserDefaultsStorage.Keys.audioRetentionDays
-        )
+        let retentionDays = userDefaults.integer(forKey: UserDefaultsStorage.Keys.audioRetentionDays)
         let effectiveRetentionDays = retentionDays > 0 ? retentionDays : 7
 
         logger.logInfo("Audio cleanup: Starting with \(effectiveRetentionDays) day retention")
@@ -73,7 +80,6 @@ final class AudioCleanupService {
 
             logger.logInfo("Audio cleanup: Found \(transcriptions.count) transcriptions with old audio files")
 
-            let audioDirectory = FileManager.appDirectory(for: .audio)
             var deletedCount = 0
 
             for transcription in transcriptions {
@@ -82,9 +88,9 @@ final class AudioCleanupService {
                 let audioURL = audioDirectory.appendingPathComponent(audioFileName)
 
                 // Delete the file
-                if FileManager.default.fileExists(atPath: audioURL.path) {
+                if fileManager.fileExists(atPath: audioURL.path) {
                     do {
-                        try FileManager.default.removeItem(at: audioURL)
+                        try fileManager.removeItem(at: audioURL)
                         deletedCount += 1
                     } catch {
                         logger.logError("Audio cleanup: Failed to delete \(audioFileName): \(error.localizedDescription)")
