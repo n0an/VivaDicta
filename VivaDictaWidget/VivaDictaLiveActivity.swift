@@ -66,18 +66,18 @@ struct VivaDictaLiveActivity: Widget {
                         switch context.state.state {
                         case .recording:
                             Image(systemName: context.state.state.iconName)
-                                .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(.continuous))
+                                .symbolEffect(.variableColor.cumulative.dimInactiveLayers.nonReversing, options: .repeat(.continuous))
                                 .font(.system(size: 40))
                                 .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
                         case .transcribing:
                             Image(systemName: context.state.state.iconName)
-                                .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(.continuous))
+                                .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
                                 .font(.system(size: 40))
                                 .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
                         default:
                             Button(intent: ToggleSessionIntent(isSessionActive: false)) {
                                 Image(systemName: context.state.state.iconName)
-                                    .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(.continuous))
+                                    .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.1)))
                                     .font(.system(size: 40))
                                     .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
                             }
