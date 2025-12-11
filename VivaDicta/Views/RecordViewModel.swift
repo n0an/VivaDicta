@@ -475,6 +475,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try Task.checkCancellation()
                 self.recordingState = .idle
 
+                // Reschedule session timeout now that all processing is complete
+                self.prewarmManager.rescheduleSessionTimeout()
+
             } catch {
                 if Task.isCancelled { return }
                 recordingState = .error(.transcribe)
@@ -482,6 +485,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 // Notify keyboard of error
                 AppGroupCoordinator.shared.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
+
+                // Reschedule session timeout even on error
+                self.prewarmManager.rescheduleSessionTimeout()
             }
         }
     }
@@ -511,9 +517,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcribingSpeechTask = nil
         pendingTranscription = nil
 
-        // Stop real capture and reschedule prewarm session timeout if active
-        if prewarmManager.isSessionActive {
-            logger.logInfo("🎙️ Stopping real capture and rescheduling session timeout on cancel")
+        // Stop real capture if still recording
+        if prewarmManager.isSessionActive && prewarmManager.audioEngine?.isRunning == true {
+            logger.logInfo("🎙️ Stopping real capture on cancel")
             prewarmManager.stopRealCapture()
         }
 
@@ -523,6 +529,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         // Notify keyboard that recording was canceled
         AppGroupCoordinator.shared.updateRecordingState(false)
         AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+
+        // Reschedule session timeout after cancellation
+        prewarmManager.rescheduleSessionTimeout()
     }
 
     /// Cancels the current processing based on state:
@@ -584,8 +593,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             AppGroupCoordinator.shared.updateRecordingState(false)
             AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
 
+            // Reschedule session timeout after cancellation
+            prewarmManager.rescheduleSessionTimeout()
+
         default:
-            // For other states, just use regular cancel
+            // For other states, just use regular cancel (which also reschedules timeout)
             cancelTranscribe()
         }
     }
