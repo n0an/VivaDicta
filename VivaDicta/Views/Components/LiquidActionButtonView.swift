@@ -19,29 +19,28 @@ struct LiquidActionButtonView: View {
     private let buttonSize: CGFloat = 56
     private let expandedOffset: CGFloat = 80
     private let diagonalOffset: CGFloat = 65
+    private let canvasSize: CGFloat = 200
+
+    private var frameHeight: CGFloat {
+        isExpanded ? canvasSize : buttonSize
+    }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             // Liquid canvas with material overlay
             Rectangle()
                 .fill(isExpanded ? .ultraThinMaterial : .ultraThickMaterial)
                 .overlay(Rectangle().fill(.black.opacity(0.5)).blendMode(.softLight))
-                .mask(
-                    liquidCanvas
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                )
+                .mask(liquidCanvas)
                 .shadow(color: .white.opacity(0.2), radius: 0, x: -1, y: -1)
                 .shadow(color: .black.opacity(0.2), radius: 0, x: 1, y: 1)
                 .shadow(color: .black.opacity(0.5), radius: 10, x: 5, y: 5)
-                .overlay(
-                    // Icons overlay - positioned relative to top-trailing
+                .overlay(alignment: .topTrailing) {
                     iconsOverlay
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                )
-                .background(
+                }
+                .background(alignment: .topTrailing) {
                     decorativeCircles
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                )
+                }
                 .contentShape(.rect)
                 .onTapGesture {
                     guard processingState == .idle else { return }
@@ -50,7 +49,7 @@ struct LiquidActionButtonView: View {
                     }
                 }
         }
-        .frame(width: 200, height: 200)
+        .frame(width: canvasSize, height: frameHeight, alignment: .topTrailing)
     }
 
     private var liquidCanvas: some View {
@@ -60,6 +59,7 @@ struct LiquidActionButtonView: View {
             context.drawLayer { ctx in
                 for index in 1...4 {
                     if let resolvedView = context.resolveSymbol(id: index) {
+                        // Always draw at top-right, buttonSize/2 from edges
                         ctx.draw(resolvedView, at: CGPoint(x: size.width - buttonSize / 2, y: buttonSize / 2))
                     }
                 }
@@ -92,6 +92,7 @@ struct LiquidActionButtonView: View {
                 .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset : 0)
                 .tag(4)
         }
+        .frame(width: canvasSize, height: frameHeight)
     }
 
     private var iconsOverlay: some View {
