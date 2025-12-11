@@ -26,10 +26,13 @@ struct LiquidActionButtonView: View {
     private let expandedOffset: CGFloat = 80
     private let diagonalOffset: CGFloat = 65
 
-    /// Height needed when expanded: main button center + offset + half button for the furthest button
+    /// Height needed when expanded: main button center + offset + half button + label space
     private var expandedHeight: CGFloat {
-        buttonSize / 2 + expandedOffset + buttonSize / 2
+        buttonSize / 2 + expandedOffset + buttonSize / 2 + labelSpace
     }
+
+    /// Extra space for labels below buttons
+    private let labelSpace: CGFloat = 30
 
     /// Width needed: main button center + offset + half button for the left button
     private var expandedWidth: CGFloat {
@@ -184,7 +187,51 @@ struct LiquidActionButtonView: View {
             .blur(radius: isExpanded ? 0 : 10)
             .scaleEffect(isExpanded ? 1 : 0.5)
             .offset(x: isExpanded ? -diagonalOffset : 0, y: isExpanded ? diagonalOffset * verticalDirection : 0)
+
+            // Text labels (only visible when expanded)
+            labelsOverlay
         }
+    }
+
+    private var labelsOverlay: some View {
+        let labelOffset: CGFloat = buttonSize / 2 + 24  // Below/above button
+
+        return ZStack(alignment: containerAlignment) {
+            // Label for Retranscribe + Enhance (vertical button)
+            Text("Transcribe\n+ Enhance")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize()
+                .offset(
+                    y: isExpanded
+                        ? (expandedOffset + labelOffset) * verticalDirection
+                        : 0
+                )
+
+            // Label for Retranscribe (left button)
+            Text("Transcribe")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+                .fixedSize()
+                .offset(
+                    x: isExpanded ? -expandedOffset : 0,
+                    y: isExpanded ? labelOffset * verticalDirection : 0
+                )
+
+            // Label for Enhance (diagonal button)
+            Text("Enhance")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+                .fixedSize()
+                .offset(
+                    x: isExpanded ? -diagonalOffset : 0,
+                    y: isExpanded ? (diagonalOffset + labelOffset) * verticalDirection : 0
+                )
+        }
+        .opacity(isExpanded ? 1 : 0)
+        .blur(radius: isExpanded ? 0 : 10)
+        .scaleEffect(isExpanded ? 1 : 0.5)
     }
 
     private var decorativeCircles: some View {
