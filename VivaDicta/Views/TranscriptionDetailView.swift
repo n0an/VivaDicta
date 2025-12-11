@@ -46,8 +46,7 @@ struct TranscriptionDetailView: View {
 
     private var audioURL: URL? {
         guard let audioFileName = transcription.audioFileName, !audioFileName.isEmpty else { return nil }
-        let audioDirectory = URL.documentsDirectory.appendingPathComponent("Audio")
-        let url = audioDirectory.appendingPathComponent(audioFileName)
+        let url = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
