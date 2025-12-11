@@ -17,8 +17,10 @@ public enum LiveActivityState: String, Codable, Hashable {
 
     var iconName: String {
         switch self {
-        case .idle, .recording:
+        case .idle:
             return "microphone.circle.fill"
+        case .recording:
+            return "microphone.and.signal.meter.fill"
         case .transcribing:
             return "pencil.and.scribble"
         case .enhancing:
