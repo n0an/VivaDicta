@@ -205,7 +205,7 @@ struct TranscriptionDetailView: View {
             Spacer()
             
             if #available(iOS 26.0, *) {
-
+                
                 if !appState.aiService.isProperlyConfigured() { // Only 1 option - transcribe - run it right away
                     Button {
                         retranscribe()
@@ -344,31 +344,37 @@ struct TranscriptionDetailView: View {
                 
                 
             } else { // iOS 18 Fallback
-
+                
                 if !appState.aiService.isProperlyConfigured() {
-                    // Simple button - no expansion needed, just retranscribe
                     simpleRetranscribeButton
                 } else {
-                    // Full liquid button with 3 options
-                    LiquidActionButtonView(
-                        isExpanded: $isExpanded,
-                        processingState: processingState,
-                        canRetranscribe: canRetranscribe,
-                        canEnhance: canEnhance,
-                        expandDirection: expandDirection,
-                        onRetranscribeAndEnhance: {
-                            isExpanded = false
-                            retranscribeAndEnhance()
-                        },
-                        onRetranscribe: {
-                            isExpanded = false
-                            retranscribe()
-                        },
-                        onEnhance: {
-                            isExpanded = false
-                            enhance()
-                        }
-                    )
+                    HStack {
+                        Text("Regenerate")
+                            .font(.system(size: 14).weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .opacity(isExpanded ? 0 : 1)
+                        
+                        // Full liquid button with 3 options
+                        LiquidActionButtonView(
+                            isExpanded: $isExpanded,
+                            processingState: processingState,
+                            canRetranscribe: canRetranscribe,
+                            canEnhance: canEnhance,
+                            expandDirection: expandDirection,
+                            onRetranscribeAndEnhance: {
+                                isExpanded = false
+                                retranscribeAndEnhance()
+                            },
+                            onRetranscribe: {
+                                isExpanded = false
+                                retranscribe()
+                            },
+                            onEnhance: {
+                                isExpanded = false
+                                enhance()
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -564,7 +570,7 @@ struct TranscriptionDetailView: View {
 
 #Preview {
     TranscriptionDetailView(
-        transcription: Transcription.mockData[2],
+        transcription: Transcription.mockData[0],
         appState: AppState()
     )
 }
