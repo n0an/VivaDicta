@@ -274,9 +274,10 @@ final class AudioPrewarmManager {
         logger.logInfo("🎙️ Real capture started (buffers now writing to disk)")
     }
 
-    /// Stops real recording and restarts the pre-warm session timeout
+    /// Stops real recording without restarting timeout (processing will follow)
+    /// Call `rescheduleSessionTimeout()` after all processing is complete
     func stopRealCapture() {
-        logger.logInfo("🎙️ Stopping real capture and restarting session timeout")
+        logger.logInfo("🎙️ Stopping real capture (timeout deferred until processing completes)")
 
         // Stop writing to file atomically
         captureContext?.isCapturing = false
@@ -297,6 +298,21 @@ final class AudioPrewarmManager {
             return
         }
 
+        // Note: We do NOT restart the timeout timer here
+        // The caller should call rescheduleSessionTimeout() after processing is complete
+        // This prevents the session from expiring during transcription/enhancement
+
+        logger.logInfo("🎙️ Real capture stopped, audio engine still running (awaiting processing completion)")
+    }
+
+    /// Reschedules the session timeout after all processing is complete
+    /// Should be called when transcription and enhancement are finished
+    func rescheduleSessionTimeout() {
+        guard audioEngine?.isRunning == true else {
+            logger.logInfo("⏰ Session not active, skipping timeout reschedule")
+            return
+        }
+
         // Reset the session start time
         sessionStartTime = Date()
 
@@ -308,7 +324,7 @@ final class AudioPrewarmManager {
             timeoutSeconds: audioSessionTimeout
         )
 
-        logger.logInfo("🎙️ Restarted pre-warm session timeout: \(self.audioSessionTimeout)s from now")
+        logger.logInfo("🎙️ Session timeout rescheduled: \(self.audioSessionTimeout)s from now")
     }
 
     // MARK: - Private Helpers
