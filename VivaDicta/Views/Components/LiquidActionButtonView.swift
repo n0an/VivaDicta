@@ -43,7 +43,7 @@ struct LiquidActionButtonView: View {
 
     /// Y position for drawing circles in canvas
     private var canvasDrawY: CGFloat {
-        expandDirection == .down ? buttonSize / 2 : canvasSize - buttonSize / 2
+        expandDirection == .down ? buttonSize / 2 : frameHeight - buttonSize / 2
     }
 
     var body: some View {
