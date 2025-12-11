@@ -134,7 +134,7 @@ struct SettingsView: View {
                     }
 
                     if isAutoAudioCleanupEnabled {
-                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
+                        Picker("    Keep Audio Files For", selection: $audioRetentionDays) {
                             Text("1 day").tag(1)
                             Text("3 days").tag(3)
                             Text("7 days").tag(7)
