@@ -24,6 +24,10 @@ struct PromptEditView: View {
         self.promptsManager = promptsManager
     }
 
+    private var isFormValid: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private func savePrompt() {
         guard let existingPrompt = editingPrompt else { return }
 
@@ -76,13 +80,13 @@ struct PromptEditView: View {
                     Button(role: .confirm) {
                         savePrompt()
                     }
-                    .disabled(title.isEmpty)
+                    .disabled(!isFormValid)
                     .tint(.blue)
                 } else {
                     Button("Save") {
                         savePrompt()
                     }
-                    .disabled(title.isEmpty)
+                    .disabled(!isFormValid)
                 }
             }
         }

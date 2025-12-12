@@ -23,6 +23,10 @@ struct PromptAddView: View {
         return templateToCreateNewPrompt ?? .regular
     }
 
+    private var isFormValid: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private func savePrompt() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -96,13 +100,13 @@ struct PromptAddView: View {
                         Button(role: .confirm) {
                             savePrompt()
                         }
-                        .disabled(title.isEmpty)
+                        .disabled(!isFormValid)
                         .tint(.blue)
                     } else {
                         Button("Save") {
                             savePrompt()
                         }
-                        .disabled(title.isEmpty)
+                        .disabled(!isFormValid)
                     }
                 }
             }
