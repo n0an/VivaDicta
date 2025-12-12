@@ -123,29 +123,6 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    
-                    Toggle(isOn: $isAutoAudioCleanupEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Automatic Audio Cleanup")
-                                .font(.body)
-                            Text("Automatically delete old audio files to save space")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    if isAutoAudioCleanupEnabled {
-                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
-                            Text("1 day").tag(1)
-                            Text("3 days").tag(3)
-                            Text("7 days").tag(7)
-                            Text("14 days").tag(14)
-                            Text("30 days").tag(30)
-                        }
-                        .pickerStyle(.menu)
-                        .padding(.leading)
-                        .tint(.primary)
-                    }
                 }
                 
                 Section("Dictionary") {
@@ -165,58 +142,6 @@ struct SettingsView: View {
                 }
 
                 Section("Keyboard") {
-                    Button(action: activateKeyboardRecordingSession) {
-                        HStack {
-                            Image(systemName: "keyboard")
-                                .foregroundStyle(.blue)
-                                .font(.body)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Enable Keyboard Recording Session")
-                                    .foregroundStyle(.blue)
-                                    .font(.body)
-
-                                if prewarmManager.isSessionActiveObservable {
-                                    HStack {
-                                        Circle()
-                                            .fill(.green)
-                                            .frame(width: 6)
-
-                                        Text("Session active")
-                                            .font(.caption)
-                                            .foregroundStyle(.green)
-                                    }
-
-                                }
-                            }
-
-                            Spacer()
-                        }
-                    }
-                    .disabled(prewarmManager.isSessionActiveObservable)
-                    .buttonStyle(.plain)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("Session Timeout", selection: $audioSessionTimeout) {
-                            Text("15 seconds").tag(15)
-                            Text("30 seconds").tag(30)
-                            Text("60 seconds").tag(60)
-                            Text("90 seconds").tag(90)
-                            Text("2 minutes").tag(120)
-                            Text("3 minutes").tag(180)
-                            Text("5 minutes").tag(300)
-                            Text("15 minutes").tag(900)
-                            Text("30 minutes").tag(1800)
-                            Text("1 hour").tag(3600)
-                        }
-                        .pickerStyle(.menu)
-                        .tint(.primary)
-
-                        Text("Keep microphone session active to allow recording from keyboard")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
                     Toggle(isOn: $isSmartFormattingEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Smart Insert")
@@ -272,6 +197,84 @@ struct SettingsView: View {
                     .onChange(of: isSoundFeedbackEnabled) { _, newValue in
                         AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Session Timeout", selection: $audioSessionTimeout) {
+                            Text("15 seconds").tag(15)
+                            Text("30 seconds").tag(30)
+                            Text("60 seconds").tag(60)
+                            Text("90 seconds").tag(90)
+                            Text("2 minutes").tag(120)
+                            Text("3 minutes").tag(180)
+                            Text("5 minutes").tag(300)
+                            Text("15 minutes").tag(900)
+                            Text("30 minutes").tag(1800)
+                            Text("1 hour").tag(3600)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
+
+                        Text("Keep microphone session active to allow recording from keyboard")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Button(action: activateKeyboardRecordingSession) {
+                        HStack {
+                            Image(systemName: "keyboard")
+                                .foregroundStyle(.blue)
+                                .font(.body)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Enable Keyboard Recording Session")
+                                    .foregroundStyle(.blue)
+                                    .font(.body)
+
+                                if prewarmManager.isSessionActiveObservable {
+                                    HStack {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 6)
+
+                                        Text("Session active")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                    }
+
+                                }
+                            }
+
+                            Spacer()
+                        }
+                    }
+                    .disabled(prewarmManager.isSessionActiveObservable)
+                    .buttonStyle(.plain)
+                }
+                
+                Section("Storage") {
+                    
+                    Toggle(isOn: $isAutoAudioCleanupEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Automatic Audio Cleanup")
+                                .font(.body)
+                            Text("Automatically delete old audio files to save space")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if isAutoAudioCleanupEnabled {
+                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
+                            Text("1 day").tag(1)
+                            Text("3 days").tag(3)
+                            Text("7 days").tag(7)
+                            Text("14 days").tag(14)
+                            Text("30 days").tag(30)
+                        }
+                        .pickerStyle(.menu)
+                        .padding(.leading)
+                        .tint(.primary)
+                    }
                 }
                 
 //                ShortcutsLink()
@@ -287,7 +290,7 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(promptsManager: promptsManager)
+                    PromptsSettings(promptsManager: promptsManager, aiService: appState.aiService)
                 case .transcriptionModels:
                     ModelsView(appState: appState)
                 case .promptsTemplates:

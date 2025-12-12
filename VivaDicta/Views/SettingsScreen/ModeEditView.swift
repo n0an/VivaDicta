@@ -168,6 +168,9 @@ struct ModeEditView: View {
                         .onChange(of: viewModel.aiProvider) { _, newProvider in
                             viewModel.updateProvider(newProvider)
                         }
+                        .onAppear {
+                            viewModel.selectFirstProviderIfNeeded()
+                        }
                         
                         if let provider = viewModel.aiProvider {
                             let hasKey = viewModel.hasAPIKey(for: provider)
