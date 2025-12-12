@@ -230,7 +230,7 @@ struct ModeEditView: View {
                             } else {
                                 Picker("Prompt", selection: $viewModel.selectedPromptID) {
                                     ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                                        Text(prompt.title).tag(Optional(prompt.id))
+                                        Text(prompt.title).tag(prompt.id)
                                     }
                                 }
                                 .onAppear {
