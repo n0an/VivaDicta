@@ -400,9 +400,9 @@ enum SettingsError: LocalizedError {
     var failureReason: String {
         switch self {
         case .duplicateModeName(let name):
-            "There's already existing Mode with name \(name). Enter different name for this mode."
+            "There's already an existing Mode with name \(name). Enter a different name for this mode."
         case .duplicatePromptName(let name):
-            "There's already existing Prompt with name \(name). Enter different name for this prompt."
+            "There's already an existing Prompt with name \(name). Enter a different name for this prompt."
         case .unexpectedError(let message):
             "An unexpected error occurred: \(message). Please try again."
         }

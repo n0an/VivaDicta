@@ -41,12 +41,19 @@ class ModeEditViewModel {
         let hasName = !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let transcriptionReady = isTranscriptionProviderConfigured(transcriptionProvider)
                                  && !transcriptionModel.isEmpty
-        let aiEnhancementReady = !aiEnhanceEnabled
-                                 || (aiProvider != nil
-                                     && hasAPIKey(for: aiProvider!)
-                                     && aiModel != nil
-                                     && !aiModel!.isEmpty
-                                     && selectedPromptID != nil)
+
+        let aiEnhancementReady: Bool
+        if !aiEnhanceEnabled {
+            aiEnhancementReady = true
+        } else if let provider = aiProvider,
+                  let model = aiModel,
+                  !model.isEmpty,
+                  hasAPIKey(for: provider),
+                  selectedPromptID != nil {
+            aiEnhancementReady = true
+        } else {
+            aiEnhancementReady = false
+        }
 
         return hasName && transcriptionReady && aiEnhancementReady
     }
