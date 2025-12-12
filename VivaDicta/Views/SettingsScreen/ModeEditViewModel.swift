@@ -38,7 +38,56 @@ class ModeEditViewModel {
     }
     
     var isValid: Bool {
-        !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasName = !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let transcriptionReady = isTranscriptionProviderConfigured(transcriptionProvider)
+                                 && !transcriptionModel.isEmpty
+
+        let aiEnhancementReady: Bool
+        if !aiEnhanceEnabled {
+            aiEnhancementReady = true
+        } else if let provider = aiProvider,
+                  let model = aiModel,
+                  !model.isEmpty,
+                  hasAPIKey(for: provider),
+                  selectedPromptID != nil {
+            aiEnhancementReady = true
+        } else {
+            aiEnhancementReady = false
+        }
+
+        return hasName && transcriptionReady && aiEnhancementReady
+    }
+
+    // MARK: - Validation Messages
+    var transcriptionValidationMessage: String? {
+        if !isTranscriptionProviderConfigured(transcriptionProvider) {
+            if transcriptionProvider == .parakeet || transcriptionProvider == .whisperKit {
+                return "Download a model to continue"
+            } else {
+                return "Add API key to continue"
+            }
+        }
+        if transcriptionModel.isEmpty {
+            return "Select a transcription model"
+        }
+        return nil
+    }
+
+    var aiEnhancementValidationMessage: String? {
+        guard aiEnhanceEnabled else { return nil }
+        if aiProvider == nil {
+            return "Select an AI provider"
+        }
+        if !hasAPIKey(for: aiProvider!) {
+            return "Add API key to continue"
+        }
+        if aiModel == nil || aiModel!.isEmpty {
+            return "Select an AI model"
+        }
+        if selectedPromptID == nil {
+            return "Select or add a prompt"
+        }
+        return nil
     }
     
     init(mode: FlowMode?,
@@ -208,6 +257,13 @@ class ModeEditViewModel {
     }
     
     // MARK: - Prompt Settings
+    func selectFirstPromptIfNeeded() {
+        if selectedPromptID == nil, let firstPrompt = promptsManager.userPrompts.first {
+            selectedPromptID = firstPrompt.id
+            logger.logInfo("Auto-selected first prompt: \(firstPrompt.title)")
+        }
+    }
+
     private func getSelectedUserPrompt() -> UserPrompt? {
         guard let promptID = selectedPromptID else {
             return nil

@@ -13,17 +13,27 @@ import os
 class PromptsManager {
     private let logger = Logger(category: .promptsManager)
     // User prompts need to be shared with keyboard extension (used in Flow Modes)
-    private let userDefaults = UserDefaultsStorage.shared
-    private let userPromptsKey = "UserPrompts"
-    
+    private let userDefaults: UserDefaults
+    private let userPromptsKey: String
+
     var userPrompts: [UserPrompt] = []
-    
-    init() {
+
+    init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
+         storageKey: String = "UserPrompts") {
+        self.userDefaults = userDefaults
+        self.userPromptsKey = storageKey
         loadUserPrompts()
     }
     
     // MARK: - Public Methods
-    
+
+    func isPromptNameDuplicate(_ name: String, excludingId: UUID? = nil) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return userPrompts.contains { prompt in
+            prompt.title.lowercased() == trimmedName && prompt.id != excludingId
+        }
+    }
+
     func addPrompt(_ prompt: UserPrompt) {
         userPrompts.append(prompt)
         saveUserPrompts()

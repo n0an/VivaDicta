@@ -11,15 +11,42 @@ struct PromptEditView: View {
     @Environment(\.dismiss) var dismiss
     let editingPrompt: UserPrompt?
     let promptsManager: PromptsManager
-    
+
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
     @State private var showInstructionsEditor = false
-    
+    @State private var showingAlert = false
+    @State private var promptError: SettingsError = .duplicatePromptName("")
+
     init(editingPrompt: UserPrompt? = nil,
          promptsManager: PromptsManager) {
         self.editingPrompt = editingPrompt
         self.promptsManager = promptsManager
+    }
+
+    private var isFormValid: Bool {
+        !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func savePrompt() {
+        guard let existingPrompt = editingPrompt else { return }
+
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if promptsManager.isPromptNameDuplicate(trimmedTitle, excludingId: existingPrompt.id) {
+            promptError = .duplicatePromptName(trimmedTitle)
+            showingAlert = true
+            return
+        }
+
+        let updatedPrompt = UserPrompt(
+            id: existingPrompt.id,
+            title: trimmedTitle,
+            promptInstructions: promptInstructions,
+            createdAt: existingPrompt.createdAt
+        )
+        promptsManager.updatePrompt(updatedPrompt)
+        dismiss()
     }
     
     var body: some View {
@@ -49,37 +76,17 @@ struct PromptEditView: View {
         
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                if #available(iOS 26, *){
+                if #available(iOS 26, *) {
                     Button(role: .confirm) {
-                        if let existingPrompt = editingPrompt {
-                            // Update existing prompt
-                            let updatedPrompt = UserPrompt(
-                                id: existingPrompt.id,
-                                title: title,
-                                promptInstructions: promptInstructions,
-                                createdAt: existingPrompt.createdAt
-                            )
-                            promptsManager.updatePrompt(updatedPrompt)
-                        }
-                        dismiss()
+                        savePrompt()
                     }
-                    .disabled(title.isEmpty)
+                    .disabled(!isFormValid)
                     .tint(.blue)
                 } else {
                     Button("Save") {
-                        if let existingPrompt = editingPrompt {
-                            // Update existing prompt
-                            let updatedPrompt = UserPrompt(
-                                id: existingPrompt.id,
-                                title: title,
-                                promptInstructions: promptInstructions,
-                                createdAt: existingPrompt.createdAt
-                            )
-                            promptsManager.updatePrompt(updatedPrompt)
-                        }
-                        dismiss()
+                        savePrompt()
                     }
-                    .disabled(title.isEmpty)
+                    .disabled(!isFormValid)
                 }
             }
         }
@@ -96,5 +103,11 @@ struct PromptEditView: View {
                 PromptInstructionsEditorView(instructions: $promptInstructions)
             }
         }
+        .alert(isPresented: $showingAlert,
+               error: promptError,
+               actions: { _ in },
+               message: { error in
+            Text(error.failureReason)
+        })
     }
 }
