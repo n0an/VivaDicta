@@ -169,12 +169,13 @@ struct ModeEditView: View {
                             } label: {
                                 HStack {
                                     Text(viewModel.aiProvider?.rawValue.capitalized ?? "Select")
-                                        .foregroundStyle(viewModel.aiProvider == nil ? .secondary : .primary)
+                                        .foregroundStyle(.secondary)
                                     Image(systemName: "chevron.up.chevron.down")
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
                                 }
                             }
+                            .buttonStyle(.plain)
                         } label: {
                             HStack {
                                 Image(systemName: "cpu")
