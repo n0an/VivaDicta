@@ -88,7 +88,8 @@ struct SettingsView: View {
                         HStack {
                             Image(systemName: "info.circle")
                                 .foregroundStyle(.secondary)
-                            Text("Download models or configure API keys to add new modes")
+                            
+                            Text("Download local or select cloud transcription model")
                                 .foregroundStyle(.secondary)
                                 .font(.footnote)
                         }
