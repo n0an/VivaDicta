@@ -257,6 +257,13 @@ class ModeEditViewModel {
     }
     
     // MARK: - Prompt Settings
+    func selectFirstPromptIfNeeded() {
+        if selectedPromptID == nil, let firstPrompt = promptsManager.userPrompts.first {
+            selectedPromptID = firstPrompt.id
+            logger.logInfo("Auto-selected first prompt: \(firstPrompt.title)")
+        }
+    }
+
     private func getSelectedUserPrompt() -> UserPrompt? {
         guard let promptID = selectedPromptID else {
             return nil

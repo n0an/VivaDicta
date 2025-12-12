@@ -230,8 +230,11 @@ struct ModeEditView: View {
                             } else {
                                 Picker("Prompt", selection: $viewModel.selectedPromptID) {
                                     ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                                        Text(prompt.title).tag(prompt.id as UUID?)
+                                        Text(prompt.title).tag(Optional(prompt.id))
                                     }
+                                }
+                                .onAppear {
+                                    viewModel.selectFirstPromptIfNeeded()
                                 }
                             }
                         }
