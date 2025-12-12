@@ -23,7 +23,14 @@ class PromptsManager {
     }
     
     // MARK: - Public Methods
-    
+
+    func isPromptNameDuplicate(_ name: String, excludingId: UUID? = nil) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return userPrompts.contains { prompt in
+            prompt.title.lowercased() == trimmedName && prompt.id != excludingId
+        }
+    }
+
     func addPrompt(_ prompt: UserPrompt) {
         userPrompts.append(prompt)
         saveUserPrompts()

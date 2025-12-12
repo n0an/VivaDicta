@@ -26,8 +26,7 @@ struct PromptAddView: View {
     private func savePrompt() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Check for duplicate names
-        if promptsManager.userPrompts.contains(where: { $0.title.lowercased() == trimmedTitle.lowercased() }) {
+        if promptsManager.isPromptNameDuplicate(trimmedTitle) {
             promptError = .duplicatePromptName(trimmedTitle)
             showingAlert = true
             return

@@ -29,9 +29,7 @@ struct PromptEditView: View {
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Check for duplicate names (excluding current prompt)
-        let otherPrompts = promptsManager.userPrompts.filter { $0.id != existingPrompt.id }
-        if otherPrompts.contains(where: { $0.title.lowercased() == trimmedTitle.lowercased() }) {
+        if promptsManager.isPromptNameDuplicate(trimmedTitle, excludingId: existingPrompt.id) {
             promptError = .duplicatePromptName(trimmedTitle)
             showingAlert = true
             return
