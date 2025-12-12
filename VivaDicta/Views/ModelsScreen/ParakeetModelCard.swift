@@ -152,6 +152,8 @@ struct ParakeetModelCard: View {
         Task {
             do {
                 try await downloadManager.downloadModel(model)
+            } catch is CancellationError {
+                // Don't treat cancellation as an error - it was intentional
             } catch {
                 await downloadManager.handleModelDownloadError(model, error)
             }
