@@ -223,11 +223,14 @@ struct LocalModelCard: View {
                 } else if let parakeetModel = model as? ParakeetModel {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
-                
+
                 // Hide "Select Transcription model" tips
                 await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
                 await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
-                
+
+            } catch is CancellationError {
+                // Don't treat cancellation as an error - it was intentional
+                // Status is already reset by cancelDownload()
             } catch {
                 if let whisperModel = model as? WhisperKitModel {
                     await downloadManager.handleModelDownloadError(whisperModel, error)

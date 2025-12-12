@@ -112,6 +112,22 @@ class ModelDownloadManager: @unchecked Sendable {
             downloadProgress.removeValue(forKey: model.name + "_coreml")
         }
 
+        // Clean up any partially downloaded files
+        Task {
+            do {
+                if let parakeetModel = model as? ParakeetModel {
+                    try parakeetModel.deleteModel()
+                    logger.logNotice("🧹 Cleaned up partial download for \(model.name)")
+                } else if let whisperKitModel = model as? WhisperKitModel {
+                    try whisperKitModel.deleteModel()
+                    logger.logNotice("🧹 Cleaned up partial download for \(model.name)")
+                }
+            } catch {
+                // Ignore cleanup errors - folder may not exist yet
+                logger.logInfo("No partial download to clean up for \(model.name)")
+            }
+        }
+
         logger.logNotice("❌ Cancelled download of \(model.name)")
     }
 
@@ -136,6 +152,8 @@ class ModelDownloadManager: @unchecked Sendable {
 
     // MARK: - Parakeet Model Download
     private func downloadParakeetModel(_ model: ParakeetModel) async throws {
+        try Task.checkCancellation()
+
         await MainActor.run {
             downloadStatuses[model.name] = .downloading
             downloadProgress[model.name] = 0.0
@@ -152,8 +170,7 @@ class ModelDownloadManager: @unchecked Sendable {
                 try? await Task.sleep(for: .seconds(1))
             }
         }
-
-        // Ensure progress task is cancelled regardless of success or failure
+        
         defer {
             progressTask.cancel()
         }
@@ -167,6 +184,8 @@ class ModelDownloadManager: @unchecked Sendable {
             )
 
             _ = try await (asrDownload, vadDownload)
+            
+            try Task.checkCancellation()
 
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
@@ -181,6 +200,9 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.onModelDownloaded?(model)
             }
 
+        } catch is CancellationError {
+            logger.logNotice("🛑 Download of \(model.displayName) was cancelled")
+            throw CancellationError()
         } catch {
             await MainActor.run {
                 self.downloadStatuses[model.name] = .download
@@ -195,6 +217,9 @@ class ModelDownloadManager: @unchecked Sendable {
     // MARK: - WhisperKit Model Download
 
     private func downloadWhisperKitModel(_ model: WhisperKitModel) async throws {
+        // Check for cancellation before starting
+        try Task.checkCancellation()
+
         await MainActor.run {
             downloadStatuses[model.name] = .downloading
             downloadProgress[model.name] = 0.0
@@ -213,6 +238,8 @@ class ModelDownloadManager: @unchecked Sendable {
             )
 
             let whisperKit = try await WhisperKit(config)
+            
+            try Task.checkCancellation()
 
             // Check if model needs downloading using consolidated path
             let modelFolder = WhisperKitModel.modelPath(for: model.whisperKitModelName)
@@ -232,6 +259,8 @@ class ModelDownloadManager: @unchecked Sendable {
                         }
                     }
                 )
+                
+                try Task.checkCancellation()
 
                 whisperKit.modelFolder = downloadedFolder
             } else {
@@ -240,6 +269,9 @@ class ModelDownloadManager: @unchecked Sendable {
                     self.downloadProgress[model.name] = 0.7
                 }
             }
+
+            // Check for cancellation before prewarm
+            try Task.checkCancellation()
 
             // Prewarm models with animated progress (critical for first-time performance)
             logger.logNotice("🔥 Prewarming model: \(model.whisperKitModelName)")
@@ -266,6 +298,10 @@ class ModelDownloadManager: @unchecked Sendable {
 
             // Cancel the animation task and set final progress
             progressTask.cancel()
+
+            // Check for cancellation after prewarm
+            try Task.checkCancellation()
+
             await MainActor.run {
                 self.downloadProgress[model.name] = 0.9
             }
@@ -290,6 +326,10 @@ class ModelDownloadManager: @unchecked Sendable {
 
             // Cancel the animation task and set final progress
             loadProgressTask.cancel()
+
+            // Check for cancellation after load
+            try Task.checkCancellation()
+
             await MainActor.run {
                 self.downloadProgress[model.name] = 1.0
                 self.downloadStatuses[model.name] = .downloaded
@@ -308,6 +348,9 @@ class ModelDownloadManager: @unchecked Sendable {
                 self.onModelDownloaded?(model)
             }
 
+        } catch is CancellationError {
+            logger.logNotice("🛑 Download of \(model.displayName) was cancelled")
+            throw CancellationError()
         } catch {
             await MainActor.run {
                 self.downloadStatuses[model.name] = .download
