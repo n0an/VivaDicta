@@ -45,7 +45,8 @@ class ModeEditViewModel {
                                  || (aiProvider != nil
                                      && hasAPIKey(for: aiProvider!)
                                      && aiModel != nil
-                                     && !aiModel!.isEmpty)
+                                     && !aiModel!.isEmpty
+                                     && selectedPromptID != nil)
 
         return hasName && transcriptionReady && aiEnhancementReady
     }
@@ -75,6 +76,9 @@ class ModeEditViewModel {
         }
         if aiModel == nil || aiModel!.isEmpty {
             return "Select an AI model"
+        }
+        if selectedPromptID == nil {
+            return "Select or add a prompt"
         }
         return nil
     }

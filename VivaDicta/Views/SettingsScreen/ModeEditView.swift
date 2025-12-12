@@ -215,17 +215,23 @@ struct ModeEditView: View {
                                     navigationPath.append(SettingsDestination.promptsSettings)
                                 }) {
                                     HStack {
-                                        Image(systemName: "plus.circle")
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
                                         Text("Add Prompt")
                                         Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
                                         Image(systemName: "chevron.right")
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                                .foregroundStyle(.primary)
                             } else {
                                 Picker("Prompt", selection: $viewModel.selectedPromptID) {
+                                    Text("Select a prompt").tag(nil as UUID?)
                                     ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                                        Text(prompt.title).tag(prompt.id)
+                                        Text(prompt.title).tag(prompt.id as UUID?)
                                     }
                                 }
                             }
