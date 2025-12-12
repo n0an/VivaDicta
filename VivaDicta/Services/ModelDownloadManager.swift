@@ -112,6 +112,22 @@ class ModelDownloadManager: @unchecked Sendable {
             downloadProgress.removeValue(forKey: model.name + "_coreml")
         }
 
+        // Clean up any partially downloaded files
+        Task {
+            do {
+                if let parakeetModel = model as? ParakeetModel {
+                    try parakeetModel.deleteModel()
+                    logger.logNotice("🧹 Cleaned up partial download for \(model.name)")
+                } else if let whisperKitModel = model as? WhisperKitModel {
+                    try whisperKitModel.deleteModel()
+                    logger.logNotice("🧹 Cleaned up partial download for \(model.name)")
+                }
+            } catch {
+                // Ignore cleanup errors - folder may not exist yet
+                logger.logInfo("No partial download to clean up for \(model.name)")
+            }
+        }
+
         logger.logNotice("❌ Cancelled download of \(model.name)")
     }
 
