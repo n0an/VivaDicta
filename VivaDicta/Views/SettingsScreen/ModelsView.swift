@@ -135,6 +135,12 @@ struct ModelsView: View {
 
         // Update cloud models to reflect the change
         appState.transcriptionManager.updateCloudModels()
+
+        // Disable AI enhancement for modes using this provider
+        // TranscriptionModelProvider and AIProvider share raw values for common providers
+        if let aiProvider = AIProvider(rawValue: model.provider.rawValue) {
+            appState.aiService.disableAIEnhancementForModesUsingProvider(aiProvider)
+        }
     }
 }
 

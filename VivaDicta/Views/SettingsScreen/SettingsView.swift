@@ -123,29 +123,6 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    
-                    Toggle(isOn: $isAutoAudioCleanupEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Automatic Audio Cleanup")
-                                .font(.body)
-                            Text("Automatically delete old audio files to save space")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    if isAutoAudioCleanupEnabled {
-                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
-                            Text("1 day").tag(1)
-                            Text("3 days").tag(3)
-                            Text("7 days").tag(7)
-                            Text("14 days").tag(14)
-                            Text("30 days").tag(30)
-                        }
-                        .pickerStyle(.menu)
-                        .padding(.leading)
-                        .tint(.primary)
-                    }
                 }
                 
                 Section("Dictionary") {
@@ -274,6 +251,32 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section("Storage") {
+                    
+                    Toggle(isOn: $isAutoAudioCleanupEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Automatic Audio Cleanup")
+                                .font(.body)
+                            Text("Automatically delete old audio files to save space")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if isAutoAudioCleanupEnabled {
+                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
+                            Text("1 day").tag(1)
+                            Text("3 days").tag(3)
+                            Text("7 days").tag(7)
+                            Text("14 days").tag(14)
+                            Text("30 days").tag(30)
+                        }
+                        .pickerStyle(.menu)
+                        .padding(.leading)
+                        .tint(.primary)
+                    }
+                }
+                
 //                ShortcutsLink()
             }
             .navigationDestination(for: FlowMode.self) { mode in
@@ -287,7 +290,7 @@ struct SettingsView: View {
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
                 case .promptsSettings:
-                    PromptsSettings(promptsManager: promptsManager)
+                    PromptsSettings(promptsManager: promptsManager, aiService: appState.aiService)
                 case .transcriptionModels:
                     ModelsView(appState: appState)
                 case .promptsTemplates:

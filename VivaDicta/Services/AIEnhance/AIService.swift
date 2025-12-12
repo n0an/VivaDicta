@@ -101,6 +101,74 @@ class AIService {
         logger.logInfo("Deleted mode: \(mode.name)")
     }
 
+    /// Disables AI enhancement for all modes that use the specified AI provider.
+    /// Called when an API key for that provider is deleted.
+    public func disableAIEnhancementForModesUsingProvider(_ provider: AIProvider) {
+        var modesUpdated = false
+
+        for (index, mode) in modes.enumerated() {
+            if mode.aiEnhanceEnabled && mode.aiProvider == provider {
+                let updatedMode = FlowMode(
+                    id: mode.id,
+                    name: mode.name,
+                    transcriptionProvider: mode.transcriptionProvider,
+                    transcriptionModel: mode.transcriptionModel,
+                    transcriptionLanguage: mode.transcriptionLanguage,
+                    userPrompt: mode.userPrompt,
+                    aiProvider: mode.aiProvider,
+                    aiModel: mode.aiModel,
+                    aiEnhanceEnabled: false
+                )
+                modes[index] = updatedMode
+
+                if selectedMode.id == mode.id {
+                    selectedMode = updatedMode
+                }
+
+                modesUpdated = true
+                logger.logInfo("Disabled AI enhancement for mode '\(mode.name)' due to API key deletion for provider: \(provider.rawValue)")
+            }
+        }
+
+        if modesUpdated {
+            saveModes()
+        }
+    }
+
+    /// Disables AI enhancement for all modes that use the specified prompt.
+    /// Called when that prompt is deleted.
+    public func disableAIEnhancementForModesUsingPrompt(promptId: UUID) {
+        var modesUpdated = false
+
+        for (index, mode) in modes.enumerated() {
+            if mode.aiEnhanceEnabled && mode.userPrompt?.id == promptId {
+                let updatedMode = FlowMode(
+                    id: mode.id,
+                    name: mode.name,
+                    transcriptionProvider: mode.transcriptionProvider,
+                    transcriptionModel: mode.transcriptionModel,
+                    transcriptionLanguage: mode.transcriptionLanguage,
+                    userPrompt: nil,
+                    aiProvider: mode.aiProvider,
+                    aiModel: mode.aiModel,
+                    aiEnhanceEnabled: false
+                )
+                modes[index] = updatedMode
+
+                if selectedMode.id == mode.id {
+                    selectedMode = updatedMode
+                }
+
+                modesUpdated = true
+                logger.logInfo("Disabled AI enhancement for mode '\(mode.name)' due to prompt deletion")
+            }
+        }
+
+        if modesUpdated {
+            saveModes()
+        }
+    }
+
     public func updateDefaultModeIfNeeded(provider: TranscriptionModelProvider, modelName: String) {
         // Find the default mode
         guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }) else {

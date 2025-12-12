@@ -9,8 +9,8 @@ import SwiftUI
 
 struct PromptsSettings: View {
     var promptsManager: PromptsManager
-//    var transition: Namespace.ID
-    
+    var aiService: AIService
+
     var body: some View {
         VStack(spacing: 0) {
             if promptsManager.userPrompts.isEmpty {
@@ -26,7 +26,7 @@ struct PromptsSettings: View {
                 }
                 .prominentButton(color: .blue)
             }
-            
+
         }
         .toolbarTitleDisplayMode(.inlineLarge)
         .navigationTitle("Prompts")
@@ -61,11 +61,18 @@ struct PromptsSettings: View {
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", role: .destructive) {
-                        promptsManager.deletePrompt(prompt)
+                        deletePrompt(prompt)
                     }
                 }
             }
         }
+    }
+
+    private func deletePrompt(_ prompt: UserPrompt) {
+        // Disable AI enhancement for modes using this prompt
+        aiService.disableAIEnhancementForModesUsingPrompt(promptId: prompt.id)
+        // Delete the prompt
+        promptsManager.deletePrompt(prompt)
     }
 }
 
@@ -85,6 +92,6 @@ struct PromptRowView: View {
 
 #Preview {
     @Previewable @State var promptsManager = PromptsManager()
-//    @Previewable @Namespace var transition
-    PromptsSettings(promptsManager: promptsManager)
+    @Previewable @State var aiService = AIService()
+    PromptsSettings(promptsManager: promptsManager, aiService: aiService)
 }
