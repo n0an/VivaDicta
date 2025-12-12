@@ -196,7 +196,12 @@ class ModeEditViewModel {
     // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
-        return ![.parakeet, .gemini].contains(transcriptionProvider)
+        
+        if transcriptionProvider == .gemini { return false }
+        
+        if transcriptionProvider == .parakeet { return transcriptionModel == "parakeet-tdt-0.6b-v2" }
+        
+        return true
 
     }
     
@@ -214,6 +219,8 @@ class ModeEditViewModel {
         switch transcriptionProvider {
         case .whisperKit:
             models = TranscriptionModelProvider.allWhisperKitModels
+        case .parakeet:
+            models = TranscriptionModelProvider.allParakeetModels
         default:
             models = TranscriptionModelProvider.allCloudModels
         }
