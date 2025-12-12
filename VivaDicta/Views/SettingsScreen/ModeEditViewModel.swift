@@ -259,6 +259,20 @@ class ModeEditViewModel {
     }
     
     // MARK: - AI Enhancement settings
+    func selectFirstConnectedProviderIfNeeded() {
+        guard aiProvider == nil else { return }
+
+        let firstConnectedProvider = AIProvider.generalProviders.first { provider in
+            aiService.connectedProviders.contains(provider)
+        }
+
+        if let provider = firstConnectedProvider {
+            aiProvider = provider
+            aiModel = provider.defaultModel
+            logger.logInfo("Auto-selected first connected provider: \(provider.rawValue)")
+        }
+    }
+
     func updateProvider(_ newProvider: AIProvider?) {
         aiProvider = newProvider
         aiModel = newProvider?.defaultModel
