@@ -92,6 +92,13 @@ struct ModeEditView: View {
                         }
                         .popoverTip(selectLanguageTip)
 
+                    } else { // Auto-detected language models - Gemini and Parakeet
+                        HStack {
+                            Text("Language")
+                            Spacer()
+                            Text("Autodetected by model")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 } else {
                     if viewModel.transcriptionProvider == .parakeet ||
