@@ -142,58 +142,6 @@ struct SettingsView: View {
                 }
 
                 Section("Keyboard") {
-                    Button(action: activateKeyboardRecordingSession) {
-                        HStack {
-                            Image(systemName: "keyboard")
-                                .foregroundStyle(.blue)
-                                .font(.body)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Enable Keyboard Recording Session")
-                                    .foregroundStyle(.blue)
-                                    .font(.body)
-
-                                if prewarmManager.isSessionActiveObservable {
-                                    HStack {
-                                        Circle()
-                                            .fill(.green)
-                                            .frame(width: 6)
-
-                                        Text("Session active")
-                                            .font(.caption)
-                                            .foregroundStyle(.green)
-                                    }
-
-                                }
-                            }
-
-                            Spacer()
-                        }
-                    }
-                    .disabled(prewarmManager.isSessionActiveObservable)
-                    .buttonStyle(.plain)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Picker("Session Timeout", selection: $audioSessionTimeout) {
-                            Text("15 seconds").tag(15)
-                            Text("30 seconds").tag(30)
-                            Text("60 seconds").tag(60)
-                            Text("90 seconds").tag(90)
-                            Text("2 minutes").tag(120)
-                            Text("3 minutes").tag(180)
-                            Text("5 minutes").tag(300)
-                            Text("15 minutes").tag(900)
-                            Text("30 minutes").tag(1800)
-                            Text("1 hour").tag(3600)
-                        }
-                        .pickerStyle(.menu)
-                        .tint(.primary)
-
-                        Text("Keep microphone session active to allow recording from keyboard")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
                     Toggle(isOn: $isSmartFormattingEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Smart Insert")
@@ -249,6 +197,58 @@ struct SettingsView: View {
                     .onChange(of: isSoundFeedbackEnabled) { _, newValue in
                         AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Session Timeout", selection: $audioSessionTimeout) {
+                            Text("15 seconds").tag(15)
+                            Text("30 seconds").tag(30)
+                            Text("60 seconds").tag(60)
+                            Text("90 seconds").tag(90)
+                            Text("2 minutes").tag(120)
+                            Text("3 minutes").tag(180)
+                            Text("5 minutes").tag(300)
+                            Text("15 minutes").tag(900)
+                            Text("30 minutes").tag(1800)
+                            Text("1 hour").tag(3600)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
+
+                        Text("Keep microphone session active to allow recording from keyboard")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Button(action: activateKeyboardRecordingSession) {
+                        HStack {
+                            Image(systemName: "keyboard")
+                                .foregroundStyle(.blue)
+                                .font(.body)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Enable Keyboard Recording Session")
+                                    .foregroundStyle(.blue)
+                                    .font(.body)
+
+                                if prewarmManager.isSessionActiveObservable {
+                                    HStack {
+                                        Circle()
+                                            .fill(.green)
+                                            .frame(width: 6)
+
+                                        Text("Session active")
+                                            .font(.caption)
+                                            .foregroundStyle(.green)
+                                    }
+
+                                }
+                            }
+
+                            Spacer()
+                        }
+                    }
+                    .disabled(prewarmManager.isSessionActiveObservable)
+                    .buttonStyle(.plain)
                 }
                 
                 Section("Storage") {
