@@ -8,7 +8,9 @@
 import SwiftUI
 import CoreSpotlight
 
-private enum TextDisplayType: String, CaseIterable {
+private enum TextDisplayType: String, CaseIterable, Identifiable {
+    var id: Self { self }
+    
     case original = "Original"
     case enhanced = "Enhanced"
 }
@@ -85,7 +87,7 @@ struct TranscriptionDetailView: View {
                 // Segmented control - only show if enhanced text exists
                 if hasEnhancedText {
                     Picker("Text type", selection: $selectedTextType) {
-                        ForEach(TextDisplayType.allCases, id: \.self) { type in
+                        ForEach(TextDisplayType.allCases) { type in
                             if type == .enhanced {
                                 Label(type.rawValue, systemImage: "sparkles")
                             } else {

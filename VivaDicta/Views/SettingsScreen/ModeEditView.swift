@@ -177,7 +177,7 @@ struct ModeEditView: View {
                                     ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
                                         Text(model).tag(model as String?)
                                     }
-                                    
+
                                 } label: {
                                     HStack {
                                         Image(systemName: "sparkles")

@@ -152,7 +152,7 @@ struct RecordView: View {
             Spacer()
 
             Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
-                ForEach(vm.availableModes, id: \.name) { mode in
+                ForEach(vm.availableModes) { mode in
                     Text(mode.name)
                         .tag(mode.name)
                 }

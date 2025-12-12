@@ -44,7 +44,7 @@ struct RecordingStateView: View {
         VStack(spacing: 0) {
             HStack {
                 Picker("Flow Mode", selection: $dictationState.flowModeManager.selectedFlowMode) {
-                    ForEach(dictationState.flowModeManager.availableFlowModes, id: \.id) { mode in
+                    ForEach(dictationState.flowModeManager.availableFlowModes) { mode in
                         Text(mode.name).tag(mode)
                     }
                 }

@@ -34,7 +34,7 @@ struct ModelsView: View {
         VStack(spacing: 0) {
             // Main segmented control at the top
             Picker("Model type", selection: $modelType) {
-                ForEach(TranscriptionModelType.allCases, id: \.self) {
+                ForEach(TranscriptionModelType.allCases) {
                     Text($0.rawValue.capitalized)
                 }
             }

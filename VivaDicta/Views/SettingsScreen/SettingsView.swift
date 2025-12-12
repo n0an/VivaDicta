@@ -22,7 +22,7 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isTextFormattingEnabled)
     private var isTextFormattingEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
-    private var audioSessionTimeout = 180
+    private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
     @State private var showPrewarmError = false
     @State private var prewarmErrorMessage = ""
@@ -198,7 +198,6 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Session Timeout", selection: $audioSessionTimeout) {
-                            Text("Immediate").tag(0)
                             Text("15 seconds").tag(15)
                             Text("30 seconds").tag(30)
                             Text("60 seconds").tag(60)

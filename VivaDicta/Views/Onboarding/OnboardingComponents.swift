@@ -226,7 +226,7 @@ struct OnboardingPageIndicator: View {
 
     var body: some View {
         HStack(spacing: spacing) {
-            ForEach(OnboardingPage.allCases, id: \.self) { page in
+            ForEach(OnboardingPage.allCases) { page in
                 if page == currentPage {
                     // Selected: line/pill shape
                     Capsule()

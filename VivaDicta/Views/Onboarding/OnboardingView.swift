@@ -8,7 +8,8 @@
 import SwiftUI
 import AVFoundation
 
-enum OnboardingPage: Int, CaseIterable, Comparable {
+enum OnboardingPage: Int, CaseIterable, Comparable, Identifiable {
+    var id: Self { self }
     case welcome
     case microphone
     case keyboard

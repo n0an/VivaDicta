@@ -22,7 +22,7 @@ struct RecordingSheetView: View {
         VStack(spacing: 12) {
             HStack {
                 Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
-                    ForEach(vm.availableModes, id: \.id) { mode in
+                    ForEach(vm.availableModes) { mode in
                         Text(mode.name)
                             .tag(mode.name)
                     }
