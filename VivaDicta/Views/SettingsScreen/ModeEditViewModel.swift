@@ -38,7 +38,45 @@ class ModeEditViewModel {
     }
     
     var isValid: Bool {
-        !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasName = !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let transcriptionReady = isTranscriptionProviderConfigured(transcriptionProvider)
+                                 && !transcriptionModel.isEmpty
+        let aiEnhancementReady = !aiEnhanceEnabled
+                                 || (aiProvider != nil
+                                     && hasAPIKey(for: aiProvider!)
+                                     && aiModel != nil
+                                     && !aiModel!.isEmpty)
+
+        return hasName && transcriptionReady && aiEnhancementReady
+    }
+
+    // MARK: - Validation Messages
+    var transcriptionValidationMessage: String? {
+        if !isTranscriptionProviderConfigured(transcriptionProvider) {
+            if transcriptionProvider == .parakeet || transcriptionProvider == .whisperKit {
+                return "Download a model to continue"
+            } else {
+                return "Add API key to continue"
+            }
+        }
+        if transcriptionModel.isEmpty {
+            return "Select a transcription model"
+        }
+        return nil
+    }
+
+    var aiEnhancementValidationMessage: String? {
+        guard aiEnhanceEnabled else { return nil }
+        if aiProvider == nil {
+            return "Select an AI provider"
+        }
+        if !hasAPIKey(for: aiProvider!) {
+            return "Add API key to continue"
+        }
+        if aiModel == nil || aiModel!.isEmpty {
+            return "Select an AI model"
+        }
+        return nil
     }
     
     init(mode: FlowMode?,

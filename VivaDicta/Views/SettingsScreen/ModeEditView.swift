@@ -45,7 +45,7 @@ struct ModeEditView: View {
             }
             
             Section(header: Text("Transcription"),
-                    footer: Text(viewModel.transcriptionFooterText)) {
+                    footer: transcriptionSectionFooter) {
                 
                 Picker("Provider", selection: $viewModel.transcriptionProvider) {
                     ForEach(TranscriptionModelProvider.allCases) { provider in
@@ -100,18 +100,20 @@ struct ModeEditView: View {
                             navigationPath.append(SettingsDestination.transcriptionModels)
                         } label: {
                             HStack {
-                                Image(systemName: "arrow.down.circle")
-                                Text("Download Local Transcription Model")
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Download Model")
                                 Spacer()
+                                Text("Required")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                 Image(systemName: "chevron.right")
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.primary)
                     } else {
                         if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
-                            
-                            
                             NavigationLink {
                                 AddAPIKeyView(
                                     provider: mappedProvider,
@@ -124,27 +126,15 @@ struct ModeEditView: View {
                                     })
                             } label: {
                                 HStack {
-                                    Image(systemName: "key")
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
                                     Text("Add API Key")
+                                    Spacer()
+                                    Text("Required")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
-
-                            
-                            
-//                            NavigationLink(destination: AddAPIKeyView(
-//                                provider: mappedProvider,
-//                                aiService: viewModel.aiService,
-//                                onSave: { _ in
-//                                    let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
-//                                    if let firstModel = availableModels.first {
-//                                        viewModel.transcriptionModel = firstModel
-//                                    }
-//                                })) {
-//                                    HStack {
-//                                        Image(systemName: "key")
-//                                        Text("Add API Key")
-//                                    }
-//                                }
                         }
                     }
                 }
@@ -153,7 +143,7 @@ struct ModeEditView: View {
             if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
                 
                 Section(header: Text("AI Enhancement"),
-                        footer: Text("Configure how the raw transcription should be processed and refined.")) {
+                        footer: aiEnhancementSectionFooter) {
                     
                     if !viewModel.aiEnhanceEnabled {
                         TipView(selectAIEnhacementTip)
@@ -199,8 +189,6 @@ struct ModeEditView: View {
                                 }
                                 
                             } else {
-                                
-                                
                                 NavigationLink {
                                     AddAPIKeyView(
                                         provider: provider,
@@ -209,22 +197,15 @@ struct ModeEditView: View {
                                         })
                                 } label: {
                                     HStack {
-                                        Image(systemName: "key")
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
                                         Text("Add API Key")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
                                     }
                                 }
-
-                                
-//                                NavigationLink(destination: AddAPIKeyView(
-//                                    provider: provider,
-//                                    aiService: viewModel.aiService, onSave: { provider in
-//                                        viewModel.updateModel(provider.defaultModel)
-//                                    })) {
-//                                        HStack {
-//                                            Image(systemName: "key")
-//                                            Text("Add API Key")
-//                                        }
-//                                    }
                             }
                         }
                         
@@ -279,7 +260,28 @@ struct ModeEditView: View {
             }
         }
     }
-    
+    @ViewBuilder
+    private var transcriptionSectionFooter: some View {
+        if let validationMessage = viewModel.transcriptionValidationMessage {
+            Label(validationMessage, systemImage: "info.circle")
+                .foregroundStyle(.orange)
+                .font(.caption)
+        } else if !viewModel.transcriptionFooterText.isEmpty {
+            Text(viewModel.transcriptionFooterText)
+        }
+    }
+
+    @ViewBuilder
+    private var aiEnhancementSectionFooter: some View {
+        if let validationMessage = viewModel.aiEnhancementValidationMessage {
+            Label(validationMessage, systemImage: "info.circle")
+                .foregroundStyle(.orange)
+                .font(.caption)
+        } else {
+            Text("Configure how the raw transcription should be processed and refined.")
+        }
+    }
+
     private func saveMode() {
         
         do {
