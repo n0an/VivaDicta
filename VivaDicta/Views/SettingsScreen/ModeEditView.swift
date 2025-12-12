@@ -229,7 +229,6 @@ struct ModeEditView: View {
                                 .foregroundStyle(.primary)
                             } else {
                                 Picker("Prompt", selection: $viewModel.selectedPromptID) {
-                                    Text("Select a prompt").tag(nil as UUID?)
                                     ForEach(viewModel.promptsManager.userPrompts) { prompt in
                                         Text(prompt.title).tag(prompt.id as UUID?)
                                     }
