@@ -108,6 +108,8 @@ class ModeEditViewModel {
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
             selectedPromptID = existingMode.userPrompt?.id
+
+            validateLanguageSelection()
         } else {
             transcriptionProvider = .whisperKit
             transcriptionModel = ""
@@ -167,12 +169,28 @@ class ModeEditViewModel {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
         logger.logInfo("Updated transcription provider to: \(newProvider.rawValue), model: \(self.transcriptionModel)")
+
+        validateLanguageSelection()
     }
 
     func updateTranscriptionModel(_ newModel: String) {
         transcriptionModel = newModel
         logger.logInfo("Updated transcription model to: \(newModel)")
 
+        validateLanguageSelection()
+    }
+
+    private func validateLanguageSelection() {
+        let grouped = getGroupedLanguages()
+        let allLanguages = grouped.recommended + grouped.other
+
+        let isCurrentLanguageValid = allLanguages.contains { $0.key == transcriptionLanguage }
+
+        if !isCurrentLanguageValid, let firstLanguage = allLanguages.first {
+            let oldLanguage = transcriptionLanguage
+            transcriptionLanguage = firstLanguage.key
+            logger.logInfo("Language '\(oldLanguage)' not supported by model, reset to '\(firstLanguage.key)'")
+        }
     }
     
     // MARK: - Language Settings
