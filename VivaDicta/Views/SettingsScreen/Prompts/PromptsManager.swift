@@ -13,12 +13,15 @@ import os
 class PromptsManager {
     private let logger = Logger(category: .promptsManager)
     // User prompts need to be shared with keyboard extension (used in Flow Modes)
-    private let userDefaults = UserDefaultsStorage.shared
-    private let userPromptsKey = "UserPrompts"
-    
+    private let userDefaults: UserDefaults
+    private let userPromptsKey: String
+
     var userPrompts: [UserPrompt] = []
-    
-    init() {
+
+    init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
+         storageKey: String = "UserPrompts") {
+        self.userDefaults = userDefaults
+        self.userPromptsKey = storageKey
         loadUserPrompts()
     }
     
