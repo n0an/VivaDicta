@@ -16,14 +16,25 @@ struct PromptAddView: View {
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
     @State private var showInstructionsEditor = false
+    @State private var showingAlert = false
+    @State private var promptError: SettingsError = .duplicatePromptName("")
 
     private var currentTemplate: PromptsTemplates {
         return templateToCreateNewPrompt ?? .regular
     }
 
     private func savePrompt() {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Check for duplicate names
+        if promptsManager.userPrompts.contains(where: { $0.title.lowercased() == trimmedTitle.lowercased() }) {
+            promptError = .duplicatePromptName(trimmedTitle)
+            showingAlert = true
+            return
+        }
+
         let prompt = UserPrompt(
-            title: title,
+            title: trimmedTitle,
             promptInstructions: promptInstructions)
 
         promptsManager.addPrompt(prompt)
@@ -111,5 +122,11 @@ struct PromptAddView: View {
                 PromptInstructionsEditorView(instructions: $promptInstructions)
             }
         }
+        .alert(isPresented: $showingAlert,
+               error: promptError,
+               actions: { _ in },
+               message: { error in
+            Text(error.failureReason)
+        })
     }
 }
