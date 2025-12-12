@@ -271,6 +271,7 @@ struct ModeEditView: View {
             Label(validationMessage, systemImage: "info.circle")
                 .foregroundStyle(.orange)
                 .font(.caption)
+                .accessibilityLabel("Required: \(validationMessage)")
         } else if !viewModel.transcriptionFooterText.isEmpty {
             Text(viewModel.transcriptionFooterText)
         }
@@ -282,6 +283,7 @@ struct ModeEditView: View {
             Label(validationMessage, systemImage: "info.circle")
                 .foregroundStyle(.orange)
                 .font(.caption)
+                .accessibilityLabel("Required: \(validationMessage)")
         } else {
             Text("Configure how the raw transcription should be processed and refined.")
         }
