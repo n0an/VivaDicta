@@ -153,29 +153,11 @@ struct ModeEditView: View {
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
                     
                     if viewModel.aiEnhanceEnabled {
-                        LabeledContent {
-                            Menu {
-                                ForEach(AIProvider.generalProviders) { provider in
-                                    Button {
-                                        viewModel.updateProvider(provider)
-                                    } label: {
-                                        if viewModel.aiProvider == provider {
-                                            Label(provider.rawValue.capitalized, systemImage: "checkmark")
-                                        } else {
-                                            Text(provider.rawValue.capitalized)
-                                        }
-                                    }
-                                }
-                            } label: {
-                                HStack {
-                                    Text(viewModel.aiProvider?.rawValue.capitalized ?? "Select")
-                                        .foregroundStyle(.secondary)
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
+                        Picker(selection: $viewModel.aiProvider) {
+                            ForEach(AIProvider.generalProviders) { provider in
+                                Text(provider.rawValue.capitalized).tag(provider)
                             }
-                            .buttonStyle(.plain)
+                            
                         } label: {
                             HStack {
                                 Image(systemName: "cpu")
@@ -183,8 +165,11 @@ struct ModeEditView: View {
                                 Text("AI Provider")
                             }
                         }
+                        .onChange(of: viewModel.aiProvider) { _, newProvider in
+                            viewModel.updateProvider(newProvider)
+                        }
                         .onAppear {
-                            viewModel.selectFirstConnectedProviderIfNeeded()
+                            viewModel.selectFirstProviderIfNeeded()
                         }
                         
                         if let provider = viewModel.aiProvider {

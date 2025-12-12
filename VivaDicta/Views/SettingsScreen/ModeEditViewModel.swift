@@ -259,17 +259,21 @@ class ModeEditViewModel {
     }
     
     // MARK: - AI Enhancement settings
-    func selectFirstConnectedProviderIfNeeded() {
+    func selectFirstProviderIfNeeded() {
         guard aiProvider == nil else { return }
 
+        // First try to find a provider with API key configured
         let firstConnectedProvider = AIProvider.generalProviders.first { provider in
             aiService.connectedProviders.contains(provider)
         }
 
-        if let provider = firstConnectedProvider {
+        // If no connected provider, just select the first one (so UI shows "Add API Key")
+        let providerToSelect = firstConnectedProvider ?? AIProvider.generalProviders.first
+
+        if let provider = providerToSelect {
             aiProvider = provider
             aiModel = provider.defaultModel
-            logger.logInfo("Auto-selected first connected provider: \(provider.rawValue)")
+            logger.logInfo("Auto-selected provider: \(provider.rawValue)")
         }
     }
 

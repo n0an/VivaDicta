@@ -23,13 +23,13 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case soniox
     
     static let generalProviders: [AIProvider] = [
-        .cerebras,
-        .groq,
-        .gemini,
         .anthropic,
         .openAI,
-        .grok,
+        .gemini,
+        .groq,
         .mistral,
+        .cerebras,
+        .grok,
         .openRouter]
     
     var baseURL: String {
