@@ -48,7 +48,11 @@ struct ModeEditView: View {
                     footer: transcriptionSectionFooter) {
                 
                 Picker("Provider", selection: $viewModel.transcriptionProvider) {
-                    ForEach(TranscriptionModelProvider.allCases) { provider in
+                    ForEach(TranscriptionModelProvider.localProviders) { provider in
+                        Text(provider.rawValue.capitalized).tag(provider)
+                    }
+                    Divider()
+                    ForEach(TranscriptionModelProvider.cloudProviders) { provider in
                         Text(provider.rawValue.capitalized).tag(provider)
                     }
                 }
