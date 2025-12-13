@@ -20,7 +20,10 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case soniox
     
     var id: Self { self }
-    
+
+    static let localProviders: [TranscriptionModelProvider] = [.parakeet, .whisperKit]
+    static let cloudProviders: [TranscriptionModelProvider] = [.openAI, .groq, .elevenLabs, .deepgram, .mistral, .gemini, .soniox]
+
     var cloudTranscriptionModelsNames: [String] {
         switch self {
         case .parakeet, .whisperKit:
