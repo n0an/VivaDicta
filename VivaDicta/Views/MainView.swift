@@ -25,9 +25,7 @@ struct MainView: View {
     @Environment(\.modelContext) private var modelContext
     
     var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
-
-    private let noModelAlertMessage = "To start recording, please download a local model or select a cloud transcription model."
-    
+        
     var body: some View {
 //        let _ = Self._printChanges()
 //        let _ = print("Executing <MainView> body")
@@ -149,7 +147,7 @@ struct MainView: View {
                         appState.shouldNavigateToModels = true
                     }
                 }, message: {
-                    Text(noModelAlertMessage)
+                    Text("To start recording, please download a local model or select a cloud transcription model.")
                 })
         }
         .overlay {
