@@ -9,8 +9,8 @@ import AppIntents
 import SwiftUI
 
 struct ToggleRecordIntent: AppIntent {
-    static let title: LocalizedStringResource = "Toggle Recording"
-    static let description = IntentDescription("Toggle recording in VivaDicta")
+    static let title: LocalizedStringResource = "Start Recording"
+    static let description = IntentDescription("Start recording in VivaDicta")
 
     static let openAppWhenRun: Bool = true
 
