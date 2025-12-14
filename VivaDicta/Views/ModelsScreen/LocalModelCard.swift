@@ -151,6 +151,7 @@ struct LocalModelCard: View {
                         if #available(iOS 26.0, *) {
                             Image(systemName: downloadStatus.actionButtonImage, variableValue: downloadStatus == .downloading ? currentProgress : 1)
                                 .symbolVariableValueMode(.draw)
+                                .contentTransition(.symbolEffect(.replace))
                                 .foregroundStyle(downloadStatus.actionButtonColor)
                                 .font(.system(size: 30))
                         } else {
