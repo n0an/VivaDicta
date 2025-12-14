@@ -339,7 +339,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "Optimized large model with faster speed and excellent accuracy",
                 recommended: true,
                 size: "632 MB",
-                speed: 0.75,
+                speed: 0.85,
                 accuracy: 0.95,
                 ramUsage: 1.2,
                 supportedLanguages: allLanguages,

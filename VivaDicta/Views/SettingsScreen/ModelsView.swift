@@ -76,8 +76,8 @@ struct ModelsView: View {
 
             // Custom ordering for local models
             let modelOrder = [
-                "parakeet-tdt-0.6b-v3",
                 "whisperkit-large-v3-v20240930_turbo_632MB",
+                "parakeet-tdt-0.6b-v3",
                 "parakeet-tdt-0.6b-v2",
                 "whisperkit-large-v3-v20240930_626MB",
                 "whisperkit-base",
