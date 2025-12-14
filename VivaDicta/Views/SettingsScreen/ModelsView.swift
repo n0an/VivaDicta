@@ -12,23 +12,8 @@ struct ModelsView: View {
     @Bindable var appState: AppState
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
-    @State private var downloadManager: ModelDownloadManager
-    
-    @Namespace var zoomNamespace
 
-    init(appState: AppState) {
-        self.appState = appState
-        let manager = ModelDownloadManager()
-        manager.onModelDownloaded = { [weak appState] model in
-            // Update the default mode if it doesn't have a model yet
-            if let parakeetModel = model as? ParakeetModel {
-                appState?.aiService.updateDefaultModeIfNeeded(provider: .parakeet, modelName: parakeetModel.name)
-            } else if let whisperKitModel = model as? WhisperKitModel {
-                appState?.aiService.updateDefaultModeIfNeeded(provider: .whisperKit, modelName: whisperKitModel.name)
-            }
-        }
-        self._downloadManager = State(initialValue: manager)
-    }
+    @Namespace var zoomNamespace
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,7 +34,7 @@ struct ModelsView: View {
                             if modelType == .local {
                                 LocalModelCard(
                                     model: model,
-                                    downloadManager: downloadManager
+                                    downloadManager: appState.downloadManager
                                 )
                                 
                             } else if let cloudModel = model as? CloudModel {
