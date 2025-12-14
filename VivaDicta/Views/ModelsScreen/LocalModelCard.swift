@@ -14,6 +14,7 @@ struct LocalModelCard: View {
 
     @State private var selectedTab: TranscriptionModelType = .local
     @State private var showDownloadAlert = false
+    @State private var showDeleteAlert = false
 
     private var isWhisperKit: Bool {
         model is WhisperKitModel
@@ -144,7 +145,7 @@ struct LocalModelCard: View {
                         case .downloading:
                             cancelDownload()
                         case .downloaded:
-                            deleteModel()
+                            showDeleteAlert = true
                         }
                     } label: {
                         if #available(iOS 26.0, *) {
@@ -208,7 +209,7 @@ struct LocalModelCard: View {
         .contextMenu {
             if isDownloaded {
                 Button(role: .destructive) {
-                    deleteModel()
+                    showDeleteAlert = true
                 } label: {
                     Label("Delete Model", systemImage: "trash")
                 }
@@ -221,6 +222,14 @@ struct LocalModelCard: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Downloading and preparing the model can take up to 4 minutes. Please don't close the app while it's downloading.")
+        }
+        .alert("Delete Model", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteModel()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(model.displayName)? You can download it again later.")
         }
     }
 
