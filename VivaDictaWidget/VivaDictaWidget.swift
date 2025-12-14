@@ -110,10 +110,9 @@ private struct WidgetViewSmall: View {
         VStack {
             Image(systemName: "mic.circle")
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(entry.configuration.widgetColor == .gradient2 ? .orange : .white.opacity(0.9))
-//                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(entry.configuration.widgetColor == .gradient1 ? .orange : .white.opacity(0.9))
                 .font(.system(size: 88))
-                .shadow(color: .black.opacity(0.5), radius: 6, x: 0, y: 4)
+                .shadow(color: .black.opacity(entry.configuration.widgetColor == .gradient1 ? 0.7 : 0.5), radius: entry.configuration.widgetColor == .gradient2 ? 4 : 6, x: 0, y: 4)
         }
         .containerBackground(for: .widget) {
             MeshGradient(
@@ -218,7 +217,7 @@ extension ConfigurationAppIntent {
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview("gradient1", as: .systemSmall) {
     VivaDictaWidget()
 } timeline: {
     SimpleEntry(date: Calendar.current.date(bySettingHour: 0, minute: 0, second: 0, of: .now)!, configuration: .gradient1)
@@ -231,7 +230,7 @@ extension ConfigurationAppIntent {
     SimpleEntry(date: Calendar.current.date(bySettingHour: 21, minute: 0, second: 0, of: .now)!, configuration: .gradient1)
 }
 
-#Preview(as: .systemSmall) {
+#Preview("gradient2", as: .systemSmall) {
     VivaDictaWidget()
 } timeline: {
     SimpleEntry(date: Calendar.current.date(bySettingHour: 0, minute: 0, second: 0, of: .now)!, configuration: .gradient2)

@@ -41,15 +41,15 @@ enum WidgetColor: String, CaseIterable {
         switch self {
         case .gradient1:
             return [
-                .blue, .red, .orange,
-                .orange, .indigo, .red,
-                .cyan, .purple, .mint
-            ]
-        case .gradient2:
-            return [
                 .red, .purple, .indigo,
                 .orange, .white, .blue,
                 .yellow, .black, .mint
+            ]
+        case .gradient2:
+            return [
+                .blue, .red, .orange,
+                .orange, .indigo, .red,
+                .cyan, .purple, .mint
             ]
         case .orange:
             return [

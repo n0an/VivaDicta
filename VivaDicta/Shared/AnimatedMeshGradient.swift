@@ -44,7 +44,7 @@ struct AnimatedMeshGradient: View {
     }
 }
 
-#Preview {
+#Preview("AnimatedMeshGradient") {
     AnimatedMeshGradient()
 }
 
@@ -85,6 +85,6 @@ struct AnimatedMeshGradient2: View {
     }
 }
 
-#Preview {
+#Preview("AnimatedMeshGradient2") {
     AnimatedMeshGradient2()
 }
