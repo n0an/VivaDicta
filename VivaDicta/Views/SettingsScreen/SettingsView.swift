@@ -87,10 +87,10 @@ struct SettingsView: View {
                     } else {
                         HStack {
                             Image(systemName: "info.circle")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.orange)
                             
-                            Text("Download local or select cloud transcription model")
-                                .foregroundStyle(.secondary)
+                            Text("Set Up Transcription Model")
+                                .foregroundStyle(.orange)
                                 .font(.footnote)
                         }
                     }
