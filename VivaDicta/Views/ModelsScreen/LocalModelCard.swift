@@ -13,6 +13,7 @@ struct LocalModelCard: View {
     let downloadManager: ModelDownloadManager
 
     @State private var selectedTab: TranscriptionModelType = .local
+    @State private var showDownloadAlert = false
 
     private var isWhisperKit: Bool {
         model is WhisperKitModel
@@ -139,7 +140,7 @@ struct LocalModelCard: View {
                     Button {
                         switch downloadStatus {
                         case .download:
-                            downloadLocalModel()
+                            showDownloadAlert = true
                         case .downloading:
                             cancelDownload()
                         case .downloaded:
@@ -212,6 +213,14 @@ struct LocalModelCard: View {
                     Label("Delete Model", systemImage: "trash")
                 }
             }
+        }
+        .alert("Download Model", isPresented: $showDownloadAlert) {
+            Button("Continue") {
+                downloadLocalModel()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Downloading and preparing the model can take up to 4 minutes. Please don't close the app while it's downloading.")
         }
     }
 
