@@ -17,7 +17,8 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     var widgetColorString: String?
     
     var widgetColor: Color {
-        return Color("WidgetColor\(widgetColorString ?? WidgetColor.def.rawValue)")
+        let colorCase = WidgetColor(rawValue: widgetColorString ?? WidgetColor.def.rawValue) ?? .def
+        return colorCase.color
     }
 }
 
@@ -34,4 +35,13 @@ enum WidgetColor: String, CaseIterable {
     case red = "Red"
     case blue = "Blue"
     case green = "Green"
+
+    var color: Color {
+        switch self {
+        case .def: return .orange
+        case .red: return .red
+        case .blue: return .blue
+        case .green: return .green
+        }
+    }
 }
