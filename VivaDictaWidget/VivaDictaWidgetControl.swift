@@ -18,7 +18,7 @@ struct VivaDictaWidgetControl: ControlWidget {
             }
         }
         
-        .displayName("Toggle Record")
-        .description("Toggle Record in VivaDicta")
+        .displayName("Start Recording")
+        .description("Start Recording in VivaDicta")
     }
 }

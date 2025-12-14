@@ -23,6 +23,7 @@ class AppState {
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
     var recordViewModel: RecordViewModel!
+    var downloadManager: ModelDownloadManager!
 //    private let lifecycleManager = AppLifecycleManager.shared
 
     // Navigation state
@@ -35,6 +36,7 @@ class AppState {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()
         recordViewModel = RecordViewModel(appState: self)
+        downloadManager = ModelDownloadManager()
 
         // Set up callbacks to coordinate between services
         aiService.onModeChange = { [weak self] newMode in
@@ -43,6 +45,15 @@ class AppState {
 
         transcriptionManager.onCloudModelsUpdate = { [weak self] in
             self?.handleCloudModelsUpdate()
+        }
+
+        downloadManager.onModelDownloaded = { [weak self] model in
+            // Update the default mode if it doesn't have a model yet
+            if let parakeetModel = model as? ParakeetModel {
+                self?.aiService.updateDefaultModeIfNeeded(provider: .parakeet, modelName: parakeetModel.name)
+            } else if let whisperKitModel = model as? WhisperKitModel {
+                self?.aiService.updateDefaultModeIfNeeded(provider: .whisperKit, modelName: whisperKitModel.name)
+            }
         }
 
         // Initialize TranscriptionManager with the current mode

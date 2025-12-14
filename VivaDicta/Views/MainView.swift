@@ -18,12 +18,15 @@ struct MainView: View {
     
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
+    @State private var showNoModelAlert = false
 
     @Namespace private var sheetTransitions
 
     @Environment(\.modelContext) private var modelContext
     
     var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
+
+    private let noModelAlertMessage = "To start recording, please download a local model or select a cloud transcription model."
     
     var body: some View {
 //        let _ = Self._printChanges()
@@ -141,6 +144,13 @@ struct MainView: View {
                 .navigationDestination(for: Transcription.self) { transcription in
                     TranscriptionDetailView(transcription: transcription, appState: appState)
                 }
+                .alert("No Transcription Model", isPresented: $showNoModelAlert, actions: {
+                    Button("Go to Models") {
+                        appState.shouldNavigateToModels = true
+                    }
+                }, message: {
+                    Text(noModelAlertMessage)
+                })
         }
         .overlay {
             if appState.recordViewModel?.recordingState == .recording ||
@@ -248,8 +258,8 @@ struct MainView: View {
 
         // Check if we have a transcription model selected
         if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
-            // Navigate to settings/models
-            appState.shouldNavigateToModels = true
+            // Show alert explaining why recording can't start
+            showNoModelAlert = true
             return
         }
 

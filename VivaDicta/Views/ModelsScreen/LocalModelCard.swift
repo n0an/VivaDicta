@@ -13,6 +13,8 @@ struct LocalModelCard: View {
     let downloadManager: ModelDownloadManager
 
     @State private var selectedTab: TranscriptionModelType = .local
+    @State private var showDownloadAlert = false
+    @State private var showDeleteAlert = false
 
     private var isWhisperKit: Bool {
         model is WhisperKitModel
@@ -139,22 +141,24 @@ struct LocalModelCard: View {
                     Button {
                         switch downloadStatus {
                         case .download:
-                            downloadLocalModel()
+                            showDownloadAlert = true
                         case .downloading:
                             cancelDownload()
                         case .downloaded:
-                            deleteModel()
+                            showDeleteAlert = true
                         }
                     } label: {
                         if #available(iOS 26.0, *) {
                             Image(systemName: downloadStatus.actionButtonImage, variableValue: downloadStatus == .downloading ? currentProgress : 1)
                                 .symbolVariableValueMode(.draw)
+                                .contentTransition(.symbolEffect(.replace))
                                 .foregroundStyle(downloadStatus.actionButtonColor)
                                 .font(.system(size: 30))
                         } else {
                             
                             if downloadStatus == .downloading {
                                 Image(systemName: "xmark")
+                                    .contentTransition(.symbolEffect(.replace))
                                     .foregroundStyle(downloadStatus.actionButtonColor)
                                     .font(.system(size: 16, weight: .bold))
                                     .padding(8)
@@ -167,6 +171,7 @@ struct LocalModelCard: View {
                                     }
                             } else {
                                 Image(systemName: downloadStatus.actionButtonImage)
+                                    .contentTransition(.symbolEffect(.replace))
                                     .foregroundStyle(downloadStatus.actionButtonColor)
                                     .font(.system(size: 30))
                             }
@@ -207,11 +212,27 @@ struct LocalModelCard: View {
         .contextMenu {
             if isDownloaded {
                 Button(role: .destructive) {
-                    deleteModel()
+                    showDeleteAlert = true
                 } label: {
                     Label("Delete Model", systemImage: "trash")
                 }
             }
+        }
+        .alert("Download Model", isPresented: $showDownloadAlert) {
+            Button("Continue") {
+                downloadLocalModel()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Downloading and preparing the model can take up to 4 minutes. Please don't close the app while it's downloading.")
+        }
+        .alert("Delete Model", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteModel()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(model.displayName)? You can download it again later.")
         }
     }
 

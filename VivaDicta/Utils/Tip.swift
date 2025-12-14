@@ -37,7 +37,7 @@ struct SelectTranscriptionModelTipMainView: Tip {
     }
     
     var message: Text? {
-        Text("Tap here to download local or select cloud transcription model")
+        Text("Tap here to set up a transcription model")
     }
     
     var image: Image? {
@@ -78,7 +78,7 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
     }
     
     var message: Text? {
-        Text("Tap here to download local or select cloud transcription model")
+        Text("Tap here to set up a transcription model")
             .foregroundStyle(.orange)
     }
 

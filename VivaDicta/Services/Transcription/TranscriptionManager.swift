@@ -93,9 +93,20 @@ class TranscriptionManager {
         TranscriptionModelProvider.allWhisperKitModels +
         TranscriptionModelProvider.allCloudModels
 
-        return allModels.first { model in
-            model.provider == provider && model.name == modelName
+        guard let model = allModels.first(where: { $0.provider == provider && $0.name == modelName }) else {
+            return nil
         }
+
+        // Check if the model is actually usable
+        if let parakeetModel = model as? ParakeetModel {
+            return parakeetModel.isDownloaded ? parakeetModel : nil
+        } else if let whisperKitModel = model as? WhisperKitModel {
+            return whisperKitModel.isDownloaded ? whisperKitModel : nil
+        } else if let cloudModel = model as? CloudModel {
+            return cloudModel.apiKey != nil ? cloudModel : nil
+        }
+
+        return model
     }
 
     public func transcribe(audioURL: URL) async throws -> String {

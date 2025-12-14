@@ -85,13 +85,17 @@ struct SettingsView: View {
                                     }
                                 }
                     } else {
-                        HStack {
-                            Image(systemName: "info.circle")
-                                .foregroundStyle(.secondary)
-                            
-                            Text("Download local or select cloud transcription model")
-                                .foregroundStyle(.secondary)
-                                .font(.footnote)
+                        Button {
+                            navigationPath.append(SettingsDestination.transcriptionModels)
+                        } label: {
+                            HStack {
+                                Image(systemName: "info.circle")
+                                    .foregroundStyle(.orange)
+                                
+                                Text("Set Up Transcription Model")
+                                    .foregroundStyle(.orange)
+                                    .font(.footnote)
+                            }
                         }
                     }
                 }
