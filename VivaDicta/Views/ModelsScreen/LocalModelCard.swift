@@ -158,6 +158,7 @@ struct LocalModelCard: View {
                             
                             if downloadStatus == .downloading {
                                 Image(systemName: "xmark")
+                                    .contentTransition(.symbolEffect(.replace))
                                     .foregroundStyle(downloadStatus.actionButtonColor)
                                     .font(.system(size: 16, weight: .bold))
                                     .padding(8)
@@ -170,6 +171,7 @@ struct LocalModelCard: View {
                                     }
                             } else {
                                 Image(systemName: downloadStatus.actionButtonImage)
+                                    .contentTransition(.symbolEffect(.replace))
                                     .foregroundStyle(downloadStatus.actionButtonColor)
                                     .font(.system(size: 30))
                             }

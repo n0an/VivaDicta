@@ -87,10 +87,12 @@ struct CloudModelCard: View {
                             
                             if #available(iOS 26.0, *) {
                                 Image(systemName: isAPIConfigured ? "key.circle.fill" : "key.circle")
+                                    .contentTransition(.symbolEffect(.replace))
                                     .foregroundStyle(isAPIConfigured ? .green : .blue)
                                     .font(.system(size: 30))
                             } else {
                                 Image(systemName: "key.fill")
+                                    .contentTransition(.symbolEffect(.replace))
                                     .foregroundStyle(isAPIConfigured ? .green : .blue)
                                     .font(.system(size: 16, weight: .bold))
                                     .padding(6)
