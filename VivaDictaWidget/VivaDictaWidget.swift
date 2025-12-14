@@ -64,18 +64,31 @@ struct VivaDictaWidgetEntryView : View {
 
 private struct WidgetViewSmall: View {
     var entry: SimpleEntry
+
+    private var meshColors: [Color] {
+        let base = entry.configuration.widgetColor
+        return base.meshGradientColors
+    }
+
     var body: some View {
         VStack {
             Image(systemName: "mic.circle")
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(entry.configuration.widgetColor.gradient)
-                .font(.system(size: 80))
+                .foregroundStyle(.white.opacity(1).gradient)
+                .font(.system(size: 88))
+                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
         }
         .containerBackground(for: .widget) {
-            ContainerRelativeShape()
-                .fill(entry.configuration.widgetColor.gradient.opacity(0.9))
-                .colorInvert()
-                .saturation(0.2)
+            MeshGradient(
+                width: 3,
+                height: 3,
+                points: [
+                    [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                    [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+                    [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+                ],
+                colors: meshColors
+            )
         }
     }
 }
@@ -146,6 +159,18 @@ extension ConfigurationAppIntent {
         intent.widgetColorString = WidgetColor.red.rawValue
         return intent
     }
+    
+    fileprivate static var blue: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.widgetColorString = WidgetColor.blue.rawValue
+        return intent
+    }
+    
+    fileprivate static var green: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.widgetColorString = WidgetColor.green.rawValue
+        return intent
+    }
 }
 
 #Preview(as: .accessoryCircular) {
@@ -153,4 +178,6 @@ extension ConfigurationAppIntent {
 } timeline: {
     SimpleEntry(date: .now, configuration: .def)
     SimpleEntry(date: .now, configuration: .red)
+    SimpleEntry(date: .now, configuration: .blue)
+    SimpleEntry(date: .now, configuration: .green)
 }
