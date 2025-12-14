@@ -17,7 +17,7 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     var widgetColorString: String?
     
     var widgetColor: WidgetColor {
-        WidgetColor(rawValue: widgetColorString ?? WidgetColor.def.rawValue) ?? .def
+        WidgetColor(rawValue: widgetColorString ?? WidgetColor.gradient1.rawValue) ?? .gradient1
     }
 }
 
@@ -26,27 +26,32 @@ struct ColorOptionsProvider: DynamicOptionsProvider {
         return WidgetColor.allCases.map { $0.rawValue }
     }
 
-    func defaultResult() async -> String? { WidgetColor.def.rawValue }
+    func defaultResult() async -> String? { WidgetColor.gradient1.rawValue }
 }
 
 enum WidgetColor: String, CaseIterable {
-    case def = "Orange"
-    case red = "Red"
-    case blue = "Blue"
-    case green = "Green"
-
-    var color: Color {
-        switch self {
-        case .def: return .orange
-        case .red: return .red
-        case .blue: return .blue
-        case .green: return .green
-        }
-    }
-
+    case gradient1
+    case gradient2
+    case orange
+    case red
+    case blue
+    case green
+    
     var meshGradientColors: [Color] {
         switch self {
-        case .def:
+        case .gradient1:
+            return [
+                .blue, .red, .orange,
+                .orange, .indigo, .red,
+                .cyan, .purple, .mint
+            ]
+        case .gradient2:
+            return [
+                .red, .purple, .indigo,
+                .orange, .white, .blue,
+                .yellow, .black, .mint
+            ]
+        case .orange:
             return [
                 .orange, .yellow, .orange,
                 .red.opacity(0.8), .orange, .yellow.opacity(0.8),
