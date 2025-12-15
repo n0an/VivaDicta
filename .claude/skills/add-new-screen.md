@@ -83,7 +83,7 @@ struct YourNewView: View {
 }
 
 #Preview {
-    @Previewable @State var appState = AppState()
+    @Previewable @State var appState = AppState.forPreview()
     YourNewView(appState: appState)
 }
 ```
@@ -174,7 +174,7 @@ struct YourNewView: View {
 }
 
 #Preview {
-    @Previewable @State var appState = AppState()
+    @Previewable @State var appState = AppState.forPreview()
     NavigationStack {
         YourNewView()
     }
