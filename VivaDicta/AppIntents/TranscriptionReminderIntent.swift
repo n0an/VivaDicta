@@ -13,12 +13,6 @@ struct TranscriptionReminderIntent: AppIntent {
     @Parameter var transcription: TranscriptionEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let text: String
-        if let enhancedText = transcription.enhancedText {
-            text =  String(enhancedText.prefix(200))
-        } else {
-            text = String(transcription.text.prefix(200))
-        }
-        return .result(dialog: "\(text)")
+        return .result(dialog: "\(transcription.text(withPrefix: 200))")
     }
 }

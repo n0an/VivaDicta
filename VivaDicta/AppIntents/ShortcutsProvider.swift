@@ -15,6 +15,8 @@ final class ShortcutsProvider: AppShortcutsProvider {
             intent: ToggleRecordIntent(),
             phrases: [
                 "Record in \(.applicationName)",
+                "Record note in \(.applicationName)",
+                "Note in \(.applicationName)",
                 "Start recording in \(.applicationName)",
                 "Start a recording in \(.applicationName)",
                 "Open \(.applicationName)",
@@ -55,6 +57,15 @@ final class ShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Add to Recent Note",
             systemImageName: "document.badge.plus"
+        )
+        
+        AppShortcut(
+            intent: OpenTranscriptionIntent(),
+            phrases: [
+                "Open a note in \(.applicationName)"
+            ],
+            shortTitle: "Open a note",
+            systemImageName: "document.viewfinder"
         )
 
         

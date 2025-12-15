@@ -27,11 +27,11 @@ struct TranscriptionEntity: AppEntity {
     
     static let defaultQuery = TranscriptionEntityDefaultQuery()
     
-    var title: String {
+    func text(withPrefix prefix: Int = 50) -> String {
         if let enhancedText {
-            return String(enhancedText.prefix(50))
+            return String(enhancedText.prefix(prefix))
         } else {
-            return String(text.prefix(50))
+            return String(text.prefix(prefix))
         }
     }
     
@@ -40,7 +40,7 @@ struct TranscriptionEntity: AppEntity {
     }
     
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(title)", subtitle: "\(subtitle)", image: .init(systemName: "text.page"))
+        DisplayRepresentation(title: "\(text(withPrefix: 50))", subtitle: "\(subtitle)", image: .init(systemName: "text.page"))
     }
 }
 
