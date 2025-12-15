@@ -48,6 +48,16 @@ final class ShortcutsProvider: AppShortcutsProvider {
             systemImageName: "text.page.badge.magnifyingglass"
         )
         
+        AppShortcut(
+            intent: AddToRecentTranscriptionIntent(),
+            phrases: [
+                "Add to my most recent note in \(.applicationName)"
+            ],
+            shortTitle: "Add to Recent Note",
+            systemImageName: "document.badge.plus"
+        )
+
+        
         
         // Commenting this for now, it's not working how I expected
 //        AppShortcut(

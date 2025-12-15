@@ -23,7 +23,7 @@ struct TranscriptionEntity: AppEntity {
     var enhancementDuration: TimeInterval?
     
     
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Transcription"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Note"
     
     static let defaultQuery = TranscriptionEntityDefaultQuery()
     
