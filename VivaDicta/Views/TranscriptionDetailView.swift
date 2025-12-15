@@ -572,6 +572,6 @@ struct TranscriptionDetailView: View {
 #Preview {
     TranscriptionDetailView(
         transcription: Transcription.mockData[0],
-        appState: AppState()
+        appState: AppState.forPreview()
     )
 }

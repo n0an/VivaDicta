@@ -205,7 +205,7 @@ struct TranscriptionsContentView: View {
 }
 
 #Preview(traits: .transcriptionsMockDataMany) {
-    @Previewable @State var appState = AppState()
+    @Previewable @State var appState = AppState.forPreview()
     @Previewable @State var searchText = ""
     NavigationStack {
         TranscriptionsContentView(appState: appState, searchText: $searchText)

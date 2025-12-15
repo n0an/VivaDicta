@@ -91,6 +91,6 @@ struct RecordingSheetView: View {
 }
 
 #Preview {
-    @State @Previewable var appState = AppState()
+    @State @Previewable var appState = AppState.forPreview()
     RecordingSheetView(appState: appState)
 }
