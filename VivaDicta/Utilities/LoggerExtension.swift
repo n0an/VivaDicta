@@ -47,7 +47,7 @@ public enum LogCategory: String {
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"
     case flowModeManager = "FlowModeManager"
-    case toggleKeyboardFlowIntent = "ToggleKeyboardFlowIntent"
+//    case toggleKeyboardFlowIntent = "ToggleKeyboardFlowIntent"
 
     // MARK: - Utility
     case installInputTapNonisolated = "installInputTapNonisolated"

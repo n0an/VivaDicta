@@ -29,19 +29,21 @@ final class ShortcutsProvider: AppShortcutsProvider {
             shortTitle: LocalizedStringResource("Record Note"),
             systemImageName: "microphone.circle.fill"
         )
-        AppShortcut(
-            intent: ToggleKeyboardFlowIntent(),
-            phrases: [
-                "Start flow in \(.applicationName)",
-                "Toggle flow in \(.applicationName)",
-                "Flow in \(.applicationName)",
-                "Keyboard flow in \(.applicationName)",
-                "Start keyboard flow in \(.applicationName)",
-                "Toggle keyboard flow in \(.applicationName)",
-                "\(.applicationName) keyboard flow"
-            ],
-            shortTitle: LocalizedStringResource("Start Keyboard Flow"),
-            systemImageName: "keyboard.fill"
-        )
+        
+        // Commenting this for now, it's not working how I expected
+//        AppShortcut(
+//            intent: ToggleKeyboardFlowIntent(),
+//            phrases: [
+//                "Start flow in \(.applicationName)",
+//                "Toggle flow in \(.applicationName)",
+//                "Flow in \(.applicationName)",
+//                "Keyboard flow in \(.applicationName)",
+//                "Start keyboard flow in \(.applicationName)",
+//                "Toggle keyboard flow in \(.applicationName)",
+//                "\(.applicationName) keyboard flow"
+//            ],
+//            shortTitle: LocalizedStringResource("Start Keyboard Flow"),
+//            systemImageName: "keyboard.fill"
+//        )
     }
 }

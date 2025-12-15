@@ -10,8 +10,8 @@ import ActivityKit
 import SwiftUI
 
 struct ToggleSessionIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Toggle Session"
-    static var description = IntentDescription("Toggle the keyboard session state")
+    static let title: LocalizedStringResource = "Toggle Session"
+    static let description = IntentDescription("Toggle the keyboard session state")
 
     @Parameter(title: "Session Active")
     var isSessionActive: Bool

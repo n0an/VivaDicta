@@ -85,7 +85,7 @@ struct ProcessingStateView: View {
 }
 
 struct InfoView: View {
-    let logger = Logger(category: .toggleKeyboardFlowIntent)
+    let logger = Logger(category: .keyboardExtension)
 
     let processingStage: ProcessingStage
     @Environment(\.colorScheme) var colorScheme
