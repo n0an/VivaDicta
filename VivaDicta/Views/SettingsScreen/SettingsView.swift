@@ -315,17 +315,9 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if #available(iOS 26.0, *) {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Close", systemImage: "xmark") {
-                            dismiss()
-                        }
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Close") {
-                            dismiss()
-                        }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close", systemImage: "xmark") {
+                        dismiss()
                     }
                 }
             }
