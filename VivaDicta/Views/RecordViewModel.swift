@@ -38,6 +38,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var animationTimer: Timer?
 
     weak var appState: AppState?
+    var modelContext: ModelContext
+    
     public var transcriptionManager: TranscriptionManager {
         appState?.transcriptionManager ?? TranscriptionManager()
     }
@@ -58,8 +60,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 //    var recordingTimer: Timer?
 //    var prevAudioPower: Double?
 
-    init(appState: AppState) {
+    init(appState: AppState, modelContainer: ModelContainer) {
         self.appState = appState
+        self.modelContext = ModelContext(modelContainer)
         super.init()
         setupKeyboardRecordingHandlers()
     }
@@ -674,8 +677,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 }
 
                 // Create a new ModelContext from Persistence container
-                let context = ModelContext(Persistence.container)
-                self.stopCaptureAudio(modelContext: context)
+//                let context = ModelContext(Persistence.container)
+                self.stopCaptureAudio(modelContext: modelContext)
             }
         }
 

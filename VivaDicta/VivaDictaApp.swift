@@ -18,8 +18,11 @@ struct VivaDictaApp: App {
 #if !os(macOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 #endif
+    
+    @State private var dataController: DataController
+    @State private var modelContainer: ModelContainer
 
-    @State var appState = AppState()
+    @State var appState: AppState
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
     private var hasCompletedOnboarding = false
@@ -31,6 +34,28 @@ struct VivaDictaApp: App {
 //    private static var isProcessingKeyboardRequest = false
 
     init() {
+        // Initialize Persistence
+        let modelContainer: ModelContainer
+        
+        do {
+            let sharedStoreURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!.appendingPathComponent("VivaDicta.sqlite")
+            let config = ModelConfiguration(url: sharedStoreURL)
+            modelContainer = try ModelContainer(for: Transcription.self, configurations: config)
+        } catch {
+            print("Error loading ModelContainer; switching to in-memory storage.")
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            modelContainer = try! ModelContainer(for: Transcription.self, configurations: config)
+        }
+
+        self._modelContainer = .init(initialValue: modelContainer)
+
+        let dataController = DataController(modelContainer: modelContainer)
+        self._dataController = .init(initialValue: dataController)
+
+        AppDependencyManager.shared.add(dependency: dataController)
+        
+        self._appState = State(initialValue: AppState(modelContainer: modelContainer))
+        
         // Initialize app directories
         FileManager.createAppDirectories()
 
@@ -192,7 +217,7 @@ struct VivaDictaApp: App {
                 }
             }
         }
-        .modelContainer(Persistence.container)
+        .modelContainer(modelContainer)
     }
     
 

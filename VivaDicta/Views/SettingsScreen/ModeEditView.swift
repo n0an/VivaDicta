@@ -333,7 +333,7 @@ struct ModeEditView: View {
 #Preview {
     @Previewable @State var aiService = AIService()
     @Previewable @State var promptsManager = PromptsManager()
-    @Previewable @State var appState = AppState()
+//    @Previewable @State var appState = AppState(modelContainer: TranscriptionsMockData.makeSharedContext())
     @Previewable @State var transcriptionManager = TranscriptionManager()
     @Previewable @State var navigationPath = NavigationPath()
     ModeEditView(

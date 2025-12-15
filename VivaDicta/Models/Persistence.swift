@@ -9,7 +9,7 @@ import SwiftData
 import Foundation
 
 struct Persistence {
-    static var container: ModelContainer {
+    static var container1: ModelContainer {
         let container: ModelContainer = {
             let sharedStoreURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!.appendingPathComponent("VivaDicta.sqlite")
             let config = ModelConfiguration(url: sharedStoreURL)
