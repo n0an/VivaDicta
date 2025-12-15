@@ -320,13 +320,13 @@ class AppState {
 
 #if DEBUG
 extension AppState {
-    static func forPreview() -> AppState {
+    convenience init() {
         let container = try! ModelContainer(
             for: Transcription.self,
             configurations: .init(isStoredInMemoryOnly: true)
         )
         Transcription.mockData.forEach { container.mainContext.insert($0) }
-        return AppState(modelContainer: container)
+        self.init(modelContainer: container)
     }
 }
 #endif

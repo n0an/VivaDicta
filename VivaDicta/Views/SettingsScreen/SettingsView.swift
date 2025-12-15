@@ -383,7 +383,7 @@ struct SettingsView: View {
 
 
 #Preview {
-    @Previewable @State var appState = AppState.forPreview()
+    @Previewable @State var appState = AppState()
     SettingsView(appState: appState)
 }
 

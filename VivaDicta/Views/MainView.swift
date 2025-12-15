@@ -267,6 +267,6 @@ struct MainView: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    @State @Previewable var appState = AppState.forPreview()
+    @State @Previewable var appState = AppState()
     MainView(appState: appState)
 }

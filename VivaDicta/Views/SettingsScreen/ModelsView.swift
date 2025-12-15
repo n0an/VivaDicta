@@ -129,7 +129,7 @@ struct ModelsView: View {
 }
 
 #Preview {
-    @Previewable @State var appState = AppState.forPreview()
+    @Previewable @State var appState = AppState()
     NavigationStack {
         ModelsView(appState: appState)
     }
