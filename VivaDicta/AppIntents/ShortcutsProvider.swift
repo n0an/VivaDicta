@@ -39,7 +39,14 @@ final class ShortcutsProvider: AppShortcutsProvider {
             systemImageName: "document.on.document"
         )
         
-        
+        AppShortcut(
+            intent: TranscriptionReminderIntent(),
+            phrases: [
+                "Remind me of a \(.applicationName) note"
+            ],
+            shortTitle: "Remind me of a Note",
+            systemImageName: "text.page.badge.magnifyingglass"
+        )
         
         
         // Commenting this for now, it's not working how I expected

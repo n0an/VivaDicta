@@ -46,7 +46,7 @@ struct TranscriptionEntity: AppEntity {
 
 
 
-struct TranscriptionEntityDefaultQuery: EntityQuery {
+struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
     @Dependency var dataController: DataController
     
     func allEntities() async throws -> [TranscriptionEntity] {
