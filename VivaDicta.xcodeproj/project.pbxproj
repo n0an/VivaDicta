@@ -128,8 +128,6 @@
 				"Extensions/FileManager+Directories.swift",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
-				Models/Persistence.swift,
-				Models/Transcription.swift,
 				Models/TranscriptionModel.swift,
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,

@@ -98,6 +98,25 @@ class Transcription {
 }
 
 extension Transcription {
+    var entity: TranscriptionEntity {
+        
+        .init(
+            id: id,
+            text: text,
+            enhancedText: enhancedText,
+            timestamp: timestamp,
+            audioDuration: audioDuration,
+            audioFileName: audioFileName,
+            transcriptionModelName: transcriptionModelName,
+            aiEnhancementModelName: aiEnhancementModelName,
+            promptName: promptName,
+            transcriptionDuration: transcriptionDuration,
+            enhancementDuration: enhancementDuration
+        )
+    }
+}
+
+extension Transcription {
     nonisolated(unsafe) static let mockData: [Transcription] =
     [
         
