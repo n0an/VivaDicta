@@ -111,7 +111,6 @@
 		18E1C8192E8E79D100BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AppIntents/ToggleKeyboardFlowIntent.swift,
 				AppIntents/ToggleRecordIntent.swift,
 				Models/VivaDictaLiveActivityAttributes.swift,
 				Shared/AppGroupCoordinator.swift,

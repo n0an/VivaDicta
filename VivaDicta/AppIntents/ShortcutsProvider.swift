@@ -30,6 +30,18 @@ final class ShortcutsProvider: AppShortcutsProvider {
             systemImageName: "microphone.circle.fill"
         )
         
+        AppShortcut(
+            intent: CountRecentTranscriptionsIntent(),
+            phrases: [
+                "Count my recent notes in \(.applicationName)"
+            ],
+            shortTitle: "Recent Notes Count",
+            systemImageName: "document.on.document"
+        )
+        
+        
+        
+        
         // Commenting this for now, it's not working how I expected
 //        AppShortcut(
 //            intent: ToggleKeyboardFlowIntent(),
