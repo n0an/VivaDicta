@@ -11,6 +11,7 @@ import ActivityKit
 import os
 import CoreSpotlight
 import SwiftData
+import AppIntents
 
 @Observable
 class AppState {
@@ -197,16 +198,24 @@ class AppState {
             logger.logError("[Spotlight] Indexing is unavailable")
             return
         }
+        
 
-        let item = CSSearchableItem(
-            uniqueIdentifier: transcription.id.uuidString,
-            domainIdentifier: "com.antonnovoselov.VivaDicta",
-            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
-        )
+//        let item = CSSearchableItem(
+//            uniqueIdentifier: transcription.id.uuidString,
+//            domainIdentifier: "com.antonnovoselov.VivaDicta",
+//            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
+//        )
 
         do {
             let index = CSSearchableIndex.default()
-            try await index.indexSearchableItems([item])
+            
+            
+            
+            let transcriptionEntity = transcription.entity
+            try await index.indexAppEntities([transcriptionEntity])
+            
+            
+//            try await index.indexSearchableItems([item])
             logger.logInfo("[Spotlight] Indexed transcription: \(transcription.id.uuidString)")
         } catch {
             logger.logError("[Spotlight] Failed to index transcription: \(error.localizedDescription)")
@@ -222,7 +231,8 @@ class AppState {
 
         do {
             let index = CSSearchableIndex.default()
-            try await index.deleteSearchableItems(withIdentifiers: [transcriptionID.uuidString])
+            try await index.deleteAppEntities(identifiedBy: [transcriptionID], ofType: TranscriptionEntity.self)
+//            try await index.deleteSearchableItems(withIdentifiers: [transcriptionID.uuidString])
             logger.logInfo("[Spotlight] Removed transcription from index: \(transcriptionID.uuidString)")
         } catch {
             logger.logError("[Spotlight] Failed to remove transcription: \(error.localizedDescription)")
@@ -237,22 +247,22 @@ class AppState {
 
     /// Update Spotlight ranking when user views a transcription
     /// This helps frequently accessed items appear higher in Spotlight results
-    func updateSpotlightRanking(for transcription: Transcription) async {
-        guard CSSearchableIndex.isIndexingAvailable() else { return }
-
-        let item = CSSearchableItem(
-            uniqueIdentifier: transcription.id.uuidString,
-            domainIdentifier: "com.antonnovoselov.VivaDicta",
-            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
-        )
-        item.isUpdate = true
-
-        do {
-            try await CSSearchableIndex.default().indexSearchableItems([item])
-        } catch {
-            logger.logError("[Spotlight] Failed to update ranking: \(error.localizedDescription)")
-        }
-    }
+//    func updateSpotlightRanking(for transcription: Transcription) async {
+//        guard CSSearchableIndex.isIndexingAvailable() else { return }
+//
+//        let item = CSSearchableItem(
+//            uniqueIdentifier: transcription.id.uuidString,
+//            domainIdentifier: "com.antonnovoselov.VivaDicta",
+//            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
+//        )
+//        item.isUpdate = true
+//
+//        do {
+//            try await CSSearchableIndex.default().indexSearchableItems([item])
+//        } catch {
+//            logger.logError("[Spotlight] Failed to update ranking: \(error.localizedDescription)")
+//        }
+//    }
 
     // Legacy batch indexing method - kept for manual rebuild if needed
 //    func updateSpotlightIndex() async {

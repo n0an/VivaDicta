@@ -27,7 +27,7 @@ struct TranscriptionDetailView: View {
     var appState: AppState
 
     @State private var selectedTextType: TextDisplayType = .enhanced
-    @State private var spotlightTask: Task<Void, Never>?
+//    @State private var spotlightTask: Task<Void, Never>?
     
     @State private var isExpanded: Bool = false
     @Namespace private var namespace
@@ -153,13 +153,13 @@ struct TranscriptionDetailView: View {
             activity.becomeCurrent()
 
             // Update Spotlight ranking for frequently accessed items
-            spotlightTask = Task {
-                await appState.updateSpotlightRanking(for: transcription)
-            }
+//            spotlightTask = Task {
+//                await appState.updateSpotlightRanking(for: transcription)
+//            }
         }
         .onDisappear {
-            spotlightTask?.cancel()
-            spotlightTask = nil
+//            spotlightTask?.cancel()
+//            spotlightTask = nil
             processingTask?.cancel()
             processingTask = nil
         }
