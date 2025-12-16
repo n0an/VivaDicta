@@ -7,28 +7,38 @@
 
 import AppIntents
 import CoreSpotlight
-import SwiftData
 
 struct TranscriptionEntity: IndexedEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Note"
+    static let defaultQuery = TranscriptionEntityDefaultQuery()
+
+    // MARK: - Properties
+
     var id: UUID
 
+    /// Original transcription text - exposed to Shortcuts
     @Property var text: String
 
+    /// AI-enhanced text - exposed to Shortcuts
     @Property(title: "Enhanced Text")
     var enhancedText: String?
 
+    /// Timestamp - exposed to Shortcuts
     @Property var timestamp: Date
 
+    /// Audio duration - exposed to Shortcuts
     @Property(title: "Duration")
     var audioDuration: TimeInterval
 
-    // Not exposed to Shortcuts - internal use only
+    // Internal properties (not exposed to Shortcuts)
     var audioFileName: String?
     var transcriptionModelName: String?
     var aiEnhancementModelName: String?
     var promptName: String?
     var transcriptionDuration: TimeInterval?
     var enhancementDuration: TimeInterval?
+
+    // MARK: - Initialization
 
     init(
         id: UUID,
@@ -56,34 +66,24 @@ struct TranscriptionEntity: IndexedEntity {
         self.enhancementDuration = enhancementDuration
     }
 
+    // MARK: - Spotlight Indexing (iOS 18+)
+
     var searchableAttributes: CSSearchableItemAttributeSet {
-        
-        
         let attributeSet = defaultAttributeSet
-//        attributeSet.contentDescription = details
-//        attributeSet.addedDate = date
-        
-        
-//        let attributes = CSSearchableItemAttributeSet(contentType: .text)
 
         let textToUse = enhancedText ?? text
-        
+
         // Title: First 100 characters of the transcription or a date-based title
         let textPreview = String(textToUse.prefix(100))
         let dateString = timestamp.formatted(.dateTime.month(.abbreviated).day().year().hour().minute())
-        
-        let title: String
-        
+
         if textToUse.count > 100 {
-            title = "\(textPreview)..."
+            attributeSet.title = "\(textPreview)..."
         } else if !textToUse.isEmpty {
-            title = textPreview
+            attributeSet.title = textPreview
         } else {
-            title = "Recording - \(dateString)"
+            attributeSet.title = "Recording - \(dateString)"
         }
-        
-        attributeSet.title = title
-//        attributeSet.displayName = title
 
         // Content: Full text for searching (original + enhanced)
         var fullContent = text
@@ -92,76 +92,44 @@ struct TranscriptionEntity: IndexedEntity {
         }
         attributeSet.contentDescription = fullContent
 
-        // Keywords: Model names, prompt, and meaningful terms
+        // Keywords: Model names, prompt
         var keywords = [String]()
-
-        if let promptName = promptName {
-            keywords.append(promptName)
-        }
-
-        if let transcriptionModel = transcriptionModelName {
-            keywords.append(transcriptionModel)
-        }
-
-        if let aiModel = aiEnhancementModelName {
-            keywords.append(aiModel)
-        }
-
-        // TODO: Add LLM-generated tags to keywords when available
-        // if let tags = tags {
-        //     keywords.append(contentsOf: tags)
-        // }
-
+        if let promptName = promptName { keywords.append(promptName) }
+        if let transcriptionModel = transcriptionModelName { keywords.append(transcriptionModel) }
+        if let aiModel = aiEnhancementModelName { keywords.append(aiModel) }
         attributeSet.keywords = keywords
 
         // Duration and dates
         attributeSet.duration = NSNumber(value: audioDuration)
         attributeSet.contentCreationDate = timestamp
         attributeSet.contentModificationDate = timestamp
+        attributeSet.addedDate = timestamp
 
         // Additional metadata
         attributeSet.kind = "Voice Transcription"
         attributeSet.identifier = id.uuidString
         attributeSet.relatedUniqueIdentifier = id.uuidString
 
-        // Audio metadata (if we have it)
-        if audioDuration > 0 {
-            let durationCategory: String
-            switch audioDuration {
-            case 0..<30:
-                durationCategory = "Short recording"
-            case 30..<120:
-                durationCategory = "Medium recording"
-            default:
-                durationCategory = "Long recording"
-            }
-            attributeSet.comment = durationCategory
-        }
-        
-        attributeSet.addedDate = timestamp
-        
         return attributeSet
     }
-    
-    
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Note"
-    
-    static let defaultQuery = TranscriptionEntityDefaultQuery()
-    
+
+    // MARK: - Display Helpers
+
     func text(withPrefix prefix: Int = 50) -> String {
-        if let enhancedText {
-            return String(enhancedText.prefix(prefix))
-        } else {
-            return String(text.prefix(prefix))
-        }
+        let textToUse = enhancedText ?? text
+        return String(textToUse.prefix(prefix))
     }
-    
+
     var subtitle: String {
-        return timestamp.formatted(.dateTime.month(.abbreviated).day().year().hour().minute())
+        timestamp.formatted(.dateTime.month(.abbreviated).day().year().hour().minute())
     }
-    
+
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(text(withPrefix: 50))", subtitle: "\(subtitle)", image: .init(systemName: "text.page"))
+        DisplayRepresentation(
+            title: "\(text(withPrefix: 50))",
+            subtitle: "\(subtitle)",
+            image: .init(systemName: "text.page")
+        )
     }
 }
 
