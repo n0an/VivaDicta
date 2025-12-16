@@ -215,23 +215,6 @@ struct MainView: View {
                 // The SettingsView should handle navigation to models internally
             }
         }
-        .onChange(of: appState.selectedTranscriptionID) { _, newID in
-            if let transcriptionID = newID {
-                // Find the transcription with the matching ID
-                let descriptor = FetchDescriptor<Transcription>(
-                    predicate: #Predicate { transcription in
-                        transcription.id == transcriptionID
-                    }
-                )
-
-                if let transcription = try? modelContext.fetch(descriptor).first {
-                    // Navigate to the transcription detail view
-                    dataController.path = [transcription]
-                    // Reset the selectedTranscriptionID
-                    appState.selectedTranscriptionID = nil
-                }
-            }
-        }
         .sheet(isPresented: $appState.showKeyboardFlowSheet) {
             KeyboardFlowSheet(appState: appState)
                 .presentationDetents([.fraction(0.3)])

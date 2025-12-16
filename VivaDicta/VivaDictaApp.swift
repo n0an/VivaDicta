@@ -188,7 +188,9 @@ struct VivaDictaApp: App {
                     handleDeepLink(url)
                 }
                 .onContinueUserActivity("com.antonnovoselov.VivaDicta.viewTranscription") { userActivity in
-                    handleTranscriptionActivity(userActivity)
+                    Task {
+                        try? await handleTranscriptionActivity(userActivity)
+                    }
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     if oldPhase == .active && newPhase == .inactive {
@@ -418,13 +420,14 @@ struct VivaDictaApp: App {
         UIApplication.shared.shortcutItems = [recordAction]
     }
 
-    private func handleTranscriptionActivity(_ userActivity: NSUserActivity) {
+    private func handleTranscriptionActivity(_ userActivity: NSUserActivity) async throws {
         logger.logInfo("📱 Handling transcription view activity (Handoff/Siri)")
-
+        
         // Try to get the transcription ID from userInfo
         if let transcriptionIDString = userActivity.userInfo?["id"] as? String,
            let transcriptionID = UUID(uuidString: transcriptionIDString) {
-            appState.selectedTranscriptionID = transcriptionID
+            try await dataController.select(id: transcriptionID)
+            
             logger.logInfo("📱 Opening transcription from user activity: \(transcriptionID)")
         } else {
             logger.logError("📱 Failed to get transcription ID from user activity")

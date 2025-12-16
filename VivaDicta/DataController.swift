@@ -54,8 +54,16 @@ class DataController {
 
     @MainActor
     func select(entity: TranscriptionEntity) async throws {
-        let id = entity.id
+        try await select(id: entity.id)
+    }
 
+    @MainActor
+    func select(transcription: Transcription) {
+        path = [transcription]
+    }
+
+    @MainActor
+    func select(id: UUID) async throws {
         let results = try transcriptions(matching: #Predicate {
             $0.id == id
         })

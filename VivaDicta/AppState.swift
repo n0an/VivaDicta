@@ -31,7 +31,6 @@ class AppState {
     // Navigation state
     var shouldNavigateToModels: Bool = false
     var shouldStartRecording: Bool = false
-    var selectedTranscriptionID: UUID? = nil  // For Spotlight navigation
     var showKeyboardFlowSheet: Bool = false  // For showing keyboard flow activation sheet
 
     init(modelContainer: ModelContainer) {
