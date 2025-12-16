@@ -11,8 +11,6 @@ struct KeyboardFlowSheet: View {
     @Environment(AppState.self) var appState
 
     var body: some View {
-        @Bindable var appState = appState
-
         VStack(spacing: 0) {
             Text("Keyboard Flow Activated")
                 .font(.title)
