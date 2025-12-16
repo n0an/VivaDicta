@@ -8,8 +8,8 @@
 import AppIntents
 import SwiftUI
 
-struct OpenTranscriptionIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open Note"
+struct OpenTranscriptionSnippetIntent: AppIntent {
+    static let title: LocalizedStringResource = "Open Note Snippet"
 
     @Parameter
     var target: TranscriptionEntity
@@ -27,5 +27,19 @@ struct OpenTranscriptionIntent: AppIntent {
             }
             .padding()
         }
+    }
+}
+
+struct OpenTranscriptionIntent: OpenIntent {
+    static let title: LocalizedStringResource = "Open Note"
+
+    @Dependency var dataController: DataController
+    
+    @Parameter
+    var target: TranscriptionEntity
+
+    func perform() async throws -> some IntentResult {
+        try await dataController.select(entity: target)
+        return .result()
     }
 }

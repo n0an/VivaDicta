@@ -60,7 +60,7 @@ final class ShortcutsProvider: AppShortcutsProvider {
         )
         
         AppShortcut(
-            intent: OpenTranscriptionIntent(),
+            intent: OpenTranscriptionSnippetIntent(),
             phrases: [
                 "Open a note in \(.applicationName)"
             ],

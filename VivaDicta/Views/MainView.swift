@@ -11,10 +11,11 @@ import TipKit
 
 struct MainView: View {
     @Bindable var appState: AppState
+    @Bindable var dataController: DataController
+    
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
     @State private var searchText = ""
-    @State private var navigationPath = NavigationPath()
     
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
@@ -30,7 +31,7 @@ struct MainView: View {
 //        let _ = Self._printChanges()
 //        let _ = print("Executing <MainView> body")
         
-        NavigationStack(path: $navigationPath) {
+        NavigationStack(path: $dataController.path) {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
                 .searchable(text: $searchText, placement: .toolbar)
                 .minimizedSearch()
@@ -225,7 +226,7 @@ struct MainView: View {
 
                 if let transcription = try? modelContext.fetch(descriptor).first {
                     // Navigate to the transcription detail view
-                    navigationPath.append(transcription)
+                    dataController.path = [transcription]
                     // Reset the selectedTranscriptionID
                     appState.selectedTranscriptionID = nil
                 }
@@ -267,6 +268,7 @@ struct MainView: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    @State @Previewable var appState = AppState()
-    MainView(appState: appState)
+    @Previewable @State var appState = AppState()
+    @Previewable @State var dataController = DataController()
+    MainView(appState: appState, dataController: dataController)
 }

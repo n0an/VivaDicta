@@ -18,6 +18,15 @@ class DataController {
         modelContext = ModelContext(modelContainer)
     }
 
+    #if DEBUG
+    /// Preview initializer with in-memory storage
+    convenience init() {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try! ModelContainer(for: Transcription.self, configurations: config)
+        self.init(modelContainer: container)
+    }
+    #endif
+
     func transcriptions(
         matching predicate: Predicate<Transcription> = #Predicate { _ in true },
         sortBy: [SortDescriptor<Transcription>] = [SortDescriptor(\.timestamp, order: .reverse)],
@@ -43,7 +52,8 @@ class DataController {
         return try modelContext.fetchCount(transcriptionsDescriptor)
     }
 
-    func select(entity: TranscriptionEntity) throws {
+    @MainActor
+    func select(entity: TranscriptionEntity) async throws {
         let id = entity.id
 
         let results = try transcriptions(matching: #Predicate {

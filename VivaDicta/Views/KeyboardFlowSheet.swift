@@ -53,8 +53,9 @@ struct KeyboardFlowSheet: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    @State @Previewable var appState = AppState()
-    MainView(appState: appState)
+    @Previewable @State var appState = AppState()
+    @Previewable @State var dataController = DataController()
+    MainView(appState: appState, dataController: dataController)
         .sheet(isPresented: .constant(true)) {
             KeyboardFlowSheet(appState: appState)
                 .presentationDetents([.fraction(0.3)])
