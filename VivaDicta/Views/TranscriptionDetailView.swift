@@ -22,9 +22,8 @@ enum ProcessingState: Equatable {
 }
 
 struct TranscriptionDetailView: View {
-
     var transcription: Transcription
-    var appState: AppState
+    @Environment(AppState.self) var appState
 
     @State private var selectedTextType: TextDisplayType = .enhanced
 //    @State private var spotlightTask: Task<Void, Never>?
@@ -570,8 +569,6 @@ struct TranscriptionDetailView: View {
 }
 
 #Preview {
-    TranscriptionDetailView(
-        transcription: Transcription.mockData[0],
-        appState: AppState()
-    )
+    TranscriptionDetailView(transcription: Transcription.mockData[0])
+        .environment(AppState())
 }

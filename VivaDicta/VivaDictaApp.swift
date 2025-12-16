@@ -111,7 +111,7 @@ struct VivaDictaApp: App {
     var body: some Scene {
         WindowGroup {
             if hasCompletedOnboarding {
-                MainView(appState: appState)
+                MainView()
                     .task {
                         //                        try? Tips.resetDatastore()
                         
@@ -189,6 +189,7 @@ struct VivaDictaApp: App {
                             }
                         }
                     }
+                    .environment(appState)
                     .environment(router)
                     .onOpenURL { url in
                         handleDeepLink(url)

@@ -12,13 +12,15 @@ import SiriWaveView
 struct RecordingSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) var modelContext
-    @Bindable var appState: AppState
+    @Environment(AppState.self) var appState
 
     private var vm: RecordViewModel {
         appState.recordViewModel
     }
 
     var body: some View {
+        @Bindable var appState = appState
+
         VStack(spacing: 12) {
             HStack {
                 Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
@@ -91,6 +93,6 @@ struct RecordingSheetView: View {
 }
 
 #Preview {
-    @State @Previewable var appState = AppState()
-    RecordingSheetView(appState: appState)
+    RecordingSheetView()
+        .environment(AppState())
 }
