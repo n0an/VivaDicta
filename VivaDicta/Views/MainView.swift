@@ -11,7 +11,9 @@ import TipKit
 
 struct MainView: View {
     @Bindable var appState: AppState
-    @Bindable var router: Router
+    @Environment(Router.self) var router
+    
+//    @Bindable var router: Router
     
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
@@ -28,6 +30,9 @@ struct MainView: View {
     var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
         
     var body: some View {
+        
+        @Bindable var router = router
+        
 //        let _ = Self._printChanges()
 //        let _ = print("Executing <MainView> body")
         
@@ -252,6 +257,5 @@ struct MainView: View {
 
 #Preview(traits: .transcriptionsMockData) {
     @Previewable @State var appState = AppState()
-    @Previewable @State var router = Router()
-    MainView(appState: appState, router: router)
+    MainView(appState: appState)
 }

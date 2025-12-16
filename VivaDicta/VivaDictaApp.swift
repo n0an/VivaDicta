@@ -22,18 +22,18 @@ struct VivaDictaApp: App {
     @State private var dataController: DataController
     @State private var modelContainer: ModelContainer
     @State private var router: Router
-
+    
     @State var appState: AppState
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
     private var hasCompletedOnboarding = false
-
+    
     private let logger = Logger(category: .app)
-
+    
     // Thread-safe flag for keyboard request processing
-//    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
-//    private static var isProcessingKeyboardRequest = false
-
+    //    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
+    //    private static var isProcessingKeyboardRequest = false
+    
     init() {
         // Initialize Persistence
         let modelContainer: ModelContainer
@@ -47,30 +47,30 @@ struct VivaDictaApp: App {
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             modelContainer = try! ModelContainer(for: Transcription.self, configurations: config)
         }
-
+        
         self._modelContainer = .init(initialValue: modelContainer)
-
+        
         let dataController = DataController(modelContainer: modelContainer)
         self._dataController = .init(initialValue: dataController)
-
+        
         let router = Router()
         self._router = .init(initialValue: router)
-
+        
         AppDependencyManager.shared.add(dependency: dataController)
         AppDependencyManager.shared.add(dependency: router)
-
+        
         self._appState = State(initialValue: AppState(modelContainer: modelContainer))
         
         // Initialize app directories
         FileManager.createAppDirectories()
-
+        
         // Check if user tapped "Open Settings" in onboarding before app was terminated
         // This handles the case where app terminates when enabling Full Access
         if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding) {
             UserDefaultsStorage.appPrivate.set(true, forKey: UserDefaultsStorage.Keys.hasCompletedOnboarding)
             UserDefaultsStorage.appPrivate.removeObject(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding)
         }
-
+        
         // Clean up any stuck Live Activities from previous session on cold start
         Task {
             let activityCount = Activity<VivaDictaLiveActivityAttributes>.activities.count
@@ -82,19 +82,19 @@ struct VivaDictaApp: App {
                 cleanupLogger.logInfo("🧹 Cleaned up \(activityCount) stuck Live Activities on cold start")
             }
         }
-
+        
         // Reset session state on app launch to prevent stale state issues
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
-
+        
         ShortcutsProvider.updateAppShortcutParameters()
         IntentDonationManager.shared.donate(intent: ToggleRecordIntent())
-
+        
         // TODO: - It's not working, keeping for reference. It was presumed to work with ToggleKeyboardFlowIntent.
         // Set up handler for keyboard session activation from intent
         AppGroupCoordinator.shared.onKeyboardSessionActivated = {
             let logger = Logger(category: .app)
             logger.logInfo("🎙️ Keyboard session activated - starting prewarm")
-
+            
             // Start audio prewarm session when keyboard session is activated
             Task {
                 do {
@@ -105,114 +105,115 @@ struct VivaDictaApp: App {
                 }
             }
         }
-
+        
     }
-
+    
     var body: some Scene {
         WindowGroup {
             if hasCompletedOnboarding {
-                MainView(appState: appState, router: router)
+                MainView(appState: appState)
                     .task {
-//                        try? Tips.resetDatastore()
+                        //                        try? Tips.resetDatastore()
                         
                         try? Tips.configure([
-//                            .displayFrequency(.immediate),
+                            //                            .displayFrequency(.immediate),
                             .datastoreLocation(.applicationDefault)])
                     }
                     .onAppear {
-                    // Set the AppState reference for quick actions
+                        // Set the AppState reference for quick actions
 #if !os(macOS)
-                    SceneDelegate.appState = appState
+                        SceneDelegate.appState = appState
 #endif
-
-                    // Set up handler for session termination from Live Activity
-                    AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
-                        logger.logInfo("🔴 Session termination requested from Live Activity")
-
-                        // End audio prewarm session
-                        AudioPrewarmManager.shared.endSession()
-
-                        // End Live Activity
-                        Task { @MainActor in
-                            await appState.endLiveActivity()
+                        
+                        // Set up handler for session termination from Live Activity
+                        AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
+                            logger.logInfo("🔴 Session termination requested from Live Activity")
+                            
+                            // End audio prewarm session
+                            AudioPrewarmManager.shared.endSession()
+                            
+                            // End Live Activity
+                            Task { @MainActor in
+                                await appState.endLiveActivity()
+                            }
+                            
+                            logger.logInfo("🔴 Terminated audio session and Live Activity")
                         }
-
-                        logger.logInfo("🔴 Terminated audio session and Live Activity")
-                    }
-
-                    // Set up handler for keyboard session expiration (timeout)
-                    AppGroupCoordinator.shared.onKeyboardSessionExpired = {
-                        logger.logInfo("⏰ Keyboard session expired - cleaning up Live Activity")
-
-                        // End Live Activity when session times out
-                        Task { @MainActor in
-                            await appState.endLiveActivity()
+                        
+                        // Set up handler for keyboard session expiration (timeout)
+                        AppGroupCoordinator.shared.onKeyboardSessionExpired = {
+                            logger.logInfo("⏰ Keyboard session expired - cleaning up Live Activity")
+                            
+                            // End Live Activity when session times out
+                            Task { @MainActor in
+                                await appState.endLiveActivity()
+                            }
                         }
-                    }
-
-                    // Set up handler for recording state changes
-                    AppGroupCoordinator.shared.onRecordingStateChanged = { isRecording in
-                        Task { @MainActor in
-                            if isRecording {
-                                await appState.updateLiveActivityState(.recording)
-                            } else {
+                        
+                        // Set up handler for recording state changes
+                        AppGroupCoordinator.shared.onRecordingStateChanged = { isRecording in
+                            Task { @MainActor in
+                                if isRecording {
+                                    await appState.updateLiveActivityState(.recording)
+                                } else {
+                                    await appState.updateLiveActivityState(.idle)
+                                }
+                            }
+                        }
+                        
+                        // Set up handler for transcription processing
+                        AppGroupCoordinator.shared.onTranscriptionTranscribing = {
+                            Task { @MainActor in
+                                await appState.updateLiveActivityState(.transcribing)
+                            }
+                        }
+                        
+                        // Set up handler for AI enhancement
+                        AppGroupCoordinator.shared.onTranscriptionEnhancing = {
+                            Task { @MainActor in
+                                await appState.updateLiveActivityState(.enhancing)
+                            }
+                        }
+                        
+                        // Set up handler for transcription completion - return to idle
+                        AppGroupCoordinator.shared.onTranscriptionCompleted = { _ in
+                            Task { @MainActor in
+                                await appState.updateLiveActivityState(.idle)
+                            }
+                        }
+                        
+                        // Set up handler for transcription error - return to idle
+                        AppGroupCoordinator.shared.onTranscriptionError = {
+                            Task { @MainActor in
                                 await appState.updateLiveActivityState(.idle)
                             }
                         }
                     }
-
-                    // Set up handler for transcription processing
-                    AppGroupCoordinator.shared.onTranscriptionTranscribing = {
-                        Task { @MainActor in
-                            await appState.updateLiveActivityState(.transcribing)
+                    .environment(router)
+                    .onOpenURL { url in
+                        handleDeepLink(url)
+                    }
+                    .onContinueUserActivity("com.antonnovoselov.VivaDicta.viewTranscription") { userActivity in
+                        try? handleTranscriptionActivity(userActivity)
+                    }
+                    .onChange(of: scenePhase) { oldPhase, newPhase in
+                        if oldPhase == .active && newPhase == .inactive {
+                            appState.showKeyboardFlowSheet = false
+                        }
+                        
+                        switch newPhase {
+                        case .active:
+                            logger.logInfo("🎬 App became active - checking for stale Live Activity")
+                            appState.checkAndEndStaleLiveActivity()
+                        case .inactive:
+                            logger.logInfo("🎬 App became inactive")
+                        case .background:
+                            logger.logInfo("🎬 App went to background")
+                            updateShortcutItems()
+                        @unknown default:
+                            break
                         }
                     }
-
-                    // Set up handler for AI enhancement
-                    AppGroupCoordinator.shared.onTranscriptionEnhancing = {
-                        Task { @MainActor in
-                            await appState.updateLiveActivityState(.enhancing)
-                        }
-                    }
-
-                    // Set up handler for transcription completion - return to idle
-                    AppGroupCoordinator.shared.onTranscriptionCompleted = { _ in
-                        Task { @MainActor in
-                            await appState.updateLiveActivityState(.idle)
-                        }
-                    }
-
-                    // Set up handler for transcription error - return to idle
-                    AppGroupCoordinator.shared.onTranscriptionError = {
-                        Task { @MainActor in
-                            await appState.updateLiveActivityState(.idle)
-                        }
-                    }
-                }
-                .onOpenURL { url in
-                    handleDeepLink(url)
-                }
-                .onContinueUserActivity("com.antonnovoselov.VivaDicta.viewTranscription") { userActivity in
-                    try? handleTranscriptionActivity(userActivity)
-                }
-                .onChange(of: scenePhase) { oldPhase, newPhase in
-                    if oldPhase == .active && newPhase == .inactive {
-                        appState.showKeyboardFlowSheet = false
-                    }
-
-                    switch newPhase {
-                    case .active:
-                        logger.logInfo("🎬 App became active - checking for stale Live Activity")
-                        appState.checkAndEndStaleLiveActivity()
-                    case .inactive:
-                        logger.logInfo("🎬 App became inactive")
-                    case .background:
-                        logger.logInfo("🎬 App went to background")
-                        updateShortcutItems()
-                    @unknown default:
-                        break
-                    }
-                }
             } else {
                 OnboardingView {
                     hasCompletedOnboarding = true
@@ -222,46 +223,46 @@ struct VivaDictaApp: App {
         .modelContainer(modelContainer)
     }
     
-
+    
     private func attemptReturnToHost(hostId: String) {
         // Keyboard session flow:
         // 1. If we CAN return to host app: Start recording → Return to host
         //    User sees recording already happening when they arrive
         // 2. If we CANNOT return: Show keyboard flow sheet → User manually switches
         //    User will manually start recording after switching
-
+        
         logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
         logger.logInfo("🔄 Attempting to return to host: \(hostId)")
-
+        
         if let urlScheme = getURLSchemeForBundleId(hostId),
-            let url = URL(string: urlScheme) {
+           let url = URL(string: urlScheme) {
             logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
-
+            
             // Check if we can open the URL before starting recording
             Task { @MainActor in
                 if UIApplication.shared.canOpenURL(url) {
                     // We can return to host - start actual recording first
                     logger.logInfo("🎙️ Starting recording before returning to host app")
-
+                    
                     // Check if we have a transcription model selected
                     guard let vm = appState.recordViewModel else {
                         logger.logError("❌ RecordViewModel not available")
                         appState.showKeyboardFlowSheet = true
                         return
                     }
-
+                    
                     if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
                         logger.logWarning("⚠️ No transcription model selected - showing keyboard flow sheet")
                         appState.showKeyboardFlowSheet = true
                         return
                     }
-
+                    
                     // Start the actual recording
                     vm.startCaptureAudio()
-
+                    
                     // Small delay to ensure recording is fully started
                     try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-
+                    
                     // Now return to the host app
                     UIApplication.shared.open(url, options: [:]) { success in
                         if success {
@@ -281,7 +282,7 @@ struct VivaDictaApp: App {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - show the keyboard flow sheet as fallback
             appState.showKeyboardFlowSheet = true
-
+            
             // TODO: Log to Firebase Analytics when we show keyboard flow sheet due to missing URL scheme mapping
             // This helps us track which apps users are trying to use but we don't have URL schemes for yet
             // We can then add popular apps to the knownSchemes dictionary
@@ -289,61 +290,61 @@ struct VivaDictaApp: App {
             // Linear issue: https://linear.app/antonnovoselov/issue/VIV-175/firebase-analytics-add-logging-what-app-was-not-added-to-predefined
         }
     }
-
+    
     private func handleDeepLink(_ url: URL) {
         logger.logInfo("📱 Received deep link: \(url.absoluteString)")
-
+        
         // Handle deep links from keyboard extension
         if url.absoluteString.starts(with: "vivadicta://record-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard recording request")
-
-            // Thread-safe check to prevent multiple simultaneous processing
-//            var shouldProcess = false
-//            Self.processingQueue.sync {
-//                if !Self.isProcessingKeyboardRequest {
-//                    Self.isProcessingKeyboardRequest = true
-//                    shouldProcess = true
-//                }
-//            }
-
-//            guard shouldProcess else {
-//                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
-//                return
-//            }
-
-            logger.logInfo("🔒 Processing keyboard request (thread-safe)")
-
-            // Ensure we reset the flag when done
-//            defer {
-//                Self.processingQueue.sync {
-//                    Self.isProcessingKeyboardRequest = false
-//                }
-//                logger.logInfo("🔓 Keyboard request processing completed")
-//            }
-
             
-
+            // Thread-safe check to prevent multiple simultaneous processing
+            //            var shouldProcess = false
+            //            Self.processingQueue.sync {
+            //                if !Self.isProcessingKeyboardRequest {
+            //                    Self.isProcessingKeyboardRequest = true
+            //                    shouldProcess = true
+            //                }
+            //            }
+            
+            //            guard shouldProcess else {
+            //                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
+            //                return
+            //            }
+            
+            logger.logInfo("🔒 Processing keyboard request (thread-safe)")
+            
+            // Ensure we reset the flag when done
+            //            defer {
+            //                Self.processingQueue.sync {
+            //                    Self.isProcessingKeyboardRequest = false
+            //                }
+            //                logger.logInfo("🔓 Keyboard request processing completed")
+            //            }
+            
+            
+            
             appState.startLiveActivity()
-
+            
             // Start audio prewarm session and wait for it to be ready before recording
             Task { @MainActor in
                 do {
                     // Start and await prewarm session to ensure it's fully ready
                     try await AudioPrewarmManager.shared.startPrewarmSession()
                     logger.logInfo("🎙️ Prewarm session fully ready")
-
+                    
                     // Extract hostId from URL query parameters
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                     let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
-
+                    
                     // Activate keyboard session to notify keyboard that hot mic is ready
                     let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
                     AppGroupCoordinator.shared.activateKeyboardSession(
                         timeoutSeconds: timeoutSeconds
                     )
-
+                    
                     logger.logInfo("🎙️ Hot Mic and keyboard session activated from deeplink")
-
+                    
                     // Now that prewarm is ready, attempt to return to host and start recording
                     if let hostId = hostId {
                         attemptReturnToHost(hostId: hostId)
@@ -351,10 +352,10 @@ struct VivaDictaApp: App {
                         // No host ID available, show the keyboard flow sheet as fallback
                         appState.showKeyboardFlowSheet = true
                     }
-
-
-
-
+                    
+                    
+                    
+                    
                 } catch {
                     logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
                     // If prewarm fails, still try to show keyboard flow sheet as fallback
@@ -363,7 +364,7 @@ struct VivaDictaApp: App {
             }
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
-
+            
             // Start recording
             appState.shouldStartRecording = true
             logger.logInfo("🎙️ Starting recording from widget deeplink")
@@ -409,7 +410,7 @@ struct VivaDictaApp: App {
             "md.obsidian": "obsidian://"
             // Add more as needed
         ]
-
+        
         return knownSchemes[bundleId]
     }
     
@@ -422,11 +423,11 @@ struct VivaDictaApp: App {
             userInfo: [:])
         UIApplication.shared.shortcutItems = [recordAction]
     }
-
+    
     @MainActor
     private func handleTranscriptionActivity(_ userActivity: NSUserActivity) throws {
         logger.logInfo("📱 Handling transcription view activity (Handoff/Siri)")
-
+        
         // Try to get the transcription ID from userInfo
         if let transcriptionIDString = userActivity.userInfo?["id"] as? String,
            let transcriptionID = UUID(uuidString: transcriptionIDString) {
