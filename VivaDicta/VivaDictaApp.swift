@@ -21,6 +21,7 @@ struct VivaDictaApp: App {
     
     @State private var dataController: DataController
     @State private var modelContainer: ModelContainer
+    @State private var router: Router
 
     @State var appState: AppState
     @Environment(\.scenePhase) private var scenePhase
@@ -52,8 +53,12 @@ struct VivaDictaApp: App {
         let dataController = DataController(modelContainer: modelContainer)
         self._dataController = .init(initialValue: dataController)
 
+        let router = Router()
+        self._router = .init(initialValue: router)
+
         AppDependencyManager.shared.add(dependency: dataController)
-        
+        AppDependencyManager.shared.add(dependency: router)
+
         self._appState = State(initialValue: AppState(modelContainer: modelContainer))
         
         // Initialize app directories
@@ -106,7 +111,7 @@ struct VivaDictaApp: App {
     var body: some Scene {
         WindowGroup {
             if hasCompletedOnboarding {
-                MainView(appState: appState, dataController: dataController)
+                MainView(appState: appState, router: router)
                     .task {
 //                        try? Tips.resetDatastore()
                         
@@ -188,9 +193,7 @@ struct VivaDictaApp: App {
                     handleDeepLink(url)
                 }
                 .onContinueUserActivity("com.antonnovoselov.VivaDicta.viewTranscription") { userActivity in
-                    Task {
-                        try? await handleTranscriptionActivity(userActivity)
-                    }
+                    try? handleTranscriptionActivity(userActivity)
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     if oldPhase == .active && newPhase == .inactive {
@@ -420,14 +423,16 @@ struct VivaDictaApp: App {
         UIApplication.shared.shortcutItems = [recordAction]
     }
 
-    private func handleTranscriptionActivity(_ userActivity: NSUserActivity) async throws {
+    @MainActor
+    private func handleTranscriptionActivity(_ userActivity: NSUserActivity) throws {
         logger.logInfo("📱 Handling transcription view activity (Handoff/Siri)")
-        
+
         // Try to get the transcription ID from userInfo
         if let transcriptionIDString = userActivity.userInfo?["id"] as? String,
            let transcriptionID = UUID(uuidString: transcriptionIDString) {
-            try await dataController.select(id: transcriptionID)
-            
+            if let transcription = try dataController.transcription(byId: transcriptionID) {
+                router.select(transcription: transcription)
+            }
             logger.logInfo("📱 Opening transcription from user activity: \(transcriptionID)")
         } else {
             logger.logError("📱 Failed to get transcription ID from user activity")

@@ -33,13 +33,17 @@ struct OpenTranscriptionSnippetIntent: AppIntent {
 struct OpenTranscriptionIntent: OpenIntent {
     static let title: LocalizedStringResource = "Open Note"
 
-    @Dependency var dataController: DataController
-    
+    @Dependency private var dataController: DataController
+    @Dependency private var router: Router
+
     @Parameter
     var target: TranscriptionEntity
 
+    @MainActor
     func perform() async throws -> some IntentResult {
-        try await dataController.select(entity: target)
+        if let transcription = try dataController.transcription(byId: target.id) {
+            router.select(transcription: transcription)
+        }
         return .result()
     }
 }

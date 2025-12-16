@@ -11,7 +11,6 @@ import SwiftData
 @Observable
 class DataController {
     var modelContext: ModelContext
-    var path = [Transcription]()
     var searchText = ""
 
     init(modelContainer: ModelContainer) {
@@ -37,6 +36,10 @@ class DataController {
         return try modelContext.fetch(transcriptionsDescriptor)
     }
 
+    func transcription(byId id: UUID) throws -> Transcription? {
+        try transcriptions(matching: #Predicate { $0.id == id }, limit: 1).first
+    }
+
     func transcriptionEntities(
         matching predicate: Predicate<Transcription> = #Predicate { _ in true },
         sortBy: [SortDescriptor<Transcription>] = [SortDescriptor(\.timestamp, order: .reverse)],
@@ -50,21 +53,5 @@ class DataController {
     ) throws -> Int {
         let transcriptionsDescriptor = FetchDescriptor<Transcription>(predicate: predicate)
         return try modelContext.fetchCount(transcriptionsDescriptor)
-    }
-
-    @MainActor
-    func select(entity: TranscriptionEntity) async throws {
-        try await select(id: entity.id)
-    }
-
-    @MainActor
-    func select(id: UUID) async throws {
-        let results = try transcriptions(matching: #Predicate {
-            $0.id == id
-        })
-
-        if let first = results.first {
-            path = [first]
-        }
     }
 }

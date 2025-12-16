@@ -11,7 +11,7 @@ import TipKit
 
 struct MainView: View {
     @Bindable var appState: AppState
-    @Bindable var dataController: DataController
+    @Bindable var router: Router
     
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
@@ -31,7 +31,7 @@ struct MainView: View {
 //        let _ = Self._printChanges()
 //        let _ = print("Executing <MainView> body")
         
-        NavigationStack(path: $dataController.path) {
+        NavigationStack(path: $router.path) {
             TranscriptionsContentView(appState: appState, searchText: $searchText)
                 .searchable(text: $searchText, placement: .toolbar)
                 .minimizedSearch()
@@ -252,6 +252,6 @@ struct MainView: View {
 
 #Preview(traits: .transcriptionsMockData) {
     @Previewable @State var appState = AppState()
-    @Previewable @State var dataController = DataController()
-    MainView(appState: appState, dataController: dataController)
+    @Previewable @State var router = Router()
+    MainView(appState: appState, router: router)
 }
