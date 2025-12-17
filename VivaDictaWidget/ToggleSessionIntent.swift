@@ -15,6 +15,8 @@ struct ToggleSessionIntent: LiveActivityIntent {
 
     @Parameter(title: "Session Active")
     var isSessionActive: Bool
+    
+    static var isDiscoverable: Bool = false
 
     init() {
         self.isSessionActive = true
