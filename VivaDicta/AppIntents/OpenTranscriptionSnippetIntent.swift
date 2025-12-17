@@ -10,8 +10,6 @@ import SwiftUI
 
 struct OpenTranscriptionSnippetIntent: AppIntent {
     static let title: LocalizedStringResource = "Open Note Snippet"
-    
-    @Dependency private var router: Router
 
     @Parameter
     var target: TranscriptionEntity
