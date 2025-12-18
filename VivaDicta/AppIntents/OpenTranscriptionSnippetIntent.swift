@@ -21,7 +21,6 @@ struct OpenTranscriptionSnippetIntent: AppIntent {
             VStack(alignment: .center) {
                 Text(target.text(withPrefix: 200))
                     .multilineTextAlignment(.leading)
-                    .lineLimit(0)
             }
             .padding()
         }

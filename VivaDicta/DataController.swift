@@ -11,7 +11,6 @@ import SwiftData
 @Observable
 class DataController {
     var modelContext: ModelContext
-    var searchText = ""
 
     init(modelContainer: ModelContainer) {
         modelContext = ModelContext(modelContainer)
@@ -25,7 +24,7 @@ class DataController {
         self.init(modelContainer: container)
     }
     #endif
-
+    
     func transcriptions(
         matching predicate: Predicate<Transcription> = #Predicate { _ in true },
         sortBy: [SortDescriptor<Transcription>] = [SortDescriptor(\.timestamp, order: .reverse)],

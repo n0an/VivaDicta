@@ -53,12 +53,14 @@ struct KeyboardFlowSheet: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
+    
+    @Previewable @State var appState = AppState()
     MainView()
-        .environment(AppState())
+        .environment(appState)
         .environment(Router())
         .sheet(isPresented: .constant(true)) {
             KeyboardFlowSheet()
-                .environment(AppState())
+                .environment(appState)
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
         }
