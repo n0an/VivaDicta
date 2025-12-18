@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct KeyboardFlowSheet: View {
-    @Bindable var appState: AppState
+    @Environment(AppState.self) var appState
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,10 +53,12 @@ struct KeyboardFlowSheet: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    @State @Previewable var appState = AppState()
-    MainView(appState: appState)
+    MainView()
+        .environment(AppState())
+        .environment(Router())
         .sheet(isPresented: .constant(true)) {
-            KeyboardFlowSheet(appState: appState)
+            KeyboardFlowSheet()
+                .environment(AppState())
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
         }

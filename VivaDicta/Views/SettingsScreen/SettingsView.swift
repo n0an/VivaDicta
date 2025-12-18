@@ -10,8 +10,8 @@ import AppIntents
 import TipKit
 
 struct SettingsView: View {
+    @Environment(AppState.self) var appState
 
-    var appState: AppState
     @State var promptsManager = PromptsManager()
 
     @Environment(\.dismiss) private var dismiss
@@ -296,7 +296,7 @@ struct SettingsView: View {
                 case .promptsSettings:
                     PromptsSettings(promptsManager: promptsManager, aiService: appState.aiService)
                 case .transcriptionModels:
-                    ModelsView(appState: appState)
+                    ModelsView()
                 case .promptsTemplates:
                     TemplateSelectionView(promptsManager: promptsManager)
 //                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
@@ -315,17 +315,9 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if #available(iOS 26.0, *) {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Close", systemImage: "xmark") {
-                            dismiss()
-                        }
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Close") {
-                            dismiss()
-                        }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close", systemImage: "xmark") {
+                        dismiss()
                     }
                 }
             }
@@ -383,8 +375,8 @@ struct SettingsView: View {
 
 
 #Preview {
-    @Previewable @State var appState = AppState()
-    SettingsView(appState: appState)
+    SettingsView()
+        .environment(AppState())
 }
 
 

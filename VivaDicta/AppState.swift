@@ -11,6 +11,7 @@ import ActivityKit
 import os
 import CoreSpotlight
 import SwiftData
+import AppIntents
 
 @Observable
 class AppState {
@@ -20,6 +21,7 @@ class AppState {
     private var liveActivityTimer: Timer?
     private var liveActivityStartTime: Date?
 
+//    var modelContainer: ModelContainer
     var transcriptionManager: TranscriptionManager!
     var aiService: AIService!
     var recordViewModel: RecordViewModel!
@@ -29,13 +31,12 @@ class AppState {
     // Navigation state
     var shouldNavigateToModels: Bool = false
     var shouldStartRecording: Bool = false
-    var selectedTranscriptionID: UUID? = nil  // For Spotlight navigation
     var showKeyboardFlowSheet: Bool = false  // For showing keyboard flow activation sheet
 
-    init() {
+    init(modelContainer: ModelContainer) {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()
-        recordViewModel = RecordViewModel(appState: self)
+        recordViewModel = RecordViewModel(appState: self, modelContainer: modelContainer)
         downloadManager = ModelDownloadManager()
 
         // Set up callbacks to coordinate between services
@@ -196,16 +197,24 @@ class AppState {
             logger.logError("[Spotlight] Indexing is unavailable")
             return
         }
+        
 
-        let item = CSSearchableItem(
-            uniqueIdentifier: transcription.id.uuidString,
-            domainIdentifier: "com.antonnovoselov.VivaDicta",
-            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
-        )
+//        let item = CSSearchableItem(
+//            uniqueIdentifier: transcription.id.uuidString,
+//            domainIdentifier: "com.antonnovoselov.VivaDicta",
+//            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
+//        )
 
         do {
             let index = CSSearchableIndex.default()
-            try await index.indexSearchableItems([item])
+            
+            
+            
+            let transcriptionEntity = transcription.entity
+            try await index.indexAppEntities([transcriptionEntity])
+            
+            
+//            try await index.indexSearchableItems([item])
             logger.logInfo("[Spotlight] Indexed transcription: \(transcription.id.uuidString)")
         } catch {
             logger.logError("[Spotlight] Failed to index transcription: \(error.localizedDescription)")
@@ -221,7 +230,8 @@ class AppState {
 
         do {
             let index = CSSearchableIndex.default()
-            try await index.deleteSearchableItems(withIdentifiers: [transcriptionID.uuidString])
+            try await index.deleteAppEntities(identifiedBy: [transcriptionID], ofType: TranscriptionEntity.self)
+//            try await index.deleteSearchableItems(withIdentifiers: [transcriptionID.uuidString])
             logger.logInfo("[Spotlight] Removed transcription from index: \(transcriptionID.uuidString)")
         } catch {
             logger.logError("[Spotlight] Failed to remove transcription: \(error.localizedDescription)")
@@ -236,60 +246,60 @@ class AppState {
 
     /// Update Spotlight ranking when user views a transcription
     /// This helps frequently accessed items appear higher in Spotlight results
-    func updateSpotlightRanking(for transcription: Transcription) async {
-        guard CSSearchableIndex.isIndexingAvailable() else { return }
-
-        let item = CSSearchableItem(
-            uniqueIdentifier: transcription.id.uuidString,
-            domainIdentifier: "com.antonnovoselov.VivaDicta",
-            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
-        )
-        item.isUpdate = true
-
-        do {
-            try await CSSearchableIndex.default().indexSearchableItems([item])
-        } catch {
-            logger.logError("[Spotlight] Failed to update ranking: \(error.localizedDescription)")
-        }
-    }
+//    func updateSpotlightRanking(for transcription: Transcription) async {
+//        guard CSSearchableIndex.isIndexingAvailable() else { return }
+//
+//        let item = CSSearchableItem(
+//            uniqueIdentifier: transcription.id.uuidString,
+//            domainIdentifier: "com.antonnovoselov.VivaDicta",
+//            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
+//        )
+//        item.isUpdate = true
+//
+//        do {
+//            try await CSSearchableIndex.default().indexSearchableItems([item])
+//        } catch {
+//            logger.logError("[Spotlight] Failed to update ranking: \(error.localizedDescription)")
+//        }
+//    }
 
     // Legacy batch indexing method - kept for manual rebuild if needed
-    func updateSpotlightIndex() async {
-        guard CSSearchableIndex.isIndexingAvailable() else {
-            logger.logError("[Spotlight] Indexing is unavailable")
-            return
-        }
-
-        let container = Persistence.container
-
-        do {
-            // Create a fetch descriptor for non-empty transcriptions
-            let descriptor = FetchDescriptor<Transcription>(
-                predicate: #Predicate { transcription in
-                    transcription.text != "" ||
-                    (transcription.enhancedText != nil && transcription.enhancedText != "")
-                },
-                sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
-            )
-
-            let transcriptions = try container.mainContext.fetch(descriptor)
-
-            let searchableItems = transcriptions.map { transcription in
-                CSSearchableItem(
-                    uniqueIdentifier: transcription.id.uuidString,
-                    domainIdentifier: "com.antonnovoselov.VivaDicta",
-                    attributeSet: transcription.searchableAttributes()
-                )
-            }
-
-            // Add the transcriptions to the search index so people can find them through Spotlight.
-            let index = CSSearchableIndex.default()
-            try await index.indexSearchableItems(searchableItems)
-            logger.logInfo("[Spotlight] Successfully indexed \(searchableItems.count) transcriptions")
-        } catch {
-            logger.logError("[Spotlight] Failed to index transcriptions. Reason: \(error.localizedDescription)")
-        }
-    }
+//    func updateSpotlightIndex() async {
+//        guard CSSearchableIndex.isIndexingAvailable() else {
+//            logger.logError("[Spotlight] Indexing is unavailable")
+//            return
+//        }
+//
+//        let container = Persistence.container
+//
+//        do {
+//            // Create a fetch descriptor for non-empty transcriptions
+//            let descriptor = FetchDescriptor<Transcription>(
+//                predicate: #Predicate { transcription in
+//                    transcription.text != "" ||
+//                    (transcription.enhancedText != nil && transcription.enhancedText != "")
+//                },
+//                sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+//            )
+//
+//            let transcriptions = try container.mainContext.fetch(descriptor)
+//
+//            let searchableItems = transcriptions.map { transcription in
+//                CSSearchableItem(
+//                    uniqueIdentifier: transcription.id.uuidString,
+//                    domainIdentifier: "com.antonnovoselov.VivaDicta",
+//                    attributeSet: transcription.searchableAttributes()
+//                )
+//            }
+//
+//            // Add the transcriptions to the search index so people can find them through Spotlight.
+//            let index = CSSearchableIndex.default()
+//            try await index.indexSearchableItems(searchableItems)
+//            logger.logInfo("[Spotlight] Successfully indexed \(searchableItems.count) transcriptions")
+//        } catch {
+//            logger.logError("[Spotlight] Failed to index transcriptions. Reason: \(error.localizedDescription)")
+//        }
+//    }
     
     
     func userActivity(for transcription: Transcription) -> NSUserActivity {
@@ -315,3 +325,17 @@ class AppState {
         return activity
     }
 }
+
+
+#if DEBUG
+extension AppState {
+    convenience init() {
+        let container = try! ModelContainer(
+            for: Transcription.self,
+            configurations: .init(isStoredInMemoryOnly: true)
+        )
+        Transcription.mockData.forEach { container.mainContext.insert($0) }
+        self.init(modelContainer: container)
+    }
+}
+#endif

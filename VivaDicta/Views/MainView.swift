@@ -10,11 +10,12 @@ import SwiftData
 import TipKit
 
 struct MainView: View {
-    @Bindable var appState: AppState
+    @Environment(AppState.self) var appState
+    @Environment(Router.self) var router
+
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
     @State private var searchText = ""
-    @State private var navigationPath = NavigationPath()
     
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
@@ -27,11 +28,14 @@ struct MainView: View {
     var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
         
     var body: some View {
+        @Bindable var appState = appState
+        @Bindable var router = router
+
 //        let _ = Self._printChanges()
 //        let _ = print("Executing <MainView> body")
         
-        NavigationStack(path: $navigationPath) {
-            TranscriptionsContentView(appState: appState, searchText: $searchText)
+        NavigationStack(path: $router.path) {
+            TranscriptionsContentView(searchText: $searchText)
                 .searchable(text: $searchText, placement: .toolbar)
                 .minimizedSearch()
             
@@ -100,7 +104,7 @@ struct MainView: View {
                 }
                 .sheet(isPresented: $showingRecordingSheet) {
                     if #available(iOS 26.0, *) {
-                        RecordingSheetView(appState: appState)
+                        RecordingSheetView()
                         // TODO: Move inside RecordingSheetView
                         
 //                            .background {
@@ -131,16 +135,16 @@ struct MainView: View {
                             .scrollContentBackground(.hidden)
                             .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
                     } else {
-                        RecordingSheetView(appState: appState)
+                        RecordingSheetView()
                     }
                 }
                 .fullScreenCover(isPresented: $showingSettings) {
-                    SettingsView(appState: appState)
+                    SettingsView()
                         .interactiveDismissDisabled(true)
                         .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
                 .navigationDestination(for: Transcription.self) { transcription in
-                    TranscriptionDetailView(transcription: transcription, appState: appState)
+                    TranscriptionDetailView(transcription: transcription)
                 }
                 .alert("No Transcription Model", isPresented: $showNoModelAlert, actions: {
                     Button("Go to Models") {
@@ -214,25 +218,8 @@ struct MainView: View {
                 // The SettingsView should handle navigation to models internally
             }
         }
-        .onChange(of: appState.selectedTranscriptionID) { _, newID in
-            if let transcriptionID = newID {
-                // Find the transcription with the matching ID
-                let descriptor = FetchDescriptor<Transcription>(
-                    predicate: #Predicate { transcription in
-                        transcription.id == transcriptionID
-                    }
-                )
-
-                if let transcription = try? modelContext.fetch(descriptor).first {
-                    // Navigate to the transcription detail view
-                    navigationPath.append(transcription)
-                    // Reset the selectedTranscriptionID
-                    appState.selectedTranscriptionID = nil
-                }
-            }
-        }
         .sheet(isPresented: $appState.showKeyboardFlowSheet) {
-            KeyboardFlowSheet(appState: appState)
+            KeyboardFlowSheet()
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
         }
@@ -267,6 +254,7 @@ struct MainView: View {
 }
 
 #Preview(traits: .transcriptionsMockData) {
-    @State @Previewable var appState = AppState()
-    MainView(appState: appState)
+    MainView()
+        .environment(AppState())
+        .environment(Router())
 }

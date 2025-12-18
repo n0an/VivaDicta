@@ -9,7 +9,8 @@ import SwiftUI
 import TipKit
 
 struct ModelsView: View {
-    @Bindable var appState: AppState
+    @Environment(AppState.self) var appState
+
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
 
@@ -129,8 +130,8 @@ struct ModelsView: View {
 }
 
 #Preview {
-    @Previewable @State var appState = AppState()
     NavigationStack {
-        ModelsView(appState: appState)
+        ModelsView()
     }
+    .environment(AppState())
 }

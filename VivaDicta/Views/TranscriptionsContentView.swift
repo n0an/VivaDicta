@@ -25,10 +25,9 @@ struct TranscriptionsContentView: View {
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
 
-    var appState: AppState
+    @Environment(AppState.self) var appState
 
-    init(appState: AppState, searchText: Binding<String>) {
-        self.appState = appState
+    init(searchText: Binding<String>) {
         self._searchText = searchText
     }
 
@@ -45,10 +44,8 @@ struct TranscriptionsContentView: View {
                             .id(topAnchorID)
 
                         ForEach(displayedTranscriptions) { transcription in
-                            
-                            
                             NavigationLink {
-                                TranscriptionDetailView(transcription: transcription, appState: appState)
+                                TranscriptionDetailView(transcription: transcription)
 //                                    .interactiveDismissDisabled(true)
 
                                     .navigationTransition(.zoom(sourceID: transcription.id, in: zoomNamespace))
@@ -205,9 +202,9 @@ struct TranscriptionsContentView: View {
 }
 
 #Preview(traits: .transcriptionsMockDataMany) {
-    @Previewable @State var appState = AppState()
     @Previewable @State var searchText = ""
     NavigationStack {
-        TranscriptionsContentView(appState: appState, searchText: $searchText)
+        TranscriptionsContentView(searchText: $searchText)
     }
+    .environment(AppState())
 }

@@ -22,12 +22,11 @@ enum ProcessingState: Equatable {
 }
 
 struct TranscriptionDetailView: View {
-
     var transcription: Transcription
-    var appState: AppState
+    @Environment(AppState.self) var appState
 
     @State private var selectedTextType: TextDisplayType = .enhanced
-    @State private var spotlightTask: Task<Void, Never>?
+//    @State private var spotlightTask: Task<Void, Never>?
     
     @State private var isExpanded: Bool = false
     @Namespace private var namespace
@@ -153,13 +152,13 @@ struct TranscriptionDetailView: View {
             activity.becomeCurrent()
 
             // Update Spotlight ranking for frequently accessed items
-            spotlightTask = Task {
-                await appState.updateSpotlightRanking(for: transcription)
-            }
+//            spotlightTask = Task {
+//                await appState.updateSpotlightRanking(for: transcription)
+//            }
         }
         .onDisappear {
-            spotlightTask?.cancel()
-            spotlightTask = nil
+//            spotlightTask?.cancel()
+//            spotlightTask = nil
             processingTask?.cancel()
             processingTask = nil
         }
@@ -570,8 +569,6 @@ struct TranscriptionDetailView: View {
 }
 
 #Preview {
-    TranscriptionDetailView(
-        transcription: Transcription.mockData[0],
-        appState: AppState()
-    )
+    TranscriptionDetailView(transcription: Transcription.mockData[0])
+        .environment(AppState())
 }

@@ -98,6 +98,25 @@ class Transcription {
 }
 
 extension Transcription {
+    var entity: TranscriptionEntity {
+        
+        .init(
+            id: id,
+            text: text,
+            enhancedText: enhancedText,
+            timestamp: timestamp,
+            audioDuration: audioDuration,
+            audioFileName: audioFileName,
+            transcriptionModelName: transcriptionModelName,
+            aiEnhancementModelName: aiEnhancementModelName,
+            promptName: promptName,
+            transcriptionDuration: transcriptionDuration,
+            enhancementDuration: enhancementDuration
+        )
+    }
+}
+
+extension Transcription {
     nonisolated(unsafe) static let mockData: [Transcription] =
     [
         
@@ -292,13 +311,12 @@ extension Transcription {
 extension Transcription {
     nonisolated func searchableAttributes(lastUsedDate: Date? = nil) -> CSSearchableItemAttributeSet {
         let attributes = CSSearchableItemAttributeSet(contentType: .text)
-
+        
+        let textToUse = enhancedText ?? text
+        
         // Title: First 100 characters of the transcription or a date-based title
-        let textPreview = String(text.prefix(100))
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        dateFormatter.timeStyle = .short
-        let dateString = dateFormatter.string(from: timestamp)
+        let textPreview = String(textToUse.prefix(100))
+        let dateString = timestamp.formatted(.dateTime.month(.abbreviated).day().year().hour().minute())
 
         var title = ""
         
