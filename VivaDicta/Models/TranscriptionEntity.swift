@@ -133,8 +133,6 @@ struct TranscriptionEntity: IndexedEntity {
     }
 }
 
-
-
 struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
     @Dependency var dataController: DataController
 

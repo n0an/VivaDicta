@@ -63,7 +63,6 @@ extension ParakeetModel {
         case .v3:
             FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
         }
-        
     }
     
     var isDownloaded: Bool {
