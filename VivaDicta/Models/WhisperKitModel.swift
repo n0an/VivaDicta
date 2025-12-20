@@ -49,15 +49,11 @@ struct WhisperKitModel: @MainActor TranscriptionModel, Equatable {
     }
     
     let supportedLanguages: [String: String]
-
-    // WhisperKit specific model identifier
     let whisperKitModelName: String
 }
 
 // MARK: - Download & File Management
 extension WhisperKitModel {
-    // WhisperKit downloads models to its own managed location
-    // WhisperKit uses ~/Documents/huggingface/models/argmaxinc/whisperkit-coreml/
     public static var whisperKitModelsRoot: URL {
         URL.documentsDirectory
             .appendingPathComponent("huggingface")

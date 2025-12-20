@@ -65,9 +65,7 @@ struct TranscriptionEntity: IndexedEntity {
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
     }
-
-    // MARK: - Spotlight Indexing (iOS 18+)
-
+    
     var searchableAttributes: CSSearchableItemAttributeSet {
         let attributeSet = defaultAttributeSet
 

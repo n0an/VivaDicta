@@ -53,14 +53,11 @@ public enum LiveActivityState: String, Codable, Hashable {
 
 struct VivaDictaLiveActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        // Dynamic stateful properties about your activity go here!
         var state: LiveActivityState
     }
-
-    // Fixed non-changing properties about your activity go here!
+    
     var name: String
 }
-
 
 
 extension VivaDictaLiveActivityAttributes {

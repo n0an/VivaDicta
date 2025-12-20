@@ -21,10 +21,6 @@ protocol TranscriptionModel: Identifiable, Hashable {
 }
 
 extension TranscriptionModel {
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
     var language: String {
         supportManyLanguages ? "Multilingual" : "English-only"
     }
