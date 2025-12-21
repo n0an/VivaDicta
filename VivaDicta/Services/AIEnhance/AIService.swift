@@ -385,7 +385,6 @@ class AIService {
             let url = URL(string: aiProvider.baseURL)!
             var request = URLRequest(url: url)
             
-            
             request.httpMethod = "POST"
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
