@@ -1,5 +1,5 @@
 //
-//  FlowMode.swift
+//  VivaMode.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.09.12
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct FlowMode: Identifiable, Hashable, Codable {
+struct VivaMode: Identifiable, Hashable, Codable {
     let id: UUID
 
     let name: String
@@ -41,7 +41,7 @@ struct FlowMode: Identifiable, Hashable, Codable {
         self.aiEnhanceEnabled = aiEnhanceEnabled
     }
     
-    static let defaultMode = FlowMode(
+    static let defaultMode = VivaMode(
         id: UUID(),
         name: "Default",
         transcriptionProvider: .whisperKit,

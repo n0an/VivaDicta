@@ -43,8 +43,8 @@ struct RecordingStateView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Picker("Flow Mode", selection: $dictationState.flowModeManager.selectedFlowMode) {
-                    ForEach(dictationState.flowModeManager.availableFlowModes) { mode in
+                Picker("Viva Mode", selection: $dictationState.vivaModeManager.selectedVivaMode) {
+                    ForEach(dictationState.vivaModeManager.availableVivaModes) { mode in
                         Text(mode.name).tag(mode)
                     }
                 }

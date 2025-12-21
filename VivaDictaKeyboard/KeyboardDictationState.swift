@@ -21,8 +21,8 @@ final class KeyboardDictationState {
     // Audio level from main app recording (0.0 to 1.0)
     var currentAudioLevel: CGFloat = 0.0
 
-    // MARK: - FlowMode Manager
-    var flowModeManager = FlowModeManager()
+    // MARK: - VivaMode Manager
+    var vivaModeManager = VivaModeManager()
     
     // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
@@ -70,8 +70,8 @@ final class KeyboardDictationState {
 
     // MARK: - Lifecycle
     func start() {
-        // Refresh FlowModes when keyboard starts
-        flowModeManager.refreshFlowModes()
+        // Refresh VivaModes when keyboard starts
+        vivaModeManager.refreshVivaModes()
 
         // TODO: Refactor to Task all below
         AppGroupCoordinator.shared.onRecordingStateChanged = { [weak self] state in

@@ -203,7 +203,7 @@ struct ModeEditViewModelTests {
         )
         let transcriptionManager = TranscriptionManager()
 
-        let existingMode = FlowMode(
+        let existingMode = VivaMode(
             id: UUID(),
             name: "Existing",
             transcriptionProvider: .whisperKit,

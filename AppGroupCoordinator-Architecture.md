@@ -52,7 +52,7 @@ AppGroupCoordinator is the central communication hub between the VivaDicta main 
 │  │  │                                                   • errorMessage        │ │  │
 │  │  │                          Audio:                   • audioLevel          │ │  │
 │  │  │                                                                         │ │  │
-│  │  │  FlowMode Management:    Language Settings:       API Keys:             │ │  │
+│  │  │  VivaMode Management:    Language Settings:       API Keys:             │ │  │
 │  │  │  • selectedAIModeKey     • selectedLanguageKey    • apiKeyTemplate     │ │  │
 │  │  │  • aiEnhanceModesKey     • transcriptionPrompt                         │ │  │
 │  │  └─────────────────────────────────────────────────────────────────────────┘ │  │
@@ -143,7 +143,7 @@ Keyboard Extension          AppGroupCoordinator           Main App            Pr
 - **Actually Used Data**:
   - Recording state (`isRecording`, `lastRecordingTimestamp`)
   - Transcribed text sharing (`transcribedText`)
-  - User preferences (FlowMode via `selectedAIModeKey`, language)
+  - User preferences (VivaMode via `selectedAIModeKey`, language)
   - Session management (`keyboardSessionActive`, `sessionExpiryTime`)
   - Transcription status and errors (`transcriptionStatus`, `errorMessage`)
   - Audio level for visualization (`audioLevel`)
@@ -192,14 +192,14 @@ The PrewarmManager works with AppGroupCoordinator to maintain background audio s
 4. Transcribed text shared via `shareTranscribedText()`
 5. Keyboard retrieves text via `getAndConsumeTranscribedText()`
 
-### 4. **FlowMode Management**
+### 4. **VivaMode Management**
 
 ```
 Keyboard Extension                AppGroupCoordinator              Main App
        │                                 │                            │
-       │  User selects FlowMode          │                            │
+       │  User selects VivaMode          │                            │
        ├────────────────────────────────►│                            │
-       │  setSelectedFlowMode(name)      │                            │
+       │  setSelectedVivaMode(name)      │                            │
        │                                 │                            │
        │                                 ├───────────────────────────►│
        │                                 │  Save to UserDefaults      │
@@ -225,7 +225,7 @@ Keyboard Extension                AppGroupCoordinator              Main App
 - `requestStartRecording()`: Initiate recording from keyboard
 - `requestStopRecording()`: Stop recording from keyboard
 - `requestCancelRecording()`: Cancel recording from keyboard
-- `setSelectedFlowMode()`: Update selected AI mode
+- `setSelectedVivaMode()`: Update selected AI mode
 
 #### For Main App:
 - `updateRecordingState()`: Update recording status

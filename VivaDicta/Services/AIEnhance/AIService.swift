@@ -14,10 +14,10 @@ class AIService {
 
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
-    public var modes: [FlowMode] = []
+    public var modes: [VivaMode] = []
 
     // Callback for mode changes
-    public var onModeChange: ((FlowMode) -> Void)?
+    public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
         didSet {
@@ -26,7 +26,7 @@ class AIService {
         }
     }
     
-    public var selectedMode: FlowMode = FlowMode.defaultMode {
+    public var selectedMode: VivaMode = VivaMode.defaultMode {
         didSet {
             onModeChange?(selectedMode)
         }
@@ -38,7 +38,7 @@ class AIService {
 
     
     init() {
-        self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedFlowModeKey) ?? FlowMode.defaultMode.name
+        self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         refreshConnectedProviders()
@@ -51,27 +51,27 @@ class AIService {
         }
     }
     
-    public func getMode(name: String) -> FlowMode {
-        return modes.first { $0.name == name } ?? FlowMode.defaultMode
+    public func getMode(name: String) -> VivaMode {
+        return modes.first { $0.name == name } ?? VivaMode.defaultMode
     }
 
     /// Reload the selected mode from UserDefaults (used when keyboard extension changes the mode)
     public func reloadSelectedModeFromKeyboard() {
-        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedFlowModeKey) ?? FlowMode.defaultMode.name
+        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
         if savedModeName != selectedModeName {
-            logger.logInfo("📱 Reloading FlowMode from keyboard: \(savedModeName)")
+            logger.logInfo("📱 Reloading VivaMode from keyboard: \(savedModeName)")
             selectedModeName = savedModeName
             selectedMode = getMode(name: savedModeName)
         }
     }
     
-    public func addMode(_ mode: FlowMode) {
+    public func addMode(_ mode: VivaMode) {
         modes.append(mode)
         saveModes()
         logger.logInfo("Added new mode: \(mode.name)")
     }
     
-    public func updateMode(_ mode: FlowMode) {
+    public func updateMode(_ mode: VivaMode) {
         if let index = modes.firstIndex(where: { $0.id == mode.id }) {
             modes[index] = mode
             saveModes()
@@ -84,7 +84,7 @@ class AIService {
         }
     }
     
-    public func deleteMode(_ mode: FlowMode) {
+    public func deleteMode(_ mode: VivaMode) {
         guard modes.count > 1 else {
             logger.logWarning("Cannot delete last mode")
             return
@@ -107,7 +107,7 @@ class AIService {
         updateModesMatching(
             { $0.aiEnhanceEnabled && $0.aiProvider == provider },
             transform: { mode in
-                FlowMode(
+                VivaMode(
                     id: mode.id,
                     name: mode.name,
                     transcriptionProvider: mode.transcriptionProvider,
@@ -129,7 +129,7 @@ class AIService {
         updateModesMatching(
             { $0.aiEnhanceEnabled && $0.userPrompt?.id == promptId },
             transform: { mode in
-                FlowMode(
+                VivaMode(
                     id: mode.id,
                     name: mode.name,
                     transcriptionProvider: mode.transcriptionProvider,
@@ -146,9 +146,9 @@ class AIService {
     }
 
     private func updateModesMatching(
-        _ predicate: (FlowMode) -> Bool,
-        transform: (FlowMode) -> FlowMode,
-        logMessage: (FlowMode) -> String
+        _ predicate: (VivaMode) -> Bool,
+        transform: (VivaMode) -> VivaMode,
+        logMessage: (VivaMode) -> String
     ) {
         var modesUpdated = false
 
@@ -183,7 +183,7 @@ class AIService {
         // Only update if the default mode doesn't have a transcription model set
         if defaultMode.transcriptionModel.isEmpty {
             // Create updated mode with the new transcription settings
-            let updatedMode = FlowMode(
+            let updatedMode = VivaMode(
                 id: defaultMode.id,
                 name: defaultMode.name,
                 transcriptionProvider: provider,
@@ -209,29 +209,29 @@ class AIService {
     }
 
     private func loadModes() {
-        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.flowModesKey),
-           let savedModes = try? JSONDecoder().decode([FlowMode].self, from: savedModesData) {
+        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.vivaModesKey),
+           let savedModes = try? JSONDecoder().decode([VivaMode].self, from: savedModesData) {
             modes = savedModes
         } else {
-            modes = [FlowMode.defaultMode]
+            modes = [VivaMode.defaultMode]
         }
 
-        logger.logInfo("Loaded \(self.modes.count) Flow Modes")
+        logger.logInfo("Loaded \(self.modes.count) Viva Modes")
     }
 
     private func saveModes() {
         guard let encoded = try? JSONEncoder().encode(modes) else {
-            logger.logError("Failed to encode Flow Modes")
+            logger.logError("Failed to encode Viva Modes")
             return
         }
-        userDefaults.set(encoded, forKey: AppGroupCoordinator.flowModesKey)
+        userDefaults.set(encoded, forKey: AppGroupCoordinator.vivaModesKey)
         userDefaults.synchronize() // Force immediate write to disk
-        logger.logInfo("Saved \(self.modes.count) Flow Modes to shared storage")
+        logger.logInfo("Saved \(self.modes.count) Viva Modes to shared storage")
     }
-    
+
     private func saveSelectedModeName(_ modeName: String) {
-        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedFlowModeKey)
-        logger.logInfo("Saved Flow Mode: \(modeName)")
+        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedVivaModeKey)
+        logger.logInfo("Saved Viva Mode: \(modeName)")
     }
     
     private func loadSavedOpenRouterModels() {

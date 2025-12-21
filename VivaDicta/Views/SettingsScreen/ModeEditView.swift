@@ -23,7 +23,7 @@ struct ModeEditView: View {
     let selectLanguageTip = SelectLanguageTip()
 
     
-    init(mode: FlowMode?,
+    init(mode: VivaMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
          transcriptionManager: TranscriptionManager,

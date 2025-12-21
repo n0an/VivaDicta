@@ -46,7 +46,7 @@ public enum LogCategory: String {
 
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"
-    case flowModeManager = "FlowModeManager"
+    case vivaModeManager = "VivaModeManager"
 //    case toggleKeyboardFlowIntent = "ToggleKeyboardFlowIntent"
 
     // MARK: - Utility

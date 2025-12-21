@@ -283,7 +283,7 @@ struct SettingsView: View {
                 
 //                ShortcutsLink()
             }
-            .navigationDestination(for: FlowMode.self) { mode in
+            .navigationDestination(for: VivaMode.self) { mode in
                 ModeEditView(
                     mode: mode,
                     aiService: appState.aiService,
@@ -345,7 +345,7 @@ struct SettingsView: View {
         }
     }
     
-    private func deleteMode(_ mode: FlowMode) {
+    private func deleteMode(_ mode: VivaMode) {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
 

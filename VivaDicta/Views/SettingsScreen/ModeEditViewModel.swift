@@ -27,7 +27,7 @@ class ModeEditViewModel {
     private let transcriptionManager: TranscriptionManager
     let promptsManager: PromptsManager
     
-    private let originalMode: FlowMode?
+    private let originalMode: VivaMode?
 
     public var transcriptionFooterText: String {
         transcriptionManager.hasAvailableTranscriptionModels ? "" : "No transcription models available. Download a local model or add an API key for a cloud model."
@@ -90,7 +90,7 @@ class ModeEditViewModel {
         return nil
     }
     
-    init(mode: FlowMode?,
+    init(mode: VivaMode?,
          aiService: AIService,
          promptsManager: PromptsManager,
          transcriptionManager: TranscriptionManager) {
@@ -117,18 +117,18 @@ class ModeEditViewModel {
         }
     }
     
-    func saveMode() throws -> FlowMode  {
+    func saveMode() throws -> VivaMode  {
         let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
         let modeId = originalMode?.id ?? UUID()
-        
+
         let otherModes = aiService.modes.filter ({ $0.id != modeId })
         if otherModes.contains(where: {$0.name.lowercased() == trimmedName.lowercased()}) {
             throw SettingsError.duplicateModeName(trimmedName)
         }
-        
+
         logger.logInfo("Saving mode with name: '\(trimmedName)'")
-        
-        return FlowMode(
+
+        return VivaMode(
             id: modeId,
             name: trimmedName,
             transcriptionProvider: transcriptionProvider,

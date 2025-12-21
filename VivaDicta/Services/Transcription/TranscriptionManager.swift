@@ -16,7 +16,7 @@ class TranscriptionManager {
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()
     private let whisperKitTranscriptionService = WhisperKitTranscriptionService()
-    private(set) var currentMode: FlowMode = .defaultMode
+    private(set) var currentMode: VivaMode = .defaultMode
 
     // Callback for when cloud models are updated
     public var onCloudModelsUpdate: (() -> Void)?
@@ -62,7 +62,7 @@ class TranscriptionManager {
         whisperKitTranscriptionService.lastTotalInitDuration
     }
     
-    public func setCurrentMode(_ mode: FlowMode) {
+    public func setCurrentMode(_ mode: VivaMode) {
         currentMode = mode
         applyModeLanguage(mode)
     }
@@ -71,7 +71,7 @@ class TranscriptionManager {
         selectedLanguage = language
     }
 
-    private func applyModeLanguage(_ mode: FlowMode) {
+    private func applyModeLanguage(_ mode: VivaMode) {
         let language = mode.transcriptionLanguage ?? "auto"
         updateLanguage(language)
     }

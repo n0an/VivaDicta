@@ -22,8 +22,8 @@ public final class AppGroupCoordinator {
     // MARK: - Constants
     public let appGroupId = "group.com.antonnovoselov.VivaDicta"
     // AI Enhancement configuration
-    public static let flowModesKey = "FlowModes"
-    public static let selectedFlowModeKey = "selectedFlowMode"
+    public static let vivaModesKey = "VivaModes"
+    public static let selectedVivaModeKey = "selectedVivaMode"
     public static let kSelectedLanguageKey = "selectedLanguageKey"
     public static let kAPIKeyTemplate = "apiKeyTemplate"
     public static let kTranscriptionPrompt = "TranscriptionPrompt"
@@ -309,12 +309,12 @@ public final class AppGroupCoordinator {
         return message
     }
 
-    // MARK: - FlowMode Management
+    // MARK: - VivaMode Management
 
-    public func setSelectedFlowMode(_ modeName: String) {
-        sharedDefaults?.set(modeName, forKey: AppGroupCoordinator.selectedFlowModeKey)
+    public func setSelectedVivaMode(_ modeName: String) {
+        sharedDefaults?.set(modeName, forKey: AppGroupCoordinator.selectedVivaModeKey)
         sharedDefaults?.synchronize()
-        logger.logInfo("📱 Keyboard Extension set selected FlowMode: \(modeName)")
+        logger.logInfo("📱 Keyboard Extension set selected VivaMode: \(modeName)")
     }
 
     // MARK: - Smart Formatting Setting

@@ -73,7 +73,7 @@ class AppState {
     }
 
     // This method is called when AIService changes its mode
-    public func handleModeChange(_ newMode: FlowMode) {
+    public func handleModeChange(_ newMode: VivaMode) {
         // Update TranscriptionManager's current mode
         transcriptionManager.setCurrentMode(newMode)
 
