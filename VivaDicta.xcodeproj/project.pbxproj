@@ -953,7 +953,7 @@
 			repositoryURL = "https://github.com/KeyboardKit/KeyboardKit.git";
 			requirement = {
 				kind = exactVersion;
-				version = 10.1.2;
+				version = 10.1.3;
 			};
 		};
 		18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
