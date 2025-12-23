@@ -20,12 +20,20 @@ class ParakeetTranscriptionService: TranscriptionService {
         guard asrManager == nil else {
             return
         }
-
+        
         do {
+            // Validate models before loading
+            let isValid = try await AsrModels.isModelValid(version: model.version)
+            
+            if !isValid {
+                logger.error("Model validation failed for \(model.version == .v2 ? "v2" : "v3"). Models are corrupted.")
+                throw ParakeetTranscriptionError.modelValidationFailed("Parakeet models are corrupted. Please delete and re-download the model.")
+            }
+            
             let manager = AsrManager(config: .default)
             let models = try await AsrModels.load(from: model.modelsDirectory, version: model.version)
             try await manager.initialize(models: models)
-
+            
             self.asrManager = manager
             logger.logNotice("✅ Parakeet ASR model loaded successfully")
         } catch {
@@ -121,6 +129,25 @@ class ParakeetTranscriptionService: TranscriptionService {
         } catch {
             logger.logWarning("⚠️ VAD processing failed: \(error.localizedDescription), using full audio")
             return audioSamples
+        }
+    }
+}
+
+
+enum ParakeetTranscriptionError: LocalizedError {
+    case modelValidationFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .modelValidationFailed(let message):
+            return message
+        }
+    }
+    
+    var failureReason: String? {
+        switch self {
+        case .modelValidationFailed(let message):
+            return "Parakeet model validation failed"
         }
     }
 }

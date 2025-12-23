@@ -15,8 +15,7 @@ class AIService {
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
     public var modes: [VivaMode] = []
-
-    // Callback for mode changes
+    
     public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
@@ -32,10 +31,8 @@ class AIService {
         }
     }
     
-    // All AI settings need to be shared with keyboard extension
     private let userDefaults = UserDefaultsStorage.shared
     private let baseTimeout: TimeInterval = 30
-
     
     init() {
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
