@@ -25,6 +25,7 @@ class ParakeetTranscriptionService: TranscriptionService {
             // Validate models before loading
             let isValid = try await AsrModels.isModelValid(version: model.version)
             
+            
             if !isValid {
                 logger.error("Model validation failed for \(model.version == .v2 ? "v2" : "v3"). Models are corrupted.")
                 throw ParakeetTranscriptionError.modelValidationFailed("Parakeet models are corrupted. Please delete and re-download the model.")
