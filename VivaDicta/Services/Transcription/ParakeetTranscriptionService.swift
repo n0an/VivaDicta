@@ -31,6 +31,7 @@ class ParakeetTranscriptionService: TranscriptionService {
                 throw ParakeetTranscriptionError.modelValidationFailed("Parakeet models are corrupted. Please delete and re-download the model.")
             }
             
+            
             let manager = AsrManager(config: .default)
             let models = try await AsrModels.load(from: model.modelsDirectory, version: model.version)
             try await manager.initialize(models: models)
