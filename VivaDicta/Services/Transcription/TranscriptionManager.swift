@@ -126,7 +126,8 @@ class TranscriptionManager {
         let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
         
         var result = TranscriptionOutputFilter.filter(text)
-
+        
+        // Aply text formatting if enabled
         if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
             result = TextFormatter.format(result)
         }
