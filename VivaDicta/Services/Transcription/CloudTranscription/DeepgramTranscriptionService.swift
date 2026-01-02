@@ -12,35 +12,36 @@ class DeepgramTranscriptionService {
     private let logger = Logger(category: .deepgramService)
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+        try await NetworkRetry.withRetry(logger: logger) {
+            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+        }
+    }
+
+    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)
-        
+
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.setValue("Token \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("audio/wav", forHTTPHeaderField: "Content-Type")
-        
+        request.timeoutInterval = NetworkRetry.defaultTimeout
+
         guard let audioData = try? Data(contentsOf: audioURL) else {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        // Check for cancellation before making network request
-        try Task.checkCancellation()
-
         let (data, response) = try await URLSession.shared.upload(for: request, from: audioData)
-
-        // Check for cancellation after network request
-        try Task.checkCancellation()
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }
-        
+
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
             logger.logError("Deepgram API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
-        
+
         do {
             let transcriptionResponse = try JSONDecoder().decode(DeepgramResponse.self, from: data)
             guard let transcript = transcriptionResponse.results.channels.first?.alternatives.first?.transcript,

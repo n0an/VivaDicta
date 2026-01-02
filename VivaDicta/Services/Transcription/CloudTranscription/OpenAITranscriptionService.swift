@@ -12,39 +12,40 @@ struct OpenAITranscriptionService {
     private let logger = Logger(category: .openAITranscriptionService)
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+        try await NetworkRetry.withRetry(logger: logger) {
+            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+        }
+    }
+
+    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)
-        
+
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
-        
+        request.timeoutInterval = NetworkRetry.defaultTimeout
+
         let body = try createOpenAICompatibleRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)
 
-        // Check for cancellation before making network request
-        try Task.checkCancellation()
-
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
-
-        // Check for cancellation after network request
-        try Task.checkCancellation()
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }
-        
+
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Groq API request failed with status \(httpResponse.statusCode): \(errorMessage)")
+            logger.logError("OpenAI API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
-        
+
         do {
             let transcriptionResponse = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
             return transcriptionResponse.text
         } catch {
-            logger.logError("Failed to decode Groq API response: \(error.localizedDescription)")
+            logger.logError("Failed to decode OpenAI API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }

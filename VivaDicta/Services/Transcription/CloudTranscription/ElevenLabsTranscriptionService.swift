@@ -13,45 +13,41 @@ class ElevenLabsTranscriptionService {
     private let logger = Logger(category: .elevenLabsTranscriptionService)
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        
-        
+        try await NetworkRetry.withRetry(logger: logger) {
+            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+        }
+    }
+
+    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)
         let apiKey = config.apiKey
-        
+
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
-        
-        let body = try createRequestBody(audioURL: audioURL, modelName: model.name, boundary: boundary)
-        
-        
-        // Check for cancellation before making network request
-        try Task.checkCancellation()
-        
-        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
-        
-        
-        // Check for cancellation after network request
-        try Task.checkCancellation()
+        request.timeoutInterval = NetworkRetry.defaultTimeout
 
-        
+        let body = try createRequestBody(audioURL: audioURL, modelName: model.name, boundary: boundary)
+
+        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }
-        
+
         logger.notice("ElevenLabs API Response Status: \(httpResponse.statusCode)")
         if let responseBody = String(data: data, encoding: .utf8) {
             logger.notice("ElevenLabs API Response Body: \(responseBody)")
         }
-        
+
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
-        
+
         do {
             let transcriptionResponse = try JSONDecoder().decode(ElevenLabsTranscriptionResponse.self, from: data)
             return transcriptionResponse.text

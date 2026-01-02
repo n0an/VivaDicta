@@ -12,23 +12,30 @@ class GeminiTranscriptionService {
     private let logger = Logger(category: .geminiService)
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+        try await NetworkRetry.withRetry(logger: logger) {
+            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+        }
+    }
+
+    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         let config = try getAPIConfig(for: model)
-        
+
         logger.logNotice("Starting Gemini transcription with model: \(model.name)")
-        
+
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "x-goog-api-key")
-        
+        request.timeoutInterval = NetworkRetry.defaultTimeout
+
         guard let audioData = try? Data(contentsOf: audioURL) else {
             throw CloudTranscriptionError.audioFileNotFound
         }
-        
+
         logger.logNotice("Audio file loaded, size: \(audioData.count) bytes")
-        
+
         let base64AudioData = audioData.base64EncodedString()
-        
+
         let requestBody = GeminiRequest(
             contents: [
                 GeminiContent(
@@ -44,7 +51,7 @@ class GeminiTranscriptionService {
                 )
             ]
         )
-        
+
         do {
             let jsonData = try JSONEncoder().encode(requestBody)
             request.httpBody = jsonData
@@ -54,24 +61,18 @@ class GeminiTranscriptionService {
             throw CloudTranscriptionError.dataEncodingError
         }
 
-        // Check for cancellation before making network request
-        try Task.checkCancellation()
-
         let (data, response) = try await URLSession.shared.data(for: request)
-
-        // Check for cancellation after network request
-        try Task.checkCancellation()
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }
-        
+
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
             logger.logError("Gemini API request failed with status \(httpResponse.statusCode): \(errorMessage)")
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
-        
+
         do {
             let transcriptionResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
             guard let candidate = transcriptionResponse.candidates.first,
