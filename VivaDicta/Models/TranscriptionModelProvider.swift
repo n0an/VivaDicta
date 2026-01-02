@@ -20,15 +20,15 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case soniox
     
     var id: Self { self }
-
+    
     static let localProviders: [TranscriptionModelProvider] = [.parakeet, .whisperKit]
     static let cloudProviders: [TranscriptionModelProvider] = [.openAI, .groq, .elevenLabs, .deepgram, .mistral, .gemini, .soniox]
-
+    
     var cloudTranscriptionModelsNames: [String] {
         switch self {
         case .parakeet, .whisperKit:
             return []
-
+            
         default:
             return TranscriptionModelProvider.allCloudModels.compactMap { $0.provider == self ? $0.name : nil }
         }
@@ -39,11 +39,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .parakeet:
             guard let model = TranscriptionModelProvider.allParakeetModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
-
+            
         case .whisperKit:
             guard let model = TranscriptionModelProvider.allWhisperKitModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
-
+            
         default:
             guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
@@ -99,6 +99,29 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
             
+            CloudModel(
+                name: "gemini-3-pro-preview",
+                displayName: "Gemini 3 Pro",
+                description: "Google's latest multimodal model with enhanced transcription capabilities.",
+                provider: .gemini,
+                speed: 0.75,
+                accuracy: 0.97,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "gemini-3-flash-preview",
+                displayName: "Gemini 3 Flash",
+                description: "Google's newest fast model combining intelligence with superior speed.",
+                provider: .gemini,
+                speed: 0.92,
+                accuracy: 0.95,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            
             // Gemini Models
             CloudModel(
                 name: "gemini-2.5-pro",
@@ -134,7 +157,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-
+            
             CloudModel(
                 name: "nova-3",
                 displayName: "Nova 3",
@@ -182,7 +205,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-
+            
             CloudModel(
                 name: "scribe_v1",
                 displayName: "Scribe v1",
@@ -194,7 +217,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-
+            
             CloudModel(
                 name: "gpt-4o-transcribe",
                 displayName: "GPT-4o Transcribe",
@@ -272,7 +295,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
         ]
     }
-
+    
     static var allWhisperKitModels: [WhisperKitModel] {
         [
             WhisperKitModel(
@@ -364,7 +387,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             }
         }
     }
-
+    
     static let allLanguages = [
         "auto": "Auto-detect",
         "af": "Afrikaans",
@@ -424,7 +447,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "ur": "Urdu",
         "vi": "Vietnamese",
     ]
-
+    
     static let languageFlags: [String: String] = [
         "auto": "🌐",
         "af": "🇿🇦",
@@ -484,7 +507,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "ur": "🇵🇰",
         "vi": "🇻🇳",
     ]
-
+    
     static func languageWithFlag(_ code: String, name: String) -> String {
         let flag = languageFlags[code] ?? "🏳️"
         return "\(flag) \(name)"
