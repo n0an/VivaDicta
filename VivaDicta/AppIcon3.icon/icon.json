@@ -8,10 +8,10 @@
           "image-name" : "gpt1.png",
           "name" : "gpt1",
           "position" : {
-            "scale" : 1.2,
+            "scale" : 1,
             "translation-in-points" : [
               0.5,
-              29.203125
+              28.265625
             ]
           }
         }
