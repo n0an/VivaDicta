@@ -1,50 +1,23 @@
 {
-  "fill" : {
-    "linear-gradient" : [
-      "extended-srgb:0.00000,0.78431,0.70196,1.00000",
-      "gray:0.17990,1.00000"
-    ],
-    "orientation" : {
-      "start" : {
-        "x" : 0.5,
-        "y" : 0
-      },
-      "stop" : {
-        "x" : 0.5,
-        "y" : 0.7
-      }
-    }
-  },
+  "fill" : "system-light",
   "groups" : [
     {
-      "blend-mode-specializations" : [
-        {
-          "appearance" : "dark",
-          "value" : "normal"
-        },
-        {
-          "appearance" : "tinted",
-          "value" : "normal"
-        }
-      ],
       "blur-material" : 0.5,
-      "hidden" : false,
       "layers" : [
         {
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "OpenAI Playground 2026-01-02 at 15.24.24 2.png",
-          "name" : "OpenAI Playground 2026-01-02 at 15.24.24 2",
+          "image-name" : "gpt1.png",
+          "name" : "gpt1",
           "position" : {
-            "scale" : 1,
+            "scale" : 1.2,
             "translation-in-points" : [
-              1.1453389732764663,
-              9.295165953188985
+              0.5,
+              29.203125
             ]
           }
         }
       ],
       "lighting" : "individual",
+      "opacity" : 1,
       "shadow-specializations" : [
         {
           "value" : {
