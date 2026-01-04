@@ -125,6 +125,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .openAI:
             return [
+                "gpt-5.2",
                 "gpt-5.1",
                 "gpt-5-mini",
                 "gpt-5-nano",
