@@ -6,8 +6,41 @@
 //
 
 import UIKit
+import SwiftUI
 import UniformTypeIdentifiers
 import os
+
+// MARK: - SwiftUI View
+
+struct ShareExtensionView: View {
+    let status: String
+    let isLoading: Bool
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(.orange)
+                }
+
+                Text(status)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(24)
+            .frame(width: 200)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        }
+    }
+}
+
+// MARK: - View Controller
 
 @MainActor
 class ShareViewController: UIViewController {
@@ -17,30 +50,9 @@ class ShareViewController: UIViewController {
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.ShareExtension", category: "ShareViewController")
 
-    private lazy var loadingView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.95)
-        view.layer.cornerRadius = 16
-        return view
-    }()
-
-    private lazy var activityIndicator: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .large)
-        indicator.translatesAutoresizingMaskIntoConstraints = false
-        indicator.color = .systemOrange
-        return indicator
-    }()
-
-    private lazy var statusLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Preparing audio..."
-        label.textAlignment = .center
-        label.font = .preferredFont(forTextStyle: .headline)
-        label.textColor = .label
-        return label
-    }()
+    private var status = "Preparing audio..."
+    private var isLoading = true
+    private var hostingController: UIHostingController<ShareExtensionView>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,28 +64,29 @@ class ShareViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        let swiftUIView = ShareExtensionView(status: status, isLoading: isLoading)
+        let hosting = UIHostingController(rootView: swiftUIView)
+        hosting.view.backgroundColor = .clear
 
-        view.addSubview(loadingView)
-        loadingView.addSubview(activityIndicator)
-        loadingView.addSubview(statusLabel)
+        addChild(hosting)
+        view.addSubview(hosting.view)
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            loadingView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            loadingView.widthAnchor.constraint(equalToConstant: 200),
-            loadingView.heightAnchor.constraint(equalToConstant: 120),
-
-            activityIndicator.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
-            activityIndicator.topAnchor.constraint(equalTo: loadingView.topAnchor, constant: 24),
-
-            statusLabel.centerXAnchor.constraint(equalTo: loadingView.centerXAnchor),
-            statusLabel.topAnchor.constraint(equalTo: activityIndicator.bottomAnchor, constant: 16),
-            statusLabel.leadingAnchor.constraint(equalTo: loadingView.leadingAnchor, constant: 8),
-            statusLabel.trailingAnchor.constraint(equalTo: loadingView.trailingAnchor, constant: -8)
+            hosting.view.topAnchor.constraint(equalTo: view.topAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            hosting.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        activityIndicator.startAnimating()
+        hosting.didMove(toParent: self)
+        hostingController = hosting
+    }
+
+    private func updateUI(status: String, isLoading: Bool) {
+        self.status = status
+        self.isLoading = isLoading
+        hostingController?.rootView = ShareExtensionView(status: status, isLoading: isLoading)
     }
 
     private func processSharedAudio() async {
@@ -186,7 +199,7 @@ class ShareViewController: UIViewController {
     }
 
     private func openMainApp() async {
-        statusLabel.text = "Opening VivaDicta..."
+        updateUI(status: "Opening VivaDicta...", isLoading: true)
 
         // Use URL scheme to open main app
         guard let url = URL(string: "vivadicta://transcribe-shared") else {
@@ -213,8 +226,7 @@ class ShareViewController: UIViewController {
     }
 
     private func completeWithError(message: String) async {
-        statusLabel.text = message
-        activityIndicator.stopAnimating()
+        updateUI(status: message, isLoading: false)
 
         // Show error briefly then dismiss
         try? await Task.sleep(for: .seconds(1.5))
