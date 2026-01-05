@@ -90,65 +90,40 @@ class ShareViewController: UIViewController {
     }
 
     private func processSharedAudio() async {
-        guard let extensionContext = extensionContext,
-              let inputItems = extensionContext.inputItems as? [NSExtensionItem] else {
-            logger.error("No extension context or input items")
+        guard let extensionContext = extensionContext else {
+            logger.error("No extension context")
             await completeWithError(message: "No audio file found")
             return
         }
 
-        // Find audio attachment
-        for item in inputItems {
-            guard let attachments = item.attachments else { continue }
+        // Get all attachments from input items
+        let attachments = extensionContext.inputItems
+            .compactMap { $0 as? NSExtensionItem }
+            .compactMap(\.attachments)
+            .flatMap { $0 }
 
-            for provider in attachments {
-                // Check for various audio UTIs
-                let audioTypes: [UTType] = [
-                    .audio,
-                    .mpeg4Audio,
-                    .wav,
-                    .mp3,
-                    .aiff
-                ]
+        // Find attachment that can be loaded as URL (Info.plist already filters to audio types)
+        for provider in attachments where provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+            do {
+                let url = try await provider.loadItem(forTypeIdentifier: UTType.url.identifier) as? URL
 
-                for audioType in audioTypes {
-                    if provider.hasItemConformingToTypeIdentifier(audioType.identifier) {
-                        logger.info("Found audio attachment with type: \(audioType.identifier)")
-                        await loadAudioFile(from: provider, contentType: audioType)
-                        return
-                    }
+                guard let sourceURL = url else {
+                    logger.error("No URL returned from provider")
+                    continue
                 }
 
-                // Also check for generic public.audio
-                if provider.hasItemConformingToTypeIdentifier("public.audio") {
-                    logger.info("Found generic audio attachment")
-                    await loadAudioFile(from: provider, contentType: .audio)
-                    return
-                }
-            }
-        }
-
-        logger.error("No audio attachment found in shared items")
-        await completeWithError(message: "No audio file found")
-    }
-
-    private func loadAudioFile(from provider: NSItemProvider, contentType: UTType) async {
-        do {
-            let url = try await provider.loadItem(forTypeIdentifier: contentType.identifier) as? URL
-
-            guard let sourceURL = url else {
-                logger.error("No URL returned from provider")
-                await completeWithError(message: "Failed to access audio")
+                logger.info("Loaded audio file: \(sourceURL.lastPathComponent)")
+                await copyAndShareAudio(from: sourceURL)
                 return
+
+            } catch {
+                logger.error("Failed to load item: \(error.localizedDescription)")
+                continue
             }
-
-            logger.info("Loaded audio file from: \(sourceURL.lastPathComponent)")
-            await copyAndShareAudio(from: sourceURL)
-
-        } catch {
-            logger.error("Failed to load audio file: \(error.localizedDescription)")
-            await completeWithError(message: "Failed to load audio")
         }
+
+        logger.error("No audio attachment found")
+        await completeWithError(message: "No audio file found")
     }
 
     private func copyAndShareAudio(from sourceURL: URL) async {
