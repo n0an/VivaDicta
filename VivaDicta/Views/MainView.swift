@@ -263,6 +263,12 @@ struct MainView: View {
                 // The SettingsView should handle navigation to models internally
             }
         }
+        .onChange(of: appState.shouldTranscribeSharedAudio) { _, newValue in
+            if newValue {
+                handleSharedAudioTranscription()
+                appState.shouldTranscribeSharedAudio = false
+            }
+        }
         .sheet(isPresented: $appState.showKeyboardFlowSheet) {
             KeyboardFlowSheet()
                 .presentationDetents([.fraction(0.3)])
@@ -339,6 +345,49 @@ struct MainView: View {
         case .failure:
             // Handle error silently
             break
+        }
+    }
+
+    private func handleSharedAudioTranscription() {
+        guard let vm = appState.recordViewModel else { return }
+
+        // Check if we have a transcription model selected
+        if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+            showNoModelAlert = true
+            return
+        }
+
+        // Get the pending shared audio filename from AppGroupCoordinator
+        guard let pendingFileName = AppGroupCoordinator.shared.getAndConsumePendingSharedAudioFileName(),
+              let sharedAudioDir = AppGroupCoordinator.shared.sharedAudioDirectory else {
+            return
+        }
+
+        let sourceURL = sharedAudioDir.appendingPathComponent(pendingFileName)
+
+        // Verify the file exists
+        guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+            return
+        }
+
+        // Copy file to app's audio directory with unique name
+        let audioDirectory = FileManager.appDirectory(for: .audio)
+        let fileExtension = sourceURL.pathExtension.isEmpty ? "m4a" : sourceURL.pathExtension
+        let destinationURL = audioDirectory.appendingPathComponent("\(UUID().uuidString).\(fileExtension)")
+
+        do {
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+
+            // Clean up the shared file
+            try? FileManager.default.removeItem(at: sourceURL)
+
+            // Start transcription
+            vm.transcribingSpeechTask = vm.transcribeSpeechTask(
+                recordURL: destinationURL,
+                modelContext: modelContext
+            )
+        } catch {
+            // Handle copy error silently
         }
     }
 }
