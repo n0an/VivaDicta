@@ -15,6 +15,7 @@ struct MainView: View {
 
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
+    @State private var showingFileImport = false
     @State private var searchText = ""
     
     @State var rippleEffectTimer: Timer?
@@ -71,6 +72,42 @@ struct MainView: View {
                                     appState.shouldNavigateToModels = true
                                 }
                             }
+                        }
+                    }
+
+                }
+            
+                .toolbar {
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                showingFileImport = true
+//                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
+                            } label: {
+                                Image(systemName: "waveform.badge.plus")
+                            }
+//                            .popoverTip(selectTranscriptionModelTipMainView) { action in
+//                                if action.id == "open-file-importer" {
+//                                    showingSettings = true
+//                                    appState.shouldNavigateToModels = true
+//                                }
+//                            }
+                        }
+                        .matchedTransitionSource(id: "FileImportSheetTransition", in: sheetTransitions)
+                    } else {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                showingFileImport = true
+                            } label: {
+                                Image(systemName: "waveform.badge.plus")
+                            }
+                            .tint(.primary)
+//                            .popoverTip(selectTranscriptionModelTipMainView) { action in
+//                                if action.id == "open-file-importer" {
+//                                    showingFileImport = true
+//                                    appState.shouldNavigateToModels = true
+//                                }
+//                            }
                         }
                     }
 
