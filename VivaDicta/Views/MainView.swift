@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import TipKit
+import UniformTypeIdentifiers
 
 struct MainView: View {
     @Environment(AppState.self) var appState
@@ -180,6 +181,13 @@ struct MainView: View {
                         .interactiveDismissDisabled(true)
                         .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
                 }
+                .fileImporter(
+                    isPresented: $showingFileImport,
+                    allowedContentTypes: [.audio, .mpeg4Audio, .wav, .mp3, .aiff],
+                    allowsMultipleSelection: false
+                ) { result in
+                    handleFileImport(result)
+                }
                 .navigationDestination(for: Transcription.self) { transcription in
                     TranscriptionDetailView(transcription: transcription)
                 }
@@ -287,6 +295,51 @@ struct MainView: View {
 
         // Start recording directly
         vm.startCaptureAudio()
+    }
+
+    private func handleFileImport(_ result: Result<[URL], any Error>) {
+        guard let vm = appState.recordViewModel else { return }
+
+        // Check if we have a transcription model selected
+        if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+            showNoModelAlert = true
+            return
+        }
+
+        switch result {
+        case .success(let urls):
+            guard let selectedURL = urls.first else { return }
+
+            // Start accessing the security-scoped resource
+            guard selectedURL.startAccessingSecurityScopedResource() else {
+                return
+            }
+
+            defer {
+                selectedURL.stopAccessingSecurityScopedResource()
+            }
+
+            // Copy file to app's audio directory with unique name
+            let audioDirectory = FileManager.appDirectory(for: .audio)
+            let fileExtension = selectedURL.pathExtension.isEmpty ? "m4a" : selectedURL.pathExtension
+            let destinationURL = audioDirectory.appendingPathComponent("\(UUID().uuidString).\(fileExtension)")
+
+            do {
+                try FileManager.default.copyItem(at: selectedURL, to: destinationURL)
+
+                // Start transcription
+                vm.transcribingSpeechTask = vm.transcribeSpeechTask(
+                    recordURL: destinationURL,
+                    modelContext: modelContext
+                )
+            } catch {
+                // Handle copy error silently for now
+            }
+
+        case .failure:
+            // Handle error silently
+            break
+        }
     }
 }
 
