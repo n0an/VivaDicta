@@ -9,6 +9,7 @@ import UIKit
 import UniformTypeIdentifiers
 import os
 
+@MainActor
 class ShareViewController: UIViewController {
 
     private let appGroupId = "group.com.antonnovoselov.VivaDicta"
@@ -44,7 +45,10 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        processSharedAudio()
+
+        Task {
+            await processSharedAudio()
+        }
     }
 
     private func setupUI() {
@@ -72,11 +76,11 @@ class ShareViewController: UIViewController {
         activityIndicator.startAnimating()
     }
 
-    private func processSharedAudio() {
+    private func processSharedAudio() async {
         guard let extensionContext = extensionContext,
               let inputItems = extensionContext.inputItems as? [NSExtensionItem] else {
             logger.error("No extension context or input items")
-            completeWithError(message: "No audio file found")
+            await completeWithError(message: "No audio file found")
             return
         }
 
@@ -97,7 +101,7 @@ class ShareViewController: UIViewController {
                 for audioType in audioTypes {
                     if provider.hasItemConformingToTypeIdentifier(audioType.identifier) {
                         logger.info("Found audio attachment with type: \(audioType.identifier)")
-                        loadAudioFile(from: provider, type: audioType)
+                        await loadAudioFile(from: provider, contentType: audioType)
                         return
                     }
                 }
@@ -105,52 +109,40 @@ class ShareViewController: UIViewController {
                 // Also check for generic public.audio
                 if provider.hasItemConformingToTypeIdentifier("public.audio") {
                     logger.info("Found generic audio attachment")
-                    loadAudioFile(from: provider, typeIdentifier: "public.audio")
+                    await loadAudioFile(from: provider, contentType: .audio)
                     return
                 }
             }
         }
 
         logger.error("No audio attachment found in shared items")
-        completeWithError(message: "No audio file found")
+        await completeWithError(message: "No audio file found")
     }
 
-    private func loadAudioFile(from provider: NSItemProvider, type: UTType) {
-        loadAudioFile(from: provider, typeIdentifier: type.identifier)
-    }
-
-    private func loadAudioFile(from provider: NSItemProvider, typeIdentifier: String) {
-        provider.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { [weak self] url, error in
-            guard let self = self else { return }
-
-            if let error = error {
-                self.logger.error("Failed to load audio file: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    self.completeWithError(message: "Failed to load audio")
-                }
-                return
-            }
+    private func loadAudioFile(from provider: NSItemProvider, contentType: UTType) async {
+        do {
+            let url = try await provider.loadItem(forTypeIdentifier: contentType.identifier) as? URL
 
             guard let sourceURL = url else {
-                self.logger.error("No URL returned from provider")
-                DispatchQueue.main.async {
-                    self.completeWithError(message: "Failed to access audio")
-                }
+                logger.error("No URL returned from provider")
+                await completeWithError(message: "Failed to access audio")
                 return
             }
 
-            self.logger.info("Loaded audio file from: \(sourceURL.lastPathComponent)")
-            self.copyAndShareAudio(from: sourceURL)
+            logger.info("Loaded audio file from: \(sourceURL.lastPathComponent)")
+            await copyAndShareAudio(from: sourceURL)
+
+        } catch {
+            logger.error("Failed to load audio file: \(error.localizedDescription)")
+            await completeWithError(message: "Failed to load audio")
         }
     }
 
-    private func copyAndShareAudio(from sourceURL: URL) {
+    private func copyAndShareAudio(from sourceURL: URL) async {
         // Get shared container directory
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
             logger.error("Failed to get app group container URL")
-            DispatchQueue.main.async {
-                self.completeWithError(message: "Storage error")
-            }
+            await completeWithError(message: "Storage error")
             return
         }
 
@@ -185,24 +177,19 @@ class ShareViewController: UIViewController {
             }
 
             // Open main app
-            DispatchQueue.main.async {
-                self.openMainApp()
-            }
+            await openMainApp()
 
         } catch {
             logger.error("Failed to copy audio file: \(error.localizedDescription)")
-            DispatchQueue.main.async {
-                self.completeWithError(message: "Failed to save audio")
-            }
+            await completeWithError(message: "Failed to save audio")
         }
     }
 
-    private func openMainApp() {
+    private func openMainApp() async {
         statusLabel.text = "Opening VivaDicta..."
 
         // Use URL scheme to open main app
-        let urlString = "vivadicta://transcribe-shared"
-        guard let url = URL(string: urlString) else {
+        guard let url = URL(string: "vivadicta://transcribe-shared") else {
             logger.error("Failed to create URL for main app")
             completeRequest()
             return
@@ -212,44 +199,27 @@ class ShareViewController: UIViewController {
         var responder: UIResponder? = self
         while responder != nil {
             if let application = responder as? UIApplication {
-                application.open(url, options: [:]) { [weak self] success in
-                    self?.logger.info("Opened main app: \(success)")
-                    self?.completeRequest()
-                }
+                let success = await application.open(url)
+                logger.info("Opened main app: \(success)")
+                completeRequest()
                 return
             }
             responder = responder?.next
         }
 
-        // Fallback: use openURL selector (works for Share Extensions)
-        if let openURL = URL(string: urlString) {
-            let selector = sel_registerName("openURL:")
-            var responderChain: UIResponder? = self
-            while responderChain != nil {
-                if responderChain!.responds(to: selector) {
-                    responderChain!.perform(selector, with: openURL)
-                    logger.info("Opened main app via responder chain")
-                    break
-                }
-                responderChain = responderChain?.next
-            }
-        }
-
-        // Complete after a short delay to allow URL to open
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.completeRequest()
-        }
+        // Fallback: complete after a short delay
+        try? await Task.sleep(for: .milliseconds(500))
+        completeRequest()
     }
 
-    private func completeWithError(message: String) {
+    private func completeWithError(message: String) async {
         statusLabel.text = message
         activityIndicator.stopAnimating()
 
         // Show error briefly then dismiss
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            let error = NSError(domain: "com.antonnovoselov.VivaDicta.ShareExtension", code: -1)
-            self?.extensionContext?.cancelRequest(withError: error)
-        }
+        try? await Task.sleep(for: .seconds(1.5))
+        let error = NSError(domain: "com.antonnovoselov.VivaDicta.ShareExtension", code: -1)
+        extensionContext?.cancelRequest(withError: error)
     }
 
     private func completeRequest() {
