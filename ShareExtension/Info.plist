@@ -7,7 +7,28 @@
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-			<string>TRUEPREDICATE</string>
+            <string>
+                SUBQUERY (
+                    extensionItems,
+                    $extensionItem,
+                    SUBQUERY (
+                        $extensionItem.attachments,
+                        $attachment,
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.movie" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.audio" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.ogg" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.mpeg-4-audio" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.mp3" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.microsoft.windows-media-wma" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.aifc-audio" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.aiff-audio" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.midi-audio" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.ac3-audio" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.microsoft.waveform-audio"
+                    ).@count == 1
+                ).@count > 0
+            </string>
 		</dict>
 		<key>NSExtensionMainStoryboard</key>
 		<string>MainInterface</string>
