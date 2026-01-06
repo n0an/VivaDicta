@@ -374,8 +374,6 @@ struct ShareExtensionView: View {
 @MainActor
 class ShareViewController: UIViewController {
 
-    private let pendingAudioFileNameKey = "pendingSharedAudioFileName"
-
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.ShareExtension", category: "ShareViewController")
 
     private let viewModel = ShareExtensionViewModel()
@@ -508,7 +506,7 @@ class ShareViewController: UIViewController {
             return
         }
 
-        sharedDefaults.set(audioFileName, forKey: pendingAudioFileNameKey)
+        sharedDefaults.set(audioFileName, forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
         sharedDefaults.synchronize()
         logger.info("Saved pending audio filename to UserDefaults: \(audioFileName)")
 
