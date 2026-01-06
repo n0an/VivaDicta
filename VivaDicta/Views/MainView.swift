@@ -265,6 +265,11 @@ struct MainView: View {
         }
         .onChange(of: appState.shouldTranscribeSharedAudio) { _, newValue in
             if newValue {
+                // Dismiss any presented screens to return to main view
+                showingSettings = false
+                showingRecordingSheet = false
+                router.popToRoot()
+
                 handleSharedAudioTranscription()
                 appState.shouldTranscribeSharedAudio = false
             }

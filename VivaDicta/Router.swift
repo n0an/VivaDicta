@@ -15,4 +15,8 @@ class Router {
     func select(transcription: Transcription) {
         path = [transcription]
     }
+
+    func popToRoot() {
+        path = []
+    }
 }
