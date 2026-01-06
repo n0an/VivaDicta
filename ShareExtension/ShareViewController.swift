@@ -81,9 +81,10 @@ final class ShareExtensionViewModel {
 
     var transcriptionLanguageDisplayName: String {
         guard let languageCode = selectedMode.transcriptionLanguage else {
-            return "Auto-detect"
+            return "🌐 Auto-detect"
         }
-        return TranscriptionModelProvider.allLanguages[languageCode] ?? languageCode
+        let languageName = TranscriptionModelProvider.allLanguages[languageCode] ?? languageCode
+        return TranscriptionModelProvider.languageWithFlag(languageCode, name: languageName)
     }
 
     var aiProviderDisplayName: String {
