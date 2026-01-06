@@ -10,10 +10,10 @@
 		<dict>
 			<key>CFBundleIconFiles</key>
 			<array>
-				<string>ActionIcon</string>
+				<string>ActionIcon60x60</string>
 			</array>
 			<key>CFBundleIconName</key>
-			<string>ActionIcon</string>
+			<string>ActionIcon60x60</string>
 		</dict>
 	</dict>
 	<key>CFBundleIcons~ipad</key>
@@ -22,10 +22,10 @@
 		<dict>
 			<key>CFBundleIconFiles</key>
 			<array>
-				<string>ActionIcon</string>
+				<string>ActionIcon60x60</string>
 			</array>
 			<key>CFBundleIconName</key>
-			<string>ActionIcon</string>
+			<string>ActionIcon60x60</string>
 		</dict>
 	</dict>
 	<key>NSExtension</key>
