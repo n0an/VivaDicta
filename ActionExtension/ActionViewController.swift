@@ -2,7 +2,7 @@
 //  ActionViewController.swift
 //  ActionExtension
 //
-//  Created by Anton Novoselov on 06.01.2026.
+//  Created by Anton Novoselov on 2026.01.06
 //
 
 import UIKit
@@ -495,7 +495,7 @@ class ActionViewController: UIViewController {
 
         } catch {
             logger.error("Failed to copy audio file: \(error.localizedDescription)")
-            cancelExtension(error: .genericError(NSError()))
+            cancelExtension(message: "Failed to copy audio file: \(error.localizedDescription)")
         }
     }
 
@@ -504,7 +504,7 @@ class ActionViewController: UIViewController {
         guard let audioFileName = viewModel.audioFileName,
               let sharedDefaults = UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId) else {
             logger.error("No audio filename or shared defaults")
-            cancelExtension(error: .genericError(NSError()))
+            cancelExtension(error: .noAudioFound)
             return
         }
 
@@ -519,7 +519,7 @@ class ActionViewController: UIViewController {
         // Use URL scheme to open main app
         guard let url = URL(string: "vivadicta://transcribe-shared") else {
             logger.error("Failed to create URL for main app")
-            cancelExtension(error: .genericError(NSError()))
+            cancelExtension(message: "Failed to create URL for main app")
             return
         }
 
