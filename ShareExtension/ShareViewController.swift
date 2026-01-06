@@ -14,7 +14,6 @@ import os
 
 @Observable
 final class ShareExtensionViewModel {
-    private let appGroupId = "group.com.antonnovoselov.VivaDicta"
     private var userDefaults: UserDefaults = UserDefaultsStorage.shared
 
     var availableModes: [VivaMode] = []
@@ -375,7 +374,6 @@ struct ShareExtensionView: View {
 @MainActor
 class ShareViewController: UIViewController {
 
-    private let appGroupId = "group.com.antonnovoselov.VivaDicta"
     private let pendingAudioFileNameKey = "pendingSharedAudioFileName"
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.ShareExtension", category: "ShareViewController")
@@ -461,7 +459,7 @@ class ShareViewController: UIViewController {
 
     private func copyAudioToSharedContainer(from sourceURL: URL) async {
         // Get shared container directory
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId) else {
             cancelExtension(message: "Failed to get app group container URL")
             return
         }
@@ -504,7 +502,7 @@ class ShareViewController: UIViewController {
     private func openMainApp() async {
         // Save the audio filename to shared UserDefaults before opening main app
         guard let audioFileName = viewModel.audioFileName,
-              let sharedDefaults = UserDefaults(suiteName: appGroupId) else {
+              let sharedDefaults = UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId) else {
             logger.error("No audio filename or shared defaults")
             cancelExtension(error: .genericError(NSError()))
             return
@@ -525,7 +523,10 @@ class ShareViewController: UIViewController {
             return
         }
 
-        // Open URL via responder chain
+        // Open URL via responder chain traversal.
+        // App Extensions cannot directly access UIApplication.shared (it's unavailable in extension targets).
+        // Instead, we traverse the responder chain to find the UIApplication instance,
+        // which allows us to call open(_:) to launch the main app via its URL scheme.
         var responder: UIResponder? = self
         while responder != nil {
             if let application = responder as? UIApplication {
@@ -551,7 +552,11 @@ class ShareViewController: UIViewController {
     }
 
     private func cancelExtension(message: String) {
-        let error = NSError(domain: "com.antonnovoselov.VivaDicta.ShareExtension", code: -1)
+        let error = NSError(
+            domain: "com.antonnovoselov.VivaDicta.ShareExtension",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: message]
+        )
         extensionContext?.cancelRequest(withError: error)
     }
 }

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import TipKit
 import UniformTypeIdentifiers
+import os
 
 struct MainView: View {
     @Environment(AppState.self) var appState
@@ -18,10 +19,14 @@ struct MainView: View {
     @State private var showingSettings = false
     @State private var showingFileImport = false
     @State private var searchText = ""
-    
+
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
     @State private var showNoModelAlert = false
+    @State private var showFileErrorAlert = false
+    @State private var fileErrorMessage = ""
+
+    private let logger = Logger(category: .mainView)
 
     @Namespace private var sheetTransitions
 
@@ -198,6 +203,11 @@ struct MainView: View {
                 }, message: {
                     Text("To start recording, please download a local model or select a cloud transcription model.")
                 })
+                .alert("File Error", isPresented: $showFileErrorAlert, actions: {
+                    Button("OK", role: .cancel) {}
+                }, message: {
+                    Text(fileErrorMessage)
+                })
         }
         .overlay {
             if appState.recordViewModel?.recordingState == .recording ||
@@ -323,6 +333,9 @@ struct MainView: View {
 
             // Start accessing the security-scoped resource
             guard selectedURL.startAccessingSecurityScopedResource() else {
+                logger.logError("Failed to access security-scoped resource: \(selectedURL.lastPathComponent)")
+                fileErrorMessage = "Unable to access the selected file. Please try again."
+                showFileErrorAlert = true
                 return
             }
 
@@ -344,12 +357,15 @@ struct MainView: View {
                     modelContext: modelContext
                 )
             } catch {
-                // Handle copy error silently for now
+                logger.logError("Failed to copy imported file: \(error.localizedDescription)")
+                fileErrorMessage = "Failed to import audio file: \(error.localizedDescription)"
+                showFileErrorAlert = true
             }
 
-        case .failure:
-            // Handle error silently
-            break
+        case .failure(let error):
+            logger.logError("File import failed: \(error.localizedDescription)")
+            fileErrorMessage = "Failed to import file: \(error.localizedDescription)"
+            showFileErrorAlert = true
         }
     }
 
@@ -365,6 +381,7 @@ struct MainView: View {
         // Get the pending shared audio filename from AppGroupCoordinator
         guard let pendingFileName = AppGroupCoordinator.shared.getAndConsumePendingSharedAudioFileName(),
               let sharedAudioDir = AppGroupCoordinator.shared.sharedAudioDirectory else {
+            logger.logError("No pending shared audio file found")
             return
         }
 
@@ -372,6 +389,9 @@ struct MainView: View {
 
         // Verify the file exists
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
+            logger.logError("Shared audio file does not exist: \(pendingFileName)")
+            fileErrorMessage = "The shared audio file could not be found."
+            showFileErrorAlert = true
             return
         }
 
@@ -402,7 +422,9 @@ struct MainView: View {
                 modelContext: modelContext
             )
         } catch {
-            // Handle copy error silently
+            logger.logError("Failed to copy shared audio file: \(error.localizedDescription)")
+            fileErrorMessage = "Failed to process shared audio: \(error.localizedDescription)"
+            showFileErrorAlert = true
         }
     }
 }
