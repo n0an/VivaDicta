@@ -13,6 +13,7 @@
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
 		189C7ABC2F0D84E2004BAFBF /* ActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7ACE2F0D8749004BAFBF /* FluidAudio */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -130,8 +131,8 @@
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
 				Shared/AppGroupCoordinator.swift,
+				Shared/UserDefaultsStorage.swift,
 				Utilities/LoggerExtension.swift,
-				Utils/UserDefaultsStorage.swift,
 			);
 			target = 189C7A8A2F0C6822004BAFBF /* ShareExtension */;
 		};
@@ -139,6 +140,24 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+			);
+			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
+		};
+		189C7AC32F0D86C1004BAFBF /* Exceptions for "VivaDicta" folder in "ActionExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Extensions/FileManager+Directories.swift",
+				Models/CloudModel.swift,
+				Models/ParakeetModel.swift,
+				Models/TranscriptionModel.swift,
+				Models/TranscriptionModelProvider.swift,
+				Models/WhisperKitModel.swift,
+				Services/AIEnhance/AIProvider.swift,
+				Services/AIEnhance/UserPrompt.swift,
+				Services/AIEnhance/VivaMode.swift,
+				Shared/AppGroupCoordinator.swift,
+				Shared/UserDefaultsStorage.swift,
+				Utilities/LoggerExtension.swift,
 			);
 			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
 		};
@@ -196,13 +215,13 @@
 				Shared/RecordingState.swift,
 				Shared/RippleEffect.metal,
 				Shared/RippleEffectModifier.swift,
+				Shared/UserDefaultsStorage.swift,
 				Shared/WobbleText.swift,
 				Utilities/LoggerExtension.swift,
 				Utils/ClipboardManager.swift,
 				"Utils/Extensions/Color+Ext.swift",
 				Utils/Extensions/GlowShape.swift,
 				"Utils/Extensions/View+Ext.swift",
-				Utils/UserDefaultsStorage.swift,
 				Views/HudView.swift,
 				Views/HudViewDarkBounceOnly.swift,
 				Views/HudViewLightBounceOnly.swift,
@@ -220,6 +239,7 @@
 				18E1C8232E8EE47200BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaKeyboard" target */,
 				18E1C8192E8E79D100BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaWidgetExtension" target */,
 				189C7A9C2F0D48F8004BAFBF /* Exceptions for "VivaDicta" folder in "ShareExtension" target */,
+				189C7AC32F0D86C1004BAFBF /* Exceptions for "VivaDicta" folder in "ActionExtension" target */,
 			);
 			path = VivaDicta;
 			sourceTree = "<group>";
@@ -294,6 +314,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */,
 				189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -456,6 +477,7 @@
 			);
 			name = ActionExtension;
 			packageProductDependencies = (
+				189C7ACE2F0D8749004BAFBF /* FluidAudio */,
 			);
 			productName = ActionExtension;
 			productReference = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */;
@@ -1310,6 +1332,11 @@
 			productName = SiriWaveView;
 		};
 		189C7AA62F0D4A6E004BAFBF /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
+		};
+		189C7ACE2F0D8749004BAFBF /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
