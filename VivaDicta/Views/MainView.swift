@@ -391,6 +391,11 @@ struct MainView: View {
             // Update TranscriptionManager with the reloaded mode
             appState.transcriptionManager.setCurrentMode(appState.aiService.selectedMode)
 
+            // Apply language override from Share Extension if present
+            if let languageOverride = AppGroupCoordinator.shared.getAndConsumePendingLanguageOverride() {
+                appState.transcriptionManager.selectedLanguage = languageOverride
+            }
+
             // Start transcription
             vm.transcribingSpeechTask = vm.transcribeSpeechTask(
                 recordURL: destinationURL,

@@ -18,13 +18,21 @@ final class ShareExtensionViewModel {
     private var userDefaults: UserDefaults = UserDefaultsStorage.shared
 
     var availableModes: [VivaMode] = []
-    var selectedMode: VivaMode = VivaMode.defaultMode
+    var selectedMode: VivaMode = VivaMode.defaultMode {
+        didSet {
+            // Reset language to mode's default when mode changes
+            selectedLanguage = selectedMode.transcriptionLanguage ?? "auto"
+        }
+    }
+    var selectedLanguage: String = "auto"
     var isLoading = true
     var status = "Preparing audio..."
     var audioFileName: String?
 
     init() {
         loadModes()
+        // Initialize language from selected mode
+        selectedLanguage = selectedMode.transcriptionLanguage ?? "auto"
     }
 
     private func loadModes() {
@@ -44,6 +52,45 @@ final class ShareExtensionViewModel {
     func saveSelectedMode() {
         userDefaults.set(selectedMode.name, forKey: AppGroupCoordinator.selectedVivaModeKey)
         userDefaults.synchronize()
+    }
+
+    func saveLanguageOverride() {
+        // Only save if language differs from mode's default
+        let modeLanguage = selectedMode.transcriptionLanguage ?? "auto"
+        if selectedLanguage != modeLanguage {
+            AppGroupCoordinator.shared.setPendingLanguageOverride(selectedLanguage)
+        } else {
+            AppGroupCoordinator.shared.setPendingLanguageOverride(nil)
+        }
+    }
+
+    /// Languages supported by the current transcription model
+    var availableLanguages: [(code: String, name: String)] {
+        // Get the current model's supported languages
+        let modelName = selectedMode.transcriptionModel
+        let provider = selectedMode.transcriptionProvider
+
+        // Find the model and get its supported languages
+        let allModels: [any TranscriptionModel] =
+            TranscriptionModelProvider.allParakeetModels +
+            TranscriptionModelProvider.allWhisperKitModels +
+            TranscriptionModelProvider.allCloudModels
+
+        let supportedLanguages: [String: String]
+        if let model = allModels.first(where: { $0.name == modelName && $0.provider == provider }) {
+            supportedLanguages = model.supportedLanguages
+        } else {
+            supportedLanguages = TranscriptionModelProvider.allLanguages
+        }
+
+        // Sort languages: Auto first, then alphabetically by name
+        return supportedLanguages
+            .map { (code: $0.key, name: $0.value) }
+            .sorted { lhs, rhs in
+                if lhs.code == "auto" { return true }
+                if rhs.code == "auto" { return false }
+                return lhs.name < rhs.name
+            }
     }
 
     // MARK: - Display Helpers
@@ -80,7 +127,8 @@ final class ShareExtensionViewModel {
     }
 
     var transcriptionLanguageDisplayName: String {
-        guard let languageCode = selectedMode.transcriptionLanguage else {
+        let languageCode = selectedLanguage
+        if languageCode == "auto" {
             return "🌐 Auto-detect"
         }
         let languageName = TranscriptionModelProvider.allLanguages[languageCode] ?? languageCode
@@ -188,6 +236,7 @@ struct ShareExtensionView: View {
             // Transcribe Button
             Button {
                 viewModel.saveSelectedMode()
+                viewModel.saveLanguageOverride()
                 onTranscribe()
             } label: {
                 Text("Transcribe")
@@ -230,10 +279,28 @@ struct ShareExtensionView: View {
 
             infoRow(label: "Provider", value: viewModel.transcriptionProviderDisplayName)
             infoRow(label: "Model", value: viewModel.transcriptionModelDisplayName)
-            infoRow(label: "Language", value: viewModel.transcriptionLanguageDisplayName)
+            languagePickerRow
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
+    }
+
+    private var languagePickerRow: some View {
+        HStack {
+            Text("Language")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 60, alignment: .leading)
+
+            Picker("Language", selection: $viewModel.selectedLanguage) {
+                ForEach(viewModel.availableLanguages, id: \.code) { language in
+                    Text(language.code == "auto" ? "🌐 Auto-detect" : TranscriptionModelProvider.languageWithFlag(language.code, name: language.name))
+                        .tag(language.code)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(.primary)
+        }
     }
 
     private var aiEnhancementInfoSection: some View {

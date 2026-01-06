@@ -35,6 +35,7 @@ public final class AppGroupCoordinator {
 
     // Share Extension
     public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"
+    public static let kPendingLanguageOverride = "pendingLanguageOverride"
 
 
     nonisolated private enum UserDefaultsKeys {
@@ -421,6 +422,28 @@ public final class AppGroupCoordinator {
     /// Checks if there's a pending shared audio file
     public var hasPendingSharedAudio: Bool {
         sharedDefaults?.string(forKey: AppGroupCoordinator.kPendingSharedAudioFileName) != nil
+    }
+
+    /// Saves a language override for the pending shared audio transcription
+    public func setPendingLanguageOverride(_ language: String?) {
+        if let language = language {
+            sharedDefaults?.set(language, forKey: AppGroupCoordinator.kPendingLanguageOverride)
+        } else {
+            sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingLanguageOverride)
+        }
+        sharedDefaults?.synchronize()
+        logger.logInfo("📁 Saved pending language override: \(language ?? "nil")")
+    }
+
+    /// Retrieves and clears the pending language override
+    public func getAndConsumePendingLanguageOverride() -> String? {
+        guard let language = sharedDefaults?.string(forKey: AppGroupCoordinator.kPendingLanguageOverride) else {
+            return nil
+        }
+        sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingLanguageOverride)
+        sharedDefaults?.synchronize()
+        logger.logInfo("📁 Consumed pending language override: \(language)")
+        return language
     }
 
     // MARK: - Darwin Notifications (Real-time Communication)
