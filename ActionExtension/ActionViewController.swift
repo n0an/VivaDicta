@@ -1,8 +1,8 @@
 //
-//  ShareViewController.swift
-//  ShareExtension
+//  ActionViewController.swift
+//  ActionExtension
 //
-//  Created by Anton Novoselov on 2026.01.05
+//  Created by Anton Novoselov on 2026.01.06
 //
 
 import UIKit
@@ -10,10 +10,10 @@ import SwiftUI
 import UniformTypeIdentifiers
 import os
 
-// MARK: - Share Extension View Model
+// MARK: - Action Extension View Model
 
 @Observable
-final class ShareExtensionViewModel {
+final class ActionExtensionViewModel {
     private var userDefaults: UserDefaults = UserDefaultsStorage.shared
 
     var availableModes: [VivaMode] = []
@@ -178,8 +178,8 @@ final class ShareExtensionViewModel {
 
 // MARK: - SwiftUI View
 
-struct ShareExtensionView: View {
-    @Bindable var viewModel: ShareExtensionViewModel
+struct ActionExtensionView: View {
+    @Bindable var viewModel: ActionExtensionViewModel
     var onTranscribe: () -> Void
     var onCancel: () -> Void
 
@@ -372,12 +372,12 @@ struct ShareExtensionView: View {
 // MARK: - View Controller
 
 @MainActor
-class ShareViewController: UIViewController {
+class ActionViewController: UIViewController {
 
-    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.ShareExtension", category: "ShareViewController")
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.ActionExtension", category: "ActionViewController")
 
-    private let viewModel = ShareExtensionViewModel()
-    private var hostingController: UIHostingController<ShareExtensionView>?
+    private let viewModel = ActionExtensionViewModel()
+    private var hostingController: UIHostingController<ActionExtensionView>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -389,7 +389,7 @@ class ShareViewController: UIViewController {
     }
 
     private func setupUI() {
-        let swiftUIView = ShareExtensionView(
+        let swiftUIView = ActionExtensionView(
             viewModel: viewModel,
             onTranscribe: { [weak self] in
                 Task {
@@ -493,7 +493,7 @@ class ShareViewController: UIViewController {
 
         } catch {
             logger.error("Failed to copy audio file: \(error.localizedDescription)")
-            cancelExtension(error: .genericError(NSError()))
+            cancelExtension(message: "Failed to copy audio file: \(error.localizedDescription)")
         }
     }
 
@@ -502,7 +502,7 @@ class ShareViewController: UIViewController {
         guard let audioFileName = viewModel.audioFileName,
               let sharedDefaults = UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId) else {
             logger.error("No audio filename or shared defaults")
-            cancelExtension(error: .genericError(NSError()))
+            cancelExtension(error: .noAudioFound)
             return
         }
 
@@ -517,7 +517,7 @@ class ShareViewController: UIViewController {
         // Use URL scheme to open main app
         guard let url = URL(string: "vivadicta://transcribe-shared") else {
             logger.error("Failed to create URL for main app")
-            cancelExtension(error: .genericError(NSError()))
+            cancelExtension(message: "Failed to create URL for main app")
             return
         }
 
@@ -545,13 +545,13 @@ class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: [])
     }
 
-    private func cancelExtension(error: VivaDictaExtensionError) {
+    private func cancelExtension(error: ActionExtensionError) {
         extensionContext?.cancelRequest(withError: error)
     }
 
     private func cancelExtension(message: String) {
         let error = NSError(
-            domain: "com.antonnovoselov.VivaDicta.ShareExtension",
+            domain: "com.antonnovoselov.VivaDicta.ActionExtension",
             code: -1,
             userInfo: [NSLocalizedDescriptionKey: message]
         )
@@ -559,7 +559,7 @@ class ShareViewController: UIViewController {
     }
 }
 
-enum VivaDictaExtensionError: Error {
+enum ActionExtensionError: Error {
     case noAudioFound
     case genericError(NSError)
     case cancelled
