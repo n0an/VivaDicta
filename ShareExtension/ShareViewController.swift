@@ -55,6 +55,12 @@ final class ShareExtensionViewModel {
     }
 
     func saveLanguageOverride() {
+        // Don't save override for models that auto-detect language
+        guard isLanguageSelectionAvailable else {
+            AppGroupCoordinator.shared.setPendingLanguageOverride(nil)
+            return
+        }
+
         // Only save if language differs from mode's default
         let modeLanguage = selectedMode.transcriptionLanguage ?? "auto"
         if selectedLanguage != modeLanguage {
@@ -64,8 +70,27 @@ final class ShareExtensionViewModel {
         }
     }
 
+    /// Whether language selection is available for the current model
+    /// Returns false for Gemini and Parakeet V3 (they auto-detect)
+    var isLanguageSelectionAvailable: Bool {
+        let provider = selectedMode.transcriptionProvider
+        let modelName = selectedMode.transcriptionModel
+
+        // Gemini always auto-detects
+        if provider == .gemini { return false }
+
+        // Parakeet V3 auto-detects, V2 needs language param
+        if provider == .parakeet {
+            return modelName == "parakeet-tdt-0.6b-v2"
+        }
+
+        return true
+    }
+
     /// Languages supported by the current transcription model
     var availableLanguages: [(code: String, name: String)] {
+        guard isLanguageSelectionAvailable else { return [] }
+
         // Get the current model's supported languages
         let modelName = selectedMode.transcriptionModel
         let provider = selectedMode.transcriptionProvider
@@ -285,6 +310,7 @@ struct ShareExtensionView: View {
         .padding(.horizontal)
     }
 
+    @ViewBuilder
     private var languagePickerRow: some View {
         HStack {
             Text("Language")
@@ -292,14 +318,20 @@ struct ShareExtensionView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 60, alignment: .leading)
 
-            Picker("Language", selection: $viewModel.selectedLanguage) {
-                ForEach(viewModel.availableLanguages, id: \.code) { language in
-                    Text(language.code == "auto" ? "🌐 Auto-detect" : TranscriptionModelProvider.languageWithFlag(language.code, name: language.name))
-                        .tag(language.code)
+            if viewModel.isLanguageSelectionAvailable {
+                Picker("Language", selection: $viewModel.selectedLanguage) {
+                    ForEach(viewModel.availableLanguages, id: \.code) { language in
+                        Text(language.code == "auto" ? "🌐 Auto-detect" : TranscriptionModelProvider.languageWithFlag(language.code, name: language.name))
+                            .tag(language.code)
+                    }
                 }
+                .pickerStyle(.menu)
+                .tint(.primary)
+            } else {
+                Text("Autodetected by model")
+                    .font(.caption)
+                    .foregroundStyle(.primary)
             }
-            .pickerStyle(.menu)
-            .tint(.primary)
         }
     }
 
