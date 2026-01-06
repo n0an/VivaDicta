@@ -10,6 +10,7 @@
 		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
 		186E2F922EA690DF00B19EDF /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 186E2F912EA690DF00B19EDF /* SiriWaveView */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -104,6 +105,24 @@
 			);
 			target = 189C7A8A2F0C6822004BAFBF /* ShareExtension */;
 		};
+		189C7A9C2F0D48F8004BAFBF /* Exceptions for "VivaDicta" folder in "ShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Extensions/FileManager+Directories.swift",
+				Models/CloudModel.swift,
+				Models/ParakeetModel.swift,
+				Models/TranscriptionModel.swift,
+				Models/TranscriptionModelProvider.swift,
+				Models/WhisperKitModel.swift,
+				Services/AIEnhance/AIProvider.swift,
+				Services/AIEnhance/UserPrompt.swift,
+				Services/AIEnhance/VivaMode.swift,
+				Shared/AppGroupCoordinator.swift,
+				Utilities/LoggerExtension.swift,
+				Utils/UserDefaultsStorage.swift,
+			);
+			target = 189C7A8A2F0C6822004BAFBF /* ShareExtension */;
+		};
 		18E1B4A62E8C6FF400BE8A11 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDictaKeyboard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -181,6 +200,7 @@
 				186E24542EA199EF00B19EDF /* Exceptions for "VivaDicta" folder in "VivaDictaTests" target */,
 				18E1C8232E8EE47200BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaKeyboard" target */,
 				18E1C8192E8E79D100BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaWidgetExtension" target */,
+				189C7A9C2F0D48F8004BAFBF /* Exceptions for "VivaDicta" folder in "ShareExtension" target */,
 			);
 			path = VivaDicta;
 			sourceTree = "<group>";
@@ -239,6 +259,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -373,6 +394,7 @@
 			);
 			name = ShareExtension;
 			packageProductDependencies = (
+				189C7AA62F0D4A6E004BAFBF /* FluidAudio */,
 			);
 			productName = ShareExtension;
 			productReference = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */;
@@ -1133,6 +1155,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */;
 			productName = SiriWaveView;
+		};
+		189C7AA62F0D4A6E004BAFBF /* FluidAudio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
+			productName = FluidAudio;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;

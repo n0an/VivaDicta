@@ -55,7 +55,7 @@ extension ParakeetModel {
     var version: AsrModelVersion {
         name.lowercased().contains("v2") ? .v2 : .v3
     }
-    
+
     var modelsDirectory: URL {
         switch version {
         case .v2:
@@ -64,7 +64,7 @@ extension ParakeetModel {
             FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
         }
     }
-    
+
     var isDownloaded: Bool {
         FileManager.default.fileExists(atPath: modelsDirectory.path)
     }
