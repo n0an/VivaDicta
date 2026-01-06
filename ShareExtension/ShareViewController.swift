@@ -92,7 +92,7 @@ class ShareViewController: UIViewController {
     private func processSharedAudio() async {
         guard let extensionContext = extensionContext else {
             logger.error("No extension context")
-            await completeWithError(message: "No audio file found")
+            cancelExtension(error: .noAudioFound)
             return
         }
 
@@ -123,14 +123,13 @@ class ShareViewController: UIViewController {
         }
 
         logger.error("No audio attachment found")
-        await completeWithError(message: "No audio file found")
+        cancelExtension(error: .noAudioFound)
     }
 
     private func copyAndShareAudio(from sourceURL: URL) async {
         // Get shared container directory
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            logger.error("Failed to get app group container URL")
-            await completeWithError(message: "Storage error")
+            cancelExtension(message: "Failed to get app group container URL")
             return
         }
 
@@ -169,7 +168,7 @@ class ShareViewController: UIViewController {
 
         } catch {
             logger.error("Failed to copy audio file: \(error.localizedDescription)")
-            await completeWithError(message: "Failed to save audio")
+            cancelExtension(error: .genericError(NSError()))
         }
     }
 
@@ -179,7 +178,7 @@ class ShareViewController: UIViewController {
         // Use URL scheme to open main app
         guard let url = URL(string: "vivadicta://transcribe-shared") else {
             logger.error("Failed to create URL for main app")
-            completeRequest()
+            cancelExtension(error: .genericError(NSError()))
             return
         }
 
@@ -189,7 +188,7 @@ class ShareViewController: UIViewController {
             if let application = responder as? UIApplication {
                 let success = await application.open(url)
                 logger.info("Opened main app: \(success)")
-                completeRequest()
+                finishExtension()
                 return
             }
             responder = responder?.next
@@ -197,19 +196,25 @@ class ShareViewController: UIViewController {
 
         // Fallback: complete after a short delay
         try? await Task.sleep(for: .milliseconds(500))
-        completeRequest()
+        finishExtension()
     }
-
-    private func completeWithError(message: String) async {
-        updateUI(status: message, isLoading: false)
-
-        // Show error briefly then dismiss
-        try? await Task.sleep(for: .seconds(1.5))
+    
+    private func finishExtension() {
+        extensionContext?.completeRequest(returningItems: [])
+    }
+    
+    private func cancelExtension(error: VivaDictaExtensionError) {
+        extensionContext?.cancelRequest(withError: error)
+    }
+    
+    private func cancelExtension(message: String) {
         let error = NSError(domain: "com.antonnovoselov.VivaDicta.ShareExtension", code: -1)
         extensionContext?.cancelRequest(withError: error)
     }
+}
 
-    private func completeRequest() {
-        extensionContext?.completeRequest(returningItems: nil)
-    }
+enum VivaDictaExtensionError: Error {
+    case noAudioFound
+    case genericError(NSError)
+    case cancelled
 }
