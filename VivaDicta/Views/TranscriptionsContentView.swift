@@ -12,8 +12,6 @@ import SwiftUI
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
-
-    @Namespace var zoomNamespace
     
     @Binding var searchText: String
     @State private var filteredTranscriptions: [Transcription] = []
@@ -46,21 +44,12 @@ struct TranscriptionsContentView: View {
                         ForEach(displayedTranscriptions) { transcription in
                             NavigationLink {
                                 TranscriptionDetailView(transcription: transcription)
-//                                    .interactiveDismissDisabled(true)
-
-                                    .navigationTransition(.zoom(sourceID: transcription.id, in: zoomNamespace))
-                                
-                                
-                                
                             } label: {
                                 TranscriptionRowView(
                                     transcription: transcription,
                                     isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
                                 )
                             }
-                            .matchedTransitionSource(id: transcription.id, in: zoomNamespace)
-                            
-
                         }
                         .onDelete(perform: deleteTranscription)
                     }

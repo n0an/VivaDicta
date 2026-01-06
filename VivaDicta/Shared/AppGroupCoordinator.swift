@@ -32,8 +32,12 @@ public final class AppGroupCoordinator {
     public static let kIsVADEnabled = "IsVADEnabled"
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
-    
-    
+
+    // Share Extension
+    public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"
+    public static let kPendingLanguageOverride = "pendingLanguageOverride"
+
+
     nonisolated private enum UserDefaultsKeys {
         static let isRecording = "isRecording"
         static let lastRecordingTimestamp = "lastRecordingTimestamp"
@@ -378,6 +382,68 @@ public final class AppGroupCoordinator {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsKeyboardSoundFeedbackEnabled)
             sharedDefaults?.synchronize()
         }
+    }
+
+    // MARK: - Share Extension Audio Handling
+
+    /// Returns the shared container URL for storing audio files shared between app and extensions
+    public var sharedAudioDirectory: URL? {
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
+            return nil
+        }
+        let audioDir = containerURL.appendingPathComponent("SharedAudio")
+
+        // Create directory if it doesn't exist
+        if !FileManager.default.fileExists(atPath: audioDir.path) {
+            try? FileManager.default.createDirectory(at: audioDir, withIntermediateDirectories: true)
+        }
+
+        return audioDir
+    }
+
+    /// Saves the filename of a shared audio file pending transcription
+    public func setPendingSharedAudioFileName(_ fileName: String) {
+        sharedDefaults?.set(fileName, forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
+        sharedDefaults?.synchronize()
+        logger.logInfo("📁 Saved pending shared audio file: \(fileName)")
+    }
+
+    /// Retrieves and clears the pending shared audio filename
+    public func getAndConsumePendingSharedAudioFileName() -> String? {
+        guard let fileName = sharedDefaults?.string(forKey: AppGroupCoordinator.kPendingSharedAudioFileName) else {
+            return nil
+        }
+        sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
+        sharedDefaults?.synchronize()
+        logger.logInfo("📁 Consumed pending shared audio file: \(fileName)")
+        return fileName
+    }
+
+    /// Checks if there's a pending shared audio file
+    public var hasPendingSharedAudio: Bool {
+        sharedDefaults?.string(forKey: AppGroupCoordinator.kPendingSharedAudioFileName) != nil
+    }
+
+    /// Saves a language override for the pending shared audio transcription
+    public func setPendingLanguageOverride(_ language: String?) {
+        if let language = language {
+            sharedDefaults?.set(language, forKey: AppGroupCoordinator.kPendingLanguageOverride)
+        } else {
+            sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingLanguageOverride)
+        }
+        sharedDefaults?.synchronize()
+        logger.logInfo("📁 Saved pending language override: \(language ?? "nil")")
+    }
+
+    /// Retrieves and clears the pending language override
+    public func getAndConsumePendingLanguageOverride() -> String? {
+        guard let language = sharedDefaults?.string(forKey: AppGroupCoordinator.kPendingLanguageOverride) else {
+            return nil
+        }
+        sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingLanguageOverride)
+        sharedDefaults?.synchronize()
+        logger.logInfo("📁 Consumed pending language override: \(language)")
+        return language
     }
 
     // MARK: - Darwin Notifications (Real-time Communication)

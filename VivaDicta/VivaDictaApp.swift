@@ -365,10 +365,16 @@ struct VivaDictaApp: App {
             }
         } else if url.absoluteString == "startRecordFromWidget" {
             logger.logInfo("📱 Recognized as widget recording request")
-            
+
             // Start recording
             appState.shouldStartRecording = true
             logger.logInfo("🎙️ Starting recording from widget deeplink")
+        } else if url.absoluteString.starts(with: "vivadicta://transcribe-shared") {
+            logger.logInfo("📱 Recognized as share extension transcription request")
+
+            // Handle shared audio from Share Extension
+            appState.shouldTranscribeSharedAudio = true
+            logger.logInfo("🎵 Will transcribe shared audio file")
         } else {
             logger.logWarning("📱 Unknown deep link URL: \(url.absoluteString)")
         }

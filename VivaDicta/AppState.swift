@@ -32,6 +32,7 @@ class AppState {
     var shouldNavigateToModels: Bool = false
     var shouldStartRecording: Bool = false
     var showKeyboardFlowSheet: Bool = false  // For showing keyboard flow activation sheet
+    var shouldTranscribeSharedAudio: Bool = false  // For handling shared audio from Share Extension
 
     init(modelContainer: ModelContainer) {
         transcriptionManager = TranscriptionManager()

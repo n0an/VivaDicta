@@ -17,6 +17,7 @@ public enum LogCategory: String {
     case appState = "AppState"
 
     // MARK: - Views
+    case mainView = "MainView"
     case recordViewModel = "RecordViewModel"
     case transcriptionsContentView = "TranscriptionsContentView"
     case audioPlayerManager = "AudioPlayerManager"
