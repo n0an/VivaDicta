@@ -1,16 +1,17 @@
 {
   "images" : [
     {
+      "filename" : "ActionIcon.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "VivaDictaIcon@2x.png",
+      "filename" : "ActionIcon@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "VivaDictaIcon@3x.png",
+      "filename" : "ActionIcon@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

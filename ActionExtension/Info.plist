@@ -4,14 +4,36 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>Transcribe with VivaDicta</string>
-	<key>CFBundleIconFile</key>
-	<string>ActionIcon</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>ActionIcon</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>ActionIcon</string>
+		</dict>
+	</dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>ActionIcon</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>ActionIcon</string>
+		</dict>
+	</dict>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-            <string>SUBQUERY (
+			<string>SUBQUERY (
                     extensionItems,
                     $extensionItem,
                     SUBQUERY (
@@ -31,8 +53,6 @@
                         ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "com.microsoft.waveform-audio"
                     ).@count == 1
                 ).@count > 0</string>
-			<key>NSExtensionServiceRoleType</key>
-			<string>NSExtensionServiceRoleTypeEditor</string>
 		</dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.ui-services</string>

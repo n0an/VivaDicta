@@ -1034,7 +1034,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ActionExtension;
+				INFOPLIST_KEY_CFBundleDisplayName = "Transcribe with VivaDicta";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1064,7 +1064,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ActionExtension;
+				INFOPLIST_KEY_CFBundleDisplayName = "Transcribe with VivaDicta";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
