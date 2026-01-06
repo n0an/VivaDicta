@@ -386,6 +386,11 @@ struct MainView: View {
             // Clean up the shared file
             try? FileManager.default.removeItem(at: sourceURL)
 
+            // Reload the selected VivaMode from Share Extension before transcription
+            appState.aiService.reloadSelectedModeFromExtension()
+            // Update TranscriptionManager with the reloaded mode
+            appState.transcriptionManager.setCurrentMode(appState.aiService.selectedMode)
+
             // Start transcription
             vm.transcribingSpeechTask = vm.transcribeSpeechTask(
                 recordURL: destinationURL,

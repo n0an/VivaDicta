@@ -52,11 +52,11 @@ class AIService {
         return modes.first { $0.name == name } ?? VivaMode.defaultMode
     }
 
-    /// Reload the selected mode from UserDefaults (used when keyboard extension changes the mode)
-    public func reloadSelectedModeFromKeyboard() {
+    /// Reload the selected mode from UserDefaults (used when keyboard or share extension changes the mode)
+    public func reloadSelectedModeFromExtension() {
         let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
         if savedModeName != selectedModeName {
-            logger.logInfo("📱 Reloading VivaMode from keyboard: \(savedModeName)")
+            logger.logInfo("📱 Reloading VivaMode from extension: \(savedModeName)")
             selectedModeName = savedModeName
             selectedMode = getMode(name: savedModeName)
         }

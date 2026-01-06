@@ -651,8 +651,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             if self.prewarmManager.isSessionActive && self.recordingState != .recording {
                 self.logger.logInfo("📱 Starting recording from keyboard request")
 
-                // Reload the selected VivaMode from keyboard before starting
-                self.appState?.aiService.reloadSelectedModeFromKeyboard()
+                // Reload the selected VivaMode from extension before starting
+                self.appState?.aiService.reloadSelectedModeFromExtension()
                 // Update TranscriptionManager with the reloaded mode
                 if let selectedMode = self.appState?.aiService.selectedMode {
                     self.appState?.transcriptionManager.setCurrentMode(selectedMode)
@@ -669,8 +669,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             if self.recordingState == .recording {
                 self.logger.logInfo("📱 Stopping recording from keyboard request")
 
-                // Reload the selected VivaMode from keyboard before transcription
-                self.appState?.aiService.reloadSelectedModeFromKeyboard()
+                // Reload the selected VivaMode from extension before transcription
+                self.appState?.aiService.reloadSelectedModeFromExtension()
                 // Update TranscriptionManager with the reloaded mode
                 if let selectedMode = self.appState?.aiService.selectedMode {
                     self.appState?.transcriptionManager.setCurrentMode(selectedMode)
