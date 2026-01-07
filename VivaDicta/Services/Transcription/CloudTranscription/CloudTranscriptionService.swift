@@ -72,6 +72,7 @@ class CloudTranscriptionService: TranscriptionService {
     private lazy var elevenLabsService = ElevenLabsTranscriptionService()
     private lazy var deepgramService = DeepgramTranscriptionService()
     private lazy var geminiService = GeminiTranscriptionService()
+    private lazy var mistralService = MistralTranscriptionService()
     
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         var text: String
@@ -87,6 +88,8 @@ class CloudTranscriptionService: TranscriptionService {
             text = try await deepgramService.transcribe(audioURL: audioURL, model: model)
         case .gemini:
             text = try await geminiService.transcribe(audioURL: audioURL, model: model)
+        case .mistral:
+            text = try await mistralService.transcribe(audioURL: audioURL, model: model)
         default:
             throw CloudTranscriptionError.unsupportedProvider
         }
