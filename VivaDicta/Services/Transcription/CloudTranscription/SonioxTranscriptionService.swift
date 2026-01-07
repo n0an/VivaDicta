@@ -1,0 +1,271 @@
+//
+//  SonioxTranscriptionService.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2026.01.07
+//
+
+import Foundation
+import os
+
+struct SonioxTranscriptionService {
+    private let logger = Logger(category: .sonioxTranscriptionService)
+    private let apiBase = "https://api.soniox.com/v1"
+    private let maxWaitSeconds: TimeInterval = 300
+    private let pollIntervalNanoseconds: UInt64 = 1_000_000_000
+
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+        let config = try getAPIConfig(for: model)
+
+        let fileId = try await uploadFile(audioURL: audioURL, apiKey: config.apiKey)
+        let transcriptionId = try await createTranscription(fileId: fileId, apiKey: config.apiKey, modelName: model.name)
+        try await pollTranscriptionStatus(id: transcriptionId, apiKey: config.apiKey)
+        let transcript = try await fetchTranscript(id: transcriptionId, apiKey: config.apiKey)
+
+        guard !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw CloudTranscriptionError.noTranscriptionReturned
+        }
+        return transcript
+    }
+
+    // MARK: - Private Methods
+
+    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
+        guard let cloudModel = model as? CloudModel,
+              let apiKey = cloudModel.apiKey,
+              !apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        return APIConfig(apiKey: apiKey)
+    }
+
+    private func uploadFile(audioURL: URL, apiKey: String) async throws -> String {
+        guard let apiURL = URL(string: "\(apiBase)/files") else {
+            throw CloudTranscriptionError.dataEncodingError
+        }
+
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let body = try createMultipartBody(fileURL: audioURL, boundary: boundary)
+        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
+        }
+
+        if !(200...299).contains(httpResponse.statusCode) {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
+            logger.logError("Soniox file upload failed with status \(httpResponse.statusCode): \(errorMessage)")
+            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        }
+
+        do {
+            let uploadResponse = try JSONDecoder().decode(FileUploadResponse.self, from: data)
+            logger.logInfo("File uploaded successfully with ID: \(uploadResponse.id)")
+            return uploadResponse.id
+        } catch {
+            logger.logError("Failed to decode Soniox upload response: \(error.localizedDescription)")
+            throw CloudTranscriptionError.noTranscriptionReturned
+        }
+    }
+
+    private func createTranscription(fileId: String, apiKey: String, modelName: String) async throws -> String {
+        guard let apiURL = URL(string: "\(apiBase)/transcriptions") else {
+            throw CloudTranscriptionError.dataEncodingError
+        }
+
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        var payload: [String: Any] = [
+            "file_id": fileId,
+            "model": modelName,
+            "enable_speaker_diarization": false
+        ]
+
+        // Add custom vocabulary terms if available
+        let vocabularyTerms = getCustomVocabularyTerms()
+        if !vocabularyTerms.isEmpty {
+            payload["context"] = ["terms": vocabularyTerms]
+            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms")
+        }
+
+        // Add language hints if not auto-detect
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+        if selectedLanguage != "auto", !selectedLanguage.isEmpty {
+            payload["language_hints"] = [selectedLanguage]
+        }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
+        }
+
+        if !(200...299).contains(httpResponse.statusCode) {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
+            logger.logError("Soniox create transcription failed with status \(httpResponse.statusCode): \(errorMessage)")
+            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        }
+
+        do {
+            let createResponse = try JSONDecoder().decode(CreateTranscriptionResponse.self, from: data)
+            logger.logInfo("Transcription job created with ID: \(createResponse.id)")
+            return createResponse.id
+        } catch {
+            logger.logError("Failed to decode Soniox create response: \(error.localizedDescription)")
+            throw CloudTranscriptionError.noTranscriptionReturned
+        }
+    }
+
+    private func pollTranscriptionStatus(id: String, apiKey: String) async throws {
+        guard let baseURL = URL(string: "\(apiBase)/transcriptions/\(id)") else {
+            throw CloudTranscriptionError.dataEncodingError
+        }
+
+        let start = Date()
+
+        while true {
+            var request = URLRequest(url: baseURL)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
+            }
+
+            if !(200...299).contains(httpResponse.statusCode) {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
+                logger.logError("Soniox status poll failed with status \(httpResponse.statusCode): \(errorMessage)")
+                throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+            }
+
+            if let status = try? JSONDecoder().decode(TranscriptionStatusResponse.self, from: data) {
+                switch status.status.lowercased() {
+                case "completed":
+                    logger.logInfo("Transcription completed")
+                    return
+                case "failed":
+                    logger.logError("Transcription job failed")
+                    throw CloudTranscriptionError.apiRequestFailed(statusCode: 500, message: "Transcription failed")
+                default:
+                    break
+                }
+            }
+
+            if Date().timeIntervalSince(start) > maxWaitSeconds {
+                logger.logError("Transcription timed out after \(maxWaitSeconds) seconds")
+                throw CloudTranscriptionError.apiRequestFailed(statusCode: 504, message: "Transcription timed out")
+            }
+
+            try await Task.sleep(for: .nanoseconds(pollIntervalNanoseconds))
+        }
+    }
+
+    private func fetchTranscript(id: String, apiKey: String) async throws -> String {
+        guard let apiURL = URL(string: "\(apiBase)/transcriptions/\(id)/transcript") else {
+            throw CloudTranscriptionError.dataEncodingError
+        }
+
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
+        }
+
+        if !(200...299).contains(httpResponse.statusCode) {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
+            logger.logError("Soniox fetch transcript failed with status \(httpResponse.statusCode): \(errorMessage)")
+            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        }
+
+        // Try JSON decode first
+        if let decoded = try? JSONDecoder().decode(TranscriptResponse.self, from: data) {
+            return decoded.text
+        }
+
+        // Fall back to raw string
+        if let asString = String(data: data, encoding: .utf8), !asString.isEmpty {
+            return asString
+        }
+
+        throw CloudTranscriptionError.noTranscriptionReturned
+    }
+
+    private func createMultipartBody(fileURL: URL, boundary: String) throws -> Data {
+        var body = Data()
+        let crlf = "\r\n"
+
+        guard let audioData = try? Data(contentsOf: fileURL) else {
+            throw CloudTranscriptionError.audioFileNotFound
+        }
+
+        body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
+        body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
+        body.append(audioData)
+        body.append(crlf.data(using: .utf8)!)
+        body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
+
+        return body
+    }
+
+    private func getCustomVocabularyTerms() -> [String] {
+        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
+            return []
+        }
+
+        let trimmedWords = words
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        // De-duplicate while preserving order
+        var seen = Set<String>()
+        var unique: [String] = []
+        for word in trimmedWords {
+            let key = word.lowercased()
+            if !seen.contains(key) {
+                seen.insert(key)
+                unique.append(word)
+            }
+        }
+        return unique
+    }
+
+    // MARK: - Response Types
+
+    private struct APIConfig {
+        let apiKey: String
+    }
+
+    private struct FileUploadResponse: Decodable {
+        let id: String
+    }
+
+    private struct CreateTranscriptionResponse: Decodable {
+        let id: String
+    }
+
+    private struct TranscriptionStatusResponse: Decodable {
+        let status: String
+    }
+
+    private struct TranscriptResponse: Decodable {
+        let text: String
+    }
+}
