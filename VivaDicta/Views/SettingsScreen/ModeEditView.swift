@@ -50,12 +50,12 @@ struct ModeEditView: View {
                 Picker("Provider", selection: $viewModel.transcriptionProvider) {
                     Section("Local") {
                         ForEach(TranscriptionModelProvider.localProviders) { provider in
-                            Text(provider.rawValue.capitalized).tag(provider)
+                            Text(provider.displayName).tag(provider)
                         }
                     }
                     Section("Cloud") {
                         ForEach(TranscriptionModelProvider.cloudProviders) { provider in
-                            Text(provider.rawValue.capitalized).tag(provider)
+                            Text(provider.displayName).tag(provider)
                         }
                     }
                 }
@@ -169,7 +169,7 @@ struct ModeEditView: View {
                     if viewModel.aiEnhanceEnabled {
                         Picker(selection: $viewModel.aiProvider) {
                             ForEach(AIProvider.generalProviders) { provider in
-                                Text(provider.rawValue.capitalized).tag(provider)
+                                Text(provider.displayName).tag(provider)
                             }
                             
                         } label: {

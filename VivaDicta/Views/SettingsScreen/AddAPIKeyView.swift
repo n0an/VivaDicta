@@ -20,7 +20,7 @@ struct AddAPIKeyView: View {
     
     var body: some View {
         VStack(spacing: 10) {
-            Text("\(provider.rawValue.capitalized) API Key")
+            Text("\(provider.displayName) API Key")
                 .font(.title2)
             
             TextField("API Key", text: $apiKey)
