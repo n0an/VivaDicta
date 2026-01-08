@@ -388,28 +388,30 @@ private struct ModeInfoRow: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(mode.name)
                 .font(.body.weight(.medium))
-            
-            HStack {
+
+            if !mode.transcriptionModel.isEmpty {
                 HStack {
-                    Image(systemName: "waveform")
-                        .foregroundStyle(.blue)
-                    Text("\(mode.transcriptionProvider.displayName)")
-                        .foregroundStyle(.secondary)
-                }
-                
-                if let provider = mode.aiProvider {
-                    Divider()
-                    HStack(spacing: 4) {
-                        Image(systemName: "sparkles")
-                            .font(.caption2)
+                    HStack {
+                        Image(systemName: "waveform")
                             .foregroundStyle(.blue)
-                        Text("\(provider.displayName)")
+                        Text("\(mode.transcriptionProvider.displayName)")
                             .foregroundStyle(.secondary)
                     }
+                    
+                    if let provider = mode.aiProvider {
+                        Divider()
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .font(.caption2)
+                                .foregroundStyle(.blue)
+                            Text("\(provider.displayName)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
+                .font(.caption2)
+                .padding(.leading, 4)
             }
-            .font(.caption2)
-            .padding(.leading, 4)
         }
         .padding(.vertical, 4)
     }
