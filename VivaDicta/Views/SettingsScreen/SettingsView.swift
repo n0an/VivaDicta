@@ -48,8 +48,7 @@ struct SettingsView: View {
                     
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
-                            Text(mode.name)
-                                .font(.body.weight(.medium))
+                            ModeInfoRow(mode: mode)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if appState.aiService.modes.count > 1 {
@@ -379,6 +378,42 @@ struct SettingsView: View {
         .environment(AppState())
 }
 
+
+// MARK: - Mode Info Row
+
+private struct ModeInfoRow: View {
+    let mode: VivaMode
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(mode.name)
+                .font(.body.weight(.medium))
+            
+            HStack {
+                HStack {
+                    Image(systemName: "waveform")
+                        .foregroundStyle(.blue)
+                    Text("\(mode.transcriptionProvider.displayName)")
+                        .foregroundStyle(.secondary)
+                }
+                
+                if let provider = mode.aiProvider {
+                    Divider()
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                        Text("\(provider.displayName)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .font(.caption2)
+            .padding(.leading, 4)
+        }
+        .padding(.vertical, 4)
+    }
+}
 
 enum SettingsError: LocalizedError {
     case duplicateModeName(String)
