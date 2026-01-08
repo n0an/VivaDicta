@@ -384,28 +384,41 @@ struct SettingsView: View {
 private struct ModeInfoRow: View {
     let mode: VivaMode
 
+    private var transcriptionModelDisplayName: String {
+        mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(mode.name)
                 .font(.body.weight(.medium))
 
             if !mode.transcriptionModel.isEmpty {
-                HStack {
-                    HStack {
+                HStack(alignment: .top) {
+                    HStack(alignment: .top, spacing: 4) {
                         Image(systemName: "waveform")
                             .foregroundStyle(.blue)
-                        Text("\(mode.transcriptionProvider.displayName)")
-                            .foregroundStyle(.secondary)
+                            .accessibilityLabel("Transcription provider")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(mode.transcriptionProvider.displayName)
+                                .foregroundStyle(.secondary)
+                            Text(transcriptionModelDisplayName)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
-                    
+
                     if let provider = mode.aiProvider {
                         Divider()
-                        HStack(spacing: 4) {
+                        HStack(alignment: .top, spacing: 4) {
                             Image(systemName: "sparkles")
-                                .font(.caption2)
                                 .foregroundStyle(.blue)
-                            Text("\(provider.displayName)")
-                                .foregroundStyle(.secondary)
+                                .accessibilityLabel("AI enhancement provider")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(provider.displayName)
+                                    .foregroundStyle(.secondary)
+                                Text(mode.aiModel)
+                                    .foregroundStyle(.tertiary)
+                            }
                         }
                     }
                 }
