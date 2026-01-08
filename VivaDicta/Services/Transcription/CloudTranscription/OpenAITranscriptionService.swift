@@ -114,11 +114,4 @@ struct OpenAITranscriptionService {
         let language: String?
         let duration: Double?
     }
-
-    /// Use custom vocabulary words as prompt
-    private func buildPromptWithVocabulary() -> String {
-        let vocabularyWords = CustomVocabulary.getTerms()
-        guard !vocabularyWords.isEmpty else { return "" }
-        return vocabularyWords.joined(separator: ", ")
-    }
 }
