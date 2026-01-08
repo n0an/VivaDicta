@@ -64,37 +64,37 @@ struct OpenAITranscriptionService {
     private func createOpenAICompatibleRequestBody(audioURL: URL, modelName: String, boundary: String) throws -> Data {
         var body = Data()
         let crlf = "\r\n"
-        
+
         guard let audioData = try? Data(contentsOf: audioURL) else {
             throw CloudTranscriptionError.audioFileNotFound
         }
-        
+
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        let prompt = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranscriptionPrompt) ?? ""
-        
+        let combinedPrompt = buildPromptWithVocabulary()
+
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
         body.append(audioData)
         body.append(crlf.data(using: .utf8)!)
-        
+
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\(crlf)\(crlf)".data(using: .utf8)!)
         body.append("gpt-4o-transcribe".data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
-        
+
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
             body.append(selectedLanguage.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
         }
-        
-        // Include prompt for OpenAI-compatible APIs
-        if !prompt.isEmpty {
+
+        // Include prompt with vocabulary for OpenAI-compatible APIs
+        if !combinedPrompt.isEmpty {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"prompt\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append(prompt.data(using: .utf8)!)
+            body.append(combinedPrompt.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
         }
         
@@ -122,5 +122,48 @@ struct OpenAITranscriptionService {
         let text: String
         let language: String?
         let duration: Double?
+    }
+
+    /// Builds a prompt combining user's transcription prompt with custom vocabulary words.
+    /// Whisper prompt has a 224 token limit, so we prioritize user prompt and add vocabulary if space allows.
+    private func buildPromptWithVocabulary() -> String {
+        let userPrompt = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranscriptionPrompt) ?? ""
+        let vocabularyWords = getCustomVocabularyTerms()
+
+        if vocabularyWords.isEmpty {
+            return userPrompt
+        }
+
+        // Format vocabulary as comma-separated list
+        let vocabularyString = vocabularyWords.joined(separator: ", ")
+
+        if userPrompt.isEmpty {
+            return vocabularyString
+        }
+
+        // Combine user prompt with vocabulary
+        return "\(userPrompt) \(vocabularyString)"
+    }
+
+    private func getCustomVocabularyTerms() -> [String] {
+        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
+            return []
+        }
+
+        let trimmedWords = words
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        // De-duplicate while preserving order
+        var seen = Set<String>()
+        var unique: [String] = []
+        for word in trimmedWords {
+            let key = word.lowercased()
+            if !seen.contains(key) {
+                seen.insert(key)
+                unique.append(word)
+            }
+        }
+        return unique
     }
 }

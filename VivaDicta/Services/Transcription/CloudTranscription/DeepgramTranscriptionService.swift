@@ -83,7 +83,18 @@ class DeepgramTranscriptionService {
         if selectedLanguage != "auto" && !selectedLanguage.isEmpty {
             queryItems.append(URLQueryItem(name: "language", value: selectedLanguage))
         }
-        
+
+        // Add custom vocabulary keywords
+        let vocabularyTerms = getCustomVocabularyTerms()
+        if !vocabularyTerms.isEmpty {
+            // Nova-3 uses keyterm, Nova-2 uses keywords
+            let paramName = modelName == "nova-3" ? "keyterm" : "keywords"
+            for term in vocabularyTerms {
+                queryItems.append(URLQueryItem(name: paramName, value: term))
+            }
+            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms to Deepgram request")
+        }
+
         components.queryItems = queryItems
         
         guard let apiURL = components.url else {
@@ -101,18 +112,46 @@ class DeepgramTranscriptionService {
     
     private struct DeepgramResponse: Decodable {
         let results: Results
-        
+
         struct Results: Decodable {
             let channels: [Channel]
-            
+
             struct Channel: Decodable {
                 let alternatives: [Alternative]
-                
+
                 struct Alternative: Decodable {
                     let transcript: String
                     let confidence: Double?
                 }
             }
         }
+    }
+
+    private func getCustomVocabularyTerms() -> [String] {
+        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
+            return []
+        }
+
+        // Deepgram recommends max 100 keywords
+        let maxKeywords = 100
+
+        let trimmedWords = words
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        // De-duplicate while preserving order
+        var seen = Set<String>()
+        var unique: [String] = []
+        for word in trimmedWords {
+            let key = word.lowercased()
+            if !seen.contains(key) {
+                seen.insert(key)
+                unique.append(word)
+            }
+            if unique.count >= maxKeywords {
+                break
+            }
+        }
+        return unique
     }
 }
