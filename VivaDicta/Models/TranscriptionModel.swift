@@ -22,6 +22,6 @@ protocol TranscriptionModel: Identifiable, Hashable {
 
 extension TranscriptionModel {
     var language: String {
-        supportManyLanguages ? "Multilingual" : "English-only"
+        supportManyLanguages ? "All Languages" : "English-only"
     }
 }

@@ -181,8 +181,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             CloudModel(
                 name: "nova-3-multilingual",
-                displayName: "Nova 3 Multilingual",
-                description: "First AI model with real-time multilingual code-switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
+                displayName: "Nova 3 Multi-language",
+                description: "First AI model with real-time switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
                 provider: .deepgram,
                 speed: 0.95,
                 accuracy: 0.95,
@@ -254,7 +254,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gpt-4o-transcribe",
                 displayName: "GPT-4o Transcribe",
-                description: "OpenAI's latest model with reduced hallucinations and enhanced multilingual accuracy",
+                description: "OpenAI's latest model with reduced hallucinations and enhanced accuracy across all languages",
                 provider: .openAI,
                 speed: 0.7,
                 accuracy: 0.95,
@@ -308,7 +308,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ParakeetModel(
                 name: "parakeet-tdt-0.6b-v3",
                 displayName: "Nvidia Parakeet V3",
-                description: "NVIDIA's ultra-fast multilingual model supporting 25 languages with automatic language detection",
+                description: "NVIDIA's ultra-fast model supporting 25 most common languages with automatic language detection",
                 recommended: true,
                 size: "494 MB",
                 speed: 0.95,
