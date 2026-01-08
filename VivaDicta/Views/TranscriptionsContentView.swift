@@ -50,6 +50,31 @@ struct TranscriptionsContentView: View {
                                     isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
                                 )
                             }
+                            .contextMenu {
+                                Section("Share") {
+                                    if let enhancedText = transcription.enhancedText {
+                                        ShareLink(item: enhancedText) {
+                                            Label("AI Processed Text", systemImage: "sparkles")
+                                        }
+                                    }
+
+                                    ShareLink(item: transcription.text) {
+                                        Label("Original Text", systemImage: "text.alignleft")
+                                    }
+
+                                    if let audioURL = audioURL(for: transcription) {
+                                        ShareLink(
+                                            item: audioURL,
+                                            preview: SharePreview(
+                                                "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
+                                                image: Image(systemName: "waveform")
+                                            )
+                                        ) {
+                                            Label("Audio Recording", systemImage: "waveform")
+                                        }
+                                    }
+                                }
+                            }
                         }
                         .onDelete(perform: deleteTranscription)
                     }
@@ -115,6 +140,12 @@ struct TranscriptionsContentView: View {
 
     private var displayedTranscriptions: [Transcription] {
         searchText.isEmpty ? allTranscriptions : filteredTranscriptions
+    }
+
+    private func audioURL(for transcription: Transcription) -> URL? {
+        guard let audioFileName = transcription.audioFileName, !audioFileName.isEmpty else { return nil }
+        let url = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
     private func performDebouncedSearch(with searchTerm: String) {
