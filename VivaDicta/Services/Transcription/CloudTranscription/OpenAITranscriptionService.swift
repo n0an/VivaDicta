@@ -70,8 +70,7 @@ struct OpenAITranscriptionService {
         }
 
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        let combinedPrompt = buildPromptWithVocabulary()
-
+        
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
@@ -87,14 +86,6 @@ struct OpenAITranscriptionService {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
             body.append(selectedLanguage.data(using: .utf8)!)
-            body.append(crlf.data(using: .utf8)!)
-        }
-
-        // Include prompt with vocabulary for OpenAI-compatible APIs
-        if !combinedPrompt.isEmpty {
-            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"prompt\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append(combinedPrompt.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
         }
         
