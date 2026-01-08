@@ -163,7 +163,7 @@ final class ShareExtensionViewModel {
         guard let provider = selectedMode.aiProvider else {
             return "Not set"
         }
-        return provider.rawValue.capitalized
+        return provider.displayName
     }
 
     var aiModelDisplayName: String {

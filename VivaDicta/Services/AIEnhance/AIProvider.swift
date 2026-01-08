@@ -22,6 +22,33 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case mistral
     case soniox
     
+    var displayName: String {
+        switch self {
+        case .cerebras:
+            "Cerebras"
+        case .openAI:
+            "OpenAI"
+        case .groq:
+            "Groq"
+        case .elevenLabs:
+            "ElevenLabs"
+        case .deepgram:
+            "Deepgram"
+        case .mistral:
+            "Mistral"
+        case .gemini:
+            "Gemini"
+        case .soniox:
+            "Soniox"
+        case .anthropic:
+            "Anthropic"
+        case .openRouter:
+            "OpenRouter"
+        case .grok:
+            "Grok (x.ai)"
+        }
+    }
+    
     static let generalProviders: [AIProvider] = [
         .anthropic,
         .openAI,

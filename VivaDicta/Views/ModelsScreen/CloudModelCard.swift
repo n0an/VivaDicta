@@ -55,7 +55,7 @@ struct CloudModelCard: View {
             
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(model.provider.rawValue.capitalized)
+                    Text(model.provider.displayName)
                         .font(.title3)
                         .fontWeight(.semibold)
                     Text(model.displayName)

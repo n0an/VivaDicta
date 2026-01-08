@@ -21,7 +21,7 @@ struct CloudModelConfigurationView: View {
     var body: some View {
         
         VStack(spacing: 10) {
-            Text("\(model.provider.rawValue.capitalized) API Key")
+            Text("\(model.provider.displayName) API Key")
                 .font(.title2)
             TextField("API Key", text: $apiKey)
                 .privacySensitive()

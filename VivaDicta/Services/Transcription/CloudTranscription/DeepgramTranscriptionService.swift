@@ -83,7 +83,18 @@ class DeepgramTranscriptionService {
         if selectedLanguage != "auto" && !selectedLanguage.isEmpty {
             queryItems.append(URLQueryItem(name: "language", value: selectedLanguage))
         }
-        
+
+        // Add custom vocabulary keywords
+        let vocabularyTerms = CustomVocabulary.getTerms(maxTerms: 100)
+        if !vocabularyTerms.isEmpty {
+            // Nova-3 uses keyterm, Nova-2 uses keywords
+            let paramName = modelName == "nova-3" ? "keyterm" : "keywords"
+            for term in vocabularyTerms {
+                queryItems.append(URLQueryItem(name: paramName, value: term))
+            }
+            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms to Deepgram request")
+        }
+
         components.queryItems = queryItems
         
         guard let apiURL = components.url else {
@@ -101,13 +112,13 @@ class DeepgramTranscriptionService {
     
     private struct DeepgramResponse: Decodable {
         let results: Results
-        
+
         struct Results: Decodable {
             let channels: [Channel]
-            
+
             struct Channel: Decodable {
                 let alternatives: [Alternative]
-                
+
                 struct Alternative: Decodable {
                     let transcript: String
                     let confidence: Double?
@@ -115,4 +126,5 @@ class DeepgramTranscriptionService {
             }
         }
     }
+
 }

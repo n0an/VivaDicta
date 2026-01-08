@@ -147,6 +147,11 @@ struct TranscriptionDetailView: View {
                 }
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                shareMenu
+            }
+        }
         .onAppear {
             let activity = appState.userActivity(for: transcription)
             activity.becomeCurrent()
@@ -460,6 +465,38 @@ struct TranscriptionDetailView: View {
             Text(value)
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private var shareMenu: some View {
+        Menu {
+            Section("Share") {
+                if let enhancedText = transcription.enhancedText {
+                    ShareLink(item: enhancedText) {
+                        Label("Enhanced Text", systemImage: "sparkles")
+                    }
+                }
+                
+                ShareLink(item: transcription.text) {
+                    Label("Original Text", systemImage: "text.alignleft")
+                }
+                
+                if let audioURL = audioURL {
+                    Divider()
+                    ShareLink(
+                        item: audioURL,
+                        preview: SharePreview(
+                            "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
+                            image: Image(systemName: "waveform")
+                        )
+                    ) {
+                        Label("Audio Recording", systemImage: "waveform")
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+                .offset(y: -2)
         }
     }
 

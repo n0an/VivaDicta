@@ -64,37 +64,37 @@ struct GroqTranscriptionService {
     private func createOpenAICompatibleRequestBody(audioURL: URL, modelName: String, boundary: String) throws -> Data {
         var body = Data()
         let crlf = "\r\n"
-        
+
         guard let audioData = try? Data(contentsOf: audioURL) else {
             throw CloudTranscriptionError.audioFileNotFound
         }
-        
+
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        let prompt = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranscriptionPrompt) ?? ""
-        
+        let combinedPrompt = buildPromptWithVocabulary()
+
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
         body.append(audioData)
         body.append(crlf.data(using: .utf8)!)
-        
+
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\(crlf)\(crlf)".data(using: .utf8)!)
         body.append(modelName.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
-        
+
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
             body.append(selectedLanguage.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
         }
-        
-        // Include prompt for OpenAI-compatible APIs
-        if !prompt.isEmpty {
+
+        // Include prompt with vocabulary for OpenAI-compatible APIs
+        if !combinedPrompt.isEmpty {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"prompt\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append(prompt.data(using: .utf8)!)
+            body.append(combinedPrompt.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
         }
         
@@ -123,9 +123,16 @@ struct GroqTranscriptionService {
         let language: String?
         let duration: Double?
         let x_groq: GroqMetadata?
-        
+
         struct GroqMetadata: Decodable {
             let id: String?
         }
+    }
+    
+    /// Use custom vocabulary words as prompt
+    private func buildPromptWithVocabulary() -> String {
+        let vocabularyWords = CustomVocabulary.getTerms()
+        guard !vocabularyWords.isEmpty else { return "" }
+        return vocabularyWords.joined(separator: ", ")
     }
 }
