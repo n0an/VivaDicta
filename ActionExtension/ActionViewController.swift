@@ -117,31 +117,6 @@ final class ActionExtensionViewModel {
             }
     }
 
-    // MARK: - Display Helpers
-
-    var transcriptionProviderDisplayName: String {
-        switch selectedMode.transcriptionProvider {
-        case .whisperKit:
-            return "WhisperKit"
-        case .parakeet:
-            return "Parakeet"
-        case .openAI:
-            return "OpenAI"
-        case .groq:
-            return "Groq"
-        case .elevenLabs:
-            return "ElevenLabs"
-        case .deepgram:
-            return "Deepgram"
-        case .mistral:
-            return "Mistral"
-        case .gemini:
-            return "Gemini"
-        case .soniox:
-            return "Soniox"
-        }
-    }
-
     var transcriptionModelDisplayName: String {
         let modelName = selectedMode.transcriptionModel
         if modelName.isEmpty {
@@ -301,7 +276,7 @@ struct ActionExtensionView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.primary)
 
-            infoRow(label: "Provider", value: viewModel.transcriptionProviderDisplayName)
+            infoRow(label: "Provider", value: viewModel.selectedMode.transcriptionProvider.displayName)
             infoRow(label: "Model", value: viewModel.transcriptionModelDisplayName)
             languagePickerRow
         }
