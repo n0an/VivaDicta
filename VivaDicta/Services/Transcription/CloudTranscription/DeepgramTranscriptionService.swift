@@ -85,7 +85,7 @@ class DeepgramTranscriptionService {
         }
 
         // Add custom vocabulary keywords
-        let vocabularyTerms = getCustomVocabularyTerms()
+        let vocabularyTerms = CustomVocabulary.getTerms(maxTerms: 100)
         if !vocabularyTerms.isEmpty {
             // Nova-3 uses keyterm, Nova-2 uses keywords
             let paramName = modelName == "nova-3" ? "keyterm" : "keywords"
@@ -127,31 +127,4 @@ class DeepgramTranscriptionService {
         }
     }
 
-    private func getCustomVocabularyTerms() -> [String] {
-        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
-            return []
-        }
-
-        // Deepgram recommends max 100 keywords
-        let maxKeywords = 100
-
-        let trimmedWords = words
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        // De-duplicate while preserving order
-        var seen = Set<String>()
-        var unique: [String] = []
-        for word in trimmedWords {
-            let key = word.lowercased()
-            if !seen.contains(key) {
-                seen.insert(key)
-                unique.append(word)
-            }
-            if unique.count >= maxKeywords {
-                break
-            }
-        }
-        return unique
-    }
 }

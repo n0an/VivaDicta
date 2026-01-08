@@ -91,7 +91,7 @@ struct SonioxTranscriptionService {
         ]
 
         // Add custom vocabulary terms if available
-        let vocabularyTerms = getCustomVocabularyTerms()
+        let vocabularyTerms = CustomVocabulary.getTerms()
         if !vocabularyTerms.isEmpty {
             payload["context"] = ["terms": vocabularyTerms]
             logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms")
@@ -223,28 +223,6 @@ struct SonioxTranscriptionService {
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
-    }
-
-    private func getCustomVocabularyTerms() -> [String] {
-        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
-            return []
-        }
-
-        let trimmedWords = words
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        // De-duplicate while preserving order
-        var seen = Set<String>()
-        var unique: [String] = []
-        for word in trimmedWords {
-            let key = word.lowercased()
-            if !seen.contains(key) {
-                seen.insert(key)
-                unique.append(word)
-            }
-        }
-        return unique
     }
 
     // MARK: - Response Types

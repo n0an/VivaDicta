@@ -128,7 +128,7 @@ struct OpenAITranscriptionService {
     /// Whisper prompt has a 224 token limit, so we prioritize user prompt and add vocabulary if space allows.
     private func buildPromptWithVocabulary() -> String {
         let userPrompt = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranscriptionPrompt) ?? ""
-        let vocabularyWords = getCustomVocabularyTerms()
+        let vocabularyWords = CustomVocabulary.getTerms()
 
         if vocabularyWords.isEmpty {
             return userPrompt
@@ -145,25 +145,4 @@ struct OpenAITranscriptionService {
         return "\(userPrompt) \(vocabularyString)"
     }
 
-    private func getCustomVocabularyTerms() -> [String] {
-        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
-            return []
-        }
-
-        let trimmedWords = words
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        // De-duplicate while preserving order
-        var seen = Set<String>()
-        var unique: [String] = []
-        for word in trimmedWords {
-            let key = word.lowercased()
-            if !seen.contains(key) {
-                seen.insert(key)
-                unique.append(word)
-            }
-        }
-        return unique
-    }
 }
