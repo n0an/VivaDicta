@@ -128,26 +128,11 @@ struct GroqTranscriptionService {
             let id: String?
         }
     }
-
-    /// Builds a prompt combining user's transcription prompt with custom vocabulary words.
-    /// Whisper prompt has a 224 token limit, so we prioritize user prompt and add vocabulary if space allows.
+    
+    /// Use custom vocabulary words as prompt
     private func buildPromptWithVocabulary() -> String {
-        let userPrompt = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranscriptionPrompt) ?? ""
         let vocabularyWords = CustomVocabulary.getTerms()
-
-        if vocabularyWords.isEmpty {
-            return userPrompt
-        }
-
-        // Format vocabulary as comma-separated list
-        let vocabularyString = vocabularyWords.joined(separator: ", ")
-
-        if userPrompt.isEmpty {
-            return vocabularyString
-        }
-
-        // Combine user prompt with vocabulary
-        return "\(userPrompt) \(vocabularyString)"
+        guard !vocabularyWords.isEmpty else { return "" }
+        return vocabularyWords.joined(separator: ", ")
     }
-
 }

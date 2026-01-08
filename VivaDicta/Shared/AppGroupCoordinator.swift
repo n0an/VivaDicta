@@ -26,7 +26,6 @@ public final class AppGroupCoordinator {
     public static let selectedVivaModeKey = "selectedVivaMode"
     public static let kSelectedLanguageKey = "selectedLanguageKey"
     public static let kAPIKeyTemplate = "apiKeyTemplate"
-    public static let kTranscriptionPrompt = "TranscriptionPrompt"
     public static let kSmartFormattingOnPaste = "smartFormattingOnPaste"
     public static let kKeepTranscriptInClipboard = "keepTranscriptInClipboard"
     public static let kIsVADEnabled = "IsVADEnabled"
