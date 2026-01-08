@@ -98,6 +98,38 @@ class AIService {
         logger.logInfo("Deleted mode: \(mode.name)")
     }
 
+    public func duplicateMode(_ mode: VivaMode) -> VivaMode {
+        let newName = generateUniqueName(baseName: mode.name)
+
+        let duplicatedMode = VivaMode(
+            id: UUID(),
+            name: newName,
+            transcriptionProvider: mode.transcriptionProvider,
+            transcriptionModel: mode.transcriptionModel,
+            transcriptionLanguage: mode.transcriptionLanguage,
+            userPrompt: mode.userPrompt,
+            aiProvider: mode.aiProvider,
+            aiModel: mode.aiModel,
+            aiEnhanceEnabled: mode.aiEnhanceEnabled
+        )
+
+        addMode(duplicatedMode)
+        logger.logInfo("Duplicated mode '\(mode.name)' as '\(newName)'")
+
+        return duplicatedMode
+    }
+
+    private func generateUniqueName(baseName: String) -> String {
+        var newName = "\(baseName) Copy"
+        let existingNames = Set(modes.map { $0.name })
+
+        while existingNames.contains(newName) {
+            newName = "\(newName) Copy"
+        }
+
+        return newName
+    }
+
     /// Disables AI enhancement for all modes that use the specified AI provider.
     /// Called when an API key for that provider is deleted.
     public func disableAIEnhancementForModesUsingProvider(_ provider: AIProvider) {

@@ -50,6 +50,21 @@ struct SettingsView: View {
                         NavigationLink(value: mode) {
                             ModeInfoRow(mode: mode)
                         }
+                        .contextMenu {
+                            Button {
+                                duplicateMode(mode)
+                            } label: {
+                                Label("Duplicate", systemImage: "doc.on.doc")
+                            }
+
+                            if appState.aiService.modes.count > 1 {
+                                Button(role: .destructive) {
+                                    deleteMode(mode)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if appState.aiService.modes.count > 1 {
                                 Button(role: .destructive) {
@@ -58,6 +73,14 @@ struct SettingsView: View {
                                     Label("Delete", systemImage: "trash")
                                 }
                             }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                duplicateMode(mode)
+                            } label: {
+                                Label("Duplicate", systemImage: "doc.on.doc")
+                            }
+                            .tint(.blue)
                         }
                     }
                     
@@ -349,6 +372,10 @@ struct SettingsView: View {
         guard appState.aiService.modes.count > 1 else { return }
 
         appState.aiService.deleteMode(mode)
+    }
+
+    private func duplicateMode(_ mode: VivaMode) {
+        _ = appState.aiService.duplicateMode(mode)
     }
 
     // MARK: - Keyboard Recording Session Actions
