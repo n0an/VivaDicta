@@ -27,7 +27,7 @@ class ModeEditViewModel {
     private let transcriptionManager: TranscriptionManager
     let promptsManager: PromptsManager
     
-    private let originalMode: VivaMode?
+    let originalMode: VivaMode?
 
     public var transcriptionFooterText: String {
         transcriptionManager.hasAvailableTranscriptionModels ? "" : "No transcription models available. Download a local model or add an API key for a cloud model."

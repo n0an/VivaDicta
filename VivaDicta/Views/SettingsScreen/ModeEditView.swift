@@ -155,23 +155,23 @@ struct ModeEditView: View {
             }
             
             if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
-                
+
                 Section(header: Text("AI Enhancement"),
                         footer: aiEnhancementSectionFooter) {
-                    
+
                     if !viewModel.aiEnhanceEnabled {
                         TipView(selectAIEnhacementTip)
                             .tipBackground(.teal.gradient)
                     }
-                    
+
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
-                    
+
                     if viewModel.aiEnhanceEnabled {
                         Picker(selection: $viewModel.aiProvider) {
                             ForEach(AIProvider.generalProviders) { provider in
                                 Text(provider.displayName).tag(provider)
                             }
-                            
+
                         } label: {
                             HStack {
                                 Image(systemName: "cpu")
@@ -185,11 +185,11 @@ struct ModeEditView: View {
                         .onAppear {
                             viewModel.selectFirstProviderIfNeeded()
                         }
-                        
+
                         if let provider = viewModel.aiProvider {
                             let hasKey = viewModel.hasAPIKey(for: provider)
                             if hasKey {
-                                
+
                                 Picker(selection: $viewModel.aiModel) {
                                     ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
                                         Text(model).tag(model as String?)
@@ -204,7 +204,7 @@ struct ModeEditView: View {
                                 .onChange(of: viewModel.aiModel) { _, newModel in
                                     viewModel.updateModel(newModel)
                                 }
-                                
+
                             } else {
                                 NavigationLink {
                                     AddAPIKeyView(
@@ -225,7 +225,7 @@ struct ModeEditView: View {
                                 }
                             }
                         }
-                        
+
                         if let provider = viewModel.aiProvider, viewModel.hasAPIKey(for: provider) {
                             if viewModel.promptsManager.userPrompts.isEmpty {
                                 Button(action: {
@@ -258,7 +258,21 @@ struct ModeEditView: View {
                     }
                 }
             }
-            
+
+            if viewModel.isEditing {
+                Section {
+                    Button {
+                        duplicateMode()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Label("Duplicate Mode", systemImage: "doc.on.doc")
+                            Spacer()
+                        }
+                    }
+                }
+            }
+
         }
         .onChange(of: viewModel.aiEnhanceEnabled, { oldValue, newValue in
             if newValue == true {
@@ -310,7 +324,7 @@ struct ModeEditView: View {
     }
 
     private func saveMode() {
-        
+
         do {
             let newMode = try viewModel.saveMode()
             if viewModel.isEditing {
@@ -326,7 +340,13 @@ struct ModeEditView: View {
             showingAlert = true
             modeEditViewError = .unexpectedError(error.localizedDescription)
         }
-        
+
+    }
+
+    private func duplicateMode() {
+        guard let mode = viewModel.originalMode else { return }
+        _ = viewModel.aiService.duplicateMode(mode)
+        dismiss()
     }
 }
 
