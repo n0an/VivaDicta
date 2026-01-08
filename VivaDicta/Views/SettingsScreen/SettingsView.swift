@@ -445,6 +445,10 @@ private struct ModeInfoRow: View {
                                     .foregroundStyle(.secondary)
                                 Text(mode.aiModel)
                                     .foregroundStyle(.tertiary)
+                                if let prompt = mode.userPrompt {
+                                    Text(prompt.title)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
                         }
                     }
