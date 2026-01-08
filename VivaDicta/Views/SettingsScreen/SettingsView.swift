@@ -48,8 +48,7 @@ struct SettingsView: View {
                     
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
-                            Text(mode.name)
-                                .font(.body.weight(.medium))
+                            ModeInfoRow(mode: mode)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if appState.aiService.modes.count > 1 {
@@ -379,6 +378,57 @@ struct SettingsView: View {
         .environment(AppState())
 }
 
+
+// MARK: - Mode Info Row
+
+private struct ModeInfoRow: View {
+    let mode: VivaMode
+
+    private var transcriptionModelDisplayName: String {
+        mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(mode.name)
+                .font(.body.weight(.medium))
+
+            if !mode.transcriptionModel.isEmpty {
+                HStack(alignment: .top) {
+                    HStack(alignment: .top, spacing: 4) {
+                        Image(systemName: "waveform")
+                            .foregroundStyle(.blue)
+                            .accessibilityLabel("Transcription provider")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(mode.transcriptionProvider.displayName)
+                                .foregroundStyle(.secondary)
+                            Text(transcriptionModelDisplayName)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    if let provider = mode.aiProvider {
+                        Divider()
+                        HStack(alignment: .top, spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(.blue)
+                                .accessibilityLabel("AI enhancement provider")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(provider.displayName)
+                                    .foregroundStyle(.secondary)
+                                Text(mode.aiModel)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
+                .font(.caption2)
+                .padding(.leading, 4)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
 
 enum SettingsError: LocalizedError {
     case duplicateModeName(String)

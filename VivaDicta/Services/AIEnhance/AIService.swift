@@ -232,13 +232,13 @@ class AIService {
     }
     
     private func loadSavedOpenRouterModels() {
-        if let savedModels = userDefaults.array(forKey: "openRouterModels") as? [String] {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.openRouterModels) as? [String] {
             openRouterModels = savedModels
         }
     }
     
     private func saveOpenRouterModels() {
-        userDefaults.set(openRouterModels, forKey: "openRouterModels")
+        userDefaults.set(openRouterModels, forKey: UserDefaultsStorage.Keys.openRouterModels)
     }
     
     // MARK: - Configuration validation

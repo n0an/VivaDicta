@@ -87,8 +87,8 @@ class DeepgramTranscriptionService {
         // Add custom vocabulary keywords
         let vocabularyTerms = CustomVocabulary.getTerms(maxTerms: 100)
         if !vocabularyTerms.isEmpty {
-            // Nova-3 uses keyterm, Nova-2 uses keywords
-            let paramName = modelName == "nova-3" ? "keyterm" : "keywords"
+            // Nova-3 (including nova-3-multilingual) uses keyterm, Nova-2 uses keywords
+            let paramName = modelName.hasPrefix("nova-3") ? "keyterm" : "keywords"
             for term in vocabularyTerms {
                 queryItems.append(URLQueryItem(name: paramName, value: term))
             }

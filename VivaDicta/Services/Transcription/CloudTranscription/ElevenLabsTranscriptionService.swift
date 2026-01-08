@@ -82,7 +82,7 @@ class ElevenLabsTranscriptionService {
         body.append(formField: "temperature", value: "0.0", boundary: boundary)
         body.append(formField: "tag_audio_events", value: "false", boundary: boundary)
         
-        let selectedLanguage = UserDefaults.standard.string(forKey: "SelectedLanguage") ?? "auto"
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             body.append(formField: "language_code", value: selectedLanguage, boundary: boundary)
         }

@@ -34,5 +34,6 @@ enum UserDefaultsStorage {
         static let isReplacementsEnabled = "isReplacementsEnabled"
         static let isAutoAudioCleanupEnabled = "isAutoAudioCleanupEnabled"
         static let audioRetentionDays = "audioRetentionDays"
+        static let openRouterModels = "openRouterModels"
     }
 }
