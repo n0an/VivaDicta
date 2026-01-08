@@ -54,7 +54,7 @@ struct TranscriptionsContentView: View {
                                 Section("Share") {
                                     if let enhancedText = transcription.enhancedText {
                                         ShareLink(item: enhancedText) {
-                                            Label("AI Processed Text", systemImage: "sparkles")
+                                            Label("Enhanced Text", systemImage: "sparkles")
                                         }
                                     }
 
