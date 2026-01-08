@@ -345,7 +345,7 @@ struct ModeEditView: View {
 
     private func duplicateMode() {
         guard let mode = viewModel.originalMode else { return }
-        _ = viewModel.aiService.duplicateMode(mode)
+        viewModel.aiService.duplicateMode(mode)
         dismiss()
     }
 }

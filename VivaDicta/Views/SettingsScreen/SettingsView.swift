@@ -375,7 +375,7 @@ struct SettingsView: View {
     }
 
     private func duplicateMode(_ mode: VivaMode) {
-        _ = appState.aiService.duplicateMode(mode)
+        appState.aiService.duplicateMode(mode)
     }
 
     // MARK: - Keyboard Recording Session Actions

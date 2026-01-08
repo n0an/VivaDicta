@@ -98,7 +98,7 @@ class AIService {
         logger.logInfo("Deleted mode: \(mode.name)")
     }
 
-    public func duplicateMode(_ mode: VivaMode) -> VivaMode {
+    public func duplicateMode(_ mode: VivaMode) {
         let newName = generateUniqueName(baseName: mode.name)
 
         let duplicatedMode = VivaMode(
@@ -115,8 +115,6 @@ class AIService {
 
         addMode(duplicatedMode)
         logger.logInfo("Duplicated mode '\(mode.name)' as '\(newName)'")
-
-        return duplicatedMode
     }
 
     private func generateUniqueName(baseName: String) -> String {
