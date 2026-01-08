@@ -82,6 +82,16 @@ struct MistralTranscriptionService {
         body.append(audioData)
         body.append(crlf.data(using: .utf8)!)
 
+        // Add language field if not auto-detect
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+        if selectedLanguage != "auto", !selectedLanguage.isEmpty {
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append(selectedLanguage.data(using: .utf8)!)
+            body.append(crlf.data(using: .utf8)!)
+            logger.logInfo("Using language: \(selectedLanguage)")
+        }
+
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
