@@ -37,39 +37,74 @@ struct WaterModifier: ViewModifier {
     }
 }
 
-/// A view modifier that conditionally applies the water distortion effect.
+/// A view modifier that applies an animated grayscale gradient sweep effect using Metal shader.
+/// Creates a wave of brightness that sweeps across the content.
+struct GrayscaleGradientModifier: ViewModifier {
+    var xOffset: Float
+    var animatableData: Float {
+        get { xOffset }
+        set { xOffset = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .visualEffect { content, proxy in
+                content
+                    .colorEffect(
+                        ShaderLibrary.grayscaleGradient(
+                            .float2(proxy.size),
+                            .float(xOffset)
+                        )
+                    )
+            }
+    }
+}
+
+/// A view modifier that conditionally applies the grayscale gradient sweep effect.
 struct ConditionalShimmer: ViewModifier {
     let isActive: Bool
-    @State private var startTime: Date?
+    @State private var xOffset: Float = 0
+    @State private var isAnimating: Bool = false
 
     func body(content: Content) -> some View {
         Group {
-            if isActive, let startTime {
-                content.modifier(WaterModifier(startTime: startTime))
+            if isAnimating {
+                content.modifier(GrayscaleGradientModifier(xOffset: xOffset))
             } else {
                 content
             }
         }
         .onChange(of: isActive) { _, newValue in
             if newValue {
-                startTime = Date()
-            } else {
-                startTime = nil
+                xOffset = 0
+                isAnimating = true
+                withAnimation(.linear(duration: 0.6)) {
+                    xOffset = 1
+                } completion: {
+                    isAnimating = false
+                }
             }
         }
     }
 }
 
 #Preview {
+    @Previewable @State var isShimmering = false
+
     VStack(spacing: 40) {
+        Text("Grayscale gradient effect!")
+            .font(.title)
+            .bold()
+            .modifier(ConditionalShimmer(isActive: isShimmering))
+
         Text("Water distortion effect!")
             .font(.title)
             .bold()
             .modifier(WaterModifier(startTime: Date()))
 
-        Text("Regular text without effect")
-            .font(.title)
-            .padding()
+        Button("Toggle Shimmer") {
+            isShimmering.toggle()
+        }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.gray.opacity(0.2))

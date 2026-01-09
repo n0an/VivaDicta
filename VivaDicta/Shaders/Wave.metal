@@ -40,3 +40,22 @@ using namespace metal;
 
     return float2(uv) * size;
 }
+
+/// A color shader that creates an animated grayscale gradient sweep effect.
+/// Produces a wave of brightness that moves across the view.
+///
+/// - Parameter position: The user-space coordinate of the current pixel.
+/// - Parameter color: The current color of the pixel.
+/// - Parameter size: The size of the view being colored.
+/// - Parameter timeOffset: Animation progress from 0 to 1 controlling the sweep position.
+/// - Returns: The modified color with grayscale gradient applied.
+[[ stitchable ]] half4 grayscaleGradient(float2 position, half4 color, float2 size, float timeOffset) {
+    position.x *= size.x / 1200;
+    float2 uv = position / size;
+    float t = uv.x - timeOffset;
+
+    half angle = t * 6.28318h;
+    half3 newColor = half3(sin(angle));
+
+    return half4(newColor * 0.5h + 0.75h, 1.0h) * color.a;
+}
