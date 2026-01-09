@@ -33,6 +33,7 @@ struct TranscriptionDetailView: View {
 
     @State private var processingState: ProcessingState = .idle
     @State private var processingTask: Task<Void, Never>?
+    @State private var isShimmering: Bool = false
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -108,6 +109,7 @@ struct TranscriptionDetailView: View {
                 // Button expands DOWN because there's space below
                 VStack(alignment: .leading, spacing: 0) {
                     textContentView
+                        .overlay { shimmerOverlay }
                     copyButton
                     retranscribeButton(expandDirection: .down)
                     Spacer()
@@ -126,6 +128,7 @@ struct TranscriptionDetailView: View {
                         textContentView
                             .padding(.horizontal)
                     }
+                    .overlay { shimmerOverlay }
                     .onScrollPhaseChange { _, newPhase in
                         if newPhase == .interacting || newPhase == .decelerating {
                             collapseIfExpanded()
@@ -178,7 +181,18 @@ struct TranscriptionDetailView: View {
                 .textSelection(.enabled)
         }
     }
-    
+
+    @ViewBuilder
+    private var shimmerOverlay: some View {
+        if isShimmering {
+            GeometryReader { geometry in
+                ShimmerView()
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
     private var copyButton: some View {
         HStack {
             if selectedTextType == .enhanced && hasEnhancedText {
@@ -195,10 +209,20 @@ struct TranscriptionDetailView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            AnimatedCopyButton(textToCopy: displayedText)
+            AnimatedCopyButton(textToCopy: displayedText) {
+                triggerCopyAnimation()
+            }
         }
         .padding(.top, 6)
         .padding(.bottom, 12)
+    }
+
+    private func triggerCopyAnimation() {
+        isShimmering = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            isShimmering = false
+        }
     }
     
     
