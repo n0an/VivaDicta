@@ -18,3 +18,25 @@ using namespace metal;
     position.y += sin(time * speed + position.x / smoothing) * strength;
     return position;
 }
+
+/// A shader that creates a fluid water ripple distortion effect.
+/// Uses both sine and cosine for bidirectional wave movement.
+///
+/// - Parameter position: The user-space coordinate of the current pixel.
+/// - Parameter size: The size of the view being distorted.
+/// - Parameter time: The number of elapsed seconds since the shader was created.
+/// - Parameter speed: How fast the water ripples move.
+/// - Parameter strength: How pronounced the distortion effect is.
+/// - Parameter frequency: How many ripples appear across the view.
+/// - Returns: The distorted position creating a water-like effect.
+[[ stitchable ]] float2 water(float2 position, float2 size, float time, float speed, float strength, float frequency) {
+    half2 uv = half2(position / size);
+
+    half adjustedSpeed = time * speed * 0.05h;
+    half adjustedStrength = strength / 100.0h;
+
+    uv.x += sin((uv.x + adjustedSpeed) * frequency) * adjustedStrength;
+    uv.y += cos((uv.y + adjustedSpeed) * frequency) * adjustedStrength;
+
+    return float2(uv) * size;
+}

@@ -7,30 +7,37 @@
 
 import SwiftUI
 
-/// A view modifier that applies an animated wave distortion effect using Metal shader.
-struct WaveModifier: ViewModifier {
+/// A view modifier that applies an animated water distortion effect using Metal shader.
+/// Creates a fluid ripple effect that distorts both X and Y coordinates.
+struct WaterModifier: ViewModifier {
     let startTime: Date
-    var speed: Float = 8
-    var smoothing: Float = 1
-    var strength: Float = 1
+    var speed: Float = 3
+    var strength: Float = 3
+    var frequency: Float = 10
 
     func body(content: Content) -> some View {
         TimelineView(.animation) { context in
+            let time = context.date.timeIntervalSince(startTime)
+
             content
-                .distortionEffect(
-                    ShaderLibrary.wave(
-                        .float(context.date.timeIntervalSince(startTime)),
-                        .float(speed),
-                        .float(smoothing),
-                        .float(strength)
-                    ),
-                    maxSampleOffset: CGSize(width: 0, height: CGFloat(strength) * 2)
-                )
+                .visualEffect { content, proxy in
+                    content
+                        .distortionEffect(
+                            ShaderLibrary.water(
+                                .float2(proxy.size),
+                                .float(time),
+                                .float(speed),
+                                .float(strength),
+                                .float(frequency)
+                            ),
+                            maxSampleOffset: CGSize(width: 100, height: 100)
+                        )
+                }
         }
     }
 }
 
-/// A view modifier that conditionally applies the wave distortion effect.
+/// A view modifier that conditionally applies the water distortion effect.
 struct ConditionalShimmer: ViewModifier {
     let isActive: Bool
     @State private var startTime: Date?
@@ -38,7 +45,7 @@ struct ConditionalShimmer: ViewModifier {
     func body(content: Content) -> some View {
         Group {
             if isActive, let startTime {
-                content.modifier(WaveModifier(startTime: startTime))
+                content.modifier(WaterModifier(startTime: startTime))
             } else {
                 content
             }
@@ -55,10 +62,10 @@ struct ConditionalShimmer: ViewModifier {
 
 #Preview {
     VStack(spacing: 40) {
-        Text("Wave distortion effect!")
+        Text("Water distortion effect!")
             .font(.title)
             .bold()
-            .modifier(WaveModifier(startTime: Date()))
+            .modifier(WaterModifier(startTime: Date()))
 
         Text("Regular text without effect")
             .font(.title)
