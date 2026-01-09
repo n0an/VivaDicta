@@ -60,29 +60,24 @@ struct GrayscaleGradientModifier: ViewModifier {
     }
 }
 
-/// A view modifier that conditionally applies the grayscale gradient sweep effect.
+/// A view modifier that conditionally applies the water distortion effect.
 struct ConditionalShimmer: ViewModifier {
     let isActive: Bool
-    @State private var xOffset: Float = 0
-    @State private var isAnimating: Bool = false
+    @State private var startTime: Date?
 
     func body(content: Content) -> some View {
         Group {
-            if isAnimating {
-                content.modifier(GrayscaleGradientModifier(xOffset: xOffset))
+            if isActive, let startTime {
+                content.modifier(WaterModifier(startTime: startTime))
             } else {
                 content
             }
         }
         .onChange(of: isActive) { _, newValue in
             if newValue {
-                xOffset = 0
-                isAnimating = true
-                withAnimation(.linear(duration: 0.6)) {
-                    xOffset = 1
-                } completion: {
-                    isAnimating = false
-                }
+                startTime = Date()
+            } else {
+                startTime = nil
             }
         }
     }
