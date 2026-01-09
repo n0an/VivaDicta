@@ -33,6 +33,7 @@ struct TranscriptionDetailView: View {
 
     @State private var processingState: ProcessingState = .idle
     @State private var processingTask: Task<Void, Never>?
+    @State private var isShimmering: Bool = false
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -177,8 +178,9 @@ struct TranscriptionDetailView: View {
                 .lineSpacing(2)
                 .textSelection(.enabled)
         }
+        .modifier(ConditionalShimmer(isActive: isShimmering))
     }
-    
+
     private var copyButton: some View {
         HStack {
             if selectedTextType == .enhanced && hasEnhancedText {
@@ -195,10 +197,20 @@ struct TranscriptionDetailView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            AnimatedCopyButton(textToCopy: displayedText)
+            AnimatedCopyButton(textToCopy: displayedText) {
+                triggerCopyAnimation()
+            }
         }
         .padding(.top, 6)
         .padding(.bottom, 12)
+    }
+
+    private func triggerCopyAnimation() {
+        isShimmering = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            isShimmering = false
+        }
     }
     
     

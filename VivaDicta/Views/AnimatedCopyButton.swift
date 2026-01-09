@@ -9,8 +9,9 @@ import SwiftUI
 
 struct AnimatedCopyButton: View {
     let textToCopy: String
+    var onCopy: (() -> Void)?
     @State private var isCopied: Bool = false
-    
+
     var buttonHeight: CGFloat = 20
     
     var body: some View {
@@ -45,7 +46,8 @@ struct AnimatedCopyButton: View {
     private func copyToClipboard() {
         let _ = ClipboardManager.copyToClipboard(textToCopy)
         isCopied = true
-        
+        onCopy?()
+
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))
             isCopied = false
