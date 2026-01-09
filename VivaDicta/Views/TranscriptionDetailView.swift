@@ -109,7 +109,6 @@ struct TranscriptionDetailView: View {
                 // Button expands DOWN because there's space below
                 VStack(alignment: .leading, spacing: 0) {
                     textContentView
-                        .overlay { shimmerOverlay }
                     copyButton
                     retranscribeButton(expandDirection: .down)
                     Spacer()
@@ -128,7 +127,6 @@ struct TranscriptionDetailView: View {
                         textContentView
                             .padding(.horizontal)
                     }
-                    .overlay { shimmerOverlay }
                     .onScrollPhaseChange { _, newPhase in
                         if newPhase == .interacting || newPhase == .decelerating {
                             collapseIfExpanded()
@@ -180,17 +178,7 @@ struct TranscriptionDetailView: View {
                 .lineSpacing(2)
                 .textSelection(.enabled)
         }
-    }
-
-    @ViewBuilder
-    private var shimmerOverlay: some View {
-        if isShimmering {
-            GeometryReader { geometry in
-                ShimmerView()
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-            }
-            .allowsHitTesting(false)
-        }
+        .modifier(ConditionalShimmer(isActive: isShimmering))
     }
 
     private var copyButton: some View {

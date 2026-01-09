@@ -7,41 +7,59 @@
 
 import SwiftUI
 
-struct ShimmerView: View {
-    @State private var shimmerOffset: CGFloat = -1
+/// A view modifier that applies an animated rainbow gradient effect using Metal shader.
+struct AnimatedGradientModifier: ViewModifier {
+    let startTime: Date
 
-    var body: some View {
-        GeometryReader { geometry in
-            LinearGradient(
-                colors: [
-                    .clear,
-                    .white.opacity(0.4),
-                    .white.opacity(0.6),
-                    .white.opacity(0.4),
-                    .clear
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .frame(width: geometry.size.width * 0.6)
-            .offset(x: shimmerOffset * geometry.size.width)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    shimmerOffset = 1.4
-                }
-            }
+    func body(content: Content) -> some View {
+        TimelineView(.animation) { timeline in
+            let elapsedTime = timeline.date.timeIntervalSince(startTime)
+
+            content
+                .colorEffect(
+                    ShaderLibrary.animatedGradientFill(
+                        .float2(1, 1),
+                        .float(elapsedTime)
+                    )
+                )
         }
-        .clipped()
+    }
+}
+
+/// A view modifier that conditionally applies the animated gradient effect.
+struct ConditionalShimmer: ViewModifier {
+    let isActive: Bool
+    @State private var startTime: Date?
+
+    func body(content: Content) -> some View {
+        if isActive {
+            if let startTime {
+                content.modifier(AnimatedGradientModifier(startTime: startTime))
+            } else {
+                content
+                    .onAppear {
+                        startTime = Date()
+                    }
+            }
+        } else {
+            content
+                .onAppear {
+                    startTime = nil
+                }
+        }
     }
 }
 
 #Preview {
-    VStack {
-        Text("This is some sample text that will have a shimmer effect applied to it when the copy button is pressed.")
+    VStack(spacing: 20) {
+        Text("Rainbow shimmer effect!")
+            .font(.title)
+            .bold()
+            .modifier(AnimatedGradientModifier(startTime: Date()))
+
+        Text("Regular text without shimmer")
+            .font(.title)
             .padding()
-            .overlay {
-                ShimmerView()
-            }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.gray.opacity(0.2))
