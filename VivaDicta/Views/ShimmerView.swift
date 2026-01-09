@@ -73,7 +73,23 @@ struct WaterModifier: ViewModifier {
     }
 }
 
-/// A view modifier that conditionally applies the wave distortion effect.
+/// A view modifier that applies an animated white noise effect using Metal shader.
+struct WhiteNoiseModifier: ViewModifier {
+    let startTime: Date
+
+    func body(content: Content) -> some View {
+        TimelineView(.animation) { context in
+            content
+                .colorEffect(
+                    ShaderLibrary.whiteNoise(
+                        .float(context.date.timeIntervalSince(startTime))
+                    )
+                )
+        }
+    }
+}
+
+/// A view modifier that conditionally applies the white noise effect.
 struct ConditionalShimmer: ViewModifier {
     let isActive: Bool
     @State private var startTime: Date?
@@ -81,7 +97,7 @@ struct ConditionalShimmer: ViewModifier {
     func body(content: Content) -> some View {
         if isActive {
             if let startTime {
-                content.modifier(WaterModifier(startTime: startTime))
+                content.modifier(WhiteNoiseModifier(startTime: startTime))
             } else {
                 content
                     .onAppear {
@@ -115,6 +131,11 @@ struct ConditionalShimmer: ViewModifier {
             .font(.title)
             .bold()
             .modifier(AnimatedGradientModifier(startTime: Date()))
+
+        Text("White noise effect!")
+            .font(.title)
+            .bold()
+            .modifier(WhiteNoiseModifier(startTime: Date()))
 
         Text("Regular text without effect")
             .font(.title)
