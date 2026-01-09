@@ -36,22 +36,19 @@ struct ConditionalShimmer: ViewModifier {
     @State private var startTime: Date?
 
     func body(content: Content) -> some View {
-        if isActive {
-            if let startTime {
+        Group {
+            if isActive, let startTime {
                 content.modifier(WaveModifier(startTime: startTime))
             } else {
                 content
-                    .onAppear {
-                        startTime = Date()
-                    }
             }
-        } else {
-            content
-                .onChange(of: isActive) { _, newValue in
-                    if !newValue {
-                        startTime = nil
-                    }
-                }
+        }
+        .onChange(of: isActive) { _, newValue in
+            if newValue {
+                startTime = Date()
+            } else {
+                startTime = nil
+            }
         }
     }
 }
