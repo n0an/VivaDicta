@@ -37,3 +37,16 @@ using namespace metal;
     // negative values for any color component.
     return half4(abs(sin(angle)), abs(sin(angle + 2.0h)), abs(sin(angle + 4.0h)), 1.0h) * color.a;
 }
+
+/// A shader that generates a uniform wave distortion effect.
+///
+/// - Parameter position: The user-space coordinate of the current pixel.
+/// - Parameter time: The number of elapsed seconds since the shader was created.
+/// - Parameter speed: How fast to make the waves ripple (try 5).
+/// - Parameter smoothing: How smooth the ripples are (try 20).
+/// - Parameter strength: How pronounced the effect is (try 5).
+/// - Returns: The distorted position.
+[[ stitchable ]] float2 wave(float2 position, float time, float speed, float smoothing, float strength) {
+    position.y += sin(time * speed + position.x / smoothing) * strength;
+    return position;
+}

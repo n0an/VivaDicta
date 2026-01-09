@@ -26,7 +26,30 @@ struct AnimatedGradientModifier: ViewModifier {
     }
 }
 
-/// A view modifier that conditionally applies the animated gradient effect.
+/// A view modifier that applies an animated wave distortion effect using Metal shader.
+struct WaveModifier: ViewModifier {
+    let startTime: Date
+    var speed: Float = 8
+    var smoothing: Float = 15
+    var strength: Float = 3
+
+    func body(content: Content) -> some View {
+        TimelineView(.animation) { context in
+            content
+                .distortionEffect(
+                    ShaderLibrary.wave(
+                        .float(context.date.timeIntervalSince(startTime)),
+                        .float(speed),
+                        .float(smoothing),
+                        .float(strength)
+                    ),
+                    maxSampleOffset: CGSize(width: 0, height: CGFloat(strength) * 2)
+                )
+        }
+    }
+}
+
+/// A view modifier that conditionally applies the wave distortion effect.
 struct ConditionalShimmer: ViewModifier {
     let isActive: Bool
     @State private var startTime: Date?
@@ -34,7 +57,7 @@ struct ConditionalShimmer: ViewModifier {
     func body(content: Content) -> some View {
         if isActive {
             if let startTime {
-                content.modifier(AnimatedGradientModifier(startTime: startTime))
+                content.modifier(WaveModifier(startTime: startTime))
             } else {
                 content
                     .onAppear {
@@ -43,21 +66,28 @@ struct ConditionalShimmer: ViewModifier {
             }
         } else {
             content
-                .onAppear {
-                    startTime = nil
+                .onChange(of: isActive) { _, newValue in
+                    if !newValue {
+                        startTime = nil
+                    }
                 }
         }
     }
 }
 
 #Preview {
-    VStack(spacing: 20) {
-        Text("Rainbow shimmer effect!")
+    VStack(spacing: 40) {
+        Text("Wave distortion effect!")
+            .font(.title)
+            .bold()
+            .modifier(WaveModifier(startTime: Date()))
+
+        Text("Rainbow gradient effect!")
             .font(.title)
             .bold()
             .modifier(AnimatedGradientModifier(startTime: Date()))
 
-        Text("Regular text without shimmer")
+        Text("Regular text without effect")
             .font(.title)
             .padding()
     }
