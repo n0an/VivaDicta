@@ -62,6 +62,7 @@ struct ModeEditView: View {
 //                .tint(.primary)
 //                .pickerStyle(.menu)
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
+                    HapticManager.pickerSelectionChanged()
                     viewModel.updateTranscriptionProvider(newProvider)
                 }
                 
@@ -74,6 +75,7 @@ struct ModeEditView: View {
                     }
                     .onChange(of: viewModel.transcriptionModel) { _, newModel in
                         viewModel.updateTranscriptionModel(newModel)
+                        HapticManager.pickerSelectionChanged()
                     }
                     .onAppear {
                         let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
@@ -96,6 +98,9 @@ struct ModeEditView: View {
                             ForEach(grouped.other, id: \.key) { key, value in
                                 Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
                             }
+                        }
+                        .onChange(of: viewModel.transcriptionLanguage) { _, _ in
+                            HapticManager.pickerSelectionChanged()
                         }
                         .popoverTip(selectLanguageTip)
 
@@ -181,6 +186,7 @@ struct ModeEditView: View {
                         }
                         .onChange(of: viewModel.aiProvider) { _, newProvider in
                             viewModel.updateProvider(newProvider)
+                            HapticManager.pickerSelectionChanged()
                         }
                         .onAppear {
                             viewModel.selectFirstProviderIfNeeded()
@@ -203,6 +209,7 @@ struct ModeEditView: View {
                                 }
                                 .onChange(of: viewModel.aiModel) { _, newModel in
                                     viewModel.updateModel(newModel)
+                                    HapticManager.pickerSelectionChanged()
                                 }
 
                             } else {
@@ -250,6 +257,9 @@ struct ModeEditView: View {
                                         Text(prompt.title).tag(prompt.id)
                                     }
                                 }
+                                .onChange(of: viewModel.selectedPromptID, { oldValue, newValue in
+                                    HapticManager.pickerSelectionChanged()
+                                })
                                 .onAppear {
                                     viewModel.selectFirstPromptIfNeeded()
                                 }
@@ -263,6 +273,7 @@ struct ModeEditView: View {
                 Section {
                     Button {
                         duplicateMode()
+                        
                     } label: {
                         HStack {
                             Spacer()
