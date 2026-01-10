@@ -93,6 +93,7 @@ High-level methods that map to specific user actions:
 | File | Location | Haptic | Trigger |
 |------|----------|--------|---------|
 | `LocalModelCard.swift` | Download/Delete button | `lightImpact()` | Button tap |
+| `LocalModelCard.swift` | Download alert "Continue" | `mediumImpact()` | Confirm download |
 | `LocalModelCard.swift` | `downloadLocalModel()` | `downloadCompleted()` | Model download complete |
 
 ### Settings Toggles

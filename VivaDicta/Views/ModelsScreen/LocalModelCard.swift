@@ -221,6 +221,7 @@ struct LocalModelCard: View {
         }
         .alert("Download Model", isPresented: $showDownloadAlert) {
             Button("Continue") {
+                HapticManager.mediumImpact()
                 downloadLocalModel()
             }
             Button("Cancel", role: .cancel) { }
