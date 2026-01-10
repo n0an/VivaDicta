@@ -427,6 +427,7 @@ struct SettingsView: View {
 
             } catch {
                 prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
+                HapticManager.errorOccurred()
                 showPrewarmError = true
             }
         }

@@ -68,6 +68,9 @@ struct ReplacementsView: View {
         Toggle("Enable Replacements", isOn: $isReplacementsEnabled)
             .padding(.horizontal)
             .padding(.vertical, 8)
+            .onChange(of: isReplacementsEnabled) { _, _ in
+                HapticManager.toggleChanged()
+            }
     }
 
     private var emptyStateView: some View {
@@ -152,6 +155,7 @@ struct ReplacementsView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !editMode {
                         Button(role: .destructive) {
+                            HapticManager.itemDeleted()
                             replacementsService.deleteReplacement(replacement)
                         } label: {
                             Label("Delete", systemImage: "trash")
@@ -179,6 +183,7 @@ struct ReplacementsView: View {
     }
 
     private func deleteSelectedReplacements() {
+        HapticManager.itemDeleted()
         for replacement in selectedReplacements {
             replacementsService.deleteReplacement(replacement)
         }
@@ -258,6 +263,7 @@ struct ReplacementsView: View {
     }
 
     private func addReplacement() {
+        HapticManager.success()
         replacementsService.addReplacement(original: originalText, replacement: replacementText)
         originalText = ""
         replacementText = ""

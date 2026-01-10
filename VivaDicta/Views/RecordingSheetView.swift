@@ -33,6 +33,9 @@ struct RecordingSheetView: View {
                 .tint(.primary)
                 .padding(.vertical, 16)
                 .padding(.horizontal, 16)
+                .onChange(of: appState.recordViewModel.selectedModeName) { _, _ in
+                    HapticManager.pickerSelectionChanged()
+                }
                 
                 Spacer()
                 

@@ -98,6 +98,9 @@ struct TranscriptionDetailView: View {
                     .pickerStyle(.segmented)
                     .padding(.top, 4)
                     .padding(.bottom, 12)
+                    .onChange(of: selectedTextType) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
                 }
             }
             .padding(.horizontal)

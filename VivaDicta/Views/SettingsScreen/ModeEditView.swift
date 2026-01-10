@@ -334,9 +334,11 @@ struct ModeEditView: View {
             }
             dismiss()
         } catch SettingsError.duplicateModeName(let name) {
+            HapticManager.errorOccurred()
             showingAlert = true
             modeEditViewError = .duplicateModeName(name)
         } catch {
+            HapticManager.errorOccurred()
             showingAlert = true
             modeEditViewError = .unexpectedError(error.localizedDescription)
         }

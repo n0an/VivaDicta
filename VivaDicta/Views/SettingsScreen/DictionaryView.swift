@@ -118,6 +118,7 @@ struct WordsDictionaryView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !editMode {
                         Button(role: .destructive) {
+                            HapticManager.itemDeleted()
                             customVocabularyService.deleteWord(word)
                         } label: {
                             Label("Delete", systemImage: "trash")
@@ -145,6 +146,7 @@ struct WordsDictionaryView: View {
     }
 
     private func deleteSelectedWords() {
+        HapticManager.itemDeleted()
         for word in selectedWords {
             customVocabularyService.deleteWord(word)
         }
@@ -196,6 +198,7 @@ struct WordsDictionaryView: View {
     }
 
     private func addWord() {
+        HapticManager.success()
         customVocabularyService.addWord(newWord)
         newWord = ""
     }

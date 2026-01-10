@@ -183,6 +183,7 @@ struct OnboardingView: View {
     // MARK: - Navigation
 
     private func navigateTo(_ page: OnboardingPage) {
+        HapticManager.selectionChanged()
         isForward = page > currentPage
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPage = page
