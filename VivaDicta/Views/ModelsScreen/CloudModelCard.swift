@@ -160,6 +160,8 @@ struct CloudModelCard: View {
     }
 
     private func deleteAPIKey() {
+        HapticManager.itemDeleted()
+
         // Remove the API key from UserDefaults
         let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
         UserDefaultsStorage.shared.removeObject(forKey: keyName)

@@ -37,6 +37,8 @@ struct SettingsView: View {
     private var isAutoAudioCleanupEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
     private var audioRetentionDays = 7
+    @AppStorage(UserDefaultsStorage.Keys.isHapticsEnabled)
+    private var isHapticsEnabled = true
 
     let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
@@ -139,6 +141,9 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    .onChange(of: isVADEnabled) { _, _ in
+                        HapticManager.toggleChanged()
+                    }
 
                     Toggle(isOn: $isTextFormattingEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -148,6 +153,9 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    .onChange(of: isTextFormattingEnabled) { _, _ in
+                        HapticManager.toggleChanged()
                     }
                 }
                 
@@ -178,6 +186,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isSmartFormattingEnabled) { _, newValue in
+                        HapticManager.toggleChanged()
                         AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
                     }
 
@@ -191,6 +200,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isKeepInClipboardEnabled) { _, newValue in
+                        HapticManager.toggleChanged()
                         AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled = newValue
                     }
 
@@ -206,9 +216,10 @@ struct SettingsView: View {
 //                        }
                     }
                     .onChange(of: isHapticFeedbackEnabled) { _, newValue in
+                        HapticManager.toggleChanged()
                         AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled = newValue
                     }
-                    
+
                     Toggle(isOn: $isSoundFeedbackEnabled) {
                         Text("Sound")
                             .font(.body)
@@ -221,9 +232,10 @@ struct SettingsView: View {
 //                        }
                     }
                     .onChange(of: isSoundFeedbackEnabled) { _, newValue in
+                        HapticManager.toggleChanged()
                         AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Session Timeout", selection: $audioSessionTimeout) {
                             Text("15 seconds").tag(15)
@@ -239,6 +251,9 @@ struct SettingsView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(.primary)
+                        .onChange(of: audioSessionTimeout) { _, _ in
+                            HapticManager.pickerSelectionChanged()
+                        }
 
                         Text("Keep microphone session active to allow recording from keyboard")
                             .font(.caption)
@@ -276,9 +291,21 @@ struct SettingsView: View {
                     .disabled(prewarmManager.isSessionActiveObservable)
                     .buttonStyle(.plain)
                 }
-                
+
+                Section("Feedback") {
+                    Toggle(isOn: $isHapticsEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Haptic Feedback")
+                                .font(.body)
+                            Text("Vibrations for actions like recording, copying, and deleting")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("Storage") {
-                    
+
                     Toggle(isOn: $isAutoAudioCleanupEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Automatic Audio Cleanup")
@@ -287,6 +314,9 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    .onChange(of: isAutoAudioCleanupEnabled) { _, _ in
+                        HapticManager.toggleChanged()
                     }
 
                     if isAutoAudioCleanupEnabled {
@@ -300,6 +330,9 @@ struct SettingsView: View {
                         .pickerStyle(.menu)
                         .padding(.leading)
                         .tint(.primary)
+                        .onChange(of: audioRetentionDays) { _, _ in
+                            HapticManager.pickerSelectionChanged()
+                        }
                     }
                 }
                 
@@ -371,6 +404,7 @@ struct SettingsView: View {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
 
+        HapticManager.itemDeleted()
         appState.aiService.deleteMode(mode)
     }
 

@@ -245,6 +245,8 @@ struct LocalModelCard: View {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
 
+                HapticManager.downloadCompleted()
+
                 // Hide "Select Transcription model" tips
                 await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
                 await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
@@ -267,6 +269,7 @@ struct LocalModelCard: View {
     }
 
     private func deleteModel() {
+        HapticManager.itemDeleted()
         Task {
             do {
                 try await downloadManager.deleteModel(model)

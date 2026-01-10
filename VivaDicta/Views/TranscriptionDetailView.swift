@@ -538,8 +538,9 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
+                HapticManager.processingCompleted()
             } catch {
-                // Handle error silently for now
+                HapticManager.errorOccurred()
             }
 
             processingState = .idle
@@ -566,8 +567,9 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
+                HapticManager.processingCompleted()
             } catch {
-                // Handle error silently for now
+                HapticManager.errorOccurred()
             }
 
             processingState = .idle
@@ -608,8 +610,9 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
+                HapticManager.processingCompleted()
             } catch {
-                // Handle error silently for now
+                HapticManager.errorOccurred()
             }
 
             processingState = .idle
