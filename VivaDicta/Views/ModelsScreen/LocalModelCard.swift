@@ -139,6 +139,7 @@ struct LocalModelCard: View {
                     
                     
                     Button {
+                        HapticManager.lightImpact()
                         switch downloadStatus {
                         case .download:
                             showDownloadAlert = true

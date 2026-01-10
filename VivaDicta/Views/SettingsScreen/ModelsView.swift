@@ -27,6 +27,9 @@ struct ModelsView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
             .padding(.vertical, 12)
+            .onChange(of: modelType) { _, _ in
+                HapticManager.selectionChanged()
+            }
 
             ScrollView {
                 VStack(spacing: 16) {
