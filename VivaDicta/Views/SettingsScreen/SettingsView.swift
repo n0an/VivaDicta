@@ -54,6 +54,7 @@ struct SettingsView: View {
                         }
                         .contextMenu {
                             Button {
+                                HapticManager.success()
                                 duplicateMode(mode)
                             } label: {
                                 Label("Duplicate", systemImage: "doc.on.doc")
@@ -78,6 +79,7 @@ struct SettingsView: View {
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: false) {
                             Button {
+                                HapticManager.success()
                                 duplicateMode(mode)
                             } label: {
                                 Label("Duplicate", systemImage: "doc.on.doc")

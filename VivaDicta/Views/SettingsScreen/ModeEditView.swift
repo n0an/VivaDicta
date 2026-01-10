@@ -358,6 +358,7 @@ struct ModeEditView: View {
 
     private func duplicateMode() {
         guard let mode = viewModel.originalMode else { return }
+        HapticManager.success()
         viewModel.aiService.duplicateMode(mode)
         dismiss()
     }

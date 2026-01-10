@@ -88,6 +88,14 @@ High-level methods that map to specific user actions:
 | `ReplacementsView.swift` | `deleteSelectedReplacements()` | `itemDeleted()` | Bulk delete replacements |
 | `PromptsSettings.swift` | `deletePrompt()` | `itemDeleted()` | Delete prompt |
 
+### Duplicate Operations
+
+| File | Location | Haptic | Trigger |
+|------|----------|--------|---------|
+| `ModeEditView.swift` | `duplicateMode()` | `success()` | Duplicate mode button |
+| `SettingsView.swift` | Context menu | `success()` | Duplicate mode (context menu) |
+| `SettingsView.swift` | Swipe action | `success()` | Duplicate mode (swipe) |
+
 ### Model Downloads
 
 | File | Location | Haptic | Trigger |
