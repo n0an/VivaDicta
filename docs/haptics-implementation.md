@@ -109,6 +109,7 @@ Direct access to UIKit feedback generators:
 |------|----------|--------|-------------|---------|
 | `CloudModelConfigurationView.swift` | `saveAPIKey()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Save API key |
 | `AddAPIKeyView.swift` | `saveAPIKey()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Save API key |
+| `CloudModelCard.swift` | Configure button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open model configuration |
 
 ### Settings Toggles
 
@@ -190,7 +191,9 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `OnboardingView.swift` | `navigateTo()` | `selectionChanged()` | `UISelectionFeedbackGenerator` | Page navigation |
+| `OnboardingView.swift` | `navigateTo()` | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Page navigation |
+| `OnboardingView.swift` | Skip button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Skip onboarding |
+| `OnboardingView.swift` | `openSettings()` | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open keyboard settings |
 
 ### Error Alerts
 
@@ -214,10 +217,10 @@ Direct access to UIKit feedback generators:
 
 | Haptic Type | Use For |
 |-------------|---------|
-| **Impact (Light)** | Minor UI feedback, edit mode buttons, swipe actions, copy, play/pause, cancel |
+| **Impact (Light)** | Minor UI feedback, edit mode buttons, swipe actions, copy, play/pause, cancel, navigation buttons |
 | **Impact (Medium)** | Primary actions (start/stop recording, add items, expand/collapse, minor deletes, save changes, save API key) |
 | **Impact (Heavy)** | Significant completions (download complete, duplicate, delete after confirmation) |
-| **Selection** | Picker/toggle changes, select all/deselect all, item selection, navigation |
+| **Selection** | Picker/toggle changes, select all/deselect all, item selection in edit mode |
 | **Warning** | Show delete confirmation alerts |
 | **Error** | Failed operations, validation errors |
 | **Custom AHAP** | Distinctive feedback (transcription complete) |
@@ -240,7 +243,7 @@ HapticManager.mediumImpact()
 // For significant completions (download, duplicate, delete after confirmation)
 HapticManager.heavyImpact()
 
-// For edit mode buttons, swipe actions, copy, cancel, play/pause
+// For edit mode buttons, swipe actions, copy, cancel, play/pause, navigation buttons
 HapticManager.lightImpact()
 
 // For toggles, pickers, select all/deselect all, item selection

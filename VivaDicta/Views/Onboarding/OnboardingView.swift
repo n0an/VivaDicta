@@ -55,6 +55,7 @@ struct OnboardingView: View {
 
                 if currentPage == .keyboard {
                     Button("Skip") {
+                        HapticManager.lightImpact()
                         onComplete()
                     }
                     .foregroundStyle(.secondary)
@@ -183,7 +184,7 @@ struct OnboardingView: View {
     // MARK: - Navigation
 
     private func navigateTo(_ page: OnboardingPage) {
-        HapticManager.selectionChanged()
+        HapticManager.lightImpact()
         isForward = page > currentPage
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPage = page
@@ -198,7 +199,7 @@ struct OnboardingView: View {
     }
 
     private func openSettings() {
-        
+        HapticManager.lightImpact()
         if let url = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(url)
         }

@@ -82,6 +82,7 @@ struct CloudModelCard: View {
                 // Cloud model configuration button
                 
                     Button(action: {
+                        HapticManager.lightImpact()
                         onConfigure(model)
                     }) {
                         VStack(alignment: .center, spacing: 0) {
