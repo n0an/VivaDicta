@@ -13,13 +13,24 @@ import FoundationModels
 #endif
 
 /// Service for AI text enhancement using Apple's on-device Foundation Models
-/// Available only on devices that support Apple Intelligence (iOS 18.4+)
-@Observable
-final class AppleFoundationModelService: Sendable {
+/// Available only on devices that support Apple Intelligence (iOS 26+)
+@MainActor
+final class AppleFoundationModelService {
     private let logger = Logger(category: .aiService)
 
+    #if canImport(FoundationModels)
+    /// The stored session - created during prewarm, used during enhance
+    /// Using Any to avoid @available issues with stored properties
+    private var _session: Any?
+
+    @available(iOS 26, *)
+    private var session: LanguageModelSession? {
+        get { _session as? LanguageModelSession }
+        set { _session = newValue }
+    }
+    #endif
+
     /// Check if Apple Foundation Models are available on this device
-    @MainActor
     static var isAvailable: Bool {
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
@@ -30,7 +41,6 @@ final class AppleFoundationModelService: Sendable {
     }
 
     /// Detailed availability status for UI display
-    @MainActor
     static var availabilityStatus: AppleFoundationModelAvailability {
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
@@ -53,16 +63,33 @@ final class AppleFoundationModelService: Sendable {
         return .unavailable
     }
 
+    /// Prewarm the model for faster first response
+    /// Creates a session with the given instructions and prewarms it
+    /// - Parameter instructions: The system prompt/instructions for the session
+    func prewarm(instructions: String) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, *) {
+            guard Self.isAvailable else { return }
+
+            // Create session with instructions and store it
+            let newSession = LanguageModelSession(instructions: instructions)
+            session = newSession
+            newSession.prewarm()
+            logger.logInfo("Apple Foundation Model - Session created and prewarmed")
+        }
+        #endif
+    }
+
     /// Enhance text using Apple's on-device Foundation Model
+    /// Uses the prewarmed session if available, otherwise creates a new one
     /// - Parameters:
     ///   - text: The transcription text to enhance
-    ///   - systemPrompt: The system instructions for enhancement
+    ///   - systemPrompt: The system instructions for enhancement (used if no prewarmed session)
     /// - Returns: The enhanced text
     func enhance(_ text: String, systemPrompt: String) async throws -> String {
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
-            let isAvailable = await MainActor.run { Self.isAvailable }
-            guard isAvailable else {
+            guard Self.isAvailable else {
                 throw AppleFoundationModelError.notAvailable
             }
 
@@ -74,34 +101,34 @@ final class AppleFoundationModelService: Sendable {
 
             logger.logNotice("Apple Foundation Model - Starting enhancement")
 
-            let session = LanguageModelSession(instructions: systemPrompt)
+            // Use prewarmed session if available, otherwise create new one
+            let activeSession: LanguageModelSession
+            if let existingSession = session {
+                activeSession = existingSession
+                logger.logInfo("Apple Foundation Model - Using prewarmed session")
+            } else {
+                activeSession = LanguageModelSession(instructions: systemPrompt)
+                logger.logInfo("Apple Foundation Model - Created new session (no prewarm)")
+            }
 
             do {
-                let response = try await session.respond(to: formattedText)
+                let response = try await activeSession.respond(to: formattedText)
                 let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
                 let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
                 logger.logNotice("Apple Foundation Model - Enhancement completed")
+
+                // Clear session after use - next recording will prewarm fresh
+                session = nil
+
                 return filteredText
             } catch let error as LanguageModelSession.GenerationError {
                 logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
+                session = nil
                 throw AppleFoundationModelError.generationFailed(error.localizedDescription)
             }
         }
         #endif
         throw AppleFoundationModelError.notAvailable
-    }
-
-    /// Prewarm the model for faster first response
-    @MainActor
-    func prewarm() {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            guard Self.isAvailable else { return }
-            let session = LanguageModelSession()
-            session.prewarm()
-            logger.logInfo("Apple Foundation Model - Prewarmed")
-        }
-        #endif
     }
 }
 

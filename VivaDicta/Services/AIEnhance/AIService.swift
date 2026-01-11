@@ -337,8 +337,9 @@ class AIService {
             return
         }
 
+        let systemMessage = getSystemMessage()
         logger.logInfo("Prewarming Apple Foundation Model for mode: \(self.selectedMode.name)")
-        appleFoundationModelService.prewarm()
+        appleFoundationModelService.prewarm(instructions: systemMessage)
     }
 
     // MARK: - Enhance methods
