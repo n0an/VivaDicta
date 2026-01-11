@@ -482,7 +482,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
                 try Task.checkCancellation()
-                HapticManager.playPattern(named: "TranscriptionComplete")
+                HapticManager.transcriptionComplete()
                 self.recordingState = .idle
 
                 // Reschedule session timeout now that all processing is complete

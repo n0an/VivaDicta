@@ -541,7 +541,7 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
-                HapticManager.playPattern(named: "TranscriptionComplete")
+                HapticManager.transcriptionComplete()
             } catch {
                 HapticManager.error()
             }
@@ -570,7 +570,7 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
-                HapticManager.playPattern(named: "TranscriptionComplete")
+                HapticManager.transcriptionComplete()
             } catch {
                 HapticManager.error()
             }
@@ -613,7 +613,7 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
-                HapticManager.playPattern(named: "TranscriptionComplete")
+                HapticManager.transcriptionComplete()
             } catch {
                 HapticManager.error()
             }

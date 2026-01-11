@@ -83,6 +83,66 @@ enum HapticManager {
         }
     }
 
+    // MARK: - Custom Haptic Patterns
+
+    /// Transcription complete - celebratory haptic with fade-out buzz and sparkles
+    static func transcriptionComplete() {
+        guard isEnabled, supportsHaptics else { return }
+
+        ensureEngineRunning()
+
+        guard let engine = hapticEngine else {
+            // Fallback to standard haptic
+            notification.notificationOccurred(.success)
+            return
+        }
+
+        var events = [CHHapticEvent]()
+        var curves = [CHHapticParameterCurve]()
+
+        // Create one continuous buzz that fades out
+        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0)
+        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.5)
+
+        let start = CHHapticParameterCurve.ControlPoint(relativeTime: 0, value: 1)
+        let end = CHHapticParameterCurve.ControlPoint(relativeTime: 1.0, value: 0.0)
+
+        let parameter = CHHapticParameterCurve(
+            parameterID: .hapticIntensityControl,
+            controlPoints: [start, end],
+            relativeTime: 0
+        )
+        let event = CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [sharpness, intensity],
+            relativeTime: 0,
+            duration: 1.0
+        )
+        events.append(event)
+        curves.append(parameter)
+
+        // Make some sparkles (8 random transient events)
+        for _ in 1...4 {
+            let sparkleSharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
+            let sparkleIntensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
+            let sparkleEvent = CHHapticEvent(
+                eventType: .hapticTransient,
+                parameters: [sparkleSharpness, sparkleIntensity],
+                relativeTime: TimeInterval.random(in: 0.1...1)
+            )
+            events.append(sparkleEvent)
+        }
+
+        do {
+            let pattern = try CHHapticPattern(events: events, parameterCurves: curves)
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+        } catch {
+            // Fallback to standard haptic if pattern fails
+            notification.notificationOccurred(.success)
+        }
+    }
+
     // MARK: - AHAP Pattern Playback
 
     /// Play a custom haptic pattern from an AHAP file
