@@ -74,9 +74,7 @@ final class AppleFoundationModelService: Sendable {
 
             logger.logNotice("Apple Foundation Model - Starting enhancement")
 
-            let session = LanguageModelSession {
-                systemPrompt
-            }
+            let session = LanguageModelSession(instructions: systemPrompt)
 
             do {
                 let response = try await session.respond(to: formattedText)
