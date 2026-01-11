@@ -48,7 +48,7 @@ class ModeEditViewModel {
         } else if let provider = aiProvider,
                   let model = aiModel,
                   !model.isEmpty,
-                  hasAPIKey(for: provider),
+                  isProviderReady(provider),
                   selectedPromptID != nil {
             aiEnhancementReady = true
         } else {
@@ -75,10 +75,13 @@ class ModeEditViewModel {
 
     var aiEnhancementValidationMessage: String? {
         guard aiEnhanceEnabled else { return nil }
-        if aiProvider == nil {
+        guard let provider = aiProvider else {
             return "Select an AI provider"
         }
-        if !hasAPIKey(for: aiProvider!) {
+        if !isProviderReady(provider) {
+            if provider == .apple {
+                return "Apple Intelligence is not available on this device"
+            }
             return "Add API key to continue"
         }
         if aiModel == nil || aiModel!.isEmpty {
@@ -269,13 +272,21 @@ class ModeEditViewModel {
     func selectFirstProviderIfNeeded() {
         guard aiProvider == nil else { return }
 
-        // First try to find a provider with API key configured
-        let firstConnectedProvider = AIProvider.generalProviders.first { provider in
+        // First try Apple if available (on-device is preferred)
+        if aiService.connectedProviders.contains(.apple) {
+            aiProvider = .apple
+            aiModel = AIProvider.apple.defaultModel
+            logger.logInfo("Auto-selected Apple Foundation Model (on-device)")
+            return
+        }
+
+        // Then try to find a cloud provider with API key configured
+        let firstConnectedProvider = AIProvider.cloudProviders.first { provider in
             aiService.connectedProviders.contains(provider)
         }
 
-        // If no connected provider, just select the first one (so UI shows "Add API Key")
-        let providerToSelect = firstConnectedProvider ?? AIProvider.generalProviders.first
+        // If no connected provider, just select the first cloud provider (so UI shows "Add API Key")
+        let providerToSelect = firstConnectedProvider ?? AIProvider.cloudProviders.first
 
         if let provider = providerToSelect {
             aiProvider = provider
@@ -296,7 +307,30 @@ class ModeEditViewModel {
     }
     
     func hasAPIKey(for provider: AIProvider) -> Bool {
+        // Apple doesn't need API key - just check if it's available
+        if provider == .apple {
+            return aiService.connectedProviders.contains(.apple)
+        }
         return aiService.connectedProviders.contains(provider)
+    }
+
+    /// Returns whether the provider is ready to use
+    /// For Apple: available on device
+    /// For cloud providers: API key is configured
+    func isProviderReady(_ provider: AIProvider) -> Bool {
+        return aiService.connectedProviders.contains(provider)
+    }
+
+    /// Check if Apple Foundation Model is available on this device
+    @MainActor
+    var isAppleFoundationModelAvailable: Bool {
+        AppleFoundationModelService.isAvailable
+    }
+
+    /// Get availability status message for Apple Foundation Model
+    @MainActor
+    var appleFoundationModelStatusMessage: String {
+        AppleFoundationModelService.availabilityStatus.description
     }
     
     // MARK: - Prompt Settings

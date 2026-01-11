@@ -173,10 +173,19 @@ struct ModeEditView: View {
 
                     if viewModel.aiEnhanceEnabled {
                         Picker(selection: $viewModel.aiProvider) {
-                            ForEach(AIProvider.generalProviders) { provider in
-                                Text(provider.displayName).tag(provider)
+                            // Show Apple at top if available (on-device section)
+                            if viewModel.isAppleFoundationModelAvailable {
+                                Section("On-Device") {
+                                    Label("Apple", systemImage: "apple.intelligence")
+                                        .tag(AIProvider.apple)
+                                }
                             }
-
+                            // Cloud providers section
+                            Section("Cloud") {
+                                ForEach(AIProvider.cloudProviders) { provider in
+                                    Text(provider.displayName).tag(provider)
+                                }
+                            }
                         } label: {
                             HStack {
                                 Image(systemName: "cpu")
@@ -193,47 +202,66 @@ struct ModeEditView: View {
                         }
 
                         if let provider = viewModel.aiProvider {
-                            let hasKey = viewModel.hasAPIKey(for: provider)
-                            if hasKey {
-
-                                Picker(selection: $viewModel.aiModel) {
-                                    ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
-                                        Text(model).tag(model as String?)
-                                    }
-
-                                } label: {
+                            let isReady = viewModel.isProviderReady(provider)
+                            if isReady {
+                                // Show model picker for Apple with just "Foundation Model"
+                                if provider == .apple {
                                     HStack {
                                         Image(systemName: "sparkles")
                                         Text("AI Model")
+                                        Spacer()
+                                        Text("Foundation Model")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    Picker(selection: $viewModel.aiModel) {
+                                        ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
+                                            Text(model).tag(model as String?)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "sparkles")
+                                            Text("AI Model")
+                                        }
+                                    }
+                                    .onChange(of: viewModel.aiModel) { _, newModel in
+                                        viewModel.updateModel(newModel)
+                                        HapticManager.selectionChanged()
                                     }
                                 }
-                                .onChange(of: viewModel.aiModel) { _, newModel in
-                                    viewModel.updateModel(newModel)
-                                    HapticManager.selectionChanged()
-                                }
-
                             } else {
-                                NavigationLink {
-                                    AddAPIKeyView(
-                                        provider: provider,
-                                        aiService: viewModel.aiService, onSave: { provider in
-                                            viewModel.updateModel(provider.defaultModel)
-                                        })
-                                } label: {
+                                // Apple provider not available - show status message
+                                if provider == .apple {
                                     HStack {
                                         Image(systemName: "exclamationmark.triangle.fill")
                                             .foregroundStyle(.orange)
-                                        Text("Add API Key")
-                                        Spacer()
-                                        Text("Required")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        Text(viewModel.appleFoundationModelStatusMessage)
+                                            .font(.callout)
+                                    }
+                                } else {
+                                    // Cloud provider needs API key
+                                    NavigationLink {
+                                        AddAPIKeyView(
+                                            provider: provider,
+                                            aiService: viewModel.aiService, onSave: { provider in
+                                                viewModel.updateModel(provider.defaultModel)
+                                            })
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.orange)
+                                            Text("Add API Key")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        if let provider = viewModel.aiProvider, viewModel.hasAPIKey(for: provider) {
+                        if let provider = viewModel.aiProvider, viewModel.isProviderReady(provider) {
                             if viewModel.promptsManager.userPrompts.isEmpty {
                                 Button(action: {
                                     navigationPath.append(SettingsDestination.promptsSettings)
@@ -257,9 +285,9 @@ struct ModeEditView: View {
                                         Text(prompt.title).tag(prompt.id)
                                     }
                                 }
-                                .onChange(of: viewModel.selectedPromptID, { oldValue, newValue in
+                                .onChange(of: viewModel.selectedPromptID) { _, _ in
                                     HapticManager.selectionChanged()
-                                })
+                                }
                                 .onAppear {
                                     viewModel.selectFirstPromptIfNeeded()
                                 }
