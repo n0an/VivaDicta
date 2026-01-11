@@ -364,7 +364,7 @@ struct SettingsView: View {
                 }
             }
             .navigationDestination(for: UserPrompt.self) { prompt in
-                PromptEditView(
+                PromptFormView(
                     editingPrompt: prompt,
                     promptsManager: promptsManager
                 )

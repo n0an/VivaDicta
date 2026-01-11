@@ -34,13 +34,15 @@ struct TemplateSelectionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.visible)
         .fullScreenCover(item: $selectedTemplate) { template in
-            PromptAddView(
-                template: template,
-                promptsManager: promptsManager,
-                onComplete: {
-                    dismiss()
-                }
-            )
+            NavigationStack {
+                PromptFormView(
+                    template: template,
+                    promptsManager: promptsManager,
+                    onComplete: {
+                        dismiss()
+                    }
+                )
+            }
         }
     }
 }
