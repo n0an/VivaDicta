@@ -9,7 +9,8 @@ import Foundation
 
 enum AIProvider: String, CaseIterable, Identifiable, Codable {
     var id: Self { self }
-    
+
+    case apple
     case cerebras
     case groq
     case gemini
@@ -21,9 +22,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case deepgram
     case mistral
     case soniox
-    
+
     var displayName: String {
         switch self {
+        case .apple:
+            "Apple"
         case .cerebras:
             "Cerebras"
         case .openAI:
@@ -48,8 +51,26 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Grok (x.ai)"
         }
     }
-    
+
+    /// Returns true if this provider requires an API key
+    var requiresAPIKey: Bool {
+        self != .apple
+    }
+
+    /// Cloud-based AI providers (require API key, network connection)
+    static let cloudProviders: [AIProvider] = [
+        .anthropic,
+        .openAI,
+        .gemini,
+        .groq,
+        .mistral,
+        .cerebras,
+        .grok,
+        .openRouter]
+
+    /// All general-purpose AI providers including on-device
     static let generalProviders: [AIProvider] = [
+        .apple,
         .anthropic,
         .openAI,
         .gemini,
@@ -61,6 +82,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     
     var baseURL: String {
         switch self {
+        case .apple:
+            return "" // On-device, no URL needed
         case .cerebras:
             return "https://api.cerebras.ai/v1/chat/completions"
         case .groq:
@@ -83,12 +106,13 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.mistral.ai/v1/chat/completions"
         case .soniox:
             return "https://api.soniox.com/v1"
-            
         }
     }
     
     var defaultModel: String {
         switch self {
+        case .apple:
+            return "foundation-model"
         case .cerebras:
             return "gpt-oss-120b"
         case .groq:
@@ -116,6 +140,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     
     var availableModels: [String] {
         switch self {
+        case .apple:
+            return ["foundation-model"]
         case .cerebras:
             return [
                 "llama-4-scout-17b-16e-instruct",
