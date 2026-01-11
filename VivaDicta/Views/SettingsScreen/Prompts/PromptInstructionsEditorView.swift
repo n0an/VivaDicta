@@ -13,8 +13,9 @@ struct PromptInstructionsEditorView: View {
 
     var body: some View {
         TextEditor(text: $instructions)
-            .padding()
-            .padding(.bottom, 50)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .contentMargins(.bottom, 100, for: .scrollContent)
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Prompt Instructions")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
