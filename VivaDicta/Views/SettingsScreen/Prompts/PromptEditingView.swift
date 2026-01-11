@@ -29,6 +29,7 @@ struct PromptEditView: View {
     }
 
     private func savePrompt() {
+        HapticManager.lightImpact()
         guard let existingPrompt = editingPrompt else { return }
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)

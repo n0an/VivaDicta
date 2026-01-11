@@ -20,11 +20,13 @@ struct PromptInstructionsEditorView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     if #available(iOS 26, *) {
                         Button(role: .confirm) {
+                            HapticManager.lightImpact()
                             dismiss()
                         }
                         .tint(.blue)
                     } else {
                         Button("Done") {
+                            HapticManager.lightImpact()
                             dismiss()
                         }
                     }

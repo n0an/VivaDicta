@@ -28,6 +28,7 @@ struct PromptAddView: View {
     }
 
     private func savePrompt() {
+        HapticManager.lightImpact()
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if promptsManager.isPromptNameDuplicate(trimmedTitle) {
@@ -83,17 +84,17 @@ struct PromptAddView: View {
             .navigationTitle("New \(currentTemplate.displayName) Prompt")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if #available(iOS 26, *) {
-                        Button(role: .close) {
-                            dismissAndComplete()
-                        }
-                    } else {
-                        Button("Cancel") {
-                            dismissAndComplete()
-                        }
-                    }
-                }
+//                ToolbarItem(placement: .topBarLeading) {
+//                    if #available(iOS 26, *) {
+//                        Button(role: .close) {
+//                            dismissAndComplete()
+//                        }
+//                    } else {
+//                        Button("Cancel") {
+//                            dismissAndComplete()
+//                        }
+//                    }
+//                }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     if #available(iOS 26, *) {
