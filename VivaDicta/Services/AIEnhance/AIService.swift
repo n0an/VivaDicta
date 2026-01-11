@@ -37,9 +37,6 @@ class AIService {
     /// Service for Apple's on-device Foundation Models
     private let appleFoundationModelService = AppleFoundationModelService()
 
-    /// Tracks whether Foundation Model has been prewarmed for current session
-    private var isFoundationModelPrewarmed = false
-
     init() {
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
         loadModes()
@@ -331,30 +328,17 @@ class AIService {
     // MARK: - Foundation Model Prewarm
 
     /// Prewarm Apple Foundation Model if the current mode uses Apple as AI provider.
-    /// This should be called on app startup and when the mode changes.
-    /// Prewarming is resource-intensive, so only do it when Apple is actually selected.
+    /// Called when recording starts - prewarming prepares the model for use within seconds.
     @MainActor
     public func prewarmFoundationModelIfNeeded() {
-        // Only prewarm if:
-        // 1. AI enhancement is enabled for the current mode
-        // 2. Apple is selected as the AI provider
-        // 3. Apple Foundation Model is available on this device
-        // 4. Not already prewarmed in this session
         guard selectedMode.aiEnhanceEnabled,
               selectedMode.aiProvider == .apple,
-              AppleFoundationModelService.isAvailable,
-              !isFoundationModelPrewarmed else {
+              AppleFoundationModelService.isAvailable else {
             return
         }
 
         logger.logInfo("Prewarming Apple Foundation Model for mode: \(self.selectedMode.name)")
         appleFoundationModelService.prewarm()
-        isFoundationModelPrewarmed = true
-    }
-
-    /// Reset the prewarm state (e.g., when app goes to background)
-    public func resetFoundationModelPrewarmState() {
-        isFoundationModelPrewarmed = false
     }
 
     // MARK: - Enhance methods
