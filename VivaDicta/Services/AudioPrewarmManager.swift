@@ -92,6 +92,7 @@ final class AudioPrewarmManager {
             mode: .default,
             options: [.mixWithOthers, .allowBluetoothHFP, .defaultToSpeaker]
         )
+        try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         #endif
 

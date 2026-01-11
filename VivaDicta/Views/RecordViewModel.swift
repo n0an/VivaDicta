@@ -104,6 +104,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         do {
 #if os(iOS)
             try recordingSession.setCategory(.playAndRecord, options: .defaultToSpeaker)
+            try recordingSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
 #endif
             try recordingSession.setActive(true)
             
@@ -136,6 +137,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 recordingState = .recording
+                HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started
                 AppGroupCoordinator.shared.updateRecordingState(true)
@@ -180,6 +182,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 recordingState = .recording
+                HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started (even in normal mode)
                 AppGroupCoordinator.shared.updateRecordingState(true)
@@ -239,6 +242,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     func stopCaptureAudio(modelContext: ModelContext) {
+        HapticManager.mediumImpact()
+
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
             logger.logInfo("🎙️ Stopping real capture in prewarm mode (dummy continues)")
@@ -412,6 +417,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Update state to show enhancing animation
                     self.recordingState = .enhancing
+                    HapticManager.lightImpact()
 
                     // Notify keyboard that AI enhancement has started
                     AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
@@ -476,6 +482,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
                 try Task.checkCancellation()
+                HapticManager.transcriptionComplete()
                 self.recordingState = .idle
 
                 // Reschedule session timeout now that all processing is complete
@@ -483,6 +490,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             } catch {
                 if Task.isCancelled { return }
+                HapticManager.error()
                 recordingState = .error(.transcribe)
                 resetValues()
 
@@ -516,6 +524,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     func cancelTranscribe() {
+        HapticManager.lightImpact()
+
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
         pendingTranscription = nil

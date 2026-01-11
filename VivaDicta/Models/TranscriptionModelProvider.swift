@@ -97,6 +97,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .mistral
         case .gemini:
             return .gemini
+        case .soniox:
+            return .soniox
         default:
             return nil
         }

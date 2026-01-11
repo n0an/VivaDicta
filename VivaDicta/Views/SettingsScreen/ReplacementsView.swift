@@ -15,6 +15,7 @@ struct ReplacementsView: View {
 
     @State private var editMode = false
     @State private var selectedReplacements: Set<Replacement> = []
+    @State private var showDeleteAlert = false
 
     @AppStorage(UserDefaultsStorage.Keys.isReplacementsEnabled)
     private var isReplacementsEnabled: Bool = true
@@ -40,6 +41,7 @@ struct ReplacementsView: View {
             if editMode {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        HapticManager.lightImpact()
                         selectedReplacements.removeAll()
                         editMode = false
                     }
@@ -47,6 +49,7 @@ struct ReplacementsView: View {
             } else {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Edit") {
+                        HapticManager.lightImpact()
                         editMode = true
                     }
                     .disabled(replacementsService.replacements.isEmpty)
@@ -62,12 +65,23 @@ struct ReplacementsView: View {
             }
             .presentationDetents([.height(280)])
         }
+        .alert("Delete Replacements", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteSelectedReplacements()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(selectedReplacements.count) replacement\(selectedReplacements.count == 1 ? "" : "s")? This action cannot be undone.")
+        }
     }
 
     private var enableToggle: some View {
         Toggle("Enable Replacements", isOn: $isReplacementsEnabled)
             .padding(.horizontal)
             .padding(.vertical, 8)
+            .onChange(of: isReplacementsEnabled) { _, _ in
+                HapticManager.selectionChanged()
+            }
     }
 
     private var emptyStateView: some View {
@@ -93,8 +107,10 @@ struct ReplacementsView: View {
         HStack {
             Button(allReplacementsSelected ? "Deselect All" : "Select All") {
                 if allReplacementsSelected {
+                    HapticManager.selectionChanged()
                     selectedReplacements.removeAll()
                 } else {
+                    HapticManager.selectionChanged()
                     selectedReplacements = Set(replacementsService.replacements)
                 }
             }
@@ -103,7 +119,8 @@ struct ReplacementsView: View {
 
             if !selectedReplacements.isEmpty {
                 Button("Delete", role: .destructive) {
-                    deleteSelectedReplacements()
+                    HapticManager.warning()
+                    showDeleteAlert = true
                 }
             }
         }
@@ -152,12 +169,14 @@ struct ReplacementsView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !editMode {
                         Button(role: .destructive) {
+                            HapticManager.mediumImpact()
                             replacementsService.deleteReplacement(replacement)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
 
                         Button {
+                            HapticManager.lightImpact()
                             replacementToEdit = replacement
                         } label: {
                             Label("Edit", systemImage: "pencil")
@@ -171,6 +190,7 @@ struct ReplacementsView: View {
     }
 
     private func toggleSelection(_ replacement: Replacement) {
+        HapticManager.selectionChanged()
         if selectedReplacements.contains(replacement) {
             selectedReplacements.remove(replacement)
         } else {
@@ -179,6 +199,7 @@ struct ReplacementsView: View {
     }
 
     private func deleteSelectedReplacements() {
+        HapticManager.heavyImpact()
         for replacement in selectedReplacements {
             replacementsService.deleteReplacement(replacement)
         }
@@ -258,6 +279,7 @@ struct ReplacementsView: View {
     }
 
     private func addReplacement() {
+        HapticManager.mediumImpact()
         replacementsService.addReplacement(original: originalText, replacement: replacementText)
         originalText = ""
         replacementText = ""
@@ -336,6 +358,7 @@ private struct EditReplacementSheet: View {
             }
 
             Button("Save changes") {
+                HapticManager.mediumImpact()
                 onSave(editedOriginal, editedReplacement)
             }
             .frame(maxWidth: .infinity)

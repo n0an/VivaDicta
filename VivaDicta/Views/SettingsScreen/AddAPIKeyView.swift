@@ -101,6 +101,8 @@ struct AddAPIKeyView: View {
                 verificationError = nil
             }
             
+            HapticManager.mediumImpact()
+            
             let isValid = await aiService.saveAPIKey(apiKey, for: provider)
             
             await MainActor.run {

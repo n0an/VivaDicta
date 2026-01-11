@@ -173,6 +173,7 @@ struct WaveformView: View {
             .contentShape(.rect)
             .onTapGesture { location in
                 if !isLoading {
+                    HapticManager.selectionChanged()
                     let progress = location.x / geometry.size.width
                     onSeek(Double(progress) * duration)
                 }
@@ -248,6 +249,7 @@ struct AudioPlayerView: View {
     }
     
     private func togglePlayback() {
+        HapticManager.lightImpact()
         if playerManager.isPlaying {
             playerManager.pause()
         } else {

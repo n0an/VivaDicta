@@ -37,6 +37,10 @@ struct SettingsView: View {
     private var isAutoAudioCleanupEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
     private var audioRetentionDays = 7
+    @AppStorage(UserDefaultsStorage.Keys.isHapticsEnabled)
+    private var isHapticsEnabled = true
+
+    @State private var showAddMode = false
 
     let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
@@ -52,6 +56,7 @@ struct SettingsView: View {
                         }
                         .contextMenu {
                             Button {
+                                HapticManager.heavyImpact()
                                 duplicateMode(mode)
                             } label: {
                                 Label("Duplicate", systemImage: "doc.on.doc")
@@ -76,6 +81,7 @@ struct SettingsView: View {
                         }
                         .swipeActions(edge: .leading, allowsFullSwipe: false) {
                             Button {
+                                HapticManager.heavyImpact()
                                 duplicateMode(mode)
                             } label: {
                                 Label("Duplicate", systemImage: "doc.on.doc")
@@ -86,28 +92,25 @@ struct SettingsView: View {
                     
                     // Add New Mode button - only show if models are available
                     if appState.transcriptionManager.hasAvailableTranscriptionModels {
-                        NavigationLink(
-                            destination: ModeEditView(
-                                mode: nil,
-                                aiService: appState.aiService,
-                                promptsManager: promptsManager,
-                                transcriptionManager: appState.transcriptionManager,
-                                navigationPath: $navigationPath)) {
-                                    HStack {
-                                        Image(systemName: "plus.circle.fill")
-                                            .foregroundStyle(.blue)
-                                            .font(.title2)
-                                         
-                                        Text("Add New Mode")
-                                            .foregroundStyle(.blue)
-                                            .font(.body)
-                                        
-                                        Spacer()
-                                        
-                                    }
-                                }
+                        Button {
+                            HapticManager.lightImpact()
+                            showAddMode = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundStyle(.blue)
+                                    .font(.title2)
+
+                                Text("Add New Mode")
+                                    .foregroundStyle(.blue)
+                                    .font(.body)
+
+                                Spacer()
+                            }
+                        }
                     } else {
                         Button {
+                            HapticManager.lightImpact()
                             navigationPath.append(SettingsDestination.transcriptionModels)
                         } label: {
                             HStack {
@@ -139,6 +142,9 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    .onChange(of: isVADEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
 
                     Toggle(isOn: $isTextFormattingEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -148,6 +154,9 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    .onChange(of: isTextFormattingEnabled) { _, _ in
+                        HapticManager.selectionChanged()
                     }
                 }
                 
@@ -178,6 +187,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isSmartFormattingEnabled) { _, newValue in
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
                     }
 
@@ -191,6 +201,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isKeepInClipboardEnabled) { _, newValue in
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled = newValue
                     }
 
@@ -206,9 +217,10 @@ struct SettingsView: View {
 //                        }
                     }
                     .onChange(of: isHapticFeedbackEnabled) { _, newValue in
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled = newValue
                     }
-                    
+
                     Toggle(isOn: $isSoundFeedbackEnabled) {
                         Text("Sound")
                             .font(.body)
@@ -221,9 +233,10 @@ struct SettingsView: View {
 //                        }
                     }
                     .onChange(of: isSoundFeedbackEnabled) { _, newValue in
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Session Timeout", selection: $audioSessionTimeout) {
                             Text("15 seconds").tag(15)
@@ -239,6 +252,9 @@ struct SettingsView: View {
                         }
                         .pickerStyle(.menu)
                         .tint(.primary)
+                        .onChange(of: audioSessionTimeout) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
 
                         Text("Keep microphone session active to allow recording from keyboard")
                             .font(.caption)
@@ -276,9 +292,21 @@ struct SettingsView: View {
                     .disabled(prewarmManager.isSessionActiveObservable)
                     .buttonStyle(.plain)
                 }
-                
+
+                Section("Feedback") {
+                    Toggle(isOn: $isHapticsEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Haptic Feedback")
+                                .font(.body)
+                            Text("Vibrations for actions like recording, copying, and deleting")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("Storage") {
-                    
+
                     Toggle(isOn: $isAutoAudioCleanupEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Automatic Audio Cleanup")
@@ -287,6 +315,9 @@ struct SettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                    .onChange(of: isAutoAudioCleanupEnabled) { _, _ in
+                        HapticManager.selectionChanged()
                     }
 
                     if isAutoAudioCleanupEnabled {
@@ -300,6 +331,9 @@ struct SettingsView: View {
                         .pickerStyle(.menu)
                         .padding(.leading)
                         .tint(.primary)
+                        .onChange(of: audioRetentionDays) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
                     }
                 }
                 
@@ -329,9 +363,18 @@ struct SettingsView: View {
                 }
             }
             .navigationDestination(for: UserPrompt.self) { prompt in
-                PromptEditView(
+                PromptFormView(
                     editingPrompt: prompt,
                     promptsManager: promptsManager
+                )
+            }
+            .navigationDestination(isPresented: $showAddMode) {
+                ModeEditView(
+                    mode: nil,
+                    aiService: appState.aiService,
+                    promptsManager: promptsManager,
+                    transcriptionManager: appState.transcriptionManager,
+                    navigationPath: $navigationPath
                 )
             }
             .navigationTitle("Settings")
@@ -339,6 +382,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close", systemImage: "xmark") {
+                        HapticManager.lightImpact()
                         dismiss()
                     }
                 }
@@ -371,6 +415,7 @@ struct SettingsView: View {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
 
+        HapticManager.heavyImpact()
         appState.aiService.deleteMode(mode)
     }
 
@@ -382,6 +427,7 @@ struct SettingsView: View {
 
     private func activateKeyboardRecordingSession() {
         Task {
+            HapticManager.lightImpact()
             do {
                 // Start the pre-warm session (same as when receiving deep link)
                 try await prewarmManager.startPrewarmSession()
@@ -393,6 +439,7 @@ struct SettingsView: View {
 
             } catch {
                 prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
+                HapticManager.error()
                 showPrewarmError = true
             }
         }
@@ -414,6 +461,33 @@ private struct ModeInfoRow: View {
     private var transcriptionModelDisplayName: String {
         mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
     }
+    
+    private var isLanguageSelectionAvailable: Bool {
+        let provider = mode.transcriptionProvider
+        let modelName = mode.transcriptionModel
+
+        // Gemini always auto-detects
+        if provider == .gemini { return false }
+
+        // Parakeet V3 auto-detects, V2 needs language param
+        if provider == .parakeet {
+            return modelName == "parakeet-tdt-0.6b-v2"
+        }
+
+        return true
+    }
+    
+    private var transcriptionLanguageView: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "globe")
+                .font(.system(size: 8))
+            if let languageCode = mode.transcriptionLanguage, isLanguageSelectionAvailable {
+                Text(TranscriptionModelProvider.allLanguages[languageCode] ?? languageCode)
+            } else {
+                Text("Auto")
+            }
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -430,6 +504,8 @@ private struct ModeInfoRow: View {
                             Text(mode.transcriptionProvider.displayName)
                                 .foregroundStyle(.secondary)
                             Text(transcriptionModelDisplayName)
+                                .foregroundStyle(.tertiary)
+                            transcriptionLanguageView
                                 .foregroundStyle(.tertiary)
                         }
                     }

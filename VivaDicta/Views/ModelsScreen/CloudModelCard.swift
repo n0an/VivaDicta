@@ -13,6 +13,7 @@ struct CloudModelCard: View {
     let onDeleteAPIKey: ((CloudModel) -> Void)?
 
     @State private var selectedTab: TranscriptionModelType = .cloud
+    @State private var showDeleteAlert = false
 
     private var isAPIConfigured: Bool {
         model.apiKey != nil
@@ -81,6 +82,7 @@ struct CloudModelCard: View {
                 // Cloud model configuration button
                 
                     Button(action: {
+                        HapticManager.lightImpact()
                         onConfigure(model)
                     }) {
                         VStack(alignment: .center, spacing: 0) {
@@ -150,16 +152,35 @@ struct CloudModelCard: View {
         }
         .contextMenu {
             if isAPIConfigured {
+                
+                Button {
+                    HapticManager.lightImpact()
+                    onConfigure(model)
+                } label: {
+                    Label("Edit API Key", systemImage: "key.fill")
+                }
+                
                 Button(role: .destructive) {
-                    deleteAPIKey()
+                    HapticManager.warning()
+                    showDeleteAlert = true
                 } label: {
                     Label("Delete API Key", systemImage: "key.slash")
                 }
             }
         }
+        .alert("Delete Model", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteAPIKey()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete the API key for \(model.provider.rawValue.capitalized)? This action cannot be undone.")
+        }
     }
 
     private func deleteAPIKey() {
+        HapticManager.heavyImpact()
+
         // Remove the API key from UserDefaults
         let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
         UserDefaultsStorage.shared.removeObject(forKey: keyName)

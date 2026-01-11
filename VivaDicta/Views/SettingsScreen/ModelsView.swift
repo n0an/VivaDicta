@@ -27,6 +27,9 @@ struct ModelsView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
             .padding(.vertical, 12)
+            .onChange(of: modelType) { _, _ in
+                HapticManager.selectionChanged()
+            }
 
             ScrollView {
                 VStack(spacing: 16) {
@@ -103,16 +106,22 @@ struct ModelsView: View {
     }
 
     func cloudModelConfigured(_ model: CloudModel) {
-        // Update the default mode if it doesn't have a model yet
-        appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
+        // Only update the default mode if API key exists (not a deletion)
+        if model.apiKey != nil {
+            appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
+
+            Task {
+                // Hide "Select Transcription model" tips
+                await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+                await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
+            }
+        } else {
+            // API key was deleted - handle deletion
+            handleAPIKeyDeletion(for: model)
+        }
+
         appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
-        
-        Task {
-            // Hide "Select Transcription model" tips
-            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
-            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
-        }
     }
 
     func handleAPIKeyDeletion(for model: CloudModel) {

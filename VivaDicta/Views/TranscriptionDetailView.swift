@@ -98,6 +98,9 @@ struct TranscriptionDetailView: View {
                     .pickerStyle(.segmented)
                     .padding(.top, 4)
                     .padding(.bottom, 12)
+                    .onChange(of: selectedTextType) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
                 }
             }
             .padding(.horizontal)
@@ -538,8 +541,9 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
+                HapticManager.transcriptionComplete()
             } catch {
-                // Handle error silently for now
+                HapticManager.error()
             }
 
             processingState = .idle
@@ -566,8 +570,9 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
+                HapticManager.transcriptionComplete()
             } catch {
-                // Handle error silently for now
+                HapticManager.error()
             }
 
             processingState = .idle
@@ -608,8 +613,9 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
+                HapticManager.transcriptionComplete()
             } catch {
-                // Handle error silently for now
+                HapticManager.error()
             }
 
             processingState = .idle

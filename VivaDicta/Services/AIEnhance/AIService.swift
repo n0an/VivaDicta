@@ -199,6 +199,8 @@ class AIService {
     }
 
     public func updateDefaultModeIfNeeded(provider: TranscriptionModelProvider, modelName: String) {
+        logger.logInfo("updateDefaultModeIfNeeded called with provider: \(provider.rawValue), modelName: \(modelName)")
+
         // Find the default mode
         guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }) else {
             logger.logWarning("Default mode not found")
@@ -206,6 +208,7 @@ class AIService {
         }
 
         let defaultMode = modes[defaultModeIndex]
+        logger.logInfo("Default mode found. Current transcriptionModel: '\(defaultMode.transcriptionModel)', isEmpty: \(defaultMode.transcriptionModel.isEmpty)")
 
         // Only update if the default mode doesn't have a transcription model set
         if defaultMode.transcriptionModel.isEmpty {
@@ -232,6 +235,8 @@ class AIService {
             }
 
             logger.logInfo("Updated default mode with first available model: \(modelName) from provider: \(provider.rawValue)")
+        } else {
+            logger.logInfo("Default mode already has a transcription model set: '\(defaultMode.transcriptionModel)'. Skipping update.")
         }
     }
 

@@ -62,6 +62,7 @@ struct ModeEditView: View {
 //                .tint(.primary)
 //                .pickerStyle(.menu)
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
+                    HapticManager.selectionChanged()
                     viewModel.updateTranscriptionProvider(newProvider)
                 }
                 
@@ -74,6 +75,7 @@ struct ModeEditView: View {
                     }
                     .onChange(of: viewModel.transcriptionModel) { _, newModel in
                         viewModel.updateTranscriptionModel(newModel)
+                        HapticManager.selectionChanged()
                     }
                     .onAppear {
                         let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
@@ -96,6 +98,9 @@ struct ModeEditView: View {
                             ForEach(grouped.other, id: \.key) { key, value in
                                 Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
                             }
+                        }
+                        .onChange(of: viewModel.transcriptionLanguage) { _, _ in
+                            HapticManager.selectionChanged()
                         }
                         .popoverTip(selectLanguageTip)
 
@@ -181,6 +186,7 @@ struct ModeEditView: View {
                         }
                         .onChange(of: viewModel.aiProvider) { _, newProvider in
                             viewModel.updateProvider(newProvider)
+                            HapticManager.selectionChanged()
                         }
                         .onAppear {
                             viewModel.selectFirstProviderIfNeeded()
@@ -203,6 +209,7 @@ struct ModeEditView: View {
                                 }
                                 .onChange(of: viewModel.aiModel) { _, newModel in
                                     viewModel.updateModel(newModel)
+                                    HapticManager.selectionChanged()
                                 }
 
                             } else {
@@ -250,6 +257,9 @@ struct ModeEditView: View {
                                         Text(prompt.title).tag(prompt.id)
                                     }
                                 }
+                                .onChange(of: viewModel.selectedPromptID, { oldValue, newValue in
+                                    HapticManager.selectionChanged()
+                                })
                                 .onAppear {
                                     viewModel.selectFirstPromptIfNeeded()
                                 }
@@ -261,6 +271,7 @@ struct ModeEditView: View {
 
             if viewModel.isEditing {
                 Section {
+                    
                     Button {
                         duplicateMode()
                     } label: {
@@ -268,6 +279,21 @@ struct ModeEditView: View {
                             Spacer()
                             Label("Duplicate Mode", systemImage: "doc.on.doc")
                             Spacer()
+                        }
+                    }
+                }
+                
+                if viewModel.aiService.modes.count > 1 {
+                    Section {
+                        Button(role: .destructive) {
+                            deleteMode()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Delete Mode", systemImage: "trash")
+                                    .foregroundStyle(.red)
+                                Spacer()
+                            }
                         }
                     }
                 }
@@ -292,10 +318,18 @@ struct ModeEditView: View {
         .navigationTitle(viewModel.isEditing ? "Edit Mode" : "New Mode")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    saveMode()
+                if #available(iOS 26, *) {
+                    Button(role: .confirm) {
+                        saveMode()
+                    }
+                    .disabled(!viewModel.isValid)
+                    .tint(.blue)
+                } else {
+                    Button("Save") {
+                        saveMode()
+                    }
+                    .disabled(!viewModel.isValid)
                 }
-                .disabled(!viewModel.isValid)
             }
         }
     }
@@ -334,9 +368,11 @@ struct ModeEditView: View {
             }
             dismiss()
         } catch SettingsError.duplicateModeName(let name) {
+            HapticManager.error()
             showingAlert = true
             modeEditViewError = .duplicateModeName(name)
         } catch {
+            HapticManager.error()
             showingAlert = true
             modeEditViewError = .unexpectedError(error.localizedDescription)
         }
@@ -345,7 +381,16 @@ struct ModeEditView: View {
 
     private func duplicateMode() {
         guard let mode = viewModel.originalMode else { return }
+        HapticManager.heavyImpact()
         viewModel.aiService.duplicateMode(mode)
+        dismiss()
+    }
+
+    private func deleteMode() {
+        guard let mode = viewModel.originalMode,
+              viewModel.aiService.modes.count > 1 else { return }
+        HapticManager.heavyImpact()
+        viewModel.aiService.deleteMode(mode)
         dismiss()
     }
 }

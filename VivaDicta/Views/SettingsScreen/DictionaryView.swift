@@ -14,6 +14,7 @@ struct WordsDictionaryView: View {
 
     @State private var editMode = false
     @State private var selectedWords: [String] = []
+    @State private var showDeleteAlert = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,6 +35,7 @@ struct WordsDictionaryView: View {
             if editMode {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        HapticManager.lightImpact()
                         selectedWords.removeAll()
                         editMode = false
                     }
@@ -41,6 +43,7 @@ struct WordsDictionaryView: View {
             } else {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Edit") {
+                        HapticManager.lightImpact()
                         editMode = true
                     }
                     .disabled(customVocabularyService.words.isEmpty)
@@ -55,6 +58,14 @@ struct WordsDictionaryView: View {
                 wordToEdit = nil
             }
             .presentationDetents([.height(180)])
+        }
+        .alert("Delete Words", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteSelectedWords()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(selectedWords.count) word\(selectedWords.count == 1 ? "" : "s")? This action cannot be undone.")
         }
     }
 
@@ -71,8 +82,10 @@ struct WordsDictionaryView: View {
         HStack {
             Button(allWordsSelected ? "Deselect All" : "Select All") {
                 if allWordsSelected {
+                    HapticManager.selectionChanged()
                     selectedWords.removeAll()
                 } else {
+                    HapticManager.selectionChanged()
                     selectedWords = customVocabularyService.words
                 }
             }
@@ -81,7 +94,8 @@ struct WordsDictionaryView: View {
 
             if !selectedWords.isEmpty {
                 Button("Delete", role: .destructive) {
-                    deleteSelectedWords()
+                    HapticManager.warning()
+                    showDeleteAlert = true
                 }
             }
         }
@@ -118,12 +132,14 @@ struct WordsDictionaryView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !editMode {
                         Button(role: .destructive) {
+                            HapticManager.mediumImpact()
                             customVocabularyService.deleteWord(word)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
 
                         Button {
+                            HapticManager.lightImpact()
                             wordToEdit = EditableWord(word: word)
                         } label: {
                             Label("Edit", systemImage: "pencil")
@@ -137,6 +153,7 @@ struct WordsDictionaryView: View {
     }
 
     private func toggleSelection(_ word: String) {
+        HapticManager.selectionChanged()
         if selectedWords.contains(word) {
             selectedWords.removeAll { $0 == word }
         } else {
@@ -145,6 +162,7 @@ struct WordsDictionaryView: View {
     }
 
     private func deleteSelectedWords() {
+        HapticManager.heavyImpact()
         for word in selectedWords {
             customVocabularyService.deleteWord(word)
         }
@@ -196,6 +214,7 @@ struct WordsDictionaryView: View {
     }
 
     private func addWord() {
+        HapticManager.mediumImpact()
         customVocabularyService.addWord(newWord)
         newWord = ""
     }
@@ -253,6 +272,7 @@ private struct EditVocabularySheet: View {
             }
 
             Button("Save changes") {
+                HapticManager.mediumImpact()
                 onSave(editedText)
             }
             .frame(maxWidth: .infinity)

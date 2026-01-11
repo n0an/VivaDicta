@@ -137,14 +137,16 @@ struct LocalModelCard: View {
                             .background(Color(.systemGray6), in: .capsule)
                     }
                     
-                    
                     Button {
                         switch downloadStatus {
                         case .download:
+                            HapticManager.lightImpact()
                             showDownloadAlert = true
                         case .downloading:
+                            HapticManager.lightImpact()
                             cancelDownload()
                         case .downloaded:
+                            HapticManager.warning()
                             showDeleteAlert = true
                         }
                     } label: {
@@ -213,6 +215,7 @@ struct LocalModelCard: View {
             if isDownloaded {
                 Button(role: .destructive) {
                     showDeleteAlert = true
+                    HapticManager.warning()
                 } label: {
                     Label("Delete Model", systemImage: "trash")
                 }
@@ -237,6 +240,7 @@ struct LocalModelCard: View {
     }
 
     private func downloadLocalModel() {
+        
         Task {
             do {
                 if let whisperModel = model as? WhisperKitModel {
@@ -244,6 +248,8 @@ struct LocalModelCard: View {
                 } else if let parakeetModel = model as? ParakeetModel {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
+
+                HapticManager.heavyImpact()
 
                 // Hide "Select Transcription model" tips
                 await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
@@ -270,6 +276,7 @@ struct LocalModelCard: View {
         Task {
             do {
                 try await downloadManager.deleteModel(model)
+                HapticManager.heavyImpact()
             } catch {
                 print("Error deleting model: \(error)")
             }

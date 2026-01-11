@@ -12,7 +12,10 @@ struct ScrollToTopButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticManager.lightImpact()
+            action()
+        } label: {
             Image(systemName: "arrow.up")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(Color(.systemBackground))

@@ -35,6 +35,11 @@ struct VivaDictaApp: App {
     //    private static var isProcessingKeyboardRequest = false
     
     init() {
+        // Register UserDefaults defaults for settings that should default to true
+        UserDefaults.standard.register(defaults: [
+            UserDefaultsStorage.Keys.isHapticsEnabled: true
+        ])
+
         // Initialize Persistence
         let modelContainer: ModelContainer
         
