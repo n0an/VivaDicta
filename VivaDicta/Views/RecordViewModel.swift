@@ -104,6 +104,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         do {
 #if os(iOS)
             try recordingSession.setCategory(.playAndRecord, options: .defaultToSpeaker)
+            try recordingSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
 #endif
             try recordingSession.setActive(true)
             
