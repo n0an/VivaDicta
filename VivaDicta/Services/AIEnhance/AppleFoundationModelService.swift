@@ -18,11 +18,10 @@ import FoundationModels
 final class AppleFoundationModelService {
     private let logger = Logger(category: .aiService)
 
-    #if canImport(FoundationModels)
-    /// The stored session - created during prewarm, used during enhance
-    /// Using Any to avoid @available issues with stored properties
+    /// The stored session (type-erased to avoid @available issues on stored properties)
     private var _session: Any?
 
+    #if canImport(FoundationModels)
     @available(iOS 26, *)
     private var session: LanguageModelSession? {
         get { _session as? LanguageModelSession }
