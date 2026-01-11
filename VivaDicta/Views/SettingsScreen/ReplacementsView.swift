@@ -263,7 +263,7 @@ struct ReplacementsView: View {
     }
 
     private func addReplacement() {
-        HapticManager.success()
+        HapticManager.mediumImpact()
         replacementsService.addReplacement(original: originalText, replacement: replacementText)
         originalText = ""
         replacementText = ""

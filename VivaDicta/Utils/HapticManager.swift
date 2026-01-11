@@ -17,8 +17,6 @@ enum HapticManager {
     private static let impactLight = UIImpactFeedbackGenerator(style: .light)
     private static let impactMedium = UIImpactFeedbackGenerator(style: .medium)
     private static let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
-    private static let impactSoft = UIImpactFeedbackGenerator(style: .soft)
-    private static let impactRigid = UIImpactFeedbackGenerator(style: .rigid)
     private static let selection = UISelectionFeedbackGenerator()
     private static let notification = UINotificationFeedbackGenerator()
 
@@ -103,7 +101,7 @@ enum HapticManager {
             try engine.playPattern(from: url)
         } catch {
             // Fallback to standard haptic if pattern fails
-            success()
+            notification.notificationOccurred(.success)
         }
     }
 
@@ -121,22 +119,10 @@ enum HapticManager {
         impactMedium.impactOccurred()
     }
 
-    /// Heavy impact - for significant actions (e.g., stop recording)
+    /// Heavy impact - for significant actions
     static func heavyImpact() {
         guard isEnabled else { return }
         impactHeavy.impactOccurred()
-    }
-
-    /// Soft impact - for gentle feedback (e.g., expand/collapse animations)
-    static func softImpact() {
-        guard isEnabled else { return }
-        impactSoft.impactOccurred()
-    }
-
-    /// Rigid impact - for crisp, sharp feedback
-    static func rigidImpact() {
-        guard isEnabled else { return }
-        impactRigid.impactOccurred()
     }
 
     // MARK: - Selection Feedback
@@ -149,11 +135,11 @@ enum HapticManager {
 
     // MARK: - Notification Feedback
 
-    /// Success notification - for completed operations (e.g., transcription done, copy success)
-    static func success() {
-        guard isEnabled else { return }
-        notification.notificationOccurred(.success)
-    }
+    /// Success notification - not used
+//    static func success() {
+//        guard isEnabled else { return }
+//        notification.notificationOccurred(.success)
+//    }
 
     /// Warning notification - for destructive actions (e.g., delete)
     static func warning() {

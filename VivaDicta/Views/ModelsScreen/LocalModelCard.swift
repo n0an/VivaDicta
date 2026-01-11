@@ -247,7 +247,7 @@ struct LocalModelCard: View {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
 
-                HapticManager.success()
+                HapticManager.heavyImpact()
 
                 // Hide "Select Transcription model" tips
                 await SelectTranscriptionModelTipMainView.selectModelEvent.donate()

@@ -42,12 +42,9 @@ Direct access to UIKit feedback generators:
 | Method | UIKit Generator | Use Case |
 |--------|-----------------|----------|
 | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Subtle feedback, play/pause, cancel |
-| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start recording, confirm actions |
-| `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Stop recording |
-| `softImpact()` | `UIImpactFeedbackGenerator(.soft)` | Expand/collapse animations |
-| `rigidImpact()` | `UIImpactFeedbackGenerator(.rigid)` | Crisp, sharp feedback |
+| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start/stop recording, copy, add items, expand/collapse |
+| `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Significant completions (download, duplicate) |
 | `selectionChanged()` | `UISelectionFeedbackGenerator` | Pickers, toggles, navigation |
-| `success()` | `UINotificationFeedbackGenerator(.success)` | Completed operations, copy, add |
 | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete operations |
 | `error()` | `UINotificationFeedbackGenerator(.error)` | Failed operations |
 | `playPattern(named:)` | CoreHaptics AHAP | Custom patterns (transcription complete) |
@@ -60,7 +57,7 @@ Direct access to UIKit feedback generators:
 |------|----------|--------|-------------|---------|
 | `RecordViewModel.swift` | Line ~139 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Prewarm recording start |
 | `RecordViewModel.swift` | Line ~184 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Normal recording start |
-| `RecordViewModel.swift` | Line ~244 | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Stop recording |
+| `RecordViewModel.swift` | Line ~244 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Stop recording |
 | `RecordViewModel.swift` | Line ~525 | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Cancel recording |
 | `RecordViewModel.swift` | Line ~483 | `playPattern(named:)` | CoreHaptics AHAP | Transcription complete |
 | `RecordViewModel.swift` | Line ~491 | `error()` | `UINotificationFeedbackGenerator(.error)` | Transcription error |
@@ -69,7 +66,7 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `AnimatedCopyButton.swift` | Line ~48 | `success()` | `UINotificationFeedbackGenerator(.success)` | Copy to clipboard |
+| `AnimatedCopyButton.swift` | Line ~48 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Copy to clipboard |
 
 ### Delete Operations
 
@@ -89,17 +86,16 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `ModeEditView.swift` | `duplicateMode()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Duplicate mode button |
-| `SettingsView.swift` | Context menu | `success()` | `UINotificationFeedbackGenerator(.success)` | Duplicate mode (context menu) |
-| `SettingsView.swift` | Swipe action | `success()` | `UINotificationFeedbackGenerator(.success)` | Duplicate mode (swipe) |
+| `ModeEditView.swift` | `duplicateMode()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Duplicate mode button |
+| `SettingsView.swift` | Context menu | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Duplicate mode (context menu) |
+| `SettingsView.swift` | Swipe action | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Duplicate mode (swipe) |
 
 ### Model Downloads
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
 | `LocalModelCard.swift` | Download/Delete button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Button tap |
-| `LocalModelCard.swift` | Download alert "Continue" | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Confirm download |
-| `LocalModelCard.swift` | `downloadLocalModel()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Model download complete |
+| `LocalModelCard.swift` | `downloadLocalModel()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Model download complete |
 
 ### Settings Toggles
 
@@ -136,7 +132,7 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `LiquidActionButtonView.swift` | `onTapGesture` | `softImpact()` | `UIImpactFeedbackGenerator(.soft)` | Expand/collapse |
+| `LiquidActionButtonView.swift` | `onTapGesture` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Expand/collapse |
 | `ScrollToTopButton.swift` | Button action | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Scroll to top |
 | `MainView.swift` | Settings toolbar button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open settings |
 | `MainView.swift` | File import toolbar button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open file import |
@@ -156,8 +152,8 @@ Direct access to UIKit feedback generators:
 
 | File | Function | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `DictionaryView.swift` | `addWord()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Word added |
-| `ReplacementsView.swift` | `addReplacement()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Replacement added |
+| `DictionaryView.swift` | `addWord()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Word added |
+| `ReplacementsView.swift` | `addReplacement()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Replacement added |
 
 ### Onboarding
 
@@ -187,12 +183,10 @@ Direct access to UIKit feedback generators:
 
 | Haptic Type | Use For |
 |-------------|---------|
-| **Impact (Light)** | Minor UI feedback, subtle confirmations, play/pause |
-| **Impact (Medium)** | Primary action initiation (start recording) |
-| **Impact (Heavy)** | Significant state changes (stop recording) |
-| **Impact (Soft)** | Smooth UI transitions (expand/collapse) |
+| **Impact (Light)** | Minor UI feedback, subtle confirmations, play/pause, cancel |
+| **Impact (Medium)** | Primary actions (start/stop recording, copy, add items, expand/collapse) |
+| **Impact (Heavy)** | Significant completions (download complete, duplicate) |
 | **Selection** | Picker/toggle changes, navigation |
-| **Success** | Completed operations, copy, add, duplicate |
 | **Warning** | Destructive actions (delete), caution states |
 | **Error** | Failed operations, validation errors |
 | **Custom AHAP** | Distinctive feedback (transcription complete) |
@@ -209,17 +203,23 @@ Direct access to UIKit feedback generators:
 Use the appropriate method directly:
 
 ```swift
-// For delete operations
-HapticManager.warning()
+// For primary actions (copy, add, start/stop recording)
+HapticManager.mediumImpact()
 
-// For success/completion
-HapticManager.success()
+// For significant completions (download, duplicate)
+HapticManager.heavyImpact()
+
+// For subtle feedback (cancel, play/pause)
+HapticManager.lightImpact()
 
 // For toggles/pickers
 HapticManager.selectionChanged()
 
-// For subtle feedback
-HapticManager.lightImpact()
+// For delete operations
+HapticManager.warning()
+
+// For errors
+HapticManager.error()
 
 // For custom patterns
 HapticManager.playPattern(named: "PatternName")

@@ -198,7 +198,7 @@ struct WordsDictionaryView: View {
     }
 
     private func addWord() {
-        HapticManager.success()
+        HapticManager.mediumImpact()
         customVocabularyService.addWord(newWord)
         newWord = ""
     }

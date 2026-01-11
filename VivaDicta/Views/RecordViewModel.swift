@@ -241,7 +241,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     func stopCaptureAudio(modelContext: ModelContext) {
-        HapticManager.heavyImpact()
+        HapticManager.mediumImpact()
 
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
