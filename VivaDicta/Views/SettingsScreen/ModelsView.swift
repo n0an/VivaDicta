@@ -106,8 +106,6 @@ struct ModelsView: View {
     }
 
     func cloudModelConfigured(_ model: CloudModel) {
-        print("🔧 cloudModelConfigured called for model: \(model.name), provider: \(model.provider.rawValue), apiKey exists: \(model.apiKey != nil)")
-
         // Only update the default mode if API key exists (not a deletion)
         if model.apiKey != nil {
             appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)

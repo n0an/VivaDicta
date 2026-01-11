@@ -29,7 +29,7 @@ enum HapticManager {
 
     /// Check if haptics are enabled in app settings
     private static var isEnabled: Bool {
-        UserDefaults.standard.bool(forKey: UserDefaultsStorage.Keys.isHapticsEnabled)
+        UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isHapticsEnabled)
     }
 
     /// Check if device supports haptics
@@ -121,7 +121,7 @@ enum HapticManager {
         events.append(event)
         curves.append(parameter)
 
-        // Make some sparkles (8 random transient events)
+        // Make some sparkles (4 random transient events)
         for _ in 1...4 {
             let sparkleSharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
             let sparkleIntensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
