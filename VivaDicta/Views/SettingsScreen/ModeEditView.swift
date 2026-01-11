@@ -303,10 +303,18 @@ struct ModeEditView: View {
         .navigationTitle(viewModel.isEditing ? "Edit Mode" : "New Mode")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    saveMode()
+                if #available(iOS 26, *) {
+                    Button(role: .confirm) {
+                        saveMode()
+                    }
+                    .disabled(!viewModel.isValid)
+                    .tint(.blue)
+                } else {
+                    Button("Save") {
+                        saveMode()
+                    }
+                    .disabled(!viewModel.isValid)
                 }
-                .disabled(!viewModel.isValid)
             }
         }
     }
