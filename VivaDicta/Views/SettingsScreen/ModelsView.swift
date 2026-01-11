@@ -106,16 +106,24 @@ struct ModelsView: View {
     }
 
     func cloudModelConfigured(_ model: CloudModel) {
-        // Update the default mode if it doesn't have a model yet
-        appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
+        print("🔧 cloudModelConfigured called for model: \(model.name), provider: \(model.provider.rawValue), apiKey exists: \(model.apiKey != nil)")
+
+        // Only update the default mode if API key exists (not a deletion)
+        if model.apiKey != nil {
+            appState.aiService.updateDefaultModeIfNeeded(provider: model.provider, modelName: model.name)
+
+            Task {
+                // Hide "Select Transcription model" tips
+                await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+                await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
+            }
+        } else {
+            // API key was deleted - handle deletion
+            handleAPIKeyDeletion(for: model)
+        }
+
         appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
-        
-        Task {
-            // Hide "Select Transcription model" tips
-            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
-            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
-        }
     }
 
     func handleAPIKeyDeletion(for model: CloudModel) {
