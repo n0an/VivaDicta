@@ -44,8 +44,12 @@ struct KeyboardFlowSheet: View {
                     .padding(.top, 8)
             }
         }
+        .onAppear {
+            HapticManager.mediumImpact()
+        }
         .contentShape(.rect)
         .onTapGesture {
+            HapticManager.lightImpact()
             appState.showKeyboardFlowSheet = false
         }
         .ignoresSafeArea()
