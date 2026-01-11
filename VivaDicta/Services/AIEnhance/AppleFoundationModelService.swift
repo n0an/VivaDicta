@@ -20,26 +20,36 @@ final class AppleFoundationModelService {
     /// The stored session - created during prewarm, used during enhance
     private var session: LanguageModelSession?
 
+    /// The stored prompt prefix - saved during prewarm for use during enhance
+    private var storedPromptPrefix: String?
+
     /// Prewarm the model for faster first response
-    /// Creates a session with the given instructions and prewarms it
-    /// - Parameter instructions: The system prompt/instructions for the session
-    func prewarm(instructions: String) {
+    /// Creates a session with instructions and prewarms with the prompt prefix
+    /// - Parameters:
+    ///   - instructions: The base instructions for the session (role + rules + vocabulary)
+    ///   - promptPrefix: The prompt prefix to prewarm with (user enhancement style)
+    func prewarm(instructions: String, promptPrefix: String) {
         guard AppleFoundationModelAvailability.isAvailable else { return }
 
         // Create session with instructions and store it
         let newSession = LanguageModelSession(instructions: instructions)
         session = newSession
-        newSession.prewarm()
-        logger.logInfo("Apple Foundation Model - Session created and prewarmed")
+        storedPromptPrefix = promptPrefix
+
+        // Prewarm with the prompt prefix
+        let prefix = Prompt { promptPrefix }
+        newSession.prewarm(promptPrefix: prefix)
+        logger.logInfo("Apple Foundation Model - Session created and prewarmed with prompt prefix")
     }
 
     /// Enhance text using Apple's on-device Foundation Model
     /// Uses the prewarmed session if available, otherwise creates a new one
     /// - Parameters:
     ///   - text: The transcription text to enhance
-    ///   - systemPrompt: The system instructions for enhancement (used if no prewarmed session)
+    ///   - instructions: The base instructions (used if no prewarmed session exists)
+    ///   - promptPrefix: The prompt prefix (user enhancement style)
     /// - Returns: The enhanced text
-    func enhance(_ text: String, systemPrompt: String) async throws -> String {
+    func enhance(_ text: String, instructions: String, promptPrefix: String) async throws -> String {
         guard AppleFoundationModelAvailability.isAvailable else {
             throw AppleFoundationModelError.notAvailable
         }
@@ -47,8 +57,6 @@ final class AppleFoundationModelService {
         guard !text.isEmpty else {
             return ""
         }
-
-        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
 
         logger.logNotice("Apple Foundation Model - Starting enhancement")
 
@@ -58,12 +66,18 @@ final class AppleFoundationModelService {
             activeSession = existingSession
             logger.logInfo("Apple Foundation Model - Using prewarmed session")
         } else {
-            activeSession = LanguageModelSession(instructions: systemPrompt)
+            activeSession = LanguageModelSession(instructions: instructions)
             logger.logInfo("Apple Foundation Model - Created new session (no prewarm)")
         }
 
+        // Build full prompt: prefix + transcript
+        let fullPrompt = Prompt {
+            promptPrefix
+            "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        }
+
         do {
-            let response = try await activeSession.respond(to: formattedText)
+            let response = try await activeSession.respond(to: fullPrompt)
             let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
             logger.logNotice("Apple Foundation Model - Enhancement completed")
@@ -75,6 +89,7 @@ final class AppleFoundationModelService {
 
             // Clear session after use - next recording will prewarm fresh
             session = nil
+            storedPromptPrefix = nil
 
             return filteredText
         } catch let error as LanguageModelSession.GenerationError {
@@ -86,6 +101,7 @@ final class AppleFoundationModelService {
             #endif
 
             session = nil
+            storedPromptPrefix = nil
             throw AppleFoundationModelError.generationFailed(error.localizedDescription)
         }
     }

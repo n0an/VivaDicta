@@ -339,6 +339,7 @@ class AIService {
 
     /// Prewarm Apple Foundation Model if the current mode uses Apple as AI provider.
     /// Called when recording starts - prewarming prepares the model for use within seconds.
+    /// Uses split instructions (role + rules + vocabulary) and prompt prefix (user enhancement style).
     @MainActor
     public func prewarmFoundationModelIfNeeded() {
         guard selectedMode.aiEnhanceEnabled,
@@ -348,9 +349,10 @@ class AIService {
         }
 
         if #available(iOS 26, *) {
-            let systemMessage = getSystemMessage()
+            let instructions = getFoundationModelInstructions()
+            let promptPrefix = getFoundationModelPromptPrefix()
             logger.logInfo("Prewarming Apple Foundation Model for mode: \(self.selectedMode.name)")
-            appleFoundationModelService.prewarm(instructions: systemMessage)
+            appleFoundationModelService.prewarm(instructions: instructions, promptPrefix: promptPrefix)
         }
     }
 
@@ -391,9 +393,11 @@ class AIService {
         // Handle Apple Foundation Model (on-device)
         if aiProvider == .apple {
             if #available(iOS 26, *) {
+                let instructions = getFoundationModelInstructions()
+                let promptPrefix = getFoundationModelPromptPrefix()
                 logger.logNotice("AI Enhancement - Using Apple Foundation Model")
-                logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
-                return try await appleFoundationModelService.enhance(text, systemPrompt: systemMessage)
+                logger.logNotice("AI Enhancement - Prompt Prefix: \(promptPrefix)")
+                return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix)
             } else {
                 throw EnhancementError.notConfigured
             }
@@ -543,15 +547,37 @@ class AIService {
         }
     }
     
+    // MARK: - System Message (Cloud Providers)
+
     private func getSystemMessage() -> String {
         var customVocabularySection = ""
         if let customVocabularyWords = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords), !customVocabularyWords.isEmpty {
             let vocabularyString = customVocabularyWords.joined(separator: ", ")
             customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
         }
-        
+
         let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
         return PromptsTemplates.systemPrompt(with: promptInstructions) + customVocabularySection
+    }
+
+    // MARK: - Foundation Model Prompts (Apple)
+
+    /// Returns instructions for LanguageModelSession (role + core rules + vocabulary)
+    /// Used with LanguageModelSession(instructions:)
+    private func getFoundationModelInstructions() -> String {
+        var customVocabulary: String? = nil
+        if let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords),
+           !words.isEmpty {
+            customVocabulary = words.joined(separator: ", ")
+        }
+        return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)
+    }
+
+    /// Returns prompt prefix for prewarm (user prompt instructions only)
+    /// Used with session.prewarm(promptPrefix:)
+    private func getFoundationModelPromptPrefix() -> String {
+        let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
+        return PromptsTemplates.foundationModelPromptPrefix(promptInstructions: promptInstructions)
     }
     
     
