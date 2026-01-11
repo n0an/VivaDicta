@@ -81,9 +81,11 @@ Direct access to UIKit feedback generators:
 | `CloudModelConfigurationView.swift` | Delete button | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Show delete confirmation |
 | `CloudModelConfigurationView.swift` | `deleteAPIKey()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete API key (after confirmation) |
 | `DictionaryView.swift` | Swipe action | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete word (swipe) |
-| `DictionaryView.swift` | `deleteSelectedWords()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete words |
+| `DictionaryView.swift` | Delete button | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Show bulk delete confirmation |
+| `DictionaryView.swift` | `deleteSelectedWords()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Bulk delete words (after confirmation) |
 | `ReplacementsView.swift` | Swipe action | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete replacement (swipe) |
-| `ReplacementsView.swift` | `deleteSelectedReplacements()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete replacements |
+| `ReplacementsView.swift` | Delete button | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Show bulk delete confirmation |
+| `ReplacementsView.swift` | `deleteSelectedReplacements()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Bulk delete replacements (after confirmation) |
 | `PromptsSettings.swift` | `deletePrompt()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete prompt |
 
 ### Duplicate Operations

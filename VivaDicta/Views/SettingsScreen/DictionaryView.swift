@@ -14,6 +14,7 @@ struct WordsDictionaryView: View {
 
     @State private var editMode = false
     @State private var selectedWords: [String] = []
+    @State private var showDeleteAlert = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,6 +59,14 @@ struct WordsDictionaryView: View {
             }
             .presentationDetents([.height(180)])
         }
+        .alert("Delete Words", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteSelectedWords()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(selectedWords.count) word\(selectedWords.count == 1 ? "" : "s")? This action cannot be undone.")
+        }
     }
 
     private var emptyStateView: some View {
@@ -85,7 +94,8 @@ struct WordsDictionaryView: View {
 
             if !selectedWords.isEmpty {
                 Button("Delete", role: .destructive) {
-                    deleteSelectedWords()
+                    HapticManager.warning()
+                    showDeleteAlert = true
                 }
             }
         }
@@ -152,7 +162,7 @@ struct WordsDictionaryView: View {
     }
 
     private func deleteSelectedWords() {
-        HapticManager.warning()
+        HapticManager.heavyImpact()
         for word in selectedWords {
             customVocabularyService.deleteWord(word)
         }

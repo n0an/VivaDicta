@@ -15,6 +15,7 @@ struct ReplacementsView: View {
 
     @State private var editMode = false
     @State private var selectedReplacements: Set<Replacement> = []
+    @State private var showDeleteAlert = false
 
     @AppStorage(UserDefaultsStorage.Keys.isReplacementsEnabled)
     private var isReplacementsEnabled: Bool = true
@@ -64,6 +65,14 @@ struct ReplacementsView: View {
             }
             .presentationDetents([.height(280)])
         }
+        .alert("Delete Replacements", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                deleteSelectedReplacements()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(selectedReplacements.count) replacement\(selectedReplacements.count == 1 ? "" : "s")? This action cannot be undone.")
+        }
     }
 
     private var enableToggle: some View {
@@ -110,7 +119,8 @@ struct ReplacementsView: View {
 
             if !selectedReplacements.isEmpty {
                 Button("Delete", role: .destructive) {
-                    deleteSelectedReplacements()
+                    HapticManager.warning()
+                    showDeleteAlert = true
                 }
             }
         }
@@ -189,7 +199,7 @@ struct ReplacementsView: View {
     }
 
     private func deleteSelectedReplacements() {
-        HapticManager.warning()
+        HapticManager.heavyImpact()
         for replacement in selectedReplacements {
             replacementsService.deleteReplacement(replacement)
         }
