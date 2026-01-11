@@ -155,7 +155,7 @@ struct ReplacementsView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !editMode {
                         Button(role: .destructive) {
-                            HapticManager.warning()
+                            HapticManager.mediumImpact()
                             replacementsService.deleteReplacement(replacement)
                         } label: {
                             Label("Delete", systemImage: "trash")

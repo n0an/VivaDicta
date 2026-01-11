@@ -72,15 +72,15 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `TranscriptionsContentView.swift` | `deleteTranscription()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete transcription |
+| `TranscriptionsContentView.swift` | `deleteTranscription()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete transcription |
 | `SettingsView.swift` | `deleteMode()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete mode |
 | `LocalModelCard.swift` | `deleteModel()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete local model |
 | `CloudModelCard.swift` | `deleteAPIKey()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete API key |
-| `DictionaryView.swift` | Swipe action | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete word (swipe) |
+| `DictionaryView.swift` | Swipe action | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete word (swipe) |
 | `DictionaryView.swift` | `deleteSelectedWords()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete words |
-| `ReplacementsView.swift` | Swipe action | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete replacement (swipe) |
+| `ReplacementsView.swift` | Swipe action | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete replacement (swipe) |
 | `ReplacementsView.swift` | `deleteSelectedReplacements()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete replacements |
-| `PromptsSettings.swift` | `deletePrompt()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete prompt |
+| `PromptsSettings.swift` | `deletePrompt()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete prompt |
 
 ### Duplicate Operations
 
@@ -184,10 +184,10 @@ Direct access to UIKit feedback generators:
 | Haptic Type | Use For |
 |-------------|---------|
 | **Impact (Light)** | Minor UI feedback, subtle confirmations, play/pause, cancel |
-| **Impact (Medium)** | Primary actions (start/stop recording, copy, add items, expand/collapse) |
-| **Impact (Heavy)** | Significant completions (download complete, duplicate) |
+| **Impact (Medium)** | Primary actions (start/stop recording, copy, add items, expand/collapse, minor deletes) |
+| **Impact (Heavy)** | Significant completions (download complete, duplicate, delete transcription) |
 | **Selection** | Picker/toggle changes, navigation |
-| **Warning** | Destructive actions (delete), caution states |
+| **Warning** | Critical destructive actions (delete mode, delete model, bulk deletes) |
 | **Error** | Failed operations, validation errors |
 | **Custom AHAP** | Distinctive feedback (transcription complete) |
 
@@ -203,10 +203,10 @@ Direct access to UIKit feedback generators:
 Use the appropriate method directly:
 
 ```swift
-// For primary actions (copy, add, start/stop recording)
+// For primary actions (copy, add, start/stop recording, minor deletes)
 HapticManager.mediumImpact()
 
-// For significant completions (download, duplicate)
+// For significant completions (download, duplicate, delete transcription)
 HapticManager.heavyImpact()
 
 // For subtle feedback (cancel, play/pause)
@@ -215,7 +215,7 @@ HapticManager.lightImpact()
 // For toggles/pickers
 HapticManager.selectionChanged()
 
-// For delete operations
+// For critical destructive actions (delete mode, delete model, bulk deletes)
 HapticManager.warning()
 
 // For errors

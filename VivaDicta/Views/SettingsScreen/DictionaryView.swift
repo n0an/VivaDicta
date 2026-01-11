@@ -118,7 +118,7 @@ struct WordsDictionaryView: View {
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if !editMode {
                         Button(role: .destructive) {
-                            HapticManager.warning()
+                            HapticManager.mediumImpact()
                             customVocabularyService.deleteWord(word)
                         } label: {
                             Label("Delete", systemImage: "trash")

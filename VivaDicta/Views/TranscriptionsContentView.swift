@@ -184,7 +184,7 @@ struct TranscriptionsContentView: View {
     }
 
     private func deleteTranscription(at offsets: IndexSet) {
-        HapticManager.warning()
+        HapticManager.heavyImpact()
         for index in offsets {
             let transcription = displayedTranscriptions[index]
             let transcriptionID = transcription.id
