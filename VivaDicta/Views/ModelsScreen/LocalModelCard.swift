@@ -137,15 +137,16 @@ struct LocalModelCard: View {
                             .background(Color(.systemGray6), in: .capsule)
                     }
                     
-                    
                     Button {
-                        HapticManager.lightImpact()
                         switch downloadStatus {
                         case .download:
+                            HapticManager.lightImpact()
                             showDownloadAlert = true
                         case .downloading:
+                            HapticManager.lightImpact()
                             cancelDownload()
                         case .downloaded:
+                            HapticManager.warning()
                             showDeleteAlert = true
                         }
                     } label: {
@@ -214,6 +215,7 @@ struct LocalModelCard: View {
             if isDownloaded {
                 Button(role: .destructive) {
                     showDeleteAlert = true
+                    HapticManager.warning()
                 } label: {
                     Label("Delete Model", systemImage: "trash")
                 }
@@ -271,10 +273,10 @@ struct LocalModelCard: View {
     }
 
     private func deleteModel() {
-        HapticManager.warning()
         Task {
             do {
                 try await downloadManager.deleteModel(model)
+                HapticManager.heavyImpact()
             } catch {
                 print("Error deleting model: \(error)")
             }

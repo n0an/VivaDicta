@@ -107,7 +107,7 @@ enum HapticManager {
 
     // MARK: - Impact Feedback
 
-    /// Light impact - for subtle UI feedback (e.g., scroll to top, edit mode buttons, swipe actions)
+    /// Light impact - for subtle UI feedback (e.g., scroll to top, edit mode buttons, swipe actions, copy)
     static func lightImpact() {
         guard isEnabled else { return }
         impactLight.impactOccurred()

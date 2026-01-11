@@ -406,7 +406,7 @@ struct SettingsView: View {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
 
-        HapticManager.warning()
+        HapticManager.heavyImpact()
         appState.aiService.deleteMode(mode)
     }
 

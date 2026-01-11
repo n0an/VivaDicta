@@ -41,9 +41,9 @@ Direct access to UIKit feedback generators:
 
 | Method | UIKit Generator | Use Case |
 |--------|-----------------|----------|
-| `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Edit mode buttons, swipe actions, play/pause, cancel |
-| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start/stop recording, copy, add items, save changes |
-| `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Significant completions (download, duplicate) |
+| `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Edit mode buttons, swipe actions, copy, play/pause, cancel |
+| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start/stop recording, add items, save changes, save API key |
+| `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Significant completions (download, duplicate, delete after confirmation) |
 | `selectionChanged()` | `UISelectionFeedbackGenerator` | Pickers, toggles, select all, item selection |
 | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete operations |
 | `error()` | `UINotificationFeedbackGenerator(.error)` | Failed operations |
@@ -66,16 +66,20 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `AnimatedCopyButton.swift` | Line ~48 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Copy to clipboard |
+| `AnimatedCopyButton.swift` | Line ~48 | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Copy to clipboard |
 
 ### Delete Operations
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
 | `TranscriptionsContentView.swift` | `deleteTranscription()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete transcription |
-| `SettingsView.swift` | `deleteMode()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete mode |
-| `LocalModelCard.swift` | `deleteModel()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete local model |
-| `CloudModelCard.swift` | `deleteAPIKey()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete API key |
+| `SettingsView.swift` | `deleteMode()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete mode |
+| `LocalModelCard.swift` | Delete button/context menu | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Show delete confirmation |
+| `LocalModelCard.swift` | `deleteModel()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete local model (after confirmation) |
+| `CloudModelCard.swift` | Context menu | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Show delete confirmation |
+| `CloudModelCard.swift` | `deleteAPIKey()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete API key (after confirmation) |
+| `CloudModelConfigurationView.swift` | Delete button | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Show delete confirmation |
+| `CloudModelConfigurationView.swift` | `deleteAPIKey()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Delete API key (after confirmation) |
 | `DictionaryView.swift` | Swipe action | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete word (swipe) |
 | `DictionaryView.swift` | `deleteSelectedWords()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete words |
 | `ReplacementsView.swift` | Swipe action | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Delete replacement (swipe) |
@@ -94,8 +98,15 @@ Direct access to UIKit feedback generators:
 
 | File | Location | Method | Haptic Type | Trigger |
 |------|----------|--------|-------------|---------|
-| `LocalModelCard.swift` | Download/Delete button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Button tap |
+| `LocalModelCard.swift` | Download/Cancel button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Download or cancel tap |
 | `LocalModelCard.swift` | `downloadLocalModel()` | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Model download complete |
+
+### API Key Operations
+
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `CloudModelConfigurationView.swift` | `saveAPIKey()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Save API key |
+| `AddAPIKeyView.swift` | `saveAPIKey()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Save API key |
 
 ### Settings Toggles
 
@@ -201,11 +212,11 @@ Direct access to UIKit feedback generators:
 
 | Haptic Type | Use For |
 |-------------|---------|
-| **Impact (Light)** | Minor UI feedback, edit mode buttons, swipe actions, play/pause, cancel |
-| **Impact (Medium)** | Primary actions (start/stop recording, copy, add items, expand/collapse, minor deletes, save changes) |
-| **Impact (Heavy)** | Significant completions (download complete, duplicate, delete transcription) |
+| **Impact (Light)** | Minor UI feedback, edit mode buttons, swipe actions, copy, play/pause, cancel |
+| **Impact (Medium)** | Primary actions (start/stop recording, add items, expand/collapse, minor deletes, save changes, save API key) |
+| **Impact (Heavy)** | Significant completions (download complete, duplicate, delete after confirmation) |
 | **Selection** | Picker/toggle changes, select all/deselect all, item selection, navigation |
-| **Warning** | Critical destructive actions (delete mode, delete model, bulk deletes) |
+| **Warning** | Show delete confirmation alerts |
 | **Error** | Failed operations, validation errors |
 | **Custom AHAP** | Distinctive feedback (transcription complete) |
 
@@ -221,19 +232,19 @@ Direct access to UIKit feedback generators:
 Use the appropriate method directly:
 
 ```swift
-// For primary actions (copy, add, start/stop recording, save changes, minor deletes)
+// For primary actions (add items, start/stop recording, save changes, save API key, minor deletes)
 HapticManager.mediumImpact()
 
-// For significant completions (download, duplicate, delete transcription)
+// For significant completions (download, duplicate, delete after confirmation)
 HapticManager.heavyImpact()
 
-// For edit mode buttons, swipe actions, cancel, play/pause
+// For edit mode buttons, swipe actions, copy, cancel, play/pause
 HapticManager.lightImpact()
 
 // For toggles, pickers, select all/deselect all, item selection
 HapticManager.selectionChanged()
 
-// For bulk delete operations
+// For showing delete confirmation alerts
 HapticManager.warning()
 
 // For errors

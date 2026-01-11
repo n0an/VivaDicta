@@ -66,6 +66,7 @@ struct CloudModelConfigurationView: View {
             if model.apiKey != nil {
                 Button(action: {
                     showDeleteConfirmation = true
+                    HapticManager.warning()
                 }) {
                     Text("Delete API Key")
                         .font(.headline.weight(.semibold))
@@ -112,6 +113,8 @@ struct CloudModelConfigurationView: View {
                 verificationError = nil
             }
             
+            HapticManager.mediumImpact()
+            
             let isValid = await aiService.saveAPIKey(apiKey, for: aiProvider)
             
             await MainActor.run {
@@ -127,6 +130,7 @@ struct CloudModelConfigurationView: View {
     }
 
     func deleteAPIKey() {
+        HapticManager.heavyImpact()
         // Remove the API key from UserDefaults
         let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
         UserDefaultsStorage.shared.removeObject(forKey: keyName)
