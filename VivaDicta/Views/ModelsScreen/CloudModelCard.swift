@@ -152,6 +152,14 @@ struct CloudModelCard: View {
         }
         .contextMenu {
             if isAPIConfigured {
+                
+                Button {
+                    HapticManager.lightImpact()
+                    onConfigure(model)
+                } label: {
+                    Label("Edit API Key", systemImage: "key.fill")
+                }
+                
                 Button(role: .destructive) {
                     HapticManager.warning()
                     showDeleteAlert = true
