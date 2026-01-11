@@ -461,6 +461,33 @@ private struct ModeInfoRow: View {
     private var transcriptionModelDisplayName: String {
         mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
     }
+    
+    private var isLanguageSelectionAvailable: Bool {
+        let provider = mode.transcriptionProvider
+        let modelName = mode.transcriptionModel
+
+        // Gemini always auto-detects
+        if provider == .gemini { return false }
+
+        // Parakeet V3 auto-detects, V2 needs language param
+        if provider == .parakeet {
+            return modelName == "parakeet-tdt-0.6b-v2"
+        }
+
+        return true
+    }
+    
+    private var transcriptionLanguageView: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "globe")
+                .font(.system(size: 8))
+            if let languageCode = mode.transcriptionLanguage, isLanguageSelectionAvailable {
+                Text(TranscriptionModelProvider.allLanguages[languageCode] ?? languageCode)
+            } else {
+                Text("Auto")
+            }
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -477,6 +504,8 @@ private struct ModeInfoRow: View {
                             Text(mode.transcriptionProvider.displayName)
                                 .foregroundStyle(.secondary)
                             Text(transcriptionModelDisplayName)
+                                .foregroundStyle(.tertiary)
+                            transcriptionLanguageView
                                 .foregroundStyle(.tertiary)
                         }
                     }
