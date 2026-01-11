@@ -68,16 +68,65 @@ final class AppleFoundationModelService {
             let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
             logger.logNotice("Apple Foundation Model - Enhancement completed")
 
+            // Debug: Print session transcript
+            #if DEBUG
+            printTranscript(activeSession)
+            #endif
+
             // Clear session after use - next recording will prewarm fresh
             session = nil
 
             return filteredText
         } catch let error as LanguageModelSession.GenerationError {
             logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
+
+            // Debug: Print transcript even on error
+            #if DEBUG
+            printTranscript(activeSession)
+            #endif
+
             session = nil
             throw AppleFoundationModelError.generationFailed(error.localizedDescription)
         }
     }
+
+    // MARK: - Debug
+
+    #if DEBUG
+    private func printTranscript(_ session: LanguageModelSession) {
+        print("\n" + String(repeating: "=", count: 60))
+        print("📜 FOUNDATION MODEL SESSION TRANSCRIPT")
+        print(String(repeating: "-", count: 60))
+
+        for entry in session.transcript {
+            switch entry {
+            case .instructions(let instructions):
+                print("📋 INSTRUCTIONS:")
+                for segment in instructions.segments {
+                    print("   \(segment)")
+                }
+            case .prompt(let prompt):
+                print("💬 PROMPT:")
+                for segment in prompt.segments {
+                    print("   \(segment)")
+                }
+            case .response(let response):
+                print("🤖 RESPONSE:")
+                for segment in response.segments {
+                    print("   \(segment)")
+                }
+            case .toolCalls(let toolCalls):
+                print("🔧 TOOL CALLS: \(toolCalls)")
+            case .toolOutput(let toolOutput):
+                print("📤 TOOL OUTPUT: \(toolOutput)")
+            @unknown default:
+                print("❓ UNKNOWN ENTRY: \(entry)")
+            }
+        }
+
+        print(String(repeating: "=", count: 60) + "\n")
+    }
+    #endif
 }
 
 // MARK: - Availability Status
