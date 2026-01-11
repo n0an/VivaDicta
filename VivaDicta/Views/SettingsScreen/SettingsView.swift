@@ -374,6 +374,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close", systemImage: "xmark") {
+                        HapticManager.lightImpact()
                         dismiss()
                     }
                 }
