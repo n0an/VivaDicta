@@ -69,11 +69,17 @@ class AppState {
             await preloadWhisperKitModelIfNeeded()
         }
 
+        // Prewarm Apple Foundation Model if the current mode uses Apple as AI provider
+        Task { @MainActor in
+            aiService.prewarmFoundationModelIfNeeded()
+        }
+
         // Note: Spotlight indexing is now done on-demand when transcriptions are created/deleted
         // No longer doing batch indexing on app startup
     }
 
     // This method is called when AIService changes its mode
+    @MainActor
     public func handleModeChange(_ newMode: VivaMode) {
         // Update TranscriptionManager's current mode
         transcriptionManager.setCurrentMode(newMode)
@@ -82,6 +88,9 @@ class AppState {
         Task {
             await preloadWhisperKitModelIfNeeded()
         }
+
+        // Prewarm Apple Foundation Model if the new mode uses Apple as AI provider
+        aiService.prewarmFoundationModelIfNeeded()
     }
 
     // This method is called when TranscriptionManager updates cloud models
