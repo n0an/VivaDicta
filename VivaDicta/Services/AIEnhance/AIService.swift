@@ -15,7 +15,7 @@ class AIService {
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
     public var modes: [VivaMode] = []
-    
+
     public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
@@ -24,24 +24,28 @@ class AIService {
             self.selectedMode = getMode(name: selectedModeName)
         }
     }
-    
+
     public var selectedMode: VivaMode = VivaMode.defaultMode {
         didSet {
             onModeChange?(selectedMode)
         }
     }
-    
+
     private let userDefaults = UserDefaultsStorage.shared
     private let baseTimeout: TimeInterval = 30
+
+    /// Service for Apple's on-device Foundation Models
+    private let appleFoundationModelService = AppleFoundationModelService()
     
     init() {
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
-        refreshConnectedProviders()
         loadSavedOpenRouterModels()
 
-        Task {
+        // Refresh connected providers on main actor (needed for Apple availability check)
+        Task { @MainActor in
+            refreshConnectedProviders()
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
             }
@@ -296,10 +300,18 @@ class AIService {
             return false
         }
 
-        // Check if API key exists for the selected provider
-        guard getAPIKey(for: aiProvider) != nil else {
-            logger.logWarning("No API key configured for provider: \(aiProvider.rawValue)")
-            return false
+        // Apple provider doesn't need API key but needs to be available
+        if aiProvider == .apple {
+            guard connectedProviders.contains(.apple) else {
+                logger.logWarning("Apple Foundation Model not available on this device")
+                return false
+            }
+        } else {
+            // Check if API key exists for the selected cloud provider
+            guard getAPIKey(for: aiProvider) != nil else {
+                logger.logWarning("No API key configured for provider: \(aiProvider.rawValue)")
+                return false
+            }
         }
 
         // Check if a prompt is selected
@@ -337,21 +349,33 @@ class AIService {
     // }
     
     private func makeRequest(text: String) async throws -> String {
-        guard let aiProvider = self.selectedMode.aiProvider,
-              let apiKey = self.getAPIKey(for: aiProvider) else {
+        guard let aiProvider = self.selectedMode.aiProvider else {
             throw EnhancementError.notConfigured
         }
-        
+
         guard !text.isEmpty else {
             return ""
         }
-        
-        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+
         let systemMessage = getSystemMessage()
         
+        // Handle Apple Foundation Model (on-device)
+        if aiProvider == .apple {
+            logger.logNotice("AI Enhancement - Using Apple Foundation Model")
+            logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
+            return try await appleFoundationModelService.enhance(text, systemPrompt: systemMessage)
+        }
+
+        // Cloud providers require API key
+        guard let apiKey = self.getAPIKey(for: aiProvider) else {
+            throw EnhancementError.notConfigured
+        }
+
+        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+
         logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
         logger.logNotice("AI Enhancement - User Message: \(formattedText)")
-        
+
         switch aiProvider {
         case .anthropic:
             let requestBody: [String: Any] = [
@@ -499,10 +523,22 @@ class AIService {
     
     
     // MARK: - API Keys methods
+    @MainActor
     public func refreshConnectedProviders() {
-        connectedProviders = AIProvider.allCases.filter { provider in
-            return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) != nil
+        var providers: [AIProvider] = []
+
+        // Add Apple provider if Foundation Models are available (no API key needed)
+        if AppleFoundationModelService.isAvailable {
+            providers.append(.apple)
         }
+
+        // Add cloud providers that have API keys configured
+        providers += AIProvider.allCases.filter { provider in
+            provider.requiresAPIKey &&
+            userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) != nil
+        }
+
+        connectedProviders = providers
     }
     
     public func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
@@ -531,6 +567,9 @@ class AIService {
     
     private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
         switch provider {
+        case .apple:
+            // Apple doesn't require API key verification
+            return true
         case .anthropic:
             return await verifyAnthropicAPIKey(key)
         case .grok:
