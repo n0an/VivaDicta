@@ -419,6 +419,7 @@ struct SettingsView: View {
 
     private func activateKeyboardRecordingSession() {
         Task {
+            HapticManager.lightImpact()
             do {
                 // Start the pre-warm session (same as when receiving deep link)
                 try await prewarmManager.startPrewarmSession()
