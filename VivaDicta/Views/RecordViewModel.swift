@@ -338,6 +338,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { @MainActor in
             do {
                 self.recordingState = .transcribing
+                HapticManager.lightImpact()
 
                 // Notify keyboard that transcription has started
                 AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
@@ -416,6 +417,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Update state to show enhancing animation
                     self.recordingState = .enhancing
+                    HapticManager.lightImpact()
 
                     // Notify keyboard that AI enhancement has started
                     AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
