@@ -40,6 +40,8 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isHapticsEnabled)
     private var isHapticsEnabled = true
 
+    @State private var showAddMode = false
+
     let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
     var body: some View {
@@ -90,28 +92,25 @@ struct SettingsView: View {
                     
                     // Add New Mode button - only show if models are available
                     if appState.transcriptionManager.hasAvailableTranscriptionModels {
-                        NavigationLink(
-                            destination: ModeEditView(
-                                mode: nil,
-                                aiService: appState.aiService,
-                                promptsManager: promptsManager,
-                                transcriptionManager: appState.transcriptionManager,
-                                navigationPath: $navigationPath)) {
-                                    HStack {
-                                        Image(systemName: "plus.circle.fill")
-                                            .foregroundStyle(.blue)
-                                            .font(.title2)
-                                         
-                                        Text("Add New Mode")
-                                            .foregroundStyle(.blue)
-                                            .font(.body)
-                                        
-                                        Spacer()
-                                        
-                                    }
-                                }
+                        Button {
+                            HapticManager.lightImpact()
+                            showAddMode = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundStyle(.blue)
+                                    .font(.title2)
+
+                                Text("Add New Mode")
+                                    .foregroundStyle(.blue)
+                                    .font(.body)
+
+                                Spacer()
+                            }
+                        }
                     } else {
                         Button {
+                            HapticManager.lightImpact()
                             navigationPath.append(SettingsDestination.transcriptionModels)
                         } label: {
                             HStack {
@@ -367,6 +366,15 @@ struct SettingsView: View {
                 PromptFormView(
                     editingPrompt: prompt,
                     promptsManager: promptsManager
+                )
+            }
+            .navigationDestination(isPresented: $showAddMode) {
+                ModeEditView(
+                    mode: nil,
+                    aiService: appState.aiService,
+                    promptsManager: promptsManager,
+                    transcriptionManager: appState.transcriptionManager,
+                    navigationPath: $navigationPath
                 )
             }
             .navigationTitle("Settings")
