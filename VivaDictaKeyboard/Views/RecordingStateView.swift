@@ -45,7 +45,9 @@ struct RecordingStateView: View {
             HStack {
                 Picker("Viva Mode", selection: $dictationState.vivaModeManager.selectedVivaMode) {
                     ForEach(dictationState.vivaModeManager.availableVivaModes) { mode in
-                        Text(mode.name).tag(mode)
+                        Text(mode.name)
+                            .lineLimit(1)
+                            .tag(mode)
                     }
                 }
                 .tint(.primary)

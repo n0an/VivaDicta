@@ -26,6 +26,7 @@ struct RecordingSheetView: View {
                 Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
                     ForEach(vm.availableModes) { mode in
                         Text(mode.name)
+                            .lineLimit(1)
                             .tag(mode.name)
                     }
                 }
