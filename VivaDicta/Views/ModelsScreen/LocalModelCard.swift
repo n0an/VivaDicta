@@ -221,7 +221,6 @@ struct LocalModelCard: View {
         }
         .alert("Download Model", isPresented: $showDownloadAlert) {
             Button("Continue") {
-                HapticManager.mediumImpact()
                 downloadLocalModel()
             }
             Button("Cancel", role: .cancel) { }
@@ -248,7 +247,7 @@ struct LocalModelCard: View {
                     try await downloadManager.downloadModel(parakeetModel)
                 }
 
-                HapticManager.downloadCompleted()
+                HapticManager.success()
 
                 // Hide "Select Transcription model" tips
                 await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
@@ -272,7 +271,7 @@ struct LocalModelCard: View {
     }
 
     private func deleteModel() {
-        HapticManager.itemDeleted()
+        HapticManager.warning()
         Task {
             do {
                 try await downloadManager.deleteModel(model)

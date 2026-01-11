@@ -249,7 +249,7 @@ struct AudioPlayerView: View {
     }
     
     private func togglePlayback() {
-        HapticManager.playbackToggled()
+        HapticManager.lightImpact()
         if playerManager.isPlaying {
             playerManager.pause()
         } else {

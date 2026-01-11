@@ -144,7 +144,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isVADEnabled) { _, _ in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                     }
 
                     Toggle(isOn: $isTextFormattingEnabled) {
@@ -157,7 +157,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isTextFormattingEnabled) { _, _ in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                     }
                 }
                 
@@ -188,7 +188,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isSmartFormattingEnabled) { _, newValue in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
                     }
 
@@ -202,7 +202,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isKeepInClipboardEnabled) { _, newValue in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled = newValue
                     }
 
@@ -218,7 +218,7 @@ struct SettingsView: View {
 //                        }
                     }
                     .onChange(of: isHapticFeedbackEnabled) { _, newValue in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled = newValue
                     }
 
@@ -234,7 +234,7 @@ struct SettingsView: View {
 //                        }
                     }
                     .onChange(of: isSoundFeedbackEnabled) { _, newValue in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
 
@@ -254,7 +254,7 @@ struct SettingsView: View {
                         .pickerStyle(.menu)
                         .tint(.primary)
                         .onChange(of: audioSessionTimeout) { _, _ in
-                            HapticManager.pickerSelectionChanged()
+                            HapticManager.selectionChanged()
                         }
 
                         Text("Keep microphone session active to allow recording from keyboard")
@@ -318,7 +318,7 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isAutoAudioCleanupEnabled) { _, _ in
-                        HapticManager.toggleChanged()
+                        HapticManager.selectionChanged()
                     }
 
                     if isAutoAudioCleanupEnabled {
@@ -333,7 +333,7 @@ struct SettingsView: View {
                         .padding(.leading)
                         .tint(.primary)
                         .onChange(of: audioRetentionDays) { _, _ in
-                            HapticManager.pickerSelectionChanged()
+                            HapticManager.selectionChanged()
                         }
                     }
                 }
@@ -406,7 +406,7 @@ struct SettingsView: View {
         // Prevent deletion if there's only one mode
         guard appState.aiService.modes.count > 1 else { return }
 
-        HapticManager.itemDeleted()
+        HapticManager.warning()
         appState.aiService.deleteMode(mode)
     }
 
@@ -429,7 +429,7 @@ struct SettingsView: View {
 
             } catch {
                 prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
-                HapticManager.errorOccurred()
+                HapticManager.error()
                 showPrewarmError = true
             }
         }

@@ -69,7 +69,7 @@ struct PromptsSettings: View {
     }
 
     private func deletePrompt(_ prompt: UserPrompt) {
-        HapticManager.itemDeleted()
+        HapticManager.warning()
         // Disable AI enhancement for modes using this prompt
         aiService.disableAIEnhancementForModesUsingPrompt(promptId: prompt.id)
         // Delete the prompt

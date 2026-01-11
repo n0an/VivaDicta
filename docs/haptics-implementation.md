@@ -7,7 +7,7 @@ This document describes the haptic feedback system implemented in VivaDicta.
 VivaDicta uses a centralized `HapticManager` utility for all haptic feedback. This provides:
 - Consistent haptic patterns across the app
 - Global enable/disable toggle in Settings
-- Both low-level and semantic APIs for different use cases
+- Direct access to UIKit feedback generators and CoreHaptics
 
 ## HapticManager API
 
@@ -35,168 +35,151 @@ Haptics can be globally enabled/disabled via:
 - Stored in `UserDefaults` with key `isHapticsEnabled`
 - Enabled by default
 
-### Low-Level API
+### API Reference
 
 Direct access to UIKit feedback generators:
 
 | Method | UIKit Generator | Use Case |
 |--------|-----------------|----------|
-| `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Subtle feedback |
-| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Standard taps |
-| `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Significant actions |
-| `softImpact()` | `UIImpactFeedbackGenerator(.soft)` | Gentle, cushioned |
-| `rigidImpact()` | `UIImpactFeedbackGenerator(.rigid)` | Crisp, sharp |
-| `selectionChanged()` | `UISelectionFeedbackGenerator` | Pickers, toggles |
-| `success()` | `UINotificationFeedbackGenerator(.success)` | Completed operations |
-| `warning()` | `UINotificationFeedbackGenerator(.warning)` | Destructive actions |
+| `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Subtle feedback, play/pause, cancel |
+| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start recording, confirm actions |
+| `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Stop recording |
+| `softImpact()` | `UIImpactFeedbackGenerator(.soft)` | Expand/collapse animations |
+| `rigidImpact()` | `UIImpactFeedbackGenerator(.rigid)` | Crisp, sharp feedback |
+| `selectionChanged()` | `UISelectionFeedbackGenerator` | Pickers, toggles, navigation |
+| `success()` | `UINotificationFeedbackGenerator(.success)` | Completed operations, copy, add |
+| `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete operations |
 | `error()` | `UINotificationFeedbackGenerator(.error)` | Failed operations |
-
-### Semantic API (Recommended)
-
-High-level methods that map to specific user actions:
-
-| Method | Maps To | Description |
-|--------|---------|-------------|
-| `recordingStarted()` | `mediumImpact()` | Recording begins |
-| `recordingStopped()` | `heavyImpact()` | Recording ends |
-| `actionCancelled()` | `lightImpact()` | User cancels action |
-| `processingCompleted()` | `playPattern("TranscriptionComplete")` | Transcription/enhancement done (custom AHAP) |
-| `copiedToClipboard()` | `success()` | Text copied |
-| `itemDeleted()` | `warning()` | Delete operation |
-| `downloadCompleted()` | `success()` | Model download finished |
-| `toggleChanged()` | `selectionChanged()` | Toggle state change |
-| `pickerSelectionChanged()` | `selectionChanged()` | Picker value change |
-| `buttonToggled()` | `softImpact()` | Expand/collapse |
-| `playbackToggled()` | `lightImpact()` | Play/pause audio |
-| `errorOccurred()` | `error()` | Error state |
+| `playPattern(named:)` | CoreHaptics AHAP | Custom patterns (transcription complete) |
 
 ## Implementation by File
 
 ### Recording Flow
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `RecordViewModel.swift` | Line ~139 | `recordingStarted()` | Prewarm recording start |
-| `RecordViewModel.swift` | Line ~184 | `recordingStarted()` | Normal recording start |
-| `RecordViewModel.swift` | Line ~245 | `recordingStopped()` | Stop recording |
-| `RecordViewModel.swift` | Line ~524 | `actionCancelled()` | Cancel recording |
-| `RecordViewModel.swift` | Line ~484 | `processingCompleted()` | Transcription complete |
-| `RecordViewModel.swift` | Line ~492 | `errorOccurred()` | Transcription error |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `RecordViewModel.swift` | Line ~139 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Prewarm recording start |
+| `RecordViewModel.swift` | Line ~184 | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Normal recording start |
+| `RecordViewModel.swift` | Line ~244 | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Stop recording |
+| `RecordViewModel.swift` | Line ~525 | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Cancel recording |
+| `RecordViewModel.swift` | Line ~483 | `playPattern(named:)` | CoreHaptics AHAP | Transcription complete |
+| `RecordViewModel.swift` | Line ~491 | `error()` | `UINotificationFeedbackGenerator(.error)` | Transcription error |
 
 ### Copy Actions
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `AnimatedCopyButton.swift` | Line ~48 | `copiedToClipboard()` | Copy to clipboard |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `AnimatedCopyButton.swift` | Line ~48 | `success()` | `UINotificationFeedbackGenerator(.success)` | Copy to clipboard |
 
 ### Delete Operations
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `TranscriptionsContentView.swift` | `deleteTranscription()` | `itemDeleted()` | Delete transcription |
-| `SettingsView.swift` | `deleteMode()` | `itemDeleted()` | Delete mode |
-| `LocalModelCard.swift` | `deleteModel()` | `itemDeleted()` | Delete local model |
-| `CloudModelCard.swift` | `deleteAPIKey()` | `itemDeleted()` | Delete API key |
-| `DictionaryView.swift` | Swipe action | `itemDeleted()` | Delete word (swipe) |
-| `DictionaryView.swift` | `deleteSelectedWords()` | `itemDeleted()` | Bulk delete words |
-| `ReplacementsView.swift` | Swipe action | `itemDeleted()` | Delete replacement (swipe) |
-| `ReplacementsView.swift` | `deleteSelectedReplacements()` | `itemDeleted()` | Bulk delete replacements |
-| `PromptsSettings.swift` | `deletePrompt()` | `itemDeleted()` | Delete prompt |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `TranscriptionsContentView.swift` | `deleteTranscription()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete transcription |
+| `SettingsView.swift` | `deleteMode()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete mode |
+| `LocalModelCard.swift` | `deleteModel()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete local model |
+| `CloudModelCard.swift` | `deleteAPIKey()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete API key |
+| `DictionaryView.swift` | Swipe action | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete word (swipe) |
+| `DictionaryView.swift` | `deleteSelectedWords()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete words |
+| `ReplacementsView.swift` | Swipe action | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete replacement (swipe) |
+| `ReplacementsView.swift` | `deleteSelectedReplacements()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete replacements |
+| `PromptsSettings.swift` | `deletePrompt()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete prompt |
 
 ### Duplicate Operations
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `ModeEditView.swift` | `duplicateMode()` | `success()` | Duplicate mode button |
-| `SettingsView.swift` | Context menu | `success()` | Duplicate mode (context menu) |
-| `SettingsView.swift` | Swipe action | `success()` | Duplicate mode (swipe) |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `ModeEditView.swift` | `duplicateMode()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Duplicate mode button |
+| `SettingsView.swift` | Context menu | `success()` | `UINotificationFeedbackGenerator(.success)` | Duplicate mode (context menu) |
+| `SettingsView.swift` | Swipe action | `success()` | `UINotificationFeedbackGenerator(.success)` | Duplicate mode (swipe) |
 
 ### Model Downloads
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `LocalModelCard.swift` | Download/Delete button | `lightImpact()` | Button tap |
-| `LocalModelCard.swift` | Download alert "Continue" | `mediumImpact()` | Confirm download |
-| `LocalModelCard.swift` | `downloadLocalModel()` | `downloadCompleted()` | Model download complete |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `LocalModelCard.swift` | Download/Delete button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Button tap |
+| `LocalModelCard.swift` | Download alert "Continue" | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Confirm download |
+| `LocalModelCard.swift` | `downloadLocalModel()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Model download complete |
 
 ### Settings Toggles
 
-| File | Toggle | Haptic |
-|------|--------|--------|
-| `SettingsView.swift` | Voice Activity Detection | `toggleChanged()` |
-| `SettingsView.swift` | Automatic Text Formatting | `toggleChanged()` |
-| `SettingsView.swift` | Smart Insert | `toggleChanged()` |
-| `SettingsView.swift` | Copy to Clipboard | `toggleChanged()` |
-| `SettingsView.swift` | Haptic Feedback (Keyboard) | `toggleChanged()` |
-| `SettingsView.swift` | Sound | `toggleChanged()` |
-| `SettingsView.swift` | Automatic Audio Cleanup | `toggleChanged()` |
-| `ReplacementsView.swift` | Enable Replacements | `toggleChanged()` |
+| File | Toggle | Method | Haptic Type |
+|------|--------|--------|-------------|
+| `SettingsView.swift` | Voice Activity Detection | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Automatic Text Formatting | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Smart Insert | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Copy to Clipboard | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Haptic Feedback (Keyboard) | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Sound | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Automatic Audio Cleanup | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `ReplacementsView.swift` | Enable Replacements | `selectionChanged()` | `UISelectionFeedbackGenerator` |
 
 ### Pickers
 
-| File | Picker | Haptic |
-|------|--------|--------|
-| `SettingsView.swift` | Session Timeout | `pickerSelectionChanged()` |
-| `SettingsView.swift` | Audio Retention Days | `pickerSelectionChanged()` |
-| `RecordingSheetView.swift` | Mode Selector | `pickerSelectionChanged()` |
-| `TranscriptionDetailView.swift` | Text Type (Original/Enhanced) | `selectionChanged()` |
-| `ModelsView.swift` | Model Type (Local/Cloud) | `selectionChanged()` |
+| File | Picker | Method | Haptic Type |
+|------|--------|--------|-------------|
+| `SettingsView.swift` | Session Timeout | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `SettingsView.swift` | Audio Retention Days | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `RecordingSheetView.swift` | Mode Selector | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `TranscriptionDetailView.swift` | Text Type (Original/Enhanced) | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `ModelsView.swift` | Model Type (Local/Cloud) | `selectionChanged()` | `UISelectionFeedbackGenerator` |
+| `ModeEditView.swift` | All pickers | `selectionChanged()` | `UISelectionFeedbackGenerator` |
 
 ### Audio Playback
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `AudioPlayerView.swift` | `togglePlayback()` | `playbackToggled()` | Play/pause |
-| `AudioPlayerView.swift` | Waveform tap gesture | `selectionChanged()` | Seek position |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `AudioPlayerView.swift` | `togglePlayback()` | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Play/pause |
+| `AudioPlayerView.swift` | Waveform tap gesture | `selectionChanged()` | `UISelectionFeedbackGenerator` | Seek position |
 
 ### UI Components
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `LiquidActionButtonView.swift` | `onTapGesture` | `buttonToggled()` | Expand/collapse |
-| `ScrollToTopButton.swift` | Button action | `lightImpact()` | Scroll to top |
-| `MainView.swift` | Settings toolbar button | `lightImpact()` | Open settings |
-| `MainView.swift` | File import toolbar button | `lightImpact()` | Open file import |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `LiquidActionButtonView.swift` | `onTapGesture` | `softImpact()` | `UIImpactFeedbackGenerator(.soft)` | Expand/collapse |
+| `ScrollToTopButton.swift` | Button action | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Scroll to top |
+| `MainView.swift` | Settings toolbar button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open settings |
+| `MainView.swift` | File import toolbar button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open file import |
 
 ### Transcription Detail
 
-| File | Function | Haptic | Trigger |
-|------|----------|--------|---------|
-| `TranscriptionDetailView.swift` | `retranscribe()` | `processingCompleted()` | Retranscribe success |
-| `TranscriptionDetailView.swift` | `retranscribe()` | `errorOccurred()` | Retranscribe error |
-| `TranscriptionDetailView.swift` | `enhance()` | `processingCompleted()` | Enhancement success |
-| `TranscriptionDetailView.swift` | `enhance()` | `errorOccurred()` | Enhancement error |
-| `TranscriptionDetailView.swift` | `retranscribeAndEnhance()` | `processingCompleted()` | Combined success |
-| `TranscriptionDetailView.swift` | `retranscribeAndEnhance()` | `errorOccurred()` | Combined error |
+| File | Function | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `TranscriptionDetailView.swift` | `retranscribe()` | `playPattern(named:)` | CoreHaptics AHAP | Retranscribe success |
+| `TranscriptionDetailView.swift` | `retranscribe()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Retranscribe error |
+| `TranscriptionDetailView.swift` | `enhance()` | `playPattern(named:)` | CoreHaptics AHAP | Enhancement success |
+| `TranscriptionDetailView.swift` | `enhance()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Enhancement error |
+| `TranscriptionDetailView.swift` | `retranscribeAndEnhance()` | `playPattern(named:)` | CoreHaptics AHAP | Combined success |
+| `TranscriptionDetailView.swift` | `retranscribeAndEnhance()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Combined error |
 
 ### Add Operations
 
-| File | Function | Haptic | Trigger |
-|------|----------|--------|---------|
-| `DictionaryView.swift` | `addWord()` | `success()` | Word added |
-| `ReplacementsView.swift` | `addReplacement()` | `success()` | Replacement added |
+| File | Function | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `DictionaryView.swift` | `addWord()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Word added |
+| `ReplacementsView.swift` | `addReplacement()` | `success()` | `UINotificationFeedbackGenerator(.success)` | Replacement added |
 
 ### Onboarding
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `OnboardingView.swift` | `navigateTo()` | `selectionChanged()` | Page navigation |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `OnboardingView.swift` | `navigateTo()` | `selectionChanged()` | `UISelectionFeedbackGenerator` | Page navigation |
 
 ### Error Alerts
 
-| File | Location | Haptic | Trigger |
-|------|----------|--------|---------|
-| `MainView.swift` | `startRecording()` | `warning()` | No model alert |
-| `MainView.swift` | `handleFileImport()` | `warning()` | No model alert |
-| `MainView.swift` | `handleFileImport()` | `errorOccurred()` | File access error |
-| `MainView.swift` | `handleFileImport()` | `errorOccurred()` | File copy error |
-| `MainView.swift` | `handleFileImport()` | `errorOccurred()` | Import failure |
-| `MainView.swift` | `handleSharedAudioTranscription()` | `warning()` | No model alert |
-| `MainView.swift` | `handleSharedAudioTranscription()` | `errorOccurred()` | File not found |
-| `MainView.swift` | `handleSharedAudioTranscription()` | `errorOccurred()` | Copy error |
-| `SettingsView.swift` | `activateKeyboardRecordingSession()` | `errorOccurred()` | Prewarm error |
-| `ModeEditView.swift` | `saveMode()` | `errorOccurred()` | Duplicate name |
-| `ModeEditView.swift` | `saveMode()` | `errorOccurred()` | Unexpected error |
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `MainView.swift` | `startRecording()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | No model alert |
+| `MainView.swift` | `handleFileImport()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | No model alert |
+| `MainView.swift` | `handleFileImport()` | `error()` | `UINotificationFeedbackGenerator(.error)` | File access error |
+| `MainView.swift` | `handleFileImport()` | `error()` | `UINotificationFeedbackGenerator(.error)` | File copy error |
+| `MainView.swift` | `handleFileImport()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Import failure |
+| `MainView.swift` | `handleSharedAudioTranscription()` | `warning()` | `UINotificationFeedbackGenerator(.warning)` | No model alert |
+| `MainView.swift` | `handleSharedAudioTranscription()` | `error()` | `UINotificationFeedbackGenerator(.error)` | File not found |
+| `MainView.swift` | `handleSharedAudioTranscription()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Copy error |
+| `SettingsView.swift` | `activateKeyboardRecordingSession()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Prewarm error |
+| `ModeEditView.swift` | `saveMode()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Duplicate name |
+| `ModeEditView.swift` | `saveMode()` | `error()` | `UINotificationFeedbackGenerator(.error)` | Unexpected error |
 
 ## Design Principles
 
@@ -204,44 +187,47 @@ High-level methods that map to specific user actions:
 
 | Haptic Type | Use For |
 |-------------|---------|
-| **Impact (Light)** | Minor UI feedback, subtle confirmations |
-| **Impact (Medium)** | Primary action initiation |
-| **Impact (Heavy)** | Significant state changes |
-| **Impact (Soft)** | Smooth UI transitions |
+| **Impact (Light)** | Minor UI feedback, subtle confirmations, play/pause |
+| **Impact (Medium)** | Primary action initiation (start recording) |
+| **Impact (Heavy)** | Significant state changes (stop recording) |
+| **Impact (Soft)** | Smooth UI transitions (expand/collapse) |
 | **Selection** | Picker/toggle changes, navigation |
-| **Success** | Completed operations, positive outcomes |
+| **Success** | Completed operations, copy, add, duplicate |
 | **Warning** | Destructive actions (delete), caution states |
 | **Error** | Failed operations, validation errors |
+| **Custom AHAP** | Distinctive feedback (transcription complete) |
 
 ### Best Practices
 
-1. **Use semantic API when possible** - `recordingStarted()` is clearer than `mediumImpact()`
-2. **Don't overuse haptics** - Reserve for meaningful interactions
-3. **Match intensity to importance** - Heavy for significant actions, light for minor ones
-4. **Be consistent** - Same action should produce same haptic throughout app
-5. **Test on device** - Simulator doesn't provide haptic feedback
+1. **Don't overuse haptics** - Reserve for meaningful interactions
+2. **Match intensity to importance** - Heavy for significant actions, light for minor ones
+3. **Be consistent** - Same action should produce same haptic throughout app
+4. **Test on device** - Simulator doesn't provide haptic feedback
 
 ## Adding New Haptics
 
-1. **For common patterns**, use existing semantic methods:
-   ```swift
-   HapticManager.itemDeleted()
-   ```
+Use the appropriate method directly:
 
-2. **For new semantic actions**, add a method to `HapticManager`:
-   ```swift
-   static func newAction() {
-       mediumImpact()
-   }
-   ```
+```swift
+// For delete operations
+HapticManager.warning()
 
-3. **For one-off cases**, use low-level API:
-   ```swift
-   HapticManager.lightImpact()
-   ```
+// For success/completion
+HapticManager.success()
+
+// For toggles/pickers
+HapticManager.selectionChanged()
+
+// For subtle feedback
+HapticManager.lightImpact()
+
+// For custom patterns
+HapticManager.playPattern(named: "PatternName")
+```
 
 ## Related Files
 
 - `VivaDicta/Utils/HapticManager.swift` - Main implementation
+- `VivaDicta/Resources/Haptics/` - AHAP pattern files
 - `VivaDicta/Shared/UserDefaultsStorage.swift` - Settings key definition
 - `VivaDicta/Views/SettingsScreen/SettingsView.swift` - Global toggle UI

@@ -81,7 +81,7 @@ struct LiquidActionButtonView: View {
                 .contentShape(.rect)
                 .onTapGesture {
                     guard processingState == .idle else { return }
-                    HapticManager.buttonToggled()
+                    HapticManager.softImpact()
                     withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
                         isExpanded.toggle()
                     }

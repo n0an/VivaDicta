@@ -341,7 +341,7 @@ struct MainView: View {
             guard selectedURL.startAccessingSecurityScopedResource() else {
                 logger.logError("Failed to access security-scoped resource: \(selectedURL.lastPathComponent)")
                 fileErrorMessage = "Unable to access the selected file. Please try again."
-                HapticManager.errorOccurred()
+                HapticManager.error()
                 showFileErrorAlert = true
                 return
             }
@@ -366,14 +366,14 @@ struct MainView: View {
             } catch {
                 logger.logError("Failed to copy imported file: \(error.localizedDescription)")
                 fileErrorMessage = "Failed to import audio file: \(error.localizedDescription)"
-                HapticManager.errorOccurred()
+                HapticManager.error()
                 showFileErrorAlert = true
             }
 
         case .failure(let error):
             logger.logError("File import failed: \(error.localizedDescription)")
             fileErrorMessage = "Failed to import file: \(error.localizedDescription)"
-            HapticManager.errorOccurred()
+            HapticManager.error()
             showFileErrorAlert = true
         }
     }
@@ -401,7 +401,7 @@ struct MainView: View {
         guard FileManager.default.fileExists(atPath: sourceURL.path) else {
             logger.logError("Shared audio file does not exist: \(pendingFileName)")
             fileErrorMessage = "The shared audio file could not be found."
-            HapticManager.errorOccurred()
+            HapticManager.error()
             showFileErrorAlert = true
             return
         }
@@ -435,7 +435,7 @@ struct MainView: View {
         } catch {
             logger.logError("Failed to copy shared audio file: \(error.localizedDescription)")
             fileErrorMessage = "Failed to process shared audio: \(error.localizedDescription)"
-            HapticManager.errorOccurred()
+            HapticManager.error()
             showFileErrorAlert = true
         }
     }

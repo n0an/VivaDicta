@@ -136,7 +136,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 recordingState = .recording
-                HapticManager.recordingStarted()
+                HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started
                 AppGroupCoordinator.shared.updateRecordingState(true)
@@ -181,7 +181,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 recordingState = .recording
-                HapticManager.recordingStarted()
+                HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started (even in normal mode)
                 AppGroupCoordinator.shared.updateRecordingState(true)
@@ -241,7 +241,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     func stopCaptureAudio(modelContext: ModelContext) {
-        HapticManager.recordingStopped()
+        HapticManager.heavyImpact()
 
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
@@ -480,7 +480,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
                 try Task.checkCancellation()
-                HapticManager.processingCompleted()
+                HapticManager.playPattern(named: "TranscriptionComplete")
                 self.recordingState = .idle
 
                 // Reschedule session timeout now that all processing is complete
@@ -488,7 +488,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             } catch {
                 if Task.isCancelled { return }
-                HapticManager.errorOccurred()
+                HapticManager.error()
                 recordingState = .error(.transcribe)
                 resetValues()
 
@@ -522,7 +522,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     }
     
     func cancelTranscribe() {
-        HapticManager.actionCancelled()
+        HapticManager.lightImpact()
 
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil

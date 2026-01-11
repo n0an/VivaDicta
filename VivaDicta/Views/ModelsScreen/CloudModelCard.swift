@@ -160,7 +160,7 @@ struct CloudModelCard: View {
     }
 
     private func deleteAPIKey() {
-        HapticManager.itemDeleted()
+        HapticManager.warning()
 
         // Remove the API key from UserDefaults
         let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue

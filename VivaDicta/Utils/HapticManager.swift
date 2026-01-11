@@ -166,69 +166,6 @@ enum HapticManager {
         guard isEnabled else { return }
         notification.notificationOccurred(.error)
     }
-
-    // MARK: - Semantic Actions (High-Level API)
-
-    /// Haptic for starting recording
-    static func recordingStarted() {
-        mediumImpact()
-    }
-
-    /// Haptic for stopping recording
-    static func recordingStopped() {
-        mediumImpact()
-    }
-
-    /// Haptic for canceling an action
-    static func actionCancelled() {
-        lightImpact()
-    }
-
-    /// Haptic for transcription/enhancement completion - uses custom AHAP pattern
-    static func processingCompleted() {
-        playPattern(named: "TranscriptionComplete")
-    }
-
-    /// Haptic for copy to clipboard
-    static func copiedToClipboard() {
-        mediumImpact()
-    }
-
-    /// Haptic for delete action
-    static func itemDeleted() {
-        warning()
-    }
-
-    /// Haptic for download completion
-    static func downloadCompleted() {
-        mediumImpact()
-    }
-
-    /// Haptic for toggle state change
-    static func toggleChanged() {
-        selectionChanged()
-    }
-
-    /// Haptic for picker/menu selection
-    static func pickerSelectionChanged() {
-        selectionChanged()
-    }
-
-    /// Haptic for button expand/collapse
-    static func buttonToggled() {
-        softImpact()
-    }
-
-    /// Haptic for play/pause audio
-    static func playbackToggled() {
-        lightImpact()
-    }
-
-    /// Haptic for error occurrence
-    static func errorOccurred() {
-        error()
-    }
-
     // MARK: - Prepare (optional optimization)
 
     /// Prepare generators for immediate feedback (call before anticipated action)
