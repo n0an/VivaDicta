@@ -19,14 +19,20 @@ struct PromptsSettings: View {
                 promptsList
             }
         }
-        .toolbar {
-            ToolbarItem {
-                NavigationLink(value: SettingsDestination.promptsTemplates) {
-                    Label("Add Data", systemImage: "plus")
-                }
-                .prominentButton(color: .blue)
+        .overlay(alignment: .bottomTrailing) {
+            NavigationLink(value: SettingsDestination.promptsTemplates) {
+                Image(systemName: "plus")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(.blue, in: .circle)
+                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
             }
-
+            .simultaneousGesture(TapGesture().onEnded {
+                HapticManager.lightImpact()
+            })
+            .padding(.trailing, 20)
+            .padding(.bottom, 20)
         }
         .toolbarTitleDisplayMode(.inlineLarge)
         .navigationTitle("Prompts")
