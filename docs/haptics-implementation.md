@@ -41,11 +41,11 @@ Direct access to UIKit feedback generators:
 
 | Method | UIKit Generator | Use Case |
 |--------|-----------------|----------|
-| `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Subtle feedback, play/pause, cancel |
-| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start/stop recording, copy, add items, expand/collapse |
+| `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Edit mode buttons, swipe actions, play/pause, cancel |
+| `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Start/stop recording, copy, add items, save changes |
 | `heavyImpact()` | `UIImpactFeedbackGenerator(.heavy)` | Significant completions (download, duplicate) |
-| `selectionChanged()` | `UISelectionFeedbackGenerator` | Pickers, toggles, navigation |
-| `warning()` | `UINotificationFeedbackGenerator(.warning)` | Delete operations |
+| `selectionChanged()` | `UISelectionFeedbackGenerator` | Pickers, toggles, select all, item selection |
+| `warning()` | `UINotificationFeedbackGenerator(.warning)` | Bulk delete operations |
 | `error()` | `UINotificationFeedbackGenerator(.error)` | Failed operations |
 | `playPattern(named:)` | CoreHaptics AHAP | Custom patterns (transcription complete) |
 
@@ -155,6 +155,24 @@ Direct access to UIKit feedback generators:
 | `DictionaryView.swift` | `addWord()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Word added |
 | `ReplacementsView.swift` | `addReplacement()` | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Replacement added |
 
+### Edit Mode Operations (Dictionary & Replacements)
+
+| File | Location | Method | Haptic Type | Trigger |
+|------|----------|--------|-------------|---------|
+| `DictionaryView.swift` | Toolbar Done button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Exit edit mode |
+| `DictionaryView.swift` | Toolbar Edit button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Enter edit mode |
+| `DictionaryView.swift` | Select All/Deselect All | `selectionChanged()` | `UISelectionFeedbackGenerator` | Toggle all selection |
+| `DictionaryView.swift` | `toggleSelection()` | `selectionChanged()` | `UISelectionFeedbackGenerator` | Toggle word selection |
+| `DictionaryView.swift` | Edit swipe action | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open edit sheet |
+| `DictionaryView.swift` | EditVocabularySheet Save | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Save word changes |
+| `ReplacementsView.swift` | Toolbar Done button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Exit edit mode |
+| `ReplacementsView.swift` | Toolbar Edit button | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Enter edit mode |
+| `ReplacementsView.swift` | Enable toggle | `selectionChanged()` | `UISelectionFeedbackGenerator` | Toggle replacements |
+| `ReplacementsView.swift` | Select All/Deselect All | `selectionChanged()` | `UISelectionFeedbackGenerator` | Toggle all selection |
+| `ReplacementsView.swift` | `toggleSelection()` | `selectionChanged()` | `UISelectionFeedbackGenerator` | Toggle replacement selection |
+| `ReplacementsView.swift` | Edit swipe action | `lightImpact()` | `UIImpactFeedbackGenerator(.light)` | Open edit sheet |
+| `ReplacementsView.swift` | EditReplacementSheet Save | `mediumImpact()` | `UIImpactFeedbackGenerator(.medium)` | Save replacement changes |
+
 ### Onboarding
 
 | File | Location | Method | Haptic Type | Trigger |
@@ -183,10 +201,10 @@ Direct access to UIKit feedback generators:
 
 | Haptic Type | Use For |
 |-------------|---------|
-| **Impact (Light)** | Minor UI feedback, subtle confirmations, play/pause, cancel |
-| **Impact (Medium)** | Primary actions (start/stop recording, copy, add items, expand/collapse, minor deletes) |
+| **Impact (Light)** | Minor UI feedback, edit mode buttons, swipe actions, play/pause, cancel |
+| **Impact (Medium)** | Primary actions (start/stop recording, copy, add items, expand/collapse, minor deletes, save changes) |
 | **Impact (Heavy)** | Significant completions (download complete, duplicate, delete transcription) |
-| **Selection** | Picker/toggle changes, navigation |
+| **Selection** | Picker/toggle changes, select all/deselect all, item selection, navigation |
 | **Warning** | Critical destructive actions (delete mode, delete model, bulk deletes) |
 | **Error** | Failed operations, validation errors |
 | **Custom AHAP** | Distinctive feedback (transcription complete) |
@@ -203,19 +221,19 @@ Direct access to UIKit feedback generators:
 Use the appropriate method directly:
 
 ```swift
-// For primary actions (copy, add, start/stop recording, minor deletes)
+// For primary actions (copy, add, start/stop recording, save changes, minor deletes)
 HapticManager.mediumImpact()
 
 // For significant completions (download, duplicate, delete transcription)
 HapticManager.heavyImpact()
 
-// For subtle feedback (cancel, play/pause)
+// For edit mode buttons, swipe actions, cancel, play/pause
 HapticManager.lightImpact()
 
-// For toggles/pickers
+// For toggles, pickers, select all/deselect all, item selection
 HapticManager.selectionChanged()
 
-// For critical destructive actions (delete mode, delete model, bulk deletes)
+// For bulk delete operations
 HapticManager.warning()
 
 // For errors

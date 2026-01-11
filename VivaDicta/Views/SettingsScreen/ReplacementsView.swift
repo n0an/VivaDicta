@@ -40,6 +40,7 @@ struct ReplacementsView: View {
             if editMode {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        HapticManager.lightImpact()
                         selectedReplacements.removeAll()
                         editMode = false
                     }
@@ -47,6 +48,7 @@ struct ReplacementsView: View {
             } else {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Edit") {
+                        HapticManager.lightImpact()
                         editMode = true
                     }
                     .disabled(replacementsService.replacements.isEmpty)
@@ -96,8 +98,10 @@ struct ReplacementsView: View {
         HStack {
             Button(allReplacementsSelected ? "Deselect All" : "Select All") {
                 if allReplacementsSelected {
+                    HapticManager.selectionChanged()
                     selectedReplacements.removeAll()
                 } else {
+                    HapticManager.selectionChanged()
                     selectedReplacements = Set(replacementsService.replacements)
                 }
             }
@@ -162,6 +166,7 @@ struct ReplacementsView: View {
                         }
 
                         Button {
+                            HapticManager.lightImpact()
                             replacementToEdit = replacement
                         } label: {
                             Label("Edit", systemImage: "pencil")
@@ -175,6 +180,7 @@ struct ReplacementsView: View {
     }
 
     private func toggleSelection(_ replacement: Replacement) {
+        HapticManager.selectionChanged()
         if selectedReplacements.contains(replacement) {
             selectedReplacements.remove(replacement)
         } else {
@@ -342,6 +348,7 @@ private struct EditReplacementSheet: View {
             }
 
             Button("Save changes") {
+                HapticManager.mediumImpact()
                 onSave(editedOriginal, editedReplacement)
             }
             .frame(maxWidth: .infinity)

@@ -34,6 +34,7 @@ struct WordsDictionaryView: View {
             if editMode {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        HapticManager.lightImpact()
                         selectedWords.removeAll()
                         editMode = false
                     }
@@ -41,6 +42,7 @@ struct WordsDictionaryView: View {
             } else {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Edit") {
+                        HapticManager.lightImpact()
                         editMode = true
                     }
                     .disabled(customVocabularyService.words.isEmpty)
@@ -71,8 +73,10 @@ struct WordsDictionaryView: View {
         HStack {
             Button(allWordsSelected ? "Deselect All" : "Select All") {
                 if allWordsSelected {
+                    HapticManager.selectionChanged()
                     selectedWords.removeAll()
                 } else {
+                    HapticManager.selectionChanged()
                     selectedWords = customVocabularyService.words
                 }
             }
@@ -125,6 +129,7 @@ struct WordsDictionaryView: View {
                         }
 
                         Button {
+                            HapticManager.lightImpact()
                             wordToEdit = EditableWord(word: word)
                         } label: {
                             Label("Edit", systemImage: "pencil")
@@ -138,6 +143,7 @@ struct WordsDictionaryView: View {
     }
 
     private func toggleSelection(_ word: String) {
+        HapticManager.selectionChanged()
         if selectedWords.contains(word) {
             selectedWords.removeAll { $0 == word }
         } else {
@@ -256,6 +262,7 @@ private struct EditVocabularySheet: View {
             }
 
             Button("Save changes") {
+                HapticManager.mediumImpact()
                 onSave(editedText)
             }
             .frame(maxWidth: .infinity)
