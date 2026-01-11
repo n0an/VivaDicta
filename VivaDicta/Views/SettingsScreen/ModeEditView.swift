@@ -271,9 +271,9 @@ struct ModeEditView: View {
 
             if viewModel.isEditing {
                 Section {
+                    
                     Button {
                         duplicateMode()
-                        
                     } label: {
                         HStack {
                             Spacer()
@@ -281,8 +281,21 @@ struct ModeEditView: View {
                             Spacer()
                         }
                     }
-                    
-                    
+                }
+                
+                if viewModel.aiService.modes.count > 1 {
+                    Section {
+                        Button(role: .destructive) {
+                            deleteMode()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Delete Mode", systemImage: "trash")
+                                    .foregroundStyle(.red)
+                                Spacer()
+                            }
+                        }
+                    }
                 }
             }
 
@@ -370,6 +383,14 @@ struct ModeEditView: View {
         guard let mode = viewModel.originalMode else { return }
         HapticManager.heavyImpact()
         viewModel.aiService.duplicateMode(mode)
+        dismiss()
+    }
+
+    private func deleteMode() {
+        guard let mode = viewModel.originalMode,
+              viewModel.aiService.modes.count > 1 else { return }
+        HapticManager.heavyImpact()
+        viewModel.aiService.deleteMode(mode)
         dismiss()
     }
 }
