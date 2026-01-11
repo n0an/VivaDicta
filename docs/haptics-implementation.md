@@ -13,6 +13,21 @@ VivaDicta uses a centralized `HapticManager` utility for all haptic feedback. Th
 
 Location: `VivaDicta/Utils/HapticManager.swift`
 
+### CoreHaptics Support
+
+HapticManager supports custom haptic patterns via AHAP (Apple Haptic Audio Pattern) files using CoreHaptics framework.
+
+**AHAP Files Location:** `VivaDicta/Resources/Haptics/`
+
+| File | Description | Used For |
+|------|-------------|----------|
+| `TranscriptionComplete.ahap` | Single heartbeat pulse | Transcription completion |
+
+**Playing Custom Patterns:**
+```swift
+HapticManager.playPattern(named: "TranscriptionComplete")
+```
+
 ### Settings
 
 Haptics can be globally enabled/disabled via:
@@ -45,7 +60,7 @@ High-level methods that map to specific user actions:
 | `recordingStarted()` | `mediumImpact()` | Recording begins |
 | `recordingStopped()` | `heavyImpact()` | Recording ends |
 | `actionCancelled()` | `lightImpact()` | User cancels action |
-| `processingCompleted()` | `success()` | Transcription/enhancement done |
+| `processingCompleted()` | `playPattern("TranscriptionComplete")` | Transcription/enhancement done (custom AHAP) |
 | `copiedToClipboard()` | `success()` | Text copied |
 | `itemDeleted()` | `warning()` | Delete operation |
 | `downloadCompleted()` | `success()` | Model download finished |

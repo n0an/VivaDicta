@@ -2,11 +2,12 @@
 //  HapticManager.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2025.01.10
+//  Created by Anton Novoselov on 2026.01.10
 //
 
 import UIKit
 import SwiftUI
+import CoreHaptics
 
 /// Centralized manager for haptic feedback throughout the app
 enum HapticManager {
@@ -21,11 +22,89 @@ enum HapticManager {
     private static let selection = UISelectionFeedbackGenerator()
     private static let notification = UINotificationFeedbackGenerator()
 
+    // MARK: - CoreHaptics Engine
+
+    private static var hapticEngine: CHHapticEngine?
+    private static var engineNeedsStart = true
+
     // MARK: - Settings
 
     /// Check if haptics are enabled in app settings
     private static var isEnabled: Bool {
         UserDefaults.standard.bool(forKey: UserDefaultsStorage.Keys.isHapticsEnabled)
+    }
+
+    /// Check if device supports haptics
+    private static var supportsHaptics: Bool {
+        CHHapticEngine.capabilitiesForHardware().supportsHaptics
+    }
+
+    // MARK: - CoreHaptics Engine Management
+
+    private static func createAndStartEngine() {
+        guard supportsHaptics else { return }
+
+        do {
+            hapticEngine = try CHHapticEngine()
+            hapticEngine?.playsHapticsOnly = true
+
+            // Handle engine reset
+            hapticEngine?.resetHandler = {
+                do {
+                    try hapticEngine?.start()
+                    engineNeedsStart = false
+                } catch {
+                    engineNeedsStart = true
+                }
+            }
+
+            // Handle engine stopped
+            hapticEngine?.stoppedHandler = { _ in
+                engineNeedsStart = true
+            }
+
+            try hapticEngine?.start()
+            engineNeedsStart = false
+        } catch {
+            hapticEngine = nil
+        }
+    }
+
+    private static func ensureEngineRunning() {
+        guard supportsHaptics else { return }
+
+        if hapticEngine == nil {
+            createAndStartEngine()
+        } else if engineNeedsStart {
+            do {
+                try hapticEngine?.start()
+                engineNeedsStart = false
+            } catch {
+                // Engine failed to start
+            }
+        }
+    }
+
+    // MARK: - AHAP Pattern Playback
+
+    /// Play a custom haptic pattern from an AHAP file
+    /// - Parameter named: The name of the AHAP file (without extension)
+    static func playPattern(named: String) {
+        guard isEnabled, supportsHaptics else { return }
+
+        ensureEngineRunning()
+
+        guard let engine = hapticEngine,
+              let url = Bundle.main.url(forResource: named, withExtension: "ahap") else {
+            return
+        }
+
+        do {
+            try engine.playPattern(from: url)
+        } catch {
+            // Fallback to standard haptic if pattern fails
+            success()
+        }
     }
 
     // MARK: - Impact Feedback
@@ -97,7 +176,7 @@ enum HapticManager {
 
     /// Haptic for stopping recording
     static func recordingStopped() {
-        heavyImpact()
+        mediumImpact()
     }
 
     /// Haptic for canceling an action
@@ -105,14 +184,14 @@ enum HapticManager {
         lightImpact()
     }
 
-    /// Haptic for transcription/enhancement completion
+    /// Haptic for transcription/enhancement completion - uses custom AHAP pattern
     static func processingCompleted() {
-        success()
+        playPattern(named: "TranscriptionComplete")
     }
 
     /// Haptic for copy to clipboard
     static func copiedToClipboard() {
-        success()
+        mediumImpact()
     }
 
     /// Haptic for delete action
@@ -122,7 +201,7 @@ enum HapticManager {
 
     /// Haptic for download completion
     static func downloadCompleted() {
-        success()
+        mediumImpact()
     }
 
     /// Haptic for toggle state change
@@ -157,5 +236,6 @@ enum HapticManager {
         guard isEnabled else { return }
         impactMedium.prepare()
         notification.prepare()
+        ensureEngineRunning()
     }
 }
