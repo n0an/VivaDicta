@@ -26,7 +26,8 @@ struct PromptsSettings: View {
                     .foregroundStyle(.white)
                     .frame(width: 56, height: 56)
                     .background(.blue, in: .circle)
-                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    .compositingGroup()
+                    .shadow(color: .black.opacity(0.4), radius: 6, x: 4, y: 4)
             }
             .simultaneousGesture(TapGesture().onEnded {
                 HapticManager.lightImpact()
