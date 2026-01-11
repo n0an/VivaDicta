@@ -14,6 +14,7 @@ struct PromptInstructionsEditorView: View {
     var body: some View {
         TextEditor(text: $instructions)
             .padding()
+            .padding(.bottom, 50)
             .navigationTitle("Prompt Instructions")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {

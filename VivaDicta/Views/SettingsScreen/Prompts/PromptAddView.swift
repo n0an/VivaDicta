@@ -121,7 +121,7 @@ struct PromptAddView: View {
                 promptInstructions = currentTemplate.prompt
             }
         }
-        .sheet(isPresented: $showInstructionsEditor) {
+        .fullScreenCover(isPresented: $showInstructionsEditor) {
             NavigationStack {
                 PromptInstructionsEditorView(instructions: $promptInstructions)
             }

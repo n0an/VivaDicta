@@ -99,7 +99,7 @@ struct PromptEditView: View {
                 promptInstructions = existingPrompt.promptInstructions
             }
         }
-        .sheet(isPresented: $showInstructionsEditor) {
+        .fullScreenCover(isPresented: $showInstructionsEditor) {
             NavigationStack {
                 PromptInstructionsEditorView(instructions: $promptInstructions)
             }
