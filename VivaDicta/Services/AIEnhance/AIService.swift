@@ -34,8 +34,18 @@ class AIService {
     private let userDefaults = UserDefaultsStorage.shared
     private let baseTimeout: TimeInterval = 30
 
-    /// Service for Apple's on-device Foundation Models
-    private let appleFoundationModelService = AppleFoundationModelService()
+    /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
+    private var _appleFoundationModelService: Any?
+
+    @available(iOS 26, *)
+    private var appleFoundationModelService: AppleFoundationModelService {
+        if let service = _appleFoundationModelService as? AppleFoundationModelService {
+            return service
+        }
+        let service = AppleFoundationModelService()
+        _appleFoundationModelService = service
+        return service
+    }
 
     init() {
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
@@ -333,13 +343,15 @@ class AIService {
     public func prewarmFoundationModelIfNeeded() {
         guard selectedMode.aiEnhanceEnabled,
               selectedMode.aiProvider == .apple,
-              AppleFoundationModelService.isAvailable else {
+              AppleFoundationModelAvailability.isAvailable else {
             return
         }
 
-        let systemMessage = getSystemMessage()
-        logger.logInfo("Prewarming Apple Foundation Model for mode: \(self.selectedMode.name)")
-        appleFoundationModelService.prewarm(instructions: systemMessage)
+        if #available(iOS 26, *) {
+            let systemMessage = getSystemMessage()
+            logger.logInfo("Prewarming Apple Foundation Model for mode: \(self.selectedMode.name)")
+            appleFoundationModelService.prewarm(instructions: systemMessage)
+        }
     }
 
     // MARK: - Enhance methods
@@ -378,9 +390,13 @@ class AIService {
         
         // Handle Apple Foundation Model (on-device)
         if aiProvider == .apple {
-            logger.logNotice("AI Enhancement - Using Apple Foundation Model")
-            logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
-            return try await appleFoundationModelService.enhance(text, systemPrompt: systemMessage)
+            if #available(iOS 26, *) {
+                logger.logNotice("AI Enhancement - Using Apple Foundation Model")
+                logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
+                return try await appleFoundationModelService.enhance(text, systemPrompt: systemMessage)
+            } else {
+                throw EnhancementError.notConfigured
+            }
         }
 
         // Cloud providers require API key
@@ -545,7 +561,7 @@ class AIService {
         var providers: [AIProvider] = []
 
         // Add Apple provider if Foundation Models are available (no API key needed)
-        if AppleFoundationModelService.isAvailable {
+        if AppleFoundationModelAvailability.isAvailable {
             providers.append(.apple)
         }
 

@@ -324,13 +324,13 @@ class ModeEditViewModel {
     /// Check if Apple Foundation Model is available on this device
     @MainActor
     var isAppleFoundationModelAvailable: Bool {
-        AppleFoundationModelService.isAvailable
+        AppleFoundationModelAvailability.isAvailable
     }
 
     /// Get availability status message for Apple Foundation Model
     @MainActor
     var appleFoundationModelStatusMessage: String {
-        AppleFoundationModelService.availabilityStatus.description
+        AppleFoundationModelAvailability.currentStatus.description
     }
     
     // MARK: - Prompt Settings

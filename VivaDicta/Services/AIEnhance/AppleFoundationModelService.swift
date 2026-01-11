@@ -6,77 +6,31 @@
 //
 
 import Foundation
+import FoundationModels
 import os
 
-#if canImport(FoundationModels)
-import FoundationModels
-#endif
+// MARK: - Service
 
 /// Service for AI text enhancement using Apple's on-device Foundation Models
-/// Available only on devices that support Apple Intelligence (iOS 26+)
+@available(iOS 26, *)
 @MainActor
 final class AppleFoundationModelService {
     private let logger = Logger(category: .aiService)
 
-    /// The stored session (type-erased to avoid @available issues on stored properties)
-    private var _session: Any?
-
-    #if canImport(FoundationModels)
-    @available(iOS 26, *)
-    private var session: LanguageModelSession? {
-        get { _session as? LanguageModelSession }
-        set { _session = newValue }
-    }
-    #endif
-
-    /// Check if Apple Foundation Models are available on this device
-    static var isAvailable: Bool {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            return SystemLanguageModel.default.availability == .available
-        }
-        #endif
-        return false
-    }
-
-    /// Detailed availability status for UI display
-    static var availabilityStatus: AppleFoundationModelAvailability {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            switch SystemLanguageModel.default.availability {
-            case .available:
-                return .available
-            case .unavailable(.deviceNotEligible):
-                return .deviceNotEligible
-            case .unavailable(.appleIntelligenceNotEnabled):
-                return .appleIntelligenceNotEnabled
-            case .unavailable(.modelNotReady):
-                return .modelNotReady
-            case .unavailable:
-                return .unavailable
-            @unknown default:
-                return .unavailable
-            }
-        }
-        #endif
-        return .unavailable
-    }
+    /// The stored session - created during prewarm, used during enhance
+    private var session: LanguageModelSession?
 
     /// Prewarm the model for faster first response
     /// Creates a session with the given instructions and prewarms it
     /// - Parameter instructions: The system prompt/instructions for the session
     func prewarm(instructions: String) {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            guard Self.isAvailable else { return }
+        guard AppleFoundationModelAvailability.isAvailable else { return }
 
-            // Create session with instructions and store it
-            let newSession = LanguageModelSession(instructions: instructions)
-            session = newSession
-            newSession.prewarm()
-            logger.logInfo("Apple Foundation Model - Session created and prewarmed")
-        }
-        #endif
+        // Create session with instructions and store it
+        let newSession = LanguageModelSession(instructions: instructions)
+        session = newSession
+        newSession.prewarm()
+        logger.logInfo("Apple Foundation Model - Session created and prewarmed")
     }
 
     /// Enhance text using Apple's on-device Foundation Model
@@ -86,48 +40,43 @@ final class AppleFoundationModelService {
     ///   - systemPrompt: The system instructions for enhancement (used if no prewarmed session)
     /// - Returns: The enhanced text
     func enhance(_ text: String, systemPrompt: String) async throws -> String {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            guard Self.isAvailable else {
-                throw AppleFoundationModelError.notAvailable
-            }
-
-            guard !text.isEmpty else {
-                return ""
-            }
-
-            let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
-
-            logger.logNotice("Apple Foundation Model - Starting enhancement")
-
-            // Use prewarmed session if available, otherwise create new one
-            let activeSession: LanguageModelSession
-            if let existingSession = session {
-                activeSession = existingSession
-                logger.logInfo("Apple Foundation Model - Using prewarmed session")
-            } else {
-                activeSession = LanguageModelSession(instructions: systemPrompt)
-                logger.logInfo("Apple Foundation Model - Created new session (no prewarm)")
-            }
-
-            do {
-                let response = try await activeSession.respond(to: formattedText)
-                let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
-                logger.logNotice("Apple Foundation Model - Enhancement completed")
-
-                // Clear session after use - next recording will prewarm fresh
-                session = nil
-
-                return filteredText
-            } catch let error as LanguageModelSession.GenerationError {
-                logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
-                session = nil
-                throw AppleFoundationModelError.generationFailed(error.localizedDescription)
-            }
+        guard AppleFoundationModelAvailability.isAvailable else {
+            throw AppleFoundationModelError.notAvailable
         }
-        #endif
-        throw AppleFoundationModelError.notAvailable
+
+        guard !text.isEmpty else {
+            return ""
+        }
+
+        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+
+        logger.logNotice("Apple Foundation Model - Starting enhancement")
+
+        // Use prewarmed session if available, otherwise create new one
+        let activeSession: LanguageModelSession
+        if let existingSession = session {
+            activeSession = existingSession
+            logger.logInfo("Apple Foundation Model - Using prewarmed session")
+        } else {
+            activeSession = LanguageModelSession(instructions: systemPrompt)
+            logger.logInfo("Apple Foundation Model - Created new session (no prewarm)")
+        }
+
+        do {
+            let response = try await activeSession.respond(to: formattedText)
+            let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
+            logger.logNotice("Apple Foundation Model - Enhancement completed")
+
+            // Clear session after use - next recording will prewarm fresh
+            session = nil
+
+            return filteredText
+        } catch let error as LanguageModelSession.GenerationError {
+            logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
+            session = nil
+            throw AppleFoundationModelError.generationFailed(error.localizedDescription)
+        }
     }
 }
 
@@ -153,6 +102,37 @@ enum AppleFoundationModelAvailability {
         case .unavailable:
             return "Apple Intelligence is unavailable"
         }
+    }
+
+    /// Check if Apple Foundation Models are available on this device
+    @MainActor
+    static var isAvailable: Bool {
+        if #available(iOS 26, *) {
+            return SystemLanguageModel.default.availability == .available
+        }
+        return false
+    }
+
+    /// Detailed availability status for UI display
+    @MainActor
+    static var currentStatus: AppleFoundationModelAvailability {
+        if #available(iOS 26, *) {
+            switch SystemLanguageModel.default.availability {
+            case .available:
+                return .available
+            case .unavailable(.deviceNotEligible):
+                return .deviceNotEligible
+            case .unavailable(.appleIntelligenceNotEnabled):
+                return .appleIntelligenceNotEnabled
+            case .unavailable(.modelNotReady):
+                return .modelNotReady
+            case .unavailable:
+                return .unavailable
+            @unknown default:
+                return .unavailable
+            }
+        }
+        return .unavailable
     }
 }
 
