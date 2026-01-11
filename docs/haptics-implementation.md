@@ -140,6 +140,8 @@ High-level methods that map to specific user actions:
 |------|----------|--------|---------|
 | `LiquidActionButtonView.swift` | `onTapGesture` | `buttonToggled()` | Expand/collapse |
 | `ScrollToTopButton.swift` | Button action | `lightImpact()` | Scroll to top |
+| `MainView.swift` | Settings toolbar button | `lightImpact()` | Open settings |
+| `MainView.swift` | File import toolbar button | `lightImpact()` | Open file import |
 
 ### Transcription Detail
 

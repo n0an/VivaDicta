@@ -51,6 +51,7 @@ struct MainView: View {
                     if #available(iOS 26.0, *) {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button {
+                                HapticManager.lightImpact()
                                 showingSettings = true
 //                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
                             } label: {
@@ -67,6 +68,7 @@ struct MainView: View {
                     } else {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button {
+                                HapticManager.lightImpact()
                                 showingSettings = true
                             } label: {
                                 Image(systemName: "gearshape.fill")
@@ -87,6 +89,7 @@ struct MainView: View {
                     if #available(iOS 26.0, *) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
+                                HapticManager.lightImpact()
                                 showingFileImport = true
 //                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
                             } label: {
@@ -103,6 +106,7 @@ struct MainView: View {
                     } else {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
+                                HapticManager.lightImpact()
                                 showingFileImport = true
                             } label: {
                                 Image(systemName: "waveform.badge.plus")

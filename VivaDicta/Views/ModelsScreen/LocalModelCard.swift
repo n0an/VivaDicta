@@ -239,6 +239,7 @@ struct LocalModelCard: View {
     }
 
     private func downloadLocalModel() {
+        
         Task {
             do {
                 if let whisperModel = model as? WhisperKitModel {
