@@ -96,41 +96,30 @@ enum HapticManager {
             notification.notificationOccurred(.success)
             return
         }
-
+        
         var events = [CHHapticEvent]()
         var curves = [CHHapticParameterCurve]()
 
-        // Create one continuous buzz that fades out
-        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0)
-        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.5)
+        do {
+            // create one continuous buzz that fades out
+            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0)
+            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
 
-        let start = CHHapticParameterCurve.ControlPoint(relativeTime: 0, value: 1)
-        let end = CHHapticParameterCurve.ControlPoint(relativeTime: 1.0, value: 0.0)
+            let start = CHHapticParameterCurve.ControlPoint(relativeTime: 0, value: 1)
+            let end = CHHapticParameterCurve.ControlPoint(relativeTime: 1.5, value: 0)
 
-        let parameter = CHHapticParameterCurve(
-            parameterID: .hapticIntensityControl,
-            controlPoints: [start, end],
-            relativeTime: 0
-        )
-        let event = CHHapticEvent(
-            eventType: .hapticContinuous,
-            parameters: [sharpness, intensity],
-            relativeTime: 0,
-            duration: 1.0
-        )
-        events.append(event)
-        curves.append(parameter)
+            let parameter = CHHapticParameterCurve(parameterID: .hapticIntensityControl, controlPoints: [start, end], relativeTime: 0)
+            let event = CHHapticEvent(eventType: .hapticContinuous, parameters: [sharpness, intensity], relativeTime: 0, duration: 1.5)
+            events.append(event)
+            curves.append(parameter)
+        }
 
-        // Make some sparkles (4 random transient events)
-        for _ in 1...4 {
-            let sparkleSharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
-            let sparkleIntensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
-            let sparkleEvent = CHHapticEvent(
-                eventType: .hapticTransient,
-                parameters: [sparkleSharpness, sparkleIntensity],
-                relativeTime: TimeInterval.random(in: 0.1...1)
-            )
-            events.append(sparkleEvent)
+        for _ in 1...16 {
+            // make some sparkles
+            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
+            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
+            let event = CHHapticEvent(eventType: .hapticTransient, parameters: [sharpness, intensity], relativeTime: TimeInterval.random(in: 0.1...1))
+            events.append(event)
         }
 
         do {
@@ -138,8 +127,8 @@ enum HapticManager {
             let player = try engine.makePlayer(with: pattern)
             try player.start(atTime: 0)
         } catch {
-            // Fallback to standard haptic if pattern fails
             notification.notificationOccurred(.success)
+
         }
     }
 
