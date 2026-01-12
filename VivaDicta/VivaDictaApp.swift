@@ -222,6 +222,7 @@ struct VivaDictaApp: App {
                     }
             } else {
                 OnboardingView {
+                    HapticManager.celebration()
                     hasCompletedOnboarding = true
                 }
             }

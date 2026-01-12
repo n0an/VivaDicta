@@ -550,7 +550,7 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
-                HapticManager.transcriptionComplete()
+                HapticManager.heartbeat()
             } catch {
                 HapticManager.error()
             }
@@ -579,7 +579,7 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
-                HapticManager.transcriptionComplete()
+                HapticManager.heartbeat()
             } catch let error as AppleFoundationModelError {
                 if case .guardrailViolation = error {
                     showGuardrailAlert = true
@@ -636,7 +636,7 @@ struct TranscriptionDetailView: View {
                 // Update Spotlight index
                 await appState.updateTranscriptionInSpotlight(transcription)
 
-                HapticManager.transcriptionComplete()
+                HapticManager.heartbeat()
             } catch {
                 HapticManager.error()
             }

@@ -85,8 +85,8 @@ enum HapticManager {
 
     // MARK: - Custom Haptic Patterns
 
-    /// Transcription complete - celebratory haptic with fade-out buzz and sparkles
-    static func transcriptionComplete() {
+    /// Celebration - celebratory haptic with fade-out buzz and sparkles (used for onboarding completion)
+    static func celebration() {
         guard isEnabled, supportsHaptics else { return }
 
         ensureEngineRunning()
@@ -132,11 +132,16 @@ enum HapticManager {
         }
     }
 
+    /// Heartbeat pattern - for transcription/enhancement completion
+    static func heartbeat() {
+        playPattern(named: "TranscriptionComplete")
+    }
+
     // MARK: - AHAP Pattern Playback
 
     /// Play a custom haptic pattern from an AHAP file
     /// - Parameter named: The name of the AHAP file (without extension)
-    static func playPattern(named: String) {
+    private static func playPattern(named: String) {
         guard isEnabled, supportsHaptics else { return }
 
         ensureEngineRunning()

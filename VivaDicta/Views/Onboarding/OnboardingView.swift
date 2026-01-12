@@ -55,7 +55,6 @@ struct OnboardingView: View {
 
                 if currentPage == .keyboard {
                     Button("Skip") {
-                        HapticManager.lightImpact()
                         onComplete()
                     }
                     .foregroundStyle(.secondary)
@@ -135,7 +134,6 @@ struct OnboardingView: View {
                     .padding(.top, 12)
 
                     OnboardingSecondaryButton(title: "Set Up Later") {
-                        HapticManager.lightImpact()
                         onComplete()
                     }
                         .buttonStyle(.plain)
@@ -172,6 +170,7 @@ struct OnboardingView: View {
     }
 
     private func requestMicrophonePermission() {
+        HapticManager.lightImpact()
         AVAudioApplication.requestRecordPermission { granted in
             Task { @MainActor in
                 permissionState = granted ? .granted : .denied
