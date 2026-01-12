@@ -134,7 +134,10 @@ struct OnboardingView: View {
                     )
                     .padding(.top, 12)
 
-                    OnboardingSecondaryButton(title: "Set Up Later", action: onComplete)
+                    OnboardingSecondaryButton(title: "Set Up Later") {
+                        HapticManager.lightImpact()
+                        onComplete()
+                    }
                         .buttonStyle(.plain)
                 }
             }
