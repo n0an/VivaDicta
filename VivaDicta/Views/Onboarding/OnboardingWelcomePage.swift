@@ -11,9 +11,12 @@ struct OnboardingWelcomePage: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
+            
+            Image("VivaDictaIcon")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 200)
 
-            // App Icon
-            OnboardingAppIcon(gradient: [.blue, .blue.opacity(0.7)], size: 120)
                 .padding(.bottom, 40)
 
             // Title
