@@ -397,8 +397,6 @@ class AIService {
             return ""
         }
 
-        let systemMessage = getSystemMessage()
-        
         // Handle Apple Foundation Model (on-device)
         if aiProvider == .apple {
             if #available(iOS 26, *) {
@@ -411,6 +409,9 @@ class AIService {
                 throw EnhancementError.notConfigured
             }
         }
+
+        // Cloud providers - compute system message only when needed
+        let systemMessage = getSystemMessage()
 
         // Cloud providers require API key
         guard let apiKey = self.getAPIKey(for: aiProvider) else {
