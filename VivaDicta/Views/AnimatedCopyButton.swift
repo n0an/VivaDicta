@@ -45,7 +45,7 @@ struct AnimatedCopyButton: View {
     
     private func copyToClipboard() {
         let _ = ClipboardManager.copyToClipboard(textToCopy)
-        HapticManager.lightImpact()
+        HapticManager.success()
         isCopied = true
         onCopy?()
 

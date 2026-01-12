@@ -188,12 +188,10 @@ enum HapticManager {
     }
 
     // MARK: - Notification Feedback
-
-    /// Success notification - not used
-//    static func success() {
-//        guard isEnabled else { return }
-//        notification.notificationOccurred(.success)
-//    }
+    static func success() {
+        guard isEnabled else { return }
+        notification.notificationOccurred(.success)
+    }
 
     /// Warning notification - for destructive actions (e.g., delete)
     static func warning() {
