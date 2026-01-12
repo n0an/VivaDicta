@@ -131,6 +131,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 return
             }
 
+            // Prewarm Apple Foundation Model if needed - user will need AI enhancement
+            // within seconds after recording completes
+            appState?.aiService.prewarmFoundationModelIfNeeded()
+
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
                 logger.logInfo("🎙️ Using prewarm session for recording")
@@ -535,6 +539,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             logger.logInfo("🎙️ Stopping real capture on cancel")
             prewarmManager.stopRealCapture()
         }
+
+        // Clear any prewarmed Foundation Model session
+        aiService.cancelFoundationModelPrewarm()
 
         resetValues()
         recordingState = .idle

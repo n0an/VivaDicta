@@ -31,7 +31,7 @@ struct TranscriptionRowView: View {
                     .cornerRadius(6)
             }
 
-            Text(transcription.text)
+            Text(transcription.enhancedText ?? transcription.text)
                 .font(.body)
                 .lineLimit(2)
                 .lineSpacing(2)
