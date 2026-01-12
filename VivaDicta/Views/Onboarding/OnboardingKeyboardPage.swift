@@ -15,9 +15,9 @@ struct OnboardingKeyboardPage: View {
         ScrollView {
             VStack(spacing: 24) {
                 VStack(spacing: 4) {
-                    Text("Record Anywhere")
-                    Text("You Type")
+                    Text("Dictate")
                         .foregroundStyle(meshGradient)
+                    Text("Anywhere You Type")
                 }
 
                 .font(.largeTitle.weight(.bold))
