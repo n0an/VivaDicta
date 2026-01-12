@@ -97,6 +97,10 @@ final class AppleFoundationModelService {
             session = nil
 
             return filteredText
+        } catch is CancellationError {
+            logger.logInfo("Apple Foundation Model - Enhancement cancelled")
+            session = nil
+            throw CancellationError()
         } catch let error as LanguageModelSession.GenerationError {
             logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
 
@@ -105,6 +109,10 @@ final class AppleFoundationModelService {
             logTranscript(activeSession)
             #endif
 
+            session = nil
+            throw AppleFoundationModelError.generationFailed(error.localizedDescription)
+        } catch {
+            logger.logError("Apple Foundation Model unexpected error: \(error.localizedDescription)")
             session = nil
             throw AppleFoundationModelError.generationFailed(error.localizedDescription)
         }
