@@ -31,8 +31,7 @@ struct OnboardingWelcomePage: View {
                         .foregroundStyle(.primary)
 
                     Text("VivaDicta")
-                        .font(.largeTitle.weight(.bold))
-                        .fontDesign(.rounded)
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundStyle(meshGradient(t: t))
                 }
                 .padding(.bottom, 16)
