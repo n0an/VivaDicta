@@ -20,6 +20,7 @@ enum RecordError: LocalizedError, Equatable {
     case userDenied
     case recordError
     case transcribe
+    case aiGuardrail
     case other
     case debugError
 
@@ -33,6 +34,8 @@ enum RecordError: LocalizedError, Equatable {
             "Recording failed"
         case .transcribe:
             "Transcription failed"
+        case .aiGuardrail:
+            "AI Safety Guardrail Triggered"
         case .other:
             "Unexpected error"
         case .debugError:
@@ -50,6 +53,8 @@ enum RecordError: LocalizedError, Equatable {
             return "Failed to record audio. Check that no other app is using the microphone and try again."
         case .transcribe:
             return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
+        case .aiGuardrail:
+            return "Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI enhancement. Consider using a cloud AI provider for this type of content."
         case .other:
             return "An unexpected error occurred. Please restart the app and try again."
         case .debugError:

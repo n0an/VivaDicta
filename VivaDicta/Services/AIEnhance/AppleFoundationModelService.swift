@@ -110,7 +110,18 @@ final class AppleFoundationModelService {
             #endif
 
             session = nil
-            throw AppleFoundationModelError.generationFailed(error.localizedDescription)
+
+            // Handle specific GenerationError cases
+            switch error {
+            case .guardrailViolation(let context):
+                logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
+                throw AppleFoundationModelError.guardrailViolation
+            case .exceededContextWindowSize:
+                logger.logWarning("Context window size exceeded")
+                throw AppleFoundationModelError.generationFailed("Context window size exceeded")
+            default:
+                throw AppleFoundationModelError.generationFailed(error.localizedDescription)
+            }
         } catch {
             logger.logError("Apple Foundation Model unexpected error: \(error.localizedDescription)")
             session = nil

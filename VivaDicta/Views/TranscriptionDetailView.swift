@@ -34,6 +34,7 @@ struct TranscriptionDetailView: View {
     @State private var processingState: ProcessingState = .idle
     @State private var processingTask: Task<Void, Never>?
     @State private var isShimmering: Bool = false
+    @State private var showGuardrailAlert: Bool = false
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -172,6 +173,14 @@ struct TranscriptionDetailView: View {
             processingTask = nil
         }
         .animation(.spring, value: isExpanded)
+        .alert(
+            "AI Safety Guardrail Triggered",
+            isPresented: $showGuardrailAlert
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Apple's on-device AI blocked this content due to safety guidelines. Consider using a cloud AI provider for this type of content.")
+        }
     }
 
     private var textContentView: some View {
@@ -571,6 +580,11 @@ struct TranscriptionDetailView: View {
                 await appState.updateTranscriptionInSpotlight(transcription)
 
                 HapticManager.transcriptionComplete()
+            } catch let error as AppleFoundationModelError {
+                if case .guardrailViolation = error {
+                    showGuardrailAlert = true
+                }
+                HapticManager.error()
             } catch {
                 HapticManager.error()
             }
@@ -599,15 +613,24 @@ struct TranscriptionDetailView: View {
                 if appState.aiService.isProperlyConfigured() {
                     processingState = .enhancing
 
-                    let (enhancedText, duration, promptName) = try await appState.aiService.enhance(newText)
+                    do {
+                        let (enhancedText, duration, promptName) = try await appState.aiService.enhance(newText)
 
-                    transcription.enhancedText = enhancedText
-                    transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
-                    transcription.promptName = promptName
-                    transcription.enhancementDuration = duration
+                        transcription.enhancedText = enhancedText
+                        transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
+                        transcription.promptName = promptName
+                        transcription.enhancementDuration = duration
 
-                    // Switch to enhanced view
-                    selectedTextType = .enhanced
+                        // Switch to enhanced view
+                        selectedTextType = .enhanced
+                    } catch let error as AppleFoundationModelError {
+                        if case .guardrailViolation = error {
+                            showGuardrailAlert = true
+                        }
+                        // Transcription still saved, just without enhancement
+                    } catch {
+                        // Enhancement failed, transcription still saved
+                    }
                 }
 
                 // Update Spotlight index

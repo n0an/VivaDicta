@@ -436,12 +436,22 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         // Clear pending data after successful enhancement
                         self.pendingTranscription = nil
 
+                    } catch let error as AppleFoundationModelError {
+                        // Apple Foundation Model specific error
+                        logger.logWarning("📱 Apple Foundation Model error: \(error.localizedDescription)")
+                        self.pendingTranscription = nil
+                        try Task.checkCancellation()
+
+                        // Show alert for guardrail violations so user knows why enhancement failed
+                        if case .guardrailViolation = error {
+                            self.recordError = .aiGuardrail
+                            self.isShowingAlert = true
+                        }
                     } catch {
-                        // Enhancement failed
+                        // Other enhancement errors
                         logger.logWarning("📱 AI enhancement failed: \(error.localizedDescription)")
                         self.pendingTranscription = nil
                         try Task.checkCancellation()
-                        self.recordingState = .idle
                     }
                 }
                 
