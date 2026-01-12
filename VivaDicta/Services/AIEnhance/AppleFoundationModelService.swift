@@ -86,7 +86,7 @@ final class AppleFoundationModelService {
 
             // Debug: Print session transcript
             #if DEBUG
-            printTranscript(activeSession)
+            logTranscript(activeSession)
             #endif
 
             // Clear session after use - next recording will prewarm fresh
@@ -99,7 +99,7 @@ final class AppleFoundationModelService {
 
             // Debug: Print transcript even on error
             #if DEBUG
-            printTranscript(activeSession)
+            logTranscript(activeSession)
             #endif
 
             session = nil
@@ -111,38 +111,27 @@ final class AppleFoundationModelService {
     // MARK: - Debug
 
     #if DEBUG
-    private func printTranscript(_ session: LanguageModelSession) {
-        print("\n" + String(repeating: "=", count: 60))
-        print("📜 FOUNDATION MODEL SESSION TRANSCRIPT")
-        print(String(repeating: "-", count: 60))
+    private func logTranscript(_ session: LanguageModelSession) {
+        logger.logDebug("=== FOUNDATION MODEL SESSION TRANSCRIPT ===")
 
         for entry in session.transcript {
             switch entry {
             case .instructions(let instructions):
-                print("📋 INSTRUCTIONS:")
-                for segment in instructions.segments {
-                    print("   \(segment)")
-                }
+                logger.logDebug("INSTRUCTIONS: \(instructions.segments.map { "\($0)" }.joined(separator: " "))")
             case .prompt(let prompt):
-                print("💬 PROMPT:")
-                for segment in prompt.segments {
-                    print("   \(segment)")
-                }
+                logger.logDebug("PROMPT: \(prompt.segments.map { "\($0)" }.joined(separator: " "))")
             case .response(let response):
-                print("🤖 RESPONSE:")
-                for segment in response.segments {
-                    print("   \(segment)")
-                }
+                logger.logDebug("RESPONSE: \(response.segments.map { "\($0)" }.joined(separator: " "))")
             case .toolCalls(let toolCalls):
-                print("🔧 TOOL CALLS: \(toolCalls)")
+                logger.logDebug("TOOL CALLS: \(toolCalls)")
             case .toolOutput(let toolOutput):
-                print("📤 TOOL OUTPUT: \(toolOutput)")
+                logger.logDebug("TOOL OUTPUT: \(toolOutput)")
             @unknown default:
-                print("❓ UNKNOWN ENTRY: \(entry)")
+                logger.logDebug("UNKNOWN ENTRY: \(entry)")
             }
         }
 
-        print(String(repeating: "=", count: 60) + "\n")
+        logger.logDebug("=== END TRANSCRIPT ===")
     }
     #endif
 }
