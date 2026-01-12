@@ -212,6 +212,17 @@ struct MainView: View {
                 }, message: {
                     Text(fileErrorMessage)
                 })
+                .alert(
+                    "AI Safety Guardrail Triggered",
+                    isPresented: Binding(
+                        get: { appState.recordViewModel?.isShowingAlert == true && appState.recordViewModel?.recordError == .aiGuardrail },
+                        set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
+                    )
+                ) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI enhancement. Consider using a cloud AI provider for this type of content.")
+                }
         }
         .overlay {
             if appState.recordViewModel?.recordingState == .recording ||
