@@ -8,80 +8,68 @@
 import SwiftUI
 
 struct OnboardingKeyboardPage: View {
-    @State private var t: Float = 0.0
-    @State private var timer: Timer?
+    @State private var startDate = Date.now
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                VStack(spacing: 4) {
-                    Text("Dictate")
-                        .foregroundStyle(meshGradient)
-                    + Text(" Anywhere")
-                    Text("You Type")
-                }
+        TimelineView(.animation) { timeline in
+            let t = Float(startDate.distance(to: timeline.date))
 
-                .font(.largeTitle.weight(.bold))
-                .fontDesign(.rounded)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-                .padding(.top, 36)
-                
-                KeyboardIllustration()
-                    .compositingGroup()
-                    .shadow(color: .black.opacity(0.2), radius: 10, x: 4, y: 6)
-//                    .padding(.horizontal, 24)
-                
-
-                // Subtitle
-                Text("Use VivaDicta keyboard to transcribe in any app")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-
-
-                // Setup Instructions
-                OnboardingCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Setup Instructions")
-                            .font(.title3.weight(.bold))
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            OnboardingInstructionRow(number: 1, text: "Tap **Open Settings** below")
-                            OnboardingInstructionRow(number: 2, text: "Go to **Keyboards** section")
-                            OnboardingInstructionRow(number: 3, text: "Enable **VivaDicta** Keyboard")
-                            OnboardingInstructionRow(number: 4, text: "Enable **Allow Full Access**")
-                        }
-
-                        // Settings preview
-                        SettingsTogglesPreview()
-
-                        OnboardingInfoBox(
-                            icon: "info.circle.fill",
-                            text: "Full Access is required for voice recording. We never collect your keystrokes or personal data.",
-                            backgroundColor: Color.yellow.opacity(0.15),
-                            textColor: .orange
-                        )
+            ScrollView {
+                VStack(spacing: 24) {
+                    VStack(spacing: 4) {
+                        Text("Dictate")
+                            .foregroundStyle(meshGradient(t: t))
+                        + Text(" Anywhere")
+                        Text("You Type")
                     }
+                    .font(.largeTitle.weight(.bold))
+                    .fontDesign(.rounded)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 36)
+
+                    KeyboardIllustration()
+                        .compositingGroup()
+                        .shadow(color: .black.opacity(0.2), radius: 10, x: 4, y: 6)
+
+                    // Subtitle
+                    Text("Use VivaDicta keyboard to transcribe in any app")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    // Setup Instructions
+                    OnboardingCard {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Setup Instructions")
+                                .font(.title3.weight(.bold))
+
+                            VStack(alignment: .leading, spacing: 12) {
+                                OnboardingInstructionRow(number: 1, text: "Tap **Open Settings** below")
+                                OnboardingInstructionRow(number: 2, text: "Go to **Keyboards** section")
+                                OnboardingInstructionRow(number: 3, text: "Enable **VivaDicta** Keyboard")
+                                OnboardingInstructionRow(number: 4, text: "Enable **Allow Full Access**")
+                            }
+
+                            // Settings preview
+                            SettingsTogglesPreview()
+
+                            OnboardingInfoBox(
+                                icon: "info.circle.fill",
+                                text: "Full Access is required for voice recording. We never collect your keystrokes or personal data.",
+                                backgroundColor: Color.yellow.opacity(0.15),
+                                textColor: .orange
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 12)
                 }
-                .padding(.horizontal, 12)
+                .padding(.bottom, 16)
             }
-            .padding(.bottom, 16)
-        }
-        .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
-                Task { @MainActor in
-                    t += 0.02
-                }
-            }
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
         }
     }
 
-    private var meshGradient: MeshGradient {
+    private func meshGradient(t: Float) -> MeshGradient {
         MeshGradient(width: 3, height: 3, points: [
             .init(0, 0), .init(0.5, 0), .init(1, 0),
             [sinInRange(-0.8...(-0.2), offset: 0.439, timeScale: 0.342, t: t), sinInRange(0.3...0.7, offset: 3.42, timeScale: 0.984, t: t)],

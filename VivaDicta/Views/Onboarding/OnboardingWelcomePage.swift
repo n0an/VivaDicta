@@ -8,80 +8,71 @@
 import SwiftUI
 
 struct OnboardingWelcomePage: View {
-    @State private var t: Float = 0.0
-    @State private var timer: Timer?
+    @State private var startDate = Date.now
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        TimelineView(.animation) { timeline in
+            let t = Float(startDate.distance(to: timeline.date))
 
-            Image("VivaDictaIcon")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 200)
+            VStack(spacing: 0) {
+                Spacer()
 
-                .padding(.bottom, 40)
+                Image("VivaDictaIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 200)
+                    .padding(.bottom, 40)
 
-            // Title
-            VStack(spacing: 4) {
-                Text("Welcome to")
-                    .font(.largeTitle.weight(.bold))
-                    .fontDesign(.rounded)
-                    .foregroundStyle(.primary)
+                // Title
+                VStack(spacing: 4) {
+                    Text("Welcome to")
+                        .font(.largeTitle.weight(.bold))
+                        .fontDesign(.rounded)
+                        .foregroundStyle(.primary)
 
-                Text("VivaDicta")
-                    .font(.largeTitle.weight(.bold))
-                    .fontDesign(.rounded)
-                    .foregroundStyle(meshGradient)
-            }
-            .padding(.bottom, 16)
-
-            // Subtitle
-            Text("Transform your voice into perfect text with AI-powered transcription")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-                .padding(.bottom, 40)
-
-            // Features
-            VStack(spacing: 20) {
-                OnboardingFeatureRow(
-                    icon: "checkmark.shield.fill",
-                    iconColor: .green,
-                    text: "Complete privacy - your data stays on device"
-                )
-
-                OnboardingFeatureRow(
-                    icon: "waveform",
-                    iconColor: .blue,
-                    text: "Advanced transcription models for perfect accuracy"
-                )
-
-                OnboardingFeatureRow(
-                    icon: "wand.and.stars",
-                    iconColor: .purple,
-                    text: "AI enhancement for professional results"
-                )
-            }
-            .padding(.horizontal, 32)
-
-            Spacer()
-        }
-        .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
-                Task { @MainActor in
-                    t += 0.02
+                    Text("VivaDicta")
+                        .font(.largeTitle.weight(.bold))
+                        .fontDesign(.rounded)
+                        .foregroundStyle(meshGradient(t: t))
                 }
+                .padding(.bottom, 16)
+
+                // Subtitle
+                Text("Transform your voice into perfect text with AI-powered transcription")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 40)
+
+                // Features
+                VStack(spacing: 20) {
+                    OnboardingFeatureRow(
+                        icon: "checkmark.shield.fill",
+                        iconColor: .green,
+                        text: "Complete privacy - your data stays on device"
+                    )
+
+                    OnboardingFeatureRow(
+                        icon: "waveform",
+                        iconColor: .blue,
+                        text: "Advanced transcription models for perfect accuracy"
+                    )
+
+                    OnboardingFeatureRow(
+                        icon: "wand.and.stars",
+                        iconColor: .purple,
+                        text: "AI enhancement for professional results"
+                    )
+                }
+                .padding(.horizontal, 32)
+
+                Spacer()
             }
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
         }
     }
 
-    private var meshGradient: MeshGradient {
+    private func meshGradient(t: Float) -> MeshGradient {
         MeshGradient(width: 3, height: 3, points: [
             .init(0, 0), .init(0.5, 0), .init(1, 0),
             [sinInRange(-0.8...(-0.2), offset: 0.439, timeScale: 0.342, t: t), sinInRange(0.3...0.7, offset: 3.42, timeScale: 0.984, t: t)],
