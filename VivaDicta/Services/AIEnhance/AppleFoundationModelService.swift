@@ -20,9 +20,6 @@ final class AppleFoundationModelService {
     /// The stored session - created during prewarm, used during enhance
     private var session: LanguageModelSession?
 
-    /// The stored prompt prefix - saved during prewarm for use during enhance
-    private var storedPromptPrefix: String?
-
     /// Prewarm the model for faster first response
     /// Creates a session with instructions and prewarms with the prompt prefix
     /// - Parameters:
@@ -34,7 +31,6 @@ final class AppleFoundationModelService {
         // Create session with instructions and store it
         let newSession = LanguageModelSession(instructions: instructions)
         session = newSession
-        storedPromptPrefix = promptPrefix
 
         // Prewarm with the prompt prefix
         let prefix = Prompt { promptPrefix }
@@ -47,7 +43,6 @@ final class AppleFoundationModelService {
     func cancelPrewarm() {
         guard session != nil else { return }
         session = nil
-        storedPromptPrefix = nil
         logger.logInfo("Apple Foundation Model - Prewarmed session cleared")
     }
 
@@ -100,7 +95,6 @@ final class AppleFoundationModelService {
 
             // Clear session after use - next recording will prewarm fresh
             session = nil
-            storedPromptPrefix = nil
 
             return filteredText
         } catch let error as LanguageModelSession.GenerationError {
@@ -112,7 +106,6 @@ final class AppleFoundationModelService {
             #endif
 
             session = nil
-            storedPromptPrefix = nil
             throw AppleFoundationModelError.generationFailed(error.localizedDescription)
         }
     }
