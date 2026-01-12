@@ -77,7 +77,9 @@ final class AppleFoundationModelService {
         }
 
         do {
-            let response = try await activeSession.respond(to: fullPrompt)
+            // Use greedy sampling for deterministic, consistent transcript cleaning
+            let options = GenerationOptions(sampling: .greedy)
+            let response = try await activeSession.respond(to: fullPrompt, options: options)
             let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
             logger.logNotice("Apple Foundation Model - Enhancement completed")
