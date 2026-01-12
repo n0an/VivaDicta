@@ -534,6 +534,7 @@ struct TranscriptionDetailView: View {
 
     private func retranscribe() {
         guard let audioURL = audioURL else { return }
+        HapticManager.lightImpact()
 
         processingTask = Task {
             processingState = .transcribing
@@ -561,6 +562,7 @@ struct TranscriptionDetailView: View {
 
     private func enhance() {
         guard !transcription.text.isEmpty else { return }
+        HapticManager.lightImpact()
 
         processingTask = Task {
             processingState = .enhancing
@@ -595,6 +597,7 @@ struct TranscriptionDetailView: View {
 
     private func retranscribeAndEnhance() {
         guard let audioURL = audioURL else { return }
+        HapticManager.lightImpact()
 
         processingTask = Task {
             processingState = .transcribing
