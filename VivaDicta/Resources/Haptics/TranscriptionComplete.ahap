@@ -1,114 +1,50 @@
 {
-  "Pattern" : [
-    {
-      "Event" : {
-        "Time" : 0,
-        "EventType" : "HapticTransient",
-        "Name" : "Haptic Event",
-        "EventParameters" : [
-          {
-            "ParameterValue" : 0.8,
-            "ParameterID" : "HapticIntensity"
-          },
-          {
-            "ParameterValue" : 0.2,
-            "ParameterID" : "HapticSharpness"
-          }
-        ]
-      }
+    "Version": 1.0,
+    "Metadata": {
+        "Project": "VivaDicta",
+        "Created": "2026-01-11",
+        "Description": "Single heartbeat pulse for transcription completion"
     },
-    {
-      "Event" : {
-        "Time" : 0.013,
-        "EventType" : "HapticTransient",
-        "Name" : "Haptic Event",
-        "EventParameters" : [
-          {
-            "ParameterID" : "HapticIntensity",
-            "ParameterValue" : 1
-          },
-          {
-            "ParameterID" : "HapticSharpness",
-            "ParameterValue" : 0.3
-          }
-        ]
-      }
-    },
-    {
-      "Event" : {
-        "Name" : "Haptic Event 2",
-        "EventParameters" : [
-          {
-            "ParameterValue" : 0.7,
-            "ParameterID" : "HapticIntensity"
-          },
-          {
-            "ParameterValue" : 0,
-            "ParameterID" : "HapticSharpness"
-          }
-        ],
-        "Time" : 0.255,
-        "EventType" : "HapticTransient"
-      }
-    },
-    {
-      "Event" : {
-        "EventParameters" : [
-          {
-            "ParameterValue" : 0.8,
-            "ParameterID" : "HapticIntensity"
-          },
-          {
-            "ParameterValue" : 0.1,
-            "ParameterID" : "HapticSharpness"
-          }
-        ],
-        "Name" : "Haptic Event 3",
-        "EventType" : "HapticTransient",
-        "Time" : 0.22
-      }
-    },
-    {
-      "Event" : {
-        "Time" : 0.318,
-        "Name" : "Haptic Event 4",
-        "EventParameters" : [
-          {
-            "ParameterID" : "HapticIntensity",
-            "ParameterValue" : 0.909
-          },
-          {
-            "ParameterID" : "HapticSharpness",
-            "ParameterValue" : 0.2
-          }
-        ],
-        "EventDuration" : 0.259,
-        "EventType" : "HapticContinuous"
-      }
-    },
-    {
-      "ParameterCurve" : {
-        "Time" : 0.318,
-        "ParameterID" : "HapticIntensityControl",
-        "ParameterCurveControlPoints" : [
-          {
-            "Time" : 0,
-            "ParameterValue" : 0.471
-          },
-          {
-            "Time" : 0.596,
-            "ParameterValue" : -0.001
-          }
-        ]
-      }
-    }
-  ],
-  "Version" : 1,
-  "Metadata" : {
-    "Created" : "2026-01-11",
-    "Title" : "",
-    "Project" : "VivaDicta",
-    "Tags" : "",
-    "Description" : "Single heartbeat pulse for transcription completion"
-  }
+    "Pattern": [
+        {
+            "Event": {
+                "Time": 0.0,
+                "EventType": "HapticTransient",
+                "EventParameters": [
+                    { "ParameterID": "HapticIntensity", "ParameterValue": 0.8 },
+                    { "ParameterID": "HapticSharpness", "ParameterValue": 0.2 }
+                ]
+            }
+        },
+        {
+            "Event": {
+                "Time": 0.013,
+                "EventType": "HapticTransient",
+                "EventParameters": [
+                    { "ParameterID": "HapticIntensity", "ParameterValue": 1.0 },
+                    { "ParameterID": "HapticSharpness", "ParameterValue": 0.3 }
+                ]
+            }
+        },
+        {
+            "Event": {
+                "Time": 0.220,
+                "EventType": "HapticTransient",
+                "EventParameters": [
+                    { "ParameterID": "HapticIntensity", "ParameterValue": 0.8 },
+                    { "ParameterID": "HapticSharpness", "ParameterValue": 0.1 }
+                ]
+            }
+        },
+        {
+            "Event": {
+                "Time": 0.255,
+                "EventType": "HapticTransient",
+                "EventParameters": [
+                    { "ParameterID": "HapticIntensity", "ParameterValue": 0.7 },
+                    { "ParameterID": "HapticSharpness", "ParameterValue": 0.0 }
+                ]
+            }
+        }
+    ]
 }
