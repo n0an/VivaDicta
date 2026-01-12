@@ -42,6 +42,15 @@ final class AppleFoundationModelService {
         logger.logInfo("Apple Foundation Model - Session created and prewarmed with prompt prefix")
     }
 
+    /// Clear the prewarmed session without using it
+    /// Call this when recording is cancelled to avoid keeping unused session in memory
+    func cancelPrewarm() {
+        guard session != nil else { return }
+        session = nil
+        storedPromptPrefix = nil
+        logger.logInfo("Apple Foundation Model - Prewarmed session cleared")
+    }
+
     /// Enhance text using Apple's on-device Foundation Model
     /// Uses the prewarmed session if available, otherwise creates a new one
     /// - Parameters:

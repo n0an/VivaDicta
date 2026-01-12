@@ -356,6 +356,15 @@ class AIService {
         }
     }
 
+    /// Cancel any prewarmed Foundation Model session.
+    /// Call this when recording is cancelled to free memory.
+    @MainActor
+    public func cancelFoundationModelPrewarm() {
+        if #available(iOS 26, *) {
+            appleFoundationModelService.cancelPrewarm()
+        }
+    }
+
     // MARK: - Enhance methods
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()

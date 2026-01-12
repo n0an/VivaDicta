@@ -540,6 +540,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             prewarmManager.stopRealCapture()
         }
 
+        // Clear any prewarmed Foundation Model session
+        aiService.cancelFoundationModelPrewarm()
+
         resetValues()
         recordingState = .idle
 
