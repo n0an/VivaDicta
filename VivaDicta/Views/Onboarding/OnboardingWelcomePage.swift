@@ -11,7 +11,7 @@ struct OnboardingWelcomePage: View {
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
-            
+
             Image("VivaDictaIcon")
                 .resizable()
                 .aspectRatio(contentMode: .fit)

@@ -59,3 +59,38 @@ using namespace metal;
 
     return half4(newColor * 0.5h + 0.75h, 1.0h) * color.a;
 }
+
+/// A shader that generates multiple twisting and turning lines that cycle through colors.
+/// Creates an animated rainbow wave effect.
+///
+/// - Parameter position: The user-space coordinate of the current pixel.
+/// - Parameter color: The current color of the pixel.
+/// - Parameter size: The size of the whole image, in user-space.
+/// - Parameter time: The number of elapsed seconds since the shader was created.
+/// - Returns: The new pixel color.
+[[ stitchable ]] half4 sinebow(float2 position, half4 color, float2 size, float time) {
+    half aspectRatio = size.x / size.y;
+    half2 uv = half2(position / size.x) * 2.0h - 1.0h;
+    uv.x /= aspectRatio;
+
+    half wave = sin(uv.x + time);
+    wave *= wave * 50.0h;
+
+    half3 waveColor = half3(0.0h);
+
+    for (half i = 0.0h; i < 10.0h; i++) {
+        half luma = abs(1.0h / (100.0h * uv.y + wave));
+        half y = sin(uv.x * sin(time) + i * 0.2h + time);
+        uv.y += 0.05h * y;
+
+        half3 rainbow = half3(
+            sin(i * 0.3h + time) * 0.5h + 0.5h,
+            sin(i * 0.3h + 2.0h + sin(time * 0.3h) * 2.0h) * 0.5h + 0.5h,
+            sin(i * 0.3h + 4.0h) * 0.5h + 0.5h
+        );
+
+        waveColor += rainbow * luma;
+    }
+
+    return half4(waveColor, 1.0h) * color.a;
+}

@@ -146,13 +146,25 @@ struct OnboardingInfoBox: View {
 struct OnboardingAppIcon: View {
     let gradient: [Color]
     let size: CGFloat
+    let useSinebow: Bool
 
-    init(gradient: [Color] = [.blue], size: CGFloat = 100) {
+    @State private var startDate = Date.now
+
+    init(gradient: [Color] = [.blue], size: CGFloat = 100, useSinebow: Bool = false) {
         self.gradient = gradient
         self.size = size
+        self.useSinebow = useSinebow
     }
 
     var body: some View {
+        if useSinebow {
+            sinebowIcon
+        } else {
+            gradientIcon
+        }
+    }
+
+    private var gradientIcon: some View {
         Image(systemName: "mic.fill")
             .font(.system(size: size * 0.4))
             .foregroundStyle(.white)
@@ -167,6 +179,29 @@ struct OnboardingAppIcon: View {
             )
             .compositingGroup()
             .shadow(color: gradient.first?.opacity(0.8) ?? .clear, radius: 20)
+    }
+
+    private var sinebowIcon: some View {
+        TimelineView(.animation) { timeline in
+            let elapsedTime = startDate.distance(to: timeline.date)
+
+            Image(systemName: "mic.fill")
+                .font(.system(size: size * 0.4))
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background {
+                    RoundedRectangle(cornerRadius: size * 0.22)
+                        .fill(.white)
+                        .colorEffect(
+                            ShaderLibrary.sinebow(
+                                .float2(size, size),
+                                .float(elapsedTime)
+                            )
+                        )
+                }
+                .compositingGroup()
+                .shadow(color: .purple.opacity(0.6), radius: 20)
+        }
     }
 }
 
@@ -285,6 +320,7 @@ struct OnboardingPageIndicator: View {
     VStack(spacing: 32) {
         OnboardingAppIcon(gradient: [.blue, .blue.opacity(0.7)])
         OnboardingAppIcon(gradient: [.pink, .cyan], size: 80)
+        OnboardingAppIcon(useSinebow: true)
     }
 }
 

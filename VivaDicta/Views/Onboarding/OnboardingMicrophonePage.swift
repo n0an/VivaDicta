@@ -23,7 +23,7 @@ struct OnboardingMicrophonePage: View {
             // Main Card
             OnboardingCard {
                 HStack(spacing: 16) {
-                    OnboardingAppIcon(gradient: [.pink, .cyan], size: 80)
+                    OnboardingAppIcon(size: 80, useSinebow: true)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Microphone Access")
