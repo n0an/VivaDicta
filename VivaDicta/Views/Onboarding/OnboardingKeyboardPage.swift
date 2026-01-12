@@ -17,7 +17,8 @@ struct OnboardingKeyboardPage: View {
                 VStack(spacing: 4) {
                     Text("Dictate")
                         .foregroundStyle(meshGradient)
-                    Text("Anywhere You Type")
+                    + Text(" Anywhere")
+                    Text("You Type")
                 }
 
                 .font(.largeTitle.weight(.bold))
