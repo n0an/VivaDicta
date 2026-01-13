@@ -16,6 +16,8 @@ struct AddAPIKeyView: View {
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
     
+    @State private var clearButtonVisible = false
+    
     var onSave: (AIProvider) -> Void
     
     var body: some View {
@@ -36,6 +38,7 @@ struct AddAPIKeyView: View {
                 .onChange(of: apiKey) { _, _ in
                     // Clear error when user starts typing
                     verificationError = nil
+                    clearButtonVisible = !apiKey.isEmpty
                 }
             
             
@@ -58,7 +61,7 @@ struct AddAPIKeyView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Paste from clipboard")
 
-            if !apiKey.isEmpty {
+            if clearButtonVisible {
                 Button {
                     apiKey = ""
                     HapticManager.lightImpact()
@@ -75,7 +78,7 @@ struct AddAPIKeyView: View {
                 }
                 .buttonStyle(.plain)
             }
-
+            
             if let error = verificationError {
                 Text(error)
                     .font(.caption)
@@ -124,6 +127,7 @@ struct AddAPIKeyView: View {
             
             Spacer()
         }
+        .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
         .onAppear {
             // Load existing API key if available (needs to be shared with keyboard)
             apiKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) ?? ""
