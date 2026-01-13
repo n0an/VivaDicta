@@ -23,20 +23,35 @@ struct RecordingSheetView: View {
 
         VStack(spacing: 12) {
             HStack {
-                Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
+                Menu {
                     ForEach(vm.availableModes) { mode in
-                        Text(mode.name)
-                            .lineLimit(1)
-                            .tag(mode.name)
+                        Button {
+                            appState.recordViewModel.selectedModeName = mode.name
+                            HapticManager.selectionChanged()
+                        } label: {
+                            if mode.name == appState.recordViewModel.selectedModeName {
+                                Label(mode.name, systemImage: "checkmark")
+                            } else {
+                                Text(mode.name)
+                            }
+                        }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(appState.recordViewModel.selectedModeName)
+                            .font(.headline)
+                            .bold()
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.fill.tertiary, in: .capsule)
                 }
-                .pickerStyle(.menu)
                 .tint(.primary)
                 .padding(.vertical, 16)
                 .padding(.horizontal, 16)
-                .onChange(of: appState.recordViewModel.selectedModeName) { _, _ in
-                    HapticManager.selectionChanged()
-                }
                 
                 Spacer()
                 
