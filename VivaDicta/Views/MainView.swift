@@ -84,6 +84,36 @@ struct MainView: View {
                     }
 
                 }
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Menu {
+                            ForEach(appState.aiService.modes) { mode in
+                                Button {
+                                    appState.aiService.selectedMode = mode
+                                } label: {
+                                    if mode.id == appState.aiService.selectedMode.id {
+                                        Label(mode.name, systemImage: "checkmark")
+                                    } else {
+                                        Text(mode.name)
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(appState.aiService.selectedMode.name)
+                                    .font(.headline)
+                                    .bold()
+                                Image(systemName: "chevron.down")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(.fill.tertiary, in: .capsule)
+                        }
+                        .tint(.primary)
+                    }
+                }
             
                 .toolbar {
                     if #available(iOS 26.0, *) {
