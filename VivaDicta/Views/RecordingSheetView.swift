@@ -38,10 +38,11 @@ struct RecordingSheetView: View {
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(appState.recordViewModel.selectedModeName.truncated(to: 16))
+                        Text(appState.recordViewModel.selectedModeName)
                             .font(.headline)
                             .bold()
                             .lineLimit(1)
+                            .frame(maxWidth: 150)
                         Image(systemName: "chevron.down")
                             .font(.caption)
                             .fontWeight(.semibold)

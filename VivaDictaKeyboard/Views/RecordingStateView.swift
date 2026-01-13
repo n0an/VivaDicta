@@ -57,10 +57,11 @@ struct RecordingStateView: View {
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(dictationState.vivaModeManager.selectedVivaMode.name.truncated(to: 16))
+                        Text(dictationState.vivaModeManager.selectedVivaMode.name)
                             .font(.headline)
                             .bold()
                             .lineLimit(1)
+                            .frame(maxWidth: 150)
                         Image(systemName: "chevron.down")
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -149,15 +150,4 @@ struct RecordingStateView: View {
     RecordingStateView(
         dictationState: KeyboardDictationState()
     )
-}
-
-
-extension String {
-    /// Truncates the string to the specified length, adding "..." if truncated
-    func truncated(to maxLength: Int) -> String {
-        if count <= maxLength {
-            return self
-        }
-        return String(prefix(maxLength)) + "..."
-    }
 }
