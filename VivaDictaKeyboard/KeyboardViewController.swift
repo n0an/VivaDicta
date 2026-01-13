@@ -111,6 +111,7 @@ struct ModeCycleSelector: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Previous mode")
 
             // Mode name - tap to cycle forward
             Button {
@@ -123,6 +124,8 @@ struct ModeCycleSelector: View {
                     .frame(maxWidth: 100)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Current mode: \(selectedMode.name)")
+            .accessibilityHint("Tap to switch to next mode")
 
             // Right arrow - cycle forward
             Button {
@@ -135,6 +138,7 @@ struct ModeCycleSelector: View {
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Next mode")
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
