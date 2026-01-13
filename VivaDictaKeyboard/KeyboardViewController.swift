@@ -147,7 +147,7 @@ struct ModeCycleSelector: View {
     }
 
     private func cycleModes(forward: Bool) {
-        KeyboardHapticManager.selectionChanged()
+        HapticManager.selectionChanged()
         guard modes.count > 1 else { return }
 
         let newIndex: Int
@@ -199,7 +199,7 @@ struct VivaDictaKeyboardToolbarView: View {
     }
 
     private func handleMic() {
-        KeyboardHapticManager.mediumImpact()
+        HapticManager.mediumImpact()
         guard dictationState.uiState != .notReady else {
             openMainAppForHotMic()
             return

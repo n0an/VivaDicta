@@ -48,7 +48,7 @@ struct RecordingStateView: View {
                     selectedModeName: Binding(
                         get: { dictationState.vivaModeManager.selectedVivaMode.name },
                         set: { newName in
-                            KeyboardHapticManager.selectionChanged()
+                            HapticManager.selectionChanged()
                             if let mode = dictationState.vivaModeManager.availableVivaModes.first(where: { $0.name == newName }) {
                                 dictationState.vivaModeManager.selectedVivaMode = mode
                             }
@@ -62,7 +62,7 @@ struct RecordingStateView: View {
                 // Cancel button (X)
                 
                 Button {
-                    KeyboardHapticManager.lightImpact()
+                    HapticManager.lightImpact()
                     dictationState.requestCancelRecording()
                 } label: {
                     Image(systemName: "xmark")
@@ -80,7 +80,7 @@ struct RecordingStateView: View {
             // Stop Button
             
             Button(action: {
-                KeyboardHapticManager.mediumImpact()
+                HapticManager.mediumImpact()
                 dictationState.requestStopRecording()
             }) {
                 HStack(spacing: 8) {

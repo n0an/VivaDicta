@@ -59,7 +59,7 @@ struct ProcessingStateView: View {
                 Spacer()
                 
                 Button {
-                    KeyboardHapticManager.lightImpact()
+                    HapticManager.lightImpact()
                     onCancel()
                 } label: {
                     
