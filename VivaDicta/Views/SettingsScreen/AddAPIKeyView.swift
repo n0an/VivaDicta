@@ -57,8 +57,25 @@ struct AddAPIKeyView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Paste from clipboard")
-            
-            
+
+            if !apiKey.isEmpty {
+                Button {
+                    apiKey = ""
+                    HapticManager.lightImpact()
+                } label: {
+                    Text("Clear")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.gray, lineWidth: 2)
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+
             if let error = verificationError {
                 Text(error)
                     .font(.caption)
