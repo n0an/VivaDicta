@@ -89,9 +89,9 @@ struct MainView: View {
                         Menu {
                             ForEach(appState.aiService.modes) { mode in
                                 Button {
-                                    appState.aiService.selectedMode = mode
+                                    appState.aiService.selectedModeName = mode.name
                                 } label: {
-                                    if mode.id == appState.aiService.selectedMode.id {
+                                    if mode.name == appState.aiService.selectedModeName {
                                         Label(mode.name, systemImage: "checkmark")
                                     } else {
                                         Text(mode.name)
@@ -100,7 +100,7 @@ struct MainView: View {
                             }
                         } label: {
                             HStack(spacing: 4) {
-                                Text(appState.aiService.selectedMode.name)
+                                Text(appState.aiService.selectedModeName)
                                     .font(.headline)
                                     .bold()
                                     .lineLimit(1)
