@@ -37,7 +37,7 @@ struct SettingsView: View {
     private var isAutoAudioCleanupEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
     private var audioRetentionDays = 7
-    @AppStorage(AppGroupCoordinator.isHapticsEnabled)
+    @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
 
     @State private var showAddMode = false

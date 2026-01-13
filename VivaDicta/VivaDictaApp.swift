@@ -40,7 +40,8 @@ struct VivaDictaApp: App {
         UserDefaultsStorage.shared.register(defaults: [
             AppGroupCoordinator.isHapticsEnabled: true
         ])
-//        
+//        UserDefaultsStorage.shared.synchronize()
+//
 //        UserDefaults.standard.register(defaults: [
 //            UserDefaultsStorage.Keys.isHapticsEnabled: true
 //        ])
