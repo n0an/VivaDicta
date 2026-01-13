@@ -2,7 +2,7 @@
 //  VivaModePicker.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2025.01.13
+//  Created by Anton Novoselov on 2026.01.13
 //
 
 import SwiftUI
@@ -42,6 +42,9 @@ struct VivaModePicker: View {
             .background(.tertiary, in: .capsule)
         }
         .tint(.primary)
+        .accessibilityLabel("Mode selector")
+        .accessibilityValue(selectedModeName)
+        .accessibilityHint("Double tap to choose a different mode")
     }
 }
 

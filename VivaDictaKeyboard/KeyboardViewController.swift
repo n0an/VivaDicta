@@ -125,6 +125,7 @@ struct ModeCycleSelector: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Current mode: \(selectedMode.name)")
+            .accessibilityValue("\(currentIndex + 1) of \(modes.count)")
             .accessibilityHint("Tap to switch to next mode")
 
             // Right arrow - cycle forward
@@ -199,8 +200,8 @@ struct VivaDictaKeyboardToolbarView: View {
 
     private func handleMic() {
         // TODO: Fix this - use settings toggle
-//        KeyboardHapticManager.mediumImpact()
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        KeyboardHapticManager.mediumImpact()
+//        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         guard dictationState.uiState != .notReady else {
             openMainAppForHotMic()
             return

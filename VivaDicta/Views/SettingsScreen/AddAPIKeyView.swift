@@ -41,26 +41,29 @@ struct AddAPIKeyView: View {
                     clearButtonVisible = !apiKey.isEmpty
                 }
             
-            
-            Button {
-                if let clipboardString = UIPasteboard.general.string {
-                    apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                    HapticManager.lightImpact()
-                }
-            } label: {
-                Text("Paste from clipboard")
-                    .font(.headline.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .background {
-                        Capsule()
-                            .stroke(.blue, lineWidth: 2)
+            if UIPasteboard.general.hasStrings {
+                Button {
+                    if let clipboardString = UIPasteboard.general.string {
+                        apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        HapticManager.lightImpact()
                     }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Paste from clipboard")
+                } label: {
+                    Text("Paste from clipboard")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Paste from clipboard")
 
+            }
+            
+            
             if clearButtonVisible {
                 Button {
                     apiKey = ""
