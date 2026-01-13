@@ -64,6 +64,7 @@ public final class AppGroupCoordinator {
         static let audioLevelUpdated = "com.antonnovoselov.VivaDicta.audioLevelUpdated"
         static let startRecordingFromControl = "com.antonnovoselov.VivaDicta.startRecordingFromControl"
         static let terminateSessionFromLiveActivity = "com.antonnovoselov.VivaDicta.terminateSessionFromLiveActivity"
+        static let vivaModeChanged = "com.antonnovoselov.VivaDicta.vivaModeChanged"
     }
 
     public enum TranscriptionStatus: String {
@@ -95,6 +96,7 @@ public final class AppGroupCoordinator {
     @MainActor var onRecordingStateChanged: ((Bool) -> Void)?
     @MainActor var onStartRecordingFromControl: (() -> Void)?
     @MainActor var onTerminateSessionFromLiveActivity: (() -> Void)?
+    @MainActor var onVivaModeChanged: (() -> Void)?
 
     // MARK: - Initialization
     private init() {
@@ -317,6 +319,7 @@ public final class AppGroupCoordinator {
     public func setSelectedVivaMode(_ modeName: String) {
         sharedDefaults?.set(modeName, forKey: AppGroupCoordinator.selectedVivaModeKey)
         sharedDefaults?.synchronize()
+        postDarwinNotification(NotificationNames.vivaModeChanged)
         logger.logInfo("📱 Keyboard Extension set selected VivaMode: \(modeName)")
     }
 
@@ -644,6 +647,19 @@ public final class AppGroupCoordinator {
             nil,
             .deliverImmediately
         )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleVivaModeChangedNotification()
+            },
+            NotificationNames.vivaModeChanged as CFString,
+            nil,
+            .deliverImmediately
+        )
     }
 
     nonisolated private func removeNotificationObservers() {
@@ -758,6 +774,12 @@ public final class AppGroupCoordinator {
     nonisolated private func handleTerminateSessionFromLiveActivityNotification() {
         Task { @MainActor in
             await onTerminateSessionFromLiveActivity?()
+        }
+    }
+
+    nonisolated private func handleVivaModeChangedNotification() {
+        Task { @MainActor in
+            await onVivaModeChanged?()
         }
     }
 }

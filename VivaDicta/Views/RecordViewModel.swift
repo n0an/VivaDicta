@@ -758,5 +758,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             self.appState?.shouldStartRecording = true
             self.logger.logInfo("🎙️ Starting recording from Control Center")
         }
+
+        // Handle VivaMode change from keyboard extension
+        AppGroupCoordinator.shared.onVivaModeChanged = { [weak self] in
+            guard let self = self else { return }
+
+            self.logger.logInfo("📱 VivaMode changed from keyboard extension")
+            self.appState?.aiService.reloadSelectedModeFromExtension()
+        }
     }
 }
