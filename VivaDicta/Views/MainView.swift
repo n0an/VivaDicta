@@ -86,34 +86,10 @@ struct MainView: View {
                 }
                 .toolbar {
                     ToolbarItem(placement: .principal) {
-                        Menu {
-                            ForEach(appState.aiService.modes) { mode in
-                                Button {
-                                    appState.aiService.selectedModeName = mode.name
-                                } label: {
-                                    if mode.name == appState.aiService.selectedModeName {
-                                        Label(mode.name, systemImage: "checkmark")
-                                    } else {
-                                        Text(mode.name)
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text(appState.aiService.selectedModeName)
-                                    .font(.headline)
-                                    .bold()
-                                    .lineLimit(1)
-                                    .frame(maxWidth: 150)
-                                Image(systemName: "chevron.down")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(.fill.tertiary, in: .capsule)
-                        }
-                        .tint(.primary)
+                        VivaModePicker(
+                            modes: appState.aiService.modes,
+                            selectedModeName: $appState.aiService.selectedModeName
+                        )
                     }
                 }
             

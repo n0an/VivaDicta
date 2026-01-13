@@ -142,7 +142,7 @@ struct ModeCycleSelector: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
-        .background(Color(.quaternaryLabel), in: .capsule)
+        .background(.quaternary, in: .capsule)
         .sensoryFeedback(.selection, trigger: selectedMode.id)
     }
 

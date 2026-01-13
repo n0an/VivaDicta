@@ -23,38 +23,14 @@ struct RecordingSheetView: View {
 
         VStack(spacing: 12) {
             HStack {
-                Menu {
-                    ForEach(vm.availableModes) { mode in
-                        Button {
-                            appState.aiService.selectedModeName = mode.name
-                            HapticManager.selectionChanged()
-                        } label: {
-                            if mode.name == appState.aiService.selectedModeName {
-                                Label(mode.name, systemImage: "checkmark")
-                            } else {
-                                Text(mode.name)
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(appState.aiService.selectedModeName)
-                            .font(.headline)
-                            .bold()
-                            .lineLimit(1)
-                            .frame(maxWidth: 150)
-                        Image(systemName: "chevron.down")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.fill.tertiary, in: .capsule)
-                }
-                .tint(.primary)
+                VivaModePicker(
+                    modes: vm.availableModes,
+                    selectedModeName: $appState.aiService.selectedModeName,
+                    onSelectionChanged: { HapticManager.selectionChanged() }
+                )
                 .padding(.vertical, 16)
                 .padding(.horizontal, 16)
-                
+
                 Spacer()
                 
                 // Cancel button (X)
