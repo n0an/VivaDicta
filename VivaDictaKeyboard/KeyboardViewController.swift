@@ -137,6 +137,78 @@ struct ActivateButton: View {
 }
 
 
+// MARK: - Mode Cycle Selector
+struct ModeCycleSelector: View {
+    @Bindable var dictationState: KeyboardDictationState
+
+    private var modes: [VivaMode] {
+        dictationState.vivaModeManager.availableVivaModes
+    }
+
+    private var selectedMode: VivaMode {
+        dictationState.vivaModeManager.selectedVivaMode
+    }
+
+    private var currentIndex: Int {
+        modes.firstIndex(where: { $0.id == selectedMode.id }) ?? 0
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Left arrow - cycle backwards
+            Button {
+                cycleModes(forward: false)
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+
+            // Mode name - tap to cycle forward
+            Button {
+                cycleModes(forward: true)
+            } label: {
+                Text(selectedMode.name)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .frame(maxWidth: 100)
+            }
+            .buttonStyle(.plain)
+
+            // Right arrow - cycle forward
+            Button {
+                cycleModes(forward: true)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .background(Color(.quaternaryLabel), in: .capsule)
+    }
+
+    private func cycleModes(forward: Bool) {
+        guard modes.count > 1 else { return }
+
+        let newIndex: Int
+        if forward {
+            newIndex = (currentIndex + 1) % modes.count
+        } else {
+            newIndex = (currentIndex - 1 + modes.count) % modes.count
+        }
+
+        dictationState.vivaModeManager.selectedVivaMode = modes[newIndex]
+    }
+}
 
 
 struct VivaDictaKeyboardToolbarView: View {
@@ -147,19 +219,22 @@ struct VivaDictaKeyboardToolbarView: View {
 
     var body: some View {
         HStack(spacing: 0) {
+            // Mode selector on the left
+            ModeCycleSelector(dictationState: dictationState)
+
             Spacer()
-            
+
             if dictationState.uiState == .notReady {
                 if #available(iOS 26.0, *) {
                     ActivateButton(borderWidth: 0, controller: controller)
                         .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
-                    
+
                 } else {
                     ActivateButton(borderWidth: 0.5, controller: controller)
                 }
-                
+
             } else {
-                
+
                 if #available(iOS 26.0, *) {
                     MicButton(
                         fontSize: 34,
@@ -167,11 +242,11 @@ struct VivaDictaKeyboardToolbarView: View {
                         backgroundColor: .orange.opacity(0.5),
                         borderWidth: 0,
                         onTapAction: handleMic)
-                    
+
                         .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
-                    
+
                 } else {
-                    
+
                     MicButton(
                         fontSize: 36,
                         padding: 0,
