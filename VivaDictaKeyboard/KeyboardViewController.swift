@@ -143,6 +143,7 @@ struct ModeCycleSelector: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
         .background(Color(.quaternaryLabel), in: .capsule)
+        .sensoryFeedback(.selection, trigger: selectedMode.id)
     }
 
     private func cycleModes(forward: Bool) {
@@ -197,6 +198,9 @@ struct VivaDictaKeyboardToolbarView: View {
     }
 
     private func handleMic() {
+        // TODO: Fix this - use settings toggle
+//        KeyboardHapticManager.mediumImpact()
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         guard dictationState.uiState != .notReady else {
             openMainAppForHotMic()
             return

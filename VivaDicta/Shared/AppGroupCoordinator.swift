@@ -31,6 +31,8 @@ public final class AppGroupCoordinator {
     public static let kIsVADEnabled = "IsVADEnabled"
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
+    
+    public static let isHapticsEnabled = "isHapticsEnabled"
 
     // Share Extension
     public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"

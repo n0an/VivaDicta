@@ -29,7 +29,7 @@ enum HapticManager {
 
     /// Check if haptics are enabled in app settings
     private static var isEnabled: Bool {
-        UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isHapticsEnabled)
+        UserDefaultsStorage.shared.bool(forKey: AppGroupCoordinator.isHapticsEnabled)
     }
 
     /// Check if device supports haptics

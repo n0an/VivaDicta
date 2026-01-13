@@ -76,7 +76,11 @@ struct RecordingStateView: View {
                 Spacer()
                 
                 // Cancel button (X)
-                Button(action: { dictationState.requestCancelRecording() }) {
+                
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    dictationState.requestCancelRecording()
+                } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Color.secondary)
@@ -86,18 +90,15 @@ struct RecordingStateView: View {
                 }
                 .padding(.trailing, 16)
             }
-//            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
-//                .frame(height: 140)
-            
+            .sensoryFeedback(.selection, trigger: dictationState.vivaModeManager.selectedVivaMode.id)
             OrbView(maskTimer: maskTimer)
                 .padding(.bottom, 40)
             
             // Stop Button
             
-            
-            
             Button(action: {
-//                rippleEffectTrigger.toggle()
+                
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 dictationState.requestStopRecording()
             }) {
                 HStack(spacing: 8) {
@@ -112,22 +113,8 @@ struct RecordingStateView: View {
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
                 .background(.red, in: .capsule)
-//                .onPressingChanged { point in
-//                    if let point {
-//                        rippleEffectOrigin = point
-//                        rippleEffectTrigger.toggle()
-//                    }
-//                    
-//                }
-                
-
             }
         }
-//        .background {
-//            ContainerRelativeShape()
-//                .fill(.clear)
-//                .modifier(RippleEffect(at: rippleEffectOrigin, trigger: rippleEffectTrigger))
-//        }
         
         .onAppear {
             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
@@ -140,7 +127,6 @@ struct RecordingStateView: View {
             timer?.invalidate()
             timer = nil
         }
-
     }
 }
 

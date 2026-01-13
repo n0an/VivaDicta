@@ -222,7 +222,6 @@
 				"Utils/Extensions/Color+Ext.swift",
 				Utils/Extensions/GlowShape.swift,
 				"Utils/Extensions/View+Ext.swift",
-				Utils/HapticManager.swift,
 				Views/HudView.swift,
 				Views/HudViewDarkBounceOnly.swift,
 				Views/HudViewLightBounceOnly.swift,
