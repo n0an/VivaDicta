@@ -26,10 +26,10 @@ struct RecordingSheetView: View {
                 Menu {
                     ForEach(vm.availableModes) { mode in
                         Button {
-                            appState.recordViewModel.selectedModeName = mode.name
+                            appState.aiService.selectedModeName = mode.name
                             HapticManager.selectionChanged()
                         } label: {
-                            if mode.name == appState.recordViewModel.selectedModeName {
+                            if mode.name == appState.aiService.selectedModeName {
                                 Label(mode.name, systemImage: "checkmark")
                             } else {
                                 Text(mode.name)
@@ -38,7 +38,7 @@ struct RecordingSheetView: View {
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(appState.recordViewModel.selectedModeName)
+                        Text(appState.aiService.selectedModeName)
                             .font(.headline)
                             .bold()
                             .lineLimit(1)
