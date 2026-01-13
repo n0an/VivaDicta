@@ -23,21 +23,14 @@ struct RecordingSheetView: View {
 
         VStack(spacing: 12) {
             HStack {
-                Picker("Mode", selection: $appState.recordViewModel.selectedModeName) {
-                    ForEach(vm.availableModes) { mode in
-                        Text(mode.name)
-                            .lineLimit(1)
-                            .tag(mode.name)
-                    }
-                }
-                .pickerStyle(.menu)
-                .tint(.primary)
+                VivaModePicker(
+                    modes: vm.availableModes,
+                    selectedModeName: $appState.aiService.selectedModeName,
+                    onSelectionChanged: { HapticManager.selectionChanged() }
+                )
                 .padding(.vertical, 16)
                 .padding(.horizontal, 16)
-                .onChange(of: appState.recordViewModel.selectedModeName) { _, _ in
-                    HapticManager.selectionChanged()
-                }
-                
+
                 Spacer()
                 
                 // Cancel button (X)

@@ -84,6 +84,14 @@ struct MainView: View {
                     }
 
                 }
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        VivaModePicker(
+                            modes: appState.aiService.modes,
+                            selectedModeName: $appState.aiService.selectedModeName
+                        )
+                    }
+                }
             
                 .toolbar {
                     if #available(iOS 26.0, *) {

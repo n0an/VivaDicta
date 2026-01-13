@@ -81,62 +81,85 @@ class KeyboardViewController: KeyboardInputViewController {
 
 }
 
-struct ActivateButton: View {
-    @Environment(\.openURL) private var openURL
-    @State var isAnimating = false
-    
-    var borderWidth: CGFloat
-    weak var controller: KeyboardViewController?
-    
-    var body: some View {
-        Button {
-            // Build URL with hostId as query parameter
-            var urlString = "vivadicta://record-for-keyboard"
-            if let hostId = controller?.hostApplicationBundleId {
-                // URL encode the hostId to handle special characters
-                if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                    urlString += "?hostId=\(encodedHostId)"
-                }
-            }
 
-            if let url = URL(string: urlString) {
-                controller?.logger.logInfo("📱 Opening main app with URL: \(url.absoluteString)")
-                openURL(url)
+// MARK: - Mode Cycle Selector
+struct ModeCycleSelector: View {
+    @Bindable var dictationState: KeyboardDictationState
+
+    private var modes: [VivaMode] {
+        dictationState.vivaModeManager.availableVivaModes
+    }
+
+    private var selectedMode: VivaMode {
+        dictationState.vivaModeManager.selectedVivaMode
+    }
+
+    private var currentIndex: Int {
+        modes.firstIndex(where: { $0.id == selectedMode.id }) ?? 0
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Left arrow - cycle backwards
+            Button {
+                cycleModes(forward: false)
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(.rect)
             }
-        } label: {
-            
-            Label("Activate", systemImage: "mic.slash")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(Color.primary)
-                .colorInvert()
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(.gray.gradient, in: .capsule(style: .continuous))
-            
-                .background {
-                    Capsule(style: .continuous)
-                    
-                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
-                        .blur(radius: 10)
-                        .onAppear {
-                            withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
-                                isAnimating = true
-                            }
-                        }
-                        .onDisappear {
-                            isAnimating = false
-                        }
-                }
-            
-                .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(.black.opacity(0.5), lineWidth: borderWidth)
-                }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Previous mode")
+
+            // Mode name - tap to cycle forward
+            Button {
+                cycleModes(forward: true)
+            } label: {
+                Text(selectedMode.name)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .frame(maxWidth: 100)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Current mode: \(selectedMode.name)")
+            .accessibilityValue("\(currentIndex + 1) of \(modes.count)")
+            .accessibilityHint("Tap to switch to next mode")
+
+            // Right arrow - cycle forward
+            Button {
+                cycleModes(forward: true)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Next mode")
         }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .background(.quaternary, in: .capsule)
+        .sensoryFeedback(.selection, trigger: selectedMode.id)
+    }
+
+    private func cycleModes(forward: Bool) {
+        guard modes.count > 1 else { return }
+
+        let newIndex: Int
+        if forward {
+            newIndex = (currentIndex + 1) % modes.count
+        } else {
+            newIndex = (currentIndex - 1 + modes.count) % modes.count
+        }
+
+        dictationState.vivaModeManager.selectedVivaMode = modes[newIndex]
     }
 }
-
-
 
 
 struct VivaDictaKeyboardToolbarView: View {
@@ -147,39 +170,27 @@ struct VivaDictaKeyboardToolbarView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Spacer()
-            
-            if dictationState.uiState == .notReady {
-                if #available(iOS 26.0, *) {
-                    ActivateButton(borderWidth: 0, controller: controller)
-                        .glassEffect(.regular.tint(.gray.opacity(1.0)).interactive())
-                    
-                } else {
-                    ActivateButton(borderWidth: 0.5, controller: controller)
-                }
-                
-            } else {
-                
-                if #available(iOS 26.0, *) {
-                    MicButton(
-                        fontSize: 34,
-                        padding: 6,
-                        backgroundColor: .orange.opacity(0.5),
-                        borderWidth: 0,
-                        onTapAction: handleMic)
-                    
-                        .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
-                    
-                } else {
-                    
-                    MicButton(
-                        fontSize: 36,
-                        padding: 0,
-                        backgroundColor: .orange,
-                        borderWidth: 0.5,
-                        onTapAction: handleMic)
+            // Mode selector on the left
+            ModeCycleSelector(dictationState: dictationState)
 
-                }
+            Spacer()
+
+            // Always show MicButton - it handles notReady state by opening main app
+            if #available(iOS 26.0, *) {
+                MicButton(
+                    fontSize: 34,
+                    padding: 6,
+                    backgroundColor: .orange.opacity(0.5),
+                    borderWidth: 0,
+                    onTapAction: handleMic)
+                    .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
+            } else {
+                MicButton(
+                    fontSize: 36,
+                    padding: 0,
+                    backgroundColor: .orange,
+                    borderWidth: 0.5,
+                    onTapAction: handleMic)
             }
         }
         .padding(.horizontal, 16)
@@ -188,6 +199,9 @@ struct VivaDictaKeyboardToolbarView: View {
     }
 
     private func handleMic() {
+        // TODO: Fix this - use settings toggle
+        KeyboardHapticManager.mediumImpact()
+//        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         guard dictationState.uiState != .notReady else {
             openMainAppForHotMic()
             return

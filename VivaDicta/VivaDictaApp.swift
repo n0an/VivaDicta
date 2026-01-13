@@ -36,9 +36,15 @@ struct VivaDictaApp: App {
     
     init() {
         // Register UserDefaults defaults for settings that should default to true
-        UserDefaults.standard.register(defaults: [
-            UserDefaultsStorage.Keys.isHapticsEnabled: true
+        
+        UserDefaultsStorage.shared.register(defaults: [
+            AppGroupCoordinator.isHapticsEnabled: true
         ])
+//        UserDefaultsStorage.shared.synchronize()
+//
+//        UserDefaults.standard.register(defaults: [
+//            UserDefaultsStorage.Keys.isHapticsEnabled: true
+//        ])
 
         // Initialize Persistence
         let modelContainer: ModelContainer

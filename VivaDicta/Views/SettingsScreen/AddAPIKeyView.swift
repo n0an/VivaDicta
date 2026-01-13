@@ -16,12 +16,15 @@ struct AddAPIKeyView: View {
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
     
+    @State private var clearButtonVisible = false
+    
     var onSave: (AIProvider) -> Void
     
     var body: some View {
         VStack(spacing: 10) {
             Text("\(provider.displayName) API Key")
                 .font(.title2)
+            
             
             TextField("API Key", text: $apiKey)
                 .privacySensitive()
@@ -35,7 +38,49 @@ struct AddAPIKeyView: View {
                 .onChange(of: apiKey) { _, _ in
                     // Clear error when user starts typing
                     verificationError = nil
+                    clearButtonVisible = !apiKey.isEmpty
                 }
+            
+            if UIPasteboard.general.hasStrings {
+                Button {
+                    if let clipboardString = UIPasteboard.general.string {
+                        apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        HapticManager.lightImpact()
+                    }
+                } label: {
+                    Text("Paste from clipboard")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Paste from clipboard")
+
+            }
+            
+            
+            if clearButtonVisible {
+                Button {
+                    apiKey = ""
+                    HapticManager.lightImpact()
+                } label: {
+                    Text("Clear")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.gray, lineWidth: 2)
+                        }
+                }
+                .buttonStyle(.plain)
+            }
             
             if let error = verificationError {
                 Text(error)
@@ -85,6 +130,7 @@ struct AddAPIKeyView: View {
             
             Spacer()
         }
+        .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
         .onAppear {
             // Load existing API key if available (needs to be shared with keyboard)
             apiKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) ?? ""

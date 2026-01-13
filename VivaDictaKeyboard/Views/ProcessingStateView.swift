@@ -57,7 +57,14 @@ struct ProcessingStateView: View {
             // Top area with cancel button
             HStack {
                 Spacer()
-                Button(action: onCancel) {
+                
+                Button {
+                    // TODO: Fix this, use settings toggle
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    
+                    onCancel()
+                } label: {
+                    
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.secondary)
