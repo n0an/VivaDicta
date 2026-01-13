@@ -23,6 +23,7 @@ struct AddAPIKeyView: View {
             Text("\(provider.displayName) API Key")
                 .font(.title2)
             
+            
             TextField("API Key", text: $apiKey)
                 .privacySensitive()
                 .textInputAutocapitalization(.never)
@@ -36,6 +37,27 @@ struct AddAPIKeyView: View {
                     // Clear error when user starts typing
                     verificationError = nil
                 }
+            
+            
+            Button {
+                if let clipboardString = UIPasteboard.general.string {
+                    apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    HapticManager.lightImpact()
+                }
+            } label: {
+                Text("Paste from clipboard")
+                    .font(.headline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .background {
+                        Capsule()
+                            .stroke(.blue, lineWidth: 2)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Paste from clipboard")
+            
             
             if let error = verificationError {
                 Text(error)
