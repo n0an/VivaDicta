@@ -43,16 +43,33 @@ struct RecordingStateView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Picker("Viva Mode", selection: $dictationState.vivaModeManager.selectedVivaMode) {
+                Menu {
                     ForEach(dictationState.vivaModeManager.availableVivaModes) { mode in
-                        Text(mode.name)
-                            .lineLimit(1)
-                            .tag(mode)
+                        Button {
+                            dictationState.vivaModeManager.selectedVivaMode = mode
+                        } label: {
+                            if mode.id == dictationState.vivaModeManager.selectedVivaMode.id {
+                                Label(mode.name, systemImage: "checkmark")
+                            } else {
+                                Text(mode.name)
+                            }
+                        }
                     }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(dictationState.vivaModeManager.selectedVivaMode.name)
+                            .font(.headline)
+                            .bold()
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.fill.tertiary, in: .capsule)
                 }
                 .tint(.primary)
-                .pickerStyle(.menu)
-                
+
                 Spacer()
                 
                 // Cancel button (X)
