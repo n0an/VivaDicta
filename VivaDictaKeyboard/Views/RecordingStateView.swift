@@ -43,34 +43,17 @@ struct RecordingStateView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Menu {
-                    ForEach(dictationState.vivaModeManager.availableVivaModes) { mode in
-                        Button {
-                            dictationState.vivaModeManager.selectedVivaMode = mode
-                        } label: {
-                            if mode.id == dictationState.vivaModeManager.selectedVivaMode.id {
-                                Label(mode.name, systemImage: "checkmark")
-                            } else {
-                                Text(mode.name)
+                VivaModePicker(
+                    modes: dictationState.vivaModeManager.availableVivaModes,
+                    selectedModeName: Binding(
+                        get: { dictationState.vivaModeManager.selectedVivaMode.name },
+                        set: { newName in
+                            if let mode = dictationState.vivaModeManager.availableVivaModes.first(where: { $0.name == newName }) {
+                                dictationState.vivaModeManager.selectedVivaMode = mode
                             }
                         }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(dictationState.vivaModeManager.selectedVivaMode.name)
-                            .font(.headline)
-                            .bold()
-                            .lineLimit(1)
-                            .frame(maxWidth: 150)
-                        Image(systemName: "chevron.down")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.fill.tertiary, in: .capsule)
-                }
-                .tint(.primary)
+                    )
+                )
                 .padding(.leading, 16)
 
                 Spacer()
