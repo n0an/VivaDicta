@@ -100,9 +100,10 @@ struct MainView: View {
                             }
                         } label: {
                             HStack(spacing: 4) {
-                                Text(appState.aiService.selectedMode.name)
+                                Text(appState.aiService.selectedMode.name.truncated(to: 16))
                                     .font(.headline)
                                     .bold()
+                                    .lineLimit(1)
                                 Image(systemName: "chevron.down")
                                     .font(.caption)
                                     .fontWeight(.semibold)

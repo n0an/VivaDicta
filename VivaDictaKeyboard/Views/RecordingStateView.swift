@@ -57,9 +57,10 @@ struct RecordingStateView: View {
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text(dictationState.vivaModeManager.selectedVivaMode.name)
+                        Text(dictationState.vivaModeManager.selectedVivaMode.name.truncated(to: 16))
                             .font(.headline)
                             .bold()
+                            .lineLimit(1)
                         Image(systemName: "chevron.down")
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -69,6 +70,7 @@ struct RecordingStateView: View {
                     .background(.fill.tertiary, in: .capsule)
                 }
                 .tint(.primary)
+                .padding(.leading, 16)
 
                 Spacer()
                 
@@ -81,7 +83,7 @@ struct RecordingStateView: View {
                         .background(.gray.opacity(0.1), in: .circle)
                         .contentShape(.rect)
                 }
-                .padding(.trailing, 8)
+                .padding(.trailing, 16)
             }
 //            SiriWaveView(power: .constant(dictationState.currentAudioLevel))
 //                .frame(height: 140)
@@ -147,4 +149,15 @@ struct RecordingStateView: View {
     RecordingStateView(
         dictationState: KeyboardDictationState()
     )
+}
+
+
+extension String {
+    /// Truncates the string to the specified length, adding "..." if truncated
+    func truncated(to maxLength: Int) -> String {
+        if count <= maxLength {
+            return self
+        }
+        return String(prefix(maxLength)) + "..."
+    }
 }
