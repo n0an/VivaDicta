@@ -59,9 +59,7 @@ struct ProcessingStateView: View {
                 Spacer()
                 
                 Button {
-                    // TODO: Fix this, use settings toggle
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    
+                    KeyboardHapticManager.lightImpact()
                     onCancel()
                 } label: {
                     

@@ -48,6 +48,7 @@ struct RecordingStateView: View {
                     selectedModeName: Binding(
                         get: { dictationState.vivaModeManager.selectedVivaMode.name },
                         set: { newName in
+                            KeyboardHapticManager.selectionChanged()
                             if let mode = dictationState.vivaModeManager.availableVivaModes.first(where: { $0.name == newName }) {
                                 dictationState.vivaModeManager.selectedVivaMode = mode
                             }
@@ -61,7 +62,7 @@ struct RecordingStateView: View {
                 // Cancel button (X)
                 
                 Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    KeyboardHapticManager.lightImpact()
                     dictationState.requestCancelRecording()
                 } label: {
                     Image(systemName: "xmark")
@@ -73,15 +74,13 @@ struct RecordingStateView: View {
                 }
                 .padding(.trailing, 16)
             }
-            .sensoryFeedback(.selection, trigger: dictationState.vivaModeManager.selectedVivaMode.id)
             OrbView(maskTimer: maskTimer)
                 .padding(.bottom, 40)
             
             // Stop Button
             
             Button(action: {
-                
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                KeyboardHapticManager.mediumImpact()
                 dictationState.requestStopRecording()
             }) {
                 HStack(spacing: 8) {
