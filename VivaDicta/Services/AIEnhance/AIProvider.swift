@@ -52,6 +52,37 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Returns the icon name for this provider (SF Symbol for Apple, asset name for others)
+    var iconName: String? {
+        switch self {
+        case .apple:
+            nil // Use SF Symbol "apple.logo" directly in view
+        case .anthropic:
+            "anthropic"
+        case .openAI:
+            "openai"
+        case .gemini:
+            "gemini"
+        case .groq:
+            "groq"
+        case .mistral:
+            "mistral"
+        case .cerebras:
+            "cerebras"
+        case .grok:
+            "grok"
+        case .openRouter:
+            "openrouter"
+        case .elevenLabs, .deepgram, .soniox:
+            nil // These providers don't have icons yet
+        }
+    }
+
+    /// Returns true if this provider uses an SF Symbol instead of an asset
+    var usesSFSymbol: Bool {
+        self == .apple
+    }
+
     /// Returns true if this provider requires an API key
     var requiresAPIKey: Bool {
         self != .apple

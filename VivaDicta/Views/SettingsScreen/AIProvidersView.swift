@@ -14,7 +14,12 @@ struct AIProviders: View {
         List {
             if AppleFoundationModelAvailability.isAvailable {
                 Section {
-                    HStack {
+                    HStack(spacing: 12) {
+                        Image(systemName: "apple.logo")
+                            .font(.title2)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28, height: 28)
+
                         Text(AIProvider.apple.displayName)
 
                         Spacer()
@@ -37,7 +42,14 @@ struct AIProviders: View {
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
                     NavigationLink(value: provider) {
-                        HStack {
+                        HStack(spacing: 12) {
+                            if let iconName = provider.iconName {
+                                Image(iconName)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 28, height: 28)
+                            }
+
                             Text(provider.displayName)
 
                             Spacer()
