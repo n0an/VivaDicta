@@ -614,7 +614,8 @@ class AIService {
 
     private func getSystemMessage() -> String {
         var customVocabularySection = ""
-        if let customVocabularyWords = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords), !customVocabularyWords.isEmpty {
+        let customVocabularyWords = CustomVocabulary.getTerms()
+        if !customVocabularyWords.isEmpty {
             let vocabularyString = customVocabularyWords.joined(separator: ", ")
             customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
         }
@@ -639,8 +640,8 @@ class AIService {
 
         if useSystemTemplate {
             var customVocabulary: String? = nil
-            if let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords),
-               !words.isEmpty {
+            let words = CustomVocabulary.getTerms()
+            if !words.isEmpty {
                 customVocabulary = words.joined(separator: ", ")
             }
             return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)

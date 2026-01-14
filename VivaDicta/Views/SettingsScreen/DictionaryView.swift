@@ -16,8 +16,13 @@ struct WordsDictionaryView: View {
     @State private var selectedWords: [String] = []
     @State private var showDeleteAlert = false
 
+    @AppStorage(UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled)
+    private var isSpellingCorrectionsEnabled: Bool = true
+
     var body: some View {
         VStack(spacing: 0) {
+            enableToggle
+
             if customVocabularyService.words.isEmpty {
                 emptyStateView
             } else {
@@ -67,6 +72,15 @@ struct WordsDictionaryView: View {
         } message: {
             Text("Are you sure you want to delete \(selectedWords.count) word\(selectedWords.count == 1 ? "" : "s")? This action cannot be undone.")
         }
+    }
+
+    private var enableToggle: some View {
+        Toggle("Enable Spelling Corrections", isOn: $isSpellingCorrectionsEnabled)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .onChange(of: isSpellingCorrectionsEnabled) { _, _ in
+                HapticManager.selectionChanged()
+            }
     }
 
     private var emptyStateView: some View {
