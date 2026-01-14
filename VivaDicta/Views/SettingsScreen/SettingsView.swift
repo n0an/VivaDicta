@@ -171,6 +171,9 @@ struct SettingsView: View {
                 }
                 
                 Section("AI Enhancement") {
+                    NavigationLink(value: SettingsDestination.aiProviders) {
+                        Text("AI Providers")
+                    }
                     NavigationLink(value: SettingsDestination.promptsSettings) {
                         Text("LLM Prompts")
                     }
@@ -360,6 +363,8 @@ struct SettingsView: View {
                     WordsDictionaryView()
                 case .replacements:
                     ReplacementsView()
+                case .aiProviders:
+                    AIProviders()
                 }
             }
             .navigationDestination(for: UserPrompt.self) { prompt in

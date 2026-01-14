@@ -8,6 +8,7 @@
 import Foundation
 
 enum SettingsDestination: Hashable {
+    case aiProviders
     case promptsSettings
     case promptsTemplates
     case transcriptionModels
