@@ -73,8 +73,12 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "grok"
         case .openRouter:
             "openrouter"
-        case .elevenLabs, .deepgram, .soniox:
-            nil // These providers don't have icons yet
+        case .elevenLabs:
+            "elevenlabs"
+        case .deepgram:
+            "deepgram"
+        case .soniox:
+            nil
         }
     }
 
