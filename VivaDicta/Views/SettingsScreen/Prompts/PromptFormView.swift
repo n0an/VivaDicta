@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import TipKit
 
 /// Unified view for creating and editing prompts
 struct PromptFormView: View {
     @Environment(\.dismiss) var dismiss
 
     let promptsManager: PromptsManager
+    let transcriptTagsTip = TranscriptTagsTip()
 
     // For creating new prompts from template
     private let template: PromptsTemplates?
@@ -92,6 +94,8 @@ struct PromptFormView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Edit prompt instructions")
                 .accessibilityHint(promptInstructions.isEmpty ? "Double tap to add instructions" : "Current instructions: \(promptInstructions)")
+
+                TipView(transcriptTagsTip)
             }
 
             if isEditMode && isFormValid {
@@ -125,6 +129,9 @@ struct PromptFormView: View {
         }
         .onAppear {
             setupInitialValues()
+            Task {
+                await TranscriptTagsTip.promptEditOpenedEvent.donate()
+            }
         }
         .fullScreenCover(isPresented: $showInstructionsEditor) {
             NavigationStack {

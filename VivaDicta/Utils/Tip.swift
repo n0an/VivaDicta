@@ -100,7 +100,7 @@ struct SelectAIEnhacementTip: Tip {
     var title: Text {
         Text("Add AI Enhancement")
     }
-    
+
     var message: Text? {
         Text("Improve transcriptions with AI")
     }
@@ -108,5 +108,27 @@ struct SelectAIEnhacementTip: Tip {
     var image: Image? {
         Image(systemName: "wand.and.sparkles")
     }
-    
+
+}
+
+struct TranscriptTagsTip: Tip {
+    static let promptEditOpenedEvent = Event(id: "promptEditOpened")
+
+    var title: Text {
+        Text("Tip: Using <TRANSCRIPT> tag")
+    }
+
+    var message: Text? {
+        Text("Use <TRANSCRIPT> in your instructions to reference the transcribed text")
+    }
+
+    var image: Image? {
+        Image(systemName: "chevron.left.forwardslash.chevron.right")
+    }
+
+    var rules: [Rule] {
+        #Rule(Self.promptEditOpenedEvent) { event in
+            event.donations.count >= 3
+        }
+    }
 }
