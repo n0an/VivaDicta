@@ -113,7 +113,7 @@ struct PromptFormView: View {
                 DisclosureGroup("Advanced Settings") {
                     Toggle("Use System Instructions", isOn: $useSystemTemplate)
 
-                    Text("When enabled, your instructions are combined with system instructions to improve transcription quality. Disable for full control over the AI prompt.")
+                    Text("When enabled, your instructions are combined with system instructions to improve transcription quality. Disable for full control over the AI prompt. Note: Spelling Corrections are always included when enabled in Settings.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

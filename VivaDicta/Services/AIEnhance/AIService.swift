@@ -637,18 +637,19 @@ class AIService {
     /// Used with LanguageModelSession(instructions:)
     private func getFoundationModelInstructions() -> String {
         let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+        let words = CustomVocabulary.getTerms()
 
         if useSystemTemplate {
-            var customVocabulary: String? = nil
-            let words = CustomVocabulary.getTerms()
-            if !words.isEmpty {
-                customVocabulary = words.joined(separator: ", ")
-            }
+            let customVocabulary = words.isEmpty ? nil : words.joined(separator: ", ")
             return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)
         } else {
-            // User wants full control - return empty instructions
-            // The user's prompt will be used directly via promptPrefix
-            return ""
+            // User wants full control - use only their instructions via promptPrefix
+            // But still include custom vocabulary if available
+            if words.isEmpty {
+                return ""
+            }
+            let vocabularyString = words.joined(separator: ", ")
+            return "<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)</CUSTOM_VOCABULARY>"
         }
     }
 
