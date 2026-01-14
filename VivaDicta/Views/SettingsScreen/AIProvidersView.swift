@@ -10,8 +10,10 @@ import SwiftUI
 struct AIProviders: View {
     var body: some View {
         List {
-            Section("On-Device") {
-                Text(AIProvider.apple.displayName)
+            if AppleFoundationModelAvailability.isAvailable {
+                Section("On-Device") {
+                    Text(AIProvider.apple.displayName)
+                }
             }
 
             Section("Cloud") {
