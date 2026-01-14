@@ -15,8 +15,9 @@ struct AddAPIKeyView: View {
     @State private var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
-    
     @State private var clearButtonVisible = false
+    @State private var showDeleteConfirmation = false
+    @State private var hasExistingKey = false
     
     var onSave: (AIProvider) -> Void
     
@@ -127,17 +128,69 @@ struct AddAPIKeyView: View {
                 .padding(.top, 16)
                 .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
             }
-            
+
+            // Delete API Key button - only show if there's an existing key
+            if hasExistingKey {
+                Button {
+                    showDeleteConfirmation = true
+                    HapticManager.warning()
+                } label: {
+                    Text("Delete API Key")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.red)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .overlay {
+                    Capsule()
+                        .stroke(Color.red, lineWidth: 1.5)
+                }
+                .padding(.top, 8)
+            }
+
             Spacer()
         }
         .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
         .onAppear {
             // Load existing API key if available (needs to be shared with keyboard)
-            apiKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) ?? ""
+            let existingKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
+            apiKey = existingKey ?? ""
+            hasExistingKey = existingKey != nil
+            clearButtonVisible = !apiKey.isEmpty
         }
         .padding(.top, 32)
         .padding()
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteAPIKey()
+            }
+        } message: {
+            Text("Are you sure you want to delete the API key for \(provider.displayName)? This action cannot be undone.")
+        }
+    }
+
+    private func deleteAPIKey() {
+        HapticManager.heavyImpact()
+
+        // Remove the API key from UserDefaults
+        let keyName = AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue
+        UserDefaultsStorage.shared.removeObject(forKey: keyName)
+
+        // Clear the text field and update state
+        apiKey = ""
+        hasExistingKey = false
+        clearButtonVisible = false
+
+        // Refresh connected providers
+        aiService.refreshConnectedProviders()
+
+        // Disable AI enhancement for modes using this provider
+        aiService.disableAIEnhancementForModesUsingProvider(provider)
+
+        onSave(provider)
+        dismiss()
     }
     
     func saveKey() {
