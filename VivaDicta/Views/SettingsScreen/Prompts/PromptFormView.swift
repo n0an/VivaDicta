@@ -21,6 +21,9 @@ struct PromptFormView: View {
     // For editing existing prompts
     private let editingPrompt: UserPrompt?
 
+    // AIService to sync prompt changes with modes (only needed when editing)
+    private let aiService: AIService?
+
     // Callback when prompt is saved (used when presented as sheet)
     private let onComplete: (() -> Void)?
 
@@ -29,6 +32,7 @@ struct PromptFormView: View {
 
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
+    @State private var useSystemTemplate: Bool = true
     @State private var showInstructionsEditor = false
     @State private var showingAlert = false
     @State private var promptError: SettingsError = .duplicatePromptName("")
@@ -60,6 +64,7 @@ struct PromptFormView: View {
          onComplete: (() -> Void)? = nil) {
         self.template = template
         self.editingPrompt = nil
+        self.aiService = nil
         self.promptsManager = promptsManager
         self.emailUserName = emailUserName
         self.onComplete = onComplete
@@ -67,9 +72,11 @@ struct PromptFormView: View {
 
     /// Edit an existing prompt
     init(editingPrompt: UserPrompt,
-         promptsManager: PromptsManager) {
+         promptsManager: PromptsManager,
+         aiService: AIService) {
         self.template = nil
         self.editingPrompt = editingPrompt
+        self.aiService = aiService
         self.promptsManager = promptsManager
         self.emailUserName = nil
         self.onComplete = nil
@@ -101,9 +108,13 @@ struct PromptFormView: View {
 
                 TipView(transcriptTagsTip)
             }
-            
-            
-            
+
+            Section(
+                footer: Text("When enabled, your instructions are combined with a system instructions to improve transcription quality. Disable for full control over the AI prompt (advanced).")
+            ) {
+                Toggle("Use System Instructions", isOn: $useSystemTemplate)
+            }
+
             if isEditMode {
                 if isFormValid {
                     Section {
@@ -188,6 +199,7 @@ struct PromptFormView: View {
             // Edit mode: pre-fill with existing prompt data
             title = existingPrompt.title
             promptInstructions = existingPrompt.promptInstructions
+            useSystemTemplate = existingPrompt.useSystemTemplate
         } else if let template = template, template != .custom {
             // Create mode with template: pre-fill from template
             title = template.defaultTitle
@@ -225,7 +237,8 @@ struct PromptFormView: View {
 
         let prompt = UserPrompt(
             title: trimmedTitle,
-            promptInstructions: promptInstructions
+            promptInstructions: promptInstructions,
+            useSystemTemplate: useSystemTemplate
         )
 
         promptsManager.addPrompt(prompt)
@@ -245,10 +258,15 @@ struct PromptFormView: View {
             id: existingPrompt.id,
             title: trimmedTitle,
             promptInstructions: promptInstructions,
+            useSystemTemplate: useSystemTemplate,
             createdAt: existingPrompt.createdAt
         )
 
         promptsManager.updatePrompt(updatedPrompt)
+
+        // Sync the updated prompt to all modes that use it
+        aiService?.updateModesWithPrompt(updatedPrompt)
+
         dismiss()
     }
 

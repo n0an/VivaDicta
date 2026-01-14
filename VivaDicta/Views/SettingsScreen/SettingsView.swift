@@ -365,7 +365,8 @@ struct SettingsView: View {
             .navigationDestination(for: UserPrompt.self) { prompt in
                 PromptFormView(
                     editingPrompt: prompt,
-                    promptsManager: promptsManager
+                    promptsManager: promptsManager,
+                    aiService: appState.aiService
                 )
             }
             .navigationDestination(isPresented: $showAddMode) {

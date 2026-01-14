@@ -217,6 +217,28 @@ class AIService {
         )
     }
 
+    /// Updates all modes that use the specified prompt with the new prompt data.
+    /// Called when a prompt is edited to sync changes across all modes using it.
+    public func updateModesWithPrompt(_ updatedPrompt: UserPrompt) {
+        updateModesMatching(
+            { $0.userPrompt?.id == updatedPrompt.id },
+            transform: { mode in
+                VivaMode(
+                    id: mode.id,
+                    name: mode.name,
+                    transcriptionProvider: mode.transcriptionProvider,
+                    transcriptionModel: mode.transcriptionModel,
+                    transcriptionLanguage: mode.transcriptionLanguage,
+                    userPrompt: updatedPrompt,
+                    aiProvider: mode.aiProvider,
+                    aiModel: mode.aiModel,
+                    aiEnhanceEnabled: mode.aiEnhanceEnabled
+                )
+            },
+            logMessage: { "Updated prompt in mode '\($0.name)' with new prompt data: \(updatedPrompt.title)" }
+        )
+    }
+
     private func updateModesMatching(
         _ predicate: (VivaMode) -> Bool,
         transform: (VivaMode) -> VivaMode,
@@ -598,7 +620,14 @@ class AIService {
         }
 
         let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        return PromptsTemplates.systemPrompt(with: promptInstructions) + customVocabularySection
+        let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+
+        if useSystemTemplate {
+            return PromptsTemplates.systemPrompt(with: promptInstructions) + customVocabularySection
+        } else {
+            // User wants full control - use only their instructions + vocabulary
+            return promptInstructions + customVocabularySection
+        }
     }
 
     // MARK: - Foundation Model Prompts (Apple)
@@ -606,19 +635,34 @@ class AIService {
     /// Returns instructions for LanguageModelSession (role + core rules + vocabulary)
     /// Used with LanguageModelSession(instructions:)
     private func getFoundationModelInstructions() -> String {
-        var customVocabulary: String? = nil
-        if let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords),
-           !words.isEmpty {
-            customVocabulary = words.joined(separator: ", ")
+        let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+
+        if useSystemTemplate {
+            var customVocabulary: String? = nil
+            if let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords),
+               !words.isEmpty {
+                customVocabulary = words.joined(separator: ", ")
+            }
+            return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)
+        } else {
+            // User wants full control - return empty instructions
+            // The user's prompt will be used directly via promptPrefix
+            return ""
         }
-        return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)
     }
 
     /// Returns prompt prefix for prewarm (user prompt instructions only)
     /// Used with session.prewarm(promptPrefix:)
     private func getFoundationModelPromptPrefix() -> String {
         let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        return PromptsTemplates.foundationModelPromptPrefix(promptInstructions: promptInstructions)
+        let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+
+        if useSystemTemplate {
+            return PromptsTemplates.foundationModelPromptPrefix(promptInstructions: promptInstructions)
+        } else {
+            // User wants full control - use their instructions directly
+            return promptInstructions
+        }
     }
     
     
