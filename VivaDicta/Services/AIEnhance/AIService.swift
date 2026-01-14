@@ -131,15 +131,46 @@ class AIService {
         logger.logInfo("Duplicated mode '\(mode.name)' as '\(newName)'")
     }
 
+    /// Generates a unique name for duplicating a mode
+    /// "default" → "default 1", "default 1" → "default 2", etc.
     private func generateUniqueName(baseName: String) -> String {
-        var newName = "\(baseName) Copy"
-        let existingNames = Set(modes.map { $0.name })
+        let trimmedName = baseName.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        while existingNames.contains(newName) {
-            newName = "\(newName) Copy"
+        // Extract base name and current number if exists
+        // Pattern: "Name" or "Name N" where N is a number
+        let pattern = /^(.+?)\s+(\d+)$/
+        let extractedBaseName: String
+        if let match = trimmedName.wholeMatch(of: pattern) {
+            extractedBaseName = String(match.1)
+        } else {
+            extractedBaseName = trimmedName
         }
 
-        return newName
+        // Find the highest number used for this base name
+        // Use normalized comparison (whitespace-insensitive)
+        var highestNumber = 0
+        let normalizedBaseName = normalizeForComparison(extractedBaseName)
+        let numberPattern = /^(.+?)\s+(\d+)$/
+
+        for mode in modes {
+            let modeName = mode.name.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if normalizeForComparison(modeName) == normalizedBaseName {
+                // Exact match with base name means at least 1 exists
+                highestNumber = max(highestNumber, 0)
+            } else if let match = modeName.wholeMatch(of: numberPattern),
+                      normalizeForComparison(String(match.1)) == normalizedBaseName,
+                      let num = Int(match.2) {
+                highestNumber = max(highestNumber, num)
+            }
+        }
+
+        return "\(extractedBaseName) \(highestNumber + 1)"
+    }
+
+    /// Normalizes a name for comparison by removing all whitespace and lowercasing
+    private func normalizeForComparison(_ name: String) -> String {
+        name.split(separator: /\s+/).joined().lowercased()
     }
 
     /// Disables AI enhancement for all modes that use the specified AI provider.

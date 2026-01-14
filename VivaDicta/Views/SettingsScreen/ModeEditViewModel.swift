@@ -125,7 +125,8 @@ class ModeEditViewModel {
         let modeId = originalMode?.id ?? UUID()
 
         let otherModes = aiService.modes.filter ({ $0.id != modeId })
-        if otherModes.contains(where: {$0.name.lowercased() == trimmedName.lowercased()}) {
+        let normalizedName = normalizeForComparison(trimmedName)
+        if otherModes.contains(where: { normalizeForComparison($0.name) == normalizedName }) {
             throw SettingsError.duplicateModeName(trimmedName)
         }
 
@@ -346,5 +347,10 @@ class ModeEditViewModel {
             return nil
         }
         return promptsManager.userPrompts.first { $0.id == promptID }
+    }
+
+    /// Normalizes a name for comparison by removing all whitespace and lowercasing
+    private func normalizeForComparison(_ name: String) -> String {
+        name.split(separator: /\s+/).joined().lowercased()
     }
 }
