@@ -82,7 +82,10 @@ struct PromptFormView: View {
                 TextField("Title", text: $title)
             }
 
-            Section(header: Text("Prompt Instructions")) {
+            Section(
+                header: Text("Prompt Instructions"),
+                footer: template == .custom ? Text("Tip: Use <TRANSCRIPT> to reference the transcribed text.\nExample: \"Clean up <TRANSCRIPT> and fix grammar\"") : nil
+            ) {
                 Button {
                     showInstructionsEditor = true
                 } label: {
