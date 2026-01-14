@@ -23,6 +23,13 @@ struct AddAPIKeyView: View {
     
     var body: some View {
         VStack(spacing: 10) {
+            if let iconName = provider.iconName {
+                Image(iconName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+            }
+
             Text("\(provider.displayName) API Key")
                 .font(.title2)
             

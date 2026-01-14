@@ -22,6 +22,13 @@ struct CloudModelConfigurationView: View {
     var body: some View {
         
         VStack(spacing: 10) {
+            if let iconName = model.provider.mappedAIProvider?.iconName {
+                Image(iconName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+            }
+
             Text("\(model.provider.displayName) API Key")
                 .font(.title2)
             TextField("API Key", text: $apiKey)
