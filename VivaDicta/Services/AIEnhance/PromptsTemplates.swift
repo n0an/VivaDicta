@@ -10,7 +10,6 @@ import Foundation
 enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     case email
     case chat
-    case note
     case regular
     case vibeCoding
     case custom
@@ -27,10 +26,8 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
             return "Template for converting casual messages into professional email format"
         case .chat:
             return "Casual chat-style formatting"
-        case .note:
-            return "Rewrites transcriptions with enhanced clarity, improved sentence structure, and rhythmic flow while preserving original meaning."
         case .regular:
-            return "Default system prompt for improving clarity and accuracy of transcriptions"
+            return "Cleans up transcriptions while preserving your natural speaking style"
         case .vibeCoding:
             return "For Vibe coders and AI chat. Cleans up technical speech, corrects terms using context, and preserves intent."
         case .custom:
@@ -78,14 +75,6 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
             Example:
             Input: "I think we should meet at three PM no wait four PM what do you think"
             Output: "I think we should meet at 4 PM. What do you think?"
-            """
-        case .note:
-            """
-            Rewrite <TRANSCRIPT> for clarity and readability:
-            1. Restructure sentences for better flow
-            2. Break complex sentences into shorter ones
-            3. Maintain original meaning exactly
-            4. Format lists clearly
             """
         case .regular:
             """
