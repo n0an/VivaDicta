@@ -10,8 +10,6 @@ import SwiftUI
 struct AIProviders: View {
     @Environment(AppState.self) private var appState
 
-    @State private var providerToConfigure: AIProvider?
-
     var body: some View {
         List {
             if AppleFoundationModelAvailability.isAvailable {
@@ -22,12 +20,9 @@ struct AIProviders: View {
 
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
-                    Button {
-                        providerToConfigure = provider
-                    } label: {
+                    NavigationLink(value: provider) {
                         HStack {
                             Text(provider.displayName)
-                                .foregroundStyle(.primary)
 
                             Spacer()
 
@@ -47,13 +42,11 @@ struct AIProviders: View {
         }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
-        .navigationDestination(item: $providerToConfigure) { provider in
+        .navigationDestination(for: AIProvider.self) { provider in
             AddAPIKeyView(
                 provider: provider,
                 aiService: appState.aiService,
-                onSave: { _ in
-                    providerToConfigure = nil
-                }
+                onSave: { _ in }
             )
         }
     }
