@@ -109,10 +109,14 @@ struct PromptFormView: View {
                 TipView(transcriptTagsTip)
             }
 
-            Section(
-                footer: Text("When enabled, your instructions are combined with a system instructions to improve transcription quality. Disable for full control over the AI prompt (advanced).")
-            ) {
-                Toggle("Use System Instructions", isOn: $useSystemTemplate)
+            Section {
+                DisclosureGroup("Advanced Settings") {
+                    Toggle("Use System Instructions", isOn: $useSystemTemplate)
+
+                    Text("When enabled, your instructions are combined with system instructions to improve transcription quality. Disable for full control over the AI prompt.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if isEditMode {
