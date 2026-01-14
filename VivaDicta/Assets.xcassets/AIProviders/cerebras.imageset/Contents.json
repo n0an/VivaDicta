@@ -1,7 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "cerebras-color.svg",
+      "filename" : "cerebras-lightmode.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "cerebras-darkmode.svg",
       "idiom" : "universal"
     }
   ],
