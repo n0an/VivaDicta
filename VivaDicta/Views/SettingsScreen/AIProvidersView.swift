@@ -22,7 +22,7 @@ struct AIProviders: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.shield.fill")
                                 .foregroundStyle(.green.gradient)
-                            Text("Private & Free")
+                            Text("Ready to use. Private & Free.")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
