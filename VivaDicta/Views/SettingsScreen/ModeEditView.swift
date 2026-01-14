@@ -199,7 +199,15 @@ struct ModeEditView: View {
                             // Cloud providers section
                             Section("Cloud") {
                                 ForEach(AIProvider.cloudProviders) { provider in
-                                    Text(provider.displayName).tag(provider)
+                                    if viewModel.isProviderReady(provider) {
+                                        Text(provider.displayName).tag(provider)
+                                    } else {
+                                        HStack(spacing: 4) {
+                                            Text(provider.displayName)
+                                            Image(systemName: "key.slash.fill")
+                                        }
+                                        .tag(provider)
+                                    }
                                 }
                             }
                         } label: {
