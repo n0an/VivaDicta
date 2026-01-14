@@ -13,8 +13,12 @@ struct AIProviders: View {
     var body: some View {
         List {
             if AppleFoundationModelAvailability.isAvailable {
-                Section("On-Device") {
+                Section {
                     Text(AIProvider.apple.displayName)
+                } header: {
+                    Text("On-Device")
+                } footer: {
+                    Text("Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or subscription required — it's completely free.")
                 }
             }
 
