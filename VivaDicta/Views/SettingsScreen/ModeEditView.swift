@@ -50,12 +50,28 @@ struct ModeEditView: View {
                 Picker("Provider", selection: $viewModel.transcriptionProvider) {
                     Section("On-Device") {
                         ForEach(TranscriptionModelProvider.localProviders) { provider in
-                            Text(provider.displayName).tag(provider)
+                            if viewModel.isTranscriptionProviderConfigured(provider) {
+                                Text(provider.displayName).tag(provider)
+                            } else {
+                                HStack(spacing: 4) {
+                                    Text(provider.displayName)
+                                    Image(systemName: "arrow.down.circle")
+                                }
+                                .tag(provider)
+                            }
                         }
                     }
                     Section("Cloud") {
                         ForEach(TranscriptionModelProvider.cloudProviders) { provider in
-                            Text(provider.displayName).tag(provider)
+                            if viewModel.isTranscriptionProviderConfigured(provider) {
+                                Text(provider.displayName).tag(provider)
+                            } else {
+                                HStack(spacing: 4) {
+                                    Text(provider.displayName)
+                                    Image(systemName: "key.slash.fill")
+                                }
+                                .tag(provider)
+                            }
                         }
                     }
                 }
