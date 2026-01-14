@@ -93,6 +93,16 @@ struct PromptFormView: View {
                 .accessibilityLabel("Edit prompt instructions")
                 .accessibilityHint(promptInstructions.isEmpty ? "Double tap to add instructions" : "Current instructions: \(promptInstructions)")
             }
+
+            if isEditMode && isFormValid {
+                Section {
+                    Button {
+                        duplicatePrompt()
+                    } label: {
+                        Label("Duplicate Prompt", systemImage: "doc.on.doc")
+                    }
+                }
+            }
         }
         .scrollDismissesKeyboard(.immediately)
         .navigationTitle(navigationTitle)
@@ -203,5 +213,12 @@ struct PromptFormView: View {
     private func dismissAndComplete() {
         dismiss()
         onComplete?()
+    }
+
+    private func duplicatePrompt() {
+        guard let existingPrompt = editingPrompt else { return }
+        HapticManager.lightImpact()
+        promptsManager.duplicatePrompt(existingPrompt)
+        dismiss()
     }
 }

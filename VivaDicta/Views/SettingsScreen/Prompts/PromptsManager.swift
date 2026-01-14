@@ -28,9 +28,9 @@ class PromptsManager {
     // MARK: - Public Methods
 
     func isPromptNameDuplicate(_ name: String, excludingId: UUID? = nil) -> Bool {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedName = normalizeForComparison(name)
         return userPrompts.contains { prompt in
-            prompt.title.lowercased() == trimmedName && prompt.id != excludingId
+            normalizeForComparison(prompt.title) == normalizedName && prompt.id != excludingId
         }
     }
 
@@ -53,9 +53,61 @@ class PromptsManager {
         saveUserPrompts()
         logger.logInfo("Deleted prompt: \(prompt.title)")
     }
-    
-    
+
+    func duplicatePrompt(_ prompt: UserPrompt) {
+        let newName = generateDuplicateName(for: prompt.title)
+        let newPrompt = UserPrompt(
+            title: newName,
+            promptInstructions: prompt.promptInstructions
+        )
+        addPrompt(newPrompt)
+    }
+
+    /// Generates a unique name for duplicating a prompt
+    /// "Email" → "Email 1", "Email 1" → "Email 2", etc.
+    func generateDuplicateName(for originalName: String) -> String {
+        let trimmedName = originalName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Extract base name and current number if exists
+        // Pattern: "Name" or "Name N" where N is a number
+        let pattern = /^(.+?)\s+(\d+)$/
+        let baseName: String
+        if let match = trimmedName.wholeMatch(of: pattern) {
+            baseName = String(match.1)
+        } else {
+            baseName = trimmedName
+        }
+
+        // Find the highest number used for this base name
+        // Use normalized comparison (whitespace-insensitive)
+        var highestNumber = 0
+        let normalizedBaseName = normalizeForComparison(baseName)
+        let numberPattern = /^(.+?)\s+(\d+)$/
+
+        for prompt in userPrompts {
+            let promptTitle = prompt.title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if normalizeForComparison(promptTitle) == normalizedBaseName {
+                // Exact match with base name means at least 1 exists
+                highestNumber = max(highestNumber, 0)
+            } else if let match = promptTitle.wholeMatch(of: numberPattern),
+                      normalizeForComparison(String(match.1)) == normalizedBaseName,
+                      let num = Int(match.2) {
+                highestNumber = max(highestNumber, num)
+            }
+        }
+
+        return "\(baseName) \(highestNumber + 1)"
+    }
+
     // MARK: - Private Methods
+
+    /// Normalizes a name for comparison by removing all whitespace and lowercasing
+    /// "my prompt" and "my  prompt" will both become "myprompt"
+    private func normalizeForComparison(_ name: String) -> String {
+        name.split(separator: /\s+/).joined().lowercased()
+    }
+
     private func loadUserPrompts() {
         guard let data = userDefaults.data(forKey: userPromptsKey),
               let prompts = try? JSONDecoder().decode([UserPrompt].self, from: data) else {
