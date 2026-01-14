@@ -11,11 +11,20 @@ struct TemplateSelectionView: View {
     var promptsManager: PromptsManager
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTemplate: PromptsTemplates?
+    @State private var showEmailNameAlert = false
+    @State private var emailUserName = ""
+    @State private var pendingEmailTemplate: PromptsTemplates?
 
     var body: some View {
         List(PromptsTemplates.allCases) { template in
             Button {
-                selectedTemplate = template
+                if template == .email {
+                    emailUserName = ""
+                    pendingEmailTemplate = template
+                    showEmailNameAlert = true
+                } else {
+                    selectedTemplate = template
+                }
             } label: {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(template.displayName)
@@ -38,10 +47,23 @@ struct TemplateSelectionView: View {
                 PromptFormView(
                     template: template,
                     promptsManager: promptsManager,
+                    emailUserName: template == .email ? emailUserName : nil,
                     onComplete: {
                         dismiss()
                     }
                 )
+            }
+        }
+        .alert("Enter your full name for email prompt", isPresented: $showEmailNameAlert) {
+            TextField("Full Name", text: $emailUserName)
+            Button("Cancel", role: .cancel) {
+                emailUserName = ""
+                selectedTemplate = pendingEmailTemplate
+                pendingEmailTemplate = nil
+            }
+            Button("OK") {
+                selectedTemplate = pendingEmailTemplate
+                pendingEmailTemplate = nil
             }
         }
     }

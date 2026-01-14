@@ -22,6 +22,9 @@ struct PromptFormView: View {
     // Callback when prompt is saved (used when presented as sheet)
     private let onComplete: (() -> Void)?
 
+    // User's name for email template (replaces [Your Name] placeholder)
+    private let emailUserName: String?
+
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
     @State private var showInstructionsEditor = false
@@ -50,10 +53,12 @@ struct PromptFormView: View {
     /// Create a new prompt from a template
     init(template: PromptsTemplates?,
          promptsManager: PromptsManager,
+         emailUserName: String? = nil,
          onComplete: (() -> Void)? = nil) {
         self.template = template
         self.editingPrompt = nil
         self.promptsManager = promptsManager
+        self.emailUserName = emailUserName
         self.onComplete = onComplete
     }
 
@@ -63,6 +68,7 @@ struct PromptFormView: View {
         self.template = nil
         self.editingPrompt = editingPrompt
         self.promptsManager = promptsManager
+        self.emailUserName = nil
         self.onComplete = nil
     }
 
@@ -133,7 +139,16 @@ struct PromptFormView: View {
         } else if let template = template, template != .custom {
             // Create mode with template: pre-fill from template
             title = template.defaultTitle
-            promptInstructions = template.prompt
+            var instructions = template.prompt
+
+            // For email template, replace [Your Name] with user's name if provided
+            if template == .email,
+               let userName = emailUserName,
+               !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                instructions = instructions.replacing("[Your Name]", with: userName)
+            }
+
+            promptInstructions = instructions
         }
         // Create mode without template or custom: leave empty
     }
