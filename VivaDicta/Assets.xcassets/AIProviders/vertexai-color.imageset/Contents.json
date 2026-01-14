@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "vertexai-color.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
