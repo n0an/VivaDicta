@@ -32,6 +32,7 @@ struct PromptFormView: View {
     @State private var showInstructionsEditor = false
     @State private var showingAlert = false
     @State private var promptError: SettingsError = .duplicatePromptName("")
+    @State private var showDeleteConfirmation = false
 
     private var isEditMode: Bool {
         editingPrompt != nil
@@ -100,16 +101,39 @@ struct PromptFormView: View {
 
                 TipView(transcriptTagsTip)
             }
-
-            if isEditMode && isFormValid {
+            
+            
+            
+            if isEditMode {
+                if isFormValid {
+                    Section {
+                        
+                        Button {
+                            duplicatePrompt()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Duplicate Prompt", systemImage: "doc.on.doc")
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+                
                 Section {
-                    Button {
-                        duplicatePrompt()
+                    Button(role: .destructive) {
+                        deletePrompt()
                     } label: {
-                        Label("Duplicate Prompt", systemImage: "doc.on.doc")
+                        HStack {
+                            Spacer()
+                            Label("Delete Prompt", systemImage: "trash")
+                                .foregroundStyle(.red)
+                            Spacer()
+                        }
                     }
                 }
             }
+            
         }
         .scrollDismissesKeyboard(.immediately)
         .navigationTitle(navigationTitle)
@@ -147,6 +171,14 @@ struct PromptFormView: View {
                message: { error in
             Text(error.failureReason)
         })
+        .alert("Delete Prompt?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deletePrompt()
+            }
+        } message: {
+            Text("This action cannot be undone.")
+        }
     }
 
     // MARK: - Private Methods
@@ -229,6 +261,13 @@ struct PromptFormView: View {
         guard let existingPrompt = editingPrompt else { return }
         HapticManager.lightImpact()
         promptsManager.duplicatePrompt(existingPrompt)
+        dismiss()
+    }
+
+    private func deletePrompt() {
+        guard let existingPrompt = editingPrompt else { return }
+        HapticManager.lightImpact()
+        promptsManager.deletePrompt(existingPrompt)
         dismiss()
     }
 }

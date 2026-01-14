@@ -321,16 +321,18 @@ struct ModeEditView: View {
                 }
             }
 
-            if viewModel.isEditing && viewModel.isValid {
-                Section {
-                    
-                    Button {
-                        duplicateMode()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Label("Duplicate Mode", systemImage: "doc.on.doc")
-                            Spacer()
+            if viewModel.isEditing {
+                if viewModel.isValid {
+                    Section {
+                        
+                        Button {
+                            duplicateMode()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Duplicate Mode", systemImage: "doc.on.doc")
+                                Spacer()
+                            }
                         }
                     }
                 }
