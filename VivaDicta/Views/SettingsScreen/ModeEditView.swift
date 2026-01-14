@@ -48,7 +48,7 @@ struct ModeEditView: View {
                     footer: transcriptionSectionFooter) {
                 
                 Picker("Provider", selection: $viewModel.transcriptionProvider) {
-                    Section("Local") {
+                    Section("On-Device") {
                         ForEach(TranscriptionModelProvider.localProviders) { provider in
                             Text(provider.displayName).tag(provider)
                         }
