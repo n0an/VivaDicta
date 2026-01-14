@@ -297,7 +297,7 @@ struct ModeEditView: View {
                 }
             }
 
-            if viewModel.isEditing {
+            if viewModel.isEditing && viewModel.isValid {
                 Section {
                     
                     Button {
