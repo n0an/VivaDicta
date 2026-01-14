@@ -14,7 +14,19 @@ struct AIProviders: View {
         List {
             if AppleFoundationModelAvailability.isAvailable {
                 Section {
-                    Text(AIProvider.apple.displayName)
+                    HStack {
+                        Text(AIProvider.apple.displayName)
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.shield.fill")
+                                .foregroundStyle(.green.gradient)
+                            Text("Private & Free")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 } header: {
                     Text("On-Device")
                 } footer: {
