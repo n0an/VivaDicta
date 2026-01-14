@@ -56,9 +56,17 @@ struct CloudModelCard: View {
             
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(model.provider.displayName)
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                    HStack(spacing: 8) {
+                        if let iconName = model.provider.mappedAIProvider?.iconName {
+                            Image(iconName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 24, height: 24)
+                        }
+                        Text(model.provider.displayName)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                    }
                     Text(model.displayName)
                         .font(.title3)
                         .fontWeight(.regular)
