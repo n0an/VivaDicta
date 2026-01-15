@@ -173,6 +173,7 @@ struct TranscriptionDetailView: View {
             processingTask = nil
         }
         .animation(.spring, value: isExpanded)
+        .animation(.easeInOut, value: processingState)
         .alert(
             "AI Safety Guardrail Triggered",
             isPresented: $showGuardrailAlert
@@ -189,6 +190,7 @@ struct TranscriptionDetailView: View {
                 .font(.system(size: 16, weight: .regular, design: .default))
                 .lineSpacing(2)
                 .textSelection(.enabled)
+                .redacted(reason: processingState != .idle ? .placeholder : [])
         }
         .modifier(ConditionalShimmer(isActive: isShimmering))
     }
@@ -340,6 +342,7 @@ struct TranscriptionDetailView: View {
                         } else {
                             
                             Button {
+                                HapticManager.lightImpact()
                                 isExpanded = true
                             } label: {
                                 HStack {
