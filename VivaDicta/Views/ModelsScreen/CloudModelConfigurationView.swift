@@ -92,23 +92,44 @@ struct CloudModelConfigurationView: View {
                     .padding(.horizontal)
             }
              
-            Button(action: saveKey) {
-                HStack {
-                    if isVerifying {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle())
-                            .scaleEffect(0.8)
+            if #available(iOS 26.0, *) {
+                Button(action: saveKey) {
+                    HStack {
+                        if isVerifying {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .scaleEffect(0.8)
+                        }
+                        Text(isVerifying ? "Verifying..." : "Save")
+                            .font(.headline.weight(.semibold))
                     }
-                    Text(isVerifying ? "Verifying..." : "Save")
-                        .font(.headline.weight(.semibold))
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .glassEffect(.regular.tint(.blue.opacity(0.7)).interactive())
+                .foregroundStyle(.white)
+                .padding(.top, 16)
+                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
+                
+            } else {
+                Button(action: saveKey) {
+                    HStack {
+                        if isVerifying {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .scaleEffect(0.8)
+                        }
+                        Text(isVerifying ? "Verifying..." : "Save")
+                            .font(.headline.weight(.semibold))
+                    }
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .foregroundStyle(.white)
+                .background(.blue, in: .capsule)
+                .padding(.top, 16)
+                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .foregroundStyle(.white)
-            .background(.blue, in: .capsule)
-            .padding(.top, 16)
-            .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
 
             // Delete API Key button - only show if there's an existing key
             if model.apiKey != nil {
