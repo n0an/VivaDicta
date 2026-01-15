@@ -158,6 +158,12 @@ struct CloudModelCard: View {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(.primary.opacity(0.3), lineWidth: 0.5)
         }
+        .contentShape(.rect)
+        .onTapGesture {
+            guard !isAPIConfigured else { return }
+            HapticManager.lightImpact()
+            onConfigure(model)
+        }
         .contextMenu {
             if isAPIConfigured {
                 
