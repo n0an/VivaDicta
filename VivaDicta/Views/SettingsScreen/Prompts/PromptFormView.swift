@@ -154,6 +154,20 @@ struct PromptFormView: View {
         .navigationTitle(navigationTitle)
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
+            if !isEditMode {
+                ToolbarItem(placement: .cancellationAction) {
+                    if #available(iOS 26, *) {
+                        Button("Close", systemImage: "xmark") {
+                            dismiss()
+                        }
+                        .labelStyle(.iconOnly)
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if #available(iOS 26, *) {
                     Button(role: .confirm) {
