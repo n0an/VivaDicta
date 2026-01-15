@@ -452,8 +452,14 @@ struct TranscriptionDetailView: View {
                     if audioURL != nil {
                         metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
                     }
+                    if let providerName = transcription.transcriptionProviderName {
+                        metadataRow(icon: "waveform", label: "Transcription Provider", value: providerName)
+                    }
                     if let modelName = transcription.transcriptionModelName {
                         metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
+                    }
+                    if let providerName = transcription.aiProviderName {
+                        metadataRow(icon: "brain.head.profile.fill", label: "AI Provider", value: providerName)
                     }
                     if let aiModel = transcription.aiEnhancementModelName {
                         metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
@@ -546,6 +552,7 @@ struct TranscriptionDetailView: View {
 
                 transcription.text = newText
                 transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
+                transcription.transcriptionProviderName = appState.transcriptionManager.currentMode.transcriptionProvider.displayName
                 transcription.transcriptionDuration = transcriptionDuration
 
                 // Update Spotlight index
@@ -572,6 +579,7 @@ struct TranscriptionDetailView: View {
 
                 transcription.enhancedText = enhancedText
                 transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
+                transcription.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
                 transcription.promptName = promptName
                 transcription.enhancementDuration = duration
 
@@ -610,6 +618,7 @@ struct TranscriptionDetailView: View {
 
                 transcription.text = newText
                 transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
+                transcription.transcriptionProviderName = appState.transcriptionManager.currentMode.transcriptionProvider.displayName
                 transcription.transcriptionDuration = transcriptionDuration
 
                 // Step 2: Enhance (if AI is configured)
@@ -621,6 +630,7 @@ struct TranscriptionDetailView: View {
 
                         transcription.enhancedText = enhancedText
                         transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
+                        transcription.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
                         transcription.promptName = promptName
                         transcription.enhancementDuration = duration
 

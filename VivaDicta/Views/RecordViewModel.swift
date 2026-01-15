@@ -18,6 +18,7 @@ private struct PendingTranscriptionData {
     let audioDuration: Double
     let audioFileName: String
     let transcriptionModelName: String?
+    let transcriptionProviderName: String?
     let transcriptionDuration: TimeInterval
     let modelContext: ModelContext
 }
@@ -415,6 +416,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         audioDuration: audioDuration,
                         audioFileName: audioURLToTranscribe.lastPathComponent,
                         transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                        transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
                         transcriptionDuration: transcriptionDuration,
                         modelContext: modelContext
                     )
@@ -462,7 +464,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     audioDuration: audioDuration,
                     audioFileName: audioURLToTranscribe.lastPathComponent,
                     transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+                    transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
                     aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
+                    aiProviderName: enhancedText != nil ? aiService.selectedMode.aiProvider?.displayName : nil,
                     promptName: promptName,
                     transcriptionDuration: transcriptionDuration,
                     enhancementDuration: enhancementDur
@@ -593,7 +597,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     audioDuration: pending.audioDuration,
                     audioFileName: pending.audioFileName,
                     transcriptionModelName: pending.transcriptionModelName,
+                    transcriptionProviderName: pending.transcriptionProviderName,
                     aiEnhancementModelName: nil,
+                    aiProviderName: nil,
                     promptName: nil,
                     transcriptionDuration: pending.transcriptionDuration,
                     enhancementDuration: nil

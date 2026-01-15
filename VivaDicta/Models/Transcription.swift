@@ -18,7 +18,9 @@ class Transcription {
     var audioDuration: TimeInterval
     var audioFileName: String?
     var transcriptionModelName: String?
+    var transcriptionProviderName: String?
     var aiEnhancementModelName: String?
+    var aiProviderName: String?
     var promptName: String?
     var transcriptionDuration: TimeInterval?
     var enhancementDuration: TimeInterval?
@@ -31,7 +33,9 @@ class Transcription {
          audioDuration: TimeInterval,
          audioFileName: String? = nil,
          transcriptionModelName: String? = nil,
+         transcriptionProviderName: String? = nil,
          aiEnhancementModelName: String? = nil,
+         aiProviderName: String? = nil,
          promptName: String? = nil,
          transcriptionDuration: TimeInterval? = nil,
          enhancementDuration: TimeInterval? = nil) {
@@ -41,7 +45,9 @@ class Transcription {
         self.audioDuration = audioDuration
         self.audioFileName = audioFileName
         self.transcriptionModelName = transcriptionModelName
+        self.transcriptionProviderName = transcriptionProviderName
         self.aiEnhancementModelName = aiEnhancementModelName
+        self.aiProviderName = aiProviderName
         self.promptName = promptName
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
@@ -99,7 +105,7 @@ class Transcription {
 
 extension Transcription {
     var entity: TranscriptionEntity {
-        
+
         .init(
             id: id,
             text: text,
@@ -108,7 +114,9 @@ extension Transcription {
             audioDuration: audioDuration,
             audioFileName: audioFileName,
             transcriptionModelName: transcriptionModelName,
+            transcriptionProviderName: transcriptionProviderName,
             aiEnhancementModelName: aiEnhancementModelName,
+            aiProviderName: aiProviderName,
             promptName: promptName,
             transcriptionDuration: transcriptionDuration,
             enhancementDuration: enhancementDuration
@@ -130,18 +138,22 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
-        
+
         Transcription(
             text: "knock knock Neo",
             enhancedText: "Knock-knock Neo!" ,
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8)
@@ -160,7 +172,9 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
@@ -171,7 +185,9 @@ extension Transcription {
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8),
@@ -186,7 +202,9 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
@@ -197,7 +215,9 @@ extension Transcription {
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8),
@@ -212,7 +232,9 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
@@ -223,7 +245,9 @@ extension Transcription {
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8),
@@ -238,7 +262,9 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
@@ -249,7 +275,9 @@ extension Transcription {
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8),
@@ -264,7 +292,9 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
@@ -275,7 +305,9 @@ extension Transcription {
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8),
@@ -290,7 +322,9 @@ extension Transcription {
             audioDuration: 2,
             audioFileName: "",
             transcriptionModelName: "Tiny",
+            transcriptionProviderName: "WhisperKit",
             aiEnhancementModelName: "claude-sonnet-4-0",
+            aiProviderName: "Anthropic",
             promptName: "Chat",
             transcriptionDuration: 0.2,
             enhancementDuration: 0.8),
@@ -301,7 +335,9 @@ extension Transcription {
             audioDuration: 77,
             audioFileName: "",
             transcriptionModelName: "Large V3 Turbo",
+            transcriptionProviderName: "OpenAI",
             aiEnhancementModelName: "openai-gpt-5",
+            aiProviderName: "OpenAI",
             promptName: "Note",
             transcriptionDuration: 1.2,
             enhancementDuration: 2.8),

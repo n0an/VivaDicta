@@ -33,7 +33,9 @@ struct TranscriptionEntity: IndexedEntity {
     // Internal properties (not exposed to Shortcuts)
     var audioFileName: String?
     var transcriptionModelName: String?
+    var transcriptionProviderName: String?
     var aiEnhancementModelName: String?
+    var aiProviderName: String?
     var promptName: String?
     var transcriptionDuration: TimeInterval?
     var enhancementDuration: TimeInterval?
@@ -48,7 +50,9 @@ struct TranscriptionEntity: IndexedEntity {
         audioDuration: TimeInterval,
         audioFileName: String? = nil,
         transcriptionModelName: String? = nil,
+        transcriptionProviderName: String? = nil,
         aiEnhancementModelName: String? = nil,
+        aiProviderName: String? = nil,
         promptName: String? = nil,
         transcriptionDuration: TimeInterval? = nil,
         enhancementDuration: TimeInterval? = nil
@@ -60,7 +64,9 @@ struct TranscriptionEntity: IndexedEntity {
         self.audioDuration = audioDuration
         self.audioFileName = audioFileName
         self.transcriptionModelName = transcriptionModelName
+        self.transcriptionProviderName = transcriptionProviderName
         self.aiEnhancementModelName = aiEnhancementModelName
+        self.aiProviderName = aiProviderName
         self.promptName = promptName
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
