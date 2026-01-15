@@ -47,42 +47,73 @@ struct CloudModelConfigurationView: View {
                 }
 
             if UIPasteboard.general.hasStrings {
-                Button {
-                    if let clipboardString = UIPasteboard.general.string {
-                        apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                        HapticManager.lightImpact()
-                    }
-                } label: {
-                    Text("Paste from clipboard")
-                        .font(.headline.weight(.medium))
-                        .foregroundStyle(.primary)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background {
-                            Capsule()
-                                .stroke(.blue, lineWidth: 2)
+                if #available(iOS 26.0, *) {
+                    Button {
+                        if let clipboardString = UIPasteboard.general.string {
+                            apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                            HapticManager.lightImpact()
                         }
+                    } label: {
+                        Text("Paste from clipboard")
+                            .font(.headline.weight(.medium))
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Paste from clipboard")
+                } else {
+                    Button {
+                        if let clipboardString = UIPasteboard.general.string {
+                            apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                            HapticManager.lightImpact()
+                        }
+                    } label: {
+                        Text("Paste from clipboard")
+                            .font(.headline.weight(.medium))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.blue, lineWidth: 2)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Paste from clipboard")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Paste from clipboard")
             }
 
             if clearButtonVisible {
-                Button {
-                    apiKey = ""
-                    HapticManager.lightImpact()
-                } label: {
-                    Text("Clear")
-                        .font(.headline.weight(.medium))
-                        .foregroundStyle(.primary)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background {
-                            Capsule()
-                                .stroke(.gray, lineWidth: 2)
-                        }
+                if #available(iOS 26.0, *) {
+                    Button {
+                        apiKey = ""
+                        HapticManager.lightImpact()
+                    } label: {
+                        Text("Clear")
+                            .font(.headline.weight(.medium))
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.gray.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        apiKey = ""
+                        HapticManager.lightImpact()
+                    } label: {
+                        Text("Clear")
+                            .font(.headline.weight(.medium))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.gray, lineWidth: 2)
+                            }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
 
             if let error = verificationError {
@@ -91,63 +122,39 @@ struct CloudModelConfigurationView: View {
                     .foregroundStyle(.red)
                     .padding(.horizontal)
             }
-             
-            if #available(iOS 26.0, *) {
-                Button(action: saveKey) {
-                    HStack {
-                        if isVerifying {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                                .scaleEffect(0.8)
-                        }
-                        Text(isVerifying ? "Verifying..." : "Save")
-                            .font(.headline.weight(.semibold))
-                    }
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .glassEffect(.regular.tint(.blue.opacity(0.7)).interactive())
-                .foregroundStyle(.white)
-                .padding(.top, 16)
-                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
-                
-            } else {
-                Button(action: saveKey) {
-                    HStack {
-                        if isVerifying {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                                .scaleEffect(0.8)
-                        }
-                        Text(isVerifying ? "Verifying..." : "Save")
-                            .font(.headline.weight(.semibold))
-                    }
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .foregroundStyle(.white)
-                .background(.blue, in: .capsule)
-                .padding(.top, 16)
-                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
-            }
 
             // Delete API Key button - only show if there's an existing key
             if model.apiKey != nil {
-                Button(action: {
-                    showDeleteConfirmation = true
-                    HapticManager.warning()
-                }) {
-                    Text("Delete API Key")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.red)
+                if #available(iOS 26.0, *) {
+                    Button(action: {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    }) {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.red.opacity(0.2)).interactive())
+                    .padding(.top, 8)
+                } else {
+                    Button(action: {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    }) {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.red, lineWidth: 1.5)
+                    }
+                    .padding(.top, 8)
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .overlay {
-                    Capsule()
-                        .stroke(Color.red, lineWidth: 1.5)
-                }
-                .padding(.top, 8)
             }
 
             Spacer()
@@ -157,7 +164,6 @@ struct CloudModelConfigurationView: View {
             apiKey = model.apiKey ?? ""
             clearButtonVisible = !apiKey.isEmpty
         }
-        .padding(.top, 32)
         .padding()
         .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -166,6 +172,28 @@ struct CloudModelConfigurationView: View {
             }
         } message: {
             Text("Are you sure you want to delete the API key for \(model.provider.rawValue.capitalized)? This action cannot be undone.")
+        }
+        .navigationTitle("API Key")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if isVerifying {
+                    ProgressView()
+                } else {
+                    if #available(iOS 26, *) {
+                        Button(role: .confirm) {
+                            saveKey()
+                        }
+                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .tint(.blue)
+                    } else {
+                        Button("Save") {
+                            saveKey()
+                        }
+                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
         }
     }
     
