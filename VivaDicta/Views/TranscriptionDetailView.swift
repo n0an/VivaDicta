@@ -449,24 +449,31 @@ struct TranscriptionDetailView: View {
             DisclosureGroup("Meta Info") {
                 VStack(alignment: .leading, spacing: 10) {
                     metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
+                    
+                    #if DEBUG
                     if audioURL != nil {
                         metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
                     }
+                    #endif
+                    
                     if let providerName = transcription.transcriptionProviderName {
                         metadataRow(icon: "waveform", label: "Transcription Provider", value: providerName)
                     }
                     if let modelName = transcription.transcriptionModelName {
-                        metadataRow(icon: "cpu.fill", label: "Transcription Model", value: modelName)
+                        metadataRow(icon: "", label: "Transcription Model", value: modelName)
+                            .padding(.leading, 4)
                     }
                     if let providerName = transcription.aiProviderName {
-                        metadataRow(icon: "brain.head.profile.fill", label: "AI Provider", value: providerName)
+                        metadataRow(icon: "sparkles", label: "AI Provider", value: providerName)
                     }
                     if let aiModel = transcription.aiEnhancementModelName {
-                        metadataRow(icon: "sparkles", label: "Enhancement Model", value: aiModel)
+                        metadataRow(icon: "", label: "AI Enhancement Model", value: aiModel)
+                            .padding(.leading, 4)
                     }
                     if let promptName = transcription.promptName {
                         metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
                     }
+                    #if DEBUG
                     if let duration = transcription.transcriptionDuration {
                         metadataRow(icon: "clock.fill", label: "Transcription Time", value: transcription.getDurationFormatted(duration))
                         metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
@@ -474,6 +481,7 @@ struct TranscriptionDetailView: View {
                     if let duration = transcription.enhancementDuration {
                         metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
                     }
+                    #endif
                 }
                 .padding(.top, 10)
             }
