@@ -227,7 +227,7 @@ struct LocalModelCard: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Downloading and preparing the model can take up to 4 minutes. Please don't close the app while it's downloading.")
+            Text("Downloading and preparing the model can take up to 4 minutes (Your device's Apple Neural Engine has to compile a cached model, only the first time — all subsequent usage is blazingly fast!). Please don't close the app while it's downloading.")
         }
         .alert("Delete Model", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
