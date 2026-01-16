@@ -294,15 +294,43 @@ class ModeEditViewModel {
 
         if let provider = providerToSelect {
             aiProvider = provider
-            aiModel = provider.defaultModel
+
+            // For Ollama, select first available model if default isn't available
+            if provider == .ollama {
+                let availableModels = aiService.ollamaModels
+                if availableModels.contains(provider.defaultModel) {
+                    aiModel = provider.defaultModel
+                } else if let firstModel = availableModels.first {
+                    aiModel = firstModel
+                } else {
+                    aiModel = provider.defaultModel
+                }
+            } else {
+                aiModel = provider.defaultModel
+            }
+
             logger.logInfo("Auto-selected provider: \(provider.rawValue)")
         }
     }
 
     func updateProvider(_ newProvider: AIProvider?) {
         aiProvider = newProvider
-        aiModel = newProvider?.defaultModel
-        logger.logInfo("Updated provider to: \(newProvider?.rawValue ?? "none")")
+
+        // For Ollama, select first available model if default isn't available
+        if let provider = newProvider, provider == .ollama {
+            let availableModels = aiService.ollamaModels
+            if availableModels.contains(provider.defaultModel) {
+                aiModel = provider.defaultModel
+            } else if let firstModel = availableModels.first {
+                aiModel = firstModel
+            } else {
+                aiModel = provider.defaultModel
+            }
+        } else {
+            aiModel = newProvider?.defaultModel
+        }
+
+        logger.logInfo("Updated provider to: \(newProvider?.rawValue ?? "none"), model: \(aiModel ?? "none")")
     }
 
     func updateModel(_ newModel: String?) {

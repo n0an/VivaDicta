@@ -72,9 +72,9 @@ struct AIProviders: View {
                 // Ollama (Local Server) - at bottom of Cloud section
                 NavigationLink(value: AIProvider.ollama) {
                     HStack(spacing: 12) {
-                        Image(systemName: "desktopcomputer")
-                            .font(.title2)
-                            .foregroundStyle(.primary)
+                        Image("ollama")
+                            .resizable()
+                            .scaledToFit()
                             .frame(width: 28, height: 28)
 
                         Text(AIProvider.ollama.displayName)

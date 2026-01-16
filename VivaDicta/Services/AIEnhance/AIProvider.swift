@@ -93,13 +93,13 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .huggingFace:
             "huggingface-color"
         case .ollama:
-            nil // Use SF Symbol "desktopcomputer" directly in view
+            "ollama"
         }
     }
 
     /// Returns true if this provider uses an SF Symbol instead of an asset
     var usesSFSymbol: Bool {
-        self == .apple || self == .ollama
+        self == .apple
     }
 
     /// Returns true if this provider requires an API key

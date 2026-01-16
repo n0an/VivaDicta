@@ -25,9 +25,10 @@ struct OllamaConfigurationView: View {
     var body: some View {
         VStack(spacing: 16) {
             // Icon
-            Image(systemName: "desktopcomputer")
-                .font(.system(size: 48))
-                .foregroundStyle(.primary)
+            Image("ollama")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 64, height: 64)
                 .padding(.top, 8)
 
             Text("Ollama")
