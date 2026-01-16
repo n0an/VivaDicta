@@ -151,12 +151,7 @@ struct OllamaConfigurationView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-
-                Text("Tip: To connect from iPhone, run Ollama with:\nOLLAMA_HOST=0.0.0.0:11434 ollama serve")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-
+                
                 Link("Get Ollama →", destination: URL(string: "https://ollama.com")!)
                     .font(.caption)
             }
