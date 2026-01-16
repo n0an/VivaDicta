@@ -1194,23 +1194,34 @@ class AIService {
 
             // Filter for text-to-text models only (exclude image, video, speech models)
             let totalCount = dataArray.count
+            var missingArchitectureCount = 0
+            var nonTextModelsCount = 0
+
             let models = dataArray
                 .filter { model in
                     guard let architecture = model["architecture"] as? [String: Any],
                           let inputModalities = architecture["input_modalities"] as? [String],
                           let outputModalities = architecture["output_modalities"] as? [String] else {
+                        missingArchitectureCount += 1
                         return false
                     }
                     // Include only text-in, text-out models
-                    return inputModalities == ["text"] && outputModalities == ["text"]
+                    let isTextToText = inputModalities == ["text"] && outputModalities == ["text"]
+                    if !isTextToText {
+                        nonTextModelsCount += 1
+                    }
+                    return isTextToText
                 }
                 .compactMap { $0["id"] as? String }
 
             // Log filtering results for debugging API changes
+            if missingArchitectureCount > 0 {
+                logger.logDebug("HuggingFace: Skipped \(missingArchitectureCount) models with missing or malformed architecture data.")
+            }
             if models.isEmpty && totalCount > 0 {
                 logger.logWarning("HuggingFace: Received \(totalCount) models but none matched text-to-text filter. API response format may have changed.")
             } else if models.count < totalCount {
-                logger.logInfo("HuggingFace: Filtered \(totalCount) models to \(models.count) text-to-text models.")
+                logger.logInfo("HuggingFace: Filtered \(totalCount) models to \(models.count) text-to-text models (skipped \(nonTextModelsCount) non-text, \(missingArchitectureCount) malformed).")
             }
 
             await MainActor.run {
