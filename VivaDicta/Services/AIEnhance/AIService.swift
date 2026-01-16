@@ -1028,23 +1028,17 @@ class AIService {
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            
+
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 logger.logError("Failed to fetch OpenRouter models: Invalid HTTP response")
-                await MainActor.run {
-                    self.openRouterModels = []
-                    self.saveOpenRouterModels()
-                }
+                // Preserve existing cached models on failure
                 return
             }
 
             guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let dataArray = jsonResponse["data"] as? [[String: Any]] else {
                 logger.logError("Failed to parse OpenRouter models JSON")
-                await MainActor.run {
-                    self.openRouterModels = []
-                    self.saveOpenRouterModels()
-                }
+                // Preserve existing cached models on failure
                 return
             }
 
@@ -1057,10 +1051,7 @@ class AIService {
 
         } catch {
             logger.logError("Error fetching OpenRouter models: \(error.localizedDescription)")
-            await MainActor.run {
-                self.openRouterModels = []
-                self.saveOpenRouterModels()
-            }
+            // Preserve existing cached models on failure
         }
     }
 
@@ -1075,20 +1066,14 @@ class AIService {
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 logger.logError("Failed to fetch Vercel AI Gateway models: Invalid HTTP response")
-                await MainActor.run {
-                    self.vercelAIGatewayModels = []
-                    self.saveVercelAIGatewayModels()
-                }
+                // Preserve existing cached models on failure
                 return
             }
 
             guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let dataArray = jsonResponse["data"] as? [[String: Any]] else {
                 logger.logError("Failed to parse Vercel AI Gateway models JSON")
-                await MainActor.run {
-                    self.vercelAIGatewayModels = []
-                    self.saveVercelAIGatewayModels()
-                }
+                // Preserve existing cached models on failure
                 return
             }
 
@@ -1105,10 +1090,7 @@ class AIService {
 
         } catch {
             logger.logError("Error fetching Vercel AI Gateway models: \(error.localizedDescription)")
-            await MainActor.run {
-                self.vercelAIGatewayModels = []
-                self.saveVercelAIGatewayModels()
-            }
+            // Preserve existing cached models on failure
         }
     }
 }
