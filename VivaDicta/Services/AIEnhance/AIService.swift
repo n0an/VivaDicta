@@ -16,7 +16,20 @@ class AIService {
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
     public var huggingFaceModels: [String] = []
+    public var ollamaModels: [String] = []
     public var modes: [VivaMode] = []
+
+    /// Ollama server URL (configurable, defaults to localhost:11434)
+    public var ollamaServerURL: String {
+        get {
+            userDefaults.string(forKey: UserDefaultsStorage.Keys.ollamaServerURL)
+                ?? AIProvider.ollamaDefaultServerURL
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsStorage.Keys.ollamaServerURL)
+            userDefaults.synchronize()
+        }
+    }
 
     public var onModeChange: ((VivaMode) -> Void)?
 
@@ -56,6 +69,7 @@ class AIService {
         loadSavedOpenRouterModels()
         loadSavedVercelAIGatewayModels()
         loadSavedHuggingFaceModels()
+        loadSavedOllamaModels()
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
@@ -69,6 +83,7 @@ class AIService {
             if connectedProviders.contains(.huggingFace) {
                 await fetchHuggingFaceModels()
             }
+            // Ollama models are fetched on-demand when user configures Ollama
         }
     }
     
@@ -373,6 +388,16 @@ class AIService {
         userDefaults.set(huggingFaceModels, forKey: UserDefaultsStorage.Keys.huggingFaceModels)
     }
 
+    private func loadSavedOllamaModels() {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.ollamaModels) as? [String] {
+            ollamaModels = savedModels
+        }
+    }
+
+    private func saveOllamaModels() {
+        userDefaults.set(ollamaModels, forKey: UserDefaultsStorage.Keys.ollamaModels)
+    }
+
     // MARK: - Configuration validation
     public func isProperlyConfigured() -> Bool {
         // Check if AI enhancement is enabled
@@ -397,6 +422,13 @@ class AIService {
         if aiProvider == .apple {
             guard connectedProviders.contains(.apple) else {
                 logger.logWarning("Apple Foundation Model not available on this device")
+                return false
+            }
+        } else if aiProvider == .ollama {
+            // Ollama doesn't need API key, just needs model selected
+            // Connection will be verified at enhancement time
+            guard !selectedMode.aiModel.isEmpty else {
+                logger.logWarning("No Ollama model selected")
                 return false
             }
         } else {
@@ -491,6 +523,11 @@ class AIService {
             } else {
                 throw EnhancementError.notConfigured
             }
+        }
+
+        // Handle Ollama (local server)
+        if aiProvider == .ollama {
+            return try await makeOllamaRequest(text: text)
         }
 
         // Cloud providers - compute system message only when needed
@@ -696,8 +733,216 @@ class AIService {
             return promptInstructions
         }
     }
-    
-    
+
+    // MARK: - Ollama Methods
+
+    /// Makes an enhancement request to the local Ollama server
+    private func makeOllamaRequest(text: String) async throws -> String {
+        let serverURL = ollamaServerURL
+        guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
+            throw EnhancementError.customError("Invalid Ollama server URL: \(serverURL)")
+        }
+
+        let systemMessage = getSystemMessage()
+        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+
+        logger.logNotice("AI Enhancement - Using Ollama at \(serverURL)")
+        logger.logNotice("AI Enhancement - Model: \(self.selectedMode.aiModel)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        // No Authorization header needed for Ollama
+        request.timeoutInterval = 120 // Longer timeout for local inference
+
+        let requestBody: [String: Any] = [
+            "model": selectedMode.aiModel,
+            "messages": [
+                ["role": "system", "content": systemMessage],
+                ["role": "user", "content": formattedText]
+            ],
+            "temperature": 0.3,
+            "stream": false
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        do {
+            try Task.checkCancellation()
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            try Task.checkCancellation()
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw EnhancementError.invalidResponse
+            }
+
+            switch httpResponse.statusCode {
+            case 200:
+                guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let choices = jsonResponse["choices"] as? [[String: Any]],
+                      let firstChoice = choices.first,
+                      let message = firstChoice["message"] as? [String: Any],
+                      let enhancedText = message["content"] as? String else {
+                    throw EnhancementError.enhancementFailed
+                }
+
+                let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredText
+
+            case 404:
+                throw EnhancementError.customError("Model '\(self.selectedMode.aiModel)' not found. Run 'ollama pull \(self.selectedMode.aiModel)' on your Mac/server to download it.")
+
+            case 500...599:
+                throw EnhancementError.serverError
+
+            default:
+                let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw EnhancementError.customError("Ollama error (HTTP \(httpResponse.statusCode)): \(errorString)")
+            }
+
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as EnhancementError {
+            throw error
+        } catch let error as URLError {
+            if error.code == .cannotConnectToHost || error.code == .timedOut {
+                throw EnhancementError.customError("Cannot connect to Ollama at \(serverURL). Make sure Ollama is running.")
+            }
+            throw error
+        } catch {
+            throw EnhancementError.customError(error.localizedDescription)
+        }
+    }
+
+    /// Fetches available models from the Ollama server
+    public func fetchOllamaModels() async {
+        let serverURL = ollamaServerURL
+
+        // Try OpenAI-compatible endpoint first
+        guard let url = URL(string: "\(serverURL)/v1/models") else {
+            logger.logError("Invalid Ollama server URL: \(serverURL)")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 5 // Short timeout for local service
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                logger.logWarning("Ollama OpenAI-compatible endpoint not responding, trying native endpoint")
+                await fetchOllamaModelsNative()
+                return
+            }
+
+            // Parse OpenAI-compatible response
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.logError("Failed to parse Ollama models response")
+                await fetchOllamaModelsNative()
+                return
+            }
+
+            let models = dataArray.compactMap { $0["id"] as? String }.sorted()
+
+            await MainActor.run {
+                self.ollamaModels = models
+                self.saveOllamaModels()
+            }
+
+            logger.logInfo("Successfully fetched \(models.count) Ollama models via OpenAI endpoint")
+
+        } catch {
+            logger.logWarning("Failed to fetch Ollama models via OpenAI endpoint: \(error.localizedDescription)")
+            await fetchOllamaModelsNative()
+        }
+    }
+
+    /// Fallback to native Ollama API endpoint for fetching models
+    private func fetchOllamaModelsNative() async {
+        let serverURL = ollamaServerURL
+        guard let url = URL(string: "\(serverURL)/api/tags") else { return }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 5
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                logger.logError("Ollama native endpoint not responding")
+                return
+            }
+
+            // Parse native Ollama response
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let modelsArray = jsonResponse["models"] as? [[String: Any]] else {
+                logger.logError("Failed to parse Ollama native models response")
+                return
+            }
+
+            let models = modelsArray.compactMap { $0["name"] as? String }.sorted()
+
+            await MainActor.run {
+                self.ollamaModels = models
+                self.saveOllamaModels()
+            }
+
+            logger.logInfo("Successfully fetched \(models.count) Ollama models via native endpoint")
+
+        } catch {
+            logger.logError("Failed to fetch Ollama models via native endpoint: \(error.localizedDescription)")
+        }
+    }
+
+    /// Checks if Ollama server is reachable
+    public func checkOllamaConnection() async -> Bool {
+        let serverURL = ollamaServerURL
+        guard let url = URL(string: "\(serverURL)/api/tags") else {
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 3
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+            return httpResponse.statusCode == 200
+        } catch {
+            return false
+        }
+    }
+
+    /// Verifies Ollama setup and returns status message
+    public func verifyOllamaSetup() async -> (success: Bool, message: String) {
+        // Check server connectivity
+        let isConnected = await checkOllamaConnection()
+
+        if !isConnected {
+            return (false, "Cannot connect to Ollama server at \(ollamaServerURL)")
+        }
+
+        // Fetch available models
+        await fetchOllamaModels()
+
+        if ollamaModels.isEmpty {
+            return (false, "Connected to Ollama but no models found. Run 'ollama pull llama3.2' on your Mac/server to download a model.")
+        }
+
+        return (true, "Connected successfully. Found \(ollamaModels.count) model(s).")
+    }
+
     // MARK: - API Keys methods
     @MainActor
     public func refreshConnectedProviders() {
@@ -707,6 +952,9 @@ class AIService {
         if AppleFoundationModelAvailability.isAvailable {
             providers.append(.apple)
         }
+
+        // Add Ollama provider (always available, connection checked on-demand)
+        providers.append(.ollama)
 
         // Add cloud providers that have API keys configured
         providers += AIProvider.allCases.filter { provider in
@@ -749,8 +997,8 @@ class AIService {
     
     private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
         switch provider {
-        case .apple:
-            // Apple doesn't require API key verification
+        case .apple, .ollama:
+            // Apple and Ollama don't require API key verification
             return true
         case .anthropic:
             return await verifyAnthropicAPIKey(key)
@@ -1084,6 +1332,9 @@ class AIService {
         }
         if provider == .huggingFace {
             return huggingFaceModels
+        }
+        if provider == .ollama {
+            return ollamaModels
         }
         return provider.availableModels
     }

@@ -12,6 +12,7 @@ struct AIProviders: View {
 
     var body: some View {
         List {
+            // On-Device Section (Apple Foundation Model)
             if AppleFoundationModelAvailability.isAvailable {
                 Section {
                     HStack(spacing: 12) {
@@ -39,6 +40,7 @@ struct AIProviders: View {
                 }
             }
 
+            // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
                     NavigationLink(value: provider) {
@@ -54,7 +56,26 @@ struct AIProviders: View {
 
                             Spacer()
 
-                            if !appState.aiService.connectedProviders.contains(provider) {
+                            // Ollama has special status display
+                            if provider == .ollama {
+                                if appState.aiService.ollamaModels.isEmpty {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "gear")
+                                            .foregroundStyle(.blue)
+                                        Text("Configure")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                        Text("\(appState.aiService.ollamaModels.count) models")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            } else if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundStyle(.orange)
@@ -71,11 +92,15 @@ struct AIProviders: View {
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: AIProvider.self) { provider in
-            AddAPIKeyView(
-                provider: provider,
-                aiService: appState.aiService,
-                onSave: { _ in }
-            )
+            if provider == .ollama {
+                OllamaConfigurationView(aiService: appState.aiService)
+            } else {
+                AddAPIKeyView(
+                    provider: provider,
+                    aiService: appState.aiService,
+                    onSave: { _ in }
+                )
+            }
         }
     }
 }
