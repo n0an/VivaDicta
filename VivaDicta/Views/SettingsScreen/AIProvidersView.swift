@@ -56,7 +56,26 @@ struct AIProviders: View {
 
                             Spacer()
 
-                            if !appState.aiService.connectedProviders.contains(provider) {
+                            // Ollama has special status display
+                            if provider == .ollama {
+                                if appState.aiService.ollamaModels.isEmpty {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "gear")
+                                            .foregroundStyle(.blue)
+                                        Text("Configure")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                        Text("\(appState.aiService.ollamaModels.count) models")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            } else if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundStyle(.orange)
@@ -64,38 +83,6 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
-                            }
-                        }
-                    }
-                }
-
-                // Ollama (Local Server) - at bottom of Cloud section
-                NavigationLink(value: AIProvider.ollama) {
-                    HStack(spacing: 12) {
-                        Image("ollama")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 28, height: 28)
-
-                        Text(AIProvider.ollama.displayName)
-
-                        Spacer()
-
-                        if appState.aiService.ollamaModels.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "gear")
-                                    .foregroundStyle(.blue)
-                                Text("Configure")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                Text("\(appState.aiService.ollamaModels.count) models")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
