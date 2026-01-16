@@ -49,43 +49,49 @@ struct AddAPIKeyView: View {
                     clearButtonVisible = !apiKey.isEmpty
                 }
             
-            if UIPasteboard.general.hasStrings {
-                if #available(iOS 26.0, *) {
-                    Button {
-                        if let clipboardString = UIPasteboard.general.string {
-                            apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                            HapticManager.lightImpact()
+            
+            if #available(iOS 26.0, *) {
+                Button {
+                    if let clipboardString = UIPasteboard.general.string {
+                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            apiKey = trimmed
+                            saveKey()
                         }
-                    } label: {
-                        Text("Paste from clipboard")
-                            .font(.headline.weight(.medium))
                     }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Paste from clipboard")
-                } else {
-                    Button {
-                        if let clipboardString = UIPasteboard.general.string {
-                            apiKey = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                            HapticManager.lightImpact()
-                        }
-                    } label: {
-                        Text("Paste from clipboard")
-                            .font(.headline.weight(.medium))
-                            .foregroundStyle(.primary)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background {
-                                Capsule()
-                                    .stroke(.blue, lineWidth: 2)
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Paste from clipboard")
+                } label: {
+                    Text("Paste from clipboard")
+                        .font(.headline.weight(.medium))
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                .buttonStyle(.plain)
+                .accessibilityLabel("Paste from clipboard")
+            } else {
+                Button {
+                    if let clipboardString = UIPasteboard.general.string {
+                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            apiKey = trimmed
+                            saveKey()
+                        }
+                    }
+                } label: {
+                    Text("Paste from clipboard")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Paste from clipboard")
             }
+            
 
             if clearButtonVisible {
                 if #available(iOS 26.0, *) {
