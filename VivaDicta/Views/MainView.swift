@@ -27,6 +27,7 @@ struct MainView: View {
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
     @State private var recordButtonBounceCount = 0
+    @State private var recordButtonBounceScale: CGFloat = 1.0
 
     private let logger = Logger(category: .mainView)
 
@@ -156,7 +157,7 @@ struct MainView: View {
                             Button("") {
                                 startRecording()
                             }
-                            .buttonStyle(RecordButtonButtonStyle())
+                            .buttonStyle(RecordButtonButtonStyle(bounceScale: recordButtonBounceScale))
                         }
                     }
                 }
@@ -323,7 +324,32 @@ struct MainView: View {
             if recordButtonBounceCount == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
                 Task {
                     try? await Task.sleep(for: .milliseconds(500))
-                    recordButtonBounceCount += 1
+
+                    if #available(iOS 26.0, *) {
+                        // iOS 26+: Use symbolEffect
+                        recordButtonBounceCount += 1
+                    } else {
+                        // iOS 18: Animate scale for double bounce
+                        // First bounce
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                            recordButtonBounceScale = 1.25
+                        }
+                        try? await Task.sleep(for: .milliseconds(300))
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                            recordButtonBounceScale = 1.0
+                        }
+                        try? await Task.sleep(for: .milliseconds(200))
+                        // Second bounce
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                            recordButtonBounceScale = 1.25
+                        }
+                        try? await Task.sleep(for: .milliseconds(300))
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                            recordButtonBounceScale = 1.0
+                        }
+                        // Mark as done so it doesn't trigger again
+                        recordButtonBounceCount = 1
+                    }
                 }
             }
 

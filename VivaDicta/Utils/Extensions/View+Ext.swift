@@ -318,14 +318,18 @@ extension View {
 }
 
 struct RecordButtonButtonStyle: ButtonStyle {
+    /// External scale for bounce animation on app start. Defaults to 1.0.
+    var bounceScale: CGFloat = 1.0
+
     func makeBody(configuration: Configuration) -> some View {
         Image(systemName: "microphone.circle")
             .font(.system(size: 28))
             .foregroundStyle(.white)
             .padding(8)
             .background(.orange.gradient, in: .circle)
-            .scaleEffect(configuration.isPressed ? 1.5 : 1.0)
+            .scaleEffect(configuration.isPressed ? 1.5 : bounceScale)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+            .animation(.spring(response: 0.3, dampingFraction: 0.4), value: bounceScale)
     }
 }
 
