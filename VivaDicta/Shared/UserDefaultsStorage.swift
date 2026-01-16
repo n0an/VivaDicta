@@ -42,5 +42,7 @@ enum UserDefaultsStorage {
         static let openRouterModels = "openRouterModels"
         static let vercelAIGatewayModels = "vercelAIGatewayModels"
         static let huggingFaceModels = "huggingFaceModels"
+        static let ollamaModels = "ollamaModels"
+        static let ollamaServerURL = "ollamaServerURL"
     }
 }

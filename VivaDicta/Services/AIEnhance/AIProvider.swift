@@ -24,6 +24,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case soniox
     case vercelAIGateway
     case huggingFace
+    case ollama
 
     var displayName: String {
         switch self {
@@ -55,6 +56,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Vercel AI Gateway"
         case .huggingFace:
             "HuggingFace"
+        case .ollama:
+            "Ollama"
         }
     }
 
@@ -89,17 +92,19 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "vercel"
         case .huggingFace:
             "huggingface-color"
+        case .ollama:
+            nil // Use SF Symbol "desktopcomputer" directly in view
         }
     }
 
     /// Returns true if this provider uses an SF Symbol instead of an asset
     var usesSFSymbol: Bool {
-        self == .apple
+        self == .apple || self == .ollama
     }
 
     /// Returns true if this provider requires an API key
     var requiresAPIKey: Bool {
-        self != .apple
+        self != .apple && self != .ollama
     }
 
     /// Cloud-based AI providers (require API key, network connection)
@@ -115,9 +120,15 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .vercelAIGateway,
         .huggingFace]
 
-    /// All general-purpose AI providers including on-device
+    /// Local AI providers that run on-device or local network (no API key needed)
+    static let localProviders: [AIProvider] = [
+        .apple,
+        .ollama]
+
+    /// All general-purpose AI providers including on-device and local
     static let generalProviders: [AIProvider] = [
         .apple,
+        .ollama,
         .anthropic,
         .openAI,
         .gemini,
@@ -159,8 +170,13 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
         case .huggingFace:
             return "https://router.huggingface.co/v1/chat/completions"
+        case .ollama:
+            return "" // URL is configurable, stored in UserDefaults
         }
     }
+
+    /// Default Ollama server URL
+    static let ollamaDefaultServerURL = "http://localhost:11434"
 
     var defaultModel: String {
         switch self {
@@ -196,6 +212,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "anthropic/claude-sonnet-4.5"
         case .huggingFace:
             return "openai/gpt-oss-120b"
+        case .ollama:
+            return "llama3.2"
         }
     }
 
@@ -274,6 +292,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return []
         case .huggingFace:
             return []
+        case .ollama:
+            return [] // Models are fetched dynamically from Ollama server
         }
     }
 }

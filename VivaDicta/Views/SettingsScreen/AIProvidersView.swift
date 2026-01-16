@@ -12,6 +12,7 @@ struct AIProviders: View {
 
     var body: some View {
         List {
+            // On-Device Section (Apple Foundation Model)
             if AppleFoundationModelAvailability.isAvailable {
                 Section {
                     HStack(spacing: 12) {
@@ -39,6 +40,45 @@ struct AIProviders: View {
                 }
             }
 
+            // Local Server Section (Ollama)
+            Section {
+                NavigationLink(value: AIProvider.ollama) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "desktopcomputer")
+                            .font(.title2)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28, height: 28)
+
+                        Text(AIProvider.ollama.displayName)
+
+                        Spacer()
+
+                        if appState.aiService.ollamaModels.isEmpty {
+                            HStack(spacing: 4) {
+                                Image(systemName: "gear")
+                                    .foregroundStyle(.blue)
+                                Text("Configure")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                Text("\(appState.aiService.ollamaModels.count) models")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Local Server")
+            } footer: {
+                Text("Ollama runs AI models locally on your Mac or any server on your network. Free and private — no API key required.")
+            }
+
+            // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
                     NavigationLink(value: provider) {
@@ -71,11 +111,15 @@ struct AIProviders: View {
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: AIProvider.self) { provider in
-            AddAPIKeyView(
-                provider: provider,
-                aiService: appState.aiService,
-                onSave: { _ in }
-            )
+            if provider == .ollama {
+                OllamaConfigurationView(aiService: appState.aiService)
+            } else {
+                AddAPIKeyView(
+                    provider: provider,
+                    aiService: appState.aiService,
+                    onSave: { _ in }
+                )
+            }
         }
     }
 }
