@@ -67,6 +67,8 @@ enum RateAppManager {
     /// Call this at app start (e.g., in MainView.onAppear).
     /// - Parameter transcriptionCount: The number of saved transcriptions.
     static func requestReviewOnAppStartIfAppropriate(transcriptionCount: Int) {
+        // Require at least one transcription to ensure the user has actually used
+        // the app's core functionality before being asked to rate
         guard transcriptionCount >= 1 else { return }
         
         let usualRule = shouldRequestReview()
@@ -108,7 +110,8 @@ enum RateAppManager {
         return true
     }
     
-    /// Returns true if all conditions are met for requesting a review WIDE vers.
+    /// Alternative conditions for passive users who don't launch frequently.
+    /// Only requires time since install (no launch count requirement).
     private static func shouldRequestReviewWide() -> Bool {
         // Check minimum days since install
         guard AppLaunchTracker.daysSinceFirstLaunch >= minimumDaysSinceInstallWide else {
