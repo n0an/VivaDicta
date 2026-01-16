@@ -463,14 +463,14 @@ struct TranscriptionDetailView: View {
                         metadataRow(icon: "waveform", label: "Transcription Provider", value: providerName)
                     }
                     if let modelName = transcription.transcriptionModelName {
-                        metadataRow(icon: "", label: "Transcription Model", value: modelName)
+                        metadataRow(icon: "character.bubble", label: "Transcription Model", value: modelName)
                             .padding(.leading, 4)
                     }
                     if let providerName = transcription.aiProviderName {
                         metadataRow(icon: "sparkles", label: "AI Provider", value: providerName)
                     }
                     if let aiModel = transcription.aiEnhancementModelName {
-                        metadataRow(icon: "", label: "AI Enhancement Model", value: aiModel)
+                        metadataRow(icon: "wand.and.sparkles", label: "AI Model", value: aiModel)
                             .padding(.leading, 4)
                     }
                     if let promptName = transcription.promptName {

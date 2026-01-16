@@ -86,8 +86,8 @@ struct ModeEditView: View {
                                         [0, 1], [1, 1]
                                     ],
                                     colors: [
-                                        .blue, .cyan,
-                                        .teal, .mint
+                                        .blue, .orange,
+                                        .green, .mint
                                     ]
                                 )
                             )
