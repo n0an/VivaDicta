@@ -77,7 +77,20 @@ struct ModeEditView: View {
                 } label: {
                     HStack {
                         Image(systemName: "waveform")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(
+                                MeshGradient(
+                                    width: 2,
+                                    height: 2,
+                                    points: [
+                                        [0, 0], [1, 0],
+                                        [0, 1], [1, 1]
+                                    ],
+                                    colors: [
+                                        .blue, .cyan,
+                                        .teal, .mint
+                                    ]
+                                )
+                            )
                         Text("Provider")
                     }
                 }
@@ -98,7 +111,20 @@ struct ModeEditView: View {
                     } label: {
                         HStack {
                             Image(systemName: "character.bubble")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(
+                                    MeshGradient(
+                                        width: 2,
+                                        height: 2,
+                                        points: [
+                                            [0, 0], [1, 0],
+                                            [0, 1], [1, 1]
+                                        ],
+                                        colors: [
+                                            .blue, .green,
+                                            .cyan, .teal
+                                        ]
+                                    )
+                                )
                             Text("Model")
                         }
                     }
