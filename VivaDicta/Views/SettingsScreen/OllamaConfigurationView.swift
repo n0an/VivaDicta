@@ -254,6 +254,8 @@ struct OllamaConfigurationView: View {
                 HapticManager.success()
             } else {
                 connectionStatus = .failed(message: result.message)
+                // Clear models so other screens know Ollama is not ready
+                aiService.ollamaModels = []
                 HapticManager.error()
             }
             isChecking = false

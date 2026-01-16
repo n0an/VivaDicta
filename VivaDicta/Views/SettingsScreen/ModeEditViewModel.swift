@@ -116,6 +116,7 @@ class ModeEditViewModel {
             selectedPromptID = existingMode.userPrompt?.id
 
             validateLanguageSelection()
+            validateAIModelSelection()
         } else {
             transcriptionProvider = .whisperKit
             transcriptionModel = ""
@@ -199,7 +200,25 @@ class ModeEditViewModel {
             logger.logInfo("Language '\(oldLanguage)' not supported by model, reset to '\(firstLanguage.key)'")
         }
     }
-    
+
+    private func validateAIModelSelection() {
+        guard let provider = aiProvider, provider == .ollama else { return }
+
+        let availableModels = aiService.ollamaModels
+        guard let currentModel = aiModel else { return }
+
+        if !availableModels.contains(currentModel) {
+            let oldModel = currentModel
+            if let firstModel = availableModels.first {
+                aiModel = firstModel
+                logger.logInfo("Ollama model '\(oldModel)' not available, reset to '\(firstModel)'")
+            } else {
+                aiModel = nil
+                logger.logInfo("Ollama model '\(oldModel)' not available and no models found")
+            }
+        }
+    }
+
     // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
@@ -303,7 +322,7 @@ class ModeEditViewModel {
                 } else if let firstModel = availableModels.first {
                     aiModel = firstModel
                 } else {
-                    aiModel = provider.defaultModel
+                    aiModel = nil // No models available
                 }
             } else {
                 aiModel = provider.defaultModel
@@ -324,7 +343,7 @@ class ModeEditViewModel {
             } else if let firstModel = availableModels.first {
                 aiModel = firstModel
             } else {
-                aiModel = provider.defaultModel
+                aiModel = nil // No models available
             }
         } else {
             aiModel = newProvider?.defaultModel
