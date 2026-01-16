@@ -24,6 +24,7 @@ enum UserDefaultsStorage {
     // MARK: - App-Private Keys
 
     enum Keys {
+        static let appLaunchCount = "appLaunchCount"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let didTapOpenSettingsInOnboarding = "didTapOpenSettingsInOnboarding"
         static let audioSessionTimeout = "audioSessionTimeout"

@@ -318,8 +318,8 @@ struct MainView: View {
             SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
             SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
 
-            // Trigger record button bounce animation on app start
-            if recordButtonBounceCount == 0 {
+            // Trigger record button bounce animation on app start (first 10 launches only)
+            if recordButtonBounceCount == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
                 Task {
                     try? await Task.sleep(for: .milliseconds(500))
                     recordButtonBounceCount += 1

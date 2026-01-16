@@ -35,8 +35,11 @@ struct VivaDictaApp: App {
     //    private static var isProcessingKeyboardRequest = false
     
     init() {
+        // Track app launch count for analytics and feature gating
+        AppLaunchTracker.recordLaunch()
+
         // Register UserDefaults defaults for settings that should default to true
-        
+
         UserDefaultsStorage.shared.register(defaults: [
             AppGroupCoordinator.isHapticsEnabled: true
         ])
