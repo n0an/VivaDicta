@@ -12,6 +12,20 @@ import TipKit
 struct SelectLanguageTip: Tip {
     var title: Text {
         Text("Select language")
+            .foregroundStyle(
+                MeshGradient(
+                    width: 2,
+                    height: 2,
+                    points: [
+                        [0, 0], [1, 0],
+                        [0, 1], [1, 1]
+                    ],
+                    colors: [
+                        .blue, .green,
+                        .indigo, .teal
+                    ]
+                )
+            )
     }
     
     var message: Text? {
@@ -34,7 +48,20 @@ struct SelectTranscriptionModelTipMainView: Tip {
     
     var title: Text {
         Text("Select Transcription model")
-//            .foregroundStyle(.teal)
+            .foregroundStyle(
+                MeshGradient(
+                    width: 2,
+                    height: 2,
+                    points: [
+                        [0, 0], [1, 0],
+                        [0, 1], [1, 1]
+                    ],
+                    colors: [
+                        .blue, .green,
+                        .indigo, .teal
+                    ]
+                )
+            )
     }
     
     var message: Text? {
@@ -75,12 +102,24 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
     
     var title: Text {
         Text("Select Transcription model")
-//            .foregroundStyle(.teal)
+            .foregroundStyle(
+                MeshGradient(
+                    width: 2,
+                    height: 2,
+                    points: [
+                        [0, 0], [1, 0],
+                        [0, 1], [1, 1]
+                    ],
+                    colors: [
+                        .blue, .green,
+                        .indigo, .teal
+                    ]
+                )
+            )
     }
     
     var message: Text? {
         Text("Tap here to set up a transcription model")
-//            .foregroundStyle(.orange)
     }
 
     var image: Image? {
@@ -142,6 +181,20 @@ struct TranscriptTagsTip: Tip {
 
     var title: Text {
         Text("Tip: Using <TRANSCRIPT> tag")
+            .foregroundStyle(
+                MeshGradient(
+                    width: 2,
+                    height: 2,
+                    points: [
+                        [0, 0], [1, 0],
+                        [0, 1], [1, 1]
+                    ],
+                    colors: [
+                        .purple, .red,
+                        .blue, .pink
+                    ]
+                )
+            )
     }
 
     var message: Text? {

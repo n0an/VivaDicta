@@ -514,8 +514,8 @@ private struct ModeInfoRow: View {
                                         [0, 1], [1, 1]
                                     ],
                                     colors: [
-                                        .blue, .cyan,
-                                        .teal, .mint
+                                        .blue, .green,
+                                        .indigo, .teal
                                     ]
                                 )
                             )

@@ -121,7 +121,7 @@ struct ModeEditView: View {
                                         ],
                                         colors: [
                                             .blue, .green,
-                                            .cyan, .teal
+                                            .indigo, .teal
                                         ]
                                     )
                                 )

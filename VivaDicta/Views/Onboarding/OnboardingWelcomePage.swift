@@ -62,8 +62,8 @@ struct OnboardingWelcomePage: View {
                                 [0, 1], [1, 1]
                             ],
                             colors: [
-                                .blue, .cyan,
-                                .teal, .mint
+                                .blue, .green,
+                                .indigo, .teal
                             ]
                         ),
                         text: "Advanced transcription models for perfect accuracy"
