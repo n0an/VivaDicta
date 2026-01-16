@@ -213,7 +213,20 @@ struct ModeEditView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "sparkles")
-                                    .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
+                                    .foregroundStyle(
+                                        MeshGradient(
+                                            width: 2,
+                                            height: 2,
+                                            points: [
+                                                [0, 0], [1, 0],
+                                                [0, 1], [1, 1]
+                                            ],
+                                            colors: [
+                                                .purple, .red,
+                                                .blue, .pink
+                                            ]
+                                        )
+                                    )
                                 Text("AI Provider")
                             }
                         }
@@ -233,7 +246,20 @@ struct ModeEditView: View {
                                 if provider == .apple {
                                     HStack {
                                         Image(systemName: "cube.fill")
-                                            .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
+                                            .foregroundStyle(
+                                        MeshGradient(
+                                            width: 2,
+                                            height: 2,
+                                            points: [
+                                                [0, 0], [1, 0],
+                                                [0, 1], [1, 1]
+                                            ],
+                                            colors: [
+                                                .purple, .red,
+                                                .blue, .pink
+                                            ]
+                                        )
+                                    )
                                         Text("AI Model")
                                         Spacer()
                                         Text("Foundation Model")
@@ -248,7 +274,20 @@ struct ModeEditView: View {
                                     } label: {
                                         HStack {
                                             Image(systemName: "cube.fill")
-                                                .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
+                                                .foregroundStyle(
+                                        MeshGradient(
+                                            width: 2,
+                                            height: 2,
+                                            points: [
+                                                [0, 0], [1, 0],
+                                                [0, 1], [1, 1]
+                                            ],
+                                            colors: [
+                                                .purple, .red,
+                                                .blue, .pink
+                                            ]
+                                        )
+                                    )
                                             Text("AI Model")
                                         }
                                     }
