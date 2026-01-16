@@ -596,7 +596,6 @@ struct TranscriptionDetailView: View {
         processingTask?.cancel()
         processingTask = nil
         processingState = .idle
-        HapticManager.warning()
     }
 
     private func retranscribe() {
@@ -624,7 +623,10 @@ struct TranscriptionDetailView: View {
 
                 // Request app rating after successful retranscribe
                 RateAppManager.requestReviewIfAppropriate()
+            } catch is CancellationError {
+                // Task was cancelled, don't show error haptic
             } catch {
+                if Task.isCancelled { return }
                 HapticManager.error()
             }
 
@@ -659,12 +661,16 @@ struct TranscriptionDetailView: View {
 
                 // Request app rating after successful enhance
                 RateAppManager.requestReviewIfAppropriate()
+            } catch is CancellationError {
+                // Task was cancelled, don't show error haptic
             } catch let error as AppleFoundationModelError {
+                if Task.isCancelled { return }
                 if case .guardrailViolation = error {
                     showGuardrailAlert = true
                 }
                 HapticManager.error()
             } catch {
+                if Task.isCancelled { return }
                 HapticManager.error()
             }
 
@@ -723,7 +729,10 @@ struct TranscriptionDetailView: View {
 
                 // Request app rating after successful retranscribe and enhance
                 RateAppManager.requestReviewIfAppropriate()
+            } catch is CancellationError {
+                // Task was cancelled, don't show error haptic
             } catch {
+                if Task.isCancelled { return }
                 HapticManager.error()
             }
 

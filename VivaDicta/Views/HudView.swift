@@ -99,9 +99,10 @@ struct HudContentView: View {
 //                .font(.system(size: 17, weight: .semibold))
 //                .foregroundStyle(.primary)
 
-            // Cancel button - appears after 5 seconds
+            // Cancel button - appears after 1 second
             if showCancelButton, let onCancel {
                 Button {
+                    HapticManager.lightImpact()
                     onCancel()
                 } label: {
                     Text("Cancel")
@@ -168,7 +169,7 @@ struct HudContentView: View {
     private func resetCancelButtonTimer() {
         showCancelButton = false
         cancelButtonTimer?.invalidate()
-        cancelButtonTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+        cancelButtonTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
             Task { @MainActor in
                 showCancelButton = true
             }
