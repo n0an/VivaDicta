@@ -1078,9 +1078,17 @@ class AIService {
             }
 
             // Filter for language models only (exclude embeddings, image models)
+            let totalCount = dataArray.count
             let models = dataArray
                 .filter { ($0["type"] as? String) == "language" }
                 .compactMap { $0["id"] as? String }
+
+            // Log filtering results for debugging API changes
+            if models.isEmpty && totalCount > 0 {
+                logger.logWarning("Vercel AI Gateway: Received \(totalCount) models but none matched type 'language'. API response format may have changed.")
+            } else if models.count < totalCount {
+                logger.logInfo("Vercel AI Gateway: Filtered \(totalCount) models to \(models.count) language models.")
+            }
 
             await MainActor.run {
                 self.vercelAIGatewayModels = models.sorted()
