@@ -20,6 +20,7 @@ struct OllamaConfigurationView: View {
         case checking
         case connected(modelCount: Int)
         case failed(message: String)
+        case invalidURL
     }
 
     var body: some View {
@@ -54,8 +55,15 @@ struct OllamaConfigurationView: View {
                             .stroke(connectionStatus.borderColor, lineWidth: connectionStatus.borderWidth)
                     }
                     .onChange(of: serverURL) { _, newValue in
-                        connectionStatus = .unknown
-                        aiService.ollamaServerURL = newValue.isEmpty ? AIProvider.ollamaDefaultServerURL : newValue
+                        if newValue.isEmpty {
+                            connectionStatus = .unknown
+                            aiService.ollamaServerURL = AIProvider.ollamaDefaultServerURL
+                        } else if isValidOllamaURL(newValue) {
+                            connectionStatus = .unknown
+                            aiService.ollamaServerURL = newValue
+                        } else {
+                            connectionStatus = .invalidURL
+                        }
                     }
             }
             .padding(.horizontal)
@@ -67,6 +75,7 @@ struct OllamaConfigurationView: View {
             // Test Connection button
             if #available(iOS 26.0, *) {
                 Button {
+                    isChecking = true
                     Task {
                         await checkConnection()
                     }
@@ -80,13 +89,14 @@ struct OllamaConfigurationView: View {
                             .font(.headline.weight(.medium))
                     }
                 }
-                .disabled(isChecking)
+                .disabled(isChecking || connectionStatus == .invalidURL)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
                 .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
                 .buttonStyle(.plain)
             } else {
                 Button {
+                    isChecking = true
                     Task {
                         await checkConnection()
                     }
@@ -107,7 +117,7 @@ struct OllamaConfigurationView: View {
                             .stroke(.blue, lineWidth: 2)
                     }
                 }
-                .disabled(isChecking)
+                .disabled(isChecking || connectionStatus == .invalidURL)
                 .buttonStyle(.plain)
             }
 
@@ -162,6 +172,7 @@ struct OllamaConfigurationView: View {
         .onAppear {
             serverURL = aiService.ollamaServerURL
             // Auto-check connection on appear
+            isChecking = true
             Task {
                 await checkConnection()
             }
@@ -203,12 +214,36 @@ struct OllamaConfigurationView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.leading)
             }
+
+        case .invalidURL:
+            HStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("Invalid URL")
+                Text("Invalid URL. Use http:// or https://")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
+    private func isValidOllamaURL(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil else {
+            return false
+        }
+        return true
+    }
+
     private func checkConnection() async {
+        guard connectionStatus != .invalidURL else {
+            isChecking = false
+            return
+        }
+
         connectionStatus = .checking
-        isChecking = true
 
         HapticManager.lightImpact()
 
@@ -236,6 +271,8 @@ extension OllamaConfigurationView.ConnectionStatus {
             return .green
         case .failed:
             return .red
+        case .invalidURL:
+            return .orange
         }
     }
 
@@ -243,7 +280,7 @@ extension OllamaConfigurationView.ConnectionStatus {
         switch self {
         case .unknown:
             return 0.5
-        case .checking, .connected, .failed:
+        case .checking, .connected, .failed, .invalidURL:
             return 1.5
         }
     }
