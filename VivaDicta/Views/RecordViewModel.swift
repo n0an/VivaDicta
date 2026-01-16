@@ -503,6 +503,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 HapticManager.heartbeat()
                 self.recordingState = .idle
 
+                // Request app rating after successful transcription
+                RateAppManager.requestReviewIfAppropriate()
+
                 // Reschedule session timeout now that all processing is complete
                 self.prewarmManager.rescheduleSessionTimeout()
 
@@ -617,6 +620,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Share with keyboard
                     AppGroupCoordinator.shared.shareTranscribedText(pending.text)
+
+                    // Request app rating after successful transcription
+                    RateAppManager.requestReviewIfAppropriate()
                 } catch {
                     logger.logError("📱 Failed to save transcription: \(error.localizedDescription)")
                 }

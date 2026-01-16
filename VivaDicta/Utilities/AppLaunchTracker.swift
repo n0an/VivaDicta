@@ -20,8 +20,26 @@ enum AppLaunchTracker {
         defaults.integer(forKey: UserDefaultsStorage.Keys.appLaunchCount)
     }
 
-    /// Call this once during app initialization to increment the launch count.
+    /// The date of the first app launch. Returns nil if never launched.
+    static var firstLaunchDate: Date? {
+        defaults.object(forKey: UserDefaultsStorage.Keys.firstLaunchDate) as? Date
+    }
+
+    /// The number of days since the first app launch.
+    /// Returns 0 if first launch date is not recorded.
+    static var daysSinceFirstLaunch: Int {
+        guard let firstLaunch = firstLaunchDate else { return 0 }
+        let components = Calendar.current.dateComponents([.day], from: firstLaunch, to: Date())
+        return components.day ?? 0
+    }
+
+    /// Call this once during app initialization to increment the launch count and record first launch date.
     static func recordLaunch() {
+        // Record first launch date if not already set
+        if firstLaunchDate == nil {
+            defaults.set(Date(), forKey: UserDefaultsStorage.Keys.firstLaunchDate)
+        }
+
         let currentCount = launchCount
         defaults.set(currentCount + 1, forKey: UserDefaultsStorage.Keys.appLaunchCount)
     }
