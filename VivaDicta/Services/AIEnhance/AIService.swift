@@ -14,6 +14,7 @@ class AIService {
 
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
+    public var vercelAIGatewayModels: [String] = []
     public var modes: [VivaMode] = []
 
     public var onModeChange: ((VivaMode) -> Void)?
@@ -52,12 +53,16 @@ class AIService {
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         loadSavedOpenRouterModels()
+        loadSavedVercelAIGatewayModels()
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
             refreshConnectedProviders()
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
+            }
+            if connectedProviders.contains(.vercelAIGateway) {
+                await fetchVercelAIGatewayModels()
             }
         }
     }
@@ -342,7 +347,17 @@ class AIService {
     private func saveOpenRouterModels() {
         userDefaults.set(openRouterModels, forKey: UserDefaultsStorage.Keys.openRouterModels)
     }
-    
+
+    private func loadSavedVercelAIGatewayModels() {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.vercelAIGatewayModels) as? [String] {
+            vercelAIGatewayModels = savedModels
+        }
+    }
+
+    private func saveVercelAIGatewayModels() {
+        userDefaults.set(vercelAIGatewayModels, forKey: UserDefaultsStorage.Keys.vercelAIGatewayModels)
+    }
+
     // MARK: - Configuration validation
     public func isProperlyConfigured() -> Bool {
         // Check if AI enhancement is enabled
@@ -699,14 +714,17 @@ class AIService {
             }
         }
         
-        // Fetch OpenRouter models if this is an OpenRouter key
+        // Fetch models for providers that support dynamic model fetching
         if isValid && provider == .openRouter {
             await fetchOpenRouterModels()
         }
-        
+        if isValid && provider == .vercelAIGateway {
+            await fetchVercelAIGatewayModels()
+        }
+
         return isValid
     }
-    
+
     private func getAPIKey(for provider: AIProvider) -> String? {
         return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
     }
@@ -728,6 +746,8 @@ class AIService {
             return await verifyMistralAPIKey(key)
         case .soniox:
             return await verifySonioxAPIKey(key)
+        case .vercelAIGateway:
+            return await verifyVercelAIGatewayAPIKey(key)
         default:
             return await verifyOpenAICompatibleAPIKey(key, provider: provider)
         }
@@ -907,7 +927,43 @@ class AIService {
             return false
         }
     }
-    
+
+    private func verifyVercelAIGatewayAPIKey(_ key: String) async -> Bool {
+        // Use /v1/credits endpoint to verify API key
+        let url = URL(string: "https://ai-gateway.vercel.sh/v1/credits")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        logger.logNotice("🔑 Verifying Vercel AI Gateway API key")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.logNotice("🔑 Vercel AI Gateway API key verification failed: Invalid response")
+                return false
+            }
+
+            let isValid = httpResponse.statusCode == 200
+
+            if !isValid {
+                if let exactAPIError = String(data: data, encoding: .utf8) {
+                    logger.logNotice("🔑 Vercel AI Gateway API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError)")
+                } else {
+                    logger.logNotice("🔑 Vercel AI Gateway API key verification failed - Status: \(httpResponse.statusCode)")
+                }
+            }
+
+            return isValid
+
+        } catch {
+            logger.logNotice("🔑 Vercel AI Gateway API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     private func verifyGrokAPIKey(_ key: String) async -> Bool {
         let url = URL(string: AIProvider.grok.baseURL)!
         var request = URLRequest(url: url)
@@ -953,10 +1009,13 @@ class AIService {
         }
     }
     
-    // MARK: - OpenRouter Models methods
+    // MARK: - Dynamic Models methods
     public func getAvailableModels(for provider: AIProvider) -> [String] {
         if provider == .openRouter {
             return openRouterModels
+        }
+        if provider == .vercelAIGateway {
+            return vercelAIGatewayModels
         }
         return provider.availableModels
     }
@@ -1001,6 +1060,54 @@ class AIService {
             await MainActor.run {
                 self.openRouterModels = []
                 self.saveOpenRouterModels()
+            }
+        }
+    }
+
+    public func fetchVercelAIGatewayModels() async {
+        let url = URL(string: "https://ai-gateway.vercel.sh/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                logger.logError("Failed to fetch Vercel AI Gateway models: Invalid HTTP response")
+                await MainActor.run {
+                    self.vercelAIGatewayModels = []
+                    self.saveVercelAIGatewayModels()
+                }
+                return
+            }
+
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.logError("Failed to parse Vercel AI Gateway models JSON")
+                await MainActor.run {
+                    self.vercelAIGatewayModels = []
+                    self.saveVercelAIGatewayModels()
+                }
+                return
+            }
+
+            // Filter for language models only (exclude embeddings, image models)
+            let models = dataArray
+                .filter { ($0["type"] as? String) == "language" }
+                .compactMap { $0["id"] as? String }
+
+            await MainActor.run {
+                self.vercelAIGatewayModels = models.sorted()
+                self.saveVercelAIGatewayModels()
+            }
+            logger.logInfo("Successfully fetched \(models.count) Vercel AI Gateway models.")
+
+        } catch {
+            logger.logError("Error fetching Vercel AI Gateway models: \(error.localizedDescription)")
+            await MainActor.run {
+                self.vercelAIGatewayModels = []
+                self.saveVercelAIGatewayModels()
             }
         }
     }

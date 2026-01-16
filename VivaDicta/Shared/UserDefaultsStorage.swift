@@ -40,5 +40,6 @@ enum UserDefaultsStorage {
         static let isAutoAudioCleanupEnabled = "isAutoAudioCleanupEnabled"
         static let audioRetentionDays = "audioRetentionDays"
         static let openRouterModels = "openRouterModels"
+        static let vercelAIGatewayModels = "vercelAIGatewayModels"
     }
 }

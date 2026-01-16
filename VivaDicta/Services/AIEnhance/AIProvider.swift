@@ -22,6 +22,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case deepgram
     case mistral
     case soniox
+    case vercelAIGateway
 
     var displayName: String {
         switch self {
@@ -49,6 +50,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "OpenRouter"
         case .grok:
             "Grok (x.ai)"
+        case .vercelAIGateway:
+            "Vercel AI Gateway"
         }
     }
 
@@ -79,6 +82,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "deepgram"
         case .soniox:
             nil
+        case .vercelAIGateway:
+            "vercel"
         }
     }
 
@@ -101,7 +106,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .mistral,
         .cerebras,
         .grok,
-        .openRouter]
+        .openRouter,
+        .vercelAIGateway]
 
     /// All general-purpose AI providers including on-device
     static let generalProviders: [AIProvider] = [
@@ -113,7 +119,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .mistral,
         .cerebras,
         .grok,
-        .openRouter]
+        .openRouter,
+        .vercelAIGateway]
     
     var baseURL: String {
         switch self {
@@ -141,9 +148,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.mistral.ai/v1/chat/completions"
         case .soniox:
             return "https://api.soniox.com/v1"
+        case .vercelAIGateway:
+            return "https://ai-gateway.vercel.sh/v1/chat/completions"
         }
     }
-    
+
     var defaultModel: String {
         switch self {
         case .apple:
@@ -170,9 +179,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "openai/gpt-oss-120b"
         case .soniox:
             return "stt-async-v3"
+        case .vercelAIGateway:
+            return "anthropic/claude-sonnet-4-5"
         }
     }
-    
+
     var availableModels: [String] {
         switch self {
         case .apple:
@@ -240,6 +251,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .soniox:
             return ["stt-async-v3"]
         case .openRouter:
+            return []
+        case .vercelAIGateway:
             return []
         }
     }
