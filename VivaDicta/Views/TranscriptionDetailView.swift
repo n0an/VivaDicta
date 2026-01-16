@@ -35,6 +35,7 @@ struct TranscriptionDetailView: View {
     @State private var processingTask: Task<Void, Never>?
     @State private var isShimmering: Bool = false
     @State private var showGuardrailAlert: Bool = false
+    @State private var isMetaInfoExpanded: Bool = false
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -101,6 +102,7 @@ struct TranscriptionDetailView: View {
                     .padding(.bottom, 12)
                     .onChange(of: selectedTextType) { _, _ in
                         HapticManager.selectionChanged()
+                        isMetaInfoExpanded = false
                     }
                 }
             }
@@ -344,6 +346,7 @@ struct TranscriptionDetailView: View {
                             Button {
                                 HapticManager.lightImpact()
                                 isExpanded = true
+                                isMetaInfoExpanded = false
                             } label: {
                                 HStack {
                                     if processingState != .idle {
@@ -449,7 +452,7 @@ struct TranscriptionDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             Divider()
 
-            DisclosureGroup("Meta Info") {
+            DisclosureGroup("Meta Info", isExpanded: $isMetaInfoExpanded) {
                 VStack(alignment: .leading, spacing: 10) {
                     metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
                     
@@ -552,6 +555,7 @@ struct TranscriptionDetailView: View {
     private func retranscribe() {
         guard let audioURL = audioURL else { return }
         HapticManager.lightImpact()
+        isMetaInfoExpanded = false
 
         processingTask = Task {
             processingState = .transcribing
@@ -584,6 +588,7 @@ struct TranscriptionDetailView: View {
     private func enhance() {
         guard !transcription.text.isEmpty else { return }
         HapticManager.lightImpact()
+        isMetaInfoExpanded = false
 
         processingTask = Task {
             processingState = .enhancing
@@ -623,6 +628,7 @@ struct TranscriptionDetailView: View {
     private func retranscribeAndEnhance() {
         guard let audioURL = audioURL else { return }
         HapticManager.lightImpact()
+        isMetaInfoExpanded = false
 
         processingTask = Task {
             processingState = .transcribing

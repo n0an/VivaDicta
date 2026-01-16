@@ -180,7 +180,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .soniox:
             return "stt-async-v3"
         case .vercelAIGateway:
-            return "anthropic/claude-sonnet-4-5"
+            // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
+            // (e.g., "claude-sonnet-4.5") unlike direct Anthropic API which uses hyphens
+            // (e.g., "claude-sonnet-4-5"). Models are fetched dynamically, so this must
+            // match Vercel's actual naming convention.
+            return "anthropic/claude-sonnet-4.5"
         }
     }
 
