@@ -212,11 +212,12 @@ struct ModeEditView: View {
                             }
                         } label: {
                             HStack {
-                                Image(systemName: "cpu")
+                                Image(systemName: "sparkles")
                                     .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
                                 Text("AI Provider")
                             }
                         }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                         .onChange(of: viewModel.aiProvider) { _, newProvider in
                             viewModel.updateProvider(newProvider)
                             HapticManager.selectionChanged()
@@ -237,6 +238,7 @@ struct ModeEditView: View {
                                         Text("Foundation Model")
                                             .foregroundStyle(.secondary)
                                     }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
                                     Picker(selection: $viewModel.aiModel) {
                                         ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
@@ -248,6 +250,7 @@ struct ModeEditView: View {
                                             Text("AI Model")
                                         }
                                     }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                     .onChange(of: viewModel.aiModel) { _, newModel in
                                         viewModel.updateModel(newModel)
                                         HapticManager.selectionChanged()
@@ -262,6 +265,7 @@ struct ModeEditView: View {
                                         Text(viewModel.appleFoundationModelStatusMessage)
                                             .font(.callout)
                                     }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
                                     // Cloud provider needs API key
                                     NavigationLink {
@@ -281,6 +285,7 @@ struct ModeEditView: View {
                                                 .foregroundStyle(.secondary)
                                         }
                                     }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 }
                             }
                         }
@@ -302,6 +307,7 @@ struct ModeEditView: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 .foregroundStyle(.primary)
                             } else {
                                 Picker("Prompt", selection: $viewModel.selectedPromptID) {

@@ -403,9 +403,10 @@ struct SettingsView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            SiriTipView(intent: ToggleRecordIntent(), isVisible: $displaySiriTip)
-            .padding(.horizontal)
-//            .background(.ultraThinMaterial)
+            if navigationPath.isEmpty {
+                SiriTipView(intent: ToggleRecordIntent(), isVisible: $displaySiriTip)
+                    .padding(.horizontal)
+            }
         }
         
         .alert("Prewarm Session Error", isPresented: $showPrewarmError) {
