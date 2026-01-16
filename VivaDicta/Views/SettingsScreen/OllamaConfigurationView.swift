@@ -58,17 +58,17 @@ struct OllamaConfigurationView: View {
                         Capsule()
                             .stroke(connectionStatus.borderColor, lineWidth: connectionStatus.borderWidth)
                     }
-                    .onChange(of: serverURL) { _, newValue in
-                        if newValue.isEmpty {
-                            connectionStatus = .unknown
-                            aiService.ollamaServerURL = AIProvider.ollamaDefaultServerURL
-                        } else if isValidOllamaURL(newValue) {
-                            connectionStatus = .unknown
-                            aiService.ollamaServerURL = newValue
-                        } else {
-                            connectionStatus = .invalidURL
-                        }
-                    }
+//                    .onChange(of: serverURL) { _, newValue in
+//                        if newValue.isEmpty {
+//                            connectionStatus = .unknown
+//                            aiService.ollamaServerURL = AIProvider.ollamaDefaultServerURL
+//                        } else if isValidOllamaURL(newValue) {
+//                            connectionStatus = .unknown
+//                            aiService.ollamaServerURL = newValue
+//                        } else {
+//                            connectionStatus = .invalidURL
+//                        }
+//                    }
             }
             .padding(.horizontal)
 
@@ -89,7 +89,7 @@ struct OllamaConfigurationView: View {
                             ProgressView()
                                 .controlSize(.small)
                         }
-                        Text(connectionStatus == .checking ? "Checking..." : "Test Connection")
+                        Text(connectionStatus == .checking ? "Connecting..." : "Connect")
                             .font(.headline.weight(.medium))
                     }
                 }
@@ -110,7 +110,7 @@ struct OllamaConfigurationView: View {
                             ProgressView()
                                 .controlSize(.small)
                         }
-                        Text(connectionStatus == .checking ? "Checking..." : "Test Connection")
+                        Text(connectionStatus == .checking ? "Connecting..." : "Connect")
                             .font(.headline.weight(.medium))
                             .foregroundStyle(.primary)
                     }
@@ -245,6 +245,8 @@ struct OllamaConfigurationView: View {
         connectionStatus = .checking
 
         HapticManager.lightImpact()
+        
+        aiService.ollamaServerURL = serverURL
 
         let result = await aiService.verifyOllamaSetup()
 

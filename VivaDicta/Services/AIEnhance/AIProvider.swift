@@ -178,7 +178,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Default Ollama server URL
-    static let ollamaDefaultServerURL = "http://localhost:11434"
+    static let ollamaDefaultServerURL = "http://host:11434"
 
     var defaultModel: String {
         switch self {
