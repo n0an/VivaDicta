@@ -205,11 +205,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return ["foundation-model"]
         case .cerebras:
             return [
+                "gpt-oss-120b",
+                "llama-3.1-8b",
                 "llama-4-scout-17b-16e-instruct",
                 "llama-3.3-70b",
-                "gpt-oss-120b",
                 "qwen-3-32b",
-                "qwen-3-235b-a22b-instruct-2507"
+                "qwen-3-235b-a22b-instruct-2507",
+                "zai-glm-4.6",
+                "zai-glm-4.7"
             ]
         case .groq:
             return [
@@ -253,9 +256,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "grok-code-fast-1"
             ]
         case .elevenLabs:
-            return ["scribe_v1", "scribe_v1_experimental"]
+            return []
         case .deepgram:
-            return ["whisper-1"]
+            return []
         case .mistral:
             return [
                 "mistral-large-latest",
@@ -264,7 +267,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "mistral-saba-latest"
             ]
         case .soniox:
-            return ["stt-async-v3"]
+            return []
         case .openRouter:
             return []
         case .vercelAIGateway:
