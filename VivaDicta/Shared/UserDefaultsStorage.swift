@@ -41,5 +41,6 @@ enum UserDefaultsStorage {
         static let audioRetentionDays = "audioRetentionDays"
         static let openRouterModels = "openRouterModels"
         static let vercelAIGatewayModels = "vercelAIGatewayModels"
+        static let huggingFaceModels = "huggingFaceModels"
     }
 }
