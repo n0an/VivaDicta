@@ -40,8 +40,36 @@ struct AIProviders: View {
                 }
             }
 
-            // Local Server Section (Ollama)
-            Section {
+            // Cloud Section
+            Section("Cloud") {
+                ForEach(AIProvider.cloudProviders) { provider in
+                    NavigationLink(value: provider) {
+                        HStack(spacing: 12) {
+                            if let iconName = provider.iconName {
+                                Image(iconName)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 28, height: 28)
+                            }
+
+                            Text(provider.displayName)
+
+                            Spacer()
+
+                            if !appState.aiService.connectedProviders.contains(provider) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+                                    Text("Add API Key")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Ollama (Local Server) - at bottom of Cloud section
                 NavigationLink(value: AIProvider.ollama) {
                     HStack(spacing: 12) {
                         Image(systemName: "desktopcomputer")
@@ -68,40 +96,6 @@ struct AIProviders: View {
                                 Text("\(appState.aiService.ollamaModels.count) models")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("Local Server")
-            } footer: {
-                Text("Ollama runs AI models locally on your Mac or any server on your network. Free and private — no API key required.")
-            }
-
-            // Cloud Section
-            Section("Cloud") {
-                ForEach(AIProvider.cloudProviders) { provider in
-                    NavigationLink(value: provider) {
-                        HStack(spacing: 12) {
-                            if let iconName = provider.iconName {
-                                Image(iconName)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 28, height: 28)
-                            }
-
-                            Text(provider.displayName)
-
-                            Spacer()
-
-                            if !appState.aiService.connectedProviders.contains(provider) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundStyle(.orange)
-                                    Text("Add API Key")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
                             }
                         }
                     }
