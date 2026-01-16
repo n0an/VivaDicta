@@ -505,7 +505,20 @@ private struct ModeInfoRow: View {
                 HStack(alignment: .top) {
                     HStack(alignment: .top, spacing: 4) {
                         Image(systemName: "waveform")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(
+                                MeshGradient(
+                                    width: 2,
+                                    height: 2,
+                                    points: [
+                                        [0, 0], [1, 0],
+                                        [0, 1], [1, 1]
+                                    ],
+                                    colors: [
+                                        .blue, .cyan,
+                                        .teal, .mint
+                                    ]
+                                )
+                            )
                             .accessibilityLabel("Transcription provider")
                         VStack(alignment: .leading, spacing: 2) {
                             Text(mode.transcriptionProvider.displayName)
@@ -521,7 +534,20 @@ private struct ModeInfoRow: View {
                         Divider()
                         HStack(alignment: .top, spacing: 4) {
                             Image(systemName: "sparkles")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(
+                                    MeshGradient(
+                                        width: 2,
+                                        height: 2,
+                                        points: [
+                                            [0, 0], [1, 0],
+                                            [0, 1], [1, 1]
+                                        ],
+                                        colors: [
+                                            .purple, .red,
+                                            .blue, .pink
+                                        ]
+                                    )
+                                )
                                 .accessibilityLabel("AI enhancement provider")
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(provider.displayName)
