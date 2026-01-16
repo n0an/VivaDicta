@@ -232,7 +232,8 @@ struct ModeEditView: View {
                                 // Show model picker for Apple with just "Foundation Model"
                                 if provider == .apple {
                                     HStack {
-                                        Image(systemName: "sparkles")
+                                        Image(systemName: "cube.fill")
+                                            .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
                                         Text("AI Model")
                                         Spacer()
                                         Text("Foundation Model")
@@ -246,7 +247,8 @@ struct ModeEditView: View {
                                         }
                                     } label: {
                                         HStack {
-                                            Image(systemName: "sparkles")
+                                            Image(systemName: "cube.fill")
+                                                .foregroundStyle(Gradient(colors: [.purple, .red, .blue]))
                                             Text("AI Model")
                                         }
                                     }
