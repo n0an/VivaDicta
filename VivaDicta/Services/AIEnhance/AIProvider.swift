@@ -92,12 +92,6 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         self != .apple
     }
 
-    /// Returns true if an API key is configured for this provider
-    var hasAPIKey: Bool {
-        guard requiresAPIKey else { return true }
-        return UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + rawValue) != nil
-    }
-
     /// Cloud-based AI providers (require API key, network connection)
     static let cloudProviders: [AIProvider] = [
         .anthropic,

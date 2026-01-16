@@ -54,7 +54,7 @@ struct AIProviders: View {
 
                             Spacer()
 
-                            if !provider.hasAPIKey {
+                            if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundStyle(.orange)
