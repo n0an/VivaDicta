@@ -613,6 +613,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     try pending.modelContext.save()
                     logger.logInfo("📱 Saved transcription without enhancement")
 
+                    // Haptic feedback for successful save
+                    HapticManager.heartbeat()
+
                     // Index to Spotlight
                     Task {
                         await self.appState?.indexTranscriptionToSpotlight(transcription)
