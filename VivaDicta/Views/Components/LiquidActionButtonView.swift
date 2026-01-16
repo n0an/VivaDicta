@@ -14,7 +14,7 @@ enum LiquidButtonExpandDirection {
 
 struct LiquidActionButtonView: View {
     @Binding var isExpanded: Bool
-    let processingState: ProcessingState
+    let processingState: RecordingState
     let canRetranscribe: Bool
     let canEnhance: Bool
     let expandDirection: LiquidButtonExpandDirection

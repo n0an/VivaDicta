@@ -10,15 +10,9 @@ import CoreSpotlight
 
 private enum TextDisplayType: String, CaseIterable, Identifiable {
     var id: Self { self }
-    
+
     case original = "Original"
     case enhanced = "Enhanced"
-}
-
-enum ProcessingState: Equatable {
-    case idle
-    case transcribing
-    case enhancing
 }
 
 struct TranscriptionDetailView: View {
@@ -31,11 +25,15 @@ struct TranscriptionDetailView: View {
     @State private var isExpanded: Bool = false
     @Namespace private var namespace
 
-    @State private var processingState: ProcessingState = .idle
+    @State private var processingState: RecordingState = .idle
     @State private var processingTask: Task<Void, Never>?
     @State private var isShimmering: Bool = false
     @State private var showGuardrailAlert: Bool = false
     @State private var isMetaInfoExpanded: Bool = false
+
+    // Ripple effect state for processing animations
+    @State private var rippleEffectTimer: Timer?
+    @State private var rippleEffectTrigger = false
 
     private var hasEnhancedText: Bool {
         transcription.enhancedText != nil
@@ -173,9 +171,51 @@ struct TranscriptionDetailView: View {
 //            spotlightTask = nil
             processingTask?.cancel()
             processingTask = nil
+            rippleEffectTimer?.invalidate()
+            rippleEffectTimer = nil
         }
         .animation(.spring, value: isExpanded)
         .animation(.easeInOut, value: processingState)
+        .allowsHitTesting(processingState == .idle)
+        .overlay {
+            if processingState == .transcribing || processingState == .enhancing {
+                GeometryReader { geometry in
+                    AnimatedMeshGradient()
+                        .onAppear {
+                            rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+                                Task { @MainActor in
+                                    if processingState == .transcribing || processingState == .enhancing {
+                                        rippleEffectTrigger.toggle()
+                                    }
+                                }
+                            })
+                            rippleEffectTimer?.fire()
+                        }
+                        .onDisappear {
+                            rippleEffectTimer?.invalidate()
+                            rippleEffectTimer = nil
+                        }
+                        .mask(
+                            RoundedRectangle(cornerRadius: 44, style: .continuous)
+                                .stroke(lineWidth: 44)
+                                .blur(radius: 22)
+                        )
+                        .ignoresSafeArea()
+                        .modifier(RippleEffect(at: CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), trigger: rippleEffectTrigger))
+                }
+            }
+        }
+        .overlay {
+            if processingState == .transcribing || processingState == .enhancing {
+                HudView(
+                    state: processingState,
+                    onCancel: {
+                        cancelProcessing()
+                    }
+                )
+            }
+        }
+        .animation(.default, value: processingState)
         .alert(
             "AI Safety Guardrail Triggered",
             isPresented: $showGuardrailAlert
@@ -550,6 +590,13 @@ struct TranscriptionDetailView: View {
         if isExpanded {
             isExpanded = false
         }
+    }
+
+    private func cancelProcessing() {
+        processingTask?.cancel()
+        processingTask = nil
+        processingState = .idle
+        HapticManager.warning()
     }
 
     private func retranscribe() {
