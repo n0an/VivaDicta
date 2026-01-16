@@ -82,6 +82,9 @@ class ModeEditViewModel {
             if provider == .apple {
                 return "Apple Intelligence is not available on this device"
             }
+            if provider == .ollama {
+                return "Configure Ollama server in AI Providers settings"
+            }
             return "Add API key to continue"
         }
         if aiModel == nil || aiModel!.isEmpty {
@@ -317,8 +320,13 @@ class ModeEditViewModel {
 
     /// Returns whether the provider is ready to use
     /// For Apple: available on device
+    /// For Ollama: has models available (server configured and accessible)
     /// For cloud providers: API key is configured
     func isProviderReady(_ provider: AIProvider) -> Bool {
+        if provider == .ollama {
+            // Ollama is ready only if models are available
+            return !aiService.ollamaModels.isEmpty
+        }
         return aiService.connectedProviders.contains(provider)
     }
 

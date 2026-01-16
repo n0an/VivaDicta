@@ -108,6 +108,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Cloud-based AI providers (require API key, network connection)
+    /// Note: Ollama is included here for UI purposes but doesn't require API key
     static let cloudProviders: [AIProvider] = [
         .anthropic,
         .openAI,
@@ -118,7 +119,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .grok,
         .openRouter,
         .vercelAIGateway,
-        .huggingFace]
+        .huggingFace,
+        .ollama]
 
     /// Local AI providers that run on-device or local network (no API key needed)
     static let localProviders: [AIProvider] = [

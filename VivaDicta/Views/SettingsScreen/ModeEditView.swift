@@ -258,7 +258,12 @@ struct ModeEditView: View {
                                     } else {
                                         HStack(spacing: 4) {
                                             Text(provider.displayName)
-                                            Image(systemName: "key.slash.fill")
+                                            // Ollama doesn't need API key, show gear instead
+                                            if provider == .ollama {
+                                                Image(systemName: "gear")
+                                            } else {
+                                                Image(systemName: "key.slash.fill")
+                                            }
                                         }
                                         .tag(provider)
                                     }
@@ -359,6 +364,22 @@ struct ModeEditView: View {
                                             .foregroundStyle(.orange)
                                         Text(viewModel.appleFoundationModelStatusMessage)
                                             .font(.callout)
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .ollama {
+                                    // Ollama needs configuration
+                                    NavigationLink {
+                                        OllamaConfigurationView(aiService: viewModel.aiService)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.orange)
+                                            Text("Configure Ollama")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
