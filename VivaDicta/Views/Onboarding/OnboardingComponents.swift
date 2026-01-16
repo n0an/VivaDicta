@@ -9,16 +9,22 @@ import SwiftUI
 
 // MARK: - Feature Row
 
-struct OnboardingFeatureRow: View {
+struct OnboardingFeatureRow<S: ShapeStyle>: View {
     let icon: String
-    let iconColor: Color
+    let iconStyle: S
     let text: String
+
+    init(icon: String, iconStyle: S, text: String) {
+        self.icon = icon
+        self.iconStyle = iconStyle
+        self.text = text
+    }
 
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundStyle(iconColor)
+                .foregroundStyle(iconStyle)
                 .frame(width: 32)
 
             Text(text)
@@ -287,12 +293,12 @@ struct OnboardingPageIndicator: View {
     VStack(spacing: 16) {
         OnboardingFeatureRow(
             icon: "checkmark.shield.fill",
-            iconColor: .green,
+            iconStyle: Color.green,
             text: "Complete privacy - your data stays on device"
         )
         OnboardingFeatureRow(
             icon: "waveform",
-            iconColor: .blue,
+            iconStyle: Color.blue,
             text: "Advanced transcription models for perfect accuracy"
         )
         

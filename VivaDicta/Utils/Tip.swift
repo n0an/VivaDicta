@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import TipKit
 
 struct SelectLanguageTip: Tip {
@@ -33,7 +34,7 @@ struct SelectTranscriptionModelTipMainView: Tip {
     
     var title: Text {
         Text("Select Transcription model")
-            .foregroundStyle(.teal)
+//            .foregroundStyle(.teal)
     }
     
     var message: Text? {
@@ -41,7 +42,7 @@ struct SelectTranscriptionModelTipMainView: Tip {
     }
     
     var image: Image? {
-        Image(systemName: "cpu.fill")
+        Image(systemName: "waveform")
     }
     
     var actions: [Action] {
@@ -74,16 +75,16 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
     
     var title: Text {
         Text("Select Transcription model")
-            .foregroundStyle(.teal)
+//            .foregroundStyle(.teal)
     }
     
     var message: Text? {
         Text("Tap here to set up a transcription model")
-            .foregroundStyle(.orange)
+//            .foregroundStyle(.orange)
     }
 
     var image: Image? {
-        Image(systemName: "cpu.fill")
+        Image(systemName: "waveform")
     }
     
     var rules: [Rule] {

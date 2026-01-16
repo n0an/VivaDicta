@@ -48,19 +48,41 @@ struct OnboardingWelcomePage: View {
                 VStack(spacing: 20) {
                     OnboardingFeatureRow(
                         icon: "checkmark.shield.fill",
-                        iconColor: .green,
+                        iconStyle: Color.green,
                         text: "Complete privacy - your data stays on device"
                     )
 
                     OnboardingFeatureRow(
                         icon: "waveform",
-                        iconColor: .blue,
+                        iconStyle: MeshGradient(
+                            width: 2,
+                            height: 2,
+                            points: [
+                                [0, 0], [1, 0],
+                                [0, 1], [1, 1]
+                            ],
+                            colors: [
+                                .blue, .cyan,
+                                .teal, .mint
+                            ]
+                        ),
                         text: "Advanced transcription models for perfect accuracy"
                     )
 
                     OnboardingFeatureRow(
                         icon: "wand.and.stars",
-                        iconColor: .purple,
+                        iconStyle: MeshGradient(
+                            width: 2,
+                            height: 2,
+                            points: [
+                                [0, 0], [1, 0],
+                                [0, 1], [1, 1]
+                            ],
+                            colors: [
+                                .purple, .red,
+                                .blue, .pink
+                            ]
+                        ),
                         text: "AI enhancement for professional results"
                     )
                 }
