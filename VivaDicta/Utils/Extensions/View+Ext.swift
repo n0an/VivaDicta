@@ -318,14 +318,37 @@ extension View {
 }
 
 struct RecordButtonButtonStyle: ButtonStyle {
+    /// Trigger for bounce animation. Change this value to trigger a double bounce.
+    var bounceTrigger: Int = 0
+
+    private struct BounceValue {
+        var scale: CGFloat = 1.0
+    }
+
     func makeBody(configuration: Configuration) -> some View {
-        Image(systemName: "microphone.circle")
-            .font(.system(size: 28))
-            .foregroundStyle(.white)
-            .padding(8)
-            .background(.orange.gradient, in: .circle)
-            .scaleEffect(configuration.isPressed ? 1.5 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+        KeyframeAnimator(
+            initialValue: BounceValue(),
+            trigger: bounceTrigger
+        ) { value in
+            Image(systemName: "microphone.circle")
+                .font(.system(size: 28))
+                .foregroundStyle(.white)
+                .padding(8)
+                .background(.orange.gradient, in: .circle)
+                .scaleEffect(configuration.isPressed ? 1.5 : value.scale)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+        } keyframes: { _ in
+            KeyframeTrack(\.scale) {
+                // First bounce
+                SpringKeyframe(1.25, duration: 0.15, spring: .bouncy)
+                SpringKeyframe(1.0, duration: 0.15, spring: .bouncy)
+                // Pause
+                LinearKeyframe(1.0, duration: 0.1)
+                // Second bounce
+                SpringKeyframe(1.25, duration: 0.15, spring: .bouncy)
+                SpringKeyframe(1.0, duration: 0.15, spring: .bouncy)
+            }
+        }
     }
 }
 

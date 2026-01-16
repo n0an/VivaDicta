@@ -25,6 +25,9 @@ enum UserDefaultsStorage {
 
     enum Keys {
         static let appLaunchCount = "appLaunchCount"
+        static let firstLaunchDate = "firstLaunchDate"
+        static let allLaunchDates = "allLaunchDates"
+        static let lastRatingRequestDate = "lastRatingRequestDate"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let didTapOpenSettingsInOnboarding = "didTapOpenSettingsInOnboarding"
         static let audioSessionTimeout = "audioSessionTimeout"

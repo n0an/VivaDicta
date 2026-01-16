@@ -14,6 +14,7 @@ import os
 struct MainView: View {
     @Environment(AppState.self) var appState
     @Environment(Router.self) var router
+    @Query private var transcriptions: [Transcription]
 
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
@@ -25,7 +26,7 @@ struct MainView: View {
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
-    @State private var recordButtonBounceCount = 0
+    @State private var recordButtonBounceTrigger = 0
 
     private let logger = Logger(category: .mainView)
 
@@ -144,7 +145,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "microphone.circle")
                                     .font(.system(size: 24))
-                                    .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceCount)
+                                    .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceTrigger)
                             }
                             .buttonStyle(.glassProminent)
                             .tint(.orange)
@@ -155,7 +156,7 @@ struct MainView: View {
                             Button("") {
                                 startRecording()
                             }
-                            .buttonStyle(RecordButtonButtonStyle())
+                            .buttonStyle(RecordButtonButtonStyle(bounceTrigger: recordButtonBounceTrigger))
                         }
                     }
                 }
@@ -319,11 +320,20 @@ struct MainView: View {
             SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
 
             // Trigger record button bounce animation on app start (first 10 launches only)
-            if recordButtonBounceCount == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
+            // iOS 26+ uses symbolEffect, iOS 18 uses KeyframeAnimator - both trigger on count change
+            if recordButtonBounceTrigger == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
                 Task {
                     try? await Task.sleep(for: .milliseconds(500))
-                    recordButtonBounceCount += 1
+                    recordButtonBounceTrigger += 1
                 }
+            }
+
+            // Request app rating on app start (with delay to not be jarring)
+            // Note: transcriptions.count is evaluated after sleep, ensuring @Query has loaded
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                let count = transcriptions.count
+                RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
             }
         }
         .task {

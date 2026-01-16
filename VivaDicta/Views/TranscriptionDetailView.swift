@@ -570,6 +570,9 @@ struct TranscriptionDetailView: View {
                 await appState.updateTranscriptionInSpotlight(transcription)
 
                 HapticManager.heartbeat()
+
+                // Request app rating after successful retranscribe
+                RateAppManager.requestReviewIfAppropriate()
             } catch {
                 HapticManager.error()
             }
@@ -601,6 +604,9 @@ struct TranscriptionDetailView: View {
                 await appState.updateTranscriptionInSpotlight(transcription)
 
                 HapticManager.heartbeat()
+
+                // Request app rating after successful enhance
+                RateAppManager.requestReviewIfAppropriate()
             } catch let error as AppleFoundationModelError {
                 if case .guardrailViolation = error {
                     showGuardrailAlert = true
@@ -661,6 +667,9 @@ struct TranscriptionDetailView: View {
                 await appState.updateTranscriptionInSpotlight(transcription)
 
                 HapticManager.heartbeat()
+
+                // Request app rating after successful retranscribe and enhance
+                RateAppManager.requestReviewIfAppropriate()
             } catch {
                 HapticManager.error()
             }
