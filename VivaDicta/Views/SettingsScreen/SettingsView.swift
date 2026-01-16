@@ -52,7 +52,7 @@ struct SettingsView: View {
                     
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
-                            ModeInfoRow(mode: mode)
+                            ModeInfoRow(mode: mode, connectedProviders: appState.aiService.connectedProviders)
                         }
                         .contextMenu {
                             Button {
@@ -464,6 +464,7 @@ struct SettingsView: View {
 
 private struct ModeInfoRow: View {
     let mode: VivaMode
+    let connectedProviders: [AIProvider]
 
     private var transcriptionModelDisplayName: String {
         mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
@@ -530,7 +531,7 @@ private struct ModeInfoRow: View {
                         }
                     }
 
-                    if let provider = mode.aiProvider {
+                    if let provider = mode.aiProvider, connectedProviders.contains(provider) {
                         Divider()
                         HStack(alignment: .top, spacing: 4) {
                             Image(systemName: "sparkles")

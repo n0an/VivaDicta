@@ -22,6 +22,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case deepgram
     case mistral
     case soniox
+    case vercelAIGateway
 
     var displayName: String {
         switch self {
@@ -49,6 +50,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "OpenRouter"
         case .grok:
             "Grok (x.ai)"
+        case .vercelAIGateway:
+            "Vercel AI Gateway"
         }
     }
 
@@ -79,6 +82,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "deepgram"
         case .soniox:
             nil
+        case .vercelAIGateway:
+            "vercel"
         }
     }
 
@@ -92,12 +97,6 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         self != .apple
     }
 
-    /// Returns true if an API key is configured for this provider
-    var hasAPIKey: Bool {
-        guard requiresAPIKey else { return true }
-        return UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + rawValue) != nil
-    }
-
     /// Cloud-based AI providers (require API key, network connection)
     static let cloudProviders: [AIProvider] = [
         .anthropic,
@@ -107,7 +106,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .mistral,
         .cerebras,
         .grok,
-        .openRouter]
+        .openRouter,
+        .vercelAIGateway]
 
     /// All general-purpose AI providers including on-device
     static let generalProviders: [AIProvider] = [
@@ -119,7 +119,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .mistral,
         .cerebras,
         .grok,
-        .openRouter]
+        .openRouter,
+        .vercelAIGateway]
     
     var baseURL: String {
         switch self {
@@ -147,9 +148,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.mistral.ai/v1/chat/completions"
         case .soniox:
             return "https://api.soniox.com/v1"
+        case .vercelAIGateway:
+            return "https://ai-gateway.vercel.sh/v1/chat/completions"
         }
     }
-    
+
     var defaultModel: String {
         switch self {
         case .apple:
@@ -176,9 +179,15 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "openai/gpt-oss-120b"
         case .soniox:
             return "stt-async-v3"
+        case .vercelAIGateway:
+            // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
+            // (e.g., "claude-sonnet-4.5") unlike direct Anthropic API which uses hyphens
+            // (e.g., "claude-sonnet-4-5"). Models are fetched dynamically, so this must
+            // match Vercel's actual naming convention.
+            return "anthropic/claude-sonnet-4.5"
         }
     }
-    
+
     var availableModels: [String] {
         switch self {
         case .apple:
@@ -246,6 +255,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .soniox:
             return ["stt-async-v3"]
         case .openRouter:
+            return []
+        case .vercelAIGateway:
             return []
         }
     }
