@@ -354,9 +354,11 @@ struct MainView: View {
             }
 
             // Request app rating on app start (with delay to not be jarring)
+            // Note: transcriptions.count is evaluated after sleep, ensuring @Query has loaded
             Task {
                 try? await Task.sleep(for: .seconds(2))
-                RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: transcriptions.count)
+                let count = transcriptions.count
+                RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
             }
         }
         .task {
