@@ -142,6 +142,11 @@ struct OllamaConfigurationView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
+                Text("Tip: To connect from iPhone, run Ollama with:\nOLLAMA_HOST=0.0.0.0:11434 ollama serve")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
                 Link("Get Ollama →", destination: URL(string: "https://ollama.com")!)
                     .font(.caption)
             }
@@ -182,6 +187,7 @@ struct OllamaConfigurationView: View {
             HStack {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+                    .accessibilityLabel("Connection successful")
                 Text("Connected • \(modelCount) model\(modelCount == 1 ? "" : "s") available")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -191,6 +197,7 @@ struct OllamaConfigurationView: View {
             HStack(alignment: .top) {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.red)
+                    .accessibilityLabel("Connection failed")
                 Text(message)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

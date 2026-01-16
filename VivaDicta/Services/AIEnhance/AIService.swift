@@ -792,7 +792,7 @@ class AIService {
                 return filteredText
 
             case 404:
-                throw EnhancementError.customError("Model '\(self.selectedMode.aiModel)' not found. Run 'ollama pull \(self.selectedMode.aiModel)' to download it.")
+                throw EnhancementError.customError("Model '\(self.selectedMode.aiModel)' not found. Run 'ollama pull \(self.selectedMode.aiModel)' on your Mac/server to download it.")
 
             case 500...599:
                 throw EnhancementError.serverError
@@ -937,7 +937,7 @@ class AIService {
         await fetchOllamaModels()
 
         if ollamaModels.isEmpty {
-            return (false, "Connected to Ollama but no models found. Run 'ollama pull llama3.2' to download a model.")
+            return (false, "Connected to Ollama but no models found. Run 'ollama pull llama3.2' on your Mac/server to download a model.")
         }
 
         return (true, "Connected successfully. Found \(ollamaModels.count) model(s).")
