@@ -47,7 +47,7 @@ struct ModeEditView: View {
             Section(header: Text("Transcription"),
                     footer: transcriptionSectionFooter) {
                 
-                Picker("Provider", selection: $viewModel.transcriptionProvider) {
+                Picker(selection: $viewModel.transcriptionProvider) {
                     Section("On-Device") {
                         ForEach(TranscriptionModelProvider.localProviders) { provider in
                             if viewModel.isTranscriptionProviderConfigured(provider) {
@@ -74,7 +74,14 @@ struct ModeEditView: View {
                             }
                         }
                     }
+                } label: {
+                    HStack {
+                        Image(systemName: "waveform")
+                            .foregroundStyle(.blue)
+                        Text("Provider")
+                    }
                 }
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
 //                .tint(.primary)
 //                .pickerStyle(.menu)
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
@@ -83,12 +90,19 @@ struct ModeEditView: View {
                 }
                 
                 if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
-                    Picker("Model", selection: $viewModel.transcriptionModel) {
+                    Picker(selection: $viewModel.transcriptionModel) {
                         ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
                             Text(viewModel.transcriptionProvider.getTranscriptionModelDisplayName(model))
                                 .tag(model)
                         }
+                    } label: {
+                        HStack {
+                            Image(systemName: "character.bubble")
+                                .foregroundStyle(.blue)
+                            Text("Model")
+                        }
                     }
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                     .onChange(of: viewModel.transcriptionModel) { _, newModel in
                         viewModel.updateTranscriptionModel(newModel)
                         HapticManager.selectionChanged()
@@ -245,7 +259,7 @@ struct ModeEditView: View {
                                 // Show model picker for Apple with just "Foundation Model"
                                 if provider == .apple {
                                     HStack {
-                                        Image(systemName: "cube.fill")
+                                        Image(systemName: "wand.and.sparkles")
                                             .foregroundStyle(
                                         MeshGradient(
                                             width: 2,
