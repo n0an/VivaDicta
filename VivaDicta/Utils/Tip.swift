@@ -100,35 +100,35 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
 struct SelectAIEnhacementTip: Tip {
     var title: Text {
         Text("Add AI Enhancement")
-            .foregroundStyle(MeshGradient(
-                width: 2,
-                height: 2,
-                points: [
-                    [0, 0], [1, 0],
-                    [0, 1], [1, 1]
-                ],
-                colors: [
-                    .purple, .red,
-                    .blue, .pink
-                ]
-            ))
+//            .foregroundStyle(MeshGradient(
+//                width: 2,
+//                height: 2,
+//                points: [
+//                    [0, 0], [1, 0],
+//                    [0, 1], [1, 1]
+//                ],
+//                colors: [
+//                    .purple, .red,
+//                    .blue, .pink
+//                ]
+//            ))
         
     }
 
     var message: Text? {
         Text("Improve transcriptions with AI")
-            .foregroundStyle(MeshGradient(
-                width: 2,
-                height: 2,
-                points: [
-                    [0, 0], [1, 0],
-                    [0, 1], [1, 1]
-                ],
-                colors: [
-                    .purple, .red,
-                    .blue, .pink
-                ]
-            ))
+//            .foregroundStyle(MeshGradient(
+//                width: 2,
+//                height: 2,
+//                points: [
+//                    [0, 0], [1, 0],
+//                    [0, 1], [1, 1]
+//                ],
+//                colors: [
+//                    .purple, .red,
+//                    .blue, .pink
+//                ]
+//            ))
     }
 
     var image: Image? {

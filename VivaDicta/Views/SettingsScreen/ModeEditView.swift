@@ -222,21 +222,21 @@ struct ModeEditView: View {
 
                     if !viewModel.aiEnhanceEnabled {
                         TipView(selectAIEnhacementTip)
-//                            .tipBackground(
-//                                MeshGradient(
-//                                    width: 2,
-//                                    height: 2,
-//                                    points: [
-//                                        [0, 0], [1, 0],
-//                                        [0, 1], [1, 1]
-//                                    ],
-//                                    colors: [
-//                                        .purple, .red,
-//                                        .blue, .pink
-//                                    ]
-//                                )
-//                                .opacity(0.3)
-//                            )
+                            .tipBackground(
+                                MeshGradient(
+                                    width: 2,
+                                    height: 2,
+                                    points: [
+                                        [0, 0], [1, 0],
+                                        [0, 1], [1, 1]
+                                    ],
+                                    colors: [
+                                        .purple, .red,
+                                        .blue, .pink
+                                    ]
+                                )
+                                .opacity(0.3)
+                            )
                     }
 
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
