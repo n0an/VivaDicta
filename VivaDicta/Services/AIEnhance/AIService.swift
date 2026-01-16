@@ -242,6 +242,28 @@ class AIService {
         )
     }
 
+    /// Disables AI enhancement for all modes that use Ollama.
+    /// Called when Ollama connection fails.
+    public func disableOllamaEnhancementForAllModes() {
+        updateModesMatching(
+            { $0.aiEnhanceEnabled && $0.aiProvider == .ollama },
+            transform: { mode in
+                VivaMode(
+                    id: mode.id,
+                    name: mode.name,
+                    transcriptionProvider: mode.transcriptionProvider,
+                    transcriptionModel: mode.transcriptionModel,
+                    transcriptionLanguage: mode.transcriptionLanguage,
+                    userPrompt: mode.userPrompt,
+                    aiProvider: nil,
+                    aiModel: "",
+                    aiEnhanceEnabled: false
+                )
+            },
+            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to Ollama connection failure" }
+        )
+    }
+
     /// Updates all modes that use the specified prompt with the new prompt data.
     /// Called when a prompt is edited to sync changes across all modes using it.
     public func updateModesWithPrompt(_ updatedPrompt: UserPrompt) {
