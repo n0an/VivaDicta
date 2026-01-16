@@ -47,6 +47,12 @@ enum RateAppManager {
         return components.day
     }
 
+    /// Returns true if enough time has passed since the last rating request (or if never requested).
+    private static var hasEnoughTimeSinceLastRequest: Bool {
+        guard let daysSinceLast = daysSinceLastRequest else { return true }
+        return daysSinceLast >= minimumDaysBetweenRequests
+    }
+
     // MARK: - Public
 
     /// Checks if conditions are met and requests an app rating if appropriate.
@@ -95,10 +101,8 @@ enum RateAppManager {
         }
 
         // Check if enough time has passed since last request
-        if let daysSinceLast = daysSinceLastRequest {
-            guard daysSinceLast >= minimumDaysBetweenRequests else {
-                return false
-            }
+        guard hasEnoughTimeSinceLastRequest else {
+            return false
         }
 
         return true
@@ -106,17 +110,14 @@ enum RateAppManager {
     
     /// Returns true if all conditions are met for requesting a review WIDE vers.
     private static func shouldRequestReviewWide() -> Bool {
-        
         // Check minimum days since install
         guard AppLaunchTracker.daysSinceFirstLaunch >= minimumDaysSinceInstallWide else {
             return false
         }
 
         // Check if enough time has passed since last request
-        if let daysSinceLast = daysSinceLastRequest {
-            guard daysSinceLast >= minimumDaysBetweenRequests else {
-                return false
-            }
+        guard hasEnoughTimeSinceLastRequest else {
+            return false
         }
 
         return true
