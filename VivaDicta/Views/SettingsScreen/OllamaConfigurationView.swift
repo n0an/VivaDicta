@@ -45,7 +45,11 @@ struct OllamaConfigurationView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                TextField("http://localhost:11434", text: $serverURL)
+                Text("Format: http://host:11434, or https://host:11434\n(default Ollama port is 11434)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+
+                TextField("http", text: $serverURL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)

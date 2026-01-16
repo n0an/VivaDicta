@@ -61,7 +61,7 @@ struct AIProviders: View {
                                 if appState.aiService.ollamaModels.isEmpty {
                                     HStack(spacing: 4) {
                                         Image(systemName: "gear")
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(.orange)
                                         Text("Configure")
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
