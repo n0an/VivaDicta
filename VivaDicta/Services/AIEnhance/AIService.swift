@@ -15,6 +15,7 @@ class AIService {
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
+    public var huggingFaceModels: [String] = []
     public var modes: [VivaMode] = []
 
     public var onModeChange: ((VivaMode) -> Void)?
@@ -54,6 +55,7 @@ class AIService {
         self.selectedMode = getMode(name: selectedModeName)
         loadSavedOpenRouterModels()
         loadSavedVercelAIGatewayModels()
+        loadSavedHuggingFaceModels()
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
@@ -63,6 +65,9 @@ class AIService {
             }
             if connectedProviders.contains(.vercelAIGateway) {
                 await fetchVercelAIGatewayModels()
+            }
+            if connectedProviders.contains(.huggingFace) {
+                await fetchHuggingFaceModels()
             }
         }
     }
@@ -356,6 +361,16 @@ class AIService {
 
     private func saveVercelAIGatewayModels() {
         userDefaults.set(vercelAIGatewayModels, forKey: UserDefaultsStorage.Keys.vercelAIGatewayModels)
+    }
+
+    private func loadSavedHuggingFaceModels() {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.huggingFaceModels) as? [String] {
+            huggingFaceModels = savedModels
+        }
+    }
+
+    private func saveHuggingFaceModels() {
+        userDefaults.set(huggingFaceModels, forKey: UserDefaultsStorage.Keys.huggingFaceModels)
     }
 
     // MARK: - Configuration validation
@@ -721,6 +736,9 @@ class AIService {
         if isValid && provider == .vercelAIGateway {
             await fetchVercelAIGatewayModels()
         }
+        if isValid && provider == .huggingFace {
+            await fetchHuggingFaceModels()
+        }
 
         return isValid
     }
@@ -748,6 +766,8 @@ class AIService {
             return await verifySonioxAPIKey(key)
         case .vercelAIGateway:
             return await verifyVercelAIGatewayAPIKey(key)
+        case .huggingFace:
+            return await verifyHuggingFaceAPIKey(key)
         default:
             return await verifyOpenAICompatibleAPIKey(key, provider: provider)
         }
@@ -1008,7 +1028,52 @@ class AIService {
             return false
         }
     }
-    
+
+    private func verifyHuggingFaceAPIKey(_ key: String) async -> Bool {
+        let url = URL(string: AIProvider.huggingFace.baseURL)!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        let testBody: [String: Any] = [
+            "model": AIProvider.huggingFace.defaultModel,
+            "messages": [
+                ["role": "user", "content": "test"]
+            ],
+            "max_tokens": 1
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
+
+        logger.logNotice("🔑 Verifying HuggingFace API key at \(url.absoluteString)")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.logNotice("🔑 HuggingFace API key verification failed: Invalid response")
+                return false
+            }
+
+            let isValid = httpResponse.statusCode == 200
+
+            if !isValid {
+                if let exactAPIError = String(data: data, encoding: .utf8) {
+                    logger.logNotice("🔑 HuggingFace API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError)")
+                } else {
+                    logger.logNotice("🔑 HuggingFace API key verification failed - Status: \(httpResponse.statusCode)")
+                }
+            }
+
+            return isValid
+
+        } catch {
+            logger.logNotice("🔑 HuggingFace API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     // MARK: - Dynamic Models methods
     public func getAvailableModels(for provider: AIProvider) -> [String] {
         if provider == .openRouter {
@@ -1016,6 +1081,9 @@ class AIService {
         }
         if provider == .vercelAIGateway {
             return vercelAIGatewayModels
+        }
+        if provider == .huggingFace {
+            return huggingFaceModels
         }
         return provider.availableModels
     }
@@ -1098,6 +1166,72 @@ class AIService {
 
         } catch {
             logger.logError("Error fetching Vercel AI Gateway models: \(error.localizedDescription)")
+            // Preserve existing cached models on failure
+        }
+    }
+
+    public func fetchHuggingFaceModels() async {
+        let url = URL(string: "https://router.huggingface.co/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                logger.logError("Failed to fetch HuggingFace models: Invalid HTTP response")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.logError("Failed to parse HuggingFace models JSON")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            // Filter for text-to-text models only (exclude image, video, speech models)
+            let totalCount = dataArray.count
+            var missingArchitectureCount = 0
+            var nonTextModelsCount = 0
+
+            let models = dataArray
+                .filter { model in
+                    guard let architecture = model["architecture"] as? [String: Any],
+                          let inputModalities = architecture["input_modalities"] as? [String],
+                          let outputModalities = architecture["output_modalities"] as? [String] else {
+                        missingArchitectureCount += 1
+                        return false
+                    }
+                    // Include only text-in, text-out models
+                    let isTextToText = inputModalities == ["text"] && outputModalities == ["text"]
+                    if !isTextToText {
+                        nonTextModelsCount += 1
+                    }
+                    return isTextToText
+                }
+                .compactMap { $0["id"] as? String }
+
+            // Log filtering results for debugging API changes
+            if missingArchitectureCount > 0 {
+                logger.logDebug("HuggingFace: Skipped \(missingArchitectureCount) models with missing or malformed architecture data.")
+            }
+            if models.isEmpty && totalCount > 0 {
+                logger.logWarning("HuggingFace: Received \(totalCount) models but none matched text-to-text filter. API response format may have changed.")
+            } else if models.count < totalCount {
+                logger.logInfo("HuggingFace: Filtered \(totalCount) models to \(models.count) text-to-text models (skipped \(nonTextModelsCount) non-text, \(missingArchitectureCount) malformed).")
+            }
+
+            await MainActor.run {
+                self.huggingFaceModels = models.sorted()
+                self.saveHuggingFaceModels()
+            }
+            logger.logInfo("Successfully fetched \(models.count) HuggingFace models.")
+
+        } catch {
+            logger.logError("Error fetching HuggingFace models: \(error.localizedDescription)")
             // Preserve existing cached models on failure
         }
     }

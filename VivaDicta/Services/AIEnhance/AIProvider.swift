@@ -23,6 +23,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case mistral
     case soniox
     case vercelAIGateway
+    case huggingFace
 
     var displayName: String {
         switch self {
@@ -52,6 +53,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Grok (x.ai)"
         case .vercelAIGateway:
             "Vercel AI Gateway"
+        case .huggingFace:
+            "HuggingFace"
         }
     }
 
@@ -84,6 +87,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             nil
         case .vercelAIGateway:
             "vercel"
+        case .huggingFace:
+            "huggingface-color"
         }
     }
 
@@ -107,7 +112,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .cerebras,
         .grok,
         .openRouter,
-        .vercelAIGateway]
+        .vercelAIGateway,
+        .huggingFace]
 
     /// All general-purpose AI providers including on-device
     static let generalProviders: [AIProvider] = [
@@ -120,7 +126,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .cerebras,
         .grok,
         .openRouter,
-        .vercelAIGateway]
+        .vercelAIGateway,
+        .huggingFace]
     
     var baseURL: String {
         switch self {
@@ -150,6 +157,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.soniox.com/v1"
         case .vercelAIGateway:
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
+        case .huggingFace:
+            return "https://router.huggingface.co/v1/chat/completions"
         }
     }
 
@@ -185,6 +194,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             // (e.g., "claude-sonnet-4-5"). Models are fetched dynamically, so this must
             // match Vercel's actual naming convention.
             return "anthropic/claude-sonnet-4.5"
+        case .huggingFace:
+            return "openai/gpt-oss-120b"
         }
     }
 
@@ -257,6 +268,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .openRouter:
             return []
         case .vercelAIGateway:
+            return []
+        case .huggingFace:
             return []
         }
     }
