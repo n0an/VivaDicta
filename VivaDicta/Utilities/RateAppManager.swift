@@ -21,6 +21,10 @@ enum RateAppManager {
     /// Minimum number of days since first launch before requesting a rating.
     private static let minimumDaysSinceInstall = 3
 
+    /// Minimum days since install for passive users who may not launch frequently.
+    /// Used as an alternative to launch-count-based conditions.
+    private static let minimumDaysSinceInstallWide = 30
+
     /// Minimum number of days between rating requests.
     private static let minimumDaysBetweenRequests = 90
 
@@ -58,7 +62,10 @@ enum RateAppManager {
     /// - Parameter transcriptionCount: The number of saved transcriptions.
     static func requestReviewOnAppStartIfAppropriate(transcriptionCount: Int) {
         guard transcriptionCount >= 1 else { return }
-        guard shouldRequestReview() else { return }
+        
+        let usualRule = shouldRequestReview()
+        let wideRule = shouldRequestReviewWide()
+        guard usualRule || wideRule else { return }
         presentReviewRequest()
     }
 
@@ -84,6 +91,24 @@ enum RateAppManager {
 
         // Check minimum days since install
         guard AppLaunchTracker.daysSinceFirstLaunch >= minimumDaysSinceInstall else {
+            return false
+        }
+
+        // Check if enough time has passed since last request
+        if let daysSinceLast = daysSinceLastRequest {
+            guard daysSinceLast >= minimumDaysBetweenRequests else {
+                return false
+            }
+        }
+
+        return true
+    }
+    
+    /// Returns true if all conditions are met for requesting a review WIDE vers.
+    private static func shouldRequestReviewWide() -> Bool {
+        
+        // Check minimum days since install
+        guard AppLaunchTracker.daysSinceFirstLaunch >= minimumDaysSinceInstallWide else {
             return false
         }
 
