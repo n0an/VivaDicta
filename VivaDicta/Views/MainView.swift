@@ -25,6 +25,7 @@ struct MainView: View {
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
+    @State private var recordButtonBounceCount = 0
 
     private let logger = Logger(category: .mainView)
 
@@ -143,6 +144,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "microphone.circle")
                                     .font(.system(size: 24))
+                                    .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceCount)
                             }
                             .buttonStyle(.glassProminent)
                             .tint(.orange)
@@ -315,6 +317,14 @@ struct MainView: View {
         .onAppear {
             SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
             SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+
+            // Trigger record button bounce animation on app start
+            if recordButtonBounceCount == 0 {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    recordButtonBounceCount += 1
+                }
+            }
         }
         .task {
             // Clean up old audio files (based on user settings)
