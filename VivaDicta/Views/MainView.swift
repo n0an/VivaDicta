@@ -14,6 +14,7 @@ import os
 struct MainView: View {
     @Environment(AppState.self) var appState
     @Environment(Router.self) var router
+    @Query private var transcriptions: [Transcription]
 
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
@@ -324,6 +325,12 @@ struct MainView: View {
                     try? await Task.sleep(for: .milliseconds(500))
                     recordButtonBounceCount += 1
                 }
+            }
+
+            // Request app rating on app start (with delay to not be jarring)
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: transcriptions.count)
             }
         }
         .task {

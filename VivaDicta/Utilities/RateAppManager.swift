@@ -49,7 +49,22 @@ enum RateAppManager {
     /// Call this after successful user actions (transcription, enhancement, etc.).
     static func requestReviewIfAppropriate() {
         guard shouldRequestReview() else { return }
+        presentReviewRequest()
+    }
 
+    /// Checks if conditions are met for app start rating request.
+    /// Requires at least one saved transcription in addition to standard conditions.
+    /// Call this at app start (e.g., in MainView.onAppear).
+    /// - Parameter transcriptionCount: The number of saved transcriptions.
+    static func requestReviewOnAppStartIfAppropriate(transcriptionCount: Int) {
+        guard transcriptionCount >= 1 else { return }
+        guard shouldRequestReview() else { return }
+        presentReviewRequest()
+    }
+
+    // MARK: - Private
+
+    private static func presentReviewRequest() {
         // Record the request date before showing
         lastRatingRequestDate = Date()
 
@@ -61,7 +76,7 @@ enum RateAppManager {
     }
 
     /// Returns true if all conditions are met for requesting a review.
-    static func shouldRequestReview() -> Bool {
+    private static func shouldRequestReview() -> Bool {
         // Check minimum launch count
         guard AppLaunchTracker.launchCount >= minimumLaunchCount else {
             return false
