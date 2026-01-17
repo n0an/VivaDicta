@@ -50,6 +50,11 @@ struct AIProviders: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 28, height: 28)
+                            } else if provider == .customOpenAI {
+                                Image(systemName: "server.rack")
+                                    .font(.title2)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 28, height: 28)
                             }
 
                             Text(provider.displayName)
@@ -75,6 +80,29 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                            } else if provider == .customOpenAI {
+                                // Custom OpenAI has special status display
+                                // Must have URL, model, AND be verified (test passed)
+                                let isConfigured = !appState.aiService.customOpenAIEndpointURL.isEmpty &&
+                                                   !appState.aiService.customOpenAIModelName.isEmpty &&
+                                                   appState.aiService.customOpenAIIsVerified
+                                if isConfigured {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                        Text("Configured")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "gear")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
                             } else if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
@@ -94,6 +122,8 @@ struct AIProviders: View {
         .navigationDestination(for: AIProvider.self) { provider in
             if provider == .ollama {
                 OllamaConfigurationView(aiService: appState.aiService)
+            } else if provider == .customOpenAI {
+                CustomOpenAIConfigurationView(aiService: appState.aiService)
             } else {
                 AddAPIKeyView(
                     provider: provider,

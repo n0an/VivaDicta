@@ -44,5 +44,10 @@ enum UserDefaultsStorage {
         static let huggingFaceModels = "huggingFaceModels"
         static let ollamaModels = "ollamaModels"
         static let ollamaServerURL = "ollamaServerURL"
+
+        // Custom OpenAI Provider Configuration
+        static let customOpenAIEndpointURL = "customOpenAIEndpointURL"
+        static let customOpenAIModelName = "customOpenAIModelName"
+        static let customOpenAIIsVerified = "customOpenAIIsVerified"
     }
 }

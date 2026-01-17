@@ -258,8 +258,8 @@ struct ModeEditView: View {
                                     } else {
                                         HStack(spacing: 4) {
                                             Text(provider.displayName)
-                                            // Ollama doesn't need API key, show gear instead
-                                            if provider == .ollama {
+                                            // Ollama and Custom OpenAI don't need API key, show gear instead
+                                            if provider == .ollama || provider == .customOpenAI {
                                                 Image(systemName: "gear")
                                             } else {
                                                 Image(systemName: "key.slash.fill")
@@ -325,6 +325,30 @@ struct ModeEditView: View {
                                             .foregroundStyle(.secondary)
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .customOpenAI {
+                                    // Custom OpenAI - show configured model name (no picker)
+                                    HStack {
+                                        Image(systemName: "cube.fill")
+                                            .foregroundStyle(
+                                        MeshGradient(
+                                            width: 2,
+                                            height: 2,
+                                            points: [
+                                                [0, 0], [1, 0],
+                                                [0, 1], [1, 1]
+                                            ],
+                                            colors: [
+                                                .purple, .red,
+                                                .blue, .pink
+                                            ]
+                                        )
+                                    )
+                                        Text("AI Model")
+                                        Spacer()
+                                        Text(viewModel.aiService.customOpenAIModelName)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
                                     Picker(selection: $viewModel.aiModel) {
                                         ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
@@ -375,6 +399,22 @@ struct ModeEditView: View {
                                             Image(systemName: "exclamationmark.triangle.fill")
                                                 .foregroundStyle(.orange)
                                             Text("Configure Ollama")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .customOpenAI {
+                                    // Custom OpenAI needs configuration
+                                    NavigationLink {
+                                        CustomOpenAIConfigurationView(aiService: viewModel.aiService)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.orange)
+                                            Text("Configure Custom AI Provider")
                                             Spacer()
                                             Text("Required")
                                                 .font(.caption)
@@ -440,6 +480,10 @@ struct ModeEditView: View {
                             }
                         }
                     }
+                }
+                .onAppear {
+                    // Refresh model selection when returning from configuration screens
+                    viewModel.refreshAIModelSelection()
                 }
             }
 

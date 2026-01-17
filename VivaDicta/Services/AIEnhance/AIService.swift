@@ -31,6 +31,33 @@ class AIService {
         }
     }
 
+    /// Custom OpenAI endpoint URL (configurable)
+    /// Stored property so @Observable can track changes for UI updates
+    public var customOpenAIEndpointURL: String = "" {
+        didSet {
+            userDefaults.set(customOpenAIEndpointURL, forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL)
+            userDefaults.synchronize()
+        }
+    }
+
+    /// Custom OpenAI model name (configurable)
+    /// Stored property so @Observable can track changes for UI updates
+    public var customOpenAIModelName: String = "" {
+        didSet {
+            userDefaults.set(customOpenAIModelName, forKey: UserDefaultsStorage.Keys.customOpenAIModelName)
+            userDefaults.synchronize()
+        }
+    }
+
+    /// Tracks whether Custom OpenAI configuration has been successfully verified
+    /// When false, the provider is not ready for use even if URL/model are set
+    public var customOpenAIIsVerified: Bool = false {
+        didSet {
+            userDefaults.set(customOpenAIIsVerified, forKey: UserDefaultsStorage.Keys.customOpenAIIsVerified)
+            userDefaults.synchronize()
+        }
+    }
+
     public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
@@ -64,6 +91,12 @@ class AIService {
 
     init() {
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
+
+        // Load Custom OpenAI configuration from UserDefaults
+        self.customOpenAIEndpointURL = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL) ?? ""
+        self.customOpenAIModelName = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIModelName) ?? ""
+        self.customOpenAIIsVerified = userDefaults.bool(forKey: UserDefaultsStorage.Keys.customOpenAIIsVerified)
+
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         loadSavedOpenRouterModels()
@@ -453,6 +486,16 @@ class AIService {
                 logger.logWarning("No Ollama model selected")
                 return false
             }
+        } else if aiProvider == .customOpenAI {
+            // Custom OpenAI needs URL and model configured
+            guard !customOpenAIEndpointURL.isEmpty else {
+                logger.logWarning("Custom OpenAI endpoint URL not configured")
+                return false
+            }
+            guard !customOpenAIModelName.isEmpty else {
+                logger.logWarning("Custom OpenAI model name not configured")
+                return false
+            }
         } else {
             // Check if API key exists for the selected cloud provider
             guard getAPIKey(for: aiProvider) != nil else {
@@ -550,6 +593,11 @@ class AIService {
         // Handle Ollama (local server)
         if aiProvider == .ollama {
             return try await makeOllamaRequest(text: text)
+        }
+
+        // Handle Custom OpenAI (user-configured endpoint)
+        if aiProvider == .customOpenAI {
+            return try await makeCustomOpenAIRequest(text: text)
         }
 
         // Cloud providers - compute system message only when needed
@@ -965,6 +1013,267 @@ class AIService {
         return (true, "Connected successfully. Found \(ollamaModels.count) model(s).")
     }
 
+    // MARK: - Custom OpenAI Methods
+
+    /// Makes an enhancement request to the custom OpenAI-compatible endpoint
+    private func makeCustomOpenAIRequest(text: String) async throws -> String {
+        let endpointURL = customOpenAIEndpointURL
+        let modelName = customOpenAIModelName
+
+        guard !endpointURL.isEmpty else {
+            throw EnhancementError.customError("Custom AI endpoint URL is not configured")
+        }
+
+        guard !modelName.isEmpty else {
+            throw EnhancementError.customError("Custom AI model name is not configured")
+        }
+
+        // Use URL directly - user provides the full chat/completions endpoint
+        guard let url = URL(string: endpointURL) else {
+            throw EnhancementError.customError("Invalid Custom AI endpoint URL: \(endpointURL)")
+        }
+
+        let systemMessage = getSystemMessage()
+        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+
+        logger.logNotice("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
+        logger.logNotice("AI Enhancement - Model: \(modelName)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Add API key if configured
+        let apiKey = getAPIKey(for: .customOpenAI)
+        if let apiKey, !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        request.timeoutInterval = 120 // Longer timeout for potentially slow endpoints
+
+        let requestBody: [String: Any] = [
+            "model": modelName,
+            "messages": [
+                ["role": "system", "content": systemMessage],
+                ["role": "user", "content": formattedText]
+            ],
+            "temperature": 0.3,
+            "stream": false
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        do {
+            try Task.checkCancellation()
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            try Task.checkCancellation()
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw EnhancementError.invalidResponse
+            }
+
+            switch httpResponse.statusCode {
+            case 200:
+                guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let choices = jsonResponse["choices"] as? [[String: Any]],
+                      let firstChoice = choices.first,
+                      let message = firstChoice["message"] as? [String: Any],
+                      let enhancedText = message["content"] as? String else {
+                    throw EnhancementError.enhancementFailed
+                }
+
+                let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredText
+
+            case 401:
+                throw EnhancementError.customError("Authentication failed. Check your API key.")
+
+            case 404:
+                throw EnhancementError.customError("Model '\(modelName)' not found on the server.")
+
+            case 500...599:
+                throw EnhancementError.serverError
+
+            default:
+                let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw EnhancementError.customError("Custom AI provider error (HTTP \(httpResponse.statusCode)): \(errorString)")
+            }
+
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as EnhancementError {
+            throw error
+        } catch let error as URLError {
+            if error.code == .cannotConnectToHost || error.code == .timedOut {
+                throw EnhancementError.customError("Cannot connect to \(endpointURL). Check the URL and try again.")
+            }
+            throw error
+        } catch {
+            throw EnhancementError.customError(error.localizedDescription)
+        }
+    }
+
+    /// Verifies Custom OpenAI setup and returns status message
+    public func verifyCustomOpenAISetup() async -> (success: Bool, message: String) {
+        let endpointURL = customOpenAIEndpointURL
+        let modelName = customOpenAIModelName
+
+        // Check URL is configured
+        guard !endpointURL.isEmpty else {
+            return (false, "Endpoint URL is not configured")
+        }
+
+        // Validate URL format
+        guard URL(string: endpointURL) != nil else {
+            return (false, "Invalid endpoint URL format")
+        }
+
+        // Check model name is configured
+        guard !modelName.isEmpty else {
+            return (false, "Model name is not configured")
+        }
+
+        // Test connection with a minimal chat completions request
+        return await testCustomOpenAIEndpoint()
+    }
+
+    /// Tests the Custom OpenAI endpoint with a minimal request and returns detailed status
+    private func testCustomOpenAIEndpoint() async -> (success: Bool, message: String) {
+        let endpointURL = customOpenAIEndpointURL
+        let modelName = customOpenAIModelName
+
+        logger.logNotice("🔧 Custom AI Test - URL: '\(endpointURL)'")
+        logger.logNotice("🔧 Custom AI Test - Model: '\(modelName)'")
+
+        // Use URL directly - user provides the full chat/completions endpoint (matches VoiceInk approach)
+        guard let url = URL(string: endpointURL) else {
+            logger.logError("🔧 Custom AI Test - Invalid URL: '\(endpointURL)'")
+            return (false, "Invalid endpoint URL format")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15
+
+        // Add API key if configured
+        let apiKey = getAPIKey(for: .customOpenAI)
+        let hasApiKey = apiKey != nil && !apiKey!.isEmpty
+        logger.logNotice("🔧 Custom OpenAI Test - API Key present: \(hasApiKey)")
+
+        if let apiKey, !apiKey.isEmpty {
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        // Minimal test request - match VoiceInk's approach (no max_tokens)
+        let testBody: [String: Any] = [
+            "model": modelName,
+            "messages": [
+                ["role": "user", "content": "test"]
+            ]
+        ]
+
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: testBody) else {
+            logger.logError("🔧 Custom OpenAI Test - Failed to serialize request body")
+            return (false, "Failed to create request")
+        }
+        request.httpBody = bodyData
+
+        if let bodyString = String(data: bodyData, encoding: .utf8) {
+            logger.logNotice("🔧 Custom OpenAI Test - Request body: \(bodyString)")
+        }
+
+        do {
+            logger.logNotice("🔧 Custom OpenAI Test - Sending request...")
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.logError("🔧 Custom OpenAI Test - Response is not HTTPURLResponse")
+                return (false, "Invalid response from server")
+            }
+
+            let responseString = String(data: data, encoding: .utf8) ?? "(unable to decode)"
+            logger.logNotice("🔧 Custom OpenAI Test - HTTP Status: \(httpResponse.statusCode)")
+            logger.logNotice("🔧 Custom OpenAI Test - Response: \(responseString.prefix(500))")
+
+            switch httpResponse.statusCode {
+            case 200:
+                logger.logNotice("🔧 Custom OpenAI Test - SUCCESS!")
+                return (true, "Connected successfully")
+            case 401:
+                logger.logError("🔧 Custom OpenAI Test - 401 Unauthorized")
+                return (false, "Authentication failed. Check your API key.")
+            case 404:
+                logger.logError("🔧 Custom OpenAI Test - 404 Not Found")
+                return (false, "Endpoint not found. Check the URL.")
+            case 400:
+                // 400 could mean various things - try to extract error message
+                logger.logError("🔧 Custom OpenAI Test - 400 Bad Request")
+                if let errorData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let error = errorData["error"] as? [String: Any],
+                   let message = error["message"] as? String {
+                    logger.logError("🔧 Custom OpenAI Test - Error message: \(message)")
+                    return (false, message)
+                }
+                return (false, "Bad request: \(responseString.prefix(200))")
+            case 500...599:
+                logger.logError("🔧 Custom OpenAI Test - Server error")
+                return (false, "Server error (\(httpResponse.statusCode)). Try again later.")
+            default:
+                logger.logError("🔧 Custom OpenAI Test - Unexpected status: \(httpResponse.statusCode)")
+                return (false, "HTTP \(httpResponse.statusCode): \(responseString.prefix(200))")
+            }
+        } catch let error as URLError {
+            logger.logError("🔧 Custom OpenAI Test - URLError: \(error.code.rawValue) - \(error.localizedDescription)")
+            switch error.code {
+            case .cannotConnectToHost:
+                return (false, "Cannot connect to server. Check the URL and that the server is running.")
+            case .timedOut:
+                return (false, "Connection timed out. Server may be slow or unreachable.")
+            case .notConnectedToInternet:
+                return (false, "No internet connection.")
+            default:
+                return (false, "Connection error: \(error.localizedDescription)")
+            }
+        } catch {
+            logger.logError("🔧 Custom OpenAI Test - Error: \(error)")
+            return (false, "Error: \(error.localizedDescription)")
+        }
+    }
+
+    /// Clears Custom OpenAI configuration
+    public func clearCustomOpenAIConfiguration() {
+        customOpenAIEndpointURL = ""
+        customOpenAIModelName = ""
+        customOpenAIIsVerified = false
+        userDefaults.removeObject(forKey: AppGroupCoordinator.kAPIKeyTemplate + AIProvider.customOpenAI.rawValue)
+        userDefaults.synchronize()
+    }
+
+    /// Disables AI enhancement for all modes that use Custom OpenAI.
+    /// Called when Custom OpenAI configuration is cleared.
+    public func disableCustomOpenAIEnhancementForAllModes() {
+        updateModesMatching(
+            { $0.aiEnhanceEnabled && $0.aiProvider == .customOpenAI },
+            transform: { mode in
+                VivaMode(
+                    id: mode.id,
+                    name: mode.name,
+                    transcriptionProvider: mode.transcriptionProvider,
+                    transcriptionModel: mode.transcriptionModel,
+                    transcriptionLanguage: mode.transcriptionLanguage,
+                    userPrompt: mode.userPrompt,
+                    aiProvider: nil,
+                    aiModel: "",
+                    aiEnhanceEnabled: false
+                )
+            },
+            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to Custom OpenAI configuration removal" }
+        )
+    }
+
     // MARK: - API Keys methods
     @MainActor
     public func refreshConnectedProviders() {
@@ -977,6 +1286,11 @@ class AIService {
 
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
+
+        // Add Custom OpenAI provider if configured AND verified
+        if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty && customOpenAIIsVerified {
+            providers.append(.customOpenAI)
+        }
 
         // Add cloud providers that have API keys configured
         providers += AIProvider.allCases.filter { provider in
@@ -1019,8 +1333,8 @@ class AIService {
     
     private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {
         switch provider {
-        case .apple, .ollama:
-            // Apple and Ollama don't require API key verification
+        case .apple, .ollama, .customOpenAI:
+            // Apple, Ollama, and Custom OpenAI don't require API key verification through standard flow
             return true
         case .anthropic:
             return await verifyAnthropicAPIKey(key)
@@ -1357,6 +1671,10 @@ class AIService {
         }
         if provider == .ollama {
             return ollamaModels
+        }
+        if provider == .customOpenAI {
+            // Return the configured model name as a single-item array
+            return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
         return provider.availableModels
     }
