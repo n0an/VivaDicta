@@ -467,7 +467,12 @@ private struct ModeInfoRow: View {
     let connectedProviders: [AIProvider]
 
     private var transcriptionModelDisplayName: String {
-        mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
+        // For custom transcription, show the actual configured model name
+        if mode.transcriptionProvider == .customTranscription {
+            let manager = CustomTranscriptionModelManager.shared
+            return manager.isConfigured ? manager.customModel.modelName : "Custom"
+        }
+        return mode.transcriptionProvider.getTranscriptionModelDisplayName(mode.transcriptionModel)
     }
     
     private var isLanguageSelectionAvailable: Bool {
