@@ -66,7 +66,7 @@ struct CustomTranscriptionModelCard: View {
                             .foregroundStyle(isConfigured ? .green : .blue)
                         Text(isConfigured ? "" : "Configure")
                             .font(.system(size: 10))
-                            .foregroundStyle(isConfigured ? .green : .blue)
+                            .foregroundStyle(isConfigured ? .green : .secondary)
                     }
                 }
                 .buttonStyle(.plain)

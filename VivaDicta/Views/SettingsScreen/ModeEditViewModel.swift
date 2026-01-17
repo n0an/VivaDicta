@@ -244,11 +244,16 @@ class ModeEditViewModel {
     // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
-        
+
         if transcriptionProvider == .gemini { return false }
-        
+
         if transcriptionProvider == .parakeet { return transcriptionModel == "parakeet-tdt-0.6b-v2" }
-        
+
+        // Custom transcription - only show language picker if multilingual
+        if transcriptionProvider == .customTranscription {
+            return CustomTranscriptionModelManager.shared.customModel.isMultilingual
+        }
+
         return true
 
     }
@@ -261,6 +266,11 @@ class ModeEditViewModel {
     public func getGroupedLanguages() -> GroupedLanguages {
         guard isLanguageSelectionAvailable() else {
             return GroupedLanguages(recommended: [], other: [])
+        }
+
+        // Custom transcription - use all languages if multilingual
+        if transcriptionProvider == .customTranscription {
+            return groupLanguages(Array(TranscriptionModelProvider.allLanguages))
         }
 
         let models: [any TranscriptionModel]
