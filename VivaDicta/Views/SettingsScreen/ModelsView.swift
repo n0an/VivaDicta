@@ -13,6 +13,7 @@ struct ModelsView: View {
 
     @State var modelType: TranscriptionModelType = .local
     @State var cloudModelToConfigure: CloudModel?
+    @State private var showCustomModelConfiguration = false
 
     @Namespace var zoomNamespace
 
@@ -40,7 +41,7 @@ struct ModelsView: View {
                                     model: model,
                                     downloadManager: appState.downloadManager
                                 )
-                                
+
                             } else if let cloudModel = model as? CloudModel {
                                 CloudModelCard(
                                     model: cloudModel,
@@ -56,6 +57,16 @@ struct ModelsView: View {
                         }
                         .padding(.horizontal)
                     }
+
+                    // Custom Model card (always shown in cloud tab)
+                    if modelType == .cloud {
+                        CustomTranscriptionModelCard(
+                            onConfigure: {
+                                showCustomModelConfiguration = true
+                            }
+                        )
+                        .padding(.horizontal)
+                    }
                 }
                 .padding(.vertical)
             }
@@ -69,6 +80,11 @@ struct ModelsView: View {
                 })
             .navigationTransition(.zoom(sourceID: model.id, in: zoomNamespace))
         })
+        .sheet(isPresented: $showCustomModelConfiguration) {
+            AddCustomTranscriptionModelView(onSave: {
+                handleCustomModelSaved()
+            })
+        }
         .navigationTitle("Transcription Models")
         .navigationBarTitleDisplayMode(.large)
     }
@@ -134,6 +150,18 @@ struct ModelsView: View {
         // Disable AI enhancement for modes using this provider
         if let aiProvider = model.provider.mappedAIProvider {
             appState.aiService.disableAIEnhancementForModesUsingProvider(aiProvider)
+        }
+    }
+
+    // MARK: - Custom Model Management
+
+    private func handleCustomModelSaved() {
+        appState.transcriptionManager.updateCloudModels()
+
+        Task {
+            // Hide "Select Transcription model" tips
+            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
         }
     }
 }

@@ -18,6 +18,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case mistral
     case gemini
     case soniox
+    case customTranscription
     
     var id: Self { self }
     
@@ -41,6 +42,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Gemini"
         case .soniox:
             "Soniox"
+        case .customTranscription:
+            "Custom"
         }
     }
     

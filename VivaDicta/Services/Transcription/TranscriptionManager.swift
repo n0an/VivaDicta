@@ -88,6 +88,11 @@ class TranscriptionManager {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
 
+        // Check for custom model first
+        if provider == .customTranscription && modelName == "custom" {
+            return CustomTranscriptionModelManager.shared.configuredModel
+        }
+
         let allModels: [any TranscriptionModel] =
         TranscriptionModelProvider.allParakeetModels +
         TranscriptionModelProvider.allWhisperKitModels +
