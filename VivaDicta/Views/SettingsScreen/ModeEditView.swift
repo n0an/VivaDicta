@@ -17,10 +17,40 @@ struct ModeEditView: View {
     
     @State private var showingAlert: Bool = false
     @State private var modeEditViewError: SettingsError = .duplicateModeName("")
+    @State private var showCustomTranscriptionConfiguration: Bool = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
-    
+
     let selectLanguageTip = SelectLanguageTip()
+
+    // MARK: - Gradients
+
+    private var transcriptionGradient: MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            points: [[0, 0], [1, 0], [0, 1], [1, 1]],
+            colors: [.blue, .orange, .green, .mint]
+        )
+    }
+
+    private var transcriptionModelGradient: MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            points: [[0, 0], [1, 0], [0, 1], [1, 1]],
+            colors: [.blue, .green, .indigo, .teal]
+        )
+    }
+
+    private var aiEnhancementGradient: MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            points: [[0, 0], [1, 0], [0, 1], [1, 1]],
+            colors: [.purple, .red, .blue, .pink]
+        )
+    }
 
     
     init(mode: VivaMode?,
@@ -68,7 +98,8 @@ struct ModeEditView: View {
                             } else {
                                 HStack(spacing: 4) {
                                     Text(provider.displayName)
-                                    Image(systemName: "key.slash.fill")
+                                    // Show gear icon for custom transcription, key icon for others
+                                    Image(systemName: provider == .customTranscription ? "gearshape" : "key.slash.fill")
                                 }
                                 .tag(provider)
                             }
@@ -77,20 +108,7 @@ struct ModeEditView: View {
                 } label: {
                     HStack {
                         Image(systemName: "waveform")
-                            .foregroundStyle(
-                                MeshGradient(
-                                    width: 2,
-                                    height: 2,
-                                    points: [
-                                        [0, 0], [1, 0],
-                                        [0, 1], [1, 1]
-                                    ],
-                                    colors: [
-                                        .blue, .orange,
-                                        .green, .mint
-                                    ]
-                                )
-                            )
+                            .foregroundStyle(transcriptionGradient)
                         Text("Provider")
                     }
                 }
@@ -103,40 +121,40 @@ struct ModeEditView: View {
                 }
                 
                 if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
-                    Picker(selection: $viewModel.transcriptionModel) {
-                        ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
-                            Text(viewModel.transcriptionProvider.getTranscriptionModelDisplayName(model))
-                                .tag(model)
-                        }
-                    } label: {
+                    // Custom transcription - show configured model name directly (no picker needed)
+                    if viewModel.transcriptionProvider == .customTranscription {
                         HStack {
                             Image(systemName: "character.bubble")
-                                .foregroundStyle(
-                                    MeshGradient(
-                                        width: 2,
-                                        height: 2,
-                                        points: [
-                                            [0, 0], [1, 0],
-                                            [0, 1], [1, 1]
-                                        ],
-                                        colors: [
-                                            .blue, .green,
-                                            .indigo, .teal
-                                        ]
-                                    )
-                                )
+                                .foregroundStyle(transcriptionModelGradient)
                             Text("Model")
+                            Spacer()
+                            Text(CustomTranscriptionModelManager.shared.customModel.modelName)
+                                .foregroundStyle(.secondary)
                         }
-                    }
-                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                    .onChange(of: viewModel.transcriptionModel) { _, newModel in
-                        viewModel.updateTranscriptionModel(newModel)
-                        HapticManager.selectionChanged()
-                    }
-                    .onAppear {
-                        let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
-                        if !availableModels.contains(viewModel.transcriptionModel) && !availableModels.isEmpty {
-                            viewModel.transcriptionModel = availableModels.first ?? ""
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                    } else {
+                        Picker(selection: $viewModel.transcriptionModel) {
+                            ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
+                                Text(viewModel.transcriptionProvider.getTranscriptionModelDisplayName(model))
+                                    .tag(model)
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "character.bubble")
+                                    .foregroundStyle(transcriptionModelGradient)
+                                Text("Model")
+                            }
+                        }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        .onChange(of: viewModel.transcriptionModel) { _, newModel in
+                            viewModel.updateTranscriptionModel(newModel)
+                            HapticManager.selectionChanged()
+                        }
+                        .onAppear {
+                            let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
+                            if !availableModels.contains(viewModel.transcriptionModel) && !availableModels.isEmpty {
+                                viewModel.transcriptionModel = availableModels.first ?? ""
+                            }
                         }
                     }
                     
@@ -187,6 +205,24 @@ struct ModeEditView: View {
                             }
                         }
                         .foregroundStyle(.primary)
+                    } else if viewModel.transcriptionProvider == .customTranscription {
+                        // Custom transcription needs configuration
+                        Button {
+                            showCustomTranscriptionConfiguration = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Configure Custom Model")
+                                Spacer()
+                                Text("Required")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .foregroundStyle(.primary)
                     } else {
                         if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
                             NavigationLink {
@@ -222,21 +258,7 @@ struct ModeEditView: View {
 
                     if !viewModel.aiEnhanceEnabled {
                         TipView(selectAIEnhacementTip)
-                            .tipBackground(
-                                MeshGradient(
-                                    width: 2,
-                                    height: 2,
-                                    points: [
-                                        [0, 0], [1, 0],
-                                        [0, 1], [1, 1]
-                                    ],
-                                    colors: [
-                                        .purple, .red,
-                                        .blue, .pink
-                                    ]
-                                )
-                                .opacity(0.3)
-                            )
+                            .tipBackground(aiEnhancementGradient.opacity(0.3))
                     }
 
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
@@ -272,20 +294,7 @@ struct ModeEditView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "sparkles")
-                                    .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                    .foregroundStyle(aiEnhancementGradient)
                                 Text("AI Provider")
                             }
                         }
@@ -305,20 +314,7 @@ struct ModeEditView: View {
                                 if provider == .apple {
                                     HStack {
                                         Image(systemName: "wand.and.sparkles")
-                                            .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                            .foregroundStyle(aiEnhancementGradient)
                                         Text("AI Model")
                                         Spacer()
                                         Text("Foundation Model")
@@ -329,20 +325,7 @@ struct ModeEditView: View {
                                     // Custom OpenAI - show configured model name (no picker)
                                     HStack {
                                         Image(systemName: "cube.fill")
-                                            .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                            .foregroundStyle(aiEnhancementGradient)
                                         Text("AI Model")
                                         Spacer()
                                         Text(viewModel.aiService.customOpenAIModelName)
@@ -357,20 +340,7 @@ struct ModeEditView: View {
                                     } label: {
                                         HStack {
                                             Image(systemName: "cube.fill")
-                                                .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                                .foregroundStyle(aiEnhancementGradient)
                                             Text("AI Model")
                                         }
                                     }
@@ -552,6 +522,11 @@ struct ModeEditView: View {
                 }
             }
         }
+        .sheet(isPresented: $showCustomTranscriptionConfiguration) {
+            AddCustomTranscriptionModelView(onSave: {
+                handleCustomTranscriptionSaved()
+            })
+        }
     }
     @ViewBuilder
     private var transcriptionSectionFooter: some View {
@@ -612,6 +587,13 @@ struct ModeEditView: View {
         HapticManager.heavyImpact()
         viewModel.aiService.deleteMode(mode)
         dismiss()
+    }
+
+    private func handleCustomTranscriptionSaved() {
+        // Update the transcription model selection after custom model is saved
+        if CustomTranscriptionModelManager.shared.isConfigured {
+            viewModel.transcriptionModel = "custom"
+        }
     }
 }
 

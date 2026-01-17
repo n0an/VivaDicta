@@ -56,6 +56,8 @@ struct TemplateSelectionView: View {
         }
         .alert("Enter your full name for email prompt", isPresented: $showEmailNameAlert) {
             TextField("Full Name", text: $emailUserName)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
             Button("Cancel", role: .cancel) {
                 emailUserName = ""
                 selectedTemplate = pendingEmailTemplate

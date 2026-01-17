@@ -36,7 +36,10 @@ class TranscriptionManager {
             model.apiKey != nil
         }
 
-        return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels
+        // Check if custom transcription model is configured
+        let hasCustomModel = CustomTranscriptionModelManager.shared.isConfigured
+
+        return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels || hasCustomModel
     }
 
     var selectedLanguage: String {
@@ -87,6 +90,11 @@ class TranscriptionManager {
     public func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
+
+        // Check for custom model first
+        if provider == .customTranscription && modelName == "custom" {
+            return CustomTranscriptionModelManager.shared.configuredModel
+        }
 
         let allModels: [any TranscriptionModel] =
         TranscriptionModelProvider.allParakeetModels +

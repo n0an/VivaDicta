@@ -18,6 +18,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case mistral
     case gemini
     case soniox
+    case customTranscription
     
     var id: Self { self }
     
@@ -41,6 +42,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Gemini"
         case .soniox:
             "Soniox"
+        case .customTranscription:
+            "Custom"
         }
     }
     
@@ -55,7 +58,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         .deepgram,
         .openAI,
         .elevenLabs,
-        .soniox]
+        .soniox,
+        .customTranscription]
     
     var cloudTranscriptionModelsNames: [String] {
         switch self {
@@ -72,11 +76,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .parakeet:
             guard let model = TranscriptionModelProvider.allParakeetModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
-            
+
         case .whisperKit:
             guard let model = TranscriptionModelProvider.allWhisperKitModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName
-            
+
+        case .customTranscription:
+            // Custom transcription uses the display name "Custom"
+            // The actual model name is shown in the configuration screen
+            return "Custom"
+
         default:
             guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == modelName}) else { return modelName }
             return model.displayName

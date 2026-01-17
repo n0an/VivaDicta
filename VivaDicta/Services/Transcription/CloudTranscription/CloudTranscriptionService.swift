@@ -74,6 +74,7 @@ class CloudTranscriptionService: TranscriptionService {
     private lazy var geminiService = GeminiTranscriptionService()
     private lazy var mistralService = MistralTranscriptionService()
     private lazy var sonioxService = SonioxTranscriptionService()
+    private lazy var customService = CustomTranscriptionService()
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
         var text: String
@@ -93,6 +94,11 @@ class CloudTranscriptionService: TranscriptionService {
             text = try await mistralService.transcribe(audioURL: audioURL, model: model)
         case .soniox:
             text = try await sonioxService.transcribe(audioURL: audioURL, model: model)
+        case .customTranscription:
+            guard let customModel = model as? CustomTranscriptionModel else {
+                throw CloudTranscriptionError.unsupportedProvider
+            }
+            text = try await customService.transcribe(audioURL: audioURL, model: customModel)
         default:
             throw CloudTranscriptionError.unsupportedProvider
         }

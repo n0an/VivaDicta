@@ -63,6 +63,8 @@ class ModeEditViewModel {
         if !isTranscriptionProviderConfigured(transcriptionProvider) {
             if transcriptionProvider == .parakeet || transcriptionProvider == .whisperKit {
                 return "Download a model to continue"
+            } else if transcriptionProvider == .customTranscription {
+                return "Configure custom model to continue"
             } else {
                 return "Add API key to continue"
             }
@@ -159,6 +161,8 @@ class ModeEditViewModel {
             return !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
         case .whisperKit:
             return !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
+        case .customTranscription:
+            return CustomTranscriptionModelManager.shared.isConfigured
         default: // Cloud transcription models
             guard let mappedAIProvider = provider.mappedAIProvider else { return false }
             return self.hasAPIKey(for: mappedAIProvider)
@@ -171,6 +175,9 @@ class ModeEditViewModel {
             return TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.compactMap { $0.name }
         case .whisperKit:
             return TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.compactMap { $0.name }
+        case .customTranscription:
+            // Custom transcription has a single fixed model name
+            return CustomTranscriptionModelManager.shared.isConfigured ? ["custom"] : []
         default: // Cloud transcription models
             return provider.cloudTranscriptionModelsNames
         }
@@ -237,11 +244,16 @@ class ModeEditViewModel {
     // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
-        
+
         if transcriptionProvider == .gemini { return false }
-        
+
         if transcriptionProvider == .parakeet { return transcriptionModel == "parakeet-tdt-0.6b-v2" }
-        
+
+        // Custom transcription - only show language picker if multilingual
+        if transcriptionProvider == .customTranscription {
+            return CustomTranscriptionModelManager.shared.customModel.isMultilingual
+        }
+
         return true
 
     }
@@ -254,6 +266,11 @@ class ModeEditViewModel {
     public func getGroupedLanguages() -> GroupedLanguages {
         guard isLanguageSelectionAvailable() else {
             return GroupedLanguages(recommended: [], other: [])
+        }
+
+        // Custom transcription - use all languages if multilingual
+        if transcriptionProvider == .customTranscription {
+            return groupLanguages(Array(TranscriptionModelProvider.allLanguages))
         }
 
         let models: [any TranscriptionModel]
