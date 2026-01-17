@@ -36,18 +36,18 @@ struct CustomTranscriptionModelCard: View {
                     // Model name (if configured)
                     if isConfigured {
                         Text(model.modelName)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.title3)
+                            .fontWeight(.regular)
                     }
 
                     // Info row with icons
                     HStack(spacing: 16) {
                         // Language support
                         Label(
-                            isConfigured ? (model.isMultilingual ? "Multilingual" : "English-only") : "Not configured",
+                            isConfigured ? (model.isMultilingual ? "All Languages" : "English-only") : "Not configured",
                             systemImage: isConfigured ? "globe" : "questionmark.circle"
                         )
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                     }
 
@@ -62,10 +62,10 @@ struct CustomTranscriptionModelCard: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: isConfigured ? "checkmark.circle.fill" : "gearshape.circle")
-                            .font(.title2)
+                            .font(.system(size: 30))
                             .foregroundStyle(isConfigured ? .green : .blue)
                         Text(isConfigured ? "" : "Configure")
-                            .font(.caption2)
+                            .font(.system(size: 10))
                             .foregroundStyle(isConfigured ? .green : .blue)
                     }
                 }
