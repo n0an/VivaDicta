@@ -1098,7 +1098,7 @@ class AIService {
 
             default:
                 let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-                throw EnhancementError.customError("Custom OpenAI error (HTTP \(httpResponse.statusCode)): \(errorString)")
+                throw EnhancementError.customError("Custom AI provider error (HTTP \(httpResponse.statusCode)): \(errorString)")
             }
 
         } catch is CancellationError {

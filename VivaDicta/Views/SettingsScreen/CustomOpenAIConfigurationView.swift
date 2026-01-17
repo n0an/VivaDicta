@@ -42,7 +42,7 @@ struct CustomOpenAIConfigurationView: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
 
-            Text("Custom OpenAI")
+            Text("Custom AI provider")
                 .font(.title2)
 
             Text("OpenAI-Compatible API")
@@ -210,7 +210,7 @@ struct CustomOpenAIConfigurationView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
-        .navigationTitle("Custom OpenAI")
+        .navigationTitle("Custom AI Provider")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             loadExistingConfiguration()

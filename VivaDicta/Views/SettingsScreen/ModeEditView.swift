@@ -414,7 +414,7 @@ struct ModeEditView: View {
                                         HStack {
                                             Image(systemName: "exclamationmark.triangle.fill")
                                                 .foregroundStyle(.orange)
-                                            Text("Configure Custom OpenAI")
+                                            Text("Configure Custom AI Provider")
                                             Spacer()
                                             Text("Required")
                                                 .font(.caption)

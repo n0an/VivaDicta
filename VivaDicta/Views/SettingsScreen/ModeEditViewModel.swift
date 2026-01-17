@@ -86,7 +86,7 @@ class ModeEditViewModel {
                 return "Configure Ollama server in AI Providers settings"
             }
             if provider == .customOpenAI {
-                return "Configure Custom OpenAI in AI Providers settings"
+                return "Configure Custom AI Provider in AI Providers settings"
             }
             return "Add API key to continue"
         }
