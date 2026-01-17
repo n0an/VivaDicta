@@ -360,15 +360,70 @@ class ModeEditViewModel {
             } else {
                 aiModel = nil // No models available
             }
+
+            // Verify Ollama connection when selected
+            verifyOllamaConnection()
         } else if let provider = newProvider, provider == .customOpenAI {
             // For Custom OpenAI, use the configured model name
             let modelName = aiService.customOpenAIModelName
             aiModel = modelName.isEmpty ? nil : modelName
+
+            // Verify Custom OpenAI connection when selected
+            verifyCustomOpenAIConnection()
         } else {
             aiModel = newProvider?.defaultModel
         }
 
         logger.logInfo("Updated provider to: \(newProvider?.rawValue ?? "none"), model: \(aiModel ?? "none")")
+    }
+
+    /// Verifies Ollama connection when user selects it as provider
+    private func verifyOllamaConnection() {
+        Task {
+            let result = await aiService.verifyOllamaSetup()
+            await MainActor.run {
+                if result.success {
+                    logger.logInfo("Ollama connection verified: \(result.message)")
+                    // Update model selection with fresh models list
+                    if let firstModel = aiService.ollamaModels.first {
+                        if aiModel == nil || !aiService.ollamaModels.contains(aiModel!) {
+                            aiModel = firstModel
+                        }
+                    }
+                } else {
+                    logger.logWarning("Ollama connection failed: \(result.message)")
+                    // Clear models and disable for all modes
+                    aiService.ollamaModels = []
+                    aiService.disableOllamaEnhancementForAllModes()
+                    aiModel = nil
+                }
+                aiService.refreshConnectedProviders()
+            }
+        }
+    }
+
+    /// Verifies Custom OpenAI connection when user selects it as provider
+    private func verifyCustomOpenAIConnection() {
+        // Only verify if configuration exists
+        guard !aiService.customOpenAIEndpointURL.isEmpty,
+              !aiService.customOpenAIModelName.isEmpty else {
+            return
+        }
+
+        Task {
+            let result = await aiService.verifyCustomOpenAISetup()
+            await MainActor.run {
+                if result.success {
+                    aiService.customOpenAIIsVerified = true
+                    logger.logInfo("Custom OpenAI connection verified: \(result.message)")
+                } else {
+                    aiService.customOpenAIIsVerified = false
+                    aiService.disableCustomOpenAIEnhancementForAllModes()
+                    logger.logWarning("Custom OpenAI connection failed: \(result.message)")
+                }
+                aiService.refreshConnectedProviders()
+            }
+        }
     }
 
     func updateModel(_ newModel: String?) {

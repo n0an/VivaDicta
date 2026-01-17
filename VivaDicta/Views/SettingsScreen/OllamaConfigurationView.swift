@@ -49,10 +49,9 @@ struct OllamaConfigurationView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
 
-                TextField("http://host:11434", text: $serverURL)
+                TextField("Server URL", text: $serverURL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    .keyboardType(.URL)
                     .padding()
                     .background {
                         Capsule()

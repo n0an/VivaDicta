@@ -57,10 +57,9 @@ struct CustomOpenAIConfigurationView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
-                        TextField("https://api.example.com/v1/chat/completions", text: $endpointURL)
+                        TextField("Server URL", text: $endpointURL)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                            .keyboardType(.URL)
                             .padding()
                             .background {
                                 Capsule()
