@@ -430,6 +430,35 @@ class ModeEditViewModel {
         aiModel = newModel
         logger.logInfo("Updated model to: \(newModel ?? "none")")
     }
+
+    /// Refreshes the AI model selection based on current provider state
+    /// Called when returning from configuration screens to sync with any changes
+    func refreshAIModelSelection() {
+        guard let provider = aiProvider else { return }
+
+        if provider == .ollama {
+            let availableModels = aiService.ollamaModels
+            if let currentModel = aiModel, availableModels.contains(currentModel) {
+                // Current model is still valid, keep it
+                return
+            }
+            // Select first available model
+            if let firstModel = availableModels.first {
+                aiModel = firstModel
+                logger.logInfo("Refreshed Ollama model to: \(firstModel)")
+            } else {
+                aiModel = nil
+            }
+        } else if provider == .customOpenAI {
+            let configuredModel = aiService.customOpenAIModelName
+            if !configuredModel.isEmpty && aiModel != configuredModel {
+                aiModel = configuredModel
+                logger.logInfo("Refreshed Custom OpenAI model to: \(configuredModel)")
+            } else if configuredModel.isEmpty {
+                aiModel = nil
+            }
+        }
+    }
     
     func hasAPIKey(for provider: AIProvider) -> Bool {
         // Apple doesn't need API key - just check if it's available

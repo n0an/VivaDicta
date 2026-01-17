@@ -481,6 +481,10 @@ struct ModeEditView: View {
                         }
                     }
                 }
+                .onAppear {
+                    // Refresh model selection when returning from configuration screens
+                    viewModel.refreshAIModelSelection()
+                }
             }
 
             if viewModel.isEditing {

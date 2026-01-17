@@ -49,11 +49,11 @@ struct CustomOpenAIConfigurationView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            // Connection status
+            connectionStatusView
+
             ScrollView {
                 VStack(spacing: 20) {
-                    // Connection status
-                    connectionStatusView
-
                     // Endpoint URL input
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Endpoint URL")
