@@ -19,6 +19,13 @@ struct AddCustomTranscriptionModelView: View {
     @State private var isChecking = false
     @State private var connectionStatus: ConnectionStatus = .unknown
     @State private var showingClearConfirmation = false
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case apiEndpoint
+        case apiKey
+        case modelName
+    }
 
     private var manager: CustomTranscriptionModelManager {
         CustomTranscriptionModelManager.shared
@@ -71,6 +78,7 @@ struct AddCustomTranscriptionModelView: View {
                                 .foregroundStyle(.secondary)
 
                             TextField("", text: $apiEndpoint)
+                                .focused($focusedField, equals: .apiEndpoint)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .keyboardType(.URL)
@@ -100,6 +108,7 @@ struct AddCustomTranscriptionModelView: View {
                                 .foregroundStyle(.secondary)
 
                             SecureField("your-api-key", text: $apiKey)
+                                .focused($focusedField, equals: .apiKey)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .privacySensitive()
@@ -121,6 +130,7 @@ struct AddCustomTranscriptionModelView: View {
                                 .foregroundStyle(.secondary)
 
                             TextField("large-v3-turbo", text: $modelName)
+                                .focused($focusedField, equals: .modelName)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .padding()
@@ -211,7 +221,7 @@ struct AddCustomTranscriptionModelView: View {
             .padding()
             .contentShape(Rectangle())
             .onTapGesture {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                focusedField = nil
             }
             .navigationTitle("Custom Model")
             .navigationBarTitleDisplayMode(.inline)

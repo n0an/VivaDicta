@@ -20,8 +20,37 @@ struct ModeEditView: View {
     @State private var showCustomTranscriptionConfiguration: Bool = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
-    
+
     let selectLanguageTip = SelectLanguageTip()
+
+    // MARK: - Gradients
+
+    private var transcriptionGradient: MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            points: [[0, 0], [1, 0], [0, 1], [1, 1]],
+            colors: [.blue, .orange, .green, .mint]
+        )
+    }
+
+    private var transcriptionModelGradient: MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            points: [[0, 0], [1, 0], [0, 1], [1, 1]],
+            colors: [.blue, .green, .indigo, .teal]
+        )
+    }
+
+    private var aiEnhancementGradient: MeshGradient {
+        MeshGradient(
+            width: 2,
+            height: 2,
+            points: [[0, 0], [1, 0], [0, 1], [1, 1]],
+            colors: [.purple, .red, .blue, .pink]
+        )
+    }
 
     
     init(mode: VivaMode?,
@@ -79,20 +108,7 @@ struct ModeEditView: View {
                 } label: {
                     HStack {
                         Image(systemName: "waveform")
-                            .foregroundStyle(
-                                MeshGradient(
-                                    width: 2,
-                                    height: 2,
-                                    points: [
-                                        [0, 0], [1, 0],
-                                        [0, 1], [1, 1]
-                                    ],
-                                    colors: [
-                                        .blue, .orange,
-                                        .green, .mint
-                                    ]
-                                )
-                            )
+                            .foregroundStyle(transcriptionGradient)
                         Text("Provider")
                     }
                 }
@@ -109,20 +125,7 @@ struct ModeEditView: View {
                     if viewModel.transcriptionProvider == .customTranscription {
                         HStack {
                             Image(systemName: "character.bubble")
-                                .foregroundStyle(
-                                    MeshGradient(
-                                        width: 2,
-                                        height: 2,
-                                        points: [
-                                            [0, 0], [1, 0],
-                                            [0, 1], [1, 1]
-                                        ],
-                                        colors: [
-                                            .blue, .green,
-                                            .indigo, .teal
-                                        ]
-                                    )
-                                )
+                                .foregroundStyle(transcriptionModelGradient)
                             Text("Model")
                             Spacer()
                             Text(CustomTranscriptionModelManager.shared.customModel.modelName)
@@ -138,20 +141,7 @@ struct ModeEditView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "character.bubble")
-                                    .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .blue, .green,
-                                                .indigo, .teal
-                                            ]
-                                        )
-                                    )
+                                    .foregroundStyle(transcriptionModelGradient)
                                 Text("Model")
                             }
                         }
@@ -268,21 +258,7 @@ struct ModeEditView: View {
 
                     if !viewModel.aiEnhanceEnabled {
                         TipView(selectAIEnhacementTip)
-                            .tipBackground(
-                                MeshGradient(
-                                    width: 2,
-                                    height: 2,
-                                    points: [
-                                        [0, 0], [1, 0],
-                                        [0, 1], [1, 1]
-                                    ],
-                                    colors: [
-                                        .purple, .red,
-                                        .blue, .pink
-                                    ]
-                                )
-                                .opacity(0.3)
-                            )
+                            .tipBackground(aiEnhancementGradient.opacity(0.3))
                     }
 
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
@@ -318,20 +294,7 @@ struct ModeEditView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "sparkles")
-                                    .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                    .foregroundStyle(aiEnhancementGradient)
                                 Text("AI Provider")
                             }
                         }
@@ -351,20 +314,7 @@ struct ModeEditView: View {
                                 if provider == .apple {
                                     HStack {
                                         Image(systemName: "wand.and.sparkles")
-                                            .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                            .foregroundStyle(aiEnhancementGradient)
                                         Text("AI Model")
                                         Spacer()
                                         Text("Foundation Model")
@@ -375,20 +325,7 @@ struct ModeEditView: View {
                                     // Custom OpenAI - show configured model name (no picker)
                                     HStack {
                                         Image(systemName: "cube.fill")
-                                            .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                            .foregroundStyle(aiEnhancementGradient)
                                         Text("AI Model")
                                         Spacer()
                                         Text(viewModel.aiService.customOpenAIModelName)
@@ -403,20 +340,7 @@ struct ModeEditView: View {
                                     } label: {
                                         HStack {
                                             Image(systemName: "cube.fill")
-                                                .foregroundStyle(
-                                        MeshGradient(
-                                            width: 2,
-                                            height: 2,
-                                            points: [
-                                                [0, 0], [1, 0],
-                                                [0, 1], [1, 1]
-                                            ],
-                                            colors: [
-                                                .purple, .red,
-                                                .blue, .pink
-                                            ]
-                                        )
-                                    )
+                                                .foregroundStyle(aiEnhancementGradient)
                                             Text("AI Model")
                                         }
                                     }
