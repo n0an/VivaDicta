@@ -60,7 +60,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .ollama:
             "Ollama"
         case .customOpenAI:
-            "Custom OpenAI"
+            "Custom"
         }
     }
 

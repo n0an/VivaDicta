@@ -57,7 +57,7 @@ struct CustomOpenAIConfigurationView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
-                        TextField("https://api.example.com", text: $endpointURL)
+                        TextField("https://api.example.com/v1/chat/completions", text: $endpointURL)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
@@ -74,7 +74,7 @@ struct CustomOpenAIConfigurationView: View {
                                 }
                             }
 
-                        Text("The base URL of your OpenAI-compatible API.\nExample: https://api.openai.com or http://localhost:8080")
+                        Text("The full chat completions endpoint URL.\nExample: https://openrouter.ai/api/v1/chat/completions")
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }

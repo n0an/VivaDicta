@@ -1021,27 +1021,16 @@ class AIService {
         let modelName = customOpenAIModelName
 
         guard !endpointURL.isEmpty else {
-            throw EnhancementError.customError("Custom OpenAI endpoint URL is not configured")
+            throw EnhancementError.customError("Custom AI endpoint URL is not configured")
         }
 
         guard !modelName.isEmpty else {
-            throw EnhancementError.customError("Custom OpenAI model name is not configured")
+            throw EnhancementError.customError("Custom AI model name is not configured")
         }
 
-        // Build the chat completions URL
-        let chatCompletionsURL: String
-        if endpointURL.hasSuffix("/chat/completions") {
-            chatCompletionsURL = endpointURL
-        } else if endpointURL.hasSuffix("/v1") {
-            chatCompletionsURL = endpointURL + "/chat/completions"
-        } else if endpointURL.hasSuffix("/") {
-            chatCompletionsURL = endpointURL + "v1/chat/completions"
-        } else {
-            chatCompletionsURL = endpointURL + "/v1/chat/completions"
-        }
-
-        guard let url = URL(string: chatCompletionsURL) else {
-            throw EnhancementError.customError("Invalid Custom OpenAI endpoint URL: \(endpointURL)")
+        // Use URL directly - user provides the full chat/completions endpoint
+        guard let url = URL(string: endpointURL) else {
+            throw EnhancementError.customError("Invalid Custom AI endpoint URL: \(endpointURL)")
         }
 
         let systemMessage = getSystemMessage()
@@ -1126,65 +1115,6 @@ class AIService {
         }
     }
 
-    /// Checks if Custom OpenAI endpoint is reachable by making a minimal chat completions request
-    public func checkCustomOpenAIConnection() async -> Bool {
-        let endpointURL = customOpenAIEndpointURL
-        let modelName = customOpenAIModelName
-
-        guard !endpointURL.isEmpty, !modelName.isEmpty else {
-            return false
-        }
-
-        // Build the chat completions URL (same logic as makeCustomOpenAIRequest)
-        let chatCompletionsURL: String
-        if endpointURL.hasSuffix("/chat/completions") {
-            chatCompletionsURL = endpointURL
-        } else if endpointURL.hasSuffix("/v1") {
-            chatCompletionsURL = endpointURL + "/chat/completions"
-        } else if endpointURL.hasSuffix("/") {
-            chatCompletionsURL = endpointURL + "v1/chat/completions"
-        } else {
-            chatCompletionsURL = endpointURL + "/v1/chat/completions"
-        }
-
-        guard let url = URL(string: chatCompletionsURL) else {
-            return false
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 10
-
-        // Add API key if configured
-        let apiKey = getAPIKey(for: .customOpenAI)
-        if let apiKey, !apiKey.isEmpty {
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        }
-
-        // Minimal test request - just a short message to verify the endpoint works
-        let testBody: [String: Any] = [
-            "model": modelName,
-            "messages": [
-                ["role": "user", "content": "test"]
-            ],
-            "max_tokens": 1
-        ]
-
-        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
-
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                return false
-            }
-            // 200 = success, 401 = auth issue (server reachable), 400 = bad request but server reachable
-            return httpResponse.statusCode == 200 || httpResponse.statusCode == 401 || httpResponse.statusCode == 400
-        } catch {
-            return false
-        }
-    }
-
     /// Verifies Custom OpenAI setup and returns status message
     public func verifyCustomOpenAISetup() async -> (success: Bool, message: String) {
         let endpointURL = customOpenAIEndpointURL
@@ -1214,31 +1144,12 @@ class AIService {
         let endpointURL = customOpenAIEndpointURL
         let modelName = customOpenAIModelName
 
-        logger.logNotice("🔧 Custom OpenAI Test - Input URL: '\(endpointURL)'")
-        logger.logNotice("🔧 Custom OpenAI Test - Model: '\(modelName)'")
+        logger.logNotice("🔧 Custom AI Test - URL: '\(endpointURL)'")
+        logger.logNotice("🔧 Custom AI Test - Model: '\(modelName)'")
 
-        // Use the endpoint URL directly - user should provide the full chat/completions URL
-        // This matches VoiceInk's approach where baseURL is used directly
-        let chatCompletionsURL: String
-        if endpointURL.contains("/chat/completions") {
-            // User provided full URL, use as-is
-            chatCompletionsURL = endpointURL
-            logger.logNotice("🔧 Custom OpenAI Test - Using URL as-is (contains /chat/completions)")
-        } else if endpointURL.hasSuffix("/v1") {
-            chatCompletionsURL = endpointURL + "/chat/completions"
-            logger.logNotice("🔧 Custom OpenAI Test - Appending /chat/completions to /v1 URL")
-        } else if endpointURL.hasSuffix("/") {
-            chatCompletionsURL = endpointURL + "v1/chat/completions"
-            logger.logNotice("🔧 Custom OpenAI Test - Appending v1/chat/completions to URL ending with /")
-        } else {
-            chatCompletionsURL = endpointURL + "/v1/chat/completions"
-            logger.logNotice("🔧 Custom OpenAI Test - Appending /v1/chat/completions to URL")
-        }
-
-        logger.logNotice("🔧 Custom OpenAI Test - Final URL: '\(chatCompletionsURL)'")
-
-        guard let url = URL(string: chatCompletionsURL) else {
-            logger.logError("🔧 Custom OpenAI Test - Failed to create URL from: '\(chatCompletionsURL)'")
+        // Use URL directly - user provides the full chat/completions endpoint (matches VoiceInk approach)
+        guard let url = URL(string: endpointURL) else {
+            logger.logError("🔧 Custom AI Test - Invalid URL: '\(endpointURL)'")
             return (false, "Invalid endpoint URL format")
         }
 
