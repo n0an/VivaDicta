@@ -32,23 +32,19 @@ class AIService {
     }
 
     /// Custom OpenAI endpoint URL (configurable)
-    public var customOpenAIEndpointURL: String {
-        get {
-            userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL) ?? ""
-        }
-        set {
-            userDefaults.set(newValue, forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL)
+    /// Stored property so @Observable can track changes for UI updates
+    public var customOpenAIEndpointURL: String = "" {
+        didSet {
+            userDefaults.set(customOpenAIEndpointURL, forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL)
             userDefaults.synchronize()
         }
     }
 
     /// Custom OpenAI model name (configurable)
-    public var customOpenAIModelName: String {
-        get {
-            userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIModelName) ?? ""
-        }
-        set {
-            userDefaults.set(newValue, forKey: UserDefaultsStorage.Keys.customOpenAIModelName)
+    /// Stored property so @Observable can track changes for UI updates
+    public var customOpenAIModelName: String = "" {
+        didSet {
+            userDefaults.set(customOpenAIModelName, forKey: UserDefaultsStorage.Keys.customOpenAIModelName)
             userDefaults.synchronize()
         }
     }
@@ -86,6 +82,11 @@ class AIService {
 
     init() {
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
+
+        // Load Custom OpenAI configuration from UserDefaults
+        self.customOpenAIEndpointURL = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL) ?? ""
+        self.customOpenAIModelName = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIModelName) ?? ""
+
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
         loadSavedOpenRouterModels()
