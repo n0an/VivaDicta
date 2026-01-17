@@ -362,11 +362,9 @@ struct CustomOpenAIConfigurationView: View {
             apiKey = existingKey
         }
 
-        // Auto-check if already configured
-        if isConfigured {
-            Task {
-                await testConnection(saveOnSuccess: false)
-            }
+        // Show connected status if already verified (verification happens on app launch)
+        if isConfigured && aiService.customOpenAIIsVerified {
+            connectionStatus = .connected
         }
     }
 
