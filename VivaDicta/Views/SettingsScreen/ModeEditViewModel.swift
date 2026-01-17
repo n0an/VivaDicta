@@ -85,6 +85,9 @@ class ModeEditViewModel {
             if provider == .ollama {
                 return "Configure Ollama server in AI Providers settings"
             }
+            if provider == .customOpenAI {
+                return "Configure Custom OpenAI in AI Providers settings"
+            }
             return "Add API key to continue"
         }
         if aiModel == nil || aiModel!.isEmpty {
@@ -202,19 +205,31 @@ class ModeEditViewModel {
     }
 
     private func validateAIModelSelection() {
-        guard let provider = aiProvider, provider == .ollama else { return }
+        guard let provider = aiProvider else { return }
 
-        let availableModels = aiService.ollamaModels
-        guard let currentModel = aiModel else { return }
+        if provider == .ollama {
+            let availableModels = aiService.ollamaModels
+            guard let currentModel = aiModel else { return }
 
-        if !availableModels.contains(currentModel) {
-            let oldModel = currentModel
-            if let firstModel = availableModels.first {
-                aiModel = firstModel
-                logger.logInfo("Ollama model '\(oldModel)' not available, reset to '\(firstModel)'")
-            } else {
+            if !availableModels.contains(currentModel) {
+                let oldModel = currentModel
+                if let firstModel = availableModels.first {
+                    aiModel = firstModel
+                    logger.logInfo("Ollama model '\(oldModel)' not available, reset to '\(firstModel)'")
+                } else {
+                    aiModel = nil
+                    logger.logInfo("Ollama model '\(oldModel)' not available and no models found")
+                }
+            }
+        } else if provider == .customOpenAI {
+            // For Custom OpenAI, validate model matches configured model
+            let configuredModel = aiService.customOpenAIModelName
+            if configuredModel.isEmpty {
                 aiModel = nil
-                logger.logInfo("Ollama model '\(oldModel)' not available and no models found")
+                logger.logInfo("Custom OpenAI model not configured")
+            } else if aiModel != configuredModel {
+                aiModel = configuredModel
+                logger.logInfo("Custom OpenAI model updated to configured: '\(configuredModel)'")
             }
         }
     }
@@ -345,6 +360,10 @@ class ModeEditViewModel {
             } else {
                 aiModel = nil // No models available
             }
+        } else if let provider = newProvider, provider == .customOpenAI {
+            // For Custom OpenAI, use the configured model name
+            let modelName = aiService.customOpenAIModelName
+            aiModel = modelName.isEmpty ? nil : modelName
         } else {
             aiModel = newProvider?.defaultModel
         }
@@ -368,11 +387,16 @@ class ModeEditViewModel {
     /// Returns whether the provider is ready to use
     /// For Apple: available on device
     /// For Ollama: has models available (server configured and accessible)
+    /// For Custom OpenAI: endpoint URL and model name are configured
     /// For cloud providers: API key is configured
     func isProviderReady(_ provider: AIProvider) -> Bool {
         if provider == .ollama {
             // Ollama is ready only if models are available
             return !aiService.ollamaModels.isEmpty
+        }
+        if provider == .customOpenAI {
+            // Custom OpenAI is ready only if URL and model are configured
+            return !aiService.customOpenAIEndpointURL.isEmpty && !aiService.customOpenAIModelName.isEmpty
         }
         return aiService.connectedProviders.contains(provider)
     }

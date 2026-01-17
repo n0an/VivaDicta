@@ -25,6 +25,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case vercelAIGateway
     case huggingFace
     case ollama
+    case customOpenAI
 
     var displayName: String {
         switch self {
@@ -58,6 +59,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "HuggingFace"
         case .ollama:
             "Ollama"
+        case .customOpenAI:
+            "Custom OpenAI"
         }
     }
 
@@ -94,21 +97,24 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "huggingface-color"
         case .ollama:
             "ollama"
+        case .customOpenAI:
+            nil // Use SF Symbol "server.rack" directly in view
         }
     }
 
     /// Returns true if this provider uses an SF Symbol instead of an asset
     var usesSFSymbol: Bool {
-        self == .apple
+        self == .apple || self == .customOpenAI
     }
 
     /// Returns true if this provider requires an API key
+    /// Note: customOpenAI doesn't require API key through the standard flow - it's handled separately
     var requiresAPIKey: Bool {
-        self != .apple && self != .ollama
+        self != .apple && self != .ollama && self != .customOpenAI
     }
 
     /// Cloud-based AI providers (require API key, network connection)
-    /// Note: Ollama is included here for UI purposes but doesn't require API key
+    /// Note: Ollama and customOpenAI are included here for UI purposes but don't require API key through standard flow
     static let cloudProviders: [AIProvider] = [
         .anthropic,
         .openAI,
@@ -120,7 +126,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .openRouter,
         .vercelAIGateway,
         .huggingFace,
-        .ollama]
+        .ollama,
+        .customOpenAI]
 
     /// Local AI providers that run on-device or local network (no API key needed)
     static let localProviders: [AIProvider] = [
@@ -131,6 +138,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     static let generalProviders: [AIProvider] = [
         .apple,
         .ollama,
+        .customOpenAI,
         .anthropic,
         .openAI,
         .gemini,
@@ -174,6 +182,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://router.huggingface.co/v1/chat/completions"
         case .ollama:
             return "" // URL is configurable, stored in UserDefaults
+        case .customOpenAI:
+            return "" // URL is configurable, stored in UserDefaults
         }
     }
 
@@ -216,6 +226,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "openai/gpt-oss-120b"
         case .ollama:
             return "llama3.2"
+        case .customOpenAI:
+            return "" // Model is configurable, stored in UserDefaults
         }
     }
 
@@ -296,6 +308,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return []
         case .ollama:
             return [] // Models are fetched dynamically from Ollama server
+        case .customOpenAI:
+            return [] // Model is configured by user
         }
     }
 }
