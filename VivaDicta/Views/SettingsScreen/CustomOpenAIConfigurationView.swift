@@ -67,7 +67,8 @@ struct CustomOpenAIConfigurationView: View {
                                     .stroke(urlFieldBorderColor, lineWidth: urlFieldBorderWidth)
                             }
                             .onChange(of: endpointURL) { _, newValue in
-                                if !newValue.isEmpty && !isValidURL(newValue) {
+                                let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                                if !trimmed.isEmpty && !isValidURL(trimmed) {
                                     connectionStatus = .invalidURL
                                 } else if connectionStatus == .invalidURL {
                                     connectionStatus = .unknown
@@ -94,9 +95,10 @@ struct CustomOpenAIConfigurationView: View {
                                     .stroke(modelFieldBorderColor, lineWidth: modelFieldBorderWidth)
                             }
                             .onChange(of: modelName) { _, newValue in
-                                if newValue.isEmpty && connectionStatus != .unknown {
+                                let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                                if trimmed.isEmpty && connectionStatus != .unknown {
                                     connectionStatus = .missingModel
-                                } else if connectionStatus == .missingModel && !newValue.isEmpty {
+                                } else if connectionStatus == .missingModel && !trimmed.isEmpty {
                                     connectionStatus = .unknown
                                 }
                             }
@@ -287,8 +289,16 @@ struct CustomOpenAIConfigurationView: View {
         }
     }
 
+    private var trimmedModelName: String {
+        modelName.trimmingCharacters(in: .whitespaces)
+    }
+
+    private var trimmedEndpointURL: String {
+        endpointURL.trimmingCharacters(in: .whitespaces)
+    }
+
     private var canTestConnection: Bool {
-        !endpointURL.isEmpty && !modelName.isEmpty && connectionStatus != .invalidURL
+        !trimmedEndpointURL.isEmpty && !trimmedModelName.isEmpty && connectionStatus != .invalidURL
     }
 
     private var urlFieldBorderColor: Color {
@@ -368,13 +378,14 @@ struct CustomOpenAIConfigurationView: View {
     }
 
     private func testConnection(saveOnSuccess: Bool) async {
-        logger.notice("🔧 CustomOpenAI Config - Starting test connection")
-        logger.notice("🔧 CustomOpenAI Config - Endpoint URL: '\(endpointURL)'")
-        logger.notice("🔧 CustomOpenAI Config - Model Name: '\(modelName)'")
-        logger.notice("🔧 CustomOpenAI Config - API Key length: \(apiKey.count)")
+        let urlToTest = trimmedEndpointURL
+        let modelToTest = trimmedModelName
+        let apiKeyToSave = apiKey.trimmingCharacters(in: .whitespaces)
 
-        guard isValidURL(endpointURL) else {
-            logger.error("🔧 CustomOpenAI Config - Invalid URL")
+        logger.debug("CustomOpenAI Config - Testing connection to: '\(urlToTest)' with model: '\(modelToTest)'")
+
+        guard isValidURL(urlToTest) else {
+            logger.debug("CustomOpenAI Config - Invalid URL")
             await MainActor.run {
                 connectionStatus = .invalidURL
                 isChecking = false
@@ -382,8 +393,8 @@ struct CustomOpenAIConfigurationView: View {
             return
         }
 
-        guard !modelName.isEmpty else {
-            logger.error("🔧 CustomOpenAI Config - Missing model name")
+        guard !modelToTest.isEmpty else {
+            logger.debug("CustomOpenAI Config - Missing model name")
             await MainActor.run {
                 connectionStatus = .missingModel
                 isChecking = false
@@ -399,26 +410,20 @@ struct CustomOpenAIConfigurationView: View {
 
         // Save configuration to test
         let apiKeyStorageKey = AppGroupCoordinator.kAPIKeyTemplate + AIProvider.customOpenAI.rawValue
-        logger.notice("🔧 CustomOpenAI Config - API Key storage key: '\(apiKeyStorageKey)'")
 
         await MainActor.run {
-            aiService.customOpenAIEndpointURL = endpointURL
-            aiService.customOpenAIModelName = modelName
-            logger.notice("🔧 CustomOpenAI Config - Saved endpoint URL to AIService: '\(aiService.customOpenAIEndpointURL)'")
-            logger.notice("🔧 CustomOpenAI Config - Saved model name to AIService: '\(aiService.customOpenAIModelName)'")
+            aiService.customOpenAIEndpointURL = urlToTest
+            aiService.customOpenAIModelName = modelToTest
 
-            if !apiKey.isEmpty {
-                UserDefaultsStorage.shared.set(apiKey, forKey: apiKeyStorageKey)
-                logger.notice("🔧 CustomOpenAI Config - Saved API key to UserDefaults")
+            if !apiKeyToSave.isEmpty {
+                UserDefaultsStorage.shared.set(apiKeyToSave, forKey: apiKeyStorageKey)
             } else {
                 UserDefaultsStorage.shared.removeObject(forKey: apiKeyStorageKey)
-                logger.notice("🔧 CustomOpenAI Config - Removed API key from UserDefaults (empty)")
             }
         }
 
-        logger.notice("🔧 CustomOpenAI Config - Calling verifyCustomOpenAISetup...")
         let result = await aiService.verifyCustomOpenAISetup()
-        logger.notice("🔧 CustomOpenAI Config - Result: success=\(result.success), message='\(result.message)'")
+        logger.debug("CustomOpenAI Config - Result: success=\(result.success)")
 
         await MainActor.run {
             if result.success {
