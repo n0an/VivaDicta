@@ -117,31 +117,7 @@ class AIService {
                 await fetchHuggingFaceModels()
             }
             // Ollama models are fetched on-demand when user configures Ollama
-
-            // Auto-verify Custom AI Provider on app launch if configuration exists
-            await verifyCustomOpenAIOnLaunchIfNeeded()
         }
-    }
-
-    /// Verifies Custom OpenAI configuration on app launch if saved configuration exists
-    private func verifyCustomOpenAIOnLaunchIfNeeded() async {
-        // Only verify if we have saved configuration
-        guard !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty else {
-            return
-        }
-
-        logger.logInfo("Verifying Custom AI Provider configuration on app launch")
-        let result = await verifyCustomOpenAISetup()
-
-        if result.success {
-            customOpenAIIsVerified = true
-            logger.logInfo("Custom AI Provider verified successfully on app launch")
-        } else {
-            customOpenAIIsVerified = false
-            disableCustomOpenAIEnhancementForAllModes()
-            logger.logWarning("Custom AI Provider verification failed on app launch: \(result.message)")
-        }
-        refreshConnectedProviders()
     }
     
     public func getMode(name: String) -> VivaMode {
