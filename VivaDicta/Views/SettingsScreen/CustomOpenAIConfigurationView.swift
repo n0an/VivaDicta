@@ -51,6 +51,9 @@ struct CustomOpenAIConfigurationView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
+                    // Connection status
+                    connectionStatusView
+
                     // Endpoint URL input
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Endpoint URL")
@@ -127,9 +130,6 @@ struct CustomOpenAIConfigurationView: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
-
-                    // Connection status
-                    connectionStatusView
                 }
                 .padding(.horizontal)
             }
