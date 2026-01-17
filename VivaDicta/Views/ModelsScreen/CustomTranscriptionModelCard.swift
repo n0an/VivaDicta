@@ -31,16 +31,6 @@ struct CustomTranscriptionModelCard: View {
                         Text("Custom")
                             .font(.title3)
                             .fontWeight(.semibold)
-
-                        // Custom badge
-                        Text("Custom")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.orange)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.orange.opacity(0.15))
-                            .clipShape(.rect(cornerRadius: 8))
                     }
 
                     // Model name (if configured)
@@ -61,14 +51,6 @@ struct CustomTranscriptionModelCard: View {
                         .foregroundStyle(.secondary)
                     }
 
-                    // OpenAI Compatible badge
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.seal")
-                            .font(.caption)
-                        Text("OpenAI Compatible")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -79,10 +61,10 @@ struct CustomTranscriptionModelCard: View {
                     onConfigure()
                 } label: {
                     VStack(spacing: 4) {
-                        Image(systemName: isConfigured ? "gearshape.fill" : "gearshape")
+                        Image(systemName: isConfigured ? "checkmark.circle.fill" : "gearshape.circle")
                             .font(.title2)
                             .foregroundStyle(isConfigured ? .green : .blue)
-                        Text(isConfigured ? "Configured" : "Configure")
+                        Text(isConfigured ? "" : "Configure")
                             .font(.caption2)
                             .foregroundStyle(isConfigured ? .green : .blue)
                     }

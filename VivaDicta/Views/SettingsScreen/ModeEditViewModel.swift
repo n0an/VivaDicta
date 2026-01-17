@@ -63,6 +63,8 @@ class ModeEditViewModel {
         if !isTranscriptionProviderConfigured(transcriptionProvider) {
             if transcriptionProvider == .parakeet || transcriptionProvider == .whisperKit {
                 return "Download a model to continue"
+            } else if transcriptionProvider == .customTranscription {
+                return "Configure custom model to continue"
             } else {
                 return "Add API key to continue"
             }
@@ -159,6 +161,8 @@ class ModeEditViewModel {
             return !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
         case .whisperKit:
             return !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
+        case .customTranscription:
+            return CustomTranscriptionModelManager.shared.isConfigured
         default: // Cloud transcription models
             guard let mappedAIProvider = provider.mappedAIProvider else { return false }
             return self.hasAPIKey(for: mappedAIProvider)
@@ -171,6 +175,9 @@ class ModeEditViewModel {
             return TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.compactMap { $0.name }
         case .whisperKit:
             return TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.compactMap { $0.name }
+        case .customTranscription:
+            // Custom transcription has a single fixed model name
+            return CustomTranscriptionModelManager.shared.isConfigured ? ["custom"] : []
         default: // Cloud transcription models
             return provider.cloudTranscriptionModelsNames
         }

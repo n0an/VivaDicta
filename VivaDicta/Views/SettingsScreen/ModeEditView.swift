@@ -17,6 +17,7 @@ struct ModeEditView: View {
     
     @State private var showingAlert: Bool = false
     @State private var modeEditViewError: SettingsError = .duplicateModeName("")
+    @State private var showCustomTranscriptionConfiguration: Bool = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
     
@@ -68,7 +69,8 @@ struct ModeEditView: View {
                             } else {
                                 HStack(spacing: 4) {
                                     Text(provider.displayName)
-                                    Image(systemName: "key.slash.fill")
+                                    // Show gear icon for custom transcription, key icon for others
+                                    Image(systemName: provider == .customTranscription ? "gearshape" : "key.slash.fill")
                                 }
                                 .tag(provider)
                             }
@@ -178,6 +180,24 @@ struct ModeEditView: View {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundStyle(.orange)
                                 Text("Download Model")
+                                Spacer()
+                                Text("Required")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    } else if viewModel.transcriptionProvider == .customTranscription {
+                        // Custom transcription needs configuration
+                        Button {
+                            showCustomTranscriptionConfiguration = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Configure Custom Model")
                                 Spacer()
                                 Text("Required")
                                     .font(.caption)
@@ -552,6 +572,11 @@ struct ModeEditView: View {
                 }
             }
         }
+        .sheet(isPresented: $showCustomTranscriptionConfiguration) {
+            AddCustomTranscriptionModelView(onSave: {
+                handleCustomTranscriptionSaved()
+            })
+        }
     }
     @ViewBuilder
     private var transcriptionSectionFooter: some View {
@@ -612,6 +637,13 @@ struct ModeEditView: View {
         HapticManager.heavyImpact()
         viewModel.aiService.deleteMode(mode)
         dismiss()
+    }
+
+    private func handleCustomTranscriptionSaved() {
+        // Update the transcription model selection after custom model is saved
+        if CustomTranscriptionModelManager.shared.isConfigured {
+            viewModel.transcriptionModel = "custom"
+        }
     }
 }
 
