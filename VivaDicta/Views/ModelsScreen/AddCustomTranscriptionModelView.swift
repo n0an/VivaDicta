@@ -83,7 +83,7 @@ struct AddCustomTranscriptionModelView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
-                            TextField("https://api.example.com/v1/audio/transcriptions", text: $apiEndpoint)
+                            TextField("", text: $apiEndpoint)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .keyboardType(.URL)
