@@ -36,7 +36,10 @@ class TranscriptionManager {
             model.apiKey != nil
         }
 
-        return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels
+        // Check if custom transcription model is configured
+        let hasCustomModel = CustomTranscriptionModelManager.shared.isConfigured
+
+        return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels || hasCustomModel
     }
 
     var selectedLanguage: String {
