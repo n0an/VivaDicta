@@ -49,7 +49,7 @@ struct OllamaConfigurationView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
 
-                TextField("http", text: $serverURL)
+                TextField("http://host:11434", text: $serverURL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
@@ -93,7 +93,7 @@ struct OllamaConfigurationView: View {
                             .font(.headline.weight(.medium))
                     }
                 }
-                .disabled(isChecking || connectionStatus == .invalidURL)
+                .disabled(isChecking || !canConnect)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 16)
                 .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
@@ -121,7 +121,7 @@ struct OllamaConfigurationView: View {
                             .stroke(.blue, lineWidth: 2)
                     }
                 }
-                .disabled(isChecking || connectionStatus == .invalidURL)
+                .disabled(isChecking || !canConnect)
                 .buttonStyle(.plain)
             }
 
@@ -169,11 +169,14 @@ struct OllamaConfigurationView: View {
         .navigationTitle("Ollama")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            serverURL = aiService.ollamaServerURL
-            // Auto-check connection on appear
-            isChecking = true
-            Task {
-                await checkConnection()
+            // Only load URL if user previously saved one (not the default)
+            let savedURL = UserDefaultsStorage.shared.string(forKey: UserDefaultsStorage.Keys.ollamaServerURL)
+            if let savedURL, !savedURL.isEmpty {
+                serverURL = savedURL
+            }
+            // Show connected status if models were previously loaded (cached state)
+            if !aiService.ollamaModels.isEmpty {
+                connectionStatus = .connected(modelCount: aiService.ollamaModels.count)
             }
         }
     }
@@ -236,17 +239,32 @@ struct OllamaConfigurationView: View {
         return true
     }
 
+    private var trimmedServerURL: String {
+        serverURL.trimmingCharacters(in: .whitespaces)
+    }
+
+    private var canConnect: Bool {
+        !trimmedServerURL.isEmpty && isValidOllamaURL(trimmedServerURL)
+    }
+
     private func checkConnection() async {
-        guard connectionStatus != .invalidURL else {
-            isChecking = false
+        let urlToTest = trimmedServerURL
+
+        guard !urlToTest.isEmpty && isValidOllamaURL(urlToTest) else {
+            await MainActor.run {
+                connectionStatus = .invalidURL
+                isChecking = false
+            }
             return
         }
 
-        connectionStatus = .checking
+        await MainActor.run {
+            connectionStatus = .checking
+        }
 
         HapticManager.lightImpact()
-        
-        aiService.ollamaServerURL = serverURL
+
+        aiService.ollamaServerURL = urlToTest
 
         let result = await aiService.verifyOllamaSetup()
 
