@@ -59,19 +59,6 @@ struct AddCustomTranscriptionModelView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                // Warning banner
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    Text("Only OpenAI-compatible transcription APIs are supported")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.orange.opacity(0.1))
-                .clipShape(.rect(cornerRadius: 8))
-
                 // Connection status
                 connectionStatusView
 
@@ -157,7 +144,7 @@ struct AddCustomTranscriptionModelView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .tint(.blue)
+//                        .tint(.blue)
                         .padding(.vertical, 8)
                     }
                     .padding(.horizontal)

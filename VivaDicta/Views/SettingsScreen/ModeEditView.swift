@@ -105,12 +105,8 @@ struct ModeEditView: View {
                 }
                 
                 if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
-                    Picker(selection: $viewModel.transcriptionModel) {
-                        ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
-                            Text(viewModel.transcriptionProvider.getTranscriptionModelDisplayName(model))
-                                .tag(model)
-                        }
-                    } label: {
+                    // Custom transcription - show configured model name directly (no picker needed)
+                    if viewModel.transcriptionProvider == .customTranscription {
                         HStack {
                             Image(systemName: "character.bubble")
                                 .foregroundStyle(
@@ -128,17 +124,47 @@ struct ModeEditView: View {
                                     )
                                 )
                             Text("Model")
+                            Spacer()
+                            Text(CustomTranscriptionModelManager.shared.customModel.modelName)
+                                .foregroundStyle(.secondary)
                         }
-                    }
-                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                    .onChange(of: viewModel.transcriptionModel) { _, newModel in
-                        viewModel.updateTranscriptionModel(newModel)
-                        HapticManager.selectionChanged()
-                    }
-                    .onAppear {
-                        let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
-                        if !availableModels.contains(viewModel.transcriptionModel) && !availableModels.isEmpty {
-                            viewModel.transcriptionModel = availableModels.first ?? ""
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                    } else {
+                        Picker(selection: $viewModel.transcriptionModel) {
+                            ForEach(viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider), id: \.self) { model in
+                                Text(viewModel.transcriptionProvider.getTranscriptionModelDisplayName(model))
+                                    .tag(model)
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "character.bubble")
+                                    .foregroundStyle(
+                                        MeshGradient(
+                                            width: 2,
+                                            height: 2,
+                                            points: [
+                                                [0, 0], [1, 0],
+                                                [0, 1], [1, 1]
+                                            ],
+                                            colors: [
+                                                .blue, .green,
+                                                .indigo, .teal
+                                            ]
+                                        )
+                                    )
+                                Text("Model")
+                            }
+                        }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        .onChange(of: viewModel.transcriptionModel) { _, newModel in
+                            viewModel.updateTranscriptionModel(newModel)
+                            HapticManager.selectionChanged()
+                        }
+                        .onAppear {
+                            let availableModels = viewModel.getAvailableTranscriptionModels(for: viewModel.transcriptionProvider)
+                            if !availableModels.contains(viewModel.transcriptionModel) && !availableModels.isEmpty {
+                                viewModel.transcriptionModel = availableModels.first ?? ""
+                            }
                         }
                     }
                     
