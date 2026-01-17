@@ -82,19 +82,23 @@ struct AIProviders: View {
                                 }
                             } else if provider == .customOpenAI {
                                 // Custom OpenAI has special status display
-                                if appState.aiService.customOpenAIEndpointURL.isEmpty || appState.aiService.customOpenAIModelName.isEmpty {
+                                // Must have URL, model, AND be verified (test passed)
+                                let isConfigured = !appState.aiService.customOpenAIEndpointURL.isEmpty &&
+                                                   !appState.aiService.customOpenAIModelName.isEmpty &&
+                                                   appState.aiService.customOpenAIIsVerified
+                                if isConfigured {
                                     HStack(spacing: 4) {
-                                        Image(systemName: "gear")
-                                            .foregroundStyle(.orange)
-                                        Text("Configure")
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                        Text("Configured")
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
                                     }
                                 } else {
                                     HStack(spacing: 4) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.green)
-                                        Text("Configured")
+                                        Image(systemName: "gear")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure")
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
                                     }

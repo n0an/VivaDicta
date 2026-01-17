@@ -395,8 +395,10 @@ class ModeEditViewModel {
             return !aiService.ollamaModels.isEmpty
         }
         if provider == .customOpenAI {
-            // Custom OpenAI is ready only if URL and model are configured
-            return !aiService.customOpenAIEndpointURL.isEmpty && !aiService.customOpenAIModelName.isEmpty
+            // Custom OpenAI is ready only if URL and model are configured AND verified
+            return !aiService.customOpenAIEndpointURL.isEmpty &&
+                   !aiService.customOpenAIModelName.isEmpty &&
+                   aiService.customOpenAIIsVerified
         }
         return aiService.connectedProviders.contains(provider)
     }

@@ -423,16 +423,18 @@ struct CustomOpenAIConfigurationView: View {
         await MainActor.run {
             if result.success {
                 connectionStatus = .connected
-                if saveOnSuccess {
-                    aiService.refreshConnectedProviders()
-                    HapticManager.success()
-                }
+                // Mark as verified so other screens know it's ready
+                aiService.customOpenAIIsVerified = true
+                aiService.refreshConnectedProviders()
+                HapticManager.success()
             } else {
                 connectionStatus = .failed(message: result.message)
-                if saveOnSuccess {
-                    // Don't clear on failure - let user fix the issue
-                    HapticManager.error()
-                }
+                // Mark as NOT verified - this invalidates the configuration
+                aiService.customOpenAIIsVerified = false
+                // Disable AI enhancement for all modes using Custom OpenAI
+                aiService.disableCustomOpenAIEnhancementForAllModes()
+                aiService.refreshConnectedProviders()
+                HapticManager.error()
             }
             isChecking = false
         }

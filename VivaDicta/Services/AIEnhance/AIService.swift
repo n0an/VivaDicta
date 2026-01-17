@@ -49,6 +49,15 @@ class AIService {
         }
     }
 
+    /// Tracks whether Custom OpenAI configuration has been successfully verified
+    /// When false, the provider is not ready for use even if URL/model are set
+    public var customOpenAIIsVerified: Bool = false {
+        didSet {
+            userDefaults.set(customOpenAIIsVerified, forKey: UserDefaultsStorage.Keys.customOpenAIIsVerified)
+            userDefaults.synchronize()
+        }
+    }
+
     public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
@@ -86,6 +95,7 @@ class AIService {
         // Load Custom OpenAI configuration from UserDefaults
         self.customOpenAIEndpointURL = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL) ?? ""
         self.customOpenAIModelName = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIModelName) ?? ""
+        self.customOpenAIIsVerified = userDefaults.bool(forKey: UserDefaultsStorage.Keys.customOpenAIIsVerified)
 
         loadModes()
         self.selectedMode = getMode(name: selectedModeName)
@@ -1326,6 +1336,7 @@ class AIService {
     public func clearCustomOpenAIConfiguration() {
         customOpenAIEndpointURL = ""
         customOpenAIModelName = ""
+        customOpenAIIsVerified = false
         userDefaults.removeObject(forKey: AppGroupCoordinator.kAPIKeyTemplate + AIProvider.customOpenAI.rawValue)
         userDefaults.synchronize()
     }
@@ -1365,8 +1376,8 @@ class AIService {
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
 
-        // Add Custom OpenAI provider if configured (URL and model name are set)
-        if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty {
+        // Add Custom OpenAI provider if configured AND verified
+        if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty && customOpenAIIsVerified {
             providers.append(.customOpenAI)
         }
 

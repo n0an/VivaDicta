@@ -48,5 +48,6 @@ enum UserDefaultsStorage {
         // Custom OpenAI Provider Configuration
         static let customOpenAIEndpointURL = "customOpenAIEndpointURL"
         static let customOpenAIModelName = "customOpenAIModelName"
+        static let customOpenAIIsVerified = "customOpenAIIsVerified"
     }
 }
