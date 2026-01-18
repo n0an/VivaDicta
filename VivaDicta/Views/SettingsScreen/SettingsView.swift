@@ -508,7 +508,8 @@ private struct ModeInfoRow: View {
                 .font(.body.weight(.medium))
 
             if !mode.transcriptionModel.isEmpty {
-                HStack(alignment: .top) {
+                HStack(alignment: .top, spacing: 0) {
+                    // Transcription info - takes 50% width
                     HStack(alignment: .top, spacing: 4) {
                         Image(systemName: "waveform")
                             .foregroundStyle(
@@ -535,9 +536,12 @@ private struct ModeInfoRow: View {
                                 .foregroundStyle(.tertiary)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
+                    // Enhancement info - takes 50% width
                     if let provider = mode.aiProvider, connectedProviders.contains(provider) {
                         Divider()
+                            .padding(.trailing, 8)
                         HStack(alignment: .top, spacing: 4) {
                             Image(systemName: "sparkles")
                                 .foregroundStyle(
@@ -566,6 +570,7 @@ private struct ModeInfoRow: View {
                                 }
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .font(.caption2)
