@@ -394,6 +394,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Check for cancellation after transcription
                 try Task.checkCancellation()
 
+                // Validate transcription has meaningful content (not empty, whitespace-only, or punctuation-only)
+                guard TranscriptionOutputFilter.hasMeaningfulContent(transcribedText) else {
+                    logger.logInfo("📱 Transcription contains no meaningful content, skipping save")
+
+                    // Clean up audio file
+                    try? FileManager.default.removeItem(at: audioURLToTranscribe)
+
+                    // Reset state
+                    resetValues()
+                    recordingState = .idle
+                    AppGroupCoordinator.shared.updateRecordingState(false)
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                    return
+                }
+
                 let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
@@ -589,10 +604,20 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             transcribingSpeechTask?.cancel()
             transcribingSpeechTask = nil
 
-            // Save the pending transcription if available
+            // Save the pending transcription if available and has meaningful content
             // Clear immediately to prevent double-save if cancel is called rapidly
             if let pending = pendingTranscription {
                 pendingTranscription = nil
+
+                // Skip saving if transcription has no meaningful content
+                guard TranscriptionOutputFilter.hasMeaningfulContent(pending.text) else {
+                    logger.logInfo("📱 Pending transcription contains no meaningful content, skipping save")
+                    resetValues()
+                    recordingState = .idle
+                    AppGroupCoordinator.shared.updateRecordingState(false)
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                    return
+                }
 
                 let transcription = Transcription(
                     text: pending.text,

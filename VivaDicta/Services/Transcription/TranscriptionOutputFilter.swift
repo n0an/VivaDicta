@@ -21,6 +21,18 @@ struct TranscriptionOutputFilter {
         "uh", "um", "uhm", "umm", "uhh", "uhhh", "ah", "eh",
         "hmm", "hm", "mmm", "mm", "mh", "ha", "ehh"
     ]
+    /// Returns true if the text contains meaningful content for a transcription.
+    /// Returns false for empty strings, whitespace-only strings, or strings containing only punctuation.
+    static func hasMeaningfulContent(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        // Check if there's at least one alphanumeric character
+        return trimmed.unicodeScalars.contains { scalar in
+            CharacterSet.alphanumerics.contains(scalar)
+        }
+    }
+
     static func filter(_ text: String) -> String {
         var filteredText = text
 
