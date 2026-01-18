@@ -3,6 +3,7 @@
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2025.08.12
+//  Test change for PR validation
 //
 
 import Foundation
