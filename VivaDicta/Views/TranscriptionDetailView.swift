@@ -616,8 +616,11 @@ struct TranscriptionDetailView: View {
                 transcription.transcriptionProviderName = appState.transcriptionManager.currentMode.transcriptionProvider.displayName
                 transcription.transcriptionDuration = transcriptionDuration
 
-                // Update Spotlight index
-                await appState.updateTranscriptionInSpotlight(transcription)
+                // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
+                let entity = transcription.entity
+                Task.detached {
+                    await appState.updateTranscriptionEntityInSpotlight(entity)
+                }
 
                 HapticManager.heartbeat()
 
@@ -640,10 +643,13 @@ struct TranscriptionDetailView: View {
         isMetaInfoExpanded = false
 
         processingTask = Task {
+            print("📱 [HUD_DEBUG] TranscriptionDetailView: Setting processingState to .enhancing")
             processingState = .enhancing
 
             do {
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: Starting aiService.enhance()")
                 let (enhancedText, duration, promptName) = try await appState.aiService.enhance(transcription.text)
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: aiService.enhance() completed successfully")
 
                 transcription.enhancedText = enhancedText
                 transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
@@ -654,8 +660,11 @@ struct TranscriptionDetailView: View {
                 // Switch to enhanced view
                 selectedTextType = .enhanced
 
-                // Update Spotlight index
-                await appState.updateTranscriptionInSpotlight(transcription)
+                // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
+                let entity = transcription.entity
+                Task.detached {
+                    await appState.updateTranscriptionEntityInSpotlight(entity)
+                }
 
                 HapticManager.heartbeat()
 
@@ -663,18 +672,25 @@ struct TranscriptionDetailView: View {
                 RateAppManager.requestReviewIfAppropriate()
             } catch is CancellationError {
                 // Task was cancelled, don't show error haptic
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: CancellationError caught")
             } catch let error as AppleFoundationModelError {
-                if Task.isCancelled { return }
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: AppleFoundationModelError caught: \(error.localizedDescription)")
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: Task.isCancelled = \(Task.isCancelled)")
+                // Don't return early - let processingState be reset
                 if case .guardrailViolation = error {
                     showGuardrailAlert = true
                 }
                 HapticManager.error()
             } catch {
-                if Task.isCancelled { return }
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: Generic error caught: \(error.localizedDescription)")
+                print("📱 [HUD_DEBUG] TranscriptionDetailView: Task.isCancelled = \(Task.isCancelled)")
+                // Don't return early - let processingState be reset
                 HapticManager.error()
             }
 
+            print("📱 [HUD_DEBUG] TranscriptionDetailView: Setting processingState to .idle")
             processingState = .idle
+            print("📱 [HUD_DEBUG] TranscriptionDetailView: processingState is now: \(processingState)")
         }
     }
 
@@ -684,13 +700,16 @@ struct TranscriptionDetailView: View {
         isMetaInfoExpanded = false
 
         processingTask = Task {
+            print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Setting processingState to .transcribing")
             processingState = .transcribing
 
             do {
                 // Step 1: Transcribe
+                print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Starting transcription")
                 let transcriptionStart = Date()
                 let newText = try await appState.transcriptionManager.transcribe(audioURL: audioURL)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+                print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Transcription completed")
 
                 transcription.text = newText
                 transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
@@ -699,10 +718,13 @@ struct TranscriptionDetailView: View {
 
                 // Step 2: Enhance (if AI is configured)
                 if appState.aiService.isProperlyConfigured() {
+                    print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Setting processingState to .enhancing")
                     processingState = .enhancing
 
                     do {
+                        print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Starting enhancement")
                         let (enhancedText, duration, promptName) = try await appState.aiService.enhance(newText)
+                        print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Enhancement completed")
 
                         transcription.enhancedText = enhancedText
                         transcription.aiEnhancementModelName = appState.aiService.selectedMode.aiModel
@@ -713,17 +735,22 @@ struct TranscriptionDetailView: View {
                         // Switch to enhanced view
                         selectedTextType = .enhanced
                     } catch let error as AppleFoundationModelError {
+                        print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: AppleFoundationModelError: \(error.localizedDescription)")
                         if case .guardrailViolation = error {
                             showGuardrailAlert = true
                         }
                         // Transcription still saved, just without enhancement
                     } catch {
+                        print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Enhancement error: \(error.localizedDescription)")
                         // Enhancement failed, transcription still saved
                     }
                 }
 
-                // Update Spotlight index
-                await appState.updateTranscriptionInSpotlight(transcription)
+                // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
+                let entity = transcription.entity
+                Task.detached {
+                    await appState.updateTranscriptionEntityInSpotlight(entity)
+                }
 
                 HapticManager.heartbeat()
 
@@ -731,12 +758,17 @@ struct TranscriptionDetailView: View {
                 RateAppManager.requestReviewIfAppropriate()
             } catch is CancellationError {
                 // Task was cancelled, don't show error haptic
+                print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: CancellationError caught")
             } catch {
-                if Task.isCancelled { return }
+                print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Generic error: \(error.localizedDescription)")
+                print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Task.isCancelled = \(Task.isCancelled)")
+                // Don't return early - let processingState be reset
                 HapticManager.error()
             }
 
+            print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: Setting processingState to .idle")
             processingState = .idle
+            print("📱 [HUD_DEBUG] TranscriptionDetailView.retranscribeAndEnhance: processingState is now: \(processingState)")
         }
     }
 }

@@ -199,27 +199,30 @@ class AppState {
             logger.logError("[Spotlight] Indexing is unavailable")
             return
         }
-        
-
-//        let item = CSSearchableItem(
-//            uniqueIdentifier: transcription.id.uuidString,
-//            domainIdentifier: "com.antonnovoselov.VivaDicta",
-//            attributeSet: transcription.searchableAttributes(lastUsedDate: Date())
-//        )
 
         do {
             let index = CSSearchableIndex.default()
-            
-            
-            
             let transcriptionEntity = transcription.entity
             try await index.indexAppEntities([transcriptionEntity])
-            
-            
-//            try await index.indexSearchableItems([item])
             logger.logInfo("[Spotlight] Indexed transcription: \(transcription.id.uuidString)")
         } catch {
             logger.logError("[Spotlight] Failed to index transcription: \(error.localizedDescription)")
+        }
+    }
+
+    /// Index a transcription entity in Spotlight (used from detached tasks to avoid actor isolation issues)
+    func indexTranscriptionEntityToSpotlight(_ entity: TranscriptionEntity) async {
+        guard CSSearchableIndex.isIndexingAvailable() else {
+            logger.logError("[Spotlight] Indexing is unavailable")
+            return
+        }
+
+        do {
+            let index = CSSearchableIndex.default()
+            try await index.indexAppEntities([entity])
+            logger.logInfo("[Spotlight] Indexed transcription entity: \(entity.id)")
+        } catch {
+            logger.logError("[Spotlight] Failed to index transcription entity: \(error.localizedDescription)")
         }
     }
 
@@ -244,6 +247,11 @@ class AppState {
     func updateTranscriptionInSpotlight(_ transcription: Transcription) async {
         // Reindexing with the same identifier will update the existing item
         await indexTranscriptionToSpotlight(transcription)
+    }
+
+    /// Update a transcription entity in Spotlight (used from detached tasks to avoid actor isolation issues)
+    func updateTranscriptionEntityInSpotlight(_ entity: TranscriptionEntity) async {
+        await indexTranscriptionEntityToSpotlight(entity)
     }
 
     /// Update Spotlight ranking when user views a transcription
