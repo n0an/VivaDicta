@@ -547,16 +547,23 @@ class AIService {
 
     // MARK: - Enhance methods
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
+        logger.logInfo("📱 [HUD_DEBUG] AIService.enhance() called")
         let startTime = Date()
 
         let promptName = selectedMode.userPrompt?.title
 
         do {
+            logger.logInfo("📱 [HUD_DEBUG] AIService.enhance() starting makeRequest")
             let result = try await makeRequest(text: text)
             let endTime = Date()
             let duration = endTime.timeIntervalSince(startTime)
+            logger.logInfo("📱 [HUD_DEBUG] AIService.enhance() completed successfully in \(duration)s")
             return (result, duration, promptName)
+        } catch is CancellationError {
+            logger.logInfo("📱 [HUD_DEBUG] AIService.enhance() cancelled")
+            throw CancellationError()
         } catch {
+            logger.logError("📱 [HUD_DEBUG] AIService.enhance() error: \(error.localizedDescription)")
             throw error
         }
     }

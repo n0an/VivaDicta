@@ -324,7 +324,7 @@ struct ModeEditView: View {
                                 } else if provider == .customOpenAI {
                                     // Custom OpenAI - show configured model name (no picker)
                                     HStack {
-                                        Image(systemName: "cube.fill")
+                                        Image(systemName: "wand.and.sparkles")
                                             .foregroundStyle(aiEnhancementGradient)
                                         Text("AI Model")
                                         Spacer()
@@ -339,7 +339,7 @@ struct ModeEditView: View {
                                         }
                                     } label: {
                                         HStack {
-                                            Image(systemName: "cube.fill")
+                                            Image(systemName: "wand.and.sparkles")
                                                 .foregroundStyle(aiEnhancementGradient)
                                             Text("AI Model")
                                         }

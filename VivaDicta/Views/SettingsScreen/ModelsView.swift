@@ -32,45 +32,54 @@ struct ModelsView: View {
                 HapticManager.selectionChanged()
             }
 
-            ScrollView {
-                VStack(spacing: 16) {
-                    ForEach(filteredModels, id: \.id) { model in
-                        Group {
-                            if modelType == .local {
-                                LocalModelCard(
-                                    model: model,
-                                    downloadManager: appState.downloadManager
-                                )
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 16) {
+                        Color.clear
+                            .frame(height: 0)
+                            .id("top")
 
-                            } else if let cloudModel = model as? CloudModel {
-                                CloudModelCard(
-                                    model: cloudModel,
-                                    onConfigure: { cloudModel in
-                                        configureCloudModel(model: cloudModel)
-                                    },
-                                    onDeleteAPIKey: { cloudModel in
-                                        handleAPIKeyDeletion(for: cloudModel)
-                                    }
-                                )
-                                .matchedTransitionSource(id: cloudModel.id, in: zoomNamespace)
+                        ForEach(filteredModels, id: \.id) { model in
+                            Group {
+                                if modelType == .local {
+                                    LocalModelCard(
+                                        model: model,
+                                        downloadManager: appState.downloadManager
+                                    )
+
+                                } else if let cloudModel = model as? CloudModel {
+                                    CloudModelCard(
+                                        model: cloudModel,
+                                        onConfigure: { cloudModel in
+                                            configureCloudModel(model: cloudModel)
+                                        },
+                                        onDeleteAPIKey: { cloudModel in
+                                            handleAPIKeyDeletion(for: cloudModel)
+                                        }
+                                    )
+                                    .matchedTransitionSource(id: cloudModel.id, in: zoomNamespace)
+                                }
                             }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
-                    }
 
-                    // Custom Model card (always shown in cloud tab)
-                    if modelType == .cloud {
-                        CustomTranscriptionModelCard(
-                            onConfigure: {
-                                showCustomModelConfiguration = true
-                            }
-                        )
-                        .padding(.horizontal)
+                        // Custom Model card (always shown in cloud tab)
+                        if modelType == .cloud {
+                            CustomTranscriptionModelCard(
+                                onConfigure: {
+                                    showCustomModelConfiguration = true
+                                }
+                            )
+                            .padding(.horizontal)
+                        }
                     }
+                    .padding(.vertical)
                 }
-                .padding(.vertical)
+                .scrollContentBackground(.hidden)
+                .onChange(of: modelType) {
+                    proxy.scrollTo("top", anchor: .top)
+                }
             }
-            .scrollContentBackground(.hidden)
         }
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(

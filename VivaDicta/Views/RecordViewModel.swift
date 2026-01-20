@@ -394,6 +394,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Check for cancellation after transcription
                 try Task.checkCancellation()
 
+                // Validate transcription has meaningful content (not empty, whitespace-only, or punctuation-only)
+                guard TranscriptionOutputFilter.hasMeaningfulContent(transcribedText) else {
+                    logger.logInfo("📱 Transcription contains no meaningful content, skipping save")
+
+                    // Clean up audio file
+                    try? FileManager.default.removeItem(at: audioURLToTranscribe)
+
+                    // Reset state
+                    resetValues()
+                    recordingState = .idle
+                    AppGroupCoordinator.shared.updateRecordingState(false)
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                    return
+                }
+
                 let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
@@ -422,6 +437,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     )
 
                     // Update state to show enhancing animation
+                    logger.logInfo("📱 [HUD_DEBUG] Setting recordingState to .enhancing")
                     self.recordingState = .enhancing
                     HapticManager.lightImpact()
 
@@ -429,7 +445,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
 
                     do {
+                        logger.logInfo("📱 [HUD_DEBUG] Starting aiService.enhance()")
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
+                        logger.logInfo("📱 [HUD_DEBUG] aiService.enhance() completed successfully")
 
                         enhancedText = enhanced
                         promptName = prompt
@@ -440,22 +458,37 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     } catch let error as AppleFoundationModelError {
                         // Apple Foundation Model specific error
-                        logger.logWarning("📱 Apple Foundation Model error: \(error.localizedDescription)")
+                        logger.logWarning("📱 [HUD_DEBUG] Apple Foundation Model error: \(error.localizedDescription)")
                         self.pendingTranscription = nil
-                        try Task.checkCancellation()
+
+                        // Check cancellation but catch to continue flow
+                        if Task.isCancelled {
+                            logger.logInfo("📱 [HUD_DEBUG] Task cancelled after AppleFoundationModelError, continuing to save")
+                        }
 
                         // Show alert for guardrail violations so user knows why enhancement failed
                         if case .guardrailViolation = error {
                             self.recordError = .aiGuardrail
                             self.isShowingAlert = true
                         }
+                    } catch is CancellationError {
+                        // Enhancement was cancelled - don't save, just let the outer handler deal with it
+                        logger.logInfo("📱 [HUD_DEBUG] Enhancement cancelled via CancellationError")
+                        self.pendingTranscription = nil
+                        throw CancellationError()
                     } catch {
                         // Other enhancement errors
-                        logger.logWarning("📱 AI enhancement failed: \(error.localizedDescription)")
+                        logger.logWarning("📱 [HUD_DEBUG] AI enhancement failed: \(error.localizedDescription)")
                         self.pendingTranscription = nil
-                        try Task.checkCancellation()
+
+                        // Check cancellation but catch to continue flow
+                        if Task.isCancelled {
+                            logger.logInfo("📱 [HUD_DEBUG] Task cancelled after other error, continuing to save")
+                        }
                     }
                 }
+
+                logger.logInfo("📱 [HUD_DEBUG] Enhancement block completed, proceeding to save transcription")
                 
                 // Create and save transcription to SwiftData
                 let transcription = Transcription(
@@ -472,17 +505,26 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     enhancementDuration: enhancementDur
                 )
 
+                logger.logInfo("📱 [HUD_DEBUG] Inserting transcription into modelContext")
                 modelContext.insert(transcription)
                 try modelContext.save()
+                logger.logInfo("📱 [HUD_DEBUG] Transcription saved to database")
 
-                // Index the new transcription in Spotlight
-                await self.appState?.indexTranscriptionToSpotlight(transcription)
+                // Index the new transcription in Spotlight (non-blocking to avoid SwiftData actor isolation issues)
+                logger.logInfo("📱 [HUD_DEBUG] Starting Spotlight indexing (non-blocking)")
+                let transcriptionEntity = transcription.entity // Extract entity on MainActor
+                Task.detached {
+                    await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
+                }
+                logger.logInfo("📱 [HUD_DEBUG] Spotlight indexing task dispatched")
 
                 // Create and donate user activity for Siri predictions
+                logger.logInfo("📱 [HUD_DEBUG] Creating user activity")
                 if let appState = self.appState {
                     let activity = appState.userActivity(for: transcription)
                     activity.becomeCurrent()
                 }
+                logger.logInfo("📱 [HUD_DEBUG] User activity created")
 
                 // TODO: Generate tags after saving transcription
                 // Task {
@@ -496,12 +538,19 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // }
 
                 // Share transcribed text with keyboard (enhanced text if available, otherwise original)
+                logger.logInfo("📱 [HUD_DEBUG] Sharing text with keyboard")
                 let textToShare = enhancedText ?? transcribedText
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
+                logger.logInfo("📱 [HUD_DEBUG] Text shared with keyboard")
 
-                try Task.checkCancellation()
+                logger.logInfo("📱 [HUD_DEBUG] About to check cancellation before final state reset")
+                if Task.isCancelled {
+                    logger.logInfo("📱 [HUD_DEBUG] Task is cancelled, but continuing to reset state anyway")
+                }
                 HapticManager.heartbeat()
+                logger.logInfo("📱 [HUD_DEBUG] Setting recordingState to .idle")
                 self.recordingState = .idle
+                logger.logInfo("📱 [HUD_DEBUG] recordingState is now: \(String(describing: self.recordingState))")
 
                 // Request app rating after successful transcription
                 RateAppManager.requestReviewIfAppropriate()
@@ -510,7 +559,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.prewarmManager.rescheduleSessionTimeout()
 
             } catch {
-                if Task.isCancelled { return }
+                logger.logError("📱 [HUD_DEBUG] Caught error in outer catch: \(error.localizedDescription)")
+                logger.logError("📱 [HUD_DEBUG] Task.isCancelled = \(Task.isCancelled)")
+                if Task.isCancelled {
+                    logger.logInfo("📱 [HUD_DEBUG] Task was cancelled, resetting state before return")
+                    self.recordingState = .idle
+                    return
+                }
                 HapticManager.error()
                 recordingState = .error(.transcribe)
                 resetValues()
@@ -589,10 +644,20 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             transcribingSpeechTask?.cancel()
             transcribingSpeechTask = nil
 
-            // Save the pending transcription if available
+            // Save the pending transcription if available and has meaningful content
             // Clear immediately to prevent double-save if cancel is called rapidly
             if let pending = pendingTranscription {
                 pendingTranscription = nil
+
+                // Skip saving if transcription has no meaningful content
+                guard TranscriptionOutputFilter.hasMeaningfulContent(pending.text) else {
+                    logger.logInfo("📱 Pending transcription contains no meaningful content, skipping save")
+                    resetValues()
+                    recordingState = .idle
+                    AppGroupCoordinator.shared.updateRecordingState(false)
+                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                    return
+                }
 
                 let transcription = Transcription(
                     text: pending.text,
@@ -616,9 +681,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Haptic feedback for successful save
                     HapticManager.heartbeat()
 
-                    // Index to Spotlight
-                    Task {
-                        await self.appState?.indexTranscriptionToSpotlight(transcription)
+                    // Index to Spotlight (non-blocking to avoid SwiftData actor isolation issues)
+                    let transcriptionEntity = transcription.entity
+                    Task.detached {
+                        await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
                     }
 
                     // Share with keyboard
