@@ -242,11 +242,13 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Session Timeout", selection: $audioSessionTimeout) {
+                            #if DEBUG
                             Text("15 seconds").tag(15)
                             Text("30 seconds").tag(30)
                             Text("60 seconds").tag(60)
                             Text("90 seconds").tag(90)
                             Text("2 minutes").tag(120)
+                            #endif
                             Text("3 minutes").tag(180)
                             Text("5 minutes").tag(300)
                             Text("15 minutes").tag(900)
