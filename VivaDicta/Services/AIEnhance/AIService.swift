@@ -159,10 +159,10 @@ class AIService {
             return
         }
 
-        modes.removeAll { $0.name == mode.name }
+        modes.removeAll { $0.id == mode.id }
 
         // If deleted mode was selected, switch to first one
-        if selectedMode.name == mode.name {
+        if selectedMode.id == mode.id {
             selectedModeName = modes[0].name
         }
 
