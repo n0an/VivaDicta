@@ -309,7 +309,15 @@ struct VivaDictaApp: App {
     
     private func handleDeepLink(_ url: URL) {
         logger.logInfo("📱 Received deep link: \(url.absoluteString)")
-        
+
+        // Handle universal links from vivadicta.com
+        if url.host == "vivadicta.com" || url.host == "www.vivadicta.com" {
+            logger.logInfo("🔗 Universal link opened: \(url.absoluteString)")
+            logger.logInfo("🔗 Path: \(url.path)")
+            // App opened via universal link - currently just opens to main screen
+            return
+        }
+
         // Handle deep links from keyboard extension
         if url.absoluteString.starts(with: "vivadicta://record-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard recording request")
