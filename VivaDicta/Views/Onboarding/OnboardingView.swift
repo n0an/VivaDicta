@@ -34,9 +34,11 @@ struct OnboardingView: View {
     @State private var isForward = true
     @State private var permissionState: MicrophonePermissionState = .undetermined
 
+    private let maxContentWidth: CGFloat = 500
+
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation Bar
+            // Navigation Bar - full width
             HStack {
                 Button {
                     if let previous = currentPage.previous {
@@ -64,7 +66,7 @@ struct OnboardingView: View {
             .padding(.top, 8)
             .animation(.easeInOut, value: currentPage)
 
-            // Page content (no swipe - button navigation only)
+            // Page content (no swipe - button navigation only) - constrained width
             Group {
                 switch currentPage {
                 case .welcome:
@@ -75,10 +77,12 @@ struct OnboardingView: View {
                     OnboardingKeyboardPage()
                 }
             }
+            .frame(maxWidth: maxContentWidth)
+            .frame(maxWidth: .infinity)
             .transition(pageTransition)
             .animation(.easeInOut(duration: 0.3), value: currentPage)
 
-            // Bottom buttons - morph based on current page
+            // Bottom buttons - morph based on current page - constrained width
             VStack(spacing: 12) {
                 switch currentPage {
                 case .welcome:
@@ -139,6 +143,8 @@ struct OnboardingView: View {
                         .buttonStyle(.plain)
                 }
             }
+            .frame(maxWidth: maxContentWidth)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
             .animation(.easeInOut, value: permissionState)
