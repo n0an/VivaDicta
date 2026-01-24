@@ -45,13 +45,14 @@ struct VivaDictaIconWidgetEntryView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80)
-                .padding(.bottom, 4)
+                .padding(.bottom, 8)
             Text("VivaDicta")
-                .font(.title2.weight(.bold))
+                .font(.title3.weight(.bold))
                 .fontDesign(.rounded)
 //                .offset(y: -5)
-                .padding(.bottom, 8)
+                .padding(.bottom, 12)
             Text("New recording")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         
