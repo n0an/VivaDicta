@@ -68,8 +68,8 @@ struct VivaDictaIconWidget: Widget {
         StaticConfiguration(kind: kind, provider: IconWidgetProvider()) { entry in
             VivaDictaIconWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("VivaDicta Icon")
-        .description("Simple widget with app icon")
+        .configurationDisplayName("VivaDicta")
+        .description("Quickly create a new recording from your home screen")
         .supportedFamilies([.systemSmall])
     }
 }
