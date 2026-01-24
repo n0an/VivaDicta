@@ -560,11 +560,11 @@ struct TranscriptionDetailView: View {
                         Label("Enhanced Text", systemImage: "sparkles")
                     }
                 }
-                
+
                 ShareLink(item: transcription.text) {
                     Label("Original Text", systemImage: "text.alignleft")
                 }
-                
+
                 if let audioURL = audioURL {
                     Divider()
                     ShareLink(
@@ -582,6 +582,7 @@ struct TranscriptionDetailView: View {
             Image(systemName: "square.and.arrow.up")
                 .offset(y: -2)
         }
+        .accessibilityLabel("Share Transcription")
     }
 
     // MARK: - Actions

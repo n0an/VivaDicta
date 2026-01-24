@@ -50,6 +50,7 @@ struct OnboardingView: View {
                     .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Go Back")
                 .opacity(currentPage > .welcome ? 1 : 0)
                 .disabled(currentPage == .welcome)
 

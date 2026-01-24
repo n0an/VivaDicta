@@ -34,7 +34,7 @@ struct RecordingSheetView: View {
                 Spacer()
                 
                 // Cancel button (X)
-                
+
                 Button(action: { vm.cancelTranscribe() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 18, weight: .semibold))
@@ -43,6 +43,7 @@ struct RecordingSheetView: View {
                         .background(.gray.opacity(0.1), in: .circle)
                         .contentShape(.rect)
                 }
+                .accessibilityLabel("Cancel Recording")
                 .padding(.vertical, 16)
                 .padding(.horizontal, 16)
                 
@@ -61,6 +62,7 @@ struct RecordingSheetView: View {
                     .font(.system(size: 56))
                     .foregroundStyle(.red)
             }
+            .accessibilityLabel("Stop Recording")
             .disabled(vm.recordingState != .recording)
             .padding(.bottom)
         }

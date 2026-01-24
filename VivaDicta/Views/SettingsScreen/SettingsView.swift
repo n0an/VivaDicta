@@ -150,7 +150,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Automatic Text Formatting")
                                 .font(.body)
-                            Text("Splits transcription into readable paragraphs")
+                            Text("Splits text into readable paragraphs")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -393,6 +393,7 @@ struct SettingsView: View {
                         HapticManager.lightImpact()
                         dismiss()
                     }
+                    .accessibilityLabel("Close Settings")
                 }
             }
 

@@ -59,6 +59,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "gearshape.fill")
                             }
+                            .accessibilityLabel("Settings")
                             .popoverTip(selectTranscriptionModelTipMainView) { action in
                                 if action.id == "go-to-models" {
                                     showingSettings = true
@@ -75,6 +76,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "gearshape.fill")
                             }
+                            .accessibilityLabel("Settings")
                             .tint(.primary)
                             .popoverTip(selectTranscriptionModelTipMainView) { action in
                                 if action.id == "go-to-models" {
@@ -105,6 +107,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "waveform.badge.plus")
                             }
+                            .accessibilityLabel("Import Audio File")
 //                            .popoverTip(selectTranscriptionModelTipMainView) { action in
 //                                if action.id == "open-file-importer" {
 //                                    showingSettings = true
@@ -121,6 +124,7 @@ struct MainView: View {
                             } label: {
                                 Image(systemName: "waveform.badge.plus")
                             }
+                            .accessibilityLabel("Import Audio File")
                             .tint(.primary)
 //                            .popoverTip(selectTranscriptionModelTipMainView) { action in
 //                                if action.id == "open-file-importer" {
@@ -137,7 +141,7 @@ struct MainView: View {
                     if #available(iOS 26.0, *) {
                         DefaultToolbarItem(kind: .search, placement: .bottomBar)
                         ToolbarSpacer(.flexible, placement: .bottomBar)
-                        
+
                         ToolbarItem(placement: .bottomBar) {
 
                             Button {
@@ -149,6 +153,7 @@ struct MainView: View {
                             }
                             .buttonStyle(.glassProminent)
                             .tint(.orange)
+                            .accessibilityLabel("Start Recording")
                         }
                         .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
                     } else {
@@ -157,6 +162,7 @@ struct MainView: View {
                                 startRecording()
                             }
                             .buttonStyle(RecordButtonButtonStyle(bounceTrigger: recordButtonBounceTrigger))
+                            .accessibilityLabel("Start Recording")
                         }
                     }
                 }
