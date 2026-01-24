@@ -215,9 +215,9 @@ struct TranscriptionsContentView: View {
 
     private var emptyAllStateView: some View {
         ContentUnavailableView {
-            Label("No Transcriptions yet", systemImage: "waveform")
+            Label("No Notes yet", systemImage: "waveform")
         } description: {
-            Text("Tap the record button to capture your first transcription.")
+            Text("Tap the record button to capture your first note.")
         }
     }
 }
