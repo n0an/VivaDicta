@@ -40,14 +40,24 @@ struct VivaDictaIconWidgetEntryView: View {
     }
 
     var body: some View {
-        Image("VivaDictaIcon")
-            .resizable()
-            .scaledToFit()
-            .padding(20)
-            .containerBackground(for: .widget) {
-                backgroundColor
-            }
-            .widgetURL(URL(string: "startRecordFromWidget"))
+        VStack(spacing: 0) {
+            Image("VivaDictaIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80)
+            Text("VivaDicta")
+                .font(.title3.weight(.bold))
+                .fontDesign(.rounded)
+                .offset(y: -5)
+                .padding(.bottom, 4)
+            Text("New recording")
+                .foregroundStyle(.secondary)
+        }
+        
+        .containerBackground(for: .widget) {
+            backgroundColor
+        }
+        .widgetURL(URL(string: "startRecordFromWidget"))
     }
 }
 
