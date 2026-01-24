@@ -62,6 +62,7 @@ struct RecordingSheetView: View {
                     .foregroundStyle(.red)
             }
             .disabled(vm.recordingState != .recording)
+            .padding(.bottom)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .presentationDetents([.height(300)])

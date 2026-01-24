@@ -73,6 +73,8 @@ struct ModelsView: View {
                             .padding(.horizontal)
                         }
                     }
+                    .frame(maxWidth: 600)
+                    .frame(maxWidth: .infinity)
                     .padding(.vertical)
                 }
                 .scrollContentBackground(.hidden)
