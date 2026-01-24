@@ -12,7 +12,6 @@ import SwiftUI
 struct VivaDictaWidgetBundle: WidgetBundle {
     var body: some Widget {
         VivaDictaIconWidget()
-        VivaDictaWidget()
         VivaDictaWidgetControl()
         VivaDictaLiveActivity()
     }

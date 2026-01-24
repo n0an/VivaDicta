@@ -41,15 +41,16 @@ struct VivaDictaIconWidgetEntryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Image("VivaDictaIcon")
+            Image("VivaDictaIconFrameless")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80)
-            Text("VivaDicta")
-                .font(.title3.weight(.bold))
-                .fontDesign(.rounded)
-                .offset(y: -5)
                 .padding(.bottom, 4)
+            Text("VivaDicta")
+                .font(.title2.weight(.bold))
+                .fontDesign(.rounded)
+//                .offset(y: -5)
+                .padding(.bottom, 8)
             Text("New recording")
                 .foregroundStyle(.secondary)
         }
