@@ -9,6 +9,10 @@
 		<dict>
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
 			<key>Title</key>
 			<string>➡️ Steps to Activate VivaDicta</string>
 			<key>FooterText</key>
@@ -31,8 +35,7 @@ Full Access only lets VivaDicta work across your apps.</string>
 			<key>Title</key>
 			<string>👀 Don&apos;t see &quot;Keyboards&quot;?</string>
 			<key>FooterText</key>
-			<string>❶ Close Settings, then try again
-❷ Or open VivaDicta → tap Enable in Settings → retry</string>
+			<string>❶ Close Settings, then try again</string>
 		</dict>
 	</array>
 </dict>
