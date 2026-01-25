@@ -596,10 +596,10 @@ class AIService {
                 let instructions = getFoundationModelInstructions()
                 let promptPrefix = getFoundationModelPromptPrefix()
                 let wrapInTags = selectedMode.userPrompt?.wrapInTranscriptTags ?? true
-                logger.logNotice("AI Enhancement - Using Apple Foundation Model")
-                logger.logNotice("AI Enhancement - Instructions: \(instructions)")
-                logger.logNotice("AI Enhancement - Prompt Prefix: \(promptPrefix)")
-                logger.logNotice("AI Enhancement - Input Text: \(text)")
+                logger.logDebug("AI Enhancement - Using Apple Foundation Model")
+                logger.logDebug("AI Enhancement - Instructions: \(instructions)")
+                logger.logDebug("AI Enhancement - Prompt Prefix: \(promptPrefix)")
+                logger.logDebug("AI Enhancement - Input Text: \(text)")
                 return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix, wrapInTranscriptTags: wrapInTags)
             } else {
                 throw EnhancementError.notConfigured
@@ -626,8 +626,8 @@ class AIService {
 
         let formattedText = formatTranscriptForLLM(text)
 
-        logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
-        logger.logNotice("AI Enhancement - User Message: \(formattedText)")
+        logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
+        logger.logDebug("AI Enhancement - User Message: \(formattedText)")
 
         switch aiProvider {
         case .anthropic:
@@ -832,10 +832,10 @@ class AIService {
         let systemMessage = getSystemMessage()
         let formattedText = formatTranscriptForLLM(text)
 
-        logger.logNotice("AI Enhancement - Using Ollama at \(serverURL)")
-        logger.logNotice("AI Enhancement - Model: \(self.selectedMode.aiModel)")
-        logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
-        logger.logNotice("AI Enhancement - User Message: \(formattedText)")
+        logger.logDebug("AI Enhancement - Using Ollama at \(serverURL)")
+        logger.logDebug("AI Enhancement - Model: \(self.selectedMode.aiModel)")
+        logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
+        logger.logDebug("AI Enhancement - User Message: \(formattedText)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -1054,10 +1054,10 @@ class AIService {
         let systemMessage = getSystemMessage()
         let formattedText = formatTranscriptForLLM(text)
 
-        logger.logNotice("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
-        logger.logNotice("AI Enhancement - Model: \(modelName)")
-        logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
-        logger.logNotice("AI Enhancement - User Message: \(formattedText)")
+        logger.logDebug("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
+        logger.logDebug("AI Enhancement - Model: \(modelName)")
+        logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
+        logger.logDebug("AI Enhancement - User Message: \(formattedText)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
