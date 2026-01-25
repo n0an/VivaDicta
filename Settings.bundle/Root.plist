@@ -10,51 +10,29 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Group</string>
+			<string>➡️ Steps to Activate VivaDicta</string>
+			<key>FooterText</key>
+			<string>❶ Tap Keyboards
+❷ Turn on VivaDicta
+❸ Enable Allow Full Access</string>
 		</dict>
 		<dict>
 			<key>Type</key>
-			<string>PSTextFieldSpecifier</string>
+			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Name</string>
-			<key>Key</key>
-			<string>name_preference</string>
-			<key>DefaultValue</key>
-			<string></string>
-			<key>IsSecure</key>
-			<false/>
-			<key>KeyboardType</key>
-			<string>Alphabet</string>
-			<key>AutocapitalizationType</key>
-			<string>None</string>
-			<key>AutocorrectionType</key>
-			<string>No</string>
+			<string>🔒 Your Privacy Matters</string>
+			<key>FooterText</key>
+			<string>VivaDicta never stores what you say.
+Full Access only lets VivaDicta work across your apps.</string>
 		</dict>
 		<dict>
 			<key>Type</key>
-			<string>PSToggleSwitchSpecifier</string>
+			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Enabled</string>
-			<key>Key</key>
-			<string>enabled_preference</string>
-			<key>DefaultValue</key>
-			<true/>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSSliderSpecifier</string>
-			<key>Key</key>
-			<string>slider_preference</string>
-			<key>DefaultValue</key>
-			<real>0.5</real>
-			<key>MinimumValue</key>
-			<integer>0</integer>
-			<key>MaximumValue</key>
-			<integer>1</integer>
-			<key>MinimumValueImage</key>
-			<string></string>
-			<key>MaximumValueImage</key>
-			<string></string>
+			<string>👀 Don&apos;t see &quot;Keyboards&quot;?</string>
+			<key>FooterText</key>
+			<string>❶ Close Settings, then try again
+❷ Or open VivaDicta → tap Enable in Settings → retry</string>
 		</dict>
 	</array>
 </dict>
