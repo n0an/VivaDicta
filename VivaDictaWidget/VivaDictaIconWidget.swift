@@ -40,7 +40,7 @@ struct IconWidgetEntry: TimelineEntry {
         let components = Calendar.current.dateComponents([.hour, .minute], from: date)
         let hours = Float(components.hour ?? 0)
         let minutes = Float(components.minute ?? 0)
-        return (hours * 60 + minutes) / 10.0
+        return (hours * 60 + minutes) / 5.0
     }
 }
 
