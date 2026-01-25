@@ -58,10 +58,10 @@ struct VivaDictaIconWidgetEntryView : View {
             VivaDictaIconWidgetEntryViewSmall(entry: entry)
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryCircular:
-            LockScreenCircularView()
+            LockScreenIconCircularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryRectangular:
-            LockScreenRectangularView()
+            LockScreenIconRectangularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryInline:
             Label("Record Note", systemImage: "microphone.circle.fill")
@@ -87,10 +87,26 @@ struct VivaDictaIconWidgetEntryViewSmall: View {
         renderingMode == .fullColor
     }
 
-    private var backgroundColor: Color {
-        colorScheme == .dark
-            ? Color(white: 0.11)
-            : Color(white: 0.95)
+    private var backgroundGradient: LinearGradient {
+        if colorScheme == .dark {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.06, blue: 0.12),
+                    Color(red: 0.18, green: 0.12, blue: 0.28)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    .white,
+                    Color(red: 0.88, green: 0.85, blue: 0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
     }
 
     var body: some View {
@@ -109,7 +125,7 @@ struct VivaDictaIconWidgetEntryViewSmall: View {
         }
         .widgetAccentable()
         .containerBackground(for: .widget) {
-            backgroundColor
+            backgroundGradient
         }
         .widgetURL(URL(string: "startRecordFromWidget"))
     }
