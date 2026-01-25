@@ -205,7 +205,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .openAI:
             return "gpt-5-mini"
         case .grok:
-            return "grok-4"
+            return "grok-4-1-fast"
         case .elevenLabs:
             return "scribe_v1"
         case .deepgram:
@@ -281,7 +281,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .grok:
             return [
-                "grok-4.1",
+                "grok-4-1-fast",
                 "grok-4",
                 "grok-4-heavy",
                 "grok-code-fast-1"
