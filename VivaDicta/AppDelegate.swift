@@ -9,9 +9,15 @@
 import UIKit
 import ActivityKit
 import os
+import FirebaseCore
 
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     private let logger = Logger(category: .appDelegate)
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        FirebaseApp.configure()
+        return true
+    }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)

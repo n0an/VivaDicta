@@ -506,23 +506,24 @@ iOS Version: \(systemVersion)
     // MARK: - Keyboard Recording Session Actions
 
     private func activateKeyboardRecordingSession() {
-        Task {
-            HapticManager.lightImpact()
-            do {
-                // Start the pre-warm session (same as when receiving deep link)
-                try await prewarmManager.startPrewarmSession()
-
-                // Activate keyboard session to notify keyboard that hot mic is ready
-                AppGroupCoordinator.shared.activateKeyboardSession(
-                    timeoutSeconds: prewarmManager.audioSessionTimeout
-                )
-
-            } catch {
-                prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
-                HapticManager.error()
-                showPrewarmError = true
-            }
-        }
+        fatalError("crash test")
+//        Task {
+//            HapticManager.lightImpact()
+//            do {
+//                // Start the pre-warm session (same as when receiving deep link)
+//                try await prewarmManager.startPrewarmSession()
+//
+//                // Activate keyboard session to notify keyboard that hot mic is ready
+//                AppGroupCoordinator.shared.activateKeyboardSession(
+//                    timeoutSeconds: prewarmManager.audioSessionTimeout
+//                )
+//
+//            } catch {
+//                prewarmErrorMessage = "Failed to activate session: \(error.localizedDescription)"
+//                HapticManager.error()
+//                showPrewarmError = true
+//            }
+//        }
     }
 }
 
