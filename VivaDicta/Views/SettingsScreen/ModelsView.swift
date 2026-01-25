@@ -177,9 +177,11 @@ struct ModelsView: View {
     }
 }
 
+#if DEBUG || QA
 #Preview {
     NavigationStack {
         ModelsView()
     }
     .environment(AppState())
 }
+#endif

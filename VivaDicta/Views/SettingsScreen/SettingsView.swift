@@ -526,11 +526,12 @@ iOS Version: \(systemVersion)
     }
 }
 
-
+#if DEBUG || QA
 #Preview {
     SettingsView()
         .environment(AppState())
 }
+#endif
 
 
 // MARK: - Mode Info Row

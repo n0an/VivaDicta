@@ -56,6 +56,7 @@ struct KeyboardFlowSheet: View {
     }
 }
 
+#if DEBUG || QA
 #Preview(traits: .transcriptionsMockData) {
     
     @Previewable @State var appState = AppState()
@@ -69,4 +70,5 @@ struct KeyboardFlowSheet: View {
                 .presentationDragIndicator(.hidden)
         }
 }
+#endif
 

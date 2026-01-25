@@ -222,6 +222,7 @@ struct TranscriptionsContentView: View {
     }
 }
 
+#if DEBUG || QA
 #Preview(traits: .transcriptionsMockDataMany) {
     @Previewable @State var searchText = ""
     NavigationStack {
@@ -229,3 +230,4 @@ struct TranscriptionsContentView: View {
     }
     .environment(AppState())
 }
+#endif

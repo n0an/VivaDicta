@@ -485,8 +485,10 @@ struct MainView: View {
     }
 }
 
+#if DEBUG || QA
 #Preview(traits: .transcriptionsMockData) {
     MainView()
         .environment(AppState())
         .environment(Router())
 }
+#endif

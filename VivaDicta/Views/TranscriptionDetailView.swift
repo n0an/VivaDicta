@@ -765,7 +765,9 @@ struct TranscriptionDetailView: View {
     }
 }
 
+#if DEBUG || QA
 #Preview {
     TranscriptionDetailView(transcription: Transcription.mockData[0])
         .environment(AppState())
 }
+#endif

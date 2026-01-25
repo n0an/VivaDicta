@@ -92,7 +92,9 @@ struct RecordingSheetView: View {
     }
 }
 
+#if DEBUG || QA
 #Preview {
     RecordingSheetView()
         .environment(AppState())
 }
+#endif
