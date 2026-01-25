@@ -467,8 +467,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         self.pendingTranscription = nil
                         throw CancellationError()
                     } catch {
-                        // Other enhancement errors
+                        // Other enhancement errors - show alert to user
                         self.pendingTranscription = nil
+                        self.recordError = .aiEnhancement(error.localizedDescription)
+                        self.isShowingAlert = true
                     }
                 }
                 

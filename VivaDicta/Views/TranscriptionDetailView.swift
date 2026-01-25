@@ -29,6 +29,8 @@ struct TranscriptionDetailView: View {
     @State private var processingTask: Task<Void, Never>?
     @State private var isShimmering: Bool = false
     @State private var showGuardrailAlert: Bool = false
+    @State private var showEnhancementErrorAlert: Bool = false
+    @State private var enhancementErrorMessage: String = ""
     @State private var isMetaInfoExpanded: Bool = false
 
     // Ripple effect state for processing animations
@@ -223,6 +225,14 @@ struct TranscriptionDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Apple's on-device AI blocked this content due to safety guidelines. Consider using a cloud AI provider for this type of content.")
+        }
+        .alert(
+            "AI Enhancement Failed",
+            isPresented: $showEnhancementErrorAlert
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(enhancementErrorMessage)
         }
     }
 
@@ -678,6 +688,8 @@ struct TranscriptionDetailView: View {
                 HapticManager.error()
             } catch {
                 // Don't return early - let processingState be reset
+                enhancementErrorMessage = error.localizedDescription
+                showEnhancementErrorAlert = true
                 HapticManager.error()
             }
 
@@ -743,6 +755,8 @@ struct TranscriptionDetailView: View {
                 // Task was cancelled, don't show error haptic
             } catch {
                 // Don't return early - let processingState be reset
+                enhancementErrorMessage = error.localizedDescription
+                showEnhancementErrorAlert = true
                 HapticManager.error()
             }
 
