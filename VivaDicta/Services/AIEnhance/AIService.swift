@@ -595,9 +595,10 @@ class AIService {
             if #available(iOS 26, *) {
                 let instructions = getFoundationModelInstructions()
                 let promptPrefix = getFoundationModelPromptPrefix()
+                let wrapInTags = selectedMode.userPrompt?.wrapInTranscriptTags ?? true
                 logger.logNotice("AI Enhancement - Using Apple Foundation Model")
                 logger.logNotice("AI Enhancement - Prompt Prefix: \(promptPrefix)")
-                return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix)
+                return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix, wrapInTranscriptTags: wrapInTags)
             } else {
                 throw EnhancementError.notConfigured
             }

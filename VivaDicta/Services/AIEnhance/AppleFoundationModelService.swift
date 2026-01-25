@@ -52,8 +52,9 @@ final class AppleFoundationModelService {
     ///   - text: The transcription text to enhance
     ///   - instructions: The base instructions (used if no prewarmed session exists)
     ///   - promptPrefix: The prompt prefix (user enhancement style)
+    ///   - wrapInTranscriptTags: Whether to wrap the text in <TRANSCRIPT> tags
     /// - Returns: The enhanced text
-    func enhance(_ text: String, instructions: String, promptPrefix: String) async throws -> String {
+    func enhance(_ text: String, instructions: String, promptPrefix: String, wrapInTranscriptTags: Bool = true) async throws -> String {
         guard AppleFoundationModelAvailability.isAvailable else {
             throw AppleFoundationModelError.notAvailable
         }
@@ -74,10 +75,11 @@ final class AppleFoundationModelService {
             logger.logInfo("Apple Foundation Model - Created new session (no prewarm)")
         }
 
-        // Build full prompt: prefix + transcript
+        // Build full prompt: prefix + transcript (optionally wrapped in tags)
+        let formattedText = wrapInTranscriptTags ? "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>" : text
         let fullPrompt = Prompt {
             promptPrefix
-            "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+            formattedText
         }
 
         do {
