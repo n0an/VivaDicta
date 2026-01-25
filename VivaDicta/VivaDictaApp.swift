@@ -447,8 +447,8 @@ struct VivaDictaApp: App {
     func updateShortcutItems() {
         let recordAction = UIApplicationShortcutItem(
             type: QuickActionType.startRecord.rawValue,
-            localizedTitle: "Start Record",
-            localizedSubtitle: nil,
+            localizedTitle: "Start recording",
+            localizedSubtitle: "Turn your voice into text",
             icon: UIApplicationShortcutIcon(systemImageName: "microphone.circle.fill"),
             userInfo: [:])
         UIApplication.shared.shortcutItems = [recordAction]
