@@ -597,7 +597,9 @@ class AIService {
                 let promptPrefix = getFoundationModelPromptPrefix()
                 let wrapInTags = selectedMode.userPrompt?.wrapInTranscriptTags ?? true
                 logger.logNotice("AI Enhancement - Using Apple Foundation Model")
+                logger.logNotice("AI Enhancement - Instructions: \(instructions)")
                 logger.logNotice("AI Enhancement - Prompt Prefix: \(promptPrefix)")
+                logger.logNotice("AI Enhancement - Input Text: \(text)")
                 return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix, wrapInTranscriptTags: wrapInTags)
             } else {
                 throw EnhancementError.notConfigured
@@ -832,6 +834,8 @@ class AIService {
 
         logger.logNotice("AI Enhancement - Using Ollama at \(serverURL)")
         logger.logNotice("AI Enhancement - Model: \(self.selectedMode.aiModel)")
+        logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
+        logger.logNotice("AI Enhancement - User Message: \(formattedText)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -1052,6 +1056,8 @@ class AIService {
 
         logger.logNotice("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
         logger.logNotice("AI Enhancement - Model: \(modelName)")
+        logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
+        logger.logNotice("AI Enhancement - User Message: \(formattedText)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
