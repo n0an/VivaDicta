@@ -16,6 +16,8 @@
 		189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7ACE2F0D8749004BAFBF /* FluidAudio */; };
 		18B497E52F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
+		18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497EF2F268B2700538830 /* FirebaseAnalytics */; };
+		18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497F12F268B2700538830 /* FirebaseCrashlytics */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -301,6 +303,8 @@
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
+				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
+				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
 				181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -420,6 +424,8 @@
 				18E328F62E894C3D0026327D /* WhisperKit */,
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
 				18EBD6B22ED1FBFB00C0041E /* FluidAudio */,
+				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
+				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -586,6 +592,7 @@
 				18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -1575,6 +1582,14 @@
 				version = 1.1.0;
 			};
 		};
+		18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
 		18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/KeyboardKit/KeyboardKit.git";
@@ -1621,6 +1636,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		18B497EF2F268B2700538830 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		18B497F12F268B2700538830 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
