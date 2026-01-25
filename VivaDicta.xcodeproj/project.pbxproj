@@ -110,6 +110,7 @@
 		186E24542EA199EF00B19EDF /* Exceptions for "VivaDicta" folder in "VivaDictaTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"GoogleService-Info.plist",
 				Utilities/LoggerExtension.swift,
 			);
 			target = 18351E562E634FF000944940 /* VivaDictaTests */;
@@ -125,6 +126,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Extensions/FileManager+Directories.swift",
+				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
 				Models/TranscriptionModel.swift,
@@ -150,6 +152,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Extensions/FileManager+Directories.swift",
+				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
 				Models/TranscriptionModel.swift,
@@ -189,6 +192,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppIntents/ToggleRecordIntent.swift,
+				"GoogleService-Info.plist",
 				Models/VivaDictaLiveActivityAttributes.swift,
 				Shared/AppGroupCoordinator.swift,
 				Utilities/LoggerExtension.swift,
@@ -202,6 +206,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Extensions/FileManager+Directories.swift",
+				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
 				Models/TranscriptionModel.swift,
