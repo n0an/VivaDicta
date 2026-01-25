@@ -559,6 +559,7 @@ class AIService {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
+            logger.logError("AI Enhancement failed: \(error.localizedDescription)")
             throw error
         }
     }
