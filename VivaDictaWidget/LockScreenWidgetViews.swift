@@ -19,8 +19,8 @@ struct LockScreenCircularView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background {
             ContainerRelativeShape()
-                .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                     startPoint: .bottom, endPoint: .top))
+                .fill(LinearGradient(colors: [.white.opacity(0.2), .clear],
+                                     startPoint: UnitPoint(x: 0.5, y: 1.3), endPoint: .top))
         }
         .containerBackground(for: .widget) { }
     }
@@ -35,7 +35,7 @@ struct LockScreenIconCircularView: View {
         .background {
             ContainerRelativeShape()
                 .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                     startPoint: .bottom, endPoint: .top))
+                                     startPoint: UnitPoint(x: 0.5, y: 1.3), endPoint: .top))
         }
         .containerBackground(for: .widget) { }
     }
