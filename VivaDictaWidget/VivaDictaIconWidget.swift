@@ -58,10 +58,10 @@ struct VivaDictaIconWidgetEntryView : View {
             VivaDictaIconWidgetEntryViewSmall(entry: entry)
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryCircular:
-            LockScreenIconCircularView()
+            LockScreenCircularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryRectangular:
-            LockScreenIconRectangularView()
+            LockScreenRectangularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryInline:
             Label("Record Note", systemImage: "microphone.circle.fill")
