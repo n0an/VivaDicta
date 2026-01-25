@@ -310,6 +310,23 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Support") {
+                    Button {
+                        openSupportEmail()
+                    } label: {
+                        HStack {
+                            Image(systemName: "envelope")
+                                .foregroundStyle(.blue)
+                            Text("Email Support")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("Storage") {
 
                     Toggle(isOn: $isAutoAudioCleanupEnabled) {
@@ -431,6 +448,44 @@ struct SettingsView: View {
 
     private func duplicateMode(_ mode: VivaMode) {
         appState.aiService.duplicateMode(mode)
+    }
+
+    // MARK: - Support
+
+    private var deviceModelIdentifier: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        return withUnsafePointer(to: &systemInfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(validatingUTF8: $0) ?? "Unknown"
+            }
+        }
+    }
+
+    private func openSupportEmail() {
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+        let deviceModel = deviceModelIdentifier
+        let systemVersion = UIDevice.current.systemVersion
+
+        let subject = "VivaDicta Support Request"
+        let body = """
+
+
+---
+Please describe your issue above this line
+---
+App Version: \(appVersion) (\(buildNumber))
+Device: \(deviceModel)
+iOS Version: \(systemVersion)
+"""
+
+        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+
+        if let url = URL(string: "mailto:anton.novoselov@gmail.com?subject=\(encodedSubject)&body=\(encodedBody)") {
+            UIApplication.shared.open(url)
+        }
     }
 
     // MARK: - Keyboard Recording Session Actions
