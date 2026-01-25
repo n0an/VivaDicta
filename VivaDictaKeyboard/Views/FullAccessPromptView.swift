@@ -65,7 +65,6 @@ struct FullAccessPromptView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
     }
 
     private func openSettings() {

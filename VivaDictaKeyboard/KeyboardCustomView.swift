@@ -22,7 +22,7 @@ struct KeyboardCustomView: View {
 
     var body: some View {
         ZStack {
-            // Main keyboard content
+            // Main keyboard content - fades out when full access prompt is shown
             Group {
                 switch dictationState.uiState {
                 case .recording:
@@ -82,6 +82,7 @@ struct KeyboardCustomView: View {
                     }
                 }
             }
+            .opacity(showFullAccessPrompt ? 0 : 1)
 
             // Full access prompt overlay with slide-up animation
             if showFullAccessPrompt {
