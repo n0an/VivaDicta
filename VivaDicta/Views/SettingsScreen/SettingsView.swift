@@ -8,6 +8,7 @@
 import SwiftUI
 import AppIntents
 import TipKit
+import MessageUI
 
 struct SettingsView: View {
     @Environment(AppState.self) var appState
@@ -41,6 +42,7 @@ struct SettingsView: View {
     private var isHapticsEnabled = true
 
     @State private var showAddMode = false
+    @State private var showMailCompose = false
 
     let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
@@ -312,7 +314,11 @@ struct SettingsView: View {
 
                 Section("Support") {
                     Button {
-                        openSupportEmail()
+                        if MFMailComposeViewController.canSendMail() {
+                            showMailCompose = true
+                        } else {
+                            openSupportEmailFallback()
+                        }
                     } label: {
                         HStack {
                             Image(systemName: "envelope")
@@ -436,6 +442,13 @@ struct SettingsView: View {
         } message: {
             Text(prewarmErrorMessage)
         }
+        .sheet(isPresented: $showMailCompose) {
+            MailComposeView(
+                subject: "VivaDicta Support Request",
+                recipients: ["anton.novoselov@gmail.com"],
+                body: supportEmailBody
+            )
+        }
     }
     
     private func deleteMode(_ mode: VivaMode) {
@@ -462,14 +475,13 @@ struct SettingsView: View {
         }
     }
 
-    private func openSupportEmail() {
+    private var supportEmailBody: String {
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
         let deviceModel = deviceModelIdentifier
         let systemVersion = UIDevice.current.systemVersion
 
-        let subject = "VivaDicta Support Request"
-        let body = """
+        return """
 
 
 ---
@@ -479,9 +491,12 @@ App Version: \(appVersion) (\(buildNumber))
 Device: \(deviceModel)
 iOS Version: \(systemVersion)
 """
+    }
 
+    private func openSupportEmailFallback() {
+        let subject = "VivaDicta Support Request"
         let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedBody = supportEmailBody.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
         if let url = URL(string: "mailto:anton.novoselov@gmail.com?subject=\(encodedSubject)&body=\(encodedBody)") {
             UIApplication.shared.open(url)
@@ -663,6 +678,43 @@ enum SettingsError: LocalizedError {
             "There's already an existing Prompt with name \(name). Enter a different name for this prompt."
         case .unexpectedError(let message):
             "An unexpected error occurred: \(message). Please try again."
+        }
+    }
+}
+
+// MARK: - Mail Compose View
+
+struct MailComposeView: UIViewControllerRepresentable {
+    let subject: String
+    let recipients: [String]
+    let body: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let mailComposer = MFMailComposeViewController()
+        mailComposer.mailComposeDelegate = context.coordinator
+        mailComposer.setSubject(subject)
+        mailComposer.setToRecipients(recipients)
+        mailComposer.setMessageBody(body, isHTML: false)
+        return mailComposer
+    }
+
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(dismiss: dismiss)
+    }
+
+    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let dismiss: DismissAction
+
+        init(dismiss: DismissAction) {
+            self.dismiss = dismiss
+        }
+
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            dismiss()
         }
     }
 }
