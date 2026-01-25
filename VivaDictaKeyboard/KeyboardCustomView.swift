@@ -21,12 +21,9 @@ struct KeyboardCustomView: View {
     }
 
     var body: some View {
-        Group {
-            if showFullAccessPrompt {
-                FullAccessPromptView(onDismiss: {
-                    showFullAccessPrompt = false
-                })
-            } else {
+        ZStack {
+            // Main keyboard content
+            Group {
                 switch dictationState.uiState {
                 case .recording:
                     RecordingStateView(dictationState: dictationState)
@@ -73,13 +70,28 @@ struct KeyboardCustomView: View {
                                 VivaDictaKeyboardToolbarView(
                                     controller: controller as? KeyboardViewController,
                                     hasFullAccess: hasFullAccess,
-                                    onShowFullAccessPrompt: { showFullAccessPrompt = true }
+                                    onShowFullAccessPrompt: {
+                                        withAnimation(.spring(duration: 0.35)) {
+                                            showFullAccessPrompt = true
+                                        }
+                                    }
                                 )
                                 .environment(self.dictationState)
                             }
                         )
                     }
                 }
+            }
+
+            // Full access prompt overlay with slide-up animation
+            if showFullAccessPrompt {
+                FullAccessPromptView(onDismiss: {
+                    withAnimation(.spring(duration: 0.35)) {
+                        showFullAccessPrompt = false
+                    }
+                })
+                .transition(.move(edge: .bottom))
+                .zIndex(1)
             }
         }
     }
