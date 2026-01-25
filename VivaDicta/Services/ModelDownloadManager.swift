@@ -9,6 +9,7 @@ import SwiftUI
 import FluidAudio
 import WhisperKit
 import os
+import FirebaseAnalytics
 
 enum DownloadStatus: String {
     case download
@@ -193,6 +194,12 @@ class ModelDownloadManager: @unchecked Sendable {
                 logger.logNotice("✅ Successfully downloaded \(model.displayName)")
             }
 
+            // Log model download to Firebase Analytics
+            Analytics.logEvent("model_downloaded", parameters: [
+                "model_name": model.displayName,
+                "model_type": "parakeet"
+            ])
+
             try? await Task.sleep(for: .seconds(0.5))
 
             await MainActor.run {
@@ -336,6 +343,12 @@ class ModelDownloadManager: @unchecked Sendable {
                 logger.logNotice("✅ Successfully downloaded and prepared \(model.displayName)")
                 logger.logNotice("⏱️ Preparation time: prewarm: \(prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s")
             }
+
+            // Log model download to Firebase Analytics
+            Analytics.logEvent("model_downloaded", parameters: [
+                "model_name": model.displayName,
+                "model_type": "whisperkit"
+            ])
 
             // Unload models after download to free memory
             // They will be loaded again when needed for transcription

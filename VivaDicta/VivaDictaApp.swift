@@ -234,6 +234,7 @@ struct VivaDictaApp: App {
                 OnboardingView {
                     HapticManager.celebration()
                     hasCompletedOnboarding = true
+                    Analytics.logEvent("onboarding_completed", parameters: nil)
                 }
             }
         }
@@ -361,7 +362,12 @@ struct VivaDictaApp: App {
                     // Extract hostId from URL query parameters
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                     let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
-                    
+
+                    // Log keyboard session start to Firebase Analytics
+                    Analytics.logEvent("keyboard_session_started", parameters: [
+                        "host_bundle_id": hostId ?? "unknown"
+                    ])
+
                     // Activate keyboard session to notify keyboard that hot mic is ready
                     let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
                     AppGroupCoordinator.shared.activateKeyboardSession(
