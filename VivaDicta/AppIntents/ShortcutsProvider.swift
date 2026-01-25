@@ -28,7 +28,6 @@ final class ShortcutsProvider: AppShortcutsProvider {
                 "Dictate in \(.applicationName)",
                 "New recording in \(.applicationName)",
                 "New note in \(.applicationName)",
-                "New transcription in \(.applicationName)",
                 "Voice note in \(.applicationName)",
                 "Quick note in \(.applicationName)"
             ],
