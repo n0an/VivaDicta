@@ -14,6 +14,8 @@
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
 		189C7ABC2F0D84E2004BAFBF /* ActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7ACE2F0D8749004BAFBF /* FluidAudio */; };
+		18B497E52F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
+		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -97,6 +99,7 @@
 		189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ActionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
+		18B497E42F26822400538830 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -356,6 +359,7 @@
 		181D04CE2E3E55E400D357A6 = {
 			isa = PBXGroup;
 			children = (
+				18B497E42F26822400538830 /* Settings.bundle */,
 				1855BB842E96C8560038F3D9 /* VivaDicta.xctestplan */,
 				181D04D92E3E55E400D357A6 /* VivaDicta */,
 				18351E582E634FF000944940 /* VivaDictaTests */,
@@ -598,6 +602,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18B497E62F26822400538830 /* Settings.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -619,6 +624,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18B497E52F26822400538830 /* Settings.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
