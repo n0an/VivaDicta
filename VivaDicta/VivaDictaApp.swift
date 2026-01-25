@@ -12,6 +12,7 @@ import AppIntents
 import CoreSpotlight
 import ActivityKit
 import TipKit
+import FirebaseAnalytics
 
 @main
 struct VivaDictaApp: App {
@@ -298,12 +299,12 @@ struct VivaDictaApp: App {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - show the keyboard flow sheet as fallback
             appState.showKeyboardFlowSheet = true
-            
-            // TODO: Log to Firebase Analytics when we show keyboard flow sheet due to missing URL scheme mapping
-            // This helps us track which apps users are trying to use but we don't have URL schemes for yet
-            // We can then add popular apps to the knownSchemes dictionary
-            // Bundle ID to log: \(hostId)
-            // Linear issue: https://linear.app/antonnovoselov/issue/VIV-175/firebase-analytics-add-logging-what-app-was-not-added-to-predefined
+
+            // Log unrecognized host app to Firebase Analytics
+            // This helps track which apps users are trying to use but we don't have URL schemes for yet
+            Analytics.logEvent("unrecognized_host_app", parameters: [
+                "bundle_id": hostId
+            ])
         }
     }
     
