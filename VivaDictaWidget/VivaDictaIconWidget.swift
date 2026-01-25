@@ -46,10 +46,15 @@ struct IconWidgetEntry: TimelineEntry {
 
 struct VivaDictaIconWidgetEntryView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var entry: IconWidgetProvider.Entry
 
     private var t: Float { entry.t }
+
+    private var isFullColor: Bool {
+        renderingMode == .fullColor
+    }
 
     private var backgroundColor: Color {
         colorScheme == .dark
@@ -59,9 +64,7 @@ struct VivaDictaIconWidgetEntryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Image("VivaDictaIconFrameless")
-                .resizable()
-                .scaledToFit()
+            iconImage
                 .frame(width: 80)
                 .padding(.bottom, 8)
             Text("VivaDicta")
@@ -73,10 +76,25 @@ struct VivaDictaIconWidgetEntryView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
+        .widgetAccentable()
         .containerBackground(for: .widget) {
             backgroundColor
         }
         .widgetURL(URL(string: "startRecordFromWidget"))
+    }
+
+    @ViewBuilder
+    private var iconImage: some View {
+        if isFullColor {
+            Image("VivaDictaIconFrameless")
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image("VivaDictaIconFrameless")
+                .resizable()
+                .scaledToFit()
+                .luminanceToAlpha()
+        }
     }
 
     private var meshGradient: MeshGradient {
