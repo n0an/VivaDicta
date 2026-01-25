@@ -44,7 +44,38 @@ struct IconWidgetEntry: TimelineEntry {
     }
 }
 
-struct VivaDictaIconWidgetEntryView: View {
+
+
+struct VivaDictaIconWidgetEntryView : View {
+    @Environment(\.widgetFamily) var family
+    
+    var entry: IconWidgetProvider.Entry
+
+    var body: some View {
+        
+        switch family {
+        case .systemSmall:
+            VivaDictaIconWidgetEntryViewSmall(entry: entry)
+                .widgetURL(URL(string: "startRecordFromWidget"))
+        case .accessoryCircular:
+            LockScreenCircularView()
+                .widgetURL(URL(string: "startRecordFromWidget"))
+        case .accessoryRectangular:
+            LockScreenRectangularView()
+                .widgetURL(URL(string: "startRecordFromWidget"))
+        case .accessoryInline:
+            Label("Record Note", systemImage: "microphone.circle.fill")
+                .widgetURL(URL(string: "startRecordFromWidget"))
+        case .systemMedium, .systemLarge, .systemExtraLarge:
+            EmptyView()
+        @unknown default:
+            EmptyView()
+        }
+    }
+}
+
+
+struct VivaDictaIconWidgetEntryViewSmall: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.widgetRenderingMode) private var renderingMode
 
@@ -135,7 +166,10 @@ struct VivaDictaIconWidget: Widget {
         }
         .configurationDisplayName("VivaDicta")
         .description("Quickly create a new recording from your home screen")
-        .supportedFamilies([.systemSmall])
+        .supportedFamilies([.systemSmall,
+                            .accessoryRectangular,
+                            .accessoryCircular,
+                            .accessoryInline])
     }
 }
 

@@ -67,7 +67,7 @@ struct VivaDictaWidgetEntryView : View {
             LockScreenRectangularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryInline:
-            Label("Start record", systemImage: "microphone.circle.fill")
+            Label("Record Note", systemImage: "microphone.circle.fill")
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .systemMedium, .systemLarge, .systemExtraLarge:
             EmptyView()
@@ -130,44 +130,6 @@ private struct WidgetViewSmall: View {
         return midPoint + amplitude * sin(timeScale * t + offset)
     }
 }
-
-private struct LockScreenCircularView: View {
-    var body: some View {
-        
-        VStack {
-            Image(systemName: "mic.circle")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.orange.gradient)
-                .font(.system(size: 40))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .background {
-            ContainerRelativeShape()
-                .fill(LinearGradient(colors: [.white.opacity(0.5), .clear],
-                                     startPoint: .bottom, endPoint: .top))
-        }
-        .containerBackground(for: .widget) { }
-    }
-}
-
-private struct LockScreenRectangularView: View {
-    var body: some View {
-        
-        VStack {
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "mic.circle")
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.orange.gradient)
-                    .font(.system(size: 40))
-                
-                Text("VivaDicta")
-            }
-        }
-        
-        .containerBackground(for: .widget) { }
-    }
-}
-
 
 struct VivaDictaWidget: Widget {
     let kind: String = "VivaDictaWidget"
