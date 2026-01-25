@@ -33,6 +33,7 @@ struct PromptFormView: View {
     @State private var title: String = ""
     @State private var promptInstructions: String = ""
     @State private var useSystemTemplate: Bool = true
+    @State private var wrapInTranscriptTags: Bool = true
     @State private var showInstructionsEditor = false
     @State private var showingAlert = false
     @State private var promptError: SettingsError = .duplicatePromptName("")
@@ -114,6 +115,14 @@ struct PromptFormView: View {
                     Toggle("Use System Instructions", isOn: $useSystemTemplate)
 
                     Text("When enabled, your instructions are combined with system instructions to improve transcription quality. Disable for full control over the AI prompt. Note: Spelling Corrections are always included when enabled in Settings.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Divider()
+
+                    Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
+
+                    Text("When enabled, the transcribed text is wrapped in <TRANSCRIPT> tags before being sent to the AI. Keep this on when using our prompt templates, as they reference the text using these tags.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -218,6 +227,7 @@ struct PromptFormView: View {
             title = existingPrompt.title
             promptInstructions = existingPrompt.promptInstructions
             useSystemTemplate = existingPrompt.useSystemTemplate
+            wrapInTranscriptTags = existingPrompt.wrapInTranscriptTags
         } else if let template = template, template != .custom {
             // Create mode with template: pre-fill from template
             title = template.defaultTitle
@@ -256,7 +266,8 @@ struct PromptFormView: View {
         let prompt = UserPrompt(
             title: trimmedTitle,
             promptInstructions: promptInstructions,
-            useSystemTemplate: useSystemTemplate
+            useSystemTemplate: useSystemTemplate,
+            wrapInTranscriptTags: wrapInTranscriptTags
         )
 
         promptsManager.addPrompt(prompt)
@@ -277,6 +288,7 @@ struct PromptFormView: View {
             title: trimmedTitle,
             promptInstructions: promptInstructions,
             useSystemTemplate: useSystemTemplate,
+            wrapInTranscriptTags: wrapInTranscriptTags,
             createdAt: existingPrompt.createdAt
         )
 

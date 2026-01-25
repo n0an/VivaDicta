@@ -569,7 +569,18 @@ class AIService {
     //     // Return array of meaningful tags for Spotlight indexing
     //     // Consider using a specific prompt optimized for tag extraction
     // }
-    
+
+    /// Formats the transcribed text for the LLM request.
+    /// Wraps in <TRANSCRIPT> tags if enabled in the user's prompt settings.
+    private func formatTranscriptForLLM(_ text: String) -> String {
+        let shouldWrap = selectedMode.userPrompt?.wrapInTranscriptTags ?? true
+        if shouldWrap {
+            return "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        } else {
+            return text
+        }
+    }
+
     private func makeRequest(text: String) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider else {
             throw EnhancementError.notConfigured
@@ -610,7 +621,7 @@ class AIService {
             throw EnhancementError.notConfigured
         }
 
-        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        let formattedText = formatTranscriptForLLM(text)
 
         logger.logNotice("AI Enhancement - System Message: \(systemMessage)")
         logger.logNotice("AI Enhancement - User Message: \(formattedText)")
@@ -816,7 +827,7 @@ class AIService {
         }
 
         let systemMessage = getSystemMessage()
-        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        let formattedText = formatTranscriptForLLM(text)
 
         logger.logNotice("AI Enhancement - Using Ollama at \(serverURL)")
         logger.logNotice("AI Enhancement - Model: \(self.selectedMode.aiModel)")
@@ -1036,7 +1047,7 @@ class AIService {
         }
 
         let systemMessage = getSystemMessage()
-        let formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        let formattedText = formatTranscriptForLLM(text)
 
         logger.logNotice("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
         logger.logNotice("AI Enhancement - Model: \(modelName)")
