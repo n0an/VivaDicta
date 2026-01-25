@@ -312,27 +312,6 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Support") {
-                    Button {
-                        if MFMailComposeViewController.canSendMail() {
-                            showMailCompose = true
-                        } else {
-                            openSupportEmailFallback()
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemName: "envelope")
-                                .foregroundStyle(.blue)
-                            Text("Email Support")
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Image(systemName: "arrow.up.forward")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
                 Section("Storage") {
 
                     Toggle(isOn: $isAutoAudioCleanupEnabled) {
@@ -361,6 +340,27 @@ struct SettingsView: View {
                         .tint(.primary)
                         .onChange(of: audioRetentionDays) { _, _ in
                             HapticManager.selectionChanged()
+                        }
+                    }
+                }
+                
+                Section("Support") {
+                    Button {
+                        if MFMailComposeViewController.canSendMail() {
+                            showMailCompose = true
+                        } else {
+                            openSupportEmailFallback()
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "envelope")
+                                .foregroundStyle(.blue)
+                            Text("Email Support")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
