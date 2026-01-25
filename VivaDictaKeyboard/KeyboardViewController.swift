@@ -167,6 +167,8 @@ struct VivaDictaKeyboardToolbarView: View {
     @Environment(\.openURL) private var openURL
 
     weak var controller: KeyboardViewController?
+    var hasFullAccess: Bool = true
+    var onShowFullAccessPrompt: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -200,6 +202,13 @@ struct VivaDictaKeyboardToolbarView: View {
 
     private func handleMic() {
         HapticManager.mediumImpact()
+
+        // Check for full access first
+        guard hasFullAccess else {
+            onShowFullAccessPrompt?()
+            return
+        }
+
         guard dictationState.uiState != .notReady else {
             openMainAppForHotMic()
             return
