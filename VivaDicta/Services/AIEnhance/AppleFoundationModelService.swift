@@ -76,7 +76,7 @@ final class AppleFoundationModelService {
         }
 
         // Build full prompt: prefix + transcript (optionally wrapped in tags)
-        let formattedText = wrapInTranscriptTags ? "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>" : text
+        let formattedText = wrapInTranscriptTags ? "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>" : "\n\(text)"
         let fullPrompt = Prompt {
             promptPrefix
             formattedText

@@ -112,19 +112,21 @@ struct PromptFormView: View {
 
             Section {
                 DisclosureGroup("Advanced Settings") {
-                    Toggle("Use System Instructions", isOn: $useSystemTemplate)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Use System Instructions", isOn: $useSystemTemplate)
 
-                    Text("When enabled, your instructions are combined with system instructions to improve transcription quality. Disable for full control over the AI prompt. Note: Spelling Corrections are always included when enabled in Settings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        Text("When enabled, your instructions are combined with system instructions to improve transcription quality. Disable for full control over the AI prompt. Note: Spelling Corrections are always included when enabled in Settings.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                    Divider()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
 
-                    Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
-
-                    Text("When enabled, the transcribed text is wrapped in <TRANSCRIPT> tags before being sent to the AI. Keep this on when using our prompt templates, as they reference the text using these tags.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        Text("When enabled, the transcribed text is wrapped in <TRANSCRIPT> tags before being sent to the AI. Keep this on when using our prompt templates, as they reference the text using these tags.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
