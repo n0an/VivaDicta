@@ -29,10 +29,7 @@ struct LockScreenCircularView: View {
 struct LockScreenIconCircularView: View {
     var body: some View {
         VStack {
-            Image("VivaDictaIconFrameless")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 30)
+            Image("VivaDictaIcon50")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background {
@@ -64,16 +61,17 @@ struct LockScreenRectangularView: View {
 
 struct LockScreenIconRectangularView: View {
     var body: some View {
-        VStack {
             HStack(alignment: .center, spacing: 12) {
-                Image("VivaDictaIconFrameless")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 30)
-
-                Text("VivaDicta")
+                Image("VivaDictaIcon50")
+                VStack {
+                    Text("VivaDicta")
+                        .font(.body.weight(.bold))
+                        .fontDesign(.rounded)
+                    Text("Record Note")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
-        }
         .containerBackground(for: .widget) { }
     }
 }

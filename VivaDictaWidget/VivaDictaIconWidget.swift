@@ -58,10 +58,10 @@ struct VivaDictaIconWidgetEntryView : View {
             VivaDictaIconWidgetEntryViewSmall(entry: entry)
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryCircular:
-            LockScreenCircularView()
+            LockScreenIconCircularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryRectangular:
-            LockScreenRectangularView()
+            LockScreenIconRectangularView()
                 .widgetURL(URL(string: "startRecordFromWidget"))
         case .accessoryInline:
             Label("Record Note", systemImage: "microphone.circle.fill")
@@ -181,7 +181,7 @@ struct VivaDictaIconWidget: Widget {
             VivaDictaIconWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("VivaDicta")
-        .description("Quickly create a new recording from your home screen")
+        .description("Quickly create a new recording")
         .supportedFamilies([.systemSmall,
                             .accessoryRectangular,
                             .accessoryCircular,
