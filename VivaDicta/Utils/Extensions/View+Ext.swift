@@ -22,48 +22,6 @@ extension Transition where Self == BlurTransition {
     }
 }
 
-// extension View {
-//    func badge<B: View>(@ViewBuilder _ badge: () -> B) -> some View {
-//        overlay(alignment: .topTrailing) {
-//            badge()
-//                .alignmentGuide(.top) { $0.height/2 }
-//                .alignmentGuide(.trailing) { $0.width/2 }
-//        }
-//    }
-// }
-
-// struct Badge: ViewModifier {
-//    @Environment(\.badgeColor) private var badgeColor
-//    func body(content: Content) -> some View {
-//        content
-//            .font(.caption)
-//            .foregroundStyle(.white)
-//            .padding(.horizontal, 5)
-//            .padding(.vertical, 2)
-//            .background {
-//                Capsule(style: .continuous)
-//                    .fill(badgeColor)
-//            }
-//    }
-// }
-
-// enum BadgeColorKey: EnvironmentKey {
-//    static var defaultValue: Color = .blue
-// }
-//
-// extension EnvironmentValues {
-//    var badgeColor: Color {
-//        get { self[BadgeColorKey.self] }
-//        set { self[BadgeColorKey.self] = newValue }
-//    }
-// }
-//
-// extension View {
-//    func badgeColor(_ color: Color) -> some View {
-//        environment(\.badgeColor, color)
-//    }
-// }
-
 // MARK: - Badges
 protocol BadgeStyle {
     associatedtype Body: View

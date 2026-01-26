@@ -17,7 +17,6 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State var navigationPath = NavigationPath()
-//    @Namespace private var promptsTransition
     @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
     private var isVADEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isTextFormattingEnabled)
@@ -128,8 +127,6 @@ struct SettingsView: View {
                 }
                 
                 Section("Transcription") {
-//                    TipView(selectTranscriptionModelTipSettingsView)
-                    
                     NavigationLink(value: SettingsDestination.transcriptionModels) {
                         Text("Transcription Models")
                     }
@@ -213,13 +210,6 @@ struct SettingsView: View {
                     Toggle(isOn: $isHapticFeedbackEnabled) {
                         Text("Haptic Feedback")
                             .font(.body)
-//                        VStack(alignment: .leading, spacing: 4) {
-//                            Text("Haptic Feedback")
-//                                .font(.body)
-//                            Text("Vibrate on key press")
-//                                .font(.caption)
-//                                .foregroundStyle(.secondary)
-//                        }
                     }
                     .onChange(of: isHapticFeedbackEnabled) { _, newValue in
                         HapticManager.selectionChanged()
@@ -229,13 +219,6 @@ struct SettingsView: View {
                     Toggle(isOn: $isSoundFeedbackEnabled) {
                         Text("Sound")
                             .font(.body)
-//                        VStack(alignment: .leading, spacing: 4) {
-//                            Text("Haptic Feedback")
-//                                .font(.body)
-//                            Text("Vibrate on key press")
-//                                .font(.caption)
-//                                .foregroundStyle(.secondary)
-//                        }
                     }
                     .onChange(of: isSoundFeedbackEnabled) { _, newValue in
                         HapticManager.selectionChanged()
@@ -364,8 +347,6 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
-//                ShortcutsLink()
             }
             .navigationDestination(for: VivaMode.self) { mode in
                 ModeEditView(
@@ -383,7 +364,6 @@ struct SettingsView: View {
                     ModelsView()
                 case .promptsTemplates:
                     TemplateSelectionView(promptsManager: promptsManager)
-//                        .navigationTransition(.zoom(sourceID: "addPrompt", in: promptsTransition))
                 case .correctSpelling:
                     WordsDictionaryView()
                 case .replacements:

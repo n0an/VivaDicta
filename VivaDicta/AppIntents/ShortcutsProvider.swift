@@ -70,23 +70,5 @@ final class ShortcutsProvider: AppShortcutsProvider {
             shortTitle: "Open a note",
             systemImageName: "document.viewfinder"
         )
-
-        
-        
-        // Commenting this for now, it's not working how I expected
-//        AppShortcut(
-//            intent: ToggleKeyboardFlowIntent(),
-//            phrases: [
-//                "Start flow in \(.applicationName)",
-//                "Toggle flow in \(.applicationName)",
-//                "Flow in \(.applicationName)",
-//                "Keyboard flow in \(.applicationName)",
-//                "Start keyboard flow in \(.applicationName)",
-//                "Toggle keyboard flow in \(.applicationName)",
-//                "\(.applicationName) keyboard flow"
-//            ],
-//            shortTitle: LocalizedStringResource("Start Keyboard Flow"),
-//            systemImageName: "keyboard.fill"
-//        )
     }
 }

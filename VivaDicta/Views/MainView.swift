@@ -40,9 +40,6 @@ struct MainView: View {
         @Bindable var appState = appState
         @Bindable var router = router
 
-//        let _ = Self._printChanges()
-//        let _ = print("Executing <MainView> body")
-        
         NavigationStack(path: $router.path) {
             TranscriptionsContentView(searchText: $searchText)
                 .searchable(text: $searchText, placement: .toolbar)
@@ -55,7 +52,6 @@ struct MainView: View {
                             Button {
                                 HapticManager.lightImpact()
                                 showingSettings = true
-//                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
                             } label: {
                                 Image(systemName: "gearshape.fill")
                             }
@@ -103,17 +99,10 @@ struct MainView: View {
                             Button {
                                 HapticManager.lightImpact()
                                 showingFileImport = true
-//                                selectTranscriptionModelTipMainView.invalidate(reason: .actionPerformed)
                             } label: {
                                 Image(systemName: "waveform.badge.plus")
                             }
                             .accessibilityLabel("Import Audio File")
-//                            .popoverTip(selectTranscriptionModelTipMainView) { action in
-//                                if action.id == "open-file-importer" {
-//                                    showingSettings = true
-//                                    appState.shouldNavigateToModels = true
-//                                }
-//                            }
                         }
                         .matchedTransitionSource(id: "FileImportSheetTransition", in: sheetTransitions)
                     } else {
@@ -126,12 +115,6 @@ struct MainView: View {
                             }
                             .accessibilityLabel("Import Audio File")
                             .tint(.primary)
-//                            .popoverTip(selectTranscriptionModelTipMainView) { action in
-//                                if action.id == "open-file-importer" {
-//                                    showingFileImport = true
-//                                    appState.shouldNavigateToModels = true
-//                                }
-//                            }
                         }
                     }
 
@@ -169,33 +152,6 @@ struct MainView: View {
                 .sheet(isPresented: $showingRecordingSheet) {
                     if #available(iOS 26.0, *) {
                         RecordingSheetView()
-                        // TODO: Move inside RecordingSheetView
-                        
-//                            .background {
-//                                                                
-//                                AnimatedMeshGradient()
-//                                    .onAppear {
-//                                        rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
-//                                            Task { @MainActor in
-//                                                rippleEffectTrigger.toggle()
-//                                            }
-//                                        })
-//                                        rippleEffectTimer?.fire()
-//                                    }
-//                                    .onDisappear {
-//                                        rippleEffectTimer?.invalidate()
-//                                        rippleEffectTimer = nil
-//                                    }
-//                                    .mask(
-//                                        ContainerRelativeShape()
-//                                            .stroke(lineWidth: 8)
-//                                            .blur(radius: 22)
-//                                    )
-//                                    .ignoresSafeArea()
-//                                    .modifier(RippleEffect(at: .init(x: 100, y: 100), trigger: rippleEffectTrigger))
-//
-//                            }
-                            
                             .scrollContentBackground(.hidden)
                             .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
                     } else {

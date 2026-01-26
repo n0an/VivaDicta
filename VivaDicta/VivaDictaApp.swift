@@ -30,11 +30,7 @@ struct VivaDictaApp: App {
     private var hasCompletedOnboarding = false
     
     private let logger = Logger(category: .app)
-    
-    // Thread-safe flag for keyboard request processing
-    //    private static let processingQueue = DispatchQueue(label: "com.vivadicta.keyboardProcessing")
-    //    private static var isProcessingKeyboardRequest = false
-    
+
     init() {
         // Track app launch count for analytics and feature gating
         AppLaunchTracker.recordLaunch()
@@ -44,11 +40,6 @@ struct VivaDictaApp: App {
         UserDefaultsStorage.shared.register(defaults: [
             AppGroupCoordinator.isHapticsEnabled: true
         ])
-//        UserDefaultsStorage.shared.synchronize()
-//
-//        UserDefaults.standard.register(defaults: [
-//            UserDefaultsStorage.Keys.isHapticsEnabled: true
-//        ])
 
         // Initialize Persistence
         let modelContainer: ModelContainer
@@ -128,10 +119,7 @@ struct VivaDictaApp: App {
             if hasCompletedOnboarding {
                 MainView()
                     .task {
-                        //                        try? Tips.resetDatastore()
-                        
                         try? Tips.configure([
-                            //                            .displayFrequency(.immediate),
                             .datastoreLocation(.applicationDefault)])
                     }
                     .onAppear {
@@ -323,33 +311,7 @@ struct VivaDictaApp: App {
         // Handle deep links from keyboard extension
         if url.absoluteString.starts(with: "vivadicta://record-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard recording request")
-            
-            // Thread-safe check to prevent multiple simultaneous processing
-            //            var shouldProcess = false
-            //            Self.processingQueue.sync {
-            //                if !Self.isProcessingKeyboardRequest {
-            //                    Self.isProcessingKeyboardRequest = true
-            //                    shouldProcess = true
-            //                }
-            //            }
-            
-            //            guard shouldProcess else {
-            //                logger.logInfo("⚠️ Already processing keyboard request, ignoring duplicate call")
-            //                return
-            //            }
-            
-            logger.logInfo("🔒 Processing keyboard request (thread-safe)")
-            
-            // Ensure we reset the flag when done
-            //            defer {
-            //                Self.processingQueue.sync {
-            //                    Self.isProcessingKeyboardRequest = false
-            //                }
-            //                logger.logInfo("🔓 Keyboard request processing completed")
-            //            }
-            
-            
-            
+
             appState.startLiveActivity()
             
             // Start audio prewarm session and wait for it to be ready before recording

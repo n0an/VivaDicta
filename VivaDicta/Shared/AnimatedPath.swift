@@ -45,14 +45,6 @@ struct AnimatedRectangle: Shape {
             CGPoint(x: padding, y: padding + radius)
         ]
 
-        // Define the arc centers
-        let _ = [
-            CGPoint(x: padding + radius, y: padding + radius), // Top-left
-            CGPoint(x: width - padding - radius, y: padding + radius), // Top-right
-            CGPoint(x: width - padding - radius, y: height - padding - radius), // Bottom-right
-            CGPoint(x: padding + radius, y: height - padding - radius) // Bottom-left
-        ]
-
         // Animate the points
         let points = initialPoints.map { point in
             CGPoint(
@@ -61,43 +53,23 @@ struct AnimatedRectangle: Shape {
             )
         }
 
-        // Animate the arc centers
-//        let arcCenters = initialArcCenters.map { center in
-//            CGPoint(
-//                x: center.x + 10 * sin(t + center.y * 0.3),
-//                y: center.y + 10 * sin(t + center.x * 0.3)
-//            )
-//        }
-
         // Draw the path
         path.move(to: CGPoint(x: padding, y: padding + radius))
-
-        // Top-left corner
-//        path.addArc(center: arcCenters[0], radius: radius, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
 
         // Top edge
         for point in points[0...2] {
             path.addLine(to: point)
         }
 
-        // Top-right corner
-//        path.addArc(center: arcCenters[1], radius: radius, startAngle: .degrees(270), endAngle: .degrees(0), clockwise: false)
-
         // Right edge
         for point in points[4...7] {
             path.addLine(to: point)
         }
 
-        // Bottom-right corner
-//        path.addArc(center: arcCenters[2], radius: radius, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
-
         // Bottom edge
         for point in points[8...10] {
             path.addLine(to: point)
         }
-
-        // Bottom-left corner
-//        path.addArc(center: arcCenters[3], radius: radius, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
 
         // Left edge
         for point in points[11...14] {
@@ -109,27 +81,6 @@ struct AnimatedRectangle: Shape {
         return path
     }
 }
-
-
-//#Preview {
-//    
-//    @Previewable @State var maskTimer: CGFloat = 0
-//    @Previewable @State var timer: Timer?
-//    
-//    AnimatedRectangle(size: .init(width: 80, height: 80), cornerRadius: 20, t: maskTimer)
-//        .fill(.blue)
-//        .onAppear {
-//             timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
-//                Task { @MainActor in
-//                    maskTimer += 0.1
-//                }
-//            }
-//        }
-//        .onDisappear {
-//            timer?.invalidate()
-//        }
-//    
-//}
 
 #Preview("clipShape") {
     
@@ -178,15 +129,9 @@ struct AnimatedRectangle: Shape {
                     .onAppear {
                         isRotating = true
                     }
-                    
-//                    .debugBorder()
-                
             )
             .blur(radius: 20)
-//            .frame(width: edgeLength + delta, height: edgeLength + delta)
-//            .debugBorder()
-    //        .padding(40)
-        
+
         AnimatedMeshGradient2()
             .mask(
                 AnimatedRectangle(size: .init(width: edgeLength - delta, height: edgeLength - delta), cornerRadius: 6, t: CGFloat(maskTimer))
@@ -202,18 +147,8 @@ struct AnimatedRectangle: Shape {
                         isRotating = true
                     }
                     .opacity(0.4)
-                    
-//                    .blur(radius: 12)
-                    
-//                    .debugBorder()
-                
             )
-        
-            
             .blur(radius: 12)
-//            .frame(width: edgeLength + delta, height: edgeLength + delta)
-//            .debugBorder()
-    //        .padding(40)
     }
     .frame(width: edgeLength, height: edgeLength)
 

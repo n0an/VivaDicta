@@ -222,15 +222,6 @@ public final class AppGroupCoordinator {
         return isActive
     }
 
-//    var keyboardSessionRemainingSeconds: TimeInterval {
-//        guard let defaults = sharedDefaults else { return 0 }
-//
-//        let expiryTime = defaults.double(forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
-//        let currentTime = Date().timeIntervalSince1970
-//
-//        return max(0, expiryTime - currentTime)
-//    }
-
     func deactivateKeyboardSession() {
         let wasActive = sharedDefaults?.bool(forKey: UserDefaultsKeys.keyboardSessionActive) ?? true
         guard wasActive else { return }

@@ -93,12 +93,6 @@ struct HudContentView: View {
                     .frame(width: 108, height: 24)
             }
 
-
-//            WobbleText(showText: $isShowingText, text: statusText, duration: 0.5)
-//                .frame(width: 108, height: 24)
-//                .font(.system(size: 17, weight: .semibold))
-//                .foregroundStyle(.primary)
-
             // Cancel button - appears after 1 second
             if showCancelButton, let onCancel {
                 Button {

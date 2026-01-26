@@ -113,8 +113,6 @@ struct ModeEditView: View {
                     }
                 }
                 .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-//                .tint(.primary)
-//                .pickerStyle(.menu)
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
                     HapticManager.selectionChanged()
                     viewModel.updateTranscriptionProvider(newProvider)

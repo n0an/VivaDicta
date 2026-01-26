@@ -20,8 +20,6 @@ struct TranscriptionDetailView: View {
     @Environment(AppState.self) var appState
 
     @State private var selectedTextType: TextDisplayType = .enhanced
-//    @State private var spotlightTask: Task<Void, Never>?
-    
     @State private var isExpanded: Bool = false
     @Namespace private var namespace
 

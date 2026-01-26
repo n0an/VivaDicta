@@ -27,8 +27,7 @@ private struct PendingTranscriptionData {
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
     var audioRecorder: AVAudioRecorder!
-    
-//    private let sessionManager = AudioSessionManager.shared
+
 #if !os(macOS)
     var recordingSession = AVAudioSession.sharedInstance()
 #endif
@@ -56,10 +55,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     var availableModes: [VivaMode] {
         appState?.aiService.modes ?? []
     }
-
-    // TODO: Add auto stop feature later
-//    var recordingTimer: Timer?
-//    var prevAudioPower: Double?
 
     init(appState: AppState, modelContainer: ModelContainer) {
         self.appState = appState
@@ -221,22 +216,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                         }
                     })
-            
-            // TODO: Add auto stop feature later
-//            recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.6, repeats: true, block: { [unowned self]_ in
-//                guard self.audioRecorder != nil else { return }
-//                self.audioRecorder.updateMeters()
-//                let power = min(1, max(0, 1 - abs(Double(self.audioRecorder.averagePower(forChannel: 0)) / 50) ))
-//                if self.prevAudioPower == nil {
-//                    self.prevAudioPower = power
-//                    return
-//                }
-//                if let prevAudioPower = self.prevAudioPower, prevAudioPower < 0.25 && power < 0.175 {
-//                    self.stopCaptureAudio()
-//                    return
-//                }
-//                self.prevAudioPower = power
-//            })
 
                 } catch {
                     resetValues()
@@ -412,9 +391,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let audioAsset = AVURLAsset(url: audioURLToTranscribe)
                 let audioDuration = (try? CMTimeGetSeconds(await audioAsset.load(.duration))) ?? 0.0
 
-                // Notify keyboard that transcription has ended
-//                AppGroupCoordinator.shared.notifyTranscriptionEnded()
-                
                 var enhancedText: String? = nil
                 var promptName: String? = nil
                 var enhancementDur: TimeInterval? = nil
@@ -503,17 +479,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     let activity = appState.userActivity(for: transcription)
                     activity.becomeCurrent()
                 }
-
-                // TODO: Generate tags after saving transcription
-                // Task {
-                //     if let tags = try? await aiService.generateTags(for: enhancedText ?? transcribedText) {
-                //         transcription.tags = tags
-                //         try? modelContext.save()
-                //
-                //         // Update the existing Spotlight item with new tags
-                //         await appState.updateTranscriptionInSpotlight(transcription)
-                //     }
-                // }
 
                 // Share transcribed text with keyboard (enhanced text if available, otherwise original)
                 let textToShare = enhancedText ?? transcribedText
@@ -686,15 +651,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
         audioRecorder?.stop()
         audioRecorder = nil
-        
+
         audioPlayer?.stop()
         audioPlayer = nil
-        
-        // TODO: Add auto stop feature later
-//        prevAudioPower = nil
-//        recordingTimer?.invalidate()
-//        recordingTimer = nil
-        
+
         animationTimer?.invalidate()
         animationTimer = nil
     }
@@ -751,8 +711,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     self.appState?.transcriptionManager.setCurrentMode(selectedMode)
                 }
 
-                // Create a new ModelContext from Persistence container
-//                let context = ModelContext(Persistence.container)
                 self.stopCaptureAudio(modelContext: modelContext)
             }
         }
