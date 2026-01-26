@@ -8,10 +8,41 @@
 import SwiftUI
 import os
 
+/// Service responsible for AI-powered text enhancement of transcriptions.
+///
+/// `AIService` manages connections to various AI providers (OpenAI, Anthropic, Groq, etc.)
+/// and handles the enhancement of raw transcriptions using LLM APIs. It also manages
+/// ``VivaMode`` configurations that combine transcription and enhancement settings.
+///
+/// ## Overview
+///
+/// The service provides:
+/// - Multi-provider AI enhancement (OpenAI, Anthropic, Groq, Mistral, Ollama, Apple Foundation Models, etc.)
+/// - Mode management (create, update, delete, duplicate ``VivaMode`` instances)
+/// - API key verification and storage
+/// - Dynamic model fetching for providers like OpenRouter
+/// - Foundation Model prewarming for faster on-device enhancement
+///
+/// ## Usage
+///
+/// ```swift
+/// let aiService = AIService()
+///
+/// // Check if enhancement is properly configured
+/// if aiService.isProperlyConfigured() {
+///     let (enhancedText, duration, promptName) = try await aiService.enhance(rawText)
+/// }
+/// ```
+///
+/// ## Thread Safety
+///
+/// This class is marked with `@Observable` for SwiftUI integration. API key operations
+/// and provider refreshing should be performed on the main actor.
 @Observable
 class AIService {
     private let logger = Logger(category: .aiService)
 
+    /// List of AI providers that have valid API keys or are otherwise available.
     public var connectedProviders: [AIProvider] = []
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
@@ -454,6 +485,17 @@ class AIService {
     }
 
     // MARK: - Configuration validation
+
+    /// Validates that AI enhancement is properly configured for the current mode.
+    ///
+    /// Checks include:
+    /// - AI enhancement is enabled in the current mode
+    /// - An AI provider is selected
+    /// - A model is selected
+    /// - The provider has valid credentials (API key, endpoint URL, or is available locally)
+    /// - A prompt with instructions is selected
+    ///
+    /// - Returns: `true` if enhancement can proceed, `false` otherwise.
     public func isProperlyConfigured() -> Bool {
         // Check if AI enhancement is enabled
         guard selectedMode.aiEnhanceEnabled else {
@@ -546,6 +588,17 @@ class AIService {
     }
 
     // MARK: - Enhance methods
+
+    /// Enhances transcribed text using the configured AI provider.
+    ///
+    /// - Parameter text: The raw transcribed text to enhance.
+    ///
+    /// - Returns: A tuple containing:
+    ///   - The enhanced text
+    ///   - The duration of the enhancement request in seconds
+    ///   - The name of the prompt used (if any)
+    ///
+    /// - Throws: ``EnhancementError`` if enhancement fails, or `CancellationError` if cancelled.
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
 
@@ -1849,6 +1902,7 @@ class AIService {
     }
 }
 
+/// Errors that can occur during AI text enhancement.
 enum EnhancementError: LocalizedError {
     case notConfigured
     case invalidResponse

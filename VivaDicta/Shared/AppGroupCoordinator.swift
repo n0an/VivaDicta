@@ -11,8 +11,43 @@
 import os
 
 
-/// Handles communication between the main app and the keyboard extension
-/// Uses App Groups + Darwin Notifications for reliable iOS-native communication
+/// Coordinates communication between the main app and extensions (keyboard, share, widget).
+///
+/// `AppGroupCoordinator` uses App Groups for shared storage and Darwin Notifications
+/// for real-time event communication. It manages the bidirectional communication
+/// needed for features like keyboard-initiated recording.
+///
+/// ## Overview
+///
+/// The coordinator handles:
+/// - Recording commands (start, stop, cancel, pause, resume) from keyboard extension
+/// - Transcription status updates (transcribing, enhancing, completed, error)
+/// - Audio level sharing for remote visualization
+/// - Keyboard session lifecycle management
+/// - Transcribed text delivery back to keyboard
+/// - VivaMode sharing between app and extensions
+///
+/// ## App Group
+///
+/// Uses the shared container `group.com.antonnovoselov.VivaDicta` for UserDefaults
+/// and file storage accessible by all app extensions.
+///
+/// ## Darwin Notifications
+///
+/// Real-time events are communicated via Darwin notifications, which work across
+/// process boundaries without requiring the target to be running.
+///
+/// ## Usage
+///
+/// ```swift
+/// // From keyboard extension - request recording
+/// AppGroupCoordinator.shared.requestStartRecording()
+///
+/// // From main app - listen for requests
+/// AppGroupCoordinator.shared.onStartRecordingRequested = {
+///     self.startRecording()
+/// }
+/// ```
 public final class AppGroupCoordinator {
     public static let shared = AppGroupCoordinator()
 
@@ -69,6 +104,7 @@ public final class AppGroupCoordinator {
         static let vivaModeChanged = "com.antonnovoselov.VivaDicta.vivaModeChanged"
     }
 
+    /// Status of the transcription pipeline, shared with extensions.
     public enum TranscriptionStatus: String {
         case idle = "idle"
         case recording = "recording"
@@ -130,6 +166,7 @@ public final class AppGroupCoordinator {
 
     // MARK: - Public Interface for Keyboard Extension
 
+    /// Requests the main app to start recording (called from keyboard extension).
     public func requestStartRecording() {
         let timestamp = Date().timeIntervalSince1970
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
@@ -140,12 +177,14 @@ public final class AppGroupCoordinator {
         postDarwinNotification(NotificationNames.startRecordingFromControl)
     }
 
+    /// Requests the main app to stop recording and begin transcription.
     public func requestStopRecording() {
         let timestamp = Date().timeIntervalSince1970
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.stopRecording)
     }
 
+    /// Requests the main app to cancel the current recording or transcription.
     public func requestCancelRecording() {
         let timestamp = Date().timeIntervalSince1970
         sharedDefaults?.set(timestamp, forKey: UserDefaultsKeys.lastRecordingTimestamp)
@@ -194,6 +233,9 @@ public final class AppGroupCoordinator {
 
     // MARK: - Keyboard Dictation Session Management
 
+    /// Activates a keyboard recording session with the specified timeout.
+    ///
+    /// - Parameter timeoutSeconds: How long the session remains active without activity.
     func activateKeyboardSession(timeoutSeconds: Int) {
         let expiryTime = Date().timeIntervalSince1970 + Double(timeoutSeconds)
         sharedDefaults?.set(true, forKey: UserDefaultsKeys.keyboardSessionActive)
@@ -244,6 +286,9 @@ public final class AppGroupCoordinator {
 
     // MARK: - Transcribed Text Sharing
 
+    /// Shares transcribed text with extensions and updates status to completed.
+    ///
+    /// - Parameter text: The transcribed (and optionally enhanced) text.
     func shareTranscribedText(_ text: String) {
         sharedDefaults?.set(text, forKey: UserDefaultsKeys.transcribedText)
         updateTranscriptionStatus(.completed)
@@ -251,6 +296,9 @@ public final class AppGroupCoordinator {
         logger.logError("📝 Shared transcribed text: \(text.prefix(50))...")
     }
 
+    /// Retrieves and clears the shared transcribed text.
+    ///
+    /// - Returns: The transcribed text, or `nil` if none is available.
     func getAndConsumeTranscribedText() -> String? {
         guard let defaults = sharedDefaults else { return nil }
 

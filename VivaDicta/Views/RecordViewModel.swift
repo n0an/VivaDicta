@@ -12,7 +12,7 @@ import AVFoundation
 import SwiftData
 import os
 
-// Data structure to hold pending transcription when enhancement is in progress
+/// Data structure to hold pending transcription when enhancement is in progress.
 private struct PendingTranscriptionData {
     let text: String
     let audioDuration: Double
@@ -23,6 +23,49 @@ private struct PendingTranscriptionData {
     let modelContext: ModelContext
 }
 
+/// View model managing audio recording, transcription, and enhancement workflow.
+///
+/// `RecordViewModel` handles the complete lifecycle of voice recording, from capturing
+/// audio to transcribing and optionally enhancing the text. It coordinates with
+/// ``TranscriptionManager`` and ``AIService`` through the ``AppState``.
+///
+/// ## Overview
+///
+/// The view model manages:
+/// - Audio recording via AVAudioRecorder or AudioPrewarmManager (for keyboard flow)
+/// - Recording state machine (idle, recording, transcribing, enhancing, error)
+/// - Audio level monitoring for visualization
+/// - Transcription and AI enhancement pipeline
+/// - Communication with keyboard extension via ``AppGroupCoordinator``
+///
+/// ## Recording States
+///
+/// ```
+/// idle → recording → transcribing → enhancing → idle
+///                  ↘                          ↗
+///                    → error → idle (on cancel)
+/// ```
+///
+/// ## Keyboard Integration
+///
+/// When the keyboard extension activates a session, recording uses a prewarmed
+/// audio engine for lower latency. The view model handles start/stop/cancel
+/// commands from the keyboard via Darwin notifications.
+///
+/// ## Usage
+///
+/// ```swift
+/// let viewModel = RecordViewModel(appState: appState, modelContainer: container)
+///
+/// // Start recording
+/// viewModel.startCaptureAudio()
+///
+/// // Stop and transcribe
+/// viewModel.stopCaptureAudio(modelContext: context)
+///
+/// // Cancel processing
+/// viewModel.cancelProcessing()
+/// ```
 @Observable @MainActor
 class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
@@ -76,6 +119,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
     }
     
+    /// Current state of the recording/transcription workflow.
+    ///
+    /// State transitions are logged and shared with the keyboard extension.
     var recordingState: RecordingState = .idle {
         didSet {
             logger.logInfo("📱 Recording state changed: \(String(describing: self.recordingState))")
@@ -119,6 +165,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     
     
     
+    /// Starts audio recording.
+    ///
+    /// If a keyboard prewarm session is active, uses the prewarmed audio engine.
+    /// Otherwise, configures and starts a standard AVAudioRecorder.
+    ///
+    /// Also triggers Foundation Model prewarming if the current mode uses Apple AI.
     func startCaptureAudio() {
         Task { @MainActor in
             // Guard against duplicate starts
@@ -225,6 +277,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
+    /// Stops audio recording and begins transcription.
+    ///
+    /// - Parameter modelContext: The SwiftData context for saving the transcription.
     func stopCaptureAudio(modelContext: ModelContext) {
         HapticManager.mediumImpact()
 
@@ -531,6 +586,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         })
     }
     
+    /// Cancels the current recording or transcription without saving.
     func cancelTranscribe() {
         HapticManager.lightImpact()
 
@@ -558,9 +614,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         prewarmManager.rescheduleSessionTimeout()
     }
 
-    /// Cancels the current processing based on state:
-    /// - Transcribing: cancels everything, doesn't save anything
-    /// - Enhancing: cancels enhancement but saves the transcription without enhancement
+    /// Cancels processing with smart behavior based on current state.
+    ///
+    /// - **Transcribing**: Cancels everything; no data is saved.
+    /// - **Enhancing**: Saves the transcription without enhancement.
     func cancelProcessing() {
         switch recordingState {
         case .transcribing:

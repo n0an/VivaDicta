@@ -11,6 +11,7 @@ import WhisperKit
 import os
 import FirebaseAnalytics
 
+/// Status of a model download operation.
 enum DownloadStatus: String {
     case download
     case downloading
@@ -39,17 +40,55 @@ enum DownloadStatus: String {
     }
 }
 
+/// Manager for downloading, tracking, and deleting on-device transcription models.
+///
+/// `ModelDownloadManager` handles the download lifecycle for WhisperKit and Parakeet
+/// models, including progress tracking, cancellation, and cleanup.
+///
+/// ## Overview
+///
+/// The manager provides:
+/// - Download progress tracking per model
+/// - Download status management (download, downloading, downloaded)
+/// - Cancellation with partial file cleanup
+/// - Model deletion
+/// - Callbacks when downloads complete
+///
+/// ## Usage
+///
+/// ```swift
+/// let manager = ModelDownloadManager()
+///
+/// // Download a model
+/// try await manager.downloadModel(whisperKitModel)
+///
+/// // Track progress
+/// let progress = manager.currentProgress(for: model)
+///
+/// // Cancel if needed
+/// manager.cancelDownload(for: model)
+/// ```
 @Observable
 class ModelDownloadManager: @unchecked Sendable {
+    /// Download progress per model (0.0 to 1.0), keyed by model name.
     public var downloadProgress: [String: Double] = [:]
+
+    /// Current download status per model, keyed by model name.
     public var downloadStatuses: [String: DownloadStatus] = [:]
+
     private var observations: [String: NSKeyValueObservation] = [:]
     private var downloadTasks: [String: Task<Void, any Error>] = [:]
     private let logger = Logger(category: .modelDownloadManager)
+
+    /// Callback invoked when a model download completes successfully.
     public var onModelDownloaded: ((any TranscriptionModel) -> Void)?
 
     // MARK: - Public Interface
 
+    /// Downloads a transcription model.
+    ///
+    /// - Parameter model: The model to download (WhisperKit or Parakeet).
+    /// - Throws: ``ModelDownloadError`` if the download fails.
     public func downloadModel(_ model: any TranscriptionModel) async throws {
         let task = Task {
             if let parakeetModel = model as? ParakeetModel {
@@ -72,6 +111,11 @@ class ModelDownloadManager: @unchecked Sendable {
         try await task.value
     }
 
+    /// Handles a model download error by resetting status and logging.
+    ///
+    /// - Parameters:
+    ///   - model: The model that failed to download.
+    ///   - error: The error that occurred.
     public func handleModelDownloadError(_ model: any TranscriptionModel, _ error: any Error) async {
         await MainActor.run {
             downloadStatuses[model.name] = .download
@@ -82,6 +126,10 @@ class ModelDownloadManager: @unchecked Sendable {
         logger.logError("Error downloading model \(model.name): \(error.localizedDescription)")
     }
 
+    /// Returns the current download progress for a model (0.0 to 1.0).
+    ///
+    /// - Parameter model: The model to check.
+    /// - Returns: Progress value between 0.0 and 1.0.
     public func currentProgress(for model: any TranscriptionModel) -> Double {
         if model is ParakeetModel || model is WhisperKitModel {
             return downloadProgress[model.name] ?? 0.0
@@ -89,6 +137,10 @@ class ModelDownloadManager: @unchecked Sendable {
         return 0.0
     }
 
+    /// Returns the current download status for a model.
+    ///
+    /// - Parameter model: The model to check.
+    /// - Returns: The download status.
     public func downloadStatus(for model: any TranscriptionModel) -> DownloadStatus {
         if let parakeetModel = model as? ParakeetModel {
             return downloadStatuses[model.name] ?? (parakeetModel.isDownloaded ? .downloaded : .download)
@@ -98,6 +150,9 @@ class ModelDownloadManager: @unchecked Sendable {
         return .download
     }
 
+    /// Cancels an in-progress download and cleans up partial files.
+    ///
+    /// - Parameter model: The model whose download should be cancelled.
     public func cancelDownload(for model: any TranscriptionModel) {
         // Cancel the download task if it exists
         if let task = downloadTasks[model.name] {
@@ -132,6 +187,10 @@ class ModelDownloadManager: @unchecked Sendable {
         logger.logNotice("❌ Cancelled download of \(model.name)")
     }
 
+    /// Deletes a downloaded model from disk.
+    ///
+    /// - Parameter model: The model to delete.
+    /// - Throws: ``ModelDownloadError/unsupportedModelType`` if the model type isn't supported.
     public func deleteModel(_ model: any TranscriptionModel) async throws {
         if let parakeetModel = model as? ParakeetModel {
             try parakeetModel.deleteModel()
@@ -465,6 +524,7 @@ class ModelDownloadManager: @unchecked Sendable {
     }
 }
 
+/// Errors that can occur during model download operations.
 enum ModelDownloadError: LocalizedError {
     case invalidURL
     case unzipFailed

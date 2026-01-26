@@ -9,22 +9,85 @@ import Foundation
 import SwiftData
 import CoreSpotlight
 
+/// A SwiftData model representing a voice transcription with optional AI enhancement.
+///
+/// `Transcription` stores the result of transcribing audio, including both the raw
+/// transcription and any AI-enhanced version. It also captures metadata about the
+/// transcription process for analytics and display purposes.
+///
+/// ## Properties
+///
+/// - ``text``: The original transcribed text from speech-to-text
+/// - ``enhancedText``: Optional AI-enhanced version of the transcription
+/// - ``timestamp``: When the transcription was created
+/// - ``audioDuration``: Length of the source audio in seconds
+/// - ``audioFileName``: Name of the stored audio file (for playback)
+///
+/// ## Metadata
+///
+/// The model tracks which models and providers were used:
+/// - Transcription: ``transcriptionModelName``, ``transcriptionProviderName``
+/// - Enhancement: ``aiEnhancementModelName``, ``aiProviderName``, ``promptName``
+/// - Performance: ``transcriptionDuration``, ``enhancementDuration``
+///
+/// ## Spotlight Integration
+///
+/// Use ``searchableAttributes(lastUsedDate:)`` to generate attributes for Spotlight indexing.
 @Model
 class Transcription {
+    /// Unique identifier for the transcription.
     var id: UUID = UUID()
+
+    /// The original transcribed text from speech-to-text.
     var text: String
+
+    /// AI-enhanced version of the transcription, if enhancement was applied.
     var enhancedText: String?
+
+    /// Timestamp when the transcription was created.
     var timestamp: Date
+
+    /// Duration of the source audio in seconds.
     var audioDuration: TimeInterval
+
+    /// Filename of the stored audio file for playback.
     var audioFileName: String?
+
+    /// Display name of the transcription model used.
     var transcriptionModelName: String?
+
+    /// Display name of the transcription provider (WhisperKit, Parakeet, etc.).
     var transcriptionProviderName: String?
+
+    /// Display name of the AI model used for enhancement.
     var aiEnhancementModelName: String?
+
+    /// Display name of the AI provider used for enhancement.
     var aiProviderName: String?
+
+    /// Name of the prompt template used for enhancement.
     var promptName: String?
+
+    /// Duration of the transcription process in seconds.
     var transcriptionDuration: TimeInterval?
+
+    /// Duration of the AI enhancement process in seconds.
     var enhancementDuration: TimeInterval?
 
+    /// Creates a new transcription with the specified properties.
+    ///
+    /// - Parameters:
+    ///   - text: The transcribed text.
+    ///   - enhancedText: Optional AI-enhanced text.
+    ///   - audioDuration: Duration of the source audio.
+    ///   - audioFileName: Filename for the stored audio.
+    ///   - transcriptionModelName: Name of the transcription model.
+    ///   - transcriptionProviderName: Name of the transcription provider.
+    ///   - aiEnhancementModelName: Name of the AI enhancement model.
+    ///   - aiProviderName: Name of the AI provider.
+    ///   - promptName: Name of the enhancement prompt.
+    ///   - transcriptionDuration: Time taken to transcribe.
+    ///   - enhancementDuration: Time taken to enhance.
     init(text: String,
          enhancedText: String? = nil,
          audioDuration: TimeInterval,
@@ -67,7 +130,9 @@ class Transcription {
         return (audioDuration / transcriptionDuration).formatted(.number.precision(.fractionLength(0...1)))
     }
 
-    /// Get the audio file size in bytes
+    /// Returns the audio file size in bytes, if available.
+    ///
+    /// - Returns: The file size in bytes, or `nil` if the file doesn't exist.
     nonisolated func getAudioFileSize() -> Int64? {
         guard let audioFileName = audioFileName else { return nil }
 
@@ -86,7 +151,9 @@ class Transcription {
         }
     }
 
-    /// Format file size in human-readable format (KB, MB)
+    /// Returns the audio file size formatted for display (KB, MB).
+    ///
+    /// - Returns: A human-readable file size string, or "N/A" if unavailable.
     nonisolated func getAudioFileSizeFormatted() -> String {
         guard let bytes = getAudioFileSize() else { return "N/A" }
 

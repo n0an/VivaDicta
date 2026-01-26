@@ -14,24 +14,70 @@ import CoreSpotlight
 import SwiftData
 import AppIntents
 
+/// Central application state manager coordinating all major services.
+///
+/// `AppState` serves as the root state container for the VivaDicta app, managing
+/// the lifecycle of core services and coordinating communication between them.
+///
+/// ## Overview
+///
+/// The app state manages:
+/// - ``TranscriptionManager``: Audio-to-text transcription
+/// - ``AIService``: AI-powered text enhancement
+/// - ``RecordViewModel``: Audio recording and playback
+/// - ``ModelDownloadManager``: On-device model management
+/// - Live Activity management for iOS Dynamic Island
+/// - Spotlight indexing for transcriptions
+///
+/// ## Initialization
+///
+/// `AppState` requires a `ModelContainer` for SwiftData persistence:
+///
+/// ```swift
+/// let container = try ModelContainer(for: Transcription.self)
+/// let appState = AppState(modelContainer: container)
+/// ```
+///
+/// ## Service Coordination
+///
+/// The app state sets up callbacks between services to maintain consistency:
+/// - Mode changes in ``AIService`` propagate to ``TranscriptionManager``
+/// - Cloud model updates trigger provider refresh
+/// - Model downloads update default mode settings
 @Observable
 class AppState {
     private let logger = Logger(category: .appState)
 
+    /// The active Live Activity for Dynamic Island display, if any.
     var liveActivity: Activity<VivaDictaLiveActivityAttributes>? = nil
     private var liveActivityTimer: Timer?
     private var liveActivityStartTime: Date?
 
+    /// Manager for coordinating transcription services.
     var transcriptionManager: TranscriptionManager!
+
+    /// Service for AI-powered text enhancement.
     var aiService: AIService!
+
+    /// View model for audio recording functionality.
     var recordViewModel: RecordViewModel!
+
+    /// Manager for downloading and managing on-device models.
     var downloadManager: ModelDownloadManager!
 
-    // Navigation state
+    // MARK: - Navigation State
+
+    /// Triggers navigation to the Models screen.
     var shouldNavigateToModels: Bool = false
+
+    /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
-    var showKeyboardFlowSheet: Bool = false  // For showing keyboard flow activation sheet
-    var shouldTranscribeSharedAudio: Bool = false  // For handling shared audio from Share Extension
+
+    /// Controls display of the keyboard flow activation sheet.
+    var showKeyboardFlowSheet: Bool = false
+
+    /// Indicates pending shared audio from the Share Extension.
+    var shouldTranscribeSharedAudio: Bool = false
 
     init(modelContainer: ModelContainer) {
         transcriptionManager = TranscriptionManager()
@@ -91,6 +137,11 @@ class AppState {
         await transcriptionManager.preloadWhisperKitModelIfNeeded()
     }
     
+    /// Transcribes audio from a file URL using the current mode's settings.
+    ///
+    /// - Parameter audioURL: The file URL of the audio to transcribe.
+    /// - Returns: The transcribed text.
+    /// - Throws: Any error from the underlying transcription service.
     func transcribe(audioURL: URL) async throws -> String {
         return try await transcriptionManager.transcribe(audioURL: audioURL)
     }
@@ -185,7 +236,9 @@ class AppState {
         }
     }
     
-    /// Index a single transcription in Spotlight
+    /// Indexes a single transcription in Spotlight for system-wide search.
+    ///
+    /// - Parameter transcription: The transcription to index.
     func indexTranscriptionToSpotlight(_ transcription: Transcription) async {
         guard CSSearchableIndex.isIndexingAvailable() else {
             logger.logError("[Spotlight] Indexing is unavailable")

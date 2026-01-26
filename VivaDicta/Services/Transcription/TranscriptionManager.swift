@@ -9,23 +9,60 @@ import Foundation
 import SwiftUI
 import os
 
+/// Central manager coordinating all transcription services in VivaDicta.
+///
+/// `TranscriptionManager` serves as the primary interface for audio-to-text transcription,
+/// abstracting the complexity of multiple transcription backends (WhisperKit, Parakeet,
+/// and various cloud providers) behind a unified API.
+///
+/// ## Overview
+///
+/// The manager handles:
+/// - Mode-based model selection (each ``VivaMode`` specifies its transcription model)
+/// - Routing transcription requests to the appropriate service
+/// - Post-processing transcriptions (filtering, text formatting, replacements)
+/// - WhisperKit model preloading for improved performance
+///
+/// ## Usage
+///
+/// ```swift
+/// let manager = TranscriptionManager()
+/// manager.setCurrentMode(selectedMode)
+///
+/// let transcribedText = try await manager.transcribe(audioURL: recordingURL)
+/// ```
+///
+/// ## Thread Safety
+///
+/// This class is marked with `@Observable` for SwiftUI integration. All public
+/// methods should be called from the main actor or properly handle concurrency.
 @Observable
 class TranscriptionManager {
     private let logger = Logger(category: .transcriptionManager)
-    
+
     private let cloudTranscriptionService = CloudTranscriptionService()
     private let parakeetTranscriptionService = ParakeetTranscriptionService()
     private let whisperKitTranscriptionService = WhisperKitTranscriptionService()
+
+    /// The currently active transcription mode determining which model to use.
     private(set) var currentMode: VivaMode = .defaultMode
 
-    // Callback for when cloud models are updated
+    /// Callback invoked when cloud models are updated (e.g., API key changes).
     public var onCloudModelsUpdate: (() -> Void)?
-    
+
+    /// All available transcription models across all providers.
     var allAvailableModels: [any TranscriptionModel] =
             TranscriptionModelProvider.allParakeetModels +
             TranscriptionModelProvider.allWhisperKitModels +
             TranscriptionModelProvider.allCloudModels
-    
+
+    /// Indicates whether at least one transcription model is available for use.
+    ///
+    /// Returns `true` if any of the following conditions are met:
+    /// - A Parakeet model is downloaded
+    /// - A WhisperKit model is downloaded
+    /// - A cloud provider has an API key configured
+    /// - A custom transcription model is configured
     var hasAvailableTranscriptionModels: Bool {
         let hasParakeetModels = !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
 
@@ -65,6 +102,9 @@ class TranscriptionManager {
         whisperKitTranscriptionService.lastTotalInitDuration
     }
     
+    /// Sets the current transcription mode and applies its language setting.
+    ///
+    /// - Parameter mode: The ``VivaMode`` to activate for transcription.
     public func setCurrentMode(_ mode: VivaMode) {
         currentMode = mode
         applyModeLanguage(mode)
@@ -79,6 +119,10 @@ class TranscriptionManager {
         updateLanguage(language)
     }
 
+    /// Refreshes the list of available cloud models and notifies observers.
+    ///
+    /// Call this method when API keys are added or removed to update the available
+    /// cloud transcription models.
     public func updateCloudModels() {
         allAvailableModels =
             TranscriptionModelProvider.allParakeetModels +
@@ -87,6 +131,14 @@ class TranscriptionManager {
         onCloudModelsUpdate?()
     }
 
+    /// Returns the transcription model for the current mode if it's available and usable.
+    ///
+    /// This method validates that the model is actually ready for use:
+    /// - On-device models must be downloaded
+    /// - Cloud models must have an API key configured
+    /// - Custom models must be properly configured
+    ///
+    /// - Returns: The transcription model if available and usable, or `nil` otherwise.
     public func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
@@ -117,12 +169,26 @@ class TranscriptionManager {
         return model
     }
     
+    /// Transcribes audio from a file URL using the current mode's model.
+    ///
+    /// This method routes the transcription request to the appropriate service based on
+    /// the current mode's provider, then applies post-processing including:
+    /// - Output filtering (removing unwanted artifacts)
+    /// - Text formatting (if enabled in settings)
+    /// - Custom text replacements (if enabled in settings)
+    ///
+    /// - Parameter audioURL: The file URL of the audio to transcribe.
+    ///
+    /// - Returns: The processed transcribed text.
+    ///
+    /// - Throws: ``TranscriptionError/transcriptionFailed`` if no valid model is configured,
+    ///   or any error thrown by the underlying transcription service.
     public func transcribe(audioURL: URL) async throws -> String {
         guard let model = getCurrentTranscriptionModel() else {
             throw TranscriptionError.transcriptionFailed
         }
 
-        
+
         let transcriptionService: any TranscriptionService
         switch model.provider {
         case .parakeet:
@@ -133,9 +199,9 @@ class TranscriptionManager {
             transcriptionService = cloudTranscriptionService
         }
         let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
-        
+
         var result = TranscriptionOutputFilter.filter(text)
-        
+
         // Aply text formatting if enabled
         if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
             result = TextFormatter.format(result)
@@ -149,7 +215,11 @@ class TranscriptionManager {
         return result
     }
 
-    // Preload WhisperKit model on app startup if conditions are met
+    /// Preloads the WhisperKit model if the current mode uses it.
+    ///
+    /// Preloading prepares the model for faster first transcription by loading weights
+    /// into memory ahead of time. This is called on app startup and when switching to
+    /// a mode that uses WhisperKit.
     public func preloadWhisperKitModelIfNeeded() async {
         // Check if current mode uses WhisperKit
         guard currentMode.transcriptionProvider == .whisperKit else {

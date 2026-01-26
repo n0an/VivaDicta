@@ -9,6 +9,35 @@ import Foundation
 import SwiftUI
 import os
 
+/// Manager for user-defined AI enhancement prompts.
+///
+/// `PromptsManager` handles CRUD operations for ``UserPrompt`` instances, which define
+/// the instructions given to AI providers when enhancing transcriptions.
+///
+/// ## Overview
+///
+/// The manager provides:
+/// - Loading and saving prompts to shared UserDefaults
+/// - Duplicate name detection with normalization
+/// - Prompt duplication with automatic name generation
+///
+/// ## Persistence
+///
+/// Prompts are stored in the shared App Group UserDefaults, making them accessible
+/// to both the main app and the keyboard extension for Flow Mode functionality.
+///
+/// ## Usage
+///
+/// ```swift
+/// let manager = PromptsManager()
+///
+/// // Add a new prompt
+/// let prompt = UserPrompt(title: "Email", promptInstructions: "Format as professional email")
+/// manager.addPrompt(prompt)
+///
+/// // Duplicate an existing prompt
+/// manager.duplicatePrompt(existingPrompt)  // Creates "Email 1"
+/// ```
 @Observable
 class PromptsManager {
     private let logger = Logger(category: .promptsManager)
@@ -16,8 +45,14 @@ class PromptsManager {
     private let userDefaults: UserDefaults
     private let userPromptsKey: String
 
+    /// All user-defined prompts.
     var userPrompts: [UserPrompt] = []
 
+    /// Creates a PromptsManager with the specified storage.
+    ///
+    /// - Parameters:
+    ///   - userDefaults: The UserDefaults instance to use for persistence.
+    ///   - storageKey: The key under which prompts are stored.
     init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
          storageKey: String = "UserPrompts") {
         self.userDefaults = userDefaults
@@ -27,6 +62,12 @@ class PromptsManager {
     
     // MARK: - Public Methods
 
+    /// Checks if a prompt name already exists.
+    ///
+    /// - Parameters:
+    ///   - name: The name to check.
+    ///   - excludingId: Optional ID to exclude (for editing existing prompts).
+    /// - Returns: `true` if the name is already used by another prompt.
     func isPromptNameDuplicate(_ name: String, excludingId: UUID? = nil) -> Bool {
         let normalizedName = normalizeForComparison(name)
         return userPrompts.contains { prompt in
@@ -34,12 +75,18 @@ class PromptsManager {
         }
     }
 
+    /// Adds a new prompt to the collection.
+    ///
+    /// - Parameter prompt: The prompt to add.
     func addPrompt(_ prompt: UserPrompt) {
         userPrompts.append(prompt)
         saveUserPrompts()
         logger.logInfo("Added new prompt: \(prompt.title)")
     }
     
+    /// Updates an existing prompt.
+    ///
+    /// - Parameter prompt: The prompt with updated values (matched by ID).
     func updatePrompt(_ prompt: UserPrompt) {
         if let index = userPrompts.firstIndex(where: { $0.id == prompt.id }) {
             userPrompts[index] = prompt
@@ -48,12 +95,18 @@ class PromptsManager {
         }
     }
     
+    /// Deletes a prompt from the collection.
+    ///
+    /// - Parameter prompt: The prompt to delete.
     func deletePrompt(_ prompt: UserPrompt) {
         userPrompts.removeAll { $0.id == prompt.id }
         saveUserPrompts()
         logger.logInfo("Deleted prompt: \(prompt.title)")
     }
 
+    /// Creates a duplicate of a prompt with a numbered suffix.
+    ///
+    /// - Parameter prompt: The prompt to duplicate.
     func duplicatePrompt(_ prompt: UserPrompt) {
         let newName = generateDuplicateName(for: prompt.title)
         let newPrompt = UserPrompt(
