@@ -56,13 +56,10 @@ extension ParakeetModel {
         name.lowercased().contains("v2") ? .v2 : .v3
     }
 
+    /// Returns FluidAudio's default cache directory for this model version.
+    /// This ensures consistency between download, validation, and loading.
     var modelsDirectory: URL {
-        switch version {
-        case .v2:
-            FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v2-coreml")
-        case .v3:
-            FileManager.appDirectory(for: .parakeetModels).appendingPathComponent("parakeet-tdt-0.6b-v3-coreml")
-        }
+        AsrModels.defaultCacheDirectory(for: version)
     }
 
     var isDownloaded: Bool {

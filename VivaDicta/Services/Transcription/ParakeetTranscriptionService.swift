@@ -20,7 +20,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         guard asrManager == nil else {
             return
         }
-        
+
         do {
             // Validate models before loading
             let isValid = try await AsrModels.isModelValid(version: model.version)
@@ -28,11 +28,12 @@ class ParakeetTranscriptionService: TranscriptionService {
                 logger.error("Model validation failed for \(model.version == .v2 ? "v2" : "v3"). Models are corrupted.")
                 throw ParakeetTranscriptionError.modelValidationFailed("Parakeet models are corrupted. Please delete and re-download the model.")
             }
-            
+
             let manager = AsrManager(config: .default)
-            let models = try await AsrModels.load(from: model.modelsDirectory, version: model.version)
+            // Load from FluidAudio's default cache directory
+            let models = try await AsrModels.loadFromCache(configuration: nil, version: model.version)
             try await manager.initialize(models: models)
-            
+
             self.asrManager = manager
             logger.logNotice("✅ Parakeet ASR model loaded successfully")
         } catch {
@@ -71,7 +72,7 @@ class ParakeetTranscriptionService: TranscriptionService {
             speechAudio = audioSamples
         } else {
             logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
-            speechAudio = try await applyVAD(to: audioSamples, modelsDirectory: parakeetModel.modelsDirectory)
+            speechAudio = try await applyVAD(to: audioSamples)
         }
         
         // Transcribe the audio
@@ -94,16 +95,12 @@ class ParakeetTranscriptionService: TranscriptionService {
         return try converter.resampleAudioFile(path: url.path)
     }
 
-    private func applyVAD(to audioSamples: [Float], modelsDirectory: URL) async throws -> [Float] {
+    private func applyVAD(to audioSamples: [Float]) async throws -> [Float] {
         let vadConfig = VadConfig(defaultThreshold: 0.7)
 
-        // Initialize VAD manager if needed
+        // Initialize VAD manager if needed (uses FluidAudio's default cache)
         if vadManager == nil {
-            // VAD models are stored in parakeet models directory
-            vadManager = try await VadManager(
-                config: vadConfig,
-                modelDirectory: FileManager.appDirectory(for: .parakeetModels)
-            )
+            vadManager = try await VadManager(config: vadConfig)
         }
 
         guard let vadManager = vadManager else {

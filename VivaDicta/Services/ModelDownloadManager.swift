@@ -236,12 +236,10 @@ class ModelDownloadManager: @unchecked Sendable {
         }
 
         do {
-            async let asrDownload = AsrModels.downloadAndLoad(to: model.modelsDirectory, version: model.version)
-            async let vadDownload = DownloadUtils.loadModels(
-                .vad,
-                modelNames: Array(ModelNames.VAD.requiredModels),
-                directory: FileManager.appDirectory(for: .parakeetModels)
-            )
+            // Download to FluidAudio's default cache directory
+            async let asrDownload = AsrModels.downloadAndLoad(version: model.version)
+            // Initialize VAD manager to download VAD models to default cache
+            async let vadDownload = VadManager()
 
             _ = try await (asrDownload, vadDownload)
             
