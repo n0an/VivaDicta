@@ -27,9 +27,14 @@ enum HapticManager {
 
     // MARK: - Settings
 
-    /// Check if haptics are enabled in app settings
+    /// Check if haptics are enabled in app settings (defaults to true if not set)
     private static var isEnabled: Bool {
-        UserDefaultsStorage.shared.bool(forKey: AppGroupCoordinator.isHapticsEnabled)
+        // Use object(forKey:) to distinguish between "not set" and "set to false"
+        // This is needed because keyboard extension doesn't have registered defaults
+        if UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.isHapticsEnabled) == nil {
+            return true
+        }
+        return UserDefaultsStorage.shared.bool(forKey: AppGroupCoordinator.isHapticsEnabled)
     }
 
     /// Check if device supports haptics
