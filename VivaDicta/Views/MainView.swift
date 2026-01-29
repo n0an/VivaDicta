@@ -149,7 +149,8 @@ struct MainView: View {
     }
 
     private var deleteAlertTitle: String {
-        "Delete \(selectedTranscriptionIDs.count) Note\(selectedTranscriptionIDs.count == 1 ? "" : "s")?"
+        let count = selectedTranscriptionIDs.count
+        return "Delete \(count) \(count == 1 ? "Note" : "Notes")?"
     }
 
     private var aiGuardrailAlertBinding: Binding<Bool> {
@@ -274,7 +275,14 @@ struct MainView: View {
 
     @ToolbarContentBuilder
     private var principalToolbarContent: some ToolbarContent {
-        if !isSelectionMode {
+        if isSelectionMode {
+            ToolbarItem(placement: .principal) {
+                if !selectedTranscriptionIDs.isEmpty {
+                    Text("^[\(selectedTranscriptionIDs.count) Note](inflect: true) selected")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } else {
             ToolbarItem(placement: .principal) {
                 VivaModePicker(
                     modes: appState.aiService.modes,
