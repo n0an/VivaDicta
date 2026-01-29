@@ -17,7 +17,12 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
 
     var displayName: String {
-        return rawValue.capitalized
+        switch self {
+        case .vibeCoding:
+            return "Coding"
+        default:
+            return rawValue.capitalized
+        }
     }
     
     var description: String {
@@ -29,7 +34,7 @@ enum PromptsTemplates: String, CaseIterable, Identifiable, Codable {
         case .regular:
             return "Cleans up transcriptions while preserving your natural speaking style"
         case .vibeCoding:
-            return "For Vibe coders and AI chat. Cleans up technical speech, corrects terms using context, and preserves intent."
+            return "For IT and AI related chat. Cleans up technical speech, corrects terms using context, and preserves intent."
         case .custom:
             return "Start with a blank prompt and write your own instructions"
         }
