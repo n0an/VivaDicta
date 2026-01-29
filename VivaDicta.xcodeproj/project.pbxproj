@@ -141,6 +141,7 @@
 				Shared/AppGroupCoordinator.swift,
 				Shared/UserDefaultsStorage.swift,
 				Utilities/LoggerExtension.swift,
+				Utils/HapticManager.swift,
 			);
 			target = 189C7A8A2F0C6822004BAFBF /* ShareExtension */;
 		};
@@ -168,6 +169,7 @@
 				Shared/AppGroupCoordinator.swift,
 				Shared/UserDefaultsStorage.swift,
 				Utilities/LoggerExtension.swift,
+				Utils/HapticManager.swift,
 			);
 			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
 		};

@@ -164,6 +164,7 @@ struct ShareExtensionView: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
+                    HapticManager.lightImpact()
                     onCancel()
                 }
 
@@ -171,6 +172,7 @@ struct ShareExtensionView: View {
                 // Header
                 HStack {
                     Button("Cancel") {
+                        HapticManager.lightImpact()
                         onCancel()
                     }
                     .foregroundStyle(.secondary)
@@ -235,6 +237,7 @@ struct ShareExtensionView: View {
 
             // Transcribe Button
             Button {
+                HapticManager.mediumImpact()
                 viewModel.saveSelectedMode()
                 viewModel.saveLanguageOverride()
                 onTranscribe()
@@ -267,6 +270,9 @@ struct ShareExtensionView: View {
             }
             .pickerStyle(.menu)
             .tint(.primary)
+            .onChange(of: viewModel.selectedMode) {
+                HapticManager.selectionChanged()
+            }
         }
         .padding(.horizontal)
     }
@@ -302,6 +308,9 @@ struct ShareExtensionView: View {
                 }
                 .pickerStyle(.menu)
                 .tint(.primary)
+                .onChange(of: viewModel.selectedLanguage) {
+                    HapticManager.selectionChanged()
+                }
             } else {
                 Text("Autodetected by model")
                     .font(.caption)
