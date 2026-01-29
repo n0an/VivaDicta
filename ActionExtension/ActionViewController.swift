@@ -86,9 +86,16 @@ final class ActionExtensionViewModel {
         return true
     }
 
-    /// Languages supported by the current transcription model
-    var availableLanguages: [(code: String, name: String)] {
-        guard isLanguageSelectionAvailable else { return [] }
+    struct GroupedLanguages {
+        let recommended: [(code: String, name: String)]  // Auto + user's preferred
+        let other: [(code: String, name: String)]        // Rest alphabetically
+    }
+
+    /// Languages supported by the current transcription model, grouped by preference
+    var groupedLanguages: GroupedLanguages {
+        guard isLanguageSelectionAvailable else {
+            return GroupedLanguages(recommended: [], other: [])
+        }
 
         // Get the current model's supported languages
         let modelName = selectedMode.transcriptionModel
@@ -107,14 +114,41 @@ final class ActionExtensionViewModel {
             supportedLanguages = TranscriptionModelProvider.allLanguages
         }
 
-        // Sort languages: Auto first, then alphabetically by name
-        return supportedLanguages
-            .map { (code: $0.key, name: $0.value) }
-            .sorted { lhs, rhs in
-                if lhs.code == "auto" { return true }
-                if rhs.code == "auto" { return false }
-                return lhs.name < rhs.name
+        let languages = supportedLanguages.map { (code: $0.key, name: $0.value) }
+        return groupLanguages(languages)
+    }
+
+    private func groupLanguages(_ languages: [(code: String, name: String)]) -> GroupedLanguages {
+        let userPreferredCodes = getUserPreferredLanguageCodes()
+
+        var recommended: [(code: String, name: String)] = []
+
+        // First, add "auto" if available
+        if let auto = languages.first(where: { $0.code == "auto" }) {
+            recommended.append(auto)
+        }
+
+        // Add user's preferred languages in order
+        for code in userPreferredCodes {
+            if let lang = languages.first(where: { $0.code == code }) {
+                recommended.append(lang)
             }
+        }
+
+        // Full alphabetical list (excluding auto, but including user's preferred languages)
+        let other = languages
+            .filter { $0.code != "auto" }
+            .sorted { $0.name < $1.name }
+
+        return GroupedLanguages(recommended: recommended, other: other)
+    }
+
+    private func getUserPreferredLanguageCodes() -> [String] {
+        Locale.preferredLanguages.compactMap { identifier in
+            // Extract language code from identifiers like "en-US", "ru-RU", "zh-Hans-CN"
+            let locale = Locale(identifier: identifier)
+            return locale.language.languageCode?.identifier
+        }
     }
 
     var transcriptionModelDisplayName: String {
@@ -299,9 +333,22 @@ struct ActionExtensionView: View {
                 .frame(width: 60, alignment: .leading)
 
             if viewModel.isLanguageSelectionAvailable {
+                let grouped = viewModel.groupedLanguages
                 Picker("Language", selection: $viewModel.selectedLanguage) {
-                    ForEach(viewModel.availableLanguages, id: \.code) { language in
+                    // Recommended section (Auto + user's preferred languages)
+                    ForEach(grouped.recommended, id: \.code) { language in
                         Text(language.code == "auto" ? "🌐 Auto-detect" : TranscriptionModelProvider.languageWithFlag(language.code, name: language.name))
+                            .tag(language.code)
+                    }
+
+                    // Divider between sections (only if both sections have items)
+                    if !grouped.recommended.isEmpty && !grouped.other.isEmpty {
+                        Divider()
+                    }
+
+                    // All languages alphabetically
+                    ForEach(grouped.other, id: \.code) { language in
+                        Text(TranscriptionModelProvider.languageWithFlag(language.code, name: language.name))
                             .tag(language.code)
                     }
                 }
