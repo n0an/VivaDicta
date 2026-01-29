@@ -262,7 +262,7 @@ private struct SelectableTranscriptionRow: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
                     .foregroundStyle(isSelected ? .blue : .secondary)
-                    .animation(.easeInOut(duration: 0.15), value: isSelected)
+                    .animation(.snappy(duration: 0.15), value: isSelected)
 
                 TranscriptionRowView(
                     transcription: transcription,
