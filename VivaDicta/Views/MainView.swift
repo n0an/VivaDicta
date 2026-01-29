@@ -305,7 +305,7 @@ struct MainView: View {
                 }
             }
         } else {
-            ToolbarItemGroup(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarLeading) {
                 Button {
                     HapticManager.lightImpact()
                     showingFileImport = true
@@ -313,8 +313,16 @@ struct MainView: View {
                     Image(systemName: "waveform.badge.plus")
                 }
                 .accessibilityLabel("Import Audio File")
+            }
 
+            if #available(iOS 26.0, *) {
                 if !transcriptions.isEmpty {
+                    ToolbarSpacer(.fixed, placement: .topBarLeading)
+                }
+            }
+
+            if !transcriptions.isEmpty {
+                ToolbarItem(placement: .topBarLeading) {
                     Button {
                         HapticManager.lightImpact()
                         enterSelectionMode()
