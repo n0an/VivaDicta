@@ -21,6 +21,11 @@ struct MainView: View {
     @State private var showingFileImport = false
     @State private var searchText = ""
 
+    // Selection mode state
+    @State private var isSelectionMode = false
+    @State private var selectedTranscriptionIDs: Set<UUID> = []
+    @State private var showDeleteConfirmation = false
+
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
     @State private var showNoModelAlert = false
@@ -41,211 +46,12 @@ struct MainView: View {
         @Bindable var router = router
 
         NavigationStack(path: $router.path) {
-            TranscriptionsContentView(searchText: $searchText)
-                .searchable(text: $searchText, placement: .toolbar)
-                .minimizedSearch()
-            
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    if #available(iOS 26.0, *) {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button {
-                                HapticManager.lightImpact()
-                                showingSettings = true
-                            } label: {
-                                Image(systemName: "gearshape.fill")
-                            }
-                            .accessibilityLabel("Settings")
-                            .popoverTip(selectTranscriptionModelTipMainView) { action in
-                                if action.id == "go-to-models" {
-                                    showingSettings = true
-                                    appState.shouldNavigateToModels = true
-                                }
-                            }
-                        }
-                        .matchedTransitionSource(id: "SettingsSheetTransition", in: sheetTransitions)
-                    } else {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button {
-                                HapticManager.lightImpact()
-                                showingSettings = true
-                            } label: {
-                                Image(systemName: "gearshape.fill")
-                            }
-                            .accessibilityLabel("Settings")
-                            .tint(.primary)
-                            .popoverTip(selectTranscriptionModelTipMainView) { action in
-                                if action.id == "go-to-models" {
-                                    showingSettings = true
-                                    appState.shouldNavigateToModels = true
-                                }
-                            }
-                        }
-                    }
-
-                }
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        VivaModePicker(
-                            modes: appState.aiService.modes,
-                            selectedModeName: $appState.aiService.selectedModeName
-                        )
-                    }
-                }
-            
-                .toolbar {
-                    if #available(iOS 26.0, *) {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                HapticManager.lightImpact()
-                                showingFileImport = true
-                            } label: {
-                                Image(systemName: "waveform.badge.plus")
-                            }
-                            .accessibilityLabel("Import Audio File")
-                        }
-                        .matchedTransitionSource(id: "FileImportSheetTransition", in: sheetTransitions)
-                    } else {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                HapticManager.lightImpact()
-                                showingFileImport = true
-                            } label: {
-                                Image(systemName: "waveform.badge.plus")
-                            }
-                            .accessibilityLabel("Import Audio File")
-                            .tint(.primary)
-                        }
-                    }
-
-                }
-            
-                .toolbar {
-                    if #available(iOS 26.0, *) {
-                        DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                        ToolbarSpacer(.flexible, placement: .bottomBar)
-
-                        ToolbarItem(placement: .bottomBar) {
-
-                            Button {
-                                startRecording()
-                            } label: {
-                                Image(systemName: "microphone.circle")
-                                    .font(.system(size: 24))
-                                    .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceTrigger)
-                            }
-                            .buttonStyle(.glassProminent)
-                            .tint(.orange)
-                            .accessibilityLabel("Start Recording")
-                        }
-                        .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
-                    } else {
-                        ToolbarItem(placement: .bottomBar) {
-                            Button("") {
-                                startRecording()
-                            }
-                            .buttonStyle(RecordButtonButtonStyle(bounceTrigger: recordButtonBounceTrigger))
-                            .accessibilityLabel("Start Recording")
-                        }
-                    }
-                }
-                .sheet(isPresented: $showingRecordingSheet) {
-                    if #available(iOS 26.0, *) {
-                        RecordingSheetView()
-                            .scrollContentBackground(.hidden)
-                            .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
-                    } else {
-                        RecordingSheetView()
-                    }
-                }
-                .fullScreenCover(isPresented: $showingSettings) {
-                    SettingsView()
-                        .interactiveDismissDisabled(true)
-                        .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
-                }
-                .fileImporter(
-                    isPresented: $showingFileImport,
-                    allowedContentTypes: [.audio, .mpeg4Audio, .wav, .mp3, .aiff],
-                    allowsMultipleSelection: false
-                ) { result in
-                    handleFileImport(result)
-                }
-                .navigationDestination(for: Transcription.self) { transcription in
-                    TranscriptionDetailView(transcription: transcription)
-                }
-                .alert("No Transcription Model", isPresented: $showNoModelAlert, actions: {
-                    Button("Go to Models") {
-                        appState.shouldNavigateToModels = true
-                    }
-                }, message: {
-                    Text("To start recording, please download a local model or select a cloud transcription model.")
-                })
-                .alert("File Error", isPresented: $showFileErrorAlert, actions: {
-                    Button("OK", role: .cancel) {}
-                }, message: {
-                    Text(fileErrorMessage)
-                })
-                .alert(
-                    "AI Safety Guardrail Triggered",
-                    isPresented: Binding(
-                        get: { appState.recordViewModel?.isShowingAlert == true && appState.recordViewModel?.recordError == .aiGuardrail },
-                        set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
-                    )
-                ) {
-                    Button("OK", role: .cancel) {}
-                } message: {
-                    Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI enhancement. Consider using a cloud AI provider for this type of content.")
-                }
+            mainContentView
         }
-        .overlay {
-            if appState.recordViewModel?.recordingState == .recording ||
-                appState.recordViewModel?.recordingState == .transcribing ||
-                appState.recordViewModel?.recordingState == .enhancing {
-                GeometryReader { geometry in
-                    AnimatedMeshGradient()
-                        .onAppear {
-                            rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
-                                Task { @MainActor in
-                                    if appState.recordViewModel?.recordingState == .transcribing ||
-                                        appState.recordViewModel?.recordingState == .enhancing {
-                                        rippleEffectTrigger.toggle()
-                                    }
-                                }
-                            })
-                            if appState.recordViewModel?.recordingState == .transcribing ||
-                                appState.recordViewModel?.recordingState == .enhancing {
-                                rippleEffectTimer?.fire()
-                            }
-                        }
-                        .onDisappear {
-                            rippleEffectTimer?.invalidate()
-                            rippleEffectTimer = nil
-                        }
-                        .mask(
-                            RoundedRectangle(cornerRadius: 44, style: .continuous)
-                                .stroke(lineWidth: 44)
-                                .blur(radius: 22)
-                        )
-                        .ignoresSafeArea()
-                        .modifier(RippleEffect(at: CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), trigger: rippleEffectTrigger))
-                }
-            }
-        }
-        .overlay {
-            if appState.recordViewModel?.recordingState == .transcribing ||
-                appState.recordViewModel?.recordingState == .enhancing {
-                HudView(
-                    state: appState.recordViewModel?.recordingState ?? .idle,
-                    onCancel: {
-                        appState.recordViewModel?.cancelProcessing()
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
+        .overlay { recordingOverlay }
+        .overlay { hudOverlay }
         .animation(.default, value: appState.recordViewModel?.recordingState)
         .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
-            // Show sheet only during active recording, not during transcribing or enhancing
             showingRecordingSheet = (newState == .recording)
         }
         .onChange(of: appState.shouldStartRecording) { _, newValue in
@@ -257,16 +63,13 @@ struct MainView: View {
         .onChange(of: appState.shouldNavigateToModels) { _, newValue in
             if newValue {
                 showingSettings = true
-                // The SettingsView should handle navigation to models internally
             }
         }
         .onChange(of: appState.shouldTranscribeSharedAudio) { _, newValue in
             if newValue {
-                // Dismiss any presented screens to return to main view
                 showingSettings = false
                 showingRecordingSheet = false
                 router.popToRoot()
-
                 handleSharedAudioTranscription()
                 appState.shouldTranscribeSharedAudio = false
             }
@@ -276,30 +79,8 @@ struct MainView: View {
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
         }
-        .onAppear {
-            SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
-            SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
-
-            // Trigger record button bounce animation on app start (first 10 launches only)
-            // iOS 26+ uses symbolEffect, iOS 18 uses KeyframeAnimator - both trigger on count change
-            if recordButtonBounceTrigger == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
-                Task {
-                    try? await Task.sleep(for: .milliseconds(500))
-                    recordButtonBounceTrigger += 1
-                }
-            }
-
-            // Request app rating on app start (with delay to not be jarring)
-            // Note: transcriptions.count is evaluated after sleep, ensuring @Query has loaded
-            Task {
-                try? await Task.sleep(for: .seconds(2))
-                let count = transcriptions.count
-                RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
-            }
-        }
+        .onAppear { handleOnAppear() }
         .task {
-            // Clean up old audio files (based on user settings)
-            // Called here instead of app init to ensure SwiftData is fully initialized
             await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
         }
         .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
@@ -307,6 +88,336 @@ struct MainView: View {
             SelectTranscriptionModelTipSettingsView.isTranscriptionReady = newValue
         }
     }
+
+    // MARK: - Main Content View
+
+    @ViewBuilder
+    private var mainContentView: some View {
+        TranscriptionsContentView(
+            searchText: $searchText,
+            isSelectionMode: $isSelectionMode,
+            selectedTranscriptionIDs: $selectedTranscriptionIDs
+        )
+        .searchable(text: $searchText, placement: .toolbar, prompt: "Search notes")
+        .minimizedSearch()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { trailingToolbarContent }
+        .toolbar { principalToolbarContent }
+        .toolbar { leadingToolbarContent }
+        .toolbar { bottomToolbarContent }
+        .sheet(isPresented: $showingRecordingSheet) { recordingSheetContent }
+        .fullScreenCover(isPresented: $showingSettings) {
+            SettingsView()
+                .interactiveDismissDisabled(true)
+                .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
+        }
+        .fileImporter(
+            isPresented: $showingFileImport,
+            allowedContentTypes: [.audio, .mpeg4Audio, .wav, .mp3, .aiff],
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImport(result)
+        }
+        .navigationDestination(for: Transcription.self) { transcription in
+            TranscriptionDetailView(transcription: transcription)
+        }
+        .alert("No Transcription Model", isPresented: $showNoModelAlert) {
+            Button("Go to Models") {
+                appState.shouldNavigateToModels = true
+            }
+        } message: {
+            Text("To start recording, please download a local model or select a cloud transcription model.")
+        }
+        .alert("File Error", isPresented: $showFileErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(fileErrorMessage)
+        }
+        .alert("AI Safety Guardrail Triggered", isPresented: aiGuardrailAlertBinding) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI enhancement. Consider using a cloud AI provider for this type of content.")
+        }
+        .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                deleteSelectedTranscriptions()
+            }
+        } message: {
+            Text("This action cannot be undone.")
+        }
+    }
+
+    private var deleteAlertTitle: String {
+        "Delete \(selectedTranscriptionIDs.count) Note\(selectedTranscriptionIDs.count == 1 ? "" : "s")?"
+    }
+
+    private var aiGuardrailAlertBinding: Binding<Bool> {
+        Binding(
+            get: { appState.recordViewModel?.isShowingAlert == true && appState.recordViewModel?.recordError == .aiGuardrail },
+            set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
+        )
+    }
+
+    @ViewBuilder
+    private var recordingSheetContent: some View {
+        if #available(iOS 26.0, *) {
+            RecordingSheetView()
+                .scrollContentBackground(.hidden)
+                .navigationTransition(.zoom(sourceID: "RecordSheetTransition", in: sheetTransitions))
+        } else {
+            RecordingSheetView()
+        }
+    }
+
+    // MARK: - Overlays
+
+    @ViewBuilder
+    private var recordingOverlay: some View {
+        if appState.recordViewModel?.recordingState == .recording ||
+            appState.recordViewModel?.recordingState == .transcribing ||
+            appState.recordViewModel?.recordingState == .enhancing {
+            GeometryReader { geometry in
+                AnimatedMeshGradient()
+                    .onAppear {
+                        rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
+                            Task { @MainActor in
+                                if appState.recordViewModel?.recordingState == .transcribing ||
+                                    appState.recordViewModel?.recordingState == .enhancing {
+                                    rippleEffectTrigger.toggle()
+                                }
+                            }
+                        })
+                        if appState.recordViewModel?.recordingState == .transcribing ||
+                            appState.recordViewModel?.recordingState == .enhancing {
+                            rippleEffectTimer?.fire()
+                        }
+                    }
+                    .onDisappear {
+                        rippleEffectTimer?.invalidate()
+                        rippleEffectTimer = nil
+                    }
+                    .mask(
+                        RoundedRectangle(cornerRadius: 44, style: .continuous)
+                            .stroke(lineWidth: 44)
+                            .blur(radius: 22)
+                    )
+                    .ignoresSafeArea()
+                    .modifier(RippleEffect(at: CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), trigger: rippleEffectTrigger))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var hudOverlay: some View {
+        if appState.recordViewModel?.recordingState == .transcribing ||
+            appState.recordViewModel?.recordingState == .enhancing {
+            HudView(
+                state: appState.recordViewModel?.recordingState ?? .idle,
+                onCancel: {
+                    appState.recordViewModel?.cancelProcessing()
+                }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func handleOnAppear() {
+        SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+        SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+
+        // Trigger record button bounce animation on app start (first 10 launches only)
+        if recordButtonBounceTrigger == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                recordButtonBounceTrigger += 1
+            }
+        }
+
+        // Request app rating on app start (with delay to not be jarring)
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            let count = transcriptions.count
+            RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
+        }
+    }
+
+    // MARK: - Toolbar Content
+
+    @ToolbarContentBuilder
+    private var trailingToolbarContent: some ToolbarContent {
+        if isSelectionMode {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Cancel") {
+                    HapticManager.lightImpact()
+                    exitSelectionMode()
+                }
+            }
+        } else {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    HapticManager.lightImpact()
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                }
+                .accessibilityLabel("Settings")
+                .popoverTip(selectTranscriptionModelTipMainView) { action in
+                    if action.id == "go-to-models" {
+                        showingSettings = true
+                        appState.shouldNavigateToModels = true
+                    }
+                }
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var principalToolbarContent: some ToolbarContent {
+        if !isSelectionMode {
+            ToolbarItem(placement: .principal) {
+                VivaModePicker(
+                    modes: appState.aiService.modes,
+                    selectedModeName: Binding(
+                        get: { appState.aiService.selectedModeName },
+                        set: { appState.aiService.selectedModeName = $0 }
+                    )
+                )
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var leadingToolbarContent: some ToolbarContent {
+        if isSelectionMode {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(allDisplayedSelected ? "Deselect All" : "Select All") {
+                    HapticManager.lightImpact()
+                    toggleSelectAll()
+                }
+            }
+        } else {
+            ToolbarItemGroup(placement: .topBarLeading) {
+                Button {
+                    HapticManager.lightImpact()
+                    showingFileImport = true
+                } label: {
+                    Image(systemName: "waveform.badge.plus")
+                }
+                .accessibilityLabel("Import Audio File")
+
+                if !transcriptions.isEmpty {
+                    Button {
+                        HapticManager.lightImpact()
+                        enterSelectionMode()
+                    } label: {
+                        Image(systemName: "checkmark.circle")
+                    }
+                    .accessibilityLabel("Select Notes")
+                }
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var bottomToolbarContent: some ToolbarContent {
+        if isSelectionMode {
+            ToolbarItem(placement: .bottomBar) {
+                Spacer()
+            }
+            ToolbarItem(placement: .bottomBar) {
+                Button(role: .destructive) {
+                    HapticManager.warning()
+                    showDeleteConfirmation = true
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .tint(.red)
+                .disabled(selectedTranscriptionIDs.isEmpty)
+            }
+        } else {
+            if #available(iOS 26.0, *) {
+                DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        startRecording()
+                    } label: {
+                        Image(systemName: "microphone.circle")
+                            .font(.system(size: 24))
+                            .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceTrigger)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(.orange)
+                    .accessibilityLabel("Start Recording")
+                }
+                .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
+            } else {
+                ToolbarItem(placement: .bottomBar) {
+                    Button("") {
+                        startRecording()
+                    }
+                    .buttonStyle(RecordButtonButtonStyle(bounceTrigger: recordButtonBounceTrigger))
+                    .accessibilityLabel("Start Recording")
+                }
+            }
+        }
+    }
+
+    // MARK: - Selection Mode
+
+    private var allDisplayedSelected: Bool {
+        !transcriptions.isEmpty && selectedTranscriptionIDs.count == transcriptions.count
+    }
+
+    private func enterSelectionMode() {
+        isSelectionMode = true
+        selectedTranscriptionIDs = []
+    }
+
+    private func exitSelectionMode() {
+        isSelectionMode = false
+        selectedTranscriptionIDs = []
+    }
+
+    private func toggleSelectAll() {
+        if allDisplayedSelected {
+            selectedTranscriptionIDs = []
+        } else {
+            selectedTranscriptionIDs = Set(transcriptions.map(\.id))
+        }
+    }
+
+    private func deleteSelectedTranscriptions() {
+        HapticManager.heavyImpact()
+
+        for transcription in transcriptions where selectedTranscriptionIDs.contains(transcription.id) {
+            let transcriptionID = transcription.id
+
+            // Delete audio file if exists
+            if let audioFileName = transcription.audioFileName {
+                let audioURL = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
+                try? FileManager.default.removeItem(at: audioURL)
+            }
+
+            modelContext.delete(transcription)
+
+            // Remove from Spotlight index
+            Task {
+                await appState.removeTranscriptionFromSpotlight(transcriptionID)
+            }
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            logger.logError("Failed to save after bulk deletion: \(error.localizedDescription)")
+        }
+
+        exitSelectionMode()
+    }
+
+    // MARK: - Recording
 
     private func startRecording() {
         guard let vm = appState.recordViewModel else { return }

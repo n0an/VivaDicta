@@ -12,8 +12,11 @@ import SwiftUI
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
-    
+
     @Binding var searchText: String
+    @Binding var isSelectionMode: Bool
+    @Binding var selectedTranscriptionIDs: Set<UUID>
+
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
     @State private var newlyInsertedIDs: Set<UUID> = []
@@ -25,8 +28,10 @@ struct TranscriptionsContentView: View {
 
     @Environment(AppState.self) var appState
 
-    init(searchText: Binding<String>) {
+    init(searchText: Binding<String>, isSelectionMode: Binding<Bool>, selectedTranscriptionIDs: Binding<Set<UUID>>) {
         self._searchText = searchText
+        self._isSelectionMode = isSelectionMode
+        self._selectedTranscriptionIDs = selectedTranscriptionIDs
     }
 
     var body: some View {
@@ -41,42 +46,54 @@ struct TranscriptionsContentView: View {
                         EmptyView()
                             .id(topAnchorID)
 
-                        ForEach(displayedTranscriptions) { transcription in
-                            NavigationLink {
-                                TranscriptionDetailView(transcription: transcription)
-                            } label: {
-                                TranscriptionRowView(
+                        if isSelectionMode {
+                            ForEach(displayedTranscriptions) { transcription in
+                                SelectableTranscriptionRow(
                                     transcription: transcription,
+                                    isSelected: selectedTranscriptionIDs.contains(transcription.id),
                                     isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
-                                )
+                                ) {
+                                    toggleSelection(for: transcription)
+                                }
                             }
-                            .contextMenu {
-                                Section("Share") {
-                                    if let enhancedText = transcription.enhancedText {
-                                        ShareLink(item: enhancedText) {
-                                            Label("Enhanced Text", systemImage: "sparkles")
+                        } else {
+                            ForEach(displayedTranscriptions) { transcription in
+                                NavigationLink {
+                                    TranscriptionDetailView(transcription: transcription)
+                                } label: {
+                                    TranscriptionRowView(
+                                        transcription: transcription,
+                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                                    )
+                                }
+                                .contextMenu {
+                                    Section("Share") {
+                                        if let enhancedText = transcription.enhancedText {
+                                            ShareLink(item: enhancedText) {
+                                                Label("Enhanced Text", systemImage: "sparkles")
+                                            }
                                         }
-                                    }
 
-                                    ShareLink(item: transcription.text) {
-                                        Label("Original Text", systemImage: "text.alignleft")
-                                    }
+                                        ShareLink(item: transcription.text) {
+                                            Label("Original Text", systemImage: "text.alignleft")
+                                        }
 
-                                    if let audioURL = audioURL(for: transcription) {
-                                        ShareLink(
-                                            item: audioURL,
-                                            preview: SharePreview(
-                                                "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
-                                                image: Image(systemName: "waveform")
-                                            )
-                                        ) {
-                                            Label("Audio Recording", systemImage: "waveform")
+                                        if let audioURL = audioURL(for: transcription) {
+                                            ShareLink(
+                                                item: audioURL,
+                                                preview: SharePreview(
+                                                    "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
+                                                    image: Image(systemName: "waveform")
+                                                )
+                                            ) {
+                                                Label("Audio Recording", systemImage: "waveform")
+                                            }
                                         }
                                     }
                                 }
                             }
+                            .onDelete(perform: deleteTranscription)
                         }
-                        .onDelete(perform: deleteTranscription)
                     }
                     .listStyle(.plain)
                     .onScrollGeometryChange(for: Bool.self) { geo in
@@ -183,6 +200,15 @@ struct TranscriptionsContentView: View {
         }
     }
 
+    private func toggleSelection(for transcription: Transcription) {
+        HapticManager.lightImpact()
+        if selectedTranscriptionIDs.contains(transcription.id) {
+            selectedTranscriptionIDs.remove(transcription.id)
+        } else {
+            selectedTranscriptionIDs.insert(transcription.id)
+        }
+    }
+
     private func deleteTranscription(at offsets: IndexSet) {
         HapticManager.heavyImpact()
         for index in offsets {
@@ -222,11 +248,44 @@ struct TranscriptionsContentView: View {
     }
 }
 
+// MARK: - Selectable Row for Selection Mode
+
+private struct SelectableTranscriptionRow: View {
+    let transcription: Transcription
+    let isSelected: Bool
+    let isNewlyInserted: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(isSelected ? .blue : .secondary)
+                    .animation(.easeInOut(duration: 0.15), value: isSelected)
+
+                TranscriptionRowView(
+                    transcription: transcription,
+                    isNewlyInserted: isNewlyInserted
+                )
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 #if DEBUG || QA
 #Preview(traits: .transcriptionsMockDataMany) {
     @Previewable @State var searchText = ""
+    @Previewable @State var isSelectionMode = false
+    @Previewable @State var selectedIDs: Set<UUID> = []
     NavigationStack {
-        TranscriptionsContentView(searchText: $searchText)
+        TranscriptionsContentView(
+            searchText: $searchText,
+            isSelectionMode: $isSelectionMode,
+            selectedTranscriptionIDs: $selectedIDs
+        )
     }
     .environment(AppState())
 }
