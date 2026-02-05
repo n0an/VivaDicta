@@ -133,12 +133,13 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             
             CloudModel(
                 name: "voxtral-mini-latest",
-                displayName: "Voxtral Mini",
-                description: "Open-source 3B model outperforming Whisper v3 at $0.001/min with 30-min context. New signups get $500 free credits (~500,000 mins)",
+                displayName: "Voxtral Mini V2",
+                description: "State-of-the-art transcription with ~4% WER, speaker diarization, and 3-hour audio support. New signups get $500 free credits",
                 provider: .mistral,
-                speed: 0.85,
-                accuracy: 0.95,
-                cost: 0.15,  // $0.001/min - New signups get $500 free credits (~500,000 mins = 8,333 hours!)
+                recommended: true,
+                speed: 0.95,
+                accuracy: 0.97,
+                cost: 0.45,  // $0.003/min - New signups get $500 free credits (~166,666 mins)
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
