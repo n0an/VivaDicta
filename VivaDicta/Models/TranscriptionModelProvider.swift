@@ -298,16 +298,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
             
             CloudModel(
-                name: "stt-async-v3",
-                displayName: "Soniox Async v3",
-                description: "Robust real-world audio handling for 60+ languages with 5-hour duration support",
+                name: "stt-async-v4",
+                displayName: "Soniox (stt-async-v4)",
+                description: "Soniox asynchronous transcription model v4 with human-parity accuracy across 60+ languages.",
                 provider: .soniox,
                 speed: 0.8,
-                accuracy: 0.935,
-                cost: 0.25,  // $0.00167/min
+                accuracy: 0.97,
+                cost: 0.25,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
-            ),
+            )
         ]
     }
     

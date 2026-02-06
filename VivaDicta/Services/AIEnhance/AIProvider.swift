@@ -215,7 +215,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .openRouter:
             return "openai/gpt-oss-120b"
         case .soniox:
-            return "stt-async-v3"
+            return "stt-async-v4"
         case .vercelAIGateway:
             // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
             // (e.g., "claude-sonnet-4.5") unlike direct Anthropic API which uses hyphens
