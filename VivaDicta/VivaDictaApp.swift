@@ -46,7 +46,10 @@ struct VivaDictaApp: App {
         
         do {
             let sharedStoreURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!.appendingPathComponent("VivaDicta.sqlite")
-            let config = ModelConfiguration(url: sharedStoreURL)
+            let config = ModelConfiguration(
+                url: sharedStoreURL,
+                cloudKitDatabase: .private("iCloud.com.antonnovoselov.VivaDicta")
+            )
             modelContainer = try ModelContainer(for: Transcription.self, configurations: config)
         } catch {
             print("Error loading ModelContainer; switching to in-memory storage.")

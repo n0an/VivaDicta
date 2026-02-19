@@ -74,6 +74,21 @@ class Transcription {
     /// Duration of the AI enhancement process in seconds.
     var enhancementDuration: TimeInterval?
 
+    /// System message used for AI enhancement request (synced from macOS).
+    var aiRequestSystemMessage: String?
+
+    /// User message used for AI enhancement request (synced from macOS).
+    var aiRequestUserMessage: String?
+
+    /// Name of the Power Mode active during transcription (synced from macOS).
+    var powerModeName: String?
+
+    /// Emoji of the Power Mode active during transcription (synced from macOS).
+    var powerModeEmoji: String?
+
+    /// Status of the transcription (pending/completed/failed, synced from macOS).
+    var transcriptionStatus: String?
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:
