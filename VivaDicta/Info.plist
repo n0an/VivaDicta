@@ -2,10 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSAppTransportSecurity</key>
+	<key>CFBundleIcons</key>
 	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>NSAppIconActionTintColorName</key>
+			<string>AccentColor</string>
+			<key>NSAppIconComplementingColorNames</key>
+			<array>
+				<string>ComplementingGradientColor1</string>
+				<string>ComplementingGradientColor2</string>
+			</array>
+		</dict>
 	</dict>
 	<key>CFBundleURLTypes</key>
 	<array>
@@ -20,10 +28,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-	</array>
 	<key>INAlternativeAppNames</key>
 	<array>
 		<dict>
@@ -33,19 +37,6 @@
 			<string>Viva Nots</string>
 		</dict>
 	</array>
-	<key>CFBundleIcons</key>
-	<dict>
-		<key>CFBundlePrimaryIcon</key>
-		<dict>
-			<key>NSAppIconActionTintColorName</key>
-			<string>AccentColor</string>
-			<key>NSAppIconComplementingColorNames</key>
-			<array>
-				<string>ComplementingGradientColor1</string>
-				<string>ComplementingGradientColor2</string>
-			</array>
-		</dict>
-	</dict>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mobilenotes</string>
@@ -79,6 +70,16 @@
 		<string>perplexity-app</string>
 		<string>claude</string>
 		<string>obsidian</string>
+	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>
