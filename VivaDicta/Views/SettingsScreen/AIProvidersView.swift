@@ -117,6 +117,9 @@ struct AIProviders: View {
                 }
             }
         }
+        .onAppear {
+            appState.aiService.refreshConnectedProviders()
+        }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: AIProvider.self) { provider in

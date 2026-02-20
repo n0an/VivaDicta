@@ -477,6 +477,10 @@ class ModeEditViewModel {
         }
     }
     
+    func refreshConnectedProviders() {
+        aiService.refreshConnectedProviders()
+    }
+
     func hasAPIKey(for provider: AIProvider) -> Bool {
         // Apple doesn't need API key - just check if it's available
         if provider == .apple {

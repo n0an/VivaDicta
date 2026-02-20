@@ -302,6 +302,7 @@ struct ModeEditView: View {
                             HapticManager.selectionChanged()
                         }
                         .onAppear {
+                            viewModel.refreshConnectedProviders()
                             viewModel.selectFirstProviderIfNeeded()
                         }
 
