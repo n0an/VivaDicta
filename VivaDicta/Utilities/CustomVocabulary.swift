@@ -6,9 +6,13 @@
 //
 
 import Foundation
+import SwiftData
 
 enum CustomVocabulary {
-    /// Retrieves custom vocabulary terms from user defaults, trimmed, deduplicated, and optionally limited.
+    /// Set once at app startup to enable SwiftData-backed vocabulary lookups
+    static var modelContainer: ModelContainer?
+
+    /// Retrieves custom vocabulary terms from SwiftData, deduplicated and optionally limited.
     /// - Parameter maxTerms: Optional maximum number of terms to return. If nil, returns all terms.
     /// - Returns: Array of unique vocabulary terms, preserving original order. Returns empty array if spelling corrections are disabled.
     static func getTerms(maxTerms: Int? = nil) -> [String] {
@@ -16,18 +20,21 @@ enum CustomVocabulary {
         let isEnabled = UserDefaultsStorage.appPrivate.object(forKey: UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled) as? Bool ?? true
         guard isEnabled else { return [] }
 
-        guard let words = UserDefaultsStorage.appPrivate.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) else {
+        guard let container = modelContainer else { return [] }
+
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<VocabularyWord>(sortBy: [SortDescriptor(\VocabularyWord.word)])
+
+        guard let items = try? context.fetch(descriptor), !items.isEmpty else {
             return []
         }
 
-        let trimmedWords = words
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
+        let words = items.map { $0.word.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
 
         // De-duplicate while preserving order
         var seen = Set<String>()
         var unique: [String] = []
-        for word in trimmedWords {
+        for word in words {
             let key = word.lowercased()
             if !seen.contains(key) {
                 seen.insert(key)

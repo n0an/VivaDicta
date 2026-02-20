@@ -6,14 +6,16 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct WordsDictionaryView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \VocabularyWord.dateAdded, order: .reverse) private var words: [VocabularyWord]
     @State private var newWord: String = ""
-    @State private var customVocabularyService = CustomVocabularyService()
-    @State private var wordToEdit: EditableWord?
+    @State private var wordToEdit: VocabularyWord?
 
     @State private var editMode = false
-    @State private var selectedWords: [String] = []
+    @State private var selectedWords: Set<PersistentIdentifier> = []
     @State private var showDeleteAlert = false
 
     @AppStorage(UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled)
@@ -23,7 +25,7 @@ struct WordsDictionaryView: View {
         VStack(spacing: 0) {
             enableToggle
 
-            if customVocabularyService.words.isEmpty {
+            if words.isEmpty {
                 emptyStateView
             } else {
                 if editMode {
@@ -51,15 +53,20 @@ struct WordsDictionaryView: View {
                         HapticManager.lightImpact()
                         editMode = true
                     }
-                    .disabled(customVocabularyService.words.isEmpty)
+                    .disabled(words.isEmpty)
                 }
             }
         }
         .navigationTitle("Spelling Corrections")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $wordToEdit) { item in
-            EditVocabularySheet(wordToEdit: item) { editedWord in
-                customVocabularyService.updateWord(item.word, to: editedWord)
+            EditVocabularySheet(word: item.word) { editedWord in
+                var trimmed = editedWord.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.count > CustomVocabularyService.maxWordLength {
+                    trimmed = String(trimmed.prefix(CustomVocabularyService.maxWordLength))
+                }
+                guard !trimmed.isEmpty else { return }
+                item.word = trimmed
                 wordToEdit = nil
             }
             .presentationDetents([.height(180)])
@@ -100,7 +107,7 @@ struct WordsDictionaryView: View {
                     selectedWords.removeAll()
                 } else {
                     HapticManager.selectionChanged()
-                    selectedWords = customVocabularyService.words
+                    selectedWords = Set(words.map(\.persistentModelID))
                 }
             }
 
@@ -118,27 +125,27 @@ struct WordsDictionaryView: View {
     }
 
     private var allWordsSelected: Bool {
-        !customVocabularyService.words.isEmpty && selectedWords.count == customVocabularyService.words.count
+        !words.isEmpty && selectedWords.count == words.count
     }
 
     private var wordsList: some View {
         List {
-            ForEach(customVocabularyService.words, id: \.self) { word in
+            ForEach(words) { word in
                 Button {
                     if editMode {
                         toggleSelection(word)
                     } else {
-                        wordToEdit = EditableWord(word: word)
+                        wordToEdit = word
                     }
                 } label: {
                     HStack {
                         if editMode {
-                            Image(systemName: selectedWords.contains(word) ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(selectedWords.contains(word) ? .blue : .secondary)
+                            Image(systemName: selectedWords.contains(word.persistentModelID) ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedWords.contains(word.persistentModelID) ? .blue : .secondary)
                                 .font(.title2)
                         }
 
-                        Text(word)
+                        Text(word.word)
                         Spacer()
                     }
                     .contentShape(.rect)
@@ -147,14 +154,14 @@ struct WordsDictionaryView: View {
                     if !editMode {
                         Button(role: .destructive) {
                             HapticManager.mediumImpact()
-                            customVocabularyService.deleteWord(word)
+                            modelContext.delete(word)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
 
                         Button {
                             HapticManager.lightImpact()
-                            wordToEdit = EditableWord(word: word)
+                            wordToEdit = word
                         } label: {
                             Label("Edit", systemImage: "pencil")
                         }
@@ -166,24 +173,23 @@ struct WordsDictionaryView: View {
         .listStyle(.plain)
     }
 
-    private func toggleSelection(_ word: String) {
+    private func toggleSelection(_ word: VocabularyWord) {
         HapticManager.selectionChanged()
-        if selectedWords.contains(word) {
-            selectedWords.removeAll { $0 == word }
+        if selectedWords.contains(word.persistentModelID) {
+            selectedWords.remove(word.persistentModelID)
         } else {
-            selectedWords.append(word)
+            selectedWords.insert(word.persistentModelID)
         }
     }
 
     private func deleteSelectedWords() {
         HapticManager.heavyImpact()
-        for word in selectedWords {
-            customVocabularyService.deleteWord(word)
+        for word in words where selectedWords.contains(word.persistentModelID) {
+            modelContext.delete(word)
         }
         selectedWords.removeAll()
 
-        // Exit edit mode if no words left
-        if customVocabularyService.words.isEmpty {
+        if words.isEmpty {
             editMode = false
         }
     }
@@ -203,7 +209,6 @@ struct WordsDictionaryView: View {
                         addWord()
                     }
                     .onChange(of: newWord) { _, newValue in
-                        // Limit input to max word length
                         if newValue.count > CustomVocabularyService.maxWordLength {
                             newWord = String(newValue.prefix(CustomVocabularyService.maxWordLength))
                         }
@@ -228,36 +233,41 @@ struct WordsDictionaryView: View {
     }
 
     private func addWord() {
+        var trimmed = newWord.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        if trimmed.count > CustomVocabularyService.maxWordLength {
+            trimmed = String(trimmed.prefix(CustomVocabularyService.maxWordLength))
+        }
+
+        // Check for duplicates (case-insensitive)
+        let isDuplicate = words.contains { $0.word.lowercased() == trimmed.lowercased() }
+        guard !isDuplicate else { return }
+
         HapticManager.mediumImpact()
-        customVocabularyService.addWord(newWord)
+        let vocabWord = VocabularyWord(word: trimmed)
+        modelContext.insert(vocabWord)
         newWord = ""
     }
-}
-
-// MARK: - Editable Word
-
-private struct EditableWord: Identifiable {
-    let id = UUID()
-    let word: String
 }
 
 // MARK: - Edit Vocabulary Word Sheet
 
 private struct EditVocabularySheet: View {
-    let wordToEdit: EditableWord
+    let word: String
     let onSave: (String) -> Void
 
     @State private var editedText: String
     @FocusState private var isTextFieldFocused: Bool
 
-    init(wordToEdit: EditableWord, onSave: @escaping (String) -> Void) {
-        self.wordToEdit = wordToEdit
+    init(word: String, onSave: @escaping (String) -> Void) {
+        self.word = word
         self.onSave = onSave
-        self._editedText = State(initialValue: wordToEdit.word)
+        self._editedText = State(initialValue: word)
     }
 
     private var hasChanges: Bool {
-        editedText.trimmingCharacters(in: .whitespacesAndNewlines) != wordToEdit.word &&
+        editedText.trimmingCharacters(in: .whitespacesAndNewlines) != word &&
         !editedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 

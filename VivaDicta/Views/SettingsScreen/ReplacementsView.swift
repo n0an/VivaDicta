@@ -6,15 +6,17 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ReplacementsView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \WordReplacement.dateAdded, order: .reverse) private var replacements: [WordReplacement]
     @State private var originalText: String = ""
     @State private var replacementText: String = ""
-    @State private var replacementsService = ReplacementsService()
-    @State private var replacementToEdit: Replacement?
+    @State private var replacementToEdit: WordReplacement?
 
     @State private var editMode = false
-    @State private var selectedReplacements: Set<Replacement> = []
+    @State private var selectedReplacements: Set<PersistentIdentifier> = []
     @State private var showDeleteAlert = false
 
     @AppStorage(UserDefaultsStorage.Keys.isReplacementsEnabled)
@@ -24,7 +26,7 @@ struct ReplacementsView: View {
         VStack(spacing: 0) {
             enableToggle
 
-            if replacementsService.replacements.isEmpty {
+            if replacements.isEmpty {
                 emptyStateView
             } else {
                 if editMode {
@@ -52,15 +54,28 @@ struct ReplacementsView: View {
                         HapticManager.lightImpact()
                         editMode = true
                     }
-                    .disabled(replacementsService.replacements.isEmpty)
+                    .disabled(replacements.isEmpty)
                 }
             }
         }
         .navigationTitle("Word Replacements")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $replacementToEdit) { item in
-            EditReplacementSheet(replacementToEdit: item) { newOriginal, newReplacement in
-                replacementsService.updateReplacement(item, original: newOriginal, replacement: newReplacement)
+            EditReplacementSheet(
+                originalText: item.originalText,
+                replacementText: item.replacementText
+            ) { newOriginal, newReplacement in
+                var trimmedOriginal = newOriginal.trimmingCharacters(in: .whitespacesAndNewlines)
+                var trimmedReplacement = newReplacement.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmedOriginal.count > ReplacementsService.maxTextLength {
+                    trimmedOriginal = String(trimmedOriginal.prefix(ReplacementsService.maxTextLength))
+                }
+                if trimmedReplacement.count > ReplacementsService.maxTextLength {
+                    trimmedReplacement = String(trimmedReplacement.prefix(ReplacementsService.maxTextLength))
+                }
+                guard !trimmedOriginal.isEmpty, !trimmedReplacement.isEmpty else { return }
+                item.originalText = trimmedOriginal
+                item.replacementText = trimmedReplacement
                 replacementToEdit = nil
             }
             .presentationDetents([.height(280)])
@@ -111,7 +126,7 @@ struct ReplacementsView: View {
                     selectedReplacements.removeAll()
                 } else {
                     HapticManager.selectionChanged()
-                    selectedReplacements = Set(replacementsService.replacements)
+                    selectedReplacements = Set(replacements.map(\.persistentModelID))
                 }
             }
 
@@ -129,13 +144,13 @@ struct ReplacementsView: View {
     }
 
     private var allReplacementsSelected: Bool {
-        !replacementsService.replacements.isEmpty &&
-        selectedReplacements.count == replacementsService.replacements.count
+        !replacements.isEmpty &&
+        selectedReplacements.count == replacements.count
     }
 
     private var replacementsList: some View {
         List {
-            ForEach(replacementsService.replacements) { replacement in
+            ForEach(replacements) { replacement in
                 Button {
                     if editMode {
                         toggleSelection(replacement)
@@ -145,19 +160,19 @@ struct ReplacementsView: View {
                 } label: {
                     HStack {
                         if editMode {
-                            Image(systemName: selectedReplacements.contains(replacement) ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(selectedReplacements.contains(replacement) ? .blue : .secondary)
+                            Image(systemName: selectedReplacements.contains(replacement.persistentModelID) ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedReplacements.contains(replacement.persistentModelID) ? .blue : .secondary)
                                 .font(.title2)
                         }
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(replacement.original)
+                            Text(replacement.originalText)
                                 .font(.body)
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.right")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                Text(replacement.replacement)
+                                Text(replacement.replacementText)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -170,7 +185,7 @@ struct ReplacementsView: View {
                     if !editMode {
                         Button(role: .destructive) {
                             HapticManager.mediumImpact()
-                            replacementsService.deleteReplacement(replacement)
+                            modelContext.delete(replacement)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -189,23 +204,23 @@ struct ReplacementsView: View {
         .listStyle(.plain)
     }
 
-    private func toggleSelection(_ replacement: Replacement) {
+    private func toggleSelection(_ replacement: WordReplacement) {
         HapticManager.selectionChanged()
-        if selectedReplacements.contains(replacement) {
-            selectedReplacements.remove(replacement)
+        if selectedReplacements.contains(replacement.persistentModelID) {
+            selectedReplacements.remove(replacement.persistentModelID)
         } else {
-            selectedReplacements.insert(replacement)
+            selectedReplacements.insert(replacement.persistentModelID)
         }
     }
 
     private func deleteSelectedReplacements() {
         HapticManager.heavyImpact()
-        for replacement in selectedReplacements {
-            replacementsService.deleteReplacement(replacement)
+        for replacement in replacements where selectedReplacements.contains(replacement.persistentModelID) {
+            modelContext.delete(replacement)
         }
         selectedReplacements.removeAll()
 
-        if replacementsService.replacements.isEmpty {
+        if replacements.isEmpty {
             editMode = false
         }
     }
@@ -279,8 +294,30 @@ struct ReplacementsView: View {
     }
 
     private func addReplacement() {
+        var trimmedOriginal = originalText.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmedReplacement = replacementText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedOriginal.isEmpty, !trimmedReplacement.isEmpty else { return }
+
+        if trimmedOriginal.count > ReplacementsService.maxTextLength {
+            trimmedOriginal = String(trimmedOriginal.prefix(ReplacementsService.maxTextLength))
+        }
+        if trimmedReplacement.count > ReplacementsService.maxTextLength {
+            trimmedReplacement = String(trimmedReplacement.prefix(ReplacementsService.maxTextLength))
+        }
+
+        // Check for duplicate original (case-insensitive)
+        let isDuplicate = replacements.contains {
+            $0.originalText.lowercased() == trimmedOriginal.lowercased()
+        }
+        guard !isDuplicate else { return }
+
         HapticManager.mediumImpact()
-        replacementsService.addReplacement(original: originalText, replacement: replacementText)
+        let wordReplacement = WordReplacement(
+            originalText: trimmedOriginal,
+            replacementText: trimmedReplacement
+        )
+        modelContext.insert(wordReplacement)
         originalText = ""
         replacementText = ""
     }
@@ -289,7 +326,8 @@ struct ReplacementsView: View {
 // MARK: - Edit Replacement Sheet
 
 private struct EditReplacementSheet: View {
-    let replacementToEdit: Replacement
+    let originalText: String
+    let replacementText: String
     let onSave: (String, String) -> Void
 
     @State private var editedOriginal: String
@@ -300,11 +338,12 @@ private struct EditReplacementSheet: View {
         case original, replacement
     }
 
-    init(replacementToEdit: Replacement, onSave: @escaping (String, String) -> Void) {
-        self.replacementToEdit = replacementToEdit
+    init(originalText: String, replacementText: String, onSave: @escaping (String, String) -> Void) {
+        self.originalText = originalText
+        self.replacementText = replacementText
         self.onSave = onSave
-        self._editedOriginal = State(initialValue: replacementToEdit.original)
-        self._editedReplacement = State(initialValue: replacementToEdit.replacement)
+        self._editedOriginal = State(initialValue: originalText)
+        self._editedReplacement = State(initialValue: replacementText)
     }
 
     private var hasChanges: Bool {
@@ -312,7 +351,7 @@ private struct EditReplacementSheet: View {
         let trimmedReplacement = editedReplacement.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmedOriginal.isEmpty &&
                !trimmedReplacement.isEmpty &&
-               (trimmedOriginal != replacementToEdit.original || trimmedReplacement != replacementToEdit.replacement)
+               (trimmedOriginal != originalText || trimmedReplacement != replacementText)
     }
 
     var body: some View {

@@ -43,22 +43,33 @@ struct VivaDictaApp: App {
 
         // Initialize Persistence
         let modelContainer: ModelContainer
-        
+        let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!
+
         do {
-            let sharedStoreURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!.appendingPathComponent("VivaDicta.sqlite")
+            let sharedStoreURL = appGroupURL.appendingPathComponent("VivaDicta.sqlite")
             let config = ModelConfiguration(
                 url: sharedStoreURL,
                 cloudKitDatabase: .private("iCloud.com.antonnovoselov.VivaDicta")
             )
-            modelContainer = try ModelContainer(for: Transcription.self, configurations: config)
+            modelContainer = try ModelContainer(
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self,
+                configurations: config
+            )
         } catch {
-            print("Error loading ModelContainer; switching to in-memory storage.")
+            print("Error loading ModelContainer; switching to in-memory storage. \(error)")
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
-            modelContainer = try! ModelContainer(for: Transcription.self, configurations: config)
+            modelContainer = try! ModelContainer(
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self,
+                configurations: config
+            )
         }
         
         self._modelContainer = .init(initialValue: modelContainer)
-        
+
+        // Set static model container references for services that use SwiftData lookups
+        CustomVocabulary.modelContainer = modelContainer
+        ReplacementsService.modelContainer = modelContainer
+
         let dataController = DataController(modelContainer: modelContainer)
         self._dataController = .init(initialValue: dataController)
         
@@ -130,7 +141,10 @@ struct VivaDictaApp: App {
 #if !os(macOS)
                         SceneDelegate.appState = appState
 #endif
-                        
+
+                        // Migrate dictionary data from UserDefaults to SwiftData (one-time)
+                        DictionaryMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
+
                         // Set up handler for session termination from Live Activity
                         AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
                             logger.logInfo("🔴 Session termination requested from Live Activity")

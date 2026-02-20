@@ -39,16 +39,16 @@ class Transcription {
     var id: UUID = UUID()
 
     /// The original transcribed text from speech-to-text.
-    var text: String
+    var text: String = ""
 
     /// AI-enhanced version of the transcription, if enhancement was applied.
     var enhancedText: String?
 
     /// Timestamp when the transcription was created.
-    var timestamp: Date
+    var timestamp: Date = Date()
 
     /// Duration of the source audio in seconds.
-    var audioDuration: TimeInterval
+    var audioDuration: TimeInterval = 0
 
     /// Filename of the stored audio file for playback.
     var audioFileName: String?

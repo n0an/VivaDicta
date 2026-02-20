@@ -7,158 +7,58 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 import os
 
-@Observable
-class ReplacementsService {
-    private let logger = Logger(category: .replacementsService)
-    private let userDefaults: UserDefaults
-    private let storageKey: String
-
+/// Provides word replacement functionality backed by SwiftData.
+/// The static `applyReplacements(to:)` method is used in the transcription pipeline.
+/// CRUD operations happen directly via `ModelContext` in views.
+enum ReplacementsService {
     /// Maximum character length for original or replacement text
     static let maxTextLength = 100
 
-    /// Ordered array of replacements (newest first)
-    private(set) var replacements: [Replacement] = []
-
-    init(userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
-         storageKey: String = UserDefaultsStorage.Keys.textReplacements) {
-        self.userDefaults = userDefaults
-        self.storageKey = storageKey
-        loadReplacements()
-    }
-
-    private func loadReplacements() {
-        replacements = Self.loadReplacements(from: userDefaults, storageKey: storageKey) ?? []
-        logger.logInfo("Loaded \(self.replacements.count) text replacements")
-    }
-
-    private func saveReplacements() {
-        guard let data = try? JSONEncoder().encode(replacements) else { return }
-        userDefaults.set(data, forKey: storageKey)
-    }
-
-    func addReplacement(original: String, replacement: String) {
-        var trimmedOriginal = original.trimmingCharacters(in: .whitespacesAndNewlines)
-        var trimmedReplacement = replacement.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedOriginal.isEmpty, !trimmedReplacement.isEmpty else { return }
-
-        // Truncate if too long
-        if trimmedOriginal.count > Self.maxTextLength {
-            trimmedOriginal = String(trimmedOriginal.prefix(Self.maxTextLength))
-        }
-        if trimmedReplacement.count > Self.maxTextLength {
-            trimmedReplacement = String(trimmedReplacement.prefix(Self.maxTextLength))
-        }
-
-        // Check for duplicate original (case-insensitive)
-        let isDuplicate = replacements.contains {
-            $0.original.lowercased() == trimmedOriginal.lowercased()
-        }
-        guard !isDuplicate else {
-            logger.logWarning("Replacement already exists for: \(trimmedOriginal)")
-            return
-        }
-
-        let newReplacement = Replacement(original: trimmedOriginal, replacement: trimmedReplacement)
-        replacements.insert(newReplacement, at: 0)
-        saveReplacements()
-        logger.logInfo("Added replacement: \(trimmedOriginal) -> \(trimmedReplacement)")
-    }
-
-    func updateReplacement(_ oldReplacement: Replacement, original: String, replacement: String) {
-        var trimmedOriginal = original.trimmingCharacters(in: .whitespacesAndNewlines)
-        var trimmedReplacement = replacement.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedOriginal.isEmpty, !trimmedReplacement.isEmpty else { return }
-
-        // Truncate if too long
-        if trimmedOriginal.count > Self.maxTextLength {
-            trimmedOriginal = String(trimmedOriginal.prefix(Self.maxTextLength))
-        }
-        if trimmedReplacement.count > Self.maxTextLength {
-            trimmedReplacement = String(trimmedReplacement.prefix(Self.maxTextLength))
-        }
-
-        // Check for duplicate original (case-insensitive), excluding the one being edited
-        let isDuplicate = replacements.contains {
-            $0.original.lowercased() == trimmedOriginal.lowercased() && $0.id != oldReplacement.id
-        }
-        guard !isDuplicate else {
-            logger.logWarning("Replacement already exists for: \(trimmedOriginal)")
-            return
-        }
-
-        if let index = replacements.firstIndex(where: { $0.id == oldReplacement.id }) {
-            replacements[index] = Replacement(
-                id: oldReplacement.id,
-                original: trimmedOriginal,
-                replacement: trimmedReplacement
-            )
-            saveReplacements()
-            logger.logInfo("Updated replacement: \(trimmedOriginal) -> \(trimmedReplacement)")
-        }
-    }
-
-    func deleteReplacement(_ replacement: Replacement) {
-        replacements.removeAll { $0.id == replacement.id }
-        saveReplacements()
-        logger.logInfo("Deleted replacement: \(replacement.original)")
-    }
-
-    func deleteReplacements(at offsets: IndexSet) {
-        replacements.remove(atOffsets: offsets)
-        saveReplacements()
-        logger.logInfo("Deleted \(offsets.count) replacements")
-    }
-
-    // MARK: - Static Methods for Loading
-
-    /// Loads replacements from the specified UserDefaults
-    static func loadReplacements(
-        from userDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
-        storageKey: String = UserDefaultsStorage.Keys.textReplacements
-    ) -> [Replacement]? {
-        guard let data = userDefaults.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([Replacement].self, from: data) else {
-            return nil
-        }
-        return decoded
-    }
+    /// Set once at app startup to enable SwiftData-backed replacement lookups
+    static var modelContainer: ModelContainer?
 
     // MARK: - Apply Replacements
 
-    /// Applies all stored replacements to the given text (case-insensitive with word boundaries)
-    /// - Parameter text: The text to apply replacements to
-    /// - Returns: The text with all replacements applied
+    /// Applies all enabled replacements from SwiftData to the given text
     static func applyReplacements(to text: String) -> String {
-        guard let replacements = loadReplacements(), !replacements.isEmpty else {
+        guard let container = modelContainer else { return text }
+
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<WordReplacement>(
+            predicate: #Predicate { $0.isEnabled }
+        )
+
+        guard let replacements = try? context.fetch(descriptor), !replacements.isEmpty else {
             return text
         }
-        return applyReplacements(replacements, to: text)
-    }
 
-    /// Applies the given replacements to the text (for testing)
-    static func applyReplacements(_ replacements: [Replacement], to text: String) -> String {
         var modifiedText = text
 
         for replacement in replacements {
-            let original = replacement.original
-            let replacementText = replacement.replacement
+            let originalGroup = replacement.originalText
+            let replacementText = replacement.replacementText
 
-            let usesBoundaries = usesWordBoundaries(for: original)
+            // Split comma-separated originals at apply time
+            let variants = originalGroup
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
 
-            if usesBoundaries {
-                // Word-boundary regex using Swift native Regex (case-insensitive)
-                let escapedOriginal = NSRegularExpression.escapedPattern(for: original)
-                if let regex = try? Regex("\\b\(escapedOriginal)\\b").ignoresCase() {
-                    modifiedText = modifiedText.replacing(regex, with: replacementText)
-                }
-            } else {
-                // For non-spaced scripts (CJK, Thai, etc.), use simple case-insensitive replacement
-                if let regex = try? Regex(NSRegularExpression.escapedPattern(for: original)).ignoresCase() {
-                    modifiedText = modifiedText.replacing(regex, with: replacementText)
+            for original in variants {
+                let usesBoundaries = usesWordBoundaries(for: original)
+
+                if usesBoundaries {
+                    let escapedOriginal = NSRegularExpression.escapedPattern(for: original)
+                    if let regex = try? Regex("\\b\(escapedOriginal)\\b").ignoresCase() {
+                        modifiedText = modifiedText.replacing(regex, with: replacementText)
+                    }
+                } else {
+                    if let regex = try? Regex(NSRegularExpression.escapedPattern(for: original)).ignoresCase() {
+                        modifiedText = modifiedText.replacing(regex, with: replacementText)
+                    }
                 }
             }
         }
@@ -167,7 +67,6 @@ class ReplacementsService {
     }
 
     /// Returns false for languages without spaces (CJK, Thai), true for spaced languages
-    /// Made internal for testing
     static func usesWordBoundaries(for text: String) -> Bool {
         let nonSpacedScripts: [ClosedRange<UInt32>] = [
             0x3040...0x309F, // Hiragana
@@ -189,7 +88,7 @@ class ReplacementsService {
     }
 }
 
-// MARK: - Replacement Model
+// MARK: - Legacy Replacement Model (kept for migration decoding and tests)
 
 struct Replacement: Identifiable, Codable, Equatable, Hashable, Sendable {
     var id: UUID
