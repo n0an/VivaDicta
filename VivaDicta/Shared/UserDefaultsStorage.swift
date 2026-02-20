@@ -45,6 +45,9 @@ enum UserDefaultsStorage {
         static let ollamaModels = "ollamaModels"
         static let ollamaServerURL = "ollamaServerURL"
 
+        // iCloud
+        static let isICloudSyncEnabled = "isICloudSyncEnabled"
+
         // Custom OpenAI Provider Configuration
         static let customOpenAIEndpointURL = "customOpenAIEndpointURL"
         static let customOpenAIModelName = "customOpenAIModelName"

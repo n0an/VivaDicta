@@ -37,6 +37,10 @@ struct SettingsView: View {
     private var isAutoAudioCleanupEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
     private var audioRetentionDays = 7
+
+    @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
+    private var isICloudSyncEnabled = true
+    @State private var showRestartAlert = false
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
 
@@ -327,6 +331,26 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section {
+                    Toggle(isOn: $isICloudSyncEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("iCloud Sync")
+                                .font(.body)
+                            Text("Sync transcriptions, dictionary, and replacements across devices")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isICloudSyncEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                        showRestartAlert = true
+                    }
+                } header: {
+                    Text("iCloud")
+                } footer: {
+                    Text("Requires app restart to take effect.")
+                }
+
                 Section("Support") {
                     Button {
                         if MFMailComposeViewController.canSendMail() {
@@ -421,6 +445,14 @@ struct SettingsView: View {
             }
         } message: {
             Text(prewarmErrorMessage)
+        }
+        .alert("Restart Required", isPresented: $showRestartAlert) {
+            Button("Restart Now") {
+                exit(0)
+            }
+            Button("Later", role: .cancel) { }
+        } message: {
+            Text("The app needs to restart for iCloud sync changes to take effect.")
         }
         .sheet(isPresented: $showMailCompose) {
             MailComposeView(

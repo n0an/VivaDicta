@@ -40,16 +40,22 @@ struct VivaDictaApp: App {
         UserDefaultsStorage.shared.register(defaults: [
             AppGroupCoordinator.isHapticsEnabled: true
         ])
+        UserDefaults.standard.register(defaults: [
+            UserDefaultsStorage.Keys.isICloudSyncEnabled: true
+        ])
 
         // Initialize Persistence
         let modelContainer: ModelContainer
         let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!
+        let isICloudSyncEnabled = UserDefaults.standard.bool(forKey: UserDefaultsStorage.Keys.isICloudSyncEnabled)
 
         do {
             let sharedStoreURL = appGroupURL.appendingPathComponent("VivaDicta.sqlite")
             let config = ModelConfiguration(
                 url: sharedStoreURL,
-                cloudKitDatabase: .private("iCloud.com.antonnovoselov.VivaDicta")
+                cloudKitDatabase: isICloudSyncEnabled
+                    ? .private("iCloud.com.antonnovoselov.VivaDicta")
+                    : .none
             )
             modelContainer = try ModelContainer(
                 for: Transcription.self, VocabularyWord.self, WordReplacement.self,
