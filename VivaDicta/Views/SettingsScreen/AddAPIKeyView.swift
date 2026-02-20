@@ -170,8 +170,8 @@ struct AddAPIKeyView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
         .onAppear {
-            // Load existing API key if available (needs to be shared with keyboard)
-            let existingKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
+            // Load existing API key from Keychain (synced via iCloud Keychain)
+            let existingKey = provider.apiKey
             apiKey = existingKey ?? ""
             hasExistingKey = existingKey != nil
             clearButtonVisible = !apiKey.isEmpty
@@ -212,9 +212,8 @@ struct AddAPIKeyView: View {
     private func deleteAPIKey() {
         HapticManager.heavyImpact()
 
-        // Remove the API key from UserDefaults
-        let keyName = AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue
-        UserDefaultsStorage.shared.removeObject(forKey: keyName)
+        // Remove the API key from Keychain
+        KeychainService.shared.delete(forKey: provider.keychainKey)
 
         // Clear the text field and update state
         apiKey = ""

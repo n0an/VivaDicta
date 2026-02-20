@@ -145,6 +145,9 @@ struct VivaDictaApp: App {
                         // Migrate dictionary data from UserDefaults to SwiftData (one-time)
                         DictionaryMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
 
+                        // Migrate API keys from UserDefaults to Keychain for iCloud sync (one-time)
+                        APIKeyMigrationService.shared.migrateIfNeeded()
+
                         // Set up handler for session termination from Live Activity
                         AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
                             logger.logInfo("🔴 Session termination requested from Live Activity")

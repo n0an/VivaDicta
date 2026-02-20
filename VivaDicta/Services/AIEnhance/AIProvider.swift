@@ -231,6 +231,30 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    // MARK: - Keychain
+
+    /// Keychain account name for this provider's API key.
+    /// Must match the macOS app's `APIKeyManager` key identifiers for iCloud Keychain sync.
+    var keychainKey: String {
+        switch self {
+        case .cerebras: "cerebrasAPIKey"
+        case .groq: "groqAPIKey"
+        case .gemini: "geminiAPIKey"
+        case .anthropic: "anthropicAPIKey"
+        case .openAI: "openAIAPIKey"
+        case .openRouter: "openRouterAPIKey"
+        case .grok: "grokAPIKey"
+        case .elevenLabs: "elevenLabsAPIKey"
+        case .deepgram: "deepgramAPIKey"
+        case .mistral: "mistralAPIKey"
+        case .soniox: "sonioxAPIKey"
+        case .vercelAIGateway: "vercelAIGatewayAPIKey"
+        case .huggingFace: "huggingFaceAPIKey"
+        case .customOpenAI: "customOpenAIAPIKey"
+        case .apple, .ollama: ""
+        }
+    }
+
     var availableModels: [String] {
         switch self {
         case .apple:

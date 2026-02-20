@@ -19,7 +19,7 @@ final class CustomTranscriptionModelManager {
     private(set) var customModel: CustomTranscriptionModel
 
     private let userDefaultsKey = "customTranscriptionModel"
-    private let apiKeyKey = "apiKey.customTranscription"
+    private let keychainKey = "customTranscriptionAPIKey"
 
     /// Fixed model ID for the singleton custom model
     private static let fixedModelId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
@@ -55,11 +55,11 @@ final class CustomTranscriptionModelManager {
             return false
         }
 
-        // Save API key
+        // Save API key to Keychain
         if !apiKey.isEmpty {
-            UserDefaultsStorage.shared.set(apiKey, forKey: apiKeyKey)
+            KeychainService.shared.save(apiKey, forKey: keychainKey)
         } else {
-            UserDefaultsStorage.shared.removeObject(forKey: apiKeyKey)
+            KeychainService.shared.delete(forKey: keychainKey)
         }
 
         // Update model
@@ -78,7 +78,7 @@ final class CustomTranscriptionModelManager {
     }
 
     func clearConfiguration() {
-        UserDefaultsStorage.shared.removeObject(forKey: apiKeyKey)
+        KeychainService.shared.delete(forKey: keychainKey)
         customModel = CustomTranscriptionModel(
             id: Self.fixedModelId,
             name: "custom",
@@ -95,11 +95,11 @@ final class CustomTranscriptionModelManager {
 
     func getAPIKey(forModelId id: UUID) -> String? {
         guard id == Self.fixedModelId else { return nil }
-        return UserDefaultsStorage.shared.string(forKey: apiKeyKey)
+        return KeychainService.shared.getString(forKey: keychainKey)
     }
 
     var apiKey: String? {
-        UserDefaultsStorage.shared.string(forKey: apiKeyKey)
+        KeychainService.shared.getString(forKey: keychainKey)
     }
 
     // MARK: - Persistence

@@ -357,7 +357,7 @@ struct CustomOpenAIConfigurationView: View {
     private func loadExistingConfiguration() {
         endpointURL = aiService.customOpenAIEndpointURL
         modelName = aiService.customOpenAIModelName
-        if let existingKey = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + AIProvider.customOpenAI.rawValue) {
+        if let existingKey = AIProvider.customOpenAI.apiKey {
             apiKey = existingKey
         }
 
@@ -406,16 +406,14 @@ struct CustomOpenAIConfigurationView: View {
         HapticManager.lightImpact()
 
         // Save configuration to test
-        let apiKeyStorageKey = AppGroupCoordinator.kAPIKeyTemplate + AIProvider.customOpenAI.rawValue
-
         await MainActor.run {
             aiService.customOpenAIEndpointURL = urlToTest
             aiService.customOpenAIModelName = modelToTest
 
             if !apiKeyToSave.isEmpty {
-                UserDefaultsStorage.shared.set(apiKeyToSave, forKey: apiKeyStorageKey)
+                KeychainService.shared.save(apiKeyToSave, forKey: AIProvider.customOpenAI.keychainKey)
             } else {
-                UserDefaultsStorage.shared.removeObject(forKey: apiKeyStorageKey)
+                KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
             }
         }
 

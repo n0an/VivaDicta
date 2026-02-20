@@ -1322,8 +1322,7 @@ class AIService {
         customOpenAIEndpointURL = ""
         customOpenAIModelName = ""
         customOpenAIIsVerified = false
-        userDefaults.removeObject(forKey: AppGroupCoordinator.kAPIKeyTemplate + AIProvider.customOpenAI.rawValue)
-        userDefaults.synchronize()
+        KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
     }
 
     /// Disables AI enhancement for all modes that use Custom OpenAI.
@@ -1369,7 +1368,7 @@ class AIService {
         // Add cloud providers that have API keys configured
         providers += AIProvider.allCases.filter { provider in
             provider.requiresAPIKey &&
-            userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue) != nil
+            provider.apiKey != nil
         }
 
         connectedProviders = providers
@@ -1380,8 +1379,8 @@ class AIService {
         
         await MainActor.run {
             if isValid {
-                self.userDefaults.set(key, forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
-                
+                KeychainService.shared.save(key, forKey: provider.keychainKey)
+
                 // Refresh connected providers to trigger UI update
                 self.refreshConnectedProviders()
             }
@@ -1402,7 +1401,7 @@ class AIService {
     }
 
     private func getAPIKey(for provider: AIProvider) -> String? {
-        return userDefaults.string(forKey: AppGroupCoordinator.kAPIKeyTemplate + provider.rawValue)
+        return provider.apiKey
     }
     
     private func verifyAPIKey(_ key: String, provider: AIProvider) async -> Bool {

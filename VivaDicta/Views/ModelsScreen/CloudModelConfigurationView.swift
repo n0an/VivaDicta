@@ -167,7 +167,7 @@ struct CloudModelConfigurationView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
         .onAppear {
-            apiKey = model.apiKey ?? ""
+            apiKey = model.provider.mappedAIProvider?.apiKey ?? ""
             clearButtonVisible = !apiKey.isEmpty
         }
         .padding()
@@ -236,9 +236,10 @@ struct CloudModelConfigurationView: View {
 
     func deleteAPIKey() {
         HapticManager.heavyImpact()
-        // Remove the API key from UserDefaults
-        let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
-        UserDefaultsStorage.shared.removeObject(forKey: keyName)
+        // Remove the API key from Keychain
+        if let aiProvider = model.provider.mappedAIProvider {
+            KeychainService.shared.delete(forKey: aiProvider.keychainKey)
+        }
 
         // Clear the text field
         apiKey = ""

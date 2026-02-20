@@ -195,9 +195,10 @@ struct CloudModelCard: View {
     private func deleteAPIKey() {
         HapticManager.heavyImpact()
 
-        // Remove the API key from UserDefaults
-        let keyName = AppGroupCoordinator.kAPIKeyTemplate + model.provider.rawValue
-        UserDefaultsStorage.shared.removeObject(forKey: keyName)
+        // Remove the API key from Keychain
+        if let aiProvider = model.provider.mappedAIProvider {
+            KeychainService.shared.delete(forKey: aiProvider.keychainKey)
+        }
 
         // Notify parent view about the deletion
         onDeleteAPIKey?(model)
