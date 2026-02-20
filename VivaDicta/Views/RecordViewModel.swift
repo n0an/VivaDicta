@@ -521,6 +521,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 )
 
                 modelContext.insert(transcription)
+
+                // Dual-write: create "enhanced" variation alongside enhancedText
+                if let enhancedText {
+                    let variation = TranscriptionVariation(
+                        presetId: "enhanced",
+                        presetDisplayName: promptName ?? "Enhanced",
+                        text: enhancedText,
+                        aiModelName: aiService.selectedMode.aiModel,
+                        aiProviderName: aiService.selectedMode.aiProvider?.displayName,
+                        processingDuration: enhancementDur
+                    )
+                    variation.transcription = transcription
+                    modelContext.insert(variation)
+                }
+
                 try modelContext.save()
 
                 // Index the new transcription in Spotlight (non-blocking to avoid SwiftData actor isolation issues)

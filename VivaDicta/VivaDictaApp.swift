@@ -58,14 +58,14 @@ struct VivaDictaApp: App {
                     : .none
             )
             modelContainer = try ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self,
                 configurations: config
             )
         } catch {
             print("Error loading ModelContainer; switching to in-memory storage. \(error)")
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             modelContainer = try! ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self,
                 configurations: config
             )
         }
@@ -153,6 +153,9 @@ struct VivaDictaApp: App {
 
                         // Migrate API keys from UserDefaults to Keychain for iCloud sync (one-time)
                         APIKeyMigrationService.shared.migrateIfNeeded()
+
+                        // Migrate enhanced text to variations (one-time)
+                        VariationMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
 
                         // Set up handler for session termination from Live Activity
                         AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {

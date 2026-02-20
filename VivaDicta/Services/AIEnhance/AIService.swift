@@ -617,6 +617,22 @@ class AIService {
         }
     }
 
+    /// Generates a text variation using a specific preset prompt.
+    ///
+    /// Unlike ``enhance(_:)`` which uses the current VivaMode's prompt, this method
+    /// uses the preset's dedicated system prompt for the AI request.
+    ///
+    /// - Parameters:
+    ///   - text: The original transcription text to process.
+    ///   - preset: The rewrite preset containing the system prompt.
+    /// - Returns: A tuple of the generated text and processing duration.
+    public func generateVariation(text: String, preset: RewritePreset) async throws -> (String, TimeInterval) {
+        let startTime = Date()
+        let result = try await makeRequest(text: text, systemMessage: preset.systemPrompt)
+        let duration = Date().timeIntervalSince(startTime)
+        return (result, duration)
+    }
+
     // TODO: Add method to generate tags/keywords for transcriptions
     // public func generateTags(for text: String, maxTags: Int = 10) async throws -> [String] {
     //     // Use LLM to analyze text and extract key topics, themes, entities
@@ -635,7 +651,7 @@ class AIService {
         }
     }
 
-    private func makeRequest(text: String) async throws -> String {
+    private func makeRequest(text: String, systemMessage: String? = nil) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider else {
             throw EnhancementError.notConfigured
         }
@@ -662,16 +678,16 @@ class AIService {
 
         // Handle Ollama (local server)
         if aiProvider == .ollama {
-            return try await makeOllamaRequest(text: text)
+            return try await makeOllamaRequest(text: text, systemMessage: systemMessage)
         }
 
         // Handle Custom OpenAI (user-configured endpoint)
         if aiProvider == .customOpenAI {
-            return try await makeCustomOpenAIRequest(text: text)
+            return try await makeCustomOpenAIRequest(text: text, systemMessage: systemMessage)
         }
 
         // Cloud providers - compute system message only when needed
-        let systemMessage = getSystemMessage()
+        let resolvedSystemMessage = systemMessage ?? getSystemMessage()
 
         // Cloud providers require API key
         guard let apiKey = self.getAPIKey(for: aiProvider) else {
@@ -680,7 +696,7 @@ class AIService {
 
         let formattedText = formatTranscriptForLLM(text)
 
-        logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
+        logger.logDebug("AI Enhancement - System Message: \(resolvedSystemMessage)")
         logger.logDebug("AI Enhancement - User Message: \(formattedText)")
 
         switch aiProvider {
@@ -688,7 +704,7 @@ class AIService {
             let requestBody: [String: Any] = [
                 "model": selectedMode.aiModel,
                 "max_tokens": 8192,
-                "system": systemMessage,
+                "system": resolvedSystemMessage,
                 "messages": [
                     ["role": "user", "content": formattedText]
                 ]
@@ -754,7 +770,7 @@ class AIService {
             request.timeoutInterval = baseTimeout
 
             let messages: [[String: Any]] = [
-                ["role": "system", "content": systemMessage],
+                ["role": "system", "content": resolvedSystemMessage],
                 ["role": "user", "content": formattedText]
             ]
 
@@ -877,13 +893,13 @@ class AIService {
     // MARK: - Ollama Methods
 
     /// Makes an enhancement request to the local Ollama server
-    private func makeOllamaRequest(text: String) async throws -> String {
+    private func makeOllamaRequest(text: String, systemMessage: String? = nil) async throws -> String {
         let serverURL = ollamaServerURL
         guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
             throw EnhancementError.customError("Invalid Ollama server URL: \(serverURL)")
         }
 
-        let systemMessage = getSystemMessage()
+        let systemMessage = systemMessage ?? getSystemMessage()
         let formattedText = formatTranscriptForLLM(text)
 
         logger.logDebug("AI Enhancement - Using Ollama at \(serverURL)")
@@ -1088,7 +1104,7 @@ class AIService {
     // MARK: - Custom OpenAI Methods
 
     /// Makes an enhancement request to the custom OpenAI-compatible endpoint
-    private func makeCustomOpenAIRequest(text: String) async throws -> String {
+    private func makeCustomOpenAIRequest(text: String, systemMessage: String? = nil) async throws -> String {
         let endpointURL = customOpenAIEndpointURL
         let modelName = customOpenAIModelName
 
@@ -1105,7 +1121,7 @@ class AIService {
             throw EnhancementError.customError("Invalid Custom AI endpoint URL: \(endpointURL)")
         }
 
-        let systemMessage = getSystemMessage()
+        let systemMessage = systemMessage ?? getSystemMessage()
         let formattedText = formatTranscriptForLLM(text)
 
         logger.logDebug("AI Enhancement - Using Custom OpenAI at \(endpointURL)")

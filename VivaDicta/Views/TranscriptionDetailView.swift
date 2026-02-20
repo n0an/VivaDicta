@@ -6,20 +6,17 @@
 //
 
 import SwiftUI
+import SwiftData
 import CoreSpotlight
-
-private enum TextDisplayType: String, CaseIterable, Identifiable {
-    var id: Self { self }
-
-    case original = "Original"
-    case enhanced = "Enhanced"
-}
 
 struct TranscriptionDetailView: View {
     var transcription: Transcription
+    var initialVariationPresetId: String?
     @Environment(AppState.self) var appState
+    @Environment(\.modelContext) private var modelContext
 
-    @State private var selectedTextType: TextDisplayType = .enhanced
+    /// "original" or a variation's presetId
+    @State private var selectedChipId: String = "original"
     @State private var isExpanded: Bool = false
     @Namespace private var namespace
 
@@ -30,20 +27,41 @@ struct TranscriptionDetailView: View {
     @State private var showEnhancementErrorAlert: Bool = false
     @State private var enhancementErrorMessage: String = ""
     @State private var isMetaInfoExpanded: Bool = false
+    @State private var showPresetPicker: Bool = false
+    @State private var generatingPresetId: String?
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
     @State private var rippleEffectTrigger = false
 
-    private var hasEnhancedText: Bool {
-        transcription.enhancedText != nil
+    private var sortedVariations: [TranscriptionVariation] {
+        (transcription.variations ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private var hasVariations: Bool {
+        !(transcription.variations ?? []).isEmpty
     }
 
     private var displayedText: String {
-        if selectedTextType == .enhanced, let enhancedText = transcription.enhancedText {
-            return enhancedText
+        if selectedChipId == "original" {
+            return transcription.text
+        }
+        if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
+            return variation.text
         }
         return transcription.text
+    }
+
+    private var selectedIsVariation: Bool {
+        selectedChipId != "original"
+    }
+
+    private var selectedLabel: String {
+        if selectedChipId == "original" { return "Original" }
+        if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
+            return RewritePresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
+        }
+        return "Original"
     }
 
     private var audioURL: URL? {
@@ -84,24 +102,11 @@ struct TranscriptionDetailView: View {
                         .clipShape(.rect(cornerRadius: 6))
                 }
 
-                // Segmented control - only show if enhanced text exists
-                if hasEnhancedText {
-                    Picker("Text type", selection: $selectedTextType) {
-                        ForEach(TextDisplayType.allCases) { type in
-                            if type == .enhanced {
-                                Label(type.rawValue, systemImage: "sparkles")
-                            } else {
-                                Text(type.rawValue)
-                            }
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.top, 4)
-                    .padding(.bottom, 12)
-                    .onChange(of: selectedTextType) { _, _ in
-                        HapticManager.selectionChanged()
-                        isMetaInfoExpanded = false
-                    }
+                // Chip bar for text variations
+                if hasVariations {
+                    variationChipBar
+                        .padding(.top, 4)
+                        .padding(.bottom, 12)
                 }
             }
             .padding(.horizontal)
@@ -158,6 +163,16 @@ struct TranscriptionDetailView: View {
             }
         }
         .onAppear {
+            // Auto-select chip: initial preset from search, or latest variation, or "original"
+            if let presetId = initialVariationPresetId,
+               sortedVariations.contains(where: { $0.presetId == presetId }) {
+                selectedChipId = presetId
+            } else if let latest = sortedVariations.last {
+                selectedChipId = latest.presetId
+            } else {
+                selectedChipId = "original"
+            }
+
             let activity = appState.userActivity(for: transcription)
             activity.becomeCurrent()
 
@@ -247,11 +262,11 @@ struct TranscriptionDetailView: View {
 
     private var copyButton: some View {
         HStack {
-            if selectedTextType == .enhanced && hasEnhancedText {
+            if selectedIsVariation {
                 HStack(spacing: 4) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: RewritePresetCatalog.icon(for: selectedChipId))
                         .foregroundStyle(.blue)
-                    Text("Enhanced")
+                    Text(selectedLabel)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.blue)
                 }
@@ -563,7 +578,15 @@ struct TranscriptionDetailView: View {
     private var shareMenu: some View {
         Menu {
             Section("Share") {
-                if let enhancedText = transcription.enhancedText {
+                // Share currently selected text (if it's a variation)
+                if selectedIsVariation {
+                    ShareLink(item: displayedText) {
+                        Label(selectedLabel, systemImage: RewritePresetCatalog.icon(for: selectedChipId))
+                    }
+                }
+
+                // Always offer enhanced text if available
+                if let enhancedText = transcription.enhancedText, !selectedIsVariation || selectedChipId != "enhanced" {
                     ShareLink(item: enhancedText) {
                         Label("Enhanced Text", systemImage: "sparkles")
                     }
@@ -663,8 +686,29 @@ struct TranscriptionDetailView: View {
                 transcription.promptName = promptName
                 transcription.enhancementDuration = duration
 
+                // Dual-write: create/update "enhanced" variation
+                if let existing = sortedVariations.first(where: { $0.presetId == "enhanced" }) {
+                    existing.text = enhancedText
+                    existing.aiModelName = appState.aiService.selectedMode.aiModel
+                    existing.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
+                    existing.presetDisplayName = promptName ?? "Enhanced"
+                    existing.processingDuration = duration
+                    existing.createdAt = Date()
+                } else {
+                    let variation = TranscriptionVariation(
+                        presetId: "enhanced",
+                        presetDisplayName: promptName ?? "Enhanced",
+                        text: enhancedText,
+                        aiModelName: appState.aiService.selectedMode.aiModel,
+                        aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
+                        processingDuration: duration
+                    )
+                    variation.transcription = transcription
+                    modelContext.insert(variation)
+                }
+
                 // Switch to enhanced view
-                selectedTextType = .enhanced
+                selectedChipId = "enhanced"
 
                 // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
                 let entity = transcription.entity
@@ -727,8 +771,29 @@ struct TranscriptionDetailView: View {
                         transcription.promptName = promptName
                         transcription.enhancementDuration = duration
 
+                        // Dual-write: create/update "enhanced" variation
+                        if let existing = sortedVariations.first(where: { $0.presetId == "enhanced" }) {
+                            existing.text = enhancedText
+                            existing.aiModelName = appState.aiService.selectedMode.aiModel
+                            existing.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
+                            existing.presetDisplayName = promptName ?? "Enhanced"
+                            existing.processingDuration = duration
+                            existing.createdAt = Date()
+                        } else {
+                            let variation = TranscriptionVariation(
+                                presetId: "enhanced",
+                                presetDisplayName: promptName ?? "Enhanced",
+                                text: enhancedText,
+                                aiModelName: appState.aiService.selectedMode.aiModel,
+                                aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
+                                processingDuration: duration
+                            )
+                            variation.transcription = transcription
+                            modelContext.insert(variation)
+                        }
+
                         // Switch to enhanced view
-                        selectedTextType = .enhanced
+                        selectedChipId = "enhanced"
                     } catch let error as AppleFoundationModelError {
                         if case .guardrailViolation = error {
                             showGuardrailAlert = true
@@ -760,6 +825,208 @@ struct TranscriptionDetailView: View {
 
             processingState = .idle
         }
+    }
+
+    // MARK: - Variation Chip Bar
+
+    private var variationChipBar: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                // "Original" chip — always present
+                variationChip(id: "original", label: "Original", icon: nil)
+
+                // One chip per existing variation
+                ForEach(sortedVariations, id: \.id) { variation in
+                    variationChip(
+                        id: variation.presetId,
+                        label: RewritePresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
+                        icon: RewritePresetCatalog.icon(for: variation.presetId),
+                        isLoading: generatingPresetId == variation.presetId
+                    )
+                }
+
+                // "+" button to add new variation
+                addVariationButton
+            }
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func variationChip(id: String, label: String, icon: String?, isLoading: Bool = false) -> some View {
+        let isSelected = selectedChipId == id
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selectedChipId = id
+            }
+            HapticManager.selectionChanged()
+            isMetaInfoExpanded = false
+        } label: {
+            HStack(spacing: 4) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.mini)
+                } else if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 11))
+                }
+                Text(label)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(.systemGray6))
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(isSelected ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2), lineWidth: 1)
+            )
+            .foregroundStyle(isSelected ? Color.accentColor : .primary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var addVariationButton: some View {
+        Button {
+            showPresetPicker = true
+        } label: {
+            HStack(spacing: 3) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 11))
+                Image(systemName: "plus")
+                    .font(.system(size: 10, weight: .bold))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(Color(.systemGray6))
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(Color.secondary.opacity(0.2), lineWidth: 1)
+            )
+            .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+        .disabled(generatingPresetId != nil || !appState.aiService.isProperlyConfigured())
+        .sheet(isPresented: $showPresetPicker) {
+            PresetPickerSheet(
+                existingVariationIds: Set(sortedVariations.map(\.presetId)),
+                onSelect: { preset in
+                    showPresetPicker = false
+                    generateVariation(preset: preset)
+                }
+            )
+            .presentationDetents([.medium])
+        }
+    }
+
+    // MARK: - Generate Variation
+
+    private func generateVariation(preset: RewritePreset) {
+        generatingPresetId = preset.id
+        HapticManager.lightImpact()
+
+        withAnimation(.easeInOut(duration: 0.15)) {
+            selectedChipId = preset.id
+        }
+
+        processingTask = Task {
+            do {
+                let (resultText, duration) = try await appState.aiService.generateVariation(
+                    text: transcription.text,
+                    preset: preset
+                )
+
+                // Check if a variation with this presetId already exists (regeneration)
+                if let existing = sortedVariations.first(where: { $0.presetId == preset.id }) {
+                    existing.text = resultText
+                    existing.createdAt = Date()
+                    existing.aiModelName = appState.aiService.selectedMode.aiModel
+                    existing.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
+                    existing.processingDuration = duration
+                } else {
+                    let variation = TranscriptionVariation(
+                        presetId: preset.id,
+                        presetDisplayName: preset.name,
+                        text: resultText,
+                        aiModelName: appState.aiService.selectedMode.aiModel,
+                        aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
+                        processingDuration: duration
+                    )
+                    variation.transcription = transcription
+                    modelContext.insert(variation)
+                }
+
+                generatingPresetId = nil
+
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    selectedChipId = preset.id
+                }
+
+                HapticManager.heartbeat()
+            } catch is CancellationError {
+                generatingPresetId = nil
+            } catch {
+                generatingPresetId = nil
+                enhancementErrorMessage = error.localizedDescription
+                showEnhancementErrorAlert = true
+                HapticManager.error()
+            }
+        }
+    }
+}
+
+// MARK: - Preset Picker Sheet
+
+private struct PresetPickerSheet: View {
+    let existingVariationIds: Set<String>
+    let onSelect: (RewritePreset) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(RewritePresetCatalog.categories, id: \.self) { category in
+                    Section(category) {
+                        let presets = RewritePresetCatalog.allBuiltIn.filter { $0.category == category }
+                        ForEach(presets) { preset in
+                            presetRow(preset)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("AI Rewrite")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func presetRow(_ preset: RewritePreset) -> some View {
+        let exists = existingVariationIds.contains(preset.id)
+        return Button {
+            onSelect(preset)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: preset.icon)
+                    .font(.system(size: 14))
+                    .frame(width: 20)
+                    .foregroundStyle(.secondary)
+
+                Text(preset.name)
+                    .font(.body)
+
+                Spacer()
+
+                if exists {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .tint(.primary)
     }
 }
 

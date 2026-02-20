@@ -89,6 +89,10 @@ class Transcription {
     /// Status of the transcription (pending/completed/failed, synced from macOS).
     var transcriptionStatus: String?
 
+    /// AI-generated text variations (Summary, Action Points, Professional, etc.).
+    @Relationship(deleteRule: .cascade)
+    var variations: [TranscriptionVariation]? = []
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:
@@ -446,10 +450,15 @@ extension Transcription {
         attributes.title = title
         attributes.displayName = title
 
-        // Content: Full text for searching (original + enhanced)
+        // Content: Full text for searching (original + enhanced + variations)
         var fullContent = text
         if let enhancedText = enhancedText, !enhancedText.isEmpty {
             fullContent += "\n\n" + enhancedText
+        }
+        if let variations {
+            for variation in variations where !variation.text.isEmpty {
+                fullContent += "\n\n" + variation.text
+            }
         }
         attributes.contentDescription = fullContent
 

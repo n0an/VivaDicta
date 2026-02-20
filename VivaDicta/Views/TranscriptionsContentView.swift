@@ -181,6 +181,7 @@ struct TranscriptionsContentView: View {
                     return
                 }
 
+                // Step 1: Search transcription text + enhancedText
                 var descriptor = FetchDescriptor<Transcription>(
                     sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
                 )
@@ -189,10 +190,31 @@ struct TranscriptionsContentView: View {
                         (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
                 }
 
-                let results = try modelContext.fetch(descriptor)
+                let transcriptionMatches = try modelContext.fetch(descriptor)
+
+                // Step 2: Search variation text
+                let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
+                    predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
+                )
+                let variationMatches = try modelContext.fetch(variationDescriptor)
+
+                // Step 3: Merge results
+                let transcriptionIds = Set(transcriptionMatches.map(\.id))
+                let variationTranscriptionIds = Set(variationMatches.compactMap { $0.transcription?.id })
+                let additionalIds = variationTranscriptionIds.subtracting(transcriptionIds)
+
+                let mergedResults: [Transcription]
+                if additionalIds.isEmpty {
+                    mergedResults = transcriptionMatches
+                } else {
+                    // Fetch additional transcriptions matched only via variations
+                    let additionalTranscriptions = allTranscriptions.filter { additionalIds.contains($0.id) }
+                    mergedResults = (transcriptionMatches + additionalTranscriptions)
+                        .sorted { $0.timestamp > $1.timestamp }
+                }
 
                 await MainActor.run {
-                    filteredTranscriptions = results
+                    filteredTranscriptions = mergedResults
                 }
             } catch {
                 logger.logError("Search was cancelled or failed: \(error.localizedDescription)")
