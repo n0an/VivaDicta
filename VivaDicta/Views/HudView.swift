@@ -24,7 +24,7 @@ struct HudView: View {
         case .transcribing:
             return "Transcribing"
         case .enhancing:
-            return "Enhancing"
+            return "AI Processing"
         default:
             return ""
         }

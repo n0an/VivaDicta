@@ -12,6 +12,7 @@ enum LiquidButtonExpandDirection {
     case down
 }
 
+// TODO: DEPRECATED - CAN DELETE
 struct LiquidActionButtonView: View {
     @Binding var isExpanded: Bool
     let processingState: RecordingState
@@ -221,7 +222,7 @@ struct LiquidActionButtonView: View {
                 )
 
             // Label for Enhance (diagonal button)
-            Text("Enhance")
+            Text("AI Process")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
                 .fixedSize()

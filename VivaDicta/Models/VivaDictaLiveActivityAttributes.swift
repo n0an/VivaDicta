@@ -46,7 +46,7 @@ public enum LiveActivityState: String, Codable, Hashable {
         case .transcribing:
             return "Transcribing"
         case .enhancing:
-            return "Enhancing"
+            return "AI Processing"
         }
     }
 }

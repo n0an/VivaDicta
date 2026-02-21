@@ -109,7 +109,7 @@ public final class AppGroupCoordinator {
         case idle = "idle"
         case recording = "recording"
         case transcribing = "transcribing"
-        case enhancing = "enhancing"
+        case enhancing = "AI processing"
         case completed = "completed"
         case error = "error"
     }
