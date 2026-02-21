@@ -122,7 +122,7 @@ struct TranscriptionDetailView: View {
                     generateVariation(preset: preset)
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -401,8 +401,6 @@ struct TranscriptionDetailView: View {
                     )
                 }
 
-                // "+" button to add new variation
-                addVariationButton
             }
         }
         .scrollIndicators(.hidden)
