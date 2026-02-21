@@ -56,7 +56,7 @@ public final class AppGroupCoordinator {
     
     // MARK: - Constants
     public let appGroupId = "group.com.antonnovoselov.VivaDicta"
-    // AI Enhancement configuration
+    // AI Processing configuration
     public static let vivaModesKey = "VivaModes"
     public static let selectedVivaModeKey = "selectedVivaMode"
     public static let kSelectedLanguageKey = "selectedLanguageKey"

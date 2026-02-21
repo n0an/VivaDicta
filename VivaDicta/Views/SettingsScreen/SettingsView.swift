@@ -173,7 +173,7 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section("AI Enhancement") {
+                Section("AI Processing") {
                     NavigationLink(value: SettingsDestination.aiProviders) {
                         Text("AI Providers")
                     }
@@ -649,7 +649,7 @@ private struct ModeInfoRow: View {
                                         ]
                                     )
                                 )
-                                .accessibilityLabel("AI enhancement provider")
+                                .accessibilityLabel("AI processing provider")
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(provider.displayName)
                                     .foregroundStyle(.secondary)

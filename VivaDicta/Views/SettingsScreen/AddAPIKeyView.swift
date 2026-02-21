@@ -223,7 +223,7 @@ struct AddAPIKeyView: View {
         // Refresh connected providers
         aiService.refreshConnectedProviders()
 
-        // Disable AI enhancement for modes using this provider
+        // Disable AI processing for modes using this provider
         aiService.disableAIEnhancementForModesUsingProvider(provider)
 
         onSave(provider)

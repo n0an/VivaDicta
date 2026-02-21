@@ -35,7 +35,7 @@ private struct PendingTranscriptionData {
 /// - Audio recording via AVAudioRecorder or AudioPrewarmManager (for keyboard flow)
 /// - Recording state machine (idle, recording, transcribing, enhancing, error)
 /// - Audio level monitoring for visualization
-/// - Transcription and AI enhancement pipeline
+/// - Transcription and AI processing pipeline
 /// - Communication with keyboard extension via ``AppGroupCoordinator``
 ///
 /// ## Recording States
@@ -179,7 +179,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 return
             }
 
-            // Prewarm Apple Foundation Model if needed - user will need AI enhancement
+            // Prewarm Apple Foundation Model if needed - user will need AI processing
             // within seconds after recording completes
             appState?.aiService.prewarmFoundationModelIfNeeded()
 
@@ -450,7 +450,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 var promptName: String? = nil
                 var enhancementDur: TimeInterval? = nil
                 
-                // Check if AI Enhancement is properly configured
+                // Check if AI Processing is properly configured
                 if aiService.isProperlyConfigured() {
                     // Check for cancellation before starting enhancement
                     try Task.checkCancellation()
@@ -471,7 +471,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     self.recordingState = .enhancing
                     HapticManager.lightImpact()
 
-                    // Notify keyboard that AI enhancement has started
+                    // Notify keyboard that AI processing has started
                     AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
 
                     do {

@@ -240,7 +240,7 @@ struct TranscriptionDetailView: View {
             Text("Apple's on-device AI blocked this content due to safety guidelines. Consider using a cloud AI provider for this type of content.")
         }
         .alert(
-            "AI Enhancement Failed",
+            "AI Processing Failed",
             isPresented: $showEnhancementErrorAlert
         ) {
             Button("OK", role: .cancel) {}
@@ -478,7 +478,7 @@ struct TranscriptionDetailView: View {
         }
     }
 
-    /// Simple retranscribe button for iOS 18 when AI enhancement is not available
+    /// Simple retranscribe button for iOS 18 when AI processing is not available
     private var simpleRetranscribeButton: some View {
         Button {
             retranscribe()

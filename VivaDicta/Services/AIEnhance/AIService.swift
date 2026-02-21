@@ -17,7 +17,7 @@ import os
 /// ## Overview
 ///
 /// The service provides:
-/// - Multi-provider AI enhancement (OpenAI, Anthropic, Groq, Mistral, Ollama, Apple Foundation Models, etc.)
+/// - Multi-provider AI processing (OpenAI, Anthropic, Groq, Mistral, Ollama, Apple Foundation Models, etc.)
 /// - Mode management (create, update, delete, duplicate ``VivaMode`` instances)
 /// - API key verification and storage
 /// - Dynamic model fetching for providers like OpenRouter
@@ -271,7 +271,7 @@ class AIService {
         name.split(separator: /\s+/).joined().lowercased()
     }
 
-    /// Disables AI enhancement for all modes that use the specified AI provider.
+    /// Disables AI processing for all modes that use the specified AI provider.
     /// Called when an API key for that provider is deleted.
     public func disableAIEnhancementForModesUsingProvider(_ provider: AIProvider) {
         updateModesMatching(
@@ -289,11 +289,11 @@ class AIService {
                     aiEnhanceEnabled: false
                 )
             },
-            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
+            logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
         )
     }
 
-    /// Disables AI enhancement for all modes that use the specified preset.
+    /// Disables AI processing for all modes that use the specified preset.
     /// Called when that preset is deleted.
     public func disableAIEnhancementForModesUsingPreset(presetId: String) {
         updateModesMatching(
@@ -311,11 +311,11 @@ class AIService {
                     aiEnhanceEnabled: false
                 )
             },
-            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to preset deletion" }
+            logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
         )
     }
 
-    /// Disables AI enhancement for all modes that use Ollama.
+    /// Disables AI processing for all modes that use Ollama.
     /// Called when Ollama connection fails.
     public func disableOllamaEnhancementForAllModes() {
         updateModesMatching(
@@ -333,7 +333,7 @@ class AIService {
                     aiEnhanceEnabled: false
                 )
             },
-            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to Ollama connection failure" }
+            logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
         )
     }
 
@@ -477,10 +477,10 @@ class AIService {
 
     // MARK: - Configuration validation
 
-    /// Validates that AI enhancement is properly configured for the current mode.
+    /// Validates that AI processing is properly configured for the current mode.
     ///
     /// Checks include:
-    /// - AI enhancement is enabled in the current mode
+    /// - AI processing is enabled in the current mode
     /// - An AI provider is selected
     /// - A model is selected
     /// - The provider has valid credentials (API key, endpoint URL, or is available locally)
@@ -488,9 +488,9 @@ class AIService {
     ///
     /// - Returns: `true` if enhancement can proceed, `false` otherwise.
     public func isProperlyConfigured() -> Bool {
-        // Check if AI enhancement is enabled
+        // Check if AI processing is enabled
         guard selectedMode.aiEnhanceEnabled else {
-            logger.logInfo("AI enhancement is disabled for mode: \(self.selectedMode.name)")
+            logger.logInfo("AI processing is disabled for mode: \(self.selectedMode.name)")
             return false
         }
 
@@ -545,7 +545,7 @@ class AIService {
             return false
         }
 
-        logger.logInfo("AI enhancement is properly configured for mode: \(self.selectedMode.name)")
+        logger.logInfo("AI processing is properly configured for mode: \(self.selectedMode.name)")
         return true
     }
 
@@ -609,7 +609,7 @@ class AIService {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            logger.logError("AI Enhancement failed: \(error.localizedDescription)")
+            logger.logError("AI Processing failed: \(error.localizedDescription)")
             throw error
         }
     }
@@ -698,10 +698,10 @@ class AIService {
                 let resolvedPreset: Preset?
                 if let pid = selectedMode.presetId { resolvedPreset = presetManager?.preset(for: pid) } else { resolvedPreset = nil }
                 let wrapInTags = resolvedPreset?.wrapInTranscriptTags ?? true
-                logger.logDebug("AI Enhancement - Using Apple Foundation Model")
-                logger.logDebug("AI Enhancement - Instructions: \(instructions)")
-                logger.logDebug("AI Enhancement - Prompt Prefix: \(promptPrefix)")
-                logger.logDebug("AI Enhancement - Input Text: \(text)")
+                logger.logDebug("AI Processing - Using Apple Foundation Model")
+                logger.logDebug("AI Processing - Instructions: \(instructions)")
+                logger.logDebug("AI Processing - Prompt Prefix: \(promptPrefix)")
+                logger.logDebug("AI Processing - Input Text: \(text)")
                 return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix, wrapInTranscriptTags: wrapInTags)
             } else {
                 throw EnhancementError.notConfigured
@@ -733,8 +733,8 @@ class AIService {
         lastSystemMessageSent = resolvedSystemMessage
         lastUserMessageSent = formattedText
 
-        logger.logDebug("AI Enhancement - System Message: \(resolvedSystemMessage)")
-        logger.logDebug("AI Enhancement - User Message: \(formattedText)")
+        logger.logDebug("AI Processing - System Message: \(resolvedSystemMessage)")
+        logger.logDebug("AI Processing - User Message: \(formattedText)")
 
         switch aiProvider {
         case .anthropic:
@@ -961,10 +961,10 @@ class AIService {
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
 
-        logger.logDebug("AI Enhancement - Using Ollama at \(serverURL)")
-        logger.logDebug("AI Enhancement - Model: \(self.selectedMode.aiModel)")
-        logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
-        logger.logDebug("AI Enhancement - User Message: \(formattedText)")
+        logger.logDebug("AI Processing - Using Ollama at \(serverURL)")
+        logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+        logger.logDebug("AI Processing - System Message: \(systemMessage)")
+        logger.logDebug("AI Processing - User Message: \(formattedText)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -1187,10 +1187,10 @@ class AIService {
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
 
-        logger.logDebug("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
-        logger.logDebug("AI Enhancement - Model: \(modelName)")
-        logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
-        logger.logDebug("AI Enhancement - User Message: \(formattedText)")
+        logger.logDebug("AI Processing - Using Custom OpenAI at \(endpointURL)")
+        logger.logDebug("AI Processing - Model: \(modelName)")
+        logger.logDebug("AI Processing - System Message: \(systemMessage)")
+        logger.logDebug("AI Processing - User Message: \(formattedText)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -1404,7 +1404,7 @@ class AIService {
         KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
     }
 
-    /// Disables AI enhancement for all modes that use Custom OpenAI.
+    /// Disables AI processing for all modes that use Custom OpenAI.
     /// Called when Custom OpenAI configuration is cleared.
     public func disableCustomOpenAIEnhancementForAllModes() {
         updateModesMatching(
@@ -1422,7 +1422,7 @@ class AIService {
                     aiEnhanceEnabled: false
                 )
             },
-            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to Custom OpenAI configuration removal" }
+            logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }
         )
     }
 
@@ -1997,7 +1997,7 @@ enum EnhancementError: LocalizedError {
         case .invalidResponse:
             return "Invalid response from AI"
         case .enhancementFailed:
-            return "AI enhancement failed"
+            return "AI processing failed"
         case .networkError:
             return "Network connection failed"
         case .serverError:

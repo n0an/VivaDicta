@@ -226,7 +226,7 @@ struct CustomOpenAIConfigurationView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will remove your Custom OpenAI configuration and disable AI enhancement for any modes using it.")
+            Text("This will remove your Custom OpenAI configuration and disable AI processing for any modes using it.")
         }
     }
 
@@ -431,7 +431,7 @@ struct CustomOpenAIConfigurationView: View {
                 connectionStatus = .failed(message: result.message)
                 // Mark as NOT verified - this invalidates the configuration
                 aiService.customOpenAIIsVerified = false
-                // Disable AI enhancement for all modes using Custom OpenAI
+                // Disable AI processing for all modes using Custom OpenAI
                 aiService.disableCustomOpenAIEnhancementForAllModes()
                 aiService.refreshConnectedProviders()
                 HapticManager.error()

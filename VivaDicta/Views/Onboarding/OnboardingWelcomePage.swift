@@ -83,7 +83,7 @@ struct OnboardingWelcomePage: View {
                                 .blue, .pink
                             ]
                         ),
-                        text: "AI enhancement for professional results"
+                        text: "AI processing for professional results"
                     )
                 }
                 .padding(.horizontal, 32)

@@ -138,7 +138,7 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
 
 struct SelectAIEnhacementTip: Tip {
     var title: Text {
-        Text("Add AI Enhancement")
+        Text("Add AI Processing")
 //            .foregroundStyle(MeshGradient(
 //                width: 2,
 //                height: 2,

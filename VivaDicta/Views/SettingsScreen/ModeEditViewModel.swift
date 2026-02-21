@@ -323,7 +323,7 @@ class ModeEditViewModel {
         }
     }
 
-    // MARK: - AI Enhancement settings
+    // MARK: - AI Processing settings
     func selectFirstProviderIfNeeded() {
         guard aiProvider == nil else { return }
 

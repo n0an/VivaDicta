@@ -252,7 +252,7 @@ struct ModeEditView: View {
             
             if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
 
-                Section(header: Text("AI Enhancement"),
+                Section(header: Text("AI Processing"),
                         footer: aiEnhancementSectionFooter) {
 
                     if !viewModel.aiEnhanceEnabled {

@@ -136,7 +136,7 @@ struct MainView: View {
         .alert("AI Safety Guardrail Triggered", isPresented: aiGuardrailAlertBinding) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI enhancement. Consider using a cloud AI provider for this type of content.")
+            Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content.")
         }
         .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}

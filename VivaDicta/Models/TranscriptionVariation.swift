@@ -14,7 +14,7 @@ import SwiftData
 /// Professional Tone) to the original transcription text. Multiple variations can be
 /// associated with a single ``Transcription`` via a one-to-many relationship.
 ///
-/// The "enhanced" preset is special — it corresponds to the standard AI enhancement
+/// The "enhanced" preset is special — it corresponds to the standard AI processing
 /// and is created automatically during transcription or migrated from legacy `enhancedText`.
 @Model
 final class TranscriptionVariation {

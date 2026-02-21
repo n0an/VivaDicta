@@ -158,7 +158,7 @@ struct ModelsView: View {
         // Update cloud models to reflect the change
         appState.transcriptionManager.updateCloudModels()
 
-        // Disable AI enhancement for modes using this provider
+        // Disable AI processing for modes using this provider
         if let aiProvider = model.provider.mappedAIProvider {
             appState.aiService.disableAIEnhancementForModesUsingProvider(aiProvider)
         }

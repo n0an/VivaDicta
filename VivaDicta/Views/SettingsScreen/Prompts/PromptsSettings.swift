@@ -50,7 +50,7 @@ struct PromptsSettings: View {
             Text("No Prompts Created")
                 .font(.title2.weight(.medium))
             
-            Text("Create your first prompt from a template to get started with AI enhancement")
+            Text("Create your first prompt from a template to get started with AI processing")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

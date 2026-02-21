@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// A configuration preset combining transcription and AI enhancement settings.
+/// A configuration preset combining transcription and AI processing settings.
 ///
 /// `VivaMode` encapsulates all settings needed for a complete transcription workflow,
 /// including which transcription model to use, which AI provider to enhance with,
@@ -27,7 +27,7 @@ import SwiftUI
 /// - ``transcriptionLanguage``: Source audio language (or "auto" for detection)
 ///
 /// ### Enhancement Settings
-/// - ``aiEnhanceEnabled``: Whether to apply AI enhancement
+/// - ``aiEnhanceEnabled``: Whether to apply AI processing
 /// - ``aiProvider``: Which AI provider to use (OpenAI, Anthropic, etc.)
 /// - ``aiModel``: The specific AI model name
 /// - ``presetId``: ID of the preset guiding enhancement
@@ -52,7 +52,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The language for transcription, or "auto" for automatic detection.
     let transcriptionLanguage: String?
 
-    /// ID of the preset for AI enhancement, if any.
+    /// ID of the preset for AI processing, if any.
     let presetId: String?
 
     /// The AI provider for text enhancement.
@@ -61,7 +61,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The specific AI model name for enhancement.
     var aiModel: String
 
-    /// Whether AI enhancement is enabled for this mode.
+    /// Whether AI processing is enabled for this mode.
     let aiEnhanceEnabled: Bool
 
     /// Creates a new VivaMode with the specified settings.
@@ -136,7 +136,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The default mode used when no custom mode is configured.
     ///
     /// Uses WhisperKit as the transcription provider with automatic language detection
-    /// and no AI enhancement enabled.
+    /// and no AI processing enabled.
     static let defaultMode = VivaMode(
         id: UUID(),
         name: "Default",

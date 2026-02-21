@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import CoreSpotlight
 
-/// A SwiftData model representing a voice transcription with optional AI enhancement.
+/// A SwiftData model representing a voice transcription with optional AI processing.
 ///
 /// `Transcription` stores the result of transcribing audio, including both the raw
 /// transcription and any AI-enhanced version. It also captures metadata about the
@@ -71,13 +71,13 @@ class Transcription {
     /// Duration of the transcription process in seconds.
     var transcriptionDuration: TimeInterval?
 
-    /// Duration of the AI enhancement process in seconds.
+    /// Duration of the AI processing process in seconds.
     var enhancementDuration: TimeInterval?
 
-    /// System message used for AI enhancement request (synced from macOS).
+    /// System message used for AI processing request (synced from macOS).
     var aiRequestSystemMessage: String?
 
-    /// User message used for AI enhancement request (synced from macOS).
+    /// User message used for AI processing request (synced from macOS).
     var aiRequestUserMessage: String?
 
     /// Name of the Power Mode active during transcription (synced from macOS).
@@ -102,7 +102,7 @@ class Transcription {
     ///   - audioFileName: Filename for the stored audio.
     ///   - transcriptionModelName: Name of the transcription model.
     ///   - transcriptionProviderName: Name of the transcription provider.
-    ///   - aiEnhancementModelName: Name of the AI enhancement model.
+    ///   - aiEnhancementModelName: Name of the AI processing model.
     ///   - aiProviderName: Name of the AI provider.
     ///   - promptName: Name of the enhancement prompt.
     ///   - transcriptionDuration: Time taken to transcribe.

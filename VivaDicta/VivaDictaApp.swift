@@ -200,7 +200,7 @@ struct VivaDictaApp: App {
                             }
                         }
                         
-                        // Set up handler for AI enhancement
+                        // Set up handler for AI processing
                         AppGroupCoordinator.shared.onTranscriptionEnhancing = {
                             Task { @MainActor in
                                 await appState.updateLiveActivityState(.enhancing)

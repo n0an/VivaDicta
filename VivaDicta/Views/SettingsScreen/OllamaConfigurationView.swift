@@ -275,7 +275,7 @@ struct OllamaConfigurationView: View {
                 connectionStatus = .failed(message: result.message)
                 // Clear models so other screens know Ollama is not ready
                 aiService.ollamaModels = []
-                // Disable AI enhancement for all modes using Ollama
+                // Disable AI processing for all modes using Ollama
                 aiService.disableOllamaEnhancementForAllModes()
                 HapticManager.error()
             }

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import os
 
-/// Manager for user-defined AI enhancement prompts.
+/// Manager for user-defined AI processing prompts.
 ///
 /// `PromptsManager` handles CRUD operations for ``UserPrompt`` instances, which define
 /// the instructions given to AI providers when enhancing transcriptions.
