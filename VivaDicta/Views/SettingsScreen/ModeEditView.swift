@@ -18,6 +18,7 @@ struct ModeEditView: View {
     @State private var showingAlert: Bool = false
     @State private var modeEditViewError: SettingsError = .duplicateModeName("")
     @State private var showCustomTranscriptionConfiguration: Bool = false
+    @State private var showPresetPicker: Bool = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
 
@@ -416,16 +417,29 @@ struct ModeEditView: View {
                         }
 
                         if let provider = viewModel.aiProvider, viewModel.isProviderReady(provider) {
-                            Picker("Preset", selection: $viewModel.selectedPresetId) {
-                                ForEach(viewModel.presetManager.enhancementPresets) { preset in
-                                    Text(preset.name).tag(preset.id as String?)
+                            Button {
+                                showPresetPicker = true
+                            } label: {
+                                HStack {
+                                    Text("Preset")
+                                    Spacer()
+                                    Text(viewModel.selectedPresetName)
+                                        .foregroundStyle(.secondary)
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
-                            .onChange(of: viewModel.selectedPresetId) { _, _ in
-                                HapticManager.selectionChanged()
-                            }
+                            .tint(.primary)
                             .onAppear {
                                 viewModel.selectFirstPresetIfNeeded()
+                            }
+                            .sheet(isPresented: $showPresetPicker) {
+                                ModePresetPickerSheet(
+                                    presetManager: viewModel.presetManager,
+                                    selectedPresetId: $viewModel.selectedPresetId
+                                )
+                                .presentationDetents([.medium, .large])
                             }
                         }
                     }
@@ -572,6 +586,53 @@ struct ModeEditView: View {
         // Update the transcription model selection after custom model is saved
         if CustomTranscriptionModelManager.shared.isConfigured {
             viewModel.transcriptionModel = "custom"
+        }
+    }
+}
+
+// MARK: - Mode Preset Picker Sheet
+
+private struct ModePresetPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let presetManager: PresetManager
+    @Binding var selectedPresetId: String?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(presetManager.categories, id: \.self) { category in
+                    Section(category) {
+                        ForEach(presetManager.presets(in: category)) { preset in
+                            Button {
+                                selectedPresetId = preset.id
+                                HapticManager.selectionChanged()
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: preset.icon)
+                                        .font(.system(size: 14))
+                                        .frame(width: 20)
+                                        .foregroundStyle(.secondary)
+
+                                    Text(preset.name)
+                                        .font(.body)
+
+                                    Spacer()
+
+                                    if selectedPresetId == preset.id {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.blue)
+                                    }
+                                }
+                            }
+                            .tint(.primary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Select Preset")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

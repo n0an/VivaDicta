@@ -30,7 +30,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
     /// SF Symbol name for display.
     var icon: String
 
-    /// Grouping category: "Enhancement", "Summarize", "Rewrite", "Translate", "Custom".
+    /// Grouping category: "Enhancement", "Summarize", "Rewrite", "Translate", "Other".
     var category: String
 
     /// The prompt text. For enhancement presets, this gets wrapped in the system template.

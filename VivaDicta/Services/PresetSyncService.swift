@@ -216,8 +216,8 @@ class PresetSyncService {
     private func convertToPreset(_ record: RewritePreset) -> Preset {
         let mappedCategory: String
         switch record.category {
-        case "General", "Assistant":
-            mappedCategory = "Custom"
+        case "General", "Assistant", "Custom":
+            mappedCategory = "Other"
         default:
             mappedCategory = record.category
         }
@@ -236,8 +236,11 @@ class PresetSyncService {
     }
 
     private func mapCategoryToMacOS(_ iosCategory: String) -> String {
-        if iosCategory == "Enhancement" { return "Custom" }
-        return iosCategory
+        switch iosCategory {
+        case "Enhancement": return "Custom"
+        case "Other": return "Custom"
+        default: return iosCategory
+        }
     }
 
     private func saveContext(_ context: ModelContext) {

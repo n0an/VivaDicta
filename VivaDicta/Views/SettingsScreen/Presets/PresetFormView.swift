@@ -11,31 +11,78 @@ struct PresetFormView: View {
     @Environment(\.dismiss) private var dismiss
 
     let presetManager: PresetManager
-    let preset: Preset
+
+    /// The preset being edited. `nil` for creation mode.
+    private let existingPreset: Preset?
 
     @State private var name: String
+    @State private var category: String
     @State private var promptInstructions: String
+    @State private var useSystemTemplate: Bool
+    @State private var wrapInTranscriptTags: Bool
     @State private var showResetConfirmation = false
 
+    private var isCreateMode: Bool { existingPreset == nil }
+
     private var isEdited: Bool {
-        name != preset.name || promptInstructions != preset.promptInstructions
+        guard let preset = existingPreset else { return true }
+        return name != preset.name || category != preset.category || promptInstructions != preset.promptInstructions || useSystemTemplate != preset.useSystemTemplate || wrapInTranscriptTags != preset.wrapInTranscriptTags
+    }
+
+    private var canSave: Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty, !promptInstructions.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        if isCreateMode {
+            return !presetManager.isPresetNameDuplicate(trimmedName)
+        }
+        return isEdited && !presetManager.isPresetNameDuplicate(trimmedName, excludingId: existingPreset?.id)
+    }
+
+    private var allCategories: [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for cat in presetManager.categories where seen.insert(cat).inserted {
+            result.append(cat)
+        }
+        if !result.contains("Other") {
+            result.append("Other")
+        }
+        return result
     }
 
     private var canReset: Bool {
-        preset.isBuiltIn && PresetCatalog.defaultPreset(for: preset.id) != nil
+        guard let preset = existingPreset else { return false }
+        return preset.isBuiltIn && PresetCatalog.defaultPreset(for: preset.id) != nil
     }
 
+    /// Edit mode: pass an existing preset.
     init(preset: Preset, presetManager: PresetManager) {
-        self.preset = preset
+        self.existingPreset = preset
         self.presetManager = presetManager
         self._name = State(initialValue: preset.name)
+        self._category = State(initialValue: preset.category)
         self._promptInstructions = State(initialValue: preset.promptInstructions)
+        self._useSystemTemplate = State(initialValue: preset.useSystemTemplate)
+        self._wrapInTranscriptTags = State(initialValue: preset.wrapInTranscriptTags)
+    }
+
+    /// Create mode: no preset provided.
+    init(presetManager: PresetManager) {
+        self.existingPreset = nil
+        self.presetManager = presetManager
+        self._name = State(initialValue: "")
+        self._category = State(initialValue: "Enhancement")
+        self._promptInstructions = State(initialValue: "")
+        self._useSystemTemplate = State(initialValue: true)
+        self._wrapInTranscriptTags = State(initialValue: true)
     }
 
     var body: some View {
         Form {
             Section("Name") {
-                if preset.isBuiltIn {
+                if let preset = existingPreset, preset.isBuiltIn {
                     Text(name)
                         .foregroundStyle(.secondary)
                 } else {
@@ -43,9 +90,31 @@ struct PresetFormView: View {
                 }
             }
 
-            Section("Category") {
-                Text(preset.category)
-                    .foregroundStyle(.secondary)
+            Section {
+                Toggle("Use System Prompt", isOn: $useSystemTemplate)
+                Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
+            } footer: {
+                if useSystemTemplate {
+                    Text("Instructions will be injected into the transcription enhancer system prompt. Use this for cleaning up transcriptions.")
+                } else {
+                    Text("Instructions will be used directly as the AI system message. Use this for summarizing, rewriting, translating, etc.")
+                }
+            }
+
+            if let preset = existingPreset, preset.isBuiltIn {
+                Section("Category") {
+                    Text(category)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Section("Category") {
+                    Picker("Category", selection: $category) {
+                        ForEach(allCategories, id: \.self) { cat in
+                            Text(cat).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
             }
 
             Section(header: Text("Instructions"),
@@ -64,13 +133,17 @@ struct PresetFormView: View {
                 }
             }
         }
-        .navigationTitle(preset.isBuiltIn ? preset.name : "Edit Preset")
+        .navigationTitle(navigationTitle)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    savePreset()
+                Button(isCreateMode ? "Add" : "Save") {
+                    if isCreateMode {
+                        createPreset()
+                    } else {
+                        savePreset()
+                    }
                 }
-                .disabled(!isEdited || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(!canSave)
             }
         }
         .confirmationDialog("Reset to Default",
@@ -84,18 +157,44 @@ struct PresetFormView: View {
         }
     }
 
+    private var navigationTitle: String {
+        if isCreateMode { return "New Preset" }
+        return existingPreset?.isBuiltIn == true ? (existingPreset?.name ?? "") : "Edit Preset"
+    }
+
     @ViewBuilder
     private var instructionsFooter: some View {
-        if preset.useSystemTemplate {
+        if useSystemTemplate {
             Text("These instructions are injected into the transcription enhancer system prompt.")
         } else {
             Text("These instructions are used as the system message for the AI model.")
         }
     }
 
+    private func createPreset() {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let newPreset = Preset(
+            id: "custom_\(UUID().uuidString)",
+            name: trimmedName,
+            icon: useSystemTemplate ? "text.bubble.fill" : "sparkles",
+            category: category,
+            promptInstructions: promptInstructions,
+            useSystemTemplate: useSystemTemplate,
+            wrapInTranscriptTags: wrapInTranscriptTags,
+            isBuiltIn: false
+        )
+        presetManager.addPreset(newPreset)
+        dismiss()
+    }
+
     private func savePreset() {
-        var updated = preset
+        guard var updated = existingPreset else { return }
         updated.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.useSystemTemplate = useSystemTemplate
+        updated.wrapInTranscriptTags = wrapInTranscriptTags
+        if !updated.isBuiltIn {
+            updated.category = category
+        }
         updated.promptInstructions = promptInstructions
         updated.isEdited = true
         presetManager.updatePreset(updated)
@@ -103,6 +202,7 @@ struct PresetFormView: View {
     }
 
     private func resetToDefault() {
+        guard let preset = existingPreset else { return }
         presetManager.resetToDefault(presetId: preset.id)
         dismiss()
     }

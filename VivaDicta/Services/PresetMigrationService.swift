@@ -76,7 +76,7 @@ enum PresetMigrationService {
                     id: customId,
                     name: prompt.title,
                     icon: "text.bubble.fill",
-                    category: "Custom",
+                    category: "Other",
                     promptInstructions: prompt.promptInstructions,
                     useSystemTemplate: prompt.useSystemTemplate,
                     wrapInTranscriptTags: prompt.wrapInTranscriptTags,
