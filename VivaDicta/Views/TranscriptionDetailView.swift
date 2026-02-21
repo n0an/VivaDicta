@@ -540,7 +540,7 @@ struct TranscriptionDetailView: View {
                         metadataRow(icon: "wand.and.sparkles", label: "AI Model", value: aiModel)
                     }
                     if let promptName = transcription.promptName {
-                        metadataRow(icon: "text.bubble.fill", label: "Prompt Used", value: promptName)
+                        metadataRow(icon: "text.bubble.fill", label: "Preset", value: promptName)
                     }
                     #if DEBUG
                     if let duration = transcription.transcriptionDuration {
@@ -548,7 +548,7 @@ struct TranscriptionDetailView: View {
                         metadataRow(icon: "figure.run.circle.fill", label: "Transcription Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
                     }
                     if let duration = transcription.enhancementDuration {
-                        metadataRow(icon: "clock.fill", label: "Enhancement Time", value: transcription.getDurationFormatted(duration))
+                        metadataRow(icon: "clock.fill", label: "AI Processing Time", value: transcription.getDurationFormatted(duration))
                     }
                     #endif
                 }
