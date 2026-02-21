@@ -401,6 +401,8 @@ struct TranscriptionDetailView: View {
                     )
                 }
 
+                // "+" button to add new variation
+                addVariationButton
             }
         }
         .scrollIndicators(.hidden)
@@ -483,6 +485,8 @@ struct TranscriptionDetailView: View {
         }
 
         processingTask = Task {
+            processingState = .enhancing
+
             do {
                 let (resultText, duration) = try await appState.aiService.generateVariation(
                     text: transcription.text,
@@ -528,6 +532,8 @@ struct TranscriptionDetailView: View {
                 showEnhancementErrorAlert = true
                 HapticManager.error()
             }
+
+            processingState = .idle
         }
     }
 }
