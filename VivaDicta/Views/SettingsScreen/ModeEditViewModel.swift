@@ -11,32 +11,32 @@ import os
 @Observable
 class ModeEditViewModel {
     private let logger = Logger(category: .modeEditViewModel)
-    
+
     var modeName: String = ""
-    
+
     var transcriptionProvider: TranscriptionModelProvider = .whisperKit
     var transcriptionModel: String = ""
     var transcriptionLanguage: String = "auto"
-    
+
     var aiEnhanceEnabled: Bool = false
     var aiProvider: AIProvider?
     var aiModel: String?
-    var selectedPromptID: UUID?
-    
+    var selectedPresetId: String?
+
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
-    let promptsManager: PromptsManager
-    
+    let presetManager: PresetManager
+
     let originalMode: VivaMode?
 
     public var transcriptionFooterText: String {
         transcriptionManager.hasAvailableTranscriptionModels ? "" : "No transcription models available. Download a local model or add an API key for a cloud model."
     }
-    
+
     var isEditing: Bool {
         originalMode != nil
     }
-    
+
     var isValid: Bool {
         let hasName = !modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let transcriptionReady = isTranscriptionProviderConfigured(transcriptionProvider)
@@ -49,7 +49,7 @@ class ModeEditViewModel {
                   let model = aiModel,
                   !model.isEmpty,
                   isProviderReady(provider),
-                  selectedPromptID != nil {
+                  selectedPresetId != nil {
             aiEnhancementReady = true
         } else {
             aiEnhancementReady = false
@@ -95,21 +95,21 @@ class ModeEditViewModel {
         if aiModel == nil || aiModel!.isEmpty {
             return "Select an AI model"
         }
-        if selectedPromptID == nil {
-            return "Select or add a prompt"
+        if selectedPresetId == nil {
+            return "Select a preset"
         }
         return nil
     }
-    
+
     init(mode: VivaMode?,
          aiService: AIService,
-         promptsManager: PromptsManager,
+         presetManager: PresetManager,
          transcriptionManager: TranscriptionManager) {
         self.originalMode = mode
         self.aiService = aiService
-        self.promptsManager = promptsManager
+        self.presetManager = presetManager
         self.transcriptionManager = transcriptionManager
-        
+
         if let existingMode = mode {
             modeName = existingMode.name
             transcriptionProvider = existingMode.transcriptionProvider
@@ -118,7 +118,7 @@ class ModeEditViewModel {
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
-            selectedPromptID = existingMode.userPrompt?.id
+            selectedPresetId = existingMode.presetId
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -128,7 +128,7 @@ class ModeEditViewModel {
             transcriptionLanguage = "auto"
         }
     }
-    
+
     func saveMode() throws -> VivaMode  {
         let trimmedName = modeName.trimmingCharacters(in: .whitespacesAndNewlines)
         let modeId = originalMode?.id ?? UUID()
@@ -147,13 +147,13 @@ class ModeEditViewModel {
             transcriptionProvider: transcriptionProvider,
             transcriptionModel: transcriptionModel,
             transcriptionLanguage: transcriptionLanguage,
-            userPrompt: getSelectedUserPrompt(),
+            presetId: aiEnhanceEnabled ? selectedPresetId : nil,
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
             aiEnhanceEnabled: aiEnhanceEnabled
         )
     }
-    
+
     // MARK: - Transcription settings
     func isTranscriptionProviderConfigured(_ provider: TranscriptionModelProvider) -> Bool {
         switch provider {
@@ -168,7 +168,7 @@ class ModeEditViewModel {
             return self.hasAPIKey(for: mappedAIProvider)
         }
     }
-    
+
     func getAvailableTranscriptionModels(for provider: TranscriptionModelProvider) -> [String] {
         switch provider {
         case .parakeet:
@@ -182,7 +182,7 @@ class ModeEditViewModel {
             return provider.cloudTranscriptionModelsNames
         }
     }
-    
+
     func updateTranscriptionProvider(_ newProvider: TranscriptionModelProvider) {
         let availableModels = getAvailableTranscriptionModels(for: newProvider)
         transcriptionModel = availableModels.first ?? ""
@@ -257,7 +257,7 @@ class ModeEditViewModel {
         return true
 
     }
-    
+
     public struct GroupedLanguages {
         let recommended: [(key: String, value: String)]  // Auto + user's preferred
         let other: [(key: String, value: String)]        // Rest alphabetically
@@ -322,7 +322,7 @@ class ModeEditViewModel {
             return locale.language.languageCode?.identifier
         }
     }
-    
+
     // MARK: - AI Enhancement settings
     func selectFirstProviderIfNeeded() {
         guard aiProvider == nil else { return }
@@ -476,7 +476,7 @@ class ModeEditViewModel {
             }
         }
     }
-    
+
     func refreshConnectedProviders() {
         aiService.refreshConnectedProviders()
     }
@@ -519,20 +519,13 @@ class ModeEditViewModel {
     var appleFoundationModelStatusMessage: String {
         AppleFoundationModelAvailability.currentStatus.description
     }
-    
-    // MARK: - Prompt Settings
-    func selectFirstPromptIfNeeded() {
-        if selectedPromptID == nil, let firstPrompt = promptsManager.userPrompts.first {
-            selectedPromptID = firstPrompt.id
-            logger.logInfo("Auto-selected first prompt: \(firstPrompt.title)")
-        }
-    }
 
-    private func getSelectedUserPrompt() -> UserPrompt? {
-        guard let promptID = selectedPromptID else {
-            return nil
+    // MARK: - Preset Settings
+    func selectFirstPresetIfNeeded() {
+        if selectedPresetId == nil, let firstPreset = presetManager.enhancementPresets.first {
+            selectedPresetId = firstPreset.id
+            logger.logInfo("Auto-selected first preset: \(firstPreset.name)")
         }
-        return promptsManager.userPrompts.first { $0.id == promptID }
     }
 
     /// Normalizes a name for comparison by removing all whitespace and lowercasing

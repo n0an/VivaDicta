@@ -177,8 +177,8 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsDestination.aiProviders) {
                         Text("AI Providers")
                     }
-                    NavigationLink(value: SettingsDestination.promptsSettings) {
-                        Text("LLM Prompts")
+                    NavigationLink(value: SettingsDestination.presetsSettings) {
+                        Text("Presets")
                     }
                 }
 
@@ -376,7 +376,7 @@ struct SettingsView: View {
                 ModeEditView(
                     mode: mode,
                     aiService: appState.aiService,
-                    promptsManager: promptsManager,
+                    presetManager: appState.presetManager,
                     transcriptionManager: appState.transcriptionManager,
                     navigationPath: $navigationPath)
             }
@@ -388,6 +388,8 @@ struct SettingsView: View {
                     ModelsView()
                 case .promptsTemplates:
                     TemplateSelectionView(promptsManager: promptsManager)
+                case .presetsSettings:
+                    PresetSettings(presetManager: appState.presetManager)
                 case .correctSpelling:
                     WordsDictionaryView()
                 case .replacements:
@@ -395,6 +397,9 @@ struct SettingsView: View {
                 case .aiProviders:
                     AIProviders()
                 }
+            }
+            .navigationDestination(for: Preset.self) { preset in
+                PresetFormView(preset: preset, presetManager: appState.presetManager)
             }
             .navigationDestination(for: UserPrompt.self) { prompt in
                 PromptFormView(
@@ -407,7 +412,7 @@ struct SettingsView: View {
                 ModeEditView(
                     mode: nil,
                     aiService: appState.aiService,
-                    promptsManager: promptsManager,
+                    presetManager: appState.presetManager,
                     transcriptionManager: appState.transcriptionManager,
                     navigationPath: $navigationPath
                 )
@@ -650,8 +655,8 @@ private struct ModeInfoRow: View {
                                     .foregroundStyle(.secondary)
                                 Text(mode.aiModel)
                                     .foregroundStyle(.tertiary)
-                                if let prompt = mode.userPrompt {
-                                    Text(prompt.title)
+                                if let presetId = mode.presetId {
+                                    Text(PresetCatalog.displayName(for: presetId, fallback: presetId))
                                         .foregroundStyle(.tertiary)
                                 }
                             }

@@ -49,6 +49,8 @@ public enum LogCategory: String {
     case replacementsService = "ReplacementsService"
     case dictionaryMigration = "DictionaryMigration"
     case variationMigration = "VariationMigration"
+    case presetManager = "PresetManager"
+    case presetMigration = "PresetMigration"
     case keychainService = "KeychainService"
 
     // MARK: - Keyboard Extension

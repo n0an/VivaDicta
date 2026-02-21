@@ -65,6 +65,9 @@ class AppState {
     /// Manager for downloading and managing on-device models.
     var downloadManager: ModelDownloadManager!
 
+    /// Manager for AI text processing presets.
+    var presetManager: PresetManager!
+
     // MARK: - Navigation State
 
     /// Triggers navigation to the Models screen.
@@ -82,6 +85,9 @@ class AppState {
     init(modelContainer: ModelContainer) {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()
+        presetManager = PresetManager()
+        aiService.presetManager = presetManager
+        PresetMigrationService.migrateIfNeeded(presetManager: presetManager, aiService: aiService)
         recordViewModel = RecordViewModel(appState: self, modelContainer: modelContainer)
         downloadManager = ModelDownloadManager()
 

@@ -181,7 +181,8 @@ final class ActionExtensionViewModel {
     }
 
     var promptDisplayName: String {
-        selectedMode.userPrompt?.title ?? "Not set"
+        guard let presetId = selectedMode.presetId else { return "Not set" }
+        return PresetCatalog.displayName(for: presetId, fallback: presetId)
     }
 }
 

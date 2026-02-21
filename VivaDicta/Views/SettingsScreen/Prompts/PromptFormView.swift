@@ -296,9 +296,6 @@ struct PromptFormView: View {
 
         promptsManager.updatePrompt(updatedPrompt)
 
-        // Sync the updated prompt to all modes that use it
-        aiService?.updateModesWithPrompt(updatedPrompt)
-
         dismiss()
     }
 

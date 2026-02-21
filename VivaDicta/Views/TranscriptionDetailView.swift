@@ -59,7 +59,7 @@ struct TranscriptionDetailView: View {
     private var selectedLabel: String {
         if selectedChipId == "original" { return "Original" }
         if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
-            return RewritePresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
+            return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
         }
         return "Original"
     }
@@ -264,7 +264,7 @@ struct TranscriptionDetailView: View {
         HStack {
             if selectedIsVariation {
                 HStack(spacing: 4) {
-                    Image(systemName: RewritePresetCatalog.icon(for: selectedChipId))
+                    Image(systemName: PresetCatalog.icon(for: selectedChipId))
                         .foregroundStyle(.blue)
                     Text(selectedLabel)
                         .font(.system(size: 14, weight: .medium))
@@ -581,7 +581,7 @@ struct TranscriptionDetailView: View {
                 // Share currently selected text (if it's a variation)
                 if selectedIsVariation {
                     ShareLink(item: displayedText) {
-                        Label(selectedLabel, systemImage: RewritePresetCatalog.icon(for: selectedChipId))
+                        Label(selectedLabel, systemImage: PresetCatalog.icon(for: selectedChipId))
                     }
                 }
 
@@ -839,8 +839,8 @@ struct TranscriptionDetailView: View {
                 ForEach(sortedVariations, id: \.id) { variation in
                     variationChip(
                         id: variation.presetId,
-                        label: RewritePresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
-                        icon: RewritePresetCatalog.icon(for: variation.presetId),
+                        label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
+                        icon: PresetCatalog.icon(for: variation.presetId),
                         isLoading: generatingPresetId == variation.presetId
                     )
                 }
@@ -926,7 +926,7 @@ struct TranscriptionDetailView: View {
 
     // MARK: - Generate Variation
 
-    private func generateVariation(preset: RewritePreset) {
+    private func generateVariation(preset: Preset) {
         generatingPresetId = preset.id
         HapticManager.lightImpact()
 
@@ -984,14 +984,14 @@ struct TranscriptionDetailView: View {
 
 private struct PresetPickerSheet: View {
     let existingVariationIds: Set<String>
-    let onSelect: (RewritePreset) -> Void
+    let onSelect: (Preset) -> Void
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(RewritePresetCatalog.categories, id: \.self) { category in
+                ForEach(PresetCatalog.standaloneCategories, id: \.self) { category in
                     Section(category) {
-                        let presets = RewritePresetCatalog.allBuiltIn.filter { $0.category == category }
+                        let presets = PresetCatalog.standalonePresets.filter { $0.category == category }
                         ForEach(presets) { preset in
                             presetRow(preset)
                         }
@@ -1003,7 +1003,7 @@ private struct PresetPickerSheet: View {
         }
     }
 
-    private func presetRow(_ preset: RewritePreset) -> some View {
+    private func presetRow(_ preset: Preset) -> some View {
         let exists = existingVariationIds.contains(preset.id)
         return Button {
             onSelect(preset)

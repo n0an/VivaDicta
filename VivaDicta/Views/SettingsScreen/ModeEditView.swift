@@ -55,16 +55,16 @@ struct ModeEditView: View {
     
     init(mode: VivaMode?,
          aiService: AIService,
-         promptsManager: PromptsManager,
+         presetManager: PresetManager,
          transcriptionManager: TranscriptionManager,
          navigationPath: Binding<NavigationPath> = .constant(NavigationPath())) {
         self._navigationPath = navigationPath
-        
+
         self._viewModel = State(
             initialValue: ModeEditViewModel(
                 mode: mode,
                 aiService: aiService,
-                promptsManager: promptsManager,
+                presetManager: presetManager,
                 transcriptionManager: transcriptionManager))
     }
     
@@ -416,36 +416,16 @@ struct ModeEditView: View {
                         }
 
                         if let provider = viewModel.aiProvider, viewModel.isProviderReady(provider) {
-                            if viewModel.promptsManager.userPrompts.isEmpty {
-                                Button(action: {
-                                    navigationPath.append(SettingsDestination.promptsSettings)
-                                }) {
-                                    HStack {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .foregroundStyle(.orange)
-                                        Text("Add Prompt")
-                                        Spacer()
-                                        Text("Required")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(.secondary)
-                                    }
+                            Picker("Preset", selection: $viewModel.selectedPresetId) {
+                                ForEach(viewModel.presetManager.enhancementPresets) { preset in
+                                    Text(preset.name).tag(preset.id as String?)
                                 }
-                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                .foregroundStyle(.primary)
-                            } else {
-                                Picker("Prompt", selection: $viewModel.selectedPromptID) {
-                                    ForEach(viewModel.promptsManager.userPrompts) { prompt in
-                                        Text(prompt.title).tag(prompt.id)
-                                    }
-                                }
-                                .onChange(of: viewModel.selectedPromptID) { _, _ in
-                                    HapticManager.selectionChanged()
-                                }
-                                .onAppear {
-                                    viewModel.selectFirstPromptIfNeeded()
-                                }
+                            }
+                            .onChange(of: viewModel.selectedPresetId) { _, _ in
+                                HapticManager.selectionChanged()
+                            }
+                            .onAppear {
+                                viewModel.selectFirstPresetIfNeeded()
                             }
                         }
                     }
@@ -598,14 +578,13 @@ struct ModeEditView: View {
 
 #Preview {
     @Previewable @State var aiService = AIService()
-    @Previewable @State var promptsManager = PromptsManager()
-//    @Previewable @State var appState = AppState(modelContainer: TranscriptionsMockData.makeSharedContext())
+    @Previewable @State var presetManager = PresetManager()
     @Previewable @State var transcriptionManager = TranscriptionManager()
     @Previewable @State var navigationPath = NavigationPath()
     ModeEditView(
         mode: nil,
         aiService: aiService,
-        promptsManager: promptsManager,
+        presetManager: presetManager,
         transcriptionManager: transcriptionManager,
         navigationPath: $navigationPath)
 }

@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// `VivaMode` encapsulates all settings needed for a complete transcription workflow,
 /// including which transcription model to use, which AI provider to enhance with,
-/// and the prompt to guide enhancement.
+/// and the preset to guide enhancement.
 ///
 /// ## Overview
 ///
@@ -30,7 +30,7 @@ import SwiftUI
 /// - ``aiEnhanceEnabled``: Whether to apply AI enhancement
 /// - ``aiProvider``: Which AI provider to use (OpenAI, Anthropic, etc.)
 /// - ``aiModel``: The specific AI model name
-/// - ``userPrompt``: The prompt template guiding enhancement
+/// - ``presetId``: ID of the preset guiding enhancement
 ///
 /// ## Persistence
 ///
@@ -52,8 +52,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The language for transcription, or "auto" for automatic detection.
     let transcriptionLanguage: String?
 
-    /// The prompt template for AI enhancement, if any.
-    let userPrompt: UserPrompt?
+    /// ID of the preset for AI enhancement, if any.
+    let presetId: String?
 
     /// The AI provider for text enhancement.
     var aiProvider: AIProvider?
@@ -70,7 +70,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
          transcriptionProvider: TranscriptionModelProvider,
          transcriptionModel: String,
          transcriptionLanguage: String? = nil,
-         userPrompt: UserPrompt? = nil,
+         presetId: String? = nil,
          aiProvider: AIProvider? = nil,
          aiModel: String,
          aiEnhanceEnabled: Bool) {
@@ -79,12 +79,60 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.transcriptionProvider = transcriptionProvider
         self.transcriptionModel = transcriptionModel
         self.transcriptionLanguage = transcriptionLanguage
-        self.userPrompt = userPrompt
+        self.presetId = presetId
         self.aiProvider = aiProvider
         self.aiModel = aiModel
         self.aiEnhanceEnabled = aiEnhanceEnabled
     }
-    
+
+    // MARK: - Backward-Compatible Decoding
+
+    /// Supports decoding both old format (with `userPrompt`) and new format (with `presetId`).
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        transcriptionProvider = try container.decode(TranscriptionModelProvider.self, forKey: .transcriptionProvider)
+        transcriptionModel = try container.decode(String.self, forKey: .transcriptionModel)
+        transcriptionLanguage = try container.decodeIfPresent(String.self, forKey: .transcriptionLanguage)
+        aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
+        aiModel = try container.decode(String.self, forKey: .aiModel)
+        aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
+
+        // Try new format first
+        if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
+            presetId = preset
+        } else if container.contains(.userPrompt) {
+            // Fall back to old format: decode embedded UserPrompt and extract a preset ID
+            // The actual mapping happens in PresetMigrationService; here we just preserve the title
+            // so the mode remains functional until migration runs
+            let legacyPrompt = try container.decodeIfPresent(LegacyUserPrompt.self, forKey: .userPrompt)
+            presetId = legacyPrompt?.title
+        } else {
+            presetId = nil
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, transcriptionProvider, transcriptionModel, transcriptionLanguage
+        case presetId, userPrompt
+        case aiProvider, aiModel, aiEnhanceEnabled
+    }
+
+    /// Encodes using the new format only (presetId).
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(transcriptionProvider, forKey: .transcriptionProvider)
+        try container.encode(transcriptionModel, forKey: .transcriptionModel)
+        try container.encodeIfPresent(transcriptionLanguage, forKey: .transcriptionLanguage)
+        try container.encodeIfPresent(presetId, forKey: .presetId)
+        try container.encodeIfPresent(aiProvider, forKey: .aiProvider)
+        try container.encode(aiModel, forKey: .aiModel)
+        try container.encode(aiEnhanceEnabled, forKey: .aiEnhanceEnabled)
+    }
+
     /// The default mode used when no custom mode is configured.
     ///
     /// Uses WhisperKit as the transcription provider with automatic language detection
@@ -95,7 +143,18 @@ struct VivaMode: Identifiable, Hashable, Codable {
         transcriptionProvider: .whisperKit,
         transcriptionModel: "",
         transcriptionLanguage: "auto",
-        userPrompt: nil,
+        presetId: nil,
         aiModel: "",
         aiEnhanceEnabled: false)
+}
+
+/// Minimal struct for decoding legacy UserPrompt data embedded in old VivaModes.
+/// Only used during backward-compatible decoding.
+private struct LegacyUserPrompt: Codable {
+    let id: UUID
+    let title: String
+    let promptInstructions: String
+    let useSystemTemplate: Bool
+    let wrapInTranscriptTags: Bool?
+    let createdAt: Date
 }

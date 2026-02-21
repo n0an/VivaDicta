@@ -15,16 +15,16 @@ struct ModeEditViewModelTests {
 
     private func makeViewModel() -> ModeEditViewModel {
         let aiService = AIService()
-        let promptsManager = PromptsManager(
+        let presetManager = PresetManager(
             userDefaults: UserDefaults(suiteName: "ModeEditViewModelTests")!,
-            storageKey: "testPrompts"
+            storageKey: "testPresets"
         )
         let transcriptionManager = TranscriptionManager()
 
         return ModeEditViewModel(
             mode: nil,
             aiService: aiService,
-            promptsManager: promptsManager,
+            presetManager: presetManager,
             transcriptionManager: transcriptionManager
         )
     }
@@ -100,16 +100,16 @@ struct ModeEditViewModelTests {
         #expect(viewModel.aiEnhancementValidationMessage != nil)
     }
 
-    @Test func testIsValid_aiEnhancementEnabled_noPrompt_returnsFalse() {
+    @Test func testIsValid_aiEnhancementEnabled_noPreset_returnsFalse() {
         let viewModel = makeViewModel()
         viewModel.modeName = "Test Mode"
         viewModel.transcriptionModel = "test-model"
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = .openAI
         viewModel.aiModel = "gpt-4"
-        viewModel.selectedPromptID = nil
+        viewModel.selectedPresetId = nil
 
-        // Should show prompt validation message (after API key check)
+        // Should show preset validation message (after API key check)
         #expect(viewModel.aiEnhancementValidationMessage != nil)
     }
 
@@ -175,15 +175,15 @@ struct ModeEditViewModelTests {
         #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue")
     }
 
-    @Test func testAIEnhancementValidationMessage_noPrompt() {
+    @Test func testAIEnhancementValidationMessage_noPreset() {
         let viewModel = makeViewModel()
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = .openAI
         viewModel.aiModel = "gpt-4"
-        viewModel.selectedPromptID = nil
+        viewModel.selectedPresetId = nil
         // Would need API key to get past that check, so this tests the order
 
-        // The validation checks in order: provider -> API key -> model -> prompt
+        // The validation checks in order: provider -> API key -> model -> preset
         #expect(viewModel.aiEnhancementValidationMessage != nil)
     }
 
@@ -197,9 +197,9 @@ struct ModeEditViewModelTests {
 
     @Test func testIsEditing_existingMode_returnsTrue() {
         let aiService = AIService()
-        let promptsManager = PromptsManager(
+        let presetManager = PresetManager(
             userDefaults: UserDefaults(suiteName: "ModeEditViewModelTests")!,
-            storageKey: "testPrompts"
+            storageKey: "testPresets"
         )
         let transcriptionManager = TranscriptionManager()
 
@@ -215,7 +215,7 @@ struct ModeEditViewModelTests {
         let viewModel = ModeEditViewModel(
             mode: existingMode,
             aiService: aiService,
-            promptsManager: promptsManager,
+            presetManager: presetManager,
             transcriptionManager: transcriptionManager
         )
 

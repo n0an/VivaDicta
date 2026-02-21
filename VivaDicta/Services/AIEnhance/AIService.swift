@@ -89,6 +89,9 @@ class AIService {
         }
     }
 
+    /// Preset manager for resolving preset IDs to full preset data.
+    public var presetManager: PresetManager?
+
     public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
@@ -210,7 +213,7 @@ class AIService {
             transcriptionProvider: mode.transcriptionProvider,
             transcriptionModel: mode.transcriptionModel,
             transcriptionLanguage: mode.transcriptionLanguage,
-            userPrompt: mode.userPrompt,
+            presetId: mode.presetId,
             aiProvider: mode.aiProvider,
             aiModel: mode.aiModel,
             aiEnhanceEnabled: mode.aiEnhanceEnabled
@@ -274,7 +277,7 @@ class AIService {
                     transcriptionProvider: mode.transcriptionProvider,
                     transcriptionModel: mode.transcriptionModel,
                     transcriptionLanguage: mode.transcriptionLanguage,
-                    userPrompt: mode.userPrompt,
+                    presetId: mode.presetId,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false
@@ -284,11 +287,11 @@ class AIService {
         )
     }
 
-    /// Disables AI enhancement for all modes that use the specified prompt.
-    /// Called when that prompt is deleted.
-    public func disableAIEnhancementForModesUsingPrompt(promptId: UUID) {
+    /// Disables AI enhancement for all modes that use the specified preset.
+    /// Called when that preset is deleted.
+    public func disableAIEnhancementForModesUsingPreset(presetId: String) {
         updateModesMatching(
-            { $0.aiEnhanceEnabled && $0.userPrompt?.id == promptId },
+            { $0.aiEnhanceEnabled && $0.presetId == presetId },
             transform: { mode in
                 VivaMode(
                     id: mode.id,
@@ -296,13 +299,13 @@ class AIService {
                     transcriptionProvider: mode.transcriptionProvider,
                     transcriptionModel: mode.transcriptionModel,
                     transcriptionLanguage: mode.transcriptionLanguage,
-                    userPrompt: nil,
+                    presetId: nil,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false
                 )
             },
-            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to prompt deletion" }
+            logMessage: { "Disabled AI enhancement for mode '\($0.name)' due to preset deletion" }
         )
     }
 
@@ -318,7 +321,7 @@ class AIService {
                     transcriptionProvider: mode.transcriptionProvider,
                     transcriptionModel: mode.transcriptionModel,
                     transcriptionLanguage: mode.transcriptionLanguage,
-                    userPrompt: mode.userPrompt,
+                    presetId: mode.presetId,
                     aiProvider: nil,
                     aiModel: "",
                     aiEnhanceEnabled: false
@@ -328,27 +331,9 @@ class AIService {
         )
     }
 
-    /// Updates all modes that use the specified prompt with the new prompt data.
-    /// Called when a prompt is edited to sync changes across all modes using it.
-    public func updateModesWithPrompt(_ updatedPrompt: UserPrompt) {
-        updateModesMatching(
-            { $0.userPrompt?.id == updatedPrompt.id },
-            transform: { mode in
-                VivaMode(
-                    id: mode.id,
-                    name: mode.name,
-                    transcriptionProvider: mode.transcriptionProvider,
-                    transcriptionModel: mode.transcriptionModel,
-                    transcriptionLanguage: mode.transcriptionLanguage,
-                    userPrompt: updatedPrompt,
-                    aiProvider: mode.aiProvider,
-                    aiModel: mode.aiModel,
-                    aiEnhanceEnabled: mode.aiEnhanceEnabled
-                )
-            },
-            logMessage: { "Updated prompt in mode '\($0.name)' with new prompt data: \(updatedPrompt.title)" }
-        )
-    }
+    // Note: updateModesWithPrompt removed - no longer needed since VivaModes
+    // reference presets by ID, not by embedded value. Editing a preset automatically
+    // takes effect for all modes referencing that preset ID.
 
     private func updateModesMatching(
         _ predicate: (VivaMode) -> Bool,
@@ -397,7 +382,7 @@ class AIService {
                 transcriptionProvider: provider,
                 transcriptionModel: modelName,
                 transcriptionLanguage: defaultMode.transcriptionLanguage,
-                userPrompt: defaultMode.userPrompt,
+                presetId: defaultMode.presetId,
                 aiProvider: defaultMode.aiProvider,
                 aiModel: defaultMode.aiModel,
                 aiEnhanceEnabled: defaultMode.aiEnhanceEnabled
@@ -429,7 +414,7 @@ class AIService {
         logger.logInfo("Loaded \(self.modes.count) Viva Modes")
     }
 
-    private func saveModes() {
+    func saveModes() {
         guard let encoded = try? JSONEncoder().encode(modes) else {
             logger.logError("Failed to encode Viva Modes")
             return
@@ -546,10 +531,11 @@ class AIService {
             }
         }
 
-        // Check if a prompt is selected
-        guard let userPrompt = selectedMode.userPrompt,
-              !userPrompt.promptInstructions.isEmpty else {
-            logger.logWarning("No prompt selected or prompt is empty for mode: \(self.selectedMode.name)")
+        // Check if a preset is selected and has content
+        guard let presetId = selectedMode.presetId,
+              let preset = presetManager?.preset(for: presetId),
+              !preset.promptInstructions.isEmpty else {
+            logger.logWarning("No preset selected or preset is empty for mode: \(self.selectedMode.name)")
             return false
         }
 
@@ -602,7 +588,12 @@ class AIService {
     public func enhance(_ text: String) async throws -> (String, TimeInterval, String?) {
         let startTime = Date()
 
-        let promptName = selectedMode.userPrompt?.title
+        let promptName: String?
+        if let presetId = selectedMode.presetId {
+            promptName = presetManager?.preset(for: presetId)?.name
+        } else {
+            promptName = nil
+        }
 
         do {
             let result = try await makeRequest(text: text)
@@ -624,11 +615,11 @@ class AIService {
     ///
     /// - Parameters:
     ///   - text: The original transcription text to process.
-    ///   - preset: The rewrite preset containing the system prompt.
+    ///   - preset: The preset containing the prompt instructions.
     /// - Returns: A tuple of the generated text and processing duration.
-    public func generateVariation(text: String, preset: RewritePreset) async throws -> (String, TimeInterval) {
+    public func generateVariation(text: String, preset: Preset) async throws -> (String, TimeInterval) {
         let startTime = Date()
-        let result = try await makeRequest(text: text, systemMessage: preset.systemPrompt)
+        let result = try await makeRequest(text: text, systemMessage: preset.promptInstructions)
         let duration = Date().timeIntervalSince(startTime)
         return (result, duration)
     }
@@ -641,9 +632,15 @@ class AIService {
     // }
 
     /// Formats the transcribed text for the LLM request.
-    /// Wraps in <TRANSCRIPT> tags if enabled in the user's prompt settings.
+    /// Wraps in <TRANSCRIPT> tags if enabled in the preset settings.
     private func formatTranscriptForLLM(_ text: String) -> String {
-        let shouldWrap = selectedMode.userPrompt?.wrapInTranscriptTags ?? true
+        let shouldWrap: Bool
+        if let presetId = selectedMode.presetId,
+           let preset = presetManager?.preset(for: presetId) {
+            shouldWrap = preset.wrapInTranscriptTags
+        } else {
+            shouldWrap = true
+        }
         if shouldWrap {
             return "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
         } else {
@@ -665,7 +662,9 @@ class AIService {
             if #available(iOS 26, *) {
                 let instructions = getFoundationModelInstructions()
                 let promptPrefix = getFoundationModelPromptPrefix()
-                let wrapInTags = selectedMode.userPrompt?.wrapInTranscriptTags ?? true
+                let resolvedPreset: Preset?
+                if let pid = selectedMode.presetId { resolvedPreset = presetManager?.preset(for: pid) } else { resolvedPreset = nil }
+                let wrapInTags = resolvedPreset?.wrapInTranscriptTags ?? true
                 logger.logDebug("AI Enhancement - Using Apple Foundation Model")
                 logger.logDebug("AI Enhancement - Instructions: \(instructions)")
                 logger.logDebug("AI Enhancement - Prompt Prefix: \(promptPrefix)")
@@ -843,13 +842,20 @@ class AIService {
             customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
         }
 
-        let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+        let preset: Preset?
+        if let presetId = selectedMode.presetId {
+            preset = presetManager?.preset(for: presetId)
+        } else {
+            preset = nil
+        }
+
+        let promptInstructions = preset?.promptInstructions ?? ""
+        let useSystemTemplate = preset?.useSystemTemplate ?? true
 
         if useSystemTemplate {
             return PromptsTemplates.systemPrompt(with: promptInstructions) + customVocabularySection
         } else {
-            // User wants full control - use only their instructions + vocabulary
+            // Standalone preset - use instructions directly + vocabulary
             return promptInstructions + customVocabularySection
         }
     }
@@ -859,15 +865,20 @@ class AIService {
     /// Returns instructions for LanguageModelSession (role + core rules + vocabulary)
     /// Used with LanguageModelSession(instructions:)
     private func getFoundationModelInstructions() -> String {
-        let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+        let preset: Preset?
+        if let presetId = selectedMode.presetId {
+            preset = presetManager?.preset(for: presetId)
+        } else {
+            preset = nil
+        }
+
+        let useSystemTemplate = preset?.useSystemTemplate ?? true
         let words = CustomVocabulary.getTerms()
 
         if useSystemTemplate {
             let customVocabulary = words.isEmpty ? nil : words.joined(separator: ", ")
             return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)
         } else {
-            // User wants full control - use only their instructions via promptPrefix
-            // But still include custom vocabulary if available
             if words.isEmpty {
                 return ""
             }
@@ -876,16 +887,22 @@ class AIService {
         }
     }
 
-    /// Returns prompt prefix for prewarm (user prompt instructions only)
+    /// Returns prompt prefix for prewarm (preset instructions only)
     /// Used with session.prewarm(promptPrefix:)
     private func getFoundationModelPromptPrefix() -> String {
-        let promptInstructions = selectedMode.userPrompt?.promptInstructions ?? ""
-        let useSystemTemplate = selectedMode.userPrompt?.useSystemTemplate ?? true
+        let preset: Preset?
+        if let presetId = selectedMode.presetId {
+            preset = presetManager?.preset(for: presetId)
+        } else {
+            preset = nil
+        }
+
+        let promptInstructions = preset?.promptInstructions ?? ""
+        let useSystemTemplate = preset?.useSystemTemplate ?? true
 
         if useSystemTemplate {
             return PromptsTemplates.foundationModelPromptPrefix(promptInstructions: promptInstructions)
         } else {
-            // User wants full control - use their instructions directly
             return promptInstructions
         }
     }
@@ -1353,7 +1370,7 @@ class AIService {
                     transcriptionProvider: mode.transcriptionProvider,
                     transcriptionModel: mode.transcriptionModel,
                     transcriptionLanguage: mode.transcriptionLanguage,
-                    userPrompt: mode.userPrompt,
+                    presetId: mode.presetId,
                     aiProvider: nil,
                     aiModel: "",
                     aiEnhanceEnabled: false

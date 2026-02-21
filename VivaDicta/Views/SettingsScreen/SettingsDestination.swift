@@ -11,8 +11,9 @@ enum SettingsDestination: Hashable {
     case aiProviders
     case promptsSettings
     case promptsTemplates
+    case presetsSettings
     case transcriptionModels
-    
+
     // Dictionary
     case correctSpelling
     case replacements

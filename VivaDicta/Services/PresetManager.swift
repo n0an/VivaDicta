@@ -1,0 +1,172 @@
+//
+//  PresetManager.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2026.02.20
+//
+
+import Foundation
+import os
+
+/// Manages AI text processing presets with persistence in App Group UserDefaults.
+///
+/// Replaces ``PromptsManager`` with a unified system that handles both built-in
+/// and custom presets. Built-in presets are editable but not deletable.
+/// Custom presets are stored as ``CustomRewritePreset`` in SwiftData for CloudKit sync,
+/// but also cached here for quick lookups.
+///
+/// ## Storage
+///
+/// Presets are stored in App Group UserDefaults, making them accessible to the
+/// keyboard extension for Flow Mode functionality.
+@Observable
+class PresetManager {
+    private let logger = Logger(category: .presetManager)
+    private let userDefaults: UserDefaults
+    private let storageKey: String
+
+    /// All available presets (built-in + custom from UserDefaults).
+    private(set) var presets: [Preset] = []
+
+    init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
+         storageKey: String = "Presets_v1") {
+        self.userDefaults = userDefaults
+        self.storageKey = storageKey
+        loadPresets()
+        populateBuiltInsIfNeeded()
+    }
+
+    // MARK: - Lookup
+
+    /// Returns a preset by its ID.
+    func preset(for id: String) -> Preset? {
+        presets.first { $0.id == id }
+    }
+
+    /// Returns all presets for a given category.
+    func presets(in category: String) -> [Preset] {
+        presets.filter { $0.category == category }
+    }
+
+    /// Returns ordered category names.
+    var categories: [String] {
+        var seen = Set<String>()
+        return presets.compactMap { preset in
+            if seen.contains(preset.category) { return nil }
+            seen.insert(preset.category)
+            return preset.category
+        }
+    }
+
+    /// Returns only enhancement presets (useSystemTemplate = true).
+    var enhancementPresets: [Preset] {
+        presets.filter { $0.useSystemTemplate }
+    }
+
+    // MARK: - CRUD
+
+    /// Adds a new custom preset.
+    func addPreset(_ preset: Preset) {
+        presets.append(preset)
+        savePresets()
+        logger.logInfo("Added preset: \(preset.name)")
+    }
+
+    /// Updates an existing preset (matched by ID).
+    func updatePreset(_ preset: Preset) {
+        guard let index = presets.firstIndex(where: { $0.id == preset.id }) else { return }
+        presets[index] = preset
+        savePresets()
+        logger.logInfo("Updated preset: \(preset.name)")
+    }
+
+    /// Deletes a preset. Built-in presets cannot be deleted.
+    func deletePreset(_ preset: Preset) {
+        guard !preset.isBuiltIn else {
+            logger.logWarning("Cannot delete built-in preset: \(preset.name)")
+            return
+        }
+        presets.removeAll { $0.id == preset.id }
+        savePresets()
+        logger.logInfo("Deleted preset: \(preset.name)")
+    }
+
+    /// Resets a built-in preset to its factory default.
+    func resetToDefault(presetId: String) {
+        guard let defaultPreset = PresetCatalog.defaultPreset(for: presetId),
+              let index = presets.firstIndex(where: { $0.id == presetId }) else { return }
+        presets[index] = defaultPreset
+        savePresets()
+        logger.logInfo("Reset preset to default: \(defaultPreset.name)")
+    }
+
+    /// Checks if a preset name already exists (for duplicate detection).
+    func isPresetNameDuplicate(_ name: String, excludingId: String? = nil) -> Bool {
+        let normalizedName = normalizeForComparison(name)
+        return presets.contains { preset in
+            normalizeForComparison(preset.name) == normalizedName && preset.id != excludingId
+        }
+    }
+
+    // MARK: - Built-In Management
+
+    /// Populates built-in presets on first launch.
+    /// Only adds presets that don't already exist (by ID).
+    private func populateBuiltInsIfNeeded() {
+        var changed = false
+        for builtIn in PresetCatalog.allBuiltIn {
+            if !presets.contains(where: { $0.id == builtIn.id }) {
+                presets.append(builtIn)
+                changed = true
+                logger.logInfo("Populated built-in preset: \(builtIn.name)")
+            }
+        }
+        if changed {
+            // Ensure built-in presets appear first, in catalog order
+            sortPresets()
+            savePresets()
+        }
+    }
+
+    /// Sorts presets: built-in first (in catalog order), then custom by creation date.
+    private func sortPresets() {
+        let builtInOrder = PresetCatalog.allBuiltIn.map(\.id)
+        presets.sort { a, b in
+            if a.isBuiltIn && b.isBuiltIn {
+                let indexA = builtInOrder.firstIndex(of: a.id) ?? Int.max
+                let indexB = builtInOrder.firstIndex(of: b.id) ?? Int.max
+                return indexA < indexB
+            }
+            if a.isBuiltIn { return true }
+            if b.isBuiltIn { return false }
+            return a.createdAt < b.createdAt
+        }
+    }
+
+    // MARK: - Persistence
+
+    private func loadPresets() {
+        guard let data = userDefaults.data(forKey: storageKey),
+              let decoded = try? JSONDecoder().decode([Preset].self, from: data) else {
+            presets = []
+            return
+        }
+        presets = decoded
+        logger.logInfo("Loaded \(decoded.count) presets")
+    }
+
+    private func savePresets() {
+        guard let data = try? JSONEncoder().encode(presets) else {
+            logger.logError("Failed to encode presets")
+            return
+        }
+        userDefaults.set(data, forKey: storageKey)
+        logger.logInfo("Saved \(self.presets.count) presets")
+    }
+
+    // MARK: - Helpers
+
+    private func normalizeForComparison(_ name: String) -> String {
+        name.split(separator: /\s+/).joined().lowercased()
+    }
+}
