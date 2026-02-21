@@ -511,6 +511,13 @@ struct TranscriptionDetailView: View {
                 }
 
                 transcription.enhancedText = resultText
+
+                // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
+                let entity = transcription.entity
+                Task.detached {
+                    await appState.updateTranscriptionEntityInSpotlight(entity)
+                }
+
                 generatingPresetId = nil
 
                 withAnimation(.easeInOut(duration: 0.15)) {
