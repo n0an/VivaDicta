@@ -262,9 +262,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .cerebras:
             return [
                 "gpt-oss-120b",
-                "llama-3.1-8b",
-                "llama-3.3-70b",
-                "qwen-3-32b",
+                "llama3.1-8b",
                 "qwen-3-235b-a22b-instruct-2507",
                 "zai-glm-4.7"
             ]
@@ -274,13 +272,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "llama-3.3-70b-versatile",
                 "moonshotai/kimi-k2-instruct-0905",
                 "qwen/qwen3-32b",
-                "meta-llama/llama-4-maverick-17b-128e-instruct",
+                "meta-llama/llama-4-scout-17b-16e-instruct",
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b"
             ]
         case .gemini:
             return [
                 "gemini-3-flash-preview",
+                "gemini-3.1-pro-preview",
                 "gemini-3-pro-preview",
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
@@ -290,6 +289,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .anthropic:
             return [
+                "claude-opus-4-6",
+                "claude-sonnet-4-6",
                 "claude-opus-4-5",
                 "claude-sonnet-4-5",
                 "claude-haiku-4-5"
