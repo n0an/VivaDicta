@@ -21,7 +21,7 @@ import os
 /// - Mode management (create, update, delete, duplicate ``VivaMode`` instances)
 /// - API key verification and storage
 /// - Dynamic model fetching for providers like OpenRouter
-/// - Foundation Model prewarming for faster on-device enhancement
+/// - Apple Foundation Model on-device enhancement
 ///
 /// ## Usage
 ///
@@ -549,36 +549,6 @@ class AIService {
         return true
     }
 
-    // MARK: - Foundation Model Prewarm
-
-    /// Prewarm Apple Foundation Model if the current mode uses Apple as AI provider.
-    /// Called when recording starts - prewarming prepares the model for use within seconds.
-    /// Uses split instructions (role + rules + vocabulary) and prompt prefix (user enhancement style).
-    @MainActor
-    public func prewarmFoundationModelIfNeeded() {
-        guard selectedMode.aiEnhanceEnabled,
-              selectedMode.aiProvider == .apple,
-              AppleFoundationModelAvailability.isAvailable else {
-            return
-        }
-
-        if #available(iOS 26, *) {
-            let instructions = getFoundationModelInstructions()
-            let promptPrefix = getFoundationModelPromptPrefix()
-            logger.logInfo("Prewarming Apple Foundation Model for mode: \(self.selectedMode.name)")
-            appleFoundationModelService.prewarm(instructions: instructions, promptPrefix: promptPrefix)
-        }
-    }
-
-    /// Cancel any prewarmed Foundation Model session.
-    /// Call this when recording is cancelled to free memory.
-    @MainActor
-    public func cancelFoundationModelPrewarm() {
-        if #available(iOS 26, *) {
-            appleFoundationModelService.cancelPrewarm()
-        }
-    }
-
     // MARK: - Enhance methods
 
     /// Enhances transcribed text using the configured AI provider.
@@ -690,19 +660,17 @@ class AIService {
             return ""
         }
 
-        // Handle Apple Foundation Model (on-device)
+        // Handle Apple Foundation Model (on-device) — same prompt as cloud providers
         if aiProvider == .apple {
             if #available(iOS 26, *) {
-                let instructions = getFoundationModelInstructions()
-                let promptPrefix = getFoundationModelPromptPrefix()
-                let resolvedPreset: Preset?
-                if let pid = selectedMode.presetId { resolvedPreset = presetManager?.preset(for: pid) } else { resolvedPreset = nil }
-                let wrapInTags = resolvedPreset?.wrapInTranscriptTags ?? true
+                let sysMsg = systemMessage ?? getSystemMessage()
+                let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
                 logger.logDebug("AI Processing - Using Apple Foundation Model")
-                logger.logDebug("AI Processing - Instructions: \(instructions)")
-                logger.logDebug("AI Processing - Prompt Prefix: \(promptPrefix)")
-                logger.logDebug("AI Processing - Input Text: \(text)")
-                return try await appleFoundationModelService.enhance(text, instructions: instructions, promptPrefix: promptPrefix, wrapInTranscriptTags: wrapInTags)
+                logger.logDebug("AI Processing - System Message: \(sysMsg)")
+                logger.logDebug("AI Processing - User Message: \(userMsg)")
+                lastSystemMessageSent = sysMsg
+                lastUserMessageSent = userMsg
+                return try await appleFoundationModelService.enhance(systemMessage: sysMsg, userMessage: userMsg)
             } else {
                 throw EnhancementError.notConfigured
             }
@@ -899,51 +867,6 @@ class AIService {
     }
 
     // MARK: - Foundation Model Prompts (Apple)
-
-    /// Returns instructions for LanguageModelSession (role + core rules + vocabulary)
-    /// Used with LanguageModelSession(instructions:)
-    private func getFoundationModelInstructions() -> String {
-        let preset: Preset?
-        if let presetId = selectedMode.presetId {
-            preset = presetManager?.preset(for: presetId)
-        } else {
-            preset = nil
-        }
-
-        let useSystemTemplate = preset?.useSystemTemplate ?? true
-        let words = CustomVocabulary.getTerms()
-
-        if useSystemTemplate {
-            let customVocabulary = words.isEmpty ? nil : words.joined(separator: ", ")
-            return PromptsTemplates.foundationModelInstructions(customVocabulary: customVocabulary)
-        } else {
-            if words.isEmpty {
-                return ""
-            }
-            let vocabularyString = words.joined(separator: ", ")
-            return "<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)</CUSTOM_VOCABULARY>"
-        }
-    }
-
-    /// Returns prompt prefix for prewarm (preset instructions only)
-    /// Used with session.prewarm(promptPrefix:)
-    private func getFoundationModelPromptPrefix() -> String {
-        let preset: Preset?
-        if let presetId = selectedMode.presetId {
-            preset = presetManager?.preset(for: presetId)
-        } else {
-            preset = nil
-        }
-
-        let promptInstructions = preset?.promptInstructions ?? ""
-        let useSystemTemplate = preset?.useSystemTemplate ?? true
-
-        if useSystemTemplate {
-            return PromptsTemplates.foundationModelPromptPrefix(promptInstructions: promptInstructions)
-        } else {
-            return promptInstructions
-        }
-    }
 
     // MARK: - Ollama Methods
 

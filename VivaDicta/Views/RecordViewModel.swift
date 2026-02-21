@@ -169,8 +169,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     ///
     /// If a keyboard prewarm session is active, uses the prewarmed audio engine.
     /// Otherwise, configures and starts a standard AVAudioRecorder.
-    ///
-    /// Also triggers Foundation Model prewarming if the current mode uses Apple AI.
     func startCaptureAudio() {
         Task { @MainActor in
             // Guard against duplicate starts
@@ -178,10 +176,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 logger.logInfo("📱 Already recording, ignoring duplicate start request")
                 return
             }
-
-            // Prewarm Apple Foundation Model if needed - user will need AI processing
-            // within seconds after recording completes
-            appState?.aiService.prewarmFoundationModelIfNeeded()
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
@@ -616,9 +610,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             logger.logInfo("🎙️ Stopping real capture on cancel")
             prewarmManager.stopRealCapture()
         }
-
-        // Clear any prewarmed Foundation Model session
-        aiService.cancelFoundationModelPrewarm()
 
         resetValues()
         recordingState = .idle

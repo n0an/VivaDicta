@@ -11,109 +11,57 @@ import os
 
 // MARK: - Service
 
-/// Service for AI text enhancement using Apple's on-device Foundation Models
+/// Service for AI text enhancement using Apple's on-device Foundation Models.
+///
+/// Uses the same system message + user message pattern as cloud providers.
+/// The system message becomes session instructions, the user message becomes the prompt.
 @available(iOS 26, *)
 @MainActor
 final class AppleFoundationModelService {
     private let logger = Logger(category: .aiService)
 
-    /// The stored session - created during prewarm, used during enhance
-    private var session: LanguageModelSession?
-
-    /// Prewarm the model for faster first response
-    /// Creates a session with instructions and prewarms with the prompt prefix
+    /// Enhance text using Apple's on-device Foundation Model.
     /// - Parameters:
-    ///   - instructions: The base instructions for the session (role + rules + vocabulary)
-    ///   - promptPrefix: The prompt prefix to prewarm with (user enhancement style)
-    func prewarm(instructions: String, promptPrefix: String) {
-        guard AppleFoundationModelAvailability.isAvailable else { return }
-
-        // Create session with instructions and store it
-        let newSession = LanguageModelSession(instructions: instructions)
-        session = newSession
-
-        // Prewarm with the prompt prefix
-        let prefix = Prompt { promptPrefix }
-        newSession.prewarm(promptPrefix: prefix)
-        logger.logInfo("Apple Foundation Model - Session created and prewarmed with prompt prefix")
-    }
-
-    /// Clear the prewarmed session without using it
-    /// Call this when recording is cancelled to avoid keeping unused session in memory
-    func cancelPrewarm() {
-        guard session != nil else { return }
-        session = nil
-        logger.logInfo("Apple Foundation Model - Prewarmed session cleared")
-    }
-
-    /// Enhance text using Apple's on-device Foundation Model
-    /// Uses the prewarmed session if available, otherwise creates a new one
-    /// - Parameters:
-    ///   - text: The transcription text to enhance
-    ///   - instructions: The base instructions (used if no prewarmed session exists)
-    ///   - promptPrefix: The prompt prefix (user enhancement style)
-    ///   - wrapInTranscriptTags: Whether to wrap the text in <TRANSCRIPT> tags
+    ///   - systemMessage: The system message (same as cloud providers)
+    ///   - userMessage: The formatted user message (transcript, optionally wrapped in tags)
     /// - Returns: The enhanced text
-    func enhance(_ text: String, instructions: String, promptPrefix: String, wrapInTranscriptTags: Bool = true) async throws -> String {
+    func enhance(systemMessage: String, userMessage: String) async throws -> String {
         guard AppleFoundationModelAvailability.isAvailable else {
             throw AppleFoundationModelError.notAvailable
         }
 
-        guard !text.isEmpty else {
+        guard !userMessage.isEmpty else {
             return ""
         }
 
         logger.logNotice("Apple Foundation Model - Starting enhancement")
 
-        // Use prewarmed session if available, otherwise create new one
-        let activeSession: LanguageModelSession
-        if let existingSession = session {
-            activeSession = existingSession
-            logger.logInfo("Apple Foundation Model - Using prewarmed session")
-        } else {
-            activeSession = LanguageModelSession(instructions: instructions)
-            logger.logInfo("Apple Foundation Model - Created new session (no prewarm)")
-        }
-
-        // Build full prompt: prefix + transcript (optionally wrapped in tags)
-        let formattedText = wrapInTranscriptTags ? "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>" : "\n\(text)"
-        let fullPrompt = Prompt {
-            promptPrefix
-            formattedText
-        }
+        let session = LanguageModelSession(instructions: systemMessage)
+        let prompt = Prompt { userMessage }
 
         do {
             // Use greedy sampling for deterministic, consistent transcript cleaning
             let options = GenerationOptions(sampling: .greedy)
-            let response = try await activeSession.respond(to: fullPrompt, options: options)
+            let response = try await session.respond(to: prompt, options: options)
             let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
             logger.logNotice("Apple Foundation Model - Enhancement completed")
 
-            // Debug: Print session transcript
             #if DEBUG
-            logTranscript(activeSession)
+            logTranscript(session)
             #endif
-
-            // Clear session after use - next recording will prewarm fresh
-            session = nil
 
             return filteredText
         } catch is CancellationError {
             logger.logInfo("Apple Foundation Model - Enhancement cancelled")
-            session = nil
             throw CancellationError()
         } catch let error as LanguageModelSession.GenerationError {
             logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
 
-            // Debug: Print transcript even on error
             #if DEBUG
-            logTranscript(activeSession)
+            logTranscript(session)
             #endif
 
-            session = nil
-
-            // Handle specific GenerationError cases
             switch error {
             case .guardrailViolation(let context):
                 logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
@@ -126,7 +74,6 @@ final class AppleFoundationModelService {
             }
         } catch {
             logger.logError("Apple Foundation Model unexpected error: \(error.localizedDescription)")
-            session = nil
             throw AppleFoundationModelError.generationFailed(error.localizedDescription)
         }
     }
