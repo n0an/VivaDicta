@@ -32,7 +32,7 @@ AIService.enhance() / generateVariation()        -- Stage 4: AI enhancement
 AIEnhancementOutputFilter.filter()               -- Stage 5: Clean AI output
     |
     v
-TextFormatter.format()                           -- Stage 5b: Paragraph formatting (if enabled)
+TextFormatter.format()                           -- Stage 5b: Paragraph formatting (Assistant preset only, if enabled)
     |
     v
 [Enhanced text stored]
@@ -86,8 +86,8 @@ Formats continuous transcription text into readable paragraphs using the `Natura
 
 **Called from:**
 - `TranscriptionManager.transcribe()` -- after `TranscriptionOutputFilter`
-- `AIService.enhance()` -- after `AIEnhancementOutputFilter`
-- `AIService.generateVariation()` -- after `AIEnhancementOutputFilter`
+- `AIService.enhance()` -- after `AIEnhancementOutputFilter` (Assistant preset only)
+- `AIService.generateVariation()` -- after `AIEnhancementOutputFilter` (Assistant preset only)
 
 **Conditional:** Setting `isTextFormattingEnabled` (default: `true`).
 
@@ -197,7 +197,7 @@ Smart formatting when inserting transcribed text from the keyboard extension.
 | 6 | `PromptsTemplates.systemPrompt()` | AI system message | When `useSystemTemplate=true` | -- |
 | 7 | `formatTranscriptForLLM()` | AI user message | When `wrapInTranscriptTags=true` | -- |
 | 8 | `AIEnhancementOutputFilter.filter()` | After AI response | Yes | -- |
-| 9 | `TextFormatter.format()` | After AI response | No | `isTextFormattingEnabled` |
+| 9 | `TextFormatter.format()` | After AI response (Assistant only) | No | `isTextFormattingEnabled` |
 | 10 | `TextInsertionFormatter` | Keyboard insertion | No | `isSmartFormattingOnPasteEnabled` |
 
 ### Server-Side Processing
