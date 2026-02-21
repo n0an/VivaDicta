@@ -8,12 +8,11 @@
 import Foundation
 import SwiftData
 
-/// A SwiftData model representing a user-created custom rewrite preset.
+/// Legacy SwiftData model for user-created custom rewrite presets.
 ///
-/// Custom presets are synced via CloudKit between iOS and macOS.
-/// Built-in presets live in ``RewritePresetCatalog`` (static code, not SwiftData).
-///
-/// The schema must match the macOS `CustomRewritePreset` model exactly for CloudKit sync.
+/// Superseded by ``RewritePreset`` for CloudKit sync. Kept in the schema for
+/// migration purposes — ``PresetSyncService`` migrates these records to
+/// `RewritePreset` on first launch.
 @Model
 final class CustomRewritePreset {
     var id: UUID = UUID()
@@ -38,14 +37,4 @@ final class CustomRewritePreset {
         self.createdAt = Date()
     }
 
-    /// Converts to the common `RewritePreset` struct used by the AI pipeline.
-    func toRewritePreset() -> RewritePreset {
-        RewritePreset(
-            id: "custom_\(id.uuidString)",
-            name: name,
-            icon: icon,
-            category: category,
-            systemPrompt: systemPrompt
-        )
-    }
 }

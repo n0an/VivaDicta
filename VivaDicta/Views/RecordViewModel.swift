@@ -530,7 +530,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         text: enhancedText,
                         aiModelName: aiService.selectedMode.aiModel,
                         aiProviderName: aiService.selectedMode.aiProvider?.displayName,
-                        processingDuration: enhancementDur
+                        processingDuration: enhancementDur,
+                        aiRequestSystemMessage: aiService.lastSystemMessageSent,
+                        aiRequestUserMessage: aiService.lastUserMessageSent
                     )
                     variation.transcription = transcription
                     modelContext.insert(variation)

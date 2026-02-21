@@ -10,10 +10,9 @@ import os
 
 /// Manages AI text processing presets with persistence in App Group UserDefaults.
 ///
-/// Replaces ``PromptsManager`` with a unified system that handles both built-in
-/// and custom presets. Built-in presets are editable but not deletable.
-/// Custom presets are stored as ``CustomRewritePreset`` in SwiftData for CloudKit sync,
-/// but also cached here for quick lookups.
+/// Handles both built-in and custom presets. Built-in presets are editable but not deletable.
+/// Custom presets are synced to CloudKit via ``PresetSyncService`` using ``RewritePreset``
+/// SwiftData records.
 ///
 /// ## Storage
 ///
@@ -27,6 +26,9 @@ class PresetManager {
 
     /// All available presets (built-in + custom from UserDefaults).
     private(set) var presets: [Preset] = []
+
+    /// Sync service for writing preset changes to SwiftData/CloudKit.
+    var syncService: PresetSyncService?
 
     init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
          storageKey: String = "Presets_v1") {
@@ -69,6 +71,11 @@ class PresetManager {
     func addPreset(_ preset: Preset) {
         presets.append(preset)
         savePresets()
+
+        if preset.id.hasPrefix("custom_") {
+            syncService?.createPresetRecord(from: preset)
+        }
+
         logger.logInfo("Added preset: \(preset.name)")
     }
 
@@ -77,6 +84,11 @@ class PresetManager {
         guard let index = presets.firstIndex(where: { $0.id == preset.id }) else { return }
         presets[index] = preset
         savePresets()
+
+        if preset.id.hasPrefix("custom_") {
+            syncService?.updatePresetRecord(from: preset)
+        }
+
         logger.logInfo("Updated preset: \(preset.name)")
     }
 
@@ -88,6 +100,11 @@ class PresetManager {
         }
         presets.removeAll { $0.id == preset.id }
         savePresets()
+
+        if preset.id.hasPrefix("custom_") {
+            syncService?.deletePresetRecord(presetId: preset.id)
+        }
+
         logger.logInfo("Deleted preset: \(preset.name)")
     }
 

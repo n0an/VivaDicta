@@ -17,8 +17,8 @@ import Foundation
 /// - **Standalone presets** (`useSystemTemplate = false`): `promptInstructions` IS the full
 ///   system message. Used for summarizing, translating, rewriting tone, etc.
 ///
-/// Built-in presets are editable but not deletable. Custom presets are stored as
-/// ``CustomRewritePreset`` in SwiftData for CloudKit sync.
+/// Built-in presets are editable but not deletable. Custom presets are synced
+/// via ``RewritePreset`` SwiftData records through CloudKit.
 struct Preset: Identifiable, Codable, Equatable, Hashable {
     /// Stable string identifier. Built-in presets use readable IDs (e.g., "regular", "email").
     /// Custom presets use "custom_<UUID>" format.

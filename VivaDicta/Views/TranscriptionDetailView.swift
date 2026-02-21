@@ -694,6 +694,8 @@ struct TranscriptionDetailView: View {
                     existing.presetDisplayName = promptName ?? "Enhanced"
                     existing.processingDuration = duration
                     existing.createdAt = Date()
+                    existing.aiRequestSystemMessage = appState.aiService.lastSystemMessageSent
+                    existing.aiRequestUserMessage = appState.aiService.lastUserMessageSent
                 } else {
                     let variation = TranscriptionVariation(
                         presetId: "enhanced",
@@ -701,7 +703,9 @@ struct TranscriptionDetailView: View {
                         text: enhancedText,
                         aiModelName: appState.aiService.selectedMode.aiModel,
                         aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
-                        processingDuration: duration
+                        processingDuration: duration,
+                        aiRequestSystemMessage: appState.aiService.lastSystemMessageSent,
+                        aiRequestUserMessage: appState.aiService.lastUserMessageSent
                     )
                     variation.transcription = transcription
                     modelContext.insert(variation)
@@ -779,6 +783,8 @@ struct TranscriptionDetailView: View {
                             existing.presetDisplayName = promptName ?? "Enhanced"
                             existing.processingDuration = duration
                             existing.createdAt = Date()
+                            existing.aiRequestSystemMessage = appState.aiService.lastSystemMessageSent
+                            existing.aiRequestUserMessage = appState.aiService.lastUserMessageSent
                         } else {
                             let variation = TranscriptionVariation(
                                 presetId: "enhanced",
@@ -786,7 +792,9 @@ struct TranscriptionDetailView: View {
                                 text: enhancedText,
                                 aiModelName: appState.aiService.selectedMode.aiModel,
                                 aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
-                                processingDuration: duration
+                                processingDuration: duration,
+                                aiRequestSystemMessage: appState.aiService.lastSystemMessageSent,
+                                aiRequestUserMessage: appState.aiService.lastUserMessageSent
                             )
                             variation.transcription = transcription
                             modelContext.insert(variation)
@@ -948,6 +956,8 @@ struct TranscriptionDetailView: View {
                     existing.aiModelName = appState.aiService.selectedMode.aiModel
                     existing.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
                     existing.processingDuration = duration
+                    existing.aiRequestSystemMessage = appState.aiService.lastSystemMessageSent
+                    existing.aiRequestUserMessage = appState.aiService.lastUserMessageSent
                 } else {
                     let variation = TranscriptionVariation(
                         presetId: preset.id,
@@ -955,7 +965,9 @@ struct TranscriptionDetailView: View {
                         text: resultText,
                         aiModelName: appState.aiService.selectedMode.aiModel,
                         aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
-                        processingDuration: duration
+                        processingDuration: duration,
+                        aiRequestSystemMessage: appState.aiService.lastSystemMessageSent,
+                        aiRequestUserMessage: appState.aiService.lastUserMessageSent
                     )
                     variation.transcription = transcription
                     modelContext.insert(variation)

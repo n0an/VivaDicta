@@ -41,6 +41,12 @@ final class TranscriptionVariation {
     /// Duration of the AI processing in seconds.
     var processingDuration: TimeInterval?
 
+    /// The system message sent to the AI provider when generating this variation.
+    var aiRequestSystemMessage: String?
+
+    /// The user message sent to the AI provider when generating this variation.
+    var aiRequestUserMessage: String?
+
     /// The parent transcription this variation belongs to.
     @Relationship(inverse: \Transcription.variations)
     var transcription: Transcription?
@@ -51,7 +57,9 @@ final class TranscriptionVariation {
          createdAt: Date = Date(),
          aiModelName: String? = nil,
          aiProviderName: String? = nil,
-         processingDuration: TimeInterval? = nil) {
+         processingDuration: TimeInterval? = nil,
+         aiRequestSystemMessage: String? = nil,
+         aiRequestUserMessage: String? = nil) {
         self.presetId = presetId
         self.presetDisplayName = presetDisplayName
         self.text = text
@@ -59,5 +67,7 @@ final class TranscriptionVariation {
         self.aiModelName = aiModelName
         self.aiProviderName = aiProviderName
         self.processingDuration = processingDuration
+        self.aiRequestSystemMessage = aiRequestSystemMessage
+        self.aiRequestUserMessage = aiRequestUserMessage
     }
 }

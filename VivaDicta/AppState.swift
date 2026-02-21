@@ -68,6 +68,9 @@ class AppState {
     /// Manager for AI text processing presets.
     var presetManager: PresetManager!
 
+    /// Service for syncing custom presets via CloudKit.
+    var presetSyncService: PresetSyncService!
+
     // MARK: - Navigation State
 
     /// Triggers navigation to the Models screen.
@@ -88,6 +91,15 @@ class AppState {
         presetManager = PresetManager()
         aiService.presetManager = presetManager
         PresetMigrationService.migrateIfNeeded(presetManager: presetManager, aiService: aiService)
+
+        // Set up preset sync service for CloudKit sync
+        presetSyncService = PresetSyncService()
+        presetSyncService.configure(modelContext: modelContainer.mainContext)
+        presetSyncService.migrateOldCustomRewritePresets()
+        presetSyncService.migrateExistingCustomPresets(presetManager: presetManager)
+        presetSyncService.syncFromCloudKit(presetManager: presetManager)
+        presetManager.syncService = presetSyncService
+
         recordViewModel = RecordViewModel(appState: self, modelContainer: modelContainer)
         downloadManager = ModelDownloadManager()
 

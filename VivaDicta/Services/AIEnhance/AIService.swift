@@ -92,6 +92,12 @@ class AIService {
     /// Preset manager for resolving preset IDs to full preset data.
     public var presetManager: PresetManager?
 
+    /// The last system message sent to an AI provider (for storing in TranscriptionVariation).
+    public private(set) var lastSystemMessageSent: String?
+
+    /// The last user message sent to an AI provider (for storing in TranscriptionVariation).
+    public private(set) var lastUserMessageSent: String?
+
     public var onModeChange: ((VivaMode) -> Void)?
 
     public var selectedModeName: String {
@@ -619,6 +625,8 @@ class AIService {
     /// - Returns: A tuple of the generated text and processing duration.
     public func generateVariation(text: String, preset: Preset) async throws -> (String, TimeInterval) {
         let startTime = Date()
+        // Store system message for variation; user message is stored by makeRequest
+        lastSystemMessageSent = preset.promptInstructions
         let result = try await makeRequest(text: text, systemMessage: preset.promptInstructions)
         let duration = Date().timeIntervalSince(startTime)
         return (result, duration)
@@ -694,6 +702,10 @@ class AIService {
         }
 
         let formattedText = formatTranscriptForLLM(text)
+
+        // Store for TranscriptionVariation
+        lastSystemMessageSent = resolvedSystemMessage
+        lastUserMessageSent = formattedText
 
         logger.logDebug("AI Enhancement - System Message: \(resolvedSystemMessage)")
         logger.logDebug("AI Enhancement - User Message: \(formattedText)")
@@ -919,6 +931,10 @@ class AIService {
         let systemMessage = systemMessage ?? getSystemMessage()
         let formattedText = formatTranscriptForLLM(text)
 
+        // Store for TranscriptionVariation
+        lastSystemMessageSent = systemMessage
+        lastUserMessageSent = formattedText
+
         logger.logDebug("AI Enhancement - Using Ollama at \(serverURL)")
         logger.logDebug("AI Enhancement - Model: \(self.selectedMode.aiModel)")
         logger.logDebug("AI Enhancement - System Message: \(systemMessage)")
@@ -1140,6 +1156,10 @@ class AIService {
 
         let systemMessage = systemMessage ?? getSystemMessage()
         let formattedText = formatTranscriptForLLM(text)
+
+        // Store for TranscriptionVariation
+        lastSystemMessageSent = systemMessage
+        lastUserMessageSent = formattedText
 
         logger.logDebug("AI Enhancement - Using Custom OpenAI at \(endpointURL)")
         logger.logDebug("AI Enhancement - Model: \(modelName)")
