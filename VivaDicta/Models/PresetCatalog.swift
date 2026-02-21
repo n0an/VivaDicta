@@ -269,8 +269,19 @@ enum PresetCatalog {
     }
 
     /// Returns the display name for a preset ID, with a fallback.
+    ///
+    /// Checks built-in presets first, then looks up custom presets from UserDefaults.
     static func displayName(for presetId: String, fallback: String) -> String {
-        allBuiltIn.first { $0.id == presetId }?.name ?? fallback
+        if let builtIn = allBuiltIn.first(where: { $0.id == presetId }) {
+            return builtIn.name
+        }
+        // Look up custom preset name from shared UserDefaults
+        if let data = UserDefaultsStorage.shared.data(forKey: "Presets_v1"),
+           let presets = try? JSONDecoder().decode([Preset].self, from: data),
+           let preset = presets.first(where: { $0.id == presetId }) {
+            return preset.name
+        }
+        return fallback
     }
 
     /// Returns the icon for a preset ID.

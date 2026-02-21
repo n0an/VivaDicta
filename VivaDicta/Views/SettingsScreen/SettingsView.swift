@@ -57,7 +57,7 @@ struct SettingsView: View {
                     
                     ForEach(appState.aiService.modes) { mode in
                         NavigationLink(value: mode) {
-                            ModeInfoRow(mode: mode, connectedProviders: appState.aiService.connectedProviders)
+                            ModeInfoRow(mode: mode, connectedProviders: appState.aiService.connectedProviders, presetManager: appState.presetManager)
                         }
                         .contextMenu {
                             Button {
@@ -556,6 +556,7 @@ iOS Version: \(systemVersion)
 private struct ModeInfoRow: View {
     let mode: VivaMode
     let connectedProviders: [AIProvider]
+    let presetManager: PresetManager
 
     private var transcriptionModelDisplayName: String {
         // For custom transcription, show the actual configured model name
@@ -656,7 +657,8 @@ private struct ModeInfoRow: View {
                                 Text(mode.aiModel)
                                     .foregroundStyle(.tertiary)
                                 if let presetId = mode.presetId {
-                                    Text(PresetCatalog.displayName(for: presetId, fallback: presetId))
+                                    Text(presetManager.preset(for: presetId)?.name
+                                         ?? PresetCatalog.displayName(for: presetId, fallback: presetId))
                                         .foregroundStyle(.tertiary)
                                 }
                             }
