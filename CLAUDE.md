@@ -13,128 +13,88 @@ When @.claude/skills is mentioned or when starting a task:
 4. Note any deviations from the skill pattern and why
 5. Suggest new skills when you see repeated patterns (use `.claude/commands/create-skill.md` to create a new skill)
 
-
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
-- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
-- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
-
-# VivaDicta iOS Codebase
-
-VivaDicta is an iOS voice transcription app that uses on-device transcription (WhisperKit and Parakeet) and cloud-based transcription services. The app records audio, transcribes it using AI models, and stores transcriptions with SwiftData for persistent storage.
-
-# Code style
-Use private for functions and proverties that called only from the same entity (struct, enum, class). Use public for functions and properties that called from other entities.
 
 ## Build Commands
-
-Use the following commands to build, run and test the app:
 
 - Build: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' build 2>&1 | xcsift`
 - Run tests: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test 2>&1 | xcsift`
 - Run single test: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test -only-testing:VivaDictaTests/TestClassName/testMethodName 2>&1 | xcsift`
 
+## App Overview
+
+VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet) and cloud transcription, AI text processing via multiple providers, and CloudKit sync with a companion macOS app (VivaDictaMac).
+
 ## Architecture
 
-### Core Components
+### Core Flow: Recording → Transcription → AI Processing → Storage
 
-- **AppState**: Observable app-wide state management using Swift's `@Observable` macro. Coordinates TranscriptionManager and AIService with mode-based configuration.
-- **Transcription Model**: SwiftData model for persistent storage of transcriptions with metadata including text, timestamps, enhanced text, audio file URL, duration, and transcription/enhancement model names.
-- **TranscriptionManager**: Central manager coordinating all transcription services (WhisperKit, Parakeet, and cloud providers) with mode-aware model selection.
-- **TranscriptionService Protocol**: Abstraction for different transcription backends enabling unified interface across on-device and cloud services.
+1. **RecordView/RecordViewModel** — records audio via AVAudioRecorder
+2. **TranscriptionManager** — routes to on-device (WhisperKit/Parakeet) or cloud provider
+3. **AIService** — AI text processing using the mode's active preset. Builds system/user messages via `PromptsTemplates`, sends to cloud providers or Apple Foundation Model
+4. **Text Processing Pipeline** — multi-stage: raw text → word replacements → custom vocabulary → AI processing → output filter → paragraph formatting → text insertion formatting. See `docs/text-processing-pipeline.md`
+5. **Transcription** (SwiftData) — persisted with `text`, `enhancedText`, audio file reference, and linked `TranscriptionVariation` records
 
-### App Structure
+### Data Model: Transcription + Variations (Dual-Write Pattern)
 
-- **TabBarView**: Main navigation with tabs for recording, transcriptions, models, and settings
-- **RecordView/RecordViewModel**: Audio recording interface with AVAudioRecorder integration and real-time audio level monitoring
-- **ModelsView**: Management of on-device models (WhisperKit and Parakeet) with download/delete functionality and cloud API configuration
-- **TranscriptionsView**: Display and management of saved transcriptions with search functionality and performance-optimized filtering
-- **TranscriptionRowView**: Reusable component for transcription list items
-- **TranscriptionDetailView**: Detailed view showing both original and AI-enhanced transcription text
+- **`Transcription`** — SwiftData model with `text` (original), `enhancedText` (latest AI output cache), and `@Relationship(deleteRule: .cascade) var variations: [TranscriptionVariation]?`
+- **`TranscriptionVariation`** — each AI-generated output stored separately with `presetId`, `text`, `aiModelName`, `processingDuration`, etc.
+- **Dual-write**: When AI processes text, both `transcription.enhancedText` and a `TranscriptionVariation` are written. When a new variation is generated from TranscriptionDetailView, `enhancedText` is updated to the latest result.
+- **`enhancedText`** serves as a "latest AI output" cache read by: list row preview, search predicate, Spotlight indexing, Shortcuts/App Intents, clipboard operations
+- **`VariationMigrationService`** — one-time migration of legacy `enhancedText` values to "regular" variations on first launch
 
-### Transcription Services
+### Preset System
 
-- **WhisperKitTranscriptionService**: Uses WhisperKit package for on-device OpenAI Whisper model inference with performance metrics tracking
-- **ParakeetTranscriptionService**: Uses FluidAudio framework for on-device NVIDIA Parakeet model transcription with VAD (Voice Activity Detection) support
-- **CloudTranscriptionService**: Unified service managing multiple cloud providers:
-  - **OpenAITranscriptionService**: OpenAI Whisper API
-  - **ElevenLabsTranscriptionService**: ElevenLabs speech-to-text
-  - **GroqTranscriptionService**: Groq API transcription
-  - **DeepgramTranscriptionService**: Deepgram Nova API
-  - **GeminiTranscriptionService**: Google Gemini API
-- **TranscriptionManager**: Coordinates between on-device (WhisperKit/Parakeet) and cloud services with mode-aware model selection
-- **AIService**: AI-powered text enhancement service for improving transcription quality using cloud AI models
+- **`Preset`** — in-memory value type with `id`, `name`, `instructions`, `icon`
+- **`PresetCatalog`** — static catalog of built-in presets (Regular, Summary, Action Points, Professional, Casual, Email, Chat, Coding, Rewrite, translations, Assistant) with stable UUIDs
+- **`PresetManager`** — manages active presets, merges built-in + custom, handles mode-to-preset mapping
+- **`CustomRewritePreset`** — SwiftData model for user-created presets, synced via CloudKit
+- **`PresetSyncService`** — bridges UserDefaults-stored preset selections with SwiftData/CloudKit for cross-device sync of edited built-in presets
 
-### Key Technologies
+### AI Processing (AIService)
 
-- **Swift 6.0** with strict concurrency enabled
-- **SwiftUI** for UI with SwiftData for persistence
-- **AVFoundation** for audio recording/playback
-- **WhisperKit** - On-device OpenAI Whisper model inference
-- **FluidAudio** - On-device NVIDIA Parakeet model transcription with VAD
-- **SiriWaveView** package for audio visualization
-- **TipKit** for user onboarding and feature discovery
+- **`AIService`** — central service for all AI text processing. Uses `VivaMode` for per-mode configuration (provider, model, preset)
+- **`PromptsTemplates`** — unified system prompt template used by all providers (cloud and Apple FM)
+- **Providers**: OpenAI, Anthropic, Google Gemini, Mistral, Groq, OpenRouter, xAI, Ollama, Custom OpenAI-compatible, Apple Foundation Model (iOS 26+)
+- **`generateVariation(text:preset:)`** — generates AI output for a specific preset, returns `(text, duration)`
+- **`makeRequest()`** — core method routing to the correct provider. Accepts optional `systemMessage`/`preFormattedUserMessage` for variation generation with custom presets
+
+### App Extensions & Targets
+
+- **VivaDictaKeyboard** — custom keyboard extension with recording/transcription. Communicates with main app via `AppGroupCoordinator` and shared UserDefaults
+- **VivaDictaWidget** — home/lock screen widgets + Live Activity for recording status
+- **ActionExtension** — action extension for processing text from other apps
+- **ShareExtension** — share extension for receiving audio/text from other apps
+
+### Cross-Platform Sync
+
+- CloudKit container `iCloud.com.antonnovoselov.VivaDicta` shared with macOS VivaDictaMac app
+- SwiftData models (`Transcription`, `TranscriptionVariation`, `CustomRewritePreset`, `VocabularyWord`, `WordReplacement`) sync automatically
+- API keys stored in iCloud Keychain via `KeychainService` for cross-device access
+- Preset ID compatibility: iOS uses string aliases ("regular", "summary") that map to stable UUIDs on both platforms
+
+### Spotlight & App Intents
+
+- **`TranscriptionEntity`** — `@AppEntity` for Shortcuts/Siri integration. Created from `Transcription.entity` computed property. Has its own `searchableAttributes` for Spotlight indexing
+- **`Transcription.searchableAttributes()`** — generates `CSSearchableItemAttributeSet` for `NSUserActivity` (Siri predictions). Includes all variation text
+- Spotlight must be re-indexed after any data change (transcription creation, variation generation, retranscription)
+
+## Code Style
+
+- Use `private` for functions/properties called only within the same type. Use `public` for cross-type access.
+- Use "AI Processing" terminology (not "AI Enhancement") in UI-facing text and status labels
+
+## Key Technologies
+
+- **Swift 6.0** with strict concurrency
+- **SwiftUI** + **SwiftData** with CloudKit
 - **iOS 18+ deployment target**
-
-### Language Support
-
-The app currently supports Auto Detect, English, and Russian languages. The codebase includes infrastructure for 20+ additional languages with localized prompts prepared for future expansion.
-
-### Enhanced Transcription Features
-
-- **AI Text Enhancement**: Dedicated AIService for improving transcription quality using cloud AI models
-- **Audio Duration Tracking**: Transcriptions include audio duration metadata for better file management  
-- **Search Functionality**: Full-text search across both original and enhanced transcription text
-- **Multiple Transcription Providers**: Users can choose from various cloud providers based on their needs and preferences
-
-## Documentation
-
-The `/docs/` directory contains comprehensive reference documentation for Apple technologies:
-- `swift.md` - Complete Swift language reference and patterns
-- `swift6-migration.mdc` - Swift 6 migration guide and concurrency best practices
-- `swift-concurrency.md` - Detailed Swift concurrency patterns and async/await usage
-- `swift-observable.mdc` - Swift Observation framework (@Observable macro)
-- `swift-argument-parser.mdc` - Swift Argument Parser for command-line tools
-- `swift-testing-api.mdc` - Swift Testing framework API reference
-- `swift-testing-playbook.mdc` - Swift Testing best practices and patterns
-- `swiftdata.md` - SwiftData persistence patterns and model definitions
-- `swiftui.md` - SwiftUI patterns, view composition, and state management
-- `uikit.md` - UIKit integration and interoperability
-- `xcode.md` - Xcode development environment and tools
-- `xcode26docs.mdc` - Xcode 26 specific features and documentation
-
-Additional Xcode documentation is available at:
-- `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/` - Latest iOS/Swift development documentation and updates
-
-Refer to these docs when working with Apple frameworks or implementing new features.
-
-There are transcripts of relevand WWDC sessions in the `/docs/wwdc-transcripts`. Use them to find relevant info.
-You can find all WWDC transcripts here - https://gist.github.com/auramagi/9c040c2233dfe71c24c76942e186f788
-
-## Performance & Best Practices
-
-- **State Management**: Use `@State` with `onChange` modifiers instead of computed properties for expensive filtering operations
-- **Component Extraction**: Extract reusable UI components for better code organization and maintainability
-- **Concurrency**: All UI updates properly isolated to `@MainActor` with Swift 6 strict concurrency
-- **Memory Management**: Efficient model loading and unloading patterns for on-device transcription models (WhisperKit/Parakeet)
-
-
-- **Xcode Target Management**: When an EXISTING file needs to be added to ADDITIONAL targets (e.g., adding an existing model file to both widget and keyboard extension targets), notify the user to manually add it in Xcode. This is a simple one-click operation for the user but complex to do programmatically via .xcodeproj file manipulation. NEW files are automatically added to the main app target by default and don't require manual intervention unless they specifically need to be in multiple targets.
-
-## Code Review Guidelines
-
-When reviewing code for this project, keep in mind:
-- Use Swift's **@Observable** macro, NOT @ObservableObject/@Published/Combine patterns
-- SwiftUI Views are implicitly @MainActor in Swift 6 - explicit annotation usually not needed
-- Use **SwiftData @Model**, NOT Core Data NSManagedObject
-- Prefer **async/await** over completion handlers
-- Use **@State/@Binding** for SwiftUI state, NOT @StateObject
-- Extract reusable components for better code organization
-- Optimize performance by using @State with onChange for expensive operations instead of computed properties
+- **AVFoundation** for audio recording/playback
+- **WhisperKit** / **FluidAudio** (Parakeet) for on-device transcription
+- **CoreSpotlight** + **App Intents** for system integration
 
 ## SwiftData #Predicate Best Practices
-
-When filtering optional fields in SwiftData predicates, use this proven pattern:
 
 ```swift
 #Predicate<Model> { item in
@@ -147,33 +107,31 @@ When filtering optional fields in SwiftData predicates, use this proven pattern:
 }
 ```
 
-**✅ WORKS:**
-- Optional chaining with nil coalescing: `optionalField?.method() ?? false`
-- Simple boolean logic with `||` and `&&`
-- Basic comparisons: `==`, `!=`, `<`, `>`
-- `localizedStandardContains()` for text search
+**Works:** Optional chaining with `?? false`, simple boolean logic, basic comparisons, `localizedStandardContains()`
 
-**❌ AVOID (causes crashes or failures):**
-- Force unwrapping: `optionalField!.method()`
-- Explicit nil checking: `optionalField != nil && optionalField!.method()`
-- Ternary operators: `(optionalField ?? "").method()`
-- Complex Swift expressions that don't translate to SQL
+**Avoid (crashes):** Force unwrapping, explicit nil checks with `&&`, ternary operators, complex Swift expressions that don't translate to SQL
 
-**Key principles:**
-- Keep predicates simple - SwiftData has limited Swift-to-SQL translation
-- Use `localizedStandardContains` for text search (handles case, diacritics)
-- Follow patterns from working examples (VoiceInk, FaceFacts, iExpense)
-- Test thoroughly - predicate errors often appear at runtime, not compile time
+## SwiftData + CloudKit Rules
 
-## SwiftUI
-- Don't use NavigationView {}, use modern NavigationStack instead
-- Use `foregroundStyle` instead of deprecated `foregroundColor` (iOS 17+)
+- Never use `@Attribute(.unique)`
+- Model properties must have default values or be optional
+- All relationships must be optional
 
+## Xcode Target Management
+
+When an EXISTING file needs to be added to ADDITIONAL targets, notify the user to manually add it in Xcode. NEW files are automatically added to the main app target.
 
 ## AI-Powered PR Review
 
-The repository includes automated GitHub Actions workflow for AI-powered code review with iOS test execution. TypeScript scripts in `/lib/agents/` orchestrate code review generation and test running using either OpenAI or Anthropic APIs.
+GitHub Actions workflow for automated code review with iOS test execution. TypeScript scripts in `/lib/agents/`.
 
+## Documentation
+
+Reference docs are in `/docs/references/` (Swift, SwiftUI, SwiftData, Xcode, etc.). WWDC session transcripts in `/docs/references/wwdc-transcripts/`. Text processing pipeline documented in `/docs/text-processing-pipeline.md`.
+
+Additional Xcode documentation at `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`.
+
+All WWDC transcripts index: https://gist.github.com/auramagi/9c040c2233dfe71c24c76942e186f788
 
 ## Swift Instructions
 
@@ -185,7 +143,6 @@ The repository includes automated GitHub Actions workflow for AI-powered code re
 - Never use old-style Grand Central Dispatch concurrency such as `DispatchQueue.main.async()`. If behavior like this is needed, always use modern Swift concurrency.
 - Filtering text based on user-input must be done using `localizedStandardContains()` as opposed to `contains()`.
 - Avoid force unwraps and force `try` unless it is unrecoverable.
-
 
 ## SwiftUI Instructions
 
@@ -210,23 +167,6 @@ The repository includes automated GitHub Actions workflow for AI-powered code re
 - Avoid `AnyView` unless it is absolutely required.
 - Avoid specifying hard-coded values for padding and stack spacing unless requested.
 - Avoid using UIKit colors in SwiftUI code.
-
-
-## SwiftData Instructions (CloudKit)
-
-If SwiftData is configured to use CloudKit:
-
-- Never use `@Attribute(.unique)`.
-- Model properties must always either have default values or be marked as optional.
-- All relationships must be marked optional.
-
-
-## Project Structure
-
-- Use a consistent project structure, with folder layout determined by app features.
-- Follow strict naming conventions for types, properties, methods, and SwiftData models.
-- Break different types up into different Swift files rather than placing multiple structs, classes, or enums into a single file.
-- Write unit tests for core application logic.
-- Only write UI tests if unit tests are not possible.
-- Add code comments and documentation comments as needed.
-- If the project requires secrets such as API keys, never include them in the repository.
+- Use `@State` with `onChange` modifiers instead of computed properties for expensive filtering operations.
+- SwiftUI Views are implicitly @MainActor in Swift 6 — explicit annotation usually not needed.
+- Use **@State/@Binding** for SwiftUI state, NOT @StateObject.
