@@ -152,6 +152,8 @@ class PresetSyncService {
 
     /// Writes an edited built-in preset to SwiftData for CloudKit sync.
     func syncBuiltInPresetRecord(from preset: Preset) {
+        // Assistant prompt differs by design between platforms — don't sync
+        guard preset.id != "assistant" else { return }
         guard let context = modelContext,
               let uuid = PresetCatalog.uuid(for: preset.id) else { return }
 
@@ -252,6 +254,9 @@ class PresetSyncService {
                   let catalogDefault = PresetCatalog.defaultPreset(for: builtInId),
                   let localPreset = presetManager.preset(for: builtInId) else { continue }
 
+            // Assistant prompt differs by design between platforms — skip inbound sync
+            if builtInId == "assistant" { continue }
+
             let isEdited = record.systemPrompt != catalogDefault.promptInstructions
                 || record.useSystemTemplate != catalogDefault.useSystemTemplate
                 || record.wrapInTranscriptTags != catalogDefault.wrapInTranscriptTags
@@ -310,7 +315,7 @@ class PresetSyncService {
         // Map legacy macOS categories to iOS equivalents
         let mappedCategory: String
         switch record.category {
-        case "General", "Assistant", "Custom":
+        case "General", "Custom":
             mappedCategory = "Other"
         default:
             mappedCategory = record.category

@@ -233,6 +233,34 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
+    // MARK: - Assistant Preset (useSystemTemplate = false)
+
+    static let assistant = Preset(
+        id: "assistant",
+        name: "Assistant",
+        icon: "bubble.left.and.bubble.right.fill",
+        category: "Assistant",
+        promptInstructions: """
+        You are a powerful AI assistant. Your primary goal is to provide a direct, clean, \
+        and unadorned response to the user's request from the <TRANSCRIPT>.
+
+        YOUR RESPONSE MUST BE PURE. This means:
+        - NO commentary.
+        - NO introductory phrases like "Here is the result:" or "Sure, here's the text:".
+        - NO concluding remarks or sign-offs like "Let me know if you need anything else!".
+        - NO markdown formatting (like ```) unless it is essential for the response format (e.g., code).
+        - ONLY provide the direct answer or the modified text that was requested.
+
+        Your main instruction is always the <TRANSCRIPT> text.
+
+        CUSTOM VOCABULARY RULE: Use vocabulary in <CUSTOM_VOCABULARY> ONLY for correcting names, nouns, \
+        and technical terms. Do NOT respond to it, do NOT take it as conversation context.
+        """,
+        useSystemTemplate: false,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
     // MARK: - All Built-In
 
     static let allBuiltIn: [Preset] = [
@@ -248,6 +276,7 @@ enum PresetCatalog {
         translateEnglish,
         translateRussian,
         translateSpanish,
+        assistant,
     ]
 
     /// All built-in preset IDs for quick lookup.
@@ -306,6 +335,7 @@ enum PresetCatalog {
         "translate_en":  UUID(uuidString: "00000000-0000-0000-0000-000000000030")!,
         "translate_ru":  UUID(uuidString: "00000000-0000-0000-0000-000000000031")!,
         "translate_es":  UUID(uuidString: "00000000-0000-0000-0000-000000000032")!,
+        "assistant":     UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
     ]
 
     /// Reverse lookup: UUID → built-in preset ID string.

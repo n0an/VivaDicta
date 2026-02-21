@@ -29,7 +29,12 @@ struct PresetFormView: View {
         return name != preset.name || category != preset.category || promptInstructions != preset.promptInstructions || useSystemTemplate != preset.useSystemTemplate || wrapInTranscriptTags != preset.wrapInTranscriptTags
     }
 
+    private var isAssistantPreset: Bool {
+        existingPreset?.id == "assistant"
+    }
+
     private var canSave: Bool {
+        if isAssistantPreset { return false }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty, !promptInstructions.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return false
@@ -90,31 +95,39 @@ struct PresetFormView: View {
                 }
             }
 
-            Section {
-                Toggle("Use System Prompt", isOn: $useSystemTemplate)
-                Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
-            }
-
-            if let preset = existingPreset, preset.isBuiltIn {
-                Section("Category") {
-                    Text(category)
+            if isAssistantPreset {
+                Section {
+                    Text("This preset uses a dedicated AI assistant prompt that responds to your requests instead of cleaning up transcriptions.")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             } else {
-                Section("Category") {
-                    Picker("Category", selection: $category) {
-                        ForEach(allCategories, id: \.self) { cat in
-                            Text(cat).tag(cat)
-                        }
-                    }
-                    .pickerStyle(.menu)
+                Section {
+                    Toggle("Use System Prompt", isOn: $useSystemTemplate)
+                    Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
                 }
-            }
 
-            Section("Instructions") {
-                TextEditor(text: $promptInstructions)
-                    .frame(minHeight: 200)
-                    .font(.body.monospaced())
+                if let preset = existingPreset, preset.isBuiltIn {
+                    Section("Category") {
+                        Text(category)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Section("Category") {
+                        Picker("Category", selection: $category) {
+                            ForEach(allCategories, id: \.self) { cat in
+                                Text(cat).tag(cat)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+
+                Section("Instructions") {
+                    TextEditor(text: $promptInstructions)
+                        .frame(minHeight: 200)
+                        .font(.body.monospaced())
+                }
             }
 
             if canReset {
@@ -128,15 +141,17 @@ struct PresetFormView: View {
         }
         .navigationTitle(navigationTitle)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button(isCreateMode ? "Add" : "Save") {
-                    if isCreateMode {
-                        createPreset()
-                    } else {
-                        savePreset()
+            if !isAssistantPreset {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(isCreateMode ? "Add" : "Save") {
+                        if isCreateMode {
+                            createPreset()
+                        } else {
+                            savePreset()
+                        }
                     }
+                    .disabled(!canSave)
                 }
-                .disabled(!canSave)
             }
         }
         .confirmationDialog("Reset to Default",
