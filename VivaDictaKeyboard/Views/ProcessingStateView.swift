@@ -34,7 +34,7 @@ public enum ProcessingStage {
         case .transcribing:
             return "Transcribing..."
         case .enhancingWithAI:
-            return "AI Enhancing..."
+            return "AI Processing..."
         case .completed:
             return "Completed"
         case .error(let message):

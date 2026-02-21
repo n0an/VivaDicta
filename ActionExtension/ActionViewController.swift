@@ -369,7 +369,7 @@ struct ActionExtensionView: View {
     private var aiEnhancementInfoSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("AI Enhancement")
+                Text("AI Processing")
                     .font(.subheadline.bold())
                     .foregroundStyle(.primary)
 
