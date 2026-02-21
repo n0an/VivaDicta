@@ -237,7 +237,6 @@ class PresetSyncService {
 
     private func mapCategoryToMacOS(_ iosCategory: String) -> String {
         switch iosCategory {
-        case "Enhancement": return "Custom"
         case "Other": return "Custom"
         default: return iosCategory
         }

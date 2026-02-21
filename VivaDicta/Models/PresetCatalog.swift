@@ -18,14 +18,14 @@ import Foundation
 /// Preset IDs must match between iOS and macOS for CloudKit variation compatibility.
 enum PresetCatalog {
 
-    // MARK: - Enhancement Presets (useSystemTemplate = true)
+    // MARK: - Rewrite Presets (useSystemTemplate = true)
     // These are injected into the TRANSCRIPTION ENHANCER system prompt wrapper.
 
     static let regular = Preset(
         id: "regular",
         name: "Regular",
         icon: "text.alignleft",
-        category: "Enhancement",
+        category: "Rewrite",
         promptInstructions: """
         Clean up <TRANSCRIPT>:
         1. Keep speaker's personality (e.g., "I think", "The thing is")
@@ -44,7 +44,7 @@ enum PresetCatalog {
         id: "email",
         name: "Email",
         icon: "envelope.fill",
-        category: "Enhancement",
+        category: "Rewrite",
         promptInstructions: """
         Format <TRANSCRIPT> as professional email:
         1. Add greeting and sign-off with [Your Name]
@@ -71,7 +71,7 @@ enum PresetCatalog {
         id: "chat",
         name: "Chat",
         icon: "bubble.left.fill",
-        category: "Enhancement",
+        category: "Rewrite",
         promptInstructions: """
         Format <TRANSCRIPT> for casual chat:
         1. Keep informal, friendly tone
@@ -90,7 +90,7 @@ enum PresetCatalog {
         id: "coding",
         name: "Coding",
         icon: "chevron.left.forwardslash.chevron.right",
-        category: "Enhancement",
+        category: "Rewrite",
         promptInstructions: """
         Clean up <TRANSCRIPT> from programming session:
         1. Fix technical terms and code references
@@ -105,7 +105,23 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    // MARK: - Summarize Presets (standalone)
+    static let rewrite = Preset(
+        id: "rewrite",
+        name: "Rewrite",
+        icon: "pencil",
+        category: "Rewrite",
+        promptInstructions: """
+        Rewrite the following transcript clearly and concisely. \
+        Fix grammar, remove filler words, and improve readability. \
+        Maintain all facts, meaning, and the speaker's intent. \
+        Output only the rewritten text, nothing else.
+        """,
+        useSystemTemplate: false,
+        wrapInTranscriptTags: false,
+        isBuiltIn: true
+    )
+
+    // MARK: - Summarize Presets
 
     static let summary = Preset(
         id: "summary",
@@ -136,8 +152,6 @@ enum PresetCatalog {
         wrapInTranscriptTags: false,
         isBuiltIn: true
     )
-
-    // MARK: - Rewrite Presets (standalone)
 
     static let professional = Preset(
         id: "professional",
@@ -220,13 +234,14 @@ enum PresetCatalog {
 
     static let allBuiltIn: [Preset] = [
         regular,
+        professional,
+        casual,
         email,
         chat,
         coding,
+        rewrite,
         summary,
         actionPoints,
-        professional,
-        casual,
         translateEnglish,
         translateRussian,
         translateSpanish,
@@ -234,19 +249,6 @@ enum PresetCatalog {
 
     /// All built-in preset IDs for quick lookup.
     static let builtInIds: Set<String> = Set(allBuiltIn.map(\.id))
-
-    /// Standalone presets (Summarize, Rewrite, Translate) - used in TranscriptionDetailView.
-    static let standalonePresets: [Preset] = allBuiltIn.filter { !$0.useSystemTemplate }
-
-    /// Categories for standalone presets only.
-    static var standaloneCategories: [String] {
-        var seen = Set<String>()
-        return standalonePresets.compactMap { preset in
-            if seen.contains(preset.category) { return nil }
-            seen.insert(preset.category)
-            return preset.category
-        }
-    }
 
     /// Ordered category names preserving insertion order.
     static var categories: [String] {

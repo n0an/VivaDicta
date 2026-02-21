@@ -922,6 +922,7 @@ struct TranscriptionDetailView: View {
         .disabled(generatingPresetId != nil || !appState.aiService.isProperlyConfigured())
         .sheet(isPresented: $showPresetPicker) {
             PresetPickerSheet(
+                presetManager: appState.presetManager,
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
                 onSelect: { preset in
                     showPresetPicker = false
@@ -995,16 +996,46 @@ struct TranscriptionDetailView: View {
 // MARK: - Preset Picker Sheet
 
 private struct PresetPickerSheet: View {
+    let presetManager: PresetManager
     let existingVariationIds: Set<String>
     let onSelect: (Preset) -> Void
+
+    @State private var filter: PresetFilter = .all
+
+    private var filteredPresets: [Preset] {
+        switch filter {
+        case .all: presetManager.presets
+        case .system: presetManager.presets.filter(\.isBuiltIn)
+        case .custom: presetManager.presets.filter { !$0.isBuiltIn }
+        }
+    }
+
+    private var filteredCategories: [String] {
+        var seen = Set<String>()
+        return filteredPresets.compactMap { preset in
+            if seen.contains(preset.category) { return nil }
+            seen.insert(preset.category)
+            return preset.category
+        }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(PresetCatalog.standaloneCategories, id: \.self) { category in
+                Section {
+                    Picker("Filter", selection: $filter) {
+                        ForEach(PresetFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                }
+
+                ForEach(filteredCategories, id: \.self) { category in
                     Section(category) {
-                        let presets = PresetCatalog.standalonePresets.filter { $0.category == category }
-                        ForEach(presets) { preset in
+                        ForEach(filteredPresets.filter { $0.category == category }) { preset in
                             presetRow(preset)
                         }
                     }

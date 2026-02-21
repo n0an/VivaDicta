@@ -73,7 +73,7 @@ struct PresetFormView: View {
         self.existingPreset = nil
         self.presetManager = presetManager
         self._name = State(initialValue: "")
-        self._category = State(initialValue: "Enhancement")
+        self._category = State(initialValue: "Rewrite")
         self._promptInstructions = State(initialValue: "")
         self._useSystemTemplate = State(initialValue: true)
         self._wrapInTranscriptTags = State(initialValue: true)

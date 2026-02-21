@@ -60,10 +60,6 @@ class PresetManager {
         }
     }
 
-    /// Returns only enhancement presets (useSystemTemplate = true).
-    var enhancementPresets: [Preset] {
-        presets.filter { $0.useSystemTemplate }
-    }
 
     // MARK: - CRUD
 

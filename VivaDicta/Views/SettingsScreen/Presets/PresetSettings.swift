@@ -83,7 +83,7 @@ struct PresetSettings: View {
     }
 }
 
-private enum PresetFilter: String, CaseIterable, Identifiable {
+enum PresetFilter: String, CaseIterable, Identifiable {
     case all, system, custom
 
     var id: Self { self }

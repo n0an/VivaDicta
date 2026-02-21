@@ -597,13 +597,42 @@ private struct ModePresetPickerSheet: View {
 
     let presetManager: PresetManager
     @Binding var selectedPresetId: String?
+    @State private var filter: PresetFilter = .all
+
+    private var filteredPresets: [Preset] {
+        switch filter {
+        case .all: presetManager.presets
+        case .system: presetManager.presets.filter(\.isBuiltIn)
+        case .custom: presetManager.presets.filter { !$0.isBuiltIn }
+        }
+    }
+
+    private var filteredCategories: [String] {
+        var seen = Set<String>()
+        return filteredPresets.compactMap { preset in
+            if seen.contains(preset.category) { return nil }
+            seen.insert(preset.category)
+            return preset.category
+        }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(presetManager.categories, id: \.self) { category in
+                Section {
+                    Picker("Filter", selection: $filter) {
+                        ForEach(PresetFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                }
+
+                ForEach(filteredCategories, id: \.self) { category in
                     Section(category) {
-                        ForEach(presetManager.presets(in: category)) { preset in
+                        ForEach(filteredPresets.filter { $0.category == category }) { preset in
                             Button {
                                 selectedPresetId = preset.id
                                 HapticManager.selectionChanged()
