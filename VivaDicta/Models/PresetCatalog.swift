@@ -277,4 +277,38 @@ enum PresetCatalog {
     static func icon(for presetId: String) -> String {
         allBuiltIn.first { $0.id == presetId }?.icon ?? "sparkles"
     }
+
+    // MARK: - CloudKit UUID Mapping
+
+    /// Stable UUIDs matching macOS RewritePreset records for CloudKit sync.
+    /// These must stay in sync with macOS `RewritePreset.builtInDefinitions` UUIDs.
+    static let builtInUUIDs: [String: UUID] = [
+        "regular":       UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+        "summary":       UUID(uuidString: "00000000-0000-0000-0000-000000000010")!,
+        "action_points": UUID(uuidString: "00000000-0000-0000-0000-000000000011")!,
+        "professional":  UUID(uuidString: "00000000-0000-0000-0000-000000000020")!,
+        "casual":        UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
+        "email":         UUID(uuidString: "00000000-0000-0000-0000-000000000022")!,
+        "chat":          UUID(uuidString: "00000000-0000-0000-0000-000000000023")!,
+        "coding":        UUID(uuidString: "00000000-0000-0000-0000-000000000024")!,
+        "rewrite":       UUID(uuidString: "00000000-0000-0000-0000-000000000025")!,
+        "translate_en":  UUID(uuidString: "00000000-0000-0000-0000-000000000030")!,
+        "translate_ru":  UUID(uuidString: "00000000-0000-0000-0000-000000000031")!,
+        "translate_es":  UUID(uuidString: "00000000-0000-0000-0000-000000000032")!,
+    ]
+
+    /// Reverse lookup: UUID → built-in preset ID string.
+    private static let uuidToBuiltInId: [UUID: String] = {
+        Dictionary(uniqueKeysWithValues: builtInUUIDs.map { ($1, $0) })
+    }()
+
+    /// Returns the stable CloudKit UUID for a built-in preset ID.
+    static func uuid(for presetId: String) -> UUID? {
+        builtInUUIDs[presetId]
+    }
+
+    /// Returns the built-in preset ID for a CloudKit UUID.
+    static func presetId(for uuid: UUID) -> String? {
+        uuidToBuiltInId[uuid]
+    }
 }

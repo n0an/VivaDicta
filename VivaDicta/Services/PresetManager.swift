@@ -83,6 +83,8 @@ class PresetManager {
 
         if preset.id.hasPrefix("custom_") {
             syncService?.updatePresetRecord(from: preset)
+        } else if preset.isEdited && PresetCatalog.builtInIds.contains(preset.id) {
+            syncService?.syncBuiltInPresetRecord(from: preset)
         }
 
         logger.logInfo("Updated preset: \(preset.name)")
@@ -110,6 +112,9 @@ class PresetManager {
               let index = presets.firstIndex(where: { $0.id == presetId }) else { return }
         presets[index] = defaultPreset
         savePresets()
+
+        syncService?.resetBuiltInPresetRecord(presetId: presetId)
+
         logger.logInfo("Reset preset to default: \(defaultPreset.name)")
     }
 

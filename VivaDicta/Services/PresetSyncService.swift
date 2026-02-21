@@ -14,10 +14,10 @@ import os
 /// CloudKit automatically syncs `RewritePreset` records between iOS and macOS via the shared
 /// `iCloud.com.antonnovoselov.VivaDicta` container. This service handles:
 ///
-/// - **Inbound sync**: Reading custom `RewritePreset` records from SwiftData and merging
-///   them into ``PresetManager`` so they appear in the preset picker.
-/// - **Outbound sync**: Writing `RewritePreset` records when the user creates, edits,
-///   or deletes custom presets on iOS.
+/// - **Custom preset sync**: Reading/writing custom `RewritePreset` records (`isPredefined == false`)
+///   bidirectionally between SwiftData and ``PresetManager``.
+/// - **Built-in preset sync**: Syncing user edits to built-in presets (`isPredefined == true`)
+///   using stable UUIDs shared with macOS (see ``PresetCatalog/builtInUUIDs``).
 /// - **Migration**: One-time migration of existing custom presets and old
 ///   ``CustomRewritePreset`` records to the new `RewritePreset` model.
 @Observable
@@ -87,6 +87,9 @@ class PresetSyncService {
                 }
             }
         }
+
+        // Sync edited built-in presets from CloudKit
+        syncBuiltInPresetsFromCloudKit(context: context, presetManager: presetManager)
     }
 
     // MARK: - Write to CloudKit
@@ -145,6 +148,50 @@ class PresetSyncService {
         }
     }
 
+    // MARK: - Built-In Preset Sync
+
+    /// Writes an edited built-in preset to SwiftData for CloudKit sync.
+    func syncBuiltInPresetRecord(from preset: Preset) {
+        guard let context = modelContext,
+              let uuid = PresetCatalog.uuid(for: preset.id) else { return }
+
+        if let existing = fetchPreset(by: uuid, context: context) {
+            existing.systemPrompt = preset.promptInstructions
+            existing.useSystemTemplate = preset.useSystemTemplate
+            existing.wrapInTranscriptTags = preset.wrapInTranscriptTags
+        } else {
+            let record = RewritePreset(
+                id: uuid,
+                name: preset.name,
+                icon: preset.icon,
+                category: preset.category,
+                systemPrompt: preset.promptInstructions,
+                isPredefined: true,
+                sortOrder: 0,
+                useSystemTemplate: preset.useSystemTemplate,
+                wrapInTranscriptTags: preset.wrapInTranscriptTags
+            )
+            context.insert(record)
+        }
+
+        saveContext(context)
+        logger.logInfo("Synced built-in preset to CloudKit: \(preset.name)")
+    }
+
+    /// Resets a built-in preset record in SwiftData to catalog defaults, propagating via CloudKit.
+    func resetBuiltInPresetRecord(presetId: String) {
+        guard let context = modelContext,
+              let uuid = PresetCatalog.uuid(for: presetId),
+              let catalogDefault = PresetCatalog.defaultPreset(for: presetId),
+              let existing = fetchPreset(by: uuid, context: context) else { return }
+
+        existing.systemPrompt = catalogDefault.promptInstructions
+        existing.useSystemTemplate = catalogDefault.useSystemTemplate
+        existing.wrapInTranscriptTags = catalogDefault.wrapInTranscriptTags
+        saveContext(context)
+        logger.logInfo("Reset built-in preset record to default: \(catalogDefault.name)")
+    }
+
     // MARK: - Migration
 
     /// Migrates existing custom presets from PresetManager (UserDefaults) to RewritePreset (SwiftData).
@@ -190,7 +237,51 @@ class PresetSyncService {
         UserDefaults.standard.set(true, forKey: Self.migratedCustomRewriteKey)
     }
 
+    // MARK: - Built-In Inbound Sync
+
+    /// Reads predefined RewritePreset records from SwiftData and applies edits to local built-in presets.
+    /// Detects edits by comparing against PresetCatalog defaults.
+    private func syncBuiltInPresetsFromCloudKit(context: ModelContext, presetManager: PresetManager) {
+        let predefinedRecords = fetchPredefinedPresets(context: context)
+        guard !predefinedRecords.isEmpty else { return }
+
+        logger.logInfo("Found \(predefinedRecords.count) predefined RewritePreset records in SwiftData")
+
+        for record in predefinedRecords {
+            guard let builtInId = PresetCatalog.presetId(for: record.id),
+                  let catalogDefault = PresetCatalog.defaultPreset(for: builtInId),
+                  let localPreset = presetManager.preset(for: builtInId) else { continue }
+
+            let isEdited = record.systemPrompt != catalogDefault.promptInstructions
+                || record.useSystemTemplate != catalogDefault.useSystemTemplate
+                || record.wrapInTranscriptTags != catalogDefault.wrapInTranscriptTags
+
+            if isEdited {
+                // Another device edited this built-in preset — apply the edits locally
+                var updated = localPreset
+                updated.promptInstructions = record.systemPrompt
+                updated.useSystemTemplate = record.useSystemTemplate
+                updated.wrapInTranscriptTags = record.wrapInTranscriptTags
+                updated.isEdited = true
+                presetManager.updatePreset(updated)
+                logger.logInfo("Applied CloudKit edits to built-in preset: \(builtInId)")
+            } else if localPreset.isEdited {
+                // CloudKit record matches catalog defaults (was reset on another device)
+                presetManager.resetToDefault(presetId: builtInId)
+                logger.logInfo("Reset built-in preset from CloudKit: \(builtInId)")
+            }
+        }
+    }
+
     // MARK: - Helpers
+
+    private func fetchPredefinedPresets(context: ModelContext) -> [RewritePreset] {
+        var descriptor = FetchDescriptor<RewritePreset>(
+            predicate: #Predicate { $0.isPredefined }
+        )
+        descriptor.fetchLimit = 50
+        return (try? context.fetch(descriptor)) ?? []
+    }
 
     private func fetchCustomPresets(context: ModelContext) -> [RewritePreset] {
         var descriptor = FetchDescriptor<RewritePreset>(
