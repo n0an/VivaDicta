@@ -93,12 +93,6 @@ struct PresetFormView: View {
             Section {
                 Toggle("Use System Prompt", isOn: $useSystemTemplate)
                 Toggle("Wrap in <TRANSCRIPT>", isOn: $wrapInTranscriptTags)
-            } footer: {
-                if useSystemTemplate {
-                    Text("Instructions will be injected into the transcription enhancer system prompt. Use this for cleaning up transcriptions.")
-                } else {
-                    Text("Instructions will be used directly as the AI system message. Use this for summarizing, rewriting, translating, etc.")
-                }
             }
 
             if let preset = existingPreset, preset.isBuiltIn {
@@ -117,8 +111,7 @@ struct PresetFormView: View {
                 }
             }
 
-            Section(header: Text("Instructions"),
-                    footer: instructionsFooter) {
+            Section("Instructions") {
                 TextEditor(text: $promptInstructions)
                     .frame(minHeight: 200)
                     .font(.body.monospaced())
@@ -162,14 +155,6 @@ struct PresetFormView: View {
         return existingPreset?.isBuiltIn == true ? (existingPreset?.name ?? "") : "Edit Preset"
     }
 
-    @ViewBuilder
-    private var instructionsFooter: some View {
-        if useSystemTemplate {
-            Text("These instructions are injected into the transcription enhancer system prompt.")
-        } else {
-            Text("These instructions are used as the system message for the AI model.")
-        }
-    }
 
     private func createPreset() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
