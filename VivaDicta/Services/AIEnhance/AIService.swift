@@ -572,7 +572,10 @@ class AIService {
         }
 
         do {
-            let result = try await makeRequest(text: text)
+            var result = try await makeRequest(text: text)
+            if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
+                result = TextFormatter.format(result)
+            }
             let endTime = Date()
             let duration = endTime.timeIntervalSince(startTime)
             return (result, duration, promptName)
@@ -622,7 +625,10 @@ class AIService {
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
 
-        let result = try await makeRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: formattedText)
+        var result = try await makeRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: formattedText)
+        if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
+            result = TextFormatter.format(result)
+        }
         let duration = Date().timeIntervalSince(startTime)
         return (result, duration)
     }
