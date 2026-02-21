@@ -123,19 +123,28 @@ class PresetManager {
 
     // MARK: - Built-In Management
 
-    /// Populates built-in presets on first launch.
-    /// Only adds presets that don't already exist (by ID).
+    /// Populates built-in presets on first launch and syncs non-user-editable
+    /// fields (category, icon) from the catalog for existing built-in presets.
     private func populateBuiltInsIfNeeded() {
         var changed = false
         for builtIn in PresetCatalog.allBuiltIn {
-            if !presets.contains(where: { $0.id == builtIn.id }) {
+            if let index = presets.firstIndex(where: { $0.id == builtIn.id }) {
+                // Sync category and icon from catalog (these aren't user-editable for built-ins)
+                if presets[index].category != builtIn.category {
+                    presets[index].category = builtIn.category
+                    changed = true
+                }
+                if presets[index].icon != builtIn.icon {
+                    presets[index].icon = builtIn.icon
+                    changed = true
+                }
+            } else {
                 presets.append(builtIn)
                 changed = true
                 logger.logInfo("Populated built-in preset: \(builtIn.name)")
             }
         }
         if changed {
-            // Ensure built-in presets appear first, in catalog order
             sortPresets()
             savePresets()
         }
