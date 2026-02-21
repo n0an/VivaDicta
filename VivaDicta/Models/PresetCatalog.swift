@@ -250,6 +250,8 @@ enum PresetCatalog {
         - NO concluding remarks or sign-offs like "Let me know if you need anything else!".
         - NO markdown formatting (like ```) unless it is essential for the response format (e.g., code).
         - ONLY provide the direct answer or the modified text that was requested.
+        - Для русского языка не используй букву "ё". Вместо нее всегда используй "е". В итоговом тексте замени все буквы "ё" на букву "е".
+        - DO NOT use long em-dashes "—", use normal hyphen "-" instead of it.
 
         Your main instruction is always the <TRANSCRIPT> text.
 
