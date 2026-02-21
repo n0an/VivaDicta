@@ -14,13 +14,14 @@ import SwiftData
 /// Professional Tone) to the original transcription text. Multiple variations can be
 /// associated with a single ``Transcription`` via a one-to-many relationship.
 ///
-/// The "enhanced" preset is special — it corresponds to the standard AI processing
-/// and is created automatically during transcription or migrated from legacy `enhancedText`.
+/// The initial AI processing variation uses the mode's active preset (typically "regular")
+/// and is created automatically during transcription. Legacy `enhancedText` is migrated
+/// to a "regular" variation by ``VariationMigrationService``.
 @Model
 final class TranscriptionVariation {
     var id: UUID = UUID()
 
-    /// Identifier of the preset used to generate this variation (e.g., "enhanced", "summary", "action_points").
+    /// Identifier of the preset used to generate this variation (e.g., "regular", "summary", "action_points").
     var presetId: String = ""
 
     /// Display name of the preset at the time of generation, stored for historical context.

@@ -306,13 +306,6 @@ struct TranscriptionDetailView: View {
                     }
                 }
 
-                // Always offer enhanced text if available
-                if let enhancedText = transcription.enhancedText, !selectedIsVariation || selectedChipId != "enhanced" {
-                    ShareLink(item: enhancedText) {
-                        Label("Enhanced Text", systemImage: "sparkles")
-                    }
-                }
-
                 ShareLink(item: transcription.text) {
                     Label("Original Text", systemImage: "text.alignleft")
                 }
@@ -517,6 +510,7 @@ struct TranscriptionDetailView: View {
                     modelContext.insert(variation)
                 }
 
+                transcription.enhancedText = resultText
                 generatingPresetId = nil
 
                 withAnimation(.easeInOut(duration: 0.15)) {

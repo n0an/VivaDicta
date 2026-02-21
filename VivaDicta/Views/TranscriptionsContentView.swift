@@ -68,9 +68,13 @@ struct TranscriptionsContentView: View {
                                 }
                                 .contextMenu {
                                     Section("Share") {
-                                        if let enhancedText = transcription.enhancedText {
-                                            ShareLink(item: enhancedText) {
-                                                Label("Enhanced Text", systemImage: "sparkles")
+                                        if let latestVariation = transcription.variations?
+                                            .sorted(by: { $0.createdAt < $1.createdAt }).last {
+                                            ShareLink(item: latestVariation.text) {
+                                                Label(
+                                                    PresetCatalog.displayName(for: latestVariation.presetId, fallback: latestVariation.presetDisplayName),
+                                                    systemImage: PresetCatalog.icon(for: latestVariation.presetId)
+                                                )
                                             }
                                         }
 

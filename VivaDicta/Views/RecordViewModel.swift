@@ -519,8 +519,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Dual-write: create variation alongside enhancedText
                 if let enhancedText {
                     let variation = TranscriptionVariation(
-                        presetId: aiService.selectedMode.presetId ?? "enhanced",
-                        presetDisplayName: promptName ?? "Enhanced",
+                        presetId: aiService.selectedMode.presetId ?? "regular",
+                        presetDisplayName: promptName ?? "Regular",
                         text: enhancedText,
                         aiModelName: aiService.selectedMode.aiModel,
                         aiProviderName: aiService.selectedMode.aiProvider?.displayName,

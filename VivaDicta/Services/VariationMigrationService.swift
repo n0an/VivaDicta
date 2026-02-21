@@ -13,7 +13,7 @@ import os
 ///
 /// This is a one-time migration that runs on first launch after the variation schema is introduced.
 /// Each transcription with non-empty `enhancedText` gets a corresponding variation with
-/// `presetId: "enhanced"`, preserving the AI model name, provider, and duration metadata.
+/// `presetId: "regular"`, preserving the AI model name, provider, and duration metadata.
 class VariationMigrationService {
     static let shared = VariationMigrationService()
     private let logger = Logger(category: .variationMigration)
@@ -39,8 +39,8 @@ class VariationMigrationService {
                       !enhancedText.isEmpty else { continue }
 
                 let variation = TranscriptionVariation()
-                variation.presetId = "enhanced"
-                variation.presetDisplayName = transcription.promptName ?? "Enhanced"
+                variation.presetId = "regular"
+                variation.presetDisplayName = transcription.promptName ?? "Regular"
                 variation.text = enhancedText
                 variation.createdAt = transcription.timestamp
                 variation.aiModelName = transcription.aiEnhancementModelName
