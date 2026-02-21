@@ -20,24 +20,26 @@ final class RewritePreset {
     var id: UUID = UUID()
     var name: String = ""
     var icon: String = "sparkles"
-    var category: String = "Custom"
+    var category: String = "Other"
     var systemPrompt: String = ""
     var isPredefined: Bool = false
     var sortOrder: Int = 0
     var createdAt: Date = Date()
     var isHidden: Bool = false
     var useSystemTemplate: Bool = true
+    var wrapInTranscriptTags: Bool = true
 
     init(
         id: UUID = UUID(),
         name: String = "",
         icon: String = "sparkles",
-        category: String = "Custom",
+        category: String = "Other",
         systemPrompt: String = "",
         isPredefined: Bool = false,
         sortOrder: Int = 0,
         isHidden: Bool = false,
-        useSystemTemplate: Bool = true
+        useSystemTemplate: Bool = true,
+        wrapInTranscriptTags: Bool = true
     ) {
         self.id = id
         self.name = name
@@ -49,5 +51,6 @@ final class RewritePreset {
         self.createdAt = Date()
         self.isHidden = isHidden
         self.useSystemTemplate = useSystemTemplate
+        self.wrapInTranscriptTags = wrapInTranscriptTags
     }
 }

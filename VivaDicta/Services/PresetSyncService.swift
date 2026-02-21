@@ -100,12 +100,13 @@ class PresetSyncService {
             id: uuid,
             name: preset.name,
             icon: preset.icon,
-            category: mapCategoryToMacOS(preset.category),
+            category: preset.category,
             systemPrompt: preset.promptInstructions,
             isPredefined: false,
             sortOrder: 1000,
             isHidden: false,
-            useSystemTemplate: preset.useSystemTemplate
+            useSystemTemplate: preset.useSystemTemplate,
+            wrapInTranscriptTags: preset.wrapInTranscriptTags
         )
 
         context.insert(record)
@@ -121,9 +122,10 @@ class PresetSyncService {
         if let existing = fetchPreset(by: uuid, context: context) {
             existing.name = preset.name
             existing.icon = preset.icon
-            existing.category = mapCategoryToMacOS(preset.category)
+            existing.category = preset.category
             existing.systemPrompt = preset.promptInstructions
             existing.useSystemTemplate = preset.useSystemTemplate
+            existing.wrapInTranscriptTags = preset.wrapInTranscriptTags
             saveContext(context)
             logger.logInfo("Updated RewritePreset record: \(preset.name)")
         } else {
@@ -214,6 +216,7 @@ class PresetSyncService {
 
     /// Converts a RewritePreset SwiftData record to a local Preset struct.
     private func convertToPreset(_ record: RewritePreset) -> Preset {
+        // Map legacy macOS categories to iOS equivalents
         let mappedCategory: String
         switch record.category {
         case "General", "Assistant", "Custom":
@@ -229,17 +232,10 @@ class PresetSyncService {
             category: mappedCategory,
             promptInstructions: record.systemPrompt,
             useSystemTemplate: record.useSystemTemplate,
-            wrapInTranscriptTags: record.useSystemTemplate,
+            wrapInTranscriptTags: record.wrapInTranscriptTags,
             isBuiltIn: false,
             createdAt: record.createdAt
         )
-    }
-
-    private func mapCategoryToMacOS(_ iosCategory: String) -> String {
-        switch iosCategory {
-        case "Other": return "Custom"
-        default: return iosCategory
-        }
     }
 
     private func saveContext(_ context: ModelContext) {

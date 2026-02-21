@@ -625,9 +625,34 @@ class AIService {
     /// - Returns: A tuple of the generated text and processing duration.
     public func generateVariation(text: String, preset: Preset) async throws -> (String, TimeInterval) {
         let startTime = Date()
-        // Store system message for variation; user message is stored by makeRequest
-        lastSystemMessageSent = preset.promptInstructions
-        let result = try await makeRequest(text: text, systemMessage: preset.promptInstructions)
+
+        // Build system message respecting useSystemTemplate (same logic as enhance flow)
+        var customVocabularySection = ""
+        let customVocabularyWords = CustomVocabulary.getTerms()
+        if !customVocabularyWords.isEmpty {
+            let vocabularyString = customVocabularyWords.joined(separator: ", ")
+            customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
+        }
+
+        let systemMessage: String
+        if preset.useSystemTemplate {
+            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
+        } else {
+            systemMessage = preset.promptInstructions + customVocabularySection
+        }
+
+        // Format user text respecting the variation preset's wrapInTranscriptTags
+        let formattedText: String
+        if preset.wrapInTranscriptTags {
+            formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        } else {
+            formattedText = text
+        }
+
+        lastSystemMessageSent = systemMessage
+        lastUserMessageSent = formattedText
+
+        let result = try await makeRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: formattedText)
         let duration = Date().timeIntervalSince(startTime)
         return (result, duration)
     }
@@ -656,7 +681,7 @@ class AIService {
         }
     }
 
-    private func makeRequest(text: String, systemMessage: String? = nil) async throws -> String {
+    private func makeRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider else {
             throw EnhancementError.notConfigured
         }
@@ -685,12 +710,12 @@ class AIService {
 
         // Handle Ollama (local server)
         if aiProvider == .ollama {
-            return try await makeOllamaRequest(text: text, systemMessage: systemMessage)
+            return try await makeOllamaRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: preFormattedUserMessage)
         }
 
         // Handle Custom OpenAI (user-configured endpoint)
         if aiProvider == .customOpenAI {
-            return try await makeCustomOpenAIRequest(text: text, systemMessage: systemMessage)
+            return try await makeCustomOpenAIRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: preFormattedUserMessage)
         }
 
         // Cloud providers - compute system message only when needed
@@ -701,7 +726,8 @@ class AIService {
             throw EnhancementError.notConfigured
         }
 
-        let formattedText = formatTranscriptForLLM(text)
+        // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
+        let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Store for TranscriptionVariation
         lastSystemMessageSent = resolvedSystemMessage
@@ -922,14 +948,14 @@ class AIService {
     // MARK: - Ollama Methods
 
     /// Makes an enhancement request to the local Ollama server
-    private func makeOllamaRequest(text: String, systemMessage: String? = nil) async throws -> String {
+    private func makeOllamaRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
         let serverURL = ollamaServerURL
         guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
             throw EnhancementError.customError("Invalid Ollama server URL: \(serverURL)")
         }
 
         let systemMessage = systemMessage ?? getSystemMessage()
-        let formattedText = formatTranscriptForLLM(text)
+        let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Store for TranscriptionVariation
         lastSystemMessageSent = systemMessage
@@ -1137,7 +1163,7 @@ class AIService {
     // MARK: - Custom OpenAI Methods
 
     /// Makes an enhancement request to the custom OpenAI-compatible endpoint
-    private func makeCustomOpenAIRequest(text: String, systemMessage: String? = nil) async throws -> String {
+    private func makeCustomOpenAIRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
         let endpointURL = customOpenAIEndpointURL
         let modelName = customOpenAIModelName
 
@@ -1155,7 +1181,7 @@ class AIService {
         }
 
         let systemMessage = systemMessage ?? getSystemMessage()
-        let formattedText = formatTranscriptForLLM(text)
+        let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Store for TranscriptionVariation
         lastSystemMessageSent = systemMessage
