@@ -597,11 +597,20 @@ private struct ModePresetPickerSheet: View {
 
     let presetManager: PresetManager
     @Binding var selectedPresetId: String?
+    @State private var filter: PresetFilter = .all
     @State private var selectedCategory: String?
+
+    private var typeFilteredPresets: [Preset] {
+        switch filter {
+        case .all: presetManager.presets
+        case .system: presetManager.presets.filter(\.isBuiltIn)
+        case .custom: presetManager.presets.filter { !$0.isBuiltIn }
+        }
+    }
 
     private var allCategories: [String] {
         var seen = Set<String>()
-        return presetManager.presets.compactMap { preset in
+        return typeFilteredPresets.compactMap { preset in
             if seen.contains(preset.category) { return nil }
             seen.insert(preset.category)
             return preset.category
@@ -609,8 +618,8 @@ private struct ModePresetPickerSheet: View {
     }
 
     private var filteredPresets: [Preset] {
-        guard let selectedCategory else { return presetManager.presets }
-        return presetManager.presets.filter { $0.category == selectedCategory }
+        guard let selectedCategory else { return typeFilteredPresets }
+        return typeFilteredPresets.filter { $0.category == selectedCategory }
     }
 
     private var filteredCategories: [String] {
@@ -626,6 +635,15 @@ private struct ModePresetPickerSheet: View {
         NavigationStack {
             List {
                 Section {
+                    Picker("Filter", selection: $filter) {
+                        ForEach(PresetFilter.allCases) { filter in
+                            Text(filter.title).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+
                     CategoryChipsView(
                         categories: allCategories,
                         selectedCategory: $selectedCategory
@@ -669,6 +687,9 @@ private struct ModePresetPickerSheet: View {
                         }
                     }
                 }
+            }
+            .onChange(of: filter) { _, _ in
+                selectedCategory = nil
             }
             .navigationTitle("Select Preset")
             .navigationBarTitleDisplayMode(.inline)
