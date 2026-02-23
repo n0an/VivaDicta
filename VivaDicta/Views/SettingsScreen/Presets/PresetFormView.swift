@@ -16,6 +16,7 @@ struct PresetFormView: View {
     private let existingPreset: Preset?
 
     @State private var name: String
+    @State private var presetDescription: String
     @State private var category: String
     @State private var promptInstructions: String
     @State private var useSystemTemplate: Bool
@@ -26,7 +27,7 @@ struct PresetFormView: View {
 
     private var isEdited: Bool {
         guard let preset = existingPreset else { return true }
-        return name != preset.name || category != preset.category || promptInstructions != preset.promptInstructions || useSystemTemplate != preset.useSystemTemplate || wrapInTranscriptTags != preset.wrapInTranscriptTags
+        return name != preset.name || presetDescription != preset.presetDescription || category != preset.category || promptInstructions != preset.promptInstructions || useSystemTemplate != preset.useSystemTemplate || wrapInTranscriptTags != preset.wrapInTranscriptTags
     }
 
     private var isAssistantPreset: Bool {
@@ -67,6 +68,7 @@ struct PresetFormView: View {
         self.existingPreset = preset
         self.presetManager = presetManager
         self._name = State(initialValue: preset.name)
+        self._presetDescription = State(initialValue: preset.presetDescription)
         self._category = State(initialValue: preset.category)
         self._promptInstructions = State(initialValue: preset.promptInstructions)
         self._useSystemTemplate = State(initialValue: preset.useSystemTemplate)
@@ -78,6 +80,7 @@ struct PresetFormView: View {
         self.existingPreset = nil
         self.presetManager = presetManager
         self._name = State(initialValue: "")
+        self._presetDescription = State(initialValue: "")
         self._category = State(initialValue: "Rewrite")
         self._promptInstructions = State(initialValue: "")
         self._useSystemTemplate = State(initialValue: true)
@@ -93,6 +96,10 @@ struct PresetFormView: View {
                 } else {
                     TextField("Preset Name", text: $name)
                 }
+            }
+
+            Section("Description") {
+                TextField("Short description", text: $presetDescription)
             }
 
             if isAssistantPreset {
@@ -177,6 +184,7 @@ struct PresetFormView: View {
             id: "custom_\(UUID().uuidString)",
             name: trimmedName,
             icon: "✨",
+            presetDescription: presetDescription.trimmingCharacters(in: .whitespacesAndNewlines),
             category: category,
             promptInstructions: promptInstructions,
             useSystemTemplate: useSystemTemplate,
@@ -190,6 +198,7 @@ struct PresetFormView: View {
     private func savePreset() {
         guard var updated = existingPreset else { return }
         updated.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.presetDescription = presetDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.useSystemTemplate = useSystemTemplate
         updated.wrapInTranscriptTags = wrapInTranscriptTags
         if !updated.isBuiltIn {
