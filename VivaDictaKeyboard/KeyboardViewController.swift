@@ -144,6 +144,14 @@ struct ModeCycleSelector: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
         .background(.quaternary, in: .capsule)
+        .gesture(
+            DragGesture(minimumDistance: 20)
+                .onEnded { value in
+                    let horizontal = value.translation.width
+                    guard abs(horizontal) > abs(value.translation.height) else { return }
+                    cycleModes(forward: horizontal < 0)
+                }
+        )
     }
 
     private func cycleModes(forward: Bool) {
