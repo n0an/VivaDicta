@@ -264,7 +264,10 @@ struct TranscriptionDetailView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
-                    .background(.blue, in: .capsule)
+                    .background {
+                        AnimatedMeshGradient()
+                            .clipShape(.capsule)
+                    }
                 }
                 .buttonStyle(.plain)
                 .disabled(generatingPresetId != nil || !appState.aiService.isProperlyConfigured())
