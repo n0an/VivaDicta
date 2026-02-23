@@ -14,6 +14,7 @@ struct TranscriptionDetailView: View {
     var initialVariationPresetId: String?
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
 
     /// "original" or a variation's presetId
     @State private var selectedChipId: String = "original"
@@ -260,13 +261,49 @@ struct TranscriptionDetailView: View {
                         Image(systemName: "sparkles")
                         Text("AI")
                     }
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                     .background {
-                        AnimatedMeshGradient2()
-                            .clipShape(.capsule)
+                        if colorScheme == .dark {
+                            // Dark mode: edge-glow HUD style
+                            AnimatedMeshGradient()
+                                .mask(
+                                    Capsule()
+                                        .stroke(lineWidth: 14)
+                                        .blur(radius: 6)
+                                )
+                                .blendMode(.lighten)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(lineWidth: 2)
+                                        .fill(Color.white)
+                                        .blur(radius: 1.5)
+                                        .blendMode(.overlay)
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .stroke(lineWidth: 0.5)
+                                        .fill(Color.white)
+                                        .blur(radius: 0.5)
+                                        .blendMode(.overlay)
+                                )
+                                .background(.black)
+                                .clipShape(.capsule)
+                        } else {
+                            // Light mode: full gradient fill
+                            AnimatedMeshGradient2()
+                                .overlay(
+                                    Capsule()
+                                        .stroke(lineWidth: 1)
+                                        .fill(Color.white)
+                                        .blur(radius: 1)
+                                        .blendMode(.overlay)
+                                )
+                                .clipShape(.capsule)
+                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                        }
                     }
                 }
                 .buttonStyle(.plain)
