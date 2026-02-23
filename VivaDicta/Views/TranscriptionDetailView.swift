@@ -274,7 +274,7 @@ struct TranscriptionDetailView: View {
                 // Button 3: Copy
                 Button {
                     UIPasteboard.general.string = displayedText
-                    HapticManager.lightImpact()
+                    HapticManager.success()
                     triggerCopyAnimation()
                 } label: {
                     Image(systemName: "doc.on.doc")
