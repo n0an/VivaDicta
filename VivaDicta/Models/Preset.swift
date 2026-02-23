@@ -28,8 +28,11 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
     /// User-visible name of the preset.
     var name: String
 
-    /// Icon for display. Can be an emoji or SF Symbol name.
+    /// Icon for display. Can be an emoji, SF Symbol name, or "asset:<name>" for custom images.
     var icon: String
+
+    /// Short user-visible description of what the preset does.
+    var presetDescription: String
 
     /// Grouping category: "Rewrite", "Summarize", "Translate", "Other".
     var category: String
@@ -64,6 +67,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
     init(id: String,
          name: String,
          icon: String,
+         presetDescription: String = "",
          category: String,
          promptInstructions: String,
          useSystemTemplate: Bool,
@@ -74,6 +78,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
         self.id = id
         self.name = name
         self.icon = icon
+        self.presetDescription = presetDescription
         self.category = category
         self.promptInstructions = promptInstructions
         self.useSystemTemplate = useSystemTemplate
@@ -82,9 +87,24 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
         self.isEdited = isEdited
         self.createdAt = createdAt
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        icon = try container.decode(String.self, forKey: .icon)
+        presetDescription = try container.decodeIfPresent(String.self, forKey: .presetDescription) ?? ""
+        category = try container.decode(String.self, forKey: .category)
+        promptInstructions = try container.decode(String.self, forKey: .promptInstructions)
+        useSystemTemplate = try container.decode(Bool.self, forKey: .useSystemTemplate)
+        wrapInTranscriptTags = try container.decode(Bool.self, forKey: .wrapInTranscriptTags)
+        isBuiltIn = try container.decode(Bool.self, forKey: .isBuiltIn)
+        isEdited = try container.decode(Bool.self, forKey: .isEdited)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+    }
 }
 
-/// Renders a preset icon as either an emoji `Text` or an SF Symbol `Image`.
+/// Renders a preset icon as an emoji `Text`, an SF Symbol `Image`, or a custom asset `Image`.
 struct PresetIconView: View {
     let icon: String
     var fontSize: CGFloat = 14
@@ -95,7 +115,13 @@ struct PresetIconView: View {
     }
 
     var body: some View {
-        if isEmoji {
+        if icon.hasPrefix("asset:") {
+            let assetName = String(icon.dropFirst("asset:".count))
+            Image(assetName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: fontSize, height: fontSize)
+        } else if isEmoji {
             Text(icon)
                 .font(.system(size: fontSize))
         } else {

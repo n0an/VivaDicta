@@ -26,8 +26,10 @@ final class RewritePreset {
     var sortOrder: Int = 0
     var createdAt: Date = Date()
     var isHidden: Bool = false
+    var isFavorite: Bool = false
     var useSystemTemplate: Bool = true
     var wrapInTranscriptTags: Bool = true
+    var presetDescription: String = ""
 
     init(
         id: UUID = UUID(),
@@ -38,8 +40,10 @@ final class RewritePreset {
         isPredefined: Bool = false,
         sortOrder: Int = 0,
         isHidden: Bool = false,
+        isFavorite: Bool = false,
         useSystemTemplate: Bool = true,
-        wrapInTranscriptTags: Bool = true
+        wrapInTranscriptTags: Bool = true,
+        presetDescription: String = ""
     ) {
         self.id = id
         self.name = name
@@ -50,7 +54,9 @@ final class RewritePreset {
         self.sortOrder = sortOrder
         self.createdAt = Date()
         self.isHidden = isHidden
+        self.isFavorite = isFavorite
         self.useSystemTemplate = useSystemTemplate
         self.wrapInTranscriptTags = wrapInTranscriptTags
+        self.presetDescription = presetDescription
     }
 }

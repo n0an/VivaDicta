@@ -109,7 +109,8 @@ class PresetSyncService {
             sortOrder: 1000,
             isHidden: false,
             useSystemTemplate: preset.useSystemTemplate,
-            wrapInTranscriptTags: preset.wrapInTranscriptTags
+            wrapInTranscriptTags: preset.wrapInTranscriptTags,
+            presetDescription: preset.presetDescription
         )
 
         context.insert(record)
@@ -129,6 +130,7 @@ class PresetSyncService {
             existing.systemPrompt = preset.promptInstructions
             existing.useSystemTemplate = preset.useSystemTemplate
             existing.wrapInTranscriptTags = preset.wrapInTranscriptTags
+            existing.presetDescription = preset.presetDescription
             saveContext(context)
             logger.logInfo("Updated RewritePreset record: \(preset.name)")
         } else {
@@ -325,6 +327,7 @@ class PresetSyncService {
             id: "custom_\(record.id.uuidString)",
             name: record.name,
             icon: record.icon,
+            presetDescription: record.presetDescription,
             category: mappedCategory,
             promptInstructions: record.systemPrompt,
             useSystemTemplate: record.useSystemTemplate,

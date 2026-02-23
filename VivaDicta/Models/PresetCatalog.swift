@@ -24,6 +24,7 @@ enum PresetCatalog {
         id: "regular",
         name: "Regular",
         icon: "✨",
+        presetDescription: "Clean up for clarity",
         category: "Rewrite",
         promptInstructions: """
         - Clean up the <TRANSCRIPT> text for clarity and natural flow while preserving meaning and the original tone.
@@ -48,6 +49,7 @@ enum PresetCatalog {
         id: "professional",
         name: "Professional",
         icon: "💼",
+        presetDescription: "Formal business tone",
         category: "Rewrite",
         promptInstructions: """
         Rewrite the <TRANSCRIPT> text in a professional, formal tone. \
@@ -63,6 +65,7 @@ enum PresetCatalog {
         id: "casual",
         name: "Casual",
         icon: "😊",
+        presetDescription: "Relaxed & friendly tone",
         category: "Rewrite",
         promptInstructions: """
         Rewrite the <TRANSCRIPT> text in a casual, friendly tone. \
@@ -78,6 +81,7 @@ enum PresetCatalog {
         id: "email",
         name: "Email",
         icon: "📧",
+        presetDescription: "Format as email",
         category: "Rewrite",
         promptInstructions: """
         - Rewrite the <TRANSCRIPT> text as a complete email with proper formatting: include a greeting (Hi), body paragraphs (2-4 sentences each), and closing (Thanks).
@@ -97,6 +101,7 @@ enum PresetCatalog {
         id: "chat",
         name: "Chat",
         icon: "💬",
+        presetDescription: "Quick chat message",
         category: "Rewrite",
         promptInstructions: """
         - Rewrite the <TRANSCRIPT> text as a chat message: informal, concise, and conversational.
@@ -119,6 +124,7 @@ enum PresetCatalog {
         id: "coding",
         name: "Coding",
         icon: "💻",
+        presetDescription: "Technical documentation",
         category: "Rewrite",
         promptInstructions: """
         Rewrite the <TRANSCRIPT> text as clean, well-structured technical documentation or code-related notes. \
@@ -135,6 +141,7 @@ enum PresetCatalog {
         id: "rewrite",
         name: "Rewrite",
         icon: "✍️",
+        presetDescription: "Enhanced clarity & flow",
         category: "Rewrite",
         promptInstructions: """
         - Rewrite the <TRANSCRIPT> text with enhanced clarity, improved sentence structure, and rhythmic flow while preserving the original meaning and tone.
@@ -160,6 +167,7 @@ enum PresetCatalog {
         id: "summary",
         name: "Summary",
         icon: "📝",
+        presetDescription: "Condensed overview",
         category: "Summarize",
         promptInstructions: """
         Summarize the <TRANSCRIPT> text in 2-5 concise bullet points. \
@@ -175,6 +183,7 @@ enum PresetCatalog {
         id: "action_points",
         name: "Action Points",
         icon: "✅",
+        presetDescription: "Tasks & to-dos",
         category: "Summarize",
         promptInstructions: """
         Extract all action items, tasks, and to-dos from the <TRANSCRIPT> text. \
@@ -192,6 +201,7 @@ enum PresetCatalog {
         id: "translate_en",
         name: "English",
         icon: "🇺🇸",
+        presetDescription: "Translate to English",
         category: "Translate",
         promptInstructions: """
         Translate the <TRANSCRIPT> text into English. \
@@ -207,6 +217,7 @@ enum PresetCatalog {
         id: "translate_ru",
         name: "Russian",
         icon: "🇷🇺",
+        presetDescription: "Translate to Russian",
         category: "Translate",
         promptInstructions: """
         Translate the <TRANSCRIPT> text into Russian. \
@@ -222,6 +233,7 @@ enum PresetCatalog {
         id: "translate_es",
         name: "Spanish",
         icon: "🇪🇸",
+        presetDescription: "Translate to Spanish",
         category: "Translate",
         promptInstructions: """
         Translate the <TRANSCRIPT> text into Spanish. \
@@ -239,6 +251,7 @@ enum PresetCatalog {
         id: "assistant",
         name: "Assistant",
         icon: "🤖",
+        presetDescription: "Ask AI anything",
         category: "Assistant",
         promptInstructions: """
         You are a powerful AI assistant. Your primary goal is to provide a direct, clean, \
