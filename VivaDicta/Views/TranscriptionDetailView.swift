@@ -265,7 +265,7 @@ struct TranscriptionDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                     .background {
-                        AnimatedMeshGradient()
+                        AnimatedMeshGradient2()
                             .clipShape(.capsule)
                     }
                 }
