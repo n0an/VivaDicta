@@ -98,6 +98,9 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onTranscriptionError = { [weak self] in
             DispatchQueue.main.async { self?.transcriptionStatus = .error }
         }
+        AppGroupCoordinator.shared.onTranscriptionCancelled = { [weak self] in
+            DispatchQueue.main.async { self?.transcriptionStatus = .idle }
+        }
         AppGroupCoordinator.shared.onTranscriptionErrorMessage = { [weak self] message in
             DispatchQueue.main.async { self?.errorMessage = message }
         }
@@ -116,6 +119,7 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
             AppGroupCoordinator.shared.onTranscriptionCompleted = nil
             AppGroupCoordinator.shared.onTranscriptionError = nil
+            AppGroupCoordinator.shared.onTranscriptionCancelled = nil
             AppGroupCoordinator.shared.onAudioLevelUpdated = nil
             errorDismissTimer?.invalidate()
             errorDismissTimer = nil

@@ -98,6 +98,7 @@ public final class AppGroupCoordinator {
         static let transcriptionTranscribing = "com.antonnovoselov.VivaDicta.transcriptionTranscribing"
         static let transcriptionEnhancing = "com.antonnovoselov.VivaDicta.transcriptionEnhancing"
         static let transcriptionError = "com.antonnovoselov.VivaDicta.transcriptionError"
+        static let transcriptionCancelled = "com.antonnovoselov.VivaDicta.transcriptionCancelled"
         static let audioLevelUpdated = "com.antonnovoselov.VivaDicta.audioLevelUpdated"
         static let startRecordingFromControl = "com.antonnovoselov.VivaDicta.startRecordingFromControl"
         static let terminateSessionFromLiveActivity = "com.antonnovoselov.VivaDicta.terminateSessionFromLiveActivity"
@@ -128,6 +129,7 @@ public final class AppGroupCoordinator {
     @MainActor var onTranscriptionTranscribing: (() -> Void)?
     @MainActor var onTranscriptionEnhancing: (() -> Void)?
     @MainActor var onTranscriptionError: (() -> Void)?
+    @MainActor var onTranscriptionCancelled: (() -> Void)?
     @MainActor var onTranscriptionErrorMessage: ((String) -> Void)?
     @MainActor var onKeyboardSessionExpired: (() -> Void)?
     @MainActor var onAudioLevelUpdated: ((CGFloat) -> Void)?
@@ -326,7 +328,9 @@ public final class AppGroupCoordinator {
             postDarwinNotification(NotificationNames.transcriptionError)
         case .completed:
             break
-        case .idle, .recording:
+        case .idle:
+            postDarwinNotification(NotificationNames.transcriptionCancelled)
+        case .recording:
             break
         }
     }
@@ -617,6 +621,19 @@ public final class AppGroupCoordinator {
             { (center, observer, name, object, userInfo) in
                 guard let observer = observer else { return }
                 let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleTranscriptionCancelledNotification()
+            },
+            NotificationNames.transcriptionCancelled as CFString,
+            nil,
+            .deliverImmediately
+        )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
                 coordinator.handleAudioLevelUpdatedNotification()
             },
             NotificationNames.audioLevelUpdated as CFString,
@@ -777,6 +794,12 @@ public final class AppGroupCoordinator {
             if !message.isEmpty {
                 await onTranscriptionErrorMessage?(message)
             }
+        }
+    }
+
+    nonisolated private func handleTranscriptionCancelledNotification() {
+        Task { @MainActor in
+            await onTranscriptionCancelled?()
         }
     }
 
