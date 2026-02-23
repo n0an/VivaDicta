@@ -13,28 +13,51 @@ struct TranscriptionRowView: View {
 
     @Environment(\.colorScheme) var colorScheme
     @State private var showGradient = false
+    @State private var showCopied = false
+
+    private var displayText: String {
+        transcription.enhancedText ?? transcription.text
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
-                Spacer()
 
+                Text(displayText)
+                    .font(.body)
+                    .lineLimit(2)
+                    .lineSpacing(2)
+            }
+
+            Spacer()
+
+            VStack(spacing: 6) {
                 Text(transcription.getDurationFormatted(transcription.audioDuration))
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(.blue.opacity(0.1))
                     .foregroundStyle(.blue)
-                    .cornerRadius(6)
-            }
+                    .clipShape(.rect(cornerRadius: 6))
 
-            Text(transcription.enhancedText ?? transcription.text)
-                .font(.body)
-                .lineLimit(2)
-                .lineSpacing(2)
+                Button("Copy", systemImage: showCopied ? "checkmark" : "doc.on.doc") {
+                    ClipboardManager.copyToClipboard(displayText)
+                    HapticManager.success()
+                    showCopied = true
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(1.5))
+                        showCopied = false
+                    }
+                }
+                .labelStyle(.iconOnly)
+                .font(.system(size: 13))
+                .foregroundStyle(showCopied ? .green : .secondary)
+                .buttonStyle(.borderless)
+                .contentTransition(.symbolEffect(.replace))
+            }
         }
         .scaleEffect(showGradient ? 1.1 : 1.0)
         .overlay(
