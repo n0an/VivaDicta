@@ -176,7 +176,7 @@ struct PresetFormView: View {
         let newPreset = Preset(
             id: "custom_\(UUID().uuidString)",
             name: trimmedName,
-            icon: useSystemTemplate ? "text.bubble.fill" : "sparkles",
+            icon: "✨",
             category: category,
             promptInstructions: promptInstructions,
             useSystemTemplate: useSystemTemplate,

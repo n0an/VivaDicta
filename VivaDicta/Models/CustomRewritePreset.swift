@@ -17,14 +17,14 @@ import SwiftData
 final class CustomRewritePreset {
     var id: UUID = UUID()
     var name: String = ""
-    var icon: String = "sparkles"
+    var icon: String = "✨"
     var category: String = "Custom"
     var systemPrompt: String = ""
     var sortOrder: Int = 0
     var createdAt: Date = Date()
 
     init(name: String,
-         icon: String = "sparkles",
+         icon: String = "✨",
          category: String = "Custom",
          systemPrompt: String,
          sortOrder: Int = 0) {

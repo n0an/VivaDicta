@@ -23,7 +23,7 @@ enum PresetCatalog {
     static let regular = Preset(
         id: "regular",
         name: "Regular",
-        icon: "checkmark.seal.fill",
+        icon: "✨",
         category: "Rewrite",
         promptInstructions: """
         - Clean up the <TRANSCRIPT> text for clarity and natural flow while preserving meaning and the original tone.
@@ -47,7 +47,7 @@ enum PresetCatalog {
     static let professional = Preset(
         id: "professional",
         name: "Professional",
-        icon: "briefcase.fill",
+        icon: "💼",
         category: "Rewrite",
         promptInstructions: """
         Rewrite the <TRANSCRIPT> text in a professional, formal tone. \
@@ -62,7 +62,7 @@ enum PresetCatalog {
     static let casual = Preset(
         id: "casual",
         name: "Casual",
-        icon: "face.smiling.fill",
+        icon: "😊",
         category: "Rewrite",
         promptInstructions: """
         Rewrite the <TRANSCRIPT> text in a casual, friendly tone. \
@@ -77,7 +77,7 @@ enum PresetCatalog {
     static let email = Preset(
         id: "email",
         name: "Email",
-        icon: "envelope.fill",
+        icon: "📧",
         category: "Rewrite",
         promptInstructions: """
         - Rewrite the <TRANSCRIPT> text as a complete email with proper formatting: include a greeting (Hi), body paragraphs (2-4 sentences each), and closing (Thanks).
@@ -96,7 +96,7 @@ enum PresetCatalog {
     static let chat = Preset(
         id: "chat",
         name: "Chat",
-        icon: "bubble.left.fill",
+        icon: "💬",
         category: "Rewrite",
         promptInstructions: """
         - Rewrite the <TRANSCRIPT> text as a chat message: informal, concise, and conversational.
@@ -118,7 +118,7 @@ enum PresetCatalog {
     static let coding = Preset(
         id: "coding",
         name: "Coding",
-        icon: "curlybraces",
+        icon: "💻",
         category: "Rewrite",
         promptInstructions: """
         Rewrite the <TRANSCRIPT> text as clean, well-structured technical documentation or code-related notes. \
@@ -134,7 +134,7 @@ enum PresetCatalog {
     static let rewrite = Preset(
         id: "rewrite",
         name: "Rewrite",
-        icon: "pencil.circle.fill",
+        icon: "✍️",
         category: "Rewrite",
         promptInstructions: """
         - Rewrite the <TRANSCRIPT> text with enhanced clarity, improved sentence structure, and rhythmic flow while preserving the original meaning and tone.
@@ -159,7 +159,7 @@ enum PresetCatalog {
     static let summary = Preset(
         id: "summary",
         name: "Summary",
-        icon: "doc.text.magnifyingglass",
+        icon: "📝",
         category: "Summarize",
         promptInstructions: """
         Summarize the <TRANSCRIPT> text in 2-5 concise bullet points. \
@@ -174,7 +174,7 @@ enum PresetCatalog {
     static let actionPoints = Preset(
         id: "action_points",
         name: "Action Points",
-        icon: "checklist",
+        icon: "✅",
         category: "Summarize",
         promptInstructions: """
         Extract all action items, tasks, and to-dos from the <TRANSCRIPT> text. \
@@ -191,7 +191,7 @@ enum PresetCatalog {
     static let translateEnglish = Preset(
         id: "translate_en",
         name: "English",
-        icon: "globe",
+        icon: "🇺🇸",
         category: "Translate",
         promptInstructions: """
         Translate the <TRANSCRIPT> text into English. \
@@ -206,7 +206,7 @@ enum PresetCatalog {
     static let translateRussian = Preset(
         id: "translate_ru",
         name: "Russian",
-        icon: "globe",
+        icon: "🇷🇺",
         category: "Translate",
         promptInstructions: """
         Translate the <TRANSCRIPT> text into Russian. \
@@ -221,7 +221,7 @@ enum PresetCatalog {
     static let translateSpanish = Preset(
         id: "translate_es",
         name: "Spanish",
-        icon: "globe",
+        icon: "🇪🇸",
         category: "Translate",
         promptInstructions: """
         Translate the <TRANSCRIPT> text into Spanish. \
@@ -238,7 +238,7 @@ enum PresetCatalog {
     static let assistant = Preset(
         id: "assistant",
         name: "Assistant",
-        icon: "bubble.left.and.bubble.right.fill",
+        icon: "🤖",
         category: "Assistant",
         promptInstructions: """
         You are a powerful AI assistant. Your primary goal is to provide a direct, clean, \
@@ -317,7 +317,7 @@ enum PresetCatalog {
 
     /// Returns the icon for a preset ID.
     static func icon(for presetId: String) -> String {
-        allBuiltIn.first { $0.id == presetId }?.icon ?? "sparkles"
+        allBuiltIn.first { $0.id == presetId }?.icon ?? "✨"
     }
 
     // MARK: - CloudKit UUID Mapping

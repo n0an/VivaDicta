@@ -639,8 +639,7 @@ private struct ModePresetPickerSheet: View {
                                 dismiss()
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: preset.icon)
-                                        .font(.system(size: 14))
+                                    PresetIconView(icon: preset.icon)
                                         .frame(width: 20)
                                         .foregroundStyle(.secondary)
 

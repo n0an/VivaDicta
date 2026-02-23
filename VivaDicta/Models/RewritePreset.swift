@@ -19,7 +19,7 @@ import SwiftData
 final class RewritePreset {
     var id: UUID = UUID()
     var name: String = ""
-    var icon: String = "sparkles"
+    var icon: String = "✨"
     var category: String = "Other"
     var systemPrompt: String = ""
     var isPredefined: Bool = false
@@ -32,7 +32,7 @@ final class RewritePreset {
     init(
         id: UUID = UUID(),
         name: String = "",
-        icon: String = "sparkles",
+        icon: String = "✨",
         category: String = "Other",
         systemPrompt: String = "",
         isPredefined: Bool = false,

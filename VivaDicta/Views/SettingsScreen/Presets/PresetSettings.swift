@@ -102,8 +102,7 @@ private struct PresetRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: preset.icon)
-                .font(.system(size: 14))
+            PresetIconView(icon: preset.icon)
                 .frame(width: 24)
                 .foregroundStyle(.secondary)
 

@@ -302,7 +302,11 @@ struct TranscriptionDetailView: View {
                 // Share currently selected text (if it's a variation)
                 if selectedIsVariation {
                     ShareLink(item: displayedText) {
-                        Label(selectedLabel, systemImage: PresetCatalog.icon(for: selectedChipId))
+                        Label {
+                            Text(selectedLabel)
+                        } icon: {
+                            PresetIconView(icon: PresetCatalog.icon(for: selectedChipId))
+                        }
                     }
                 }
 
@@ -414,8 +418,7 @@ struct TranscriptionDetailView: View {
                     ProgressView()
                         .controlSize(.mini)
                 } else if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11))
+                    PresetIconView(icon: icon, fontSize: 11)
                 }
                 Text(label)
                     .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
@@ -598,8 +601,7 @@ private struct PresetPickerSheet: View {
             onSelect(preset)
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: preset.icon)
-                    .font(.system(size: 14))
+                PresetIconView(icon: preset.icon)
                     .frame(width: 20)
                     .foregroundStyle(.secondary)
 

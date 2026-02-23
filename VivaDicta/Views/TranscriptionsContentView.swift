@@ -71,10 +71,11 @@ struct TranscriptionsContentView: View {
                                         if let latestVariation = transcription.variations?
                                             .sorted(by: { $0.createdAt < $1.createdAt }).last {
                                             ShareLink(item: latestVariation.text) {
-                                                Label(
-                                                    PresetCatalog.displayName(for: latestVariation.presetId, fallback: latestVariation.presetDisplayName),
-                                                    systemImage: PresetCatalog.icon(for: latestVariation.presetId)
-                                                )
+                                                Label {
+                                                    Text(PresetCatalog.displayName(for: latestVariation.presetId, fallback: latestVariation.presetDisplayName))
+                                                } icon: {
+                                                    PresetIconView(icon: PresetCatalog.icon(for: latestVariation.presetId))
+                                                }
                                             }
                                         }
 
