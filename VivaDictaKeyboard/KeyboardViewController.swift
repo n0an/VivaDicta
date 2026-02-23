@@ -112,21 +112,17 @@ struct ModeCycleSelector: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Previous mode")
+            .accessibilityHint("Tap to switch to previous mode")
 
-            // Mode name - tap to cycle forward
-            Button {
-                cycleModes(forward: true)
-            } label: {
-                Text(selectedMode.name)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .frame(maxWidth: 100)
-            }
-            .buttonStyle(.plain)
+            // Mode name
+            Text(selectedMode.name)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .frame(maxWidth: 100)
             .accessibilityLabel("Current mode: \(selectedMode.name)")
             .accessibilityValue("\(currentIndex + 1) of \(modes.count)")
-            .accessibilityHint("Tap to switch to next mode")
+            
 
             // Right arrow - cycle forward
             Button {
@@ -140,6 +136,7 @@ struct ModeCycleSelector: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Next mode")
+            .accessibilityHint("Tap to switch to next mode")
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
@@ -149,6 +146,7 @@ struct ModeCycleSelector: View {
                 .onEnded { value in
                     let horizontal = value.translation.width
                     guard abs(horizontal) > abs(value.translation.height) else { return }
+                    print("=== gesture forward == \(horizontal < 0)")
                     cycleModes(forward: horizontal < 0)
                 }
         )
