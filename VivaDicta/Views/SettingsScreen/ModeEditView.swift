@@ -597,14 +597,20 @@ private struct ModePresetPickerSheet: View {
 
     let presetManager: PresetManager
     @Binding var selectedPresetId: String?
-    @State private var filter: PresetFilter = .all
+    @State private var selectedCategory: String?
+
+    private var allCategories: [String] {
+        var seen = Set<String>()
+        return presetManager.presets.compactMap { preset in
+            if seen.contains(preset.category) { return nil }
+            seen.insert(preset.category)
+            return preset.category
+        }
+    }
 
     private var filteredPresets: [Preset] {
-        switch filter {
-        case .all: presetManager.presets
-        case .system: presetManager.presets.filter(\.isBuiltIn)
-        case .custom: presetManager.presets.filter { !$0.isBuiltIn }
-        }
+        guard let selectedCategory else { return presetManager.presets }
+        return presetManager.presets.filter { $0.category == selectedCategory }
     }
 
     private var filteredCategories: [String] {
@@ -620,12 +626,10 @@ private struct ModePresetPickerSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Picker("Filter", selection: $filter) {
-                        ForEach(PresetFilter.allCases) { filter in
-                            Text(filter.title).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    CategoryChipsView(
+                        categories: allCategories,
+                        selectedCategory: $selectedCategory
+                    )
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 }
@@ -643,8 +647,15 @@ private struct ModePresetPickerSheet: View {
                                         .frame(width: 20)
                                         .foregroundStyle(.secondary)
 
-                                    Text(preset.name)
-                                        .font(.body)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(preset.name)
+                                            .font(.body)
+                                        if !preset.presetDescription.isEmpty {
+                                            Text(preset.presetDescription)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
 
                                     Spacer()
 
