@@ -86,11 +86,11 @@ struct HudContentView: View {
                     .foregroundStyle(.primary)
                     .customAttribute(EmphasisAttribute())
                     .transition(TextTransition())
-                    .frame(width: 108, height: 24)
+                    .frame(width: 140, height: 24)
             } else {
                 Rectangle()
                     .fill(.clear)
-                    .frame(width: 108, height: 24)
+                    .frame(width: 140, height: 24)
             }
 
             // Cancel button - appears after 1 second
