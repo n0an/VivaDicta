@@ -55,7 +55,6 @@ struct HudContentView: View {
     @State private var isShowingText = false
     @State private var showCancelButton = false
     @State private var timer: Timer?
-    @State private var textRenderEffectTimer: Timer?
     @State private var cancelButtonTimer: Timer?
 
     var body: some View {
@@ -84,7 +83,19 @@ struct HudContentView: View {
                 Text(statusText)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.primary)
-                    .transition(.blurReplace)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(
+                                edge: .bottom
+                            )
+                            .combined(
+                                with: .scale(
+                                    scale: 0.5
+                                )
+                            ),
+                            removal: .opacity
+                        )
+                    )
                     .frame(width: 140, height: 24)
             } else {
                 Rectangle()
@@ -120,23 +131,12 @@ struct HudContentView: View {
             isShowingText = true
             resetCancelButtonTimer()
 
-            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: true) { _ in
-                Task { @MainActor in
-                    isShowingText = false
-
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(1.2))
-                        isShowingText = true
-                    }
-                }
-            }
-
-            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
                 Task { @MainActor in
                     isShowing = true
 
                     Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(0.5))
+                        try? await Task.sleep(for: .seconds(2.6))
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isShowing = false
                         }
@@ -147,9 +147,8 @@ struct HudContentView: View {
         }
         .onDisappear {
             isSymbolAnimating = false
+            isShowingText = false
             showCancelButton = false
-            textRenderEffectTimer?.invalidate()
-            textRenderEffectTimer = nil
             timer?.invalidate()
             timer = nil
             cancelButtonTimer?.invalidate()
