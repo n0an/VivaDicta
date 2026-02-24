@@ -330,9 +330,43 @@ enum PresetCatalog {
     }
 
     /// Returns the icon for a preset ID.
+    /// Checks built-in presets first, then macOS-only presets, then falls back to ✨.
     static func icon(for presetId: String) -> String {
-        allBuiltIn.first { $0.id == presetId }?.icon ?? "✨"
+        if let icon = allBuiltIn.first(where: { $0.id == presetId })?.icon {
+            return icon
+        }
+        return macOSOnlyPresetIcons[presetId] ?? "✨"
     }
+
+    /// Icons for presets that exist only on macOS but may sync via CloudKit.
+    private static let macOSOnlyPresetIcons: [String: String] = [
+        "short": "✂️",
+        "elaborated": "🔬",
+        "simplify": "🔤",
+        "takeaways": "📌",
+        "mind_map": "🕸️",
+        "key_points": "🎯",
+        "study_note": "🎓",
+        "definitions": "📖",
+        "quiz": "🧩",
+        "insights": "🧠",
+        "pros_cons": "⚖️",
+        "new_ideas": "💡",
+        "hidden_gems": "💎",
+        "proofreading": "🔍",
+        "structured": "📄",
+        "list": "📋",
+        "table": "🗂️",
+        "journal_entry": "📔",
+        "philosophical": "🤔",
+        "blog": "✒️",
+        "instagram": "📸",
+        "facebook": "👥",
+        "youtube": "🎬",
+        "twitter": "🐦",
+        "threads": "🧵",
+        "linkedin": "💼",
+    ]
 
     // MARK: - CloudKit UUID Mapping
 
