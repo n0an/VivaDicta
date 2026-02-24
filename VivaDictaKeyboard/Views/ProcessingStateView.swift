@@ -96,6 +96,7 @@ struct InfoView: View {
     @Environment(\.colorScheme) var colorScheme
     @State var isSymbolAnimating: Bool = false
     @State var isShowing = false
+    @State var isShowingText: Bool = false
     @State var timer: Timer?
 
     var body: some View {
@@ -107,6 +108,7 @@ struct InfoView: View {
                     Image(systemName: processingStage.statusIcon)
                         .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
                         .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
+//                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                         .foregroundStyle(.primary)
                         .font(.system(size: 50, weight: .semibold))
                 } else {
@@ -126,34 +128,40 @@ struct InfoView: View {
             
             // Processing status label
             
-            Text(processingStage.statusText)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(
-                            edge: .bottom
-                        ).combined(
-                            with: .scale(
-                                scale: 0.5
-                            )
-                        ),
-                        removal: .opacity
+            if isShowingText {
+                Text(processingStage.statusText)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(
+                                edge: .bottom
+                            ).combined(
+                                with: .scale(
+                                    scale: 0.5
+                                )
+                            ),
+                            removal: .opacity
+                        )
                     )
-                )
-            
-                .frame(width: 150, height: 20)
+                
+                    .frame(width: 150, height: 20)
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .frame(width: 150, height: 20)
+            }
         }
+        .animation(.default, value: isShowingText)
         .onAppear {
             isSymbolAnimating = true
-            
-            timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
+            isShowingText = true
+            timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
                 Task { @MainActor in
-                    
                     isShowing = true
-                    
+
                     Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(0.5))
+                        try? await Task.sleep(for: .seconds(2.6))
                         withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
                             isShowing = false
                         }
@@ -163,6 +171,7 @@ struct InfoView: View {
             timer?.fire()
         }
         .onDisappear {
+            isShowingText = false
             isSymbolAnimating = false
             timer?.invalidate()
             timer = nil
