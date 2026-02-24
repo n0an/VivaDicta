@@ -670,53 +670,21 @@ private struct ModePresetPickerSheet: View {
                     .listRowBackground(Color.clear)
                 }
 
+                if selectedCategory == nil {
+                    let favorites = typeFilteredPresets.filter(\.isFavorite)
+                    if !favorites.isEmpty {
+                        Section("Favorites") {
+                            ForEach(favorites) { preset in
+                                modePresetRow(preset)
+                            }
+                        }
+                    }
+                }
+
                 ForEach(filteredCategories, id: \.self) { category in
                     Section(category) {
                         ForEach(filteredPresets.filter { $0.category == category }) { preset in
-                            Button {
-                                selectedPresetId = preset.id
-                                HapticManager.selectionChanged()
-                                dismiss()
-                            } label: {
-                                HStack(spacing: 10) {
-                                    if !preset.isBuiltIn {
-                                        Capsule()
-                                            .fill(.orange)
-                                            .frame(width: 4)
-                                    }
-
-                                    PresetIconView(icon: preset.icon)
-                                        .frame(width: 20)
-                                        .foregroundStyle(.secondary)
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(preset.name)
-                                            .font(.body)
-                                        if !preset.presetDescription.isEmpty {
-                                            Text(preset.presetDescription)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-
-                                    Spacer()
-
-                                    Button {
-                                        presetManager.toggleFavorite(presetId: preset.id)
-                                    } label: {
-                                        Image(systemName: preset.isFavorite ? "heart.fill" : "heart")
-                                            .foregroundStyle(preset.isFavorite ? .red : .secondary.opacity(0.4))
-                                            .font(.system(size: 16))
-                                    }
-                                    .buttonStyle(.borderless)
-
-                                    if selectedPresetId == preset.id {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.blue)
-                                    }
-                                }
-                            }
-                            .tint(.primary)
+                            modePresetRow(preset)
                         }
                     }
                 }
@@ -732,6 +700,53 @@ private struct ModePresetPickerSheet: View {
             .navigationTitle("Select Preset")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private func modePresetRow(_ preset: Preset) -> some View {
+        Button {
+            selectedPresetId = preset.id
+            HapticManager.selectionChanged()
+            dismiss()
+        } label: {
+            HStack(spacing: 10) {
+                if !preset.isBuiltIn {
+                    Capsule()
+                        .fill(.orange)
+                        .frame(width: 4)
+                }
+
+                PresetIconView(icon: preset.icon)
+                    .frame(width: 20)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(preset.name)
+                        .font(.body)
+                    if !preset.presetDescription.isEmpty {
+                        Text(preset.presetDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Button {
+                    presetManager.toggleFavorite(presetId: preset.id)
+                } label: {
+                    Image(systemName: preset.isFavorite ? "heart.fill" : "heart")
+                        .foregroundStyle(preset.isFavorite ? .red : .secondary.opacity(0.4))
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.borderless)
+
+                if selectedPresetId == preset.id {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.blue)
+                }
+            }
+        }
+        .tint(.primary)
     }
 }
 

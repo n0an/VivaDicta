@@ -648,6 +648,17 @@ private struct PresetPickerSheet: View {
                     .listRowBackground(Color.clear)
                 }
 
+                if selectedCategory == nil {
+                    let favorites = typeFilteredPresets.filter(\.isFavorite)
+                    if !favorites.isEmpty {
+                        Section("Favorites") {
+                            ForEach(favorites) { preset in
+                                presetRow(preset)
+                            }
+                        }
+                    }
+                }
+
                 ForEach(filteredCategories, id: \.self) { category in
                     Section(category) {
                         ForEach(filteredPresets.filter { $0.category == category }) { preset in

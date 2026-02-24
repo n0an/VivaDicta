@@ -148,6 +148,16 @@ struct PresetFormView: View {
         }
         .navigationTitle(navigationTitle)
         .toolbar {
+            if !isCreateMode, let preset = existingPreset {
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        presetManager.toggleFavorite(presetId: preset.id)
+                    } label: {
+                        Image(systemName: presetManager.preset(for: preset.id)?.isFavorite == true ? "heart.fill" : "heart")
+                            .foregroundStyle(presetManager.preset(for: preset.id)?.isFavorite == true ? .red : .secondary)
+                    }
+                }
+            }
             if !isAssistantPreset {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isCreateMode ? "Add" : "Save") {

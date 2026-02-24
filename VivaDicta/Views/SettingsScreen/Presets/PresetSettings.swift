@@ -69,6 +69,28 @@ struct PresetSettings: View {
                 .listRowBackground(Color.clear)
             }
 
+            if selectedCategory == nil {
+                let favorites = typeFilteredPresets.filter(\.isFavorite)
+                if !favorites.isEmpty {
+                    Section("Favorites") {
+                        ForEach(favorites) { preset in
+                            NavigationLink(value: preset) {
+                                PresetRowView(preset: preset, onToggleFavorite: {
+                                    presetManager.toggleFavorite(presetId: preset.id)
+                                })
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if !preset.isBuiltIn {
+                                    Button("Delete", role: .destructive) {
+                                        deletePreset(preset)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ForEach(filteredCategories, id: \.self) { category in
                 Section(category) {
                     ForEach(filteredPresets.filter { $0.category == category }) { preset in
