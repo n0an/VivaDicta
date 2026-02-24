@@ -19,6 +19,7 @@ struct ModeEditView: View {
     @State private var modeEditViewError: SettingsError = .duplicateModeName("")
     @State private var showCustomTranscriptionConfiguration: Bool = false
     @State private var showPresetPicker: Bool = false
+    @State private var showAIModelPicker: Bool = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
 
@@ -333,18 +334,31 @@ struct ModeEditView: View {
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
-                                    Picker(selection: $viewModel.aiModel) {
-                                        ForEach(viewModel.aiService.getAvailableModels(for: provider), id: \.self) { model in
-                                            Text(model).tag(model as String?)
-                                        }
+                                    Button {
+                                        showAIModelPicker = true
                                     } label: {
                                         HStack {
                                             Image(systemName: "wand.and.sparkles")
                                                 .foregroundStyle(aiEnhancementGradient)
                                             Text("AI Model")
+                                            Spacer()
+                                            Text(viewModel.aiModel ?? "Select")
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(1)
+                                            Image(systemName: "chevron.up.chevron.down")
+                                                .font(.system(size: 10, weight: .semibold))
+                                                .foregroundStyle(.tertiary)
                                         }
                                     }
+                                    .tint(.primary)
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                    .sheet(isPresented: $showAIModelPicker) {
+                                        ModelPickerSheet(
+                                            models: viewModel.aiService.getAvailableModels(for: provider),
+                                            selectedModel: $viewModel.aiModel
+                                        )
+                                        .presentationDetents([.medium, .large])
+                                    }
                                     .onChange(of: viewModel.aiModel) { _, newModel in
                                         viewModel.updateModel(newModel)
                                         HapticManager.selectionChanged()
@@ -661,6 +675,12 @@ private struct ModePresetPickerSheet: View {
                                 dismiss()
                             } label: {
                                 HStack(spacing: 10) {
+                                    if !preset.isBuiltIn {
+                                        Capsule()
+                                            .fill(.orange)
+                                            .frame(width: 4)
+                                    }
+
                                     PresetIconView(icon: preset.icon)
                                         .frame(width: 20)
                                         .foregroundStyle(.secondary)
@@ -692,6 +712,46 @@ private struct ModePresetPickerSheet: View {
                 selectedCategory = nil
             }
             .navigationTitle("Select Preset")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+// MARK: - Model Picker Sheet
+
+private struct ModelPickerSheet: View {
+    let models: [String]
+    @Binding var selectedModel: String?
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var filteredModels: [String] {
+        if searchText.isEmpty { return models }
+        return models.filter { $0.localizedStandardContains(searchText) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(filteredModels, id: \.self) { model in
+                Button {
+                    selectedModel = model
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text(model)
+
+                        Spacer()
+
+                        if selectedModel == model {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                }
+                .tint(.primary)
+            }
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search models")
+            .navigationTitle("Select Model")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
