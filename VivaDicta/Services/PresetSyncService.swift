@@ -108,6 +108,7 @@ class PresetSyncService {
             isPredefined: false,
             sortOrder: 1000,
             isHidden: false,
+            isFavorite: preset.isFavorite,
             useSystemTemplate: preset.useSystemTemplate,
             wrapInTranscriptTags: preset.wrapInTranscriptTags,
             presetDescription: preset.presetDescription
@@ -131,6 +132,7 @@ class PresetSyncService {
             existing.useSystemTemplate = preset.useSystemTemplate
             existing.wrapInTranscriptTags = preset.wrapInTranscriptTags
             existing.presetDescription = preset.presetDescription
+            existing.isFavorite = preset.isFavorite
             saveContext(context)
             logger.logInfo("Updated RewritePreset record: \(preset.name)")
         } else {
@@ -163,6 +165,7 @@ class PresetSyncService {
             existing.systemPrompt = preset.promptInstructions
             existing.useSystemTemplate = preset.useSystemTemplate
             existing.wrapInTranscriptTags = preset.wrapInTranscriptTags
+            existing.isFavorite = preset.isFavorite
         } else {
             let record = RewritePreset(
                 id: uuid,
@@ -172,6 +175,7 @@ class PresetSyncService {
                 systemPrompt: preset.promptInstructions,
                 isPredefined: true,
                 sortOrder: 0,
+                isFavorite: preset.isFavorite,
                 useSystemTemplate: preset.useSystemTemplate,
                 wrapInTranscriptTags: preset.wrapInTranscriptTags
             )
@@ -194,6 +198,45 @@ class PresetSyncService {
         existing.wrapInTranscriptTags = catalogDefault.wrapInTranscriptTags
         saveContext(context)
         logger.logInfo("Reset built-in preset record to default: \(catalogDefault.name)")
+    }
+
+    /// Syncs the favorite state of a preset to SwiftData/CloudKit.
+    /// Works for both custom presets (by extracted UUID) and built-in presets (by catalog UUID).
+    func syncFavoriteState(presetId: String, isFavorite: Bool) {
+        guard let context = modelContext else { return }
+
+        let uuid: UUID?
+        if presetId.hasPrefix("custom_") {
+            uuid = extractUUID(from: presetId)
+        } else {
+            uuid = PresetCatalog.uuid(for: presetId)
+        }
+
+        guard let uuid else { return }
+
+        if let existing = fetchPreset(by: uuid, context: context) {
+            existing.isFavorite = isFavorite
+            saveContext(context)
+            logger.logInfo("Synced favorite state to CloudKit: \(presetId) → \(isFavorite)")
+        } else if !presetId.hasPrefix("custom_") {
+            // Built-in preset doesn't have a record yet — create one for favorite sync
+            guard let catalogDefault = PresetCatalog.defaultPreset(for: presetId) else { return }
+            let record = RewritePreset(
+                id: uuid,
+                name: catalogDefault.name,
+                icon: catalogDefault.icon,
+                category: catalogDefault.category,
+                systemPrompt: catalogDefault.promptInstructions,
+                isPredefined: true,
+                sortOrder: 0,
+                isFavorite: isFavorite,
+                useSystemTemplate: catalogDefault.useSystemTemplate,
+                wrapInTranscriptTags: catalogDefault.wrapInTranscriptTags
+            )
+            context.insert(record)
+            saveContext(context)
+            logger.logInfo("Created built-in RewritePreset record for favorite sync: \(presetId)")
+        }
     }
 
     // MARK: - Migration
@@ -269,6 +312,7 @@ class PresetSyncService {
                 updated.promptInstructions = record.systemPrompt
                 updated.useSystemTemplate = record.useSystemTemplate
                 updated.wrapInTranscriptTags = record.wrapInTranscriptTags
+                updated.isFavorite = record.isFavorite
                 updated.isEdited = true
                 presetManager.updatePreset(updated)
                 logger.logInfo("Applied CloudKit edits to built-in preset: \(builtInId)")
@@ -276,6 +320,16 @@ class PresetSyncService {
                 // CloudKit record matches catalog defaults (was reset on another device)
                 presetManager.resetToDefault(presetId: builtInId)
                 logger.logInfo("Reset built-in preset from CloudKit: \(builtInId)")
+            }
+
+            // Sync isFavorite regardless of edit state
+            if localPreset.isFavorite != record.isFavorite {
+                if let currentPreset = presetManager.preset(for: builtInId), currentPreset.isFavorite != record.isFavorite {
+                    var updated = currentPreset
+                    updated.isFavorite = record.isFavorite
+                    presetManager.updatePreset(updated)
+                    logger.logInfo("Synced favorite state from CloudKit for: \(builtInId)")
+                }
             }
         }
     }
@@ -333,6 +387,7 @@ class PresetSyncService {
             useSystemTemplate: record.useSystemTemplate,
             wrapInTranscriptTags: record.wrapInTranscriptTags,
             isBuiltIn: false,
+            isFavorite: record.isFavorite,
             createdAt: record.createdAt
         )
     }

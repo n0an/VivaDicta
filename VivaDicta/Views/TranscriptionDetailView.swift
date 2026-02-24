@@ -610,6 +610,9 @@ private struct PresetPickerSheet: View {
     }
 
     private var filteredPresets: [Preset] {
+        if selectedCategory == CategoryChipsView.favoritesFilter {
+            return typeFilteredPresets.filter(\.isFavorite)
+        }
         guard let selectedCategory else { return typeFilteredPresets }
         return typeFilteredPresets.filter { $0.category == selectedCategory }
     }
@@ -638,7 +641,8 @@ private struct PresetPickerSheet: View {
 
                     CategoryChipsView(
                         categories: allCategories,
-                        selectedCategory: $selectedCategory
+                        selectedCategory: $selectedCategory,
+                        showFavorites: presetManager.hasFavorites
                     )
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
@@ -654,6 +658,11 @@ private struct PresetPickerSheet: View {
             }
             .onChange(of: filter) { _, _ in
                 selectedCategory = nil
+            }
+            .onChange(of: presetManager.hasFavorites) {
+                if !presetManager.hasFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
+                    selectedCategory = nil
+                }
             }
             .navigationTitle("AI Rewrite")
             .navigationBarTitleDisplayMode(.inline)
@@ -687,6 +696,15 @@ private struct PresetPickerSheet: View {
                 }
 
                 Spacer()
+
+                Button {
+                    presetManager.toggleFavorite(presetId: preset.id)
+                } label: {
+                    Image(systemName: preset.isFavorite ? "heart.fill" : "heart")
+                        .foregroundStyle(preset.isFavorite ? .red : .secondary.opacity(0.4))
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.borderless)
 
                 if exists {
                     Image(systemName: "arrow.clockwise")

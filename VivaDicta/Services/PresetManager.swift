@@ -50,6 +50,11 @@ class PresetManager {
         presets.filter { $0.category == category }
     }
 
+    /// Whether any presets are marked as favorites.
+    var hasFavorites: Bool {
+        presets.contains { $0.isFavorite }
+    }
+
     /// Returns ordered category names.
     var categories: [String] {
         var seen = Set<String>()
@@ -118,6 +123,15 @@ class PresetManager {
         logger.logInfo("Reset preset to default: \(defaultPreset.name)")
     }
 
+    /// Toggles the favorite state of a preset and syncs to CloudKit.
+    func toggleFavorite(presetId: String) {
+        guard let index = presets.firstIndex(where: { $0.id == presetId }) else { return }
+        presets[index].isFavorite.toggle()
+        savePresets()
+        syncService?.syncFavoriteState(presetId: presetId, isFavorite: presets[index].isFavorite)
+        logger.logInfo("Toggled favorite for preset: \(presets[index].name) → \(presets[index].isFavorite)")
+    }
+
     /// Checks if a preset name already exists (for duplicate detection).
     func isPresetNameDuplicate(_ name: String, excludingId: String? = nil) -> Bool {
         let normalizedName = normalizeForComparison(name)
@@ -145,10 +159,15 @@ class PresetManager {
                         presets[index].icon = builtIn.icon
                         changed = true
                     }
-                } else if presets[index] != builtIn {
-                    // Not edited — refresh entirely from catalog
-                    presets[index] = builtIn
-                    changed = true
+                } else {
+                    // Not edited — refresh from catalog, preserving isFavorite
+                    let wasFavorite = presets[index].isFavorite
+                    if presets[index] != builtIn || wasFavorite != builtIn.isFavorite {
+                        var refreshed = builtIn
+                        refreshed.isFavorite = wasFavorite
+                        presets[index] = refreshed
+                        changed = true
+                    }
                 }
             } else {
                 presets.append(builtIn)

@@ -32,6 +32,9 @@ struct PresetSettings: View {
     }
 
     private var filteredPresets: [Preset] {
+        if selectedCategory == CategoryChipsView.favoritesFilter {
+            return typeFilteredPresets.filter(\.isFavorite)
+        }
         guard let selectedCategory else { return typeFilteredPresets }
         return typeFilteredPresets.filter { $0.category == selectedCategory }
     }
@@ -59,7 +62,8 @@ struct PresetSettings: View {
 
                 CategoryChipsView(
                     categories: allCategories,
-                    selectedCategory: $selectedCategory
+                    selectedCategory: $selectedCategory,
+                    showFavorites: presetManager.hasFavorites
                 )
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
@@ -69,7 +73,9 @@ struct PresetSettings: View {
                 Section(category) {
                     ForEach(filteredPresets.filter { $0.category == category }) { preset in
                         NavigationLink(value: preset) {
-                            PresetRowView(preset: preset)
+                            PresetRowView(preset: preset, onToggleFavorite: {
+                                presetManager.toggleFavorite(presetId: preset.id)
+                            })
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if !preset.isBuiltIn {
@@ -84,6 +90,11 @@ struct PresetSettings: View {
         }
         .onChange(of: filter) { _, _ in
             selectedCategory = nil
+        }
+        .onChange(of: presetManager.hasFavorites) {
+            if !presetManager.hasFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
+                selectedCategory = nil
+            }
         }
         .toolbarTitleDisplayMode(.inlineLarge)
         .navigationTitle("Presets")
@@ -121,6 +132,7 @@ enum PresetFilter: String, CaseIterable, Identifiable {
 
 private struct PresetRowView: View {
     let preset: Preset
+    var onToggleFavorite: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -147,6 +159,19 @@ private struct PresetRowView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Spacer()
+
+            if let onToggleFavorite {
+                Button {
+                    onToggleFavorite()
+                } label: {
+                    Image(systemName: preset.isFavorite ? "heart.fill" : "heart")
+                        .foregroundStyle(preset.isFavorite ? .red : .secondary.opacity(0.4))
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.borderless)
             }
         }
         .padding(.vertical, 4)

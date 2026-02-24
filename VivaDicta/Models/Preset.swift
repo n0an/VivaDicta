@@ -55,6 +55,9 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
     /// Whether a built-in preset has been modified by the user.
     var isEdited: Bool
 
+    /// Whether the user has marked this preset as a favorite.
+    var isFavorite: Bool
+
     /// When this preset was created.
     let createdAt: Date
 
@@ -74,6 +77,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
          wrapInTranscriptTags: Bool = true,
          isBuiltIn: Bool = false,
          isEdited: Bool = false,
+         isFavorite: Bool = false,
          createdAt: Date = Date()) {
         self.id = id
         self.name = name
@@ -85,6 +89,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
         self.wrapInTranscriptTags = wrapInTranscriptTags
         self.isBuiltIn = isBuiltIn
         self.isEdited = isEdited
+        self.isFavorite = isFavorite
         self.createdAt = createdAt
     }
 
@@ -100,6 +105,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
         wrapInTranscriptTags = try container.decode(Bool.self, forKey: .wrapInTranscriptTags)
         isBuiltIn = try container.decode(Bool.self, forKey: .isBuiltIn)
         isEdited = try container.decode(Bool.self, forKey: .isEdited)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
         createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
 }

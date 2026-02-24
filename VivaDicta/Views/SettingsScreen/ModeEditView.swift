@@ -632,6 +632,9 @@ private struct ModePresetPickerSheet: View {
     }
 
     private var filteredPresets: [Preset] {
+        if selectedCategory == CategoryChipsView.favoritesFilter {
+            return typeFilteredPresets.filter(\.isFavorite)
+        }
         guard let selectedCategory else { return typeFilteredPresets }
         return typeFilteredPresets.filter { $0.category == selectedCategory }
     }
@@ -660,7 +663,8 @@ private struct ModePresetPickerSheet: View {
 
                     CategoryChipsView(
                         categories: allCategories,
-                        selectedCategory: $selectedCategory
+                        selectedCategory: $selectedCategory,
+                        showFavorites: presetManager.hasFavorites
                     )
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
@@ -697,6 +701,15 @@ private struct ModePresetPickerSheet: View {
 
                                     Spacer()
 
+                                    Button {
+                                        presetManager.toggleFavorite(presetId: preset.id)
+                                    } label: {
+                                        Image(systemName: preset.isFavorite ? "heart.fill" : "heart")
+                                            .foregroundStyle(preset.isFavorite ? .red : .secondary.opacity(0.4))
+                                            .font(.system(size: 16))
+                                    }
+                                    .buttonStyle(.borderless)
+
                                     if selectedPresetId == preset.id {
                                         Image(systemName: "checkmark")
                                             .foregroundStyle(.blue)
@@ -710,6 +723,11 @@ private struct ModePresetPickerSheet: View {
             }
             .onChange(of: filter) { _, _ in
                 selectedCategory = nil
+            }
+            .onChange(of: presetManager.hasFavorites) {
+                if !presetManager.hasFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
+                    selectedCategory = nil
+                }
             }
             .navigationTitle("Select Preset")
             .navigationBarTitleDisplayMode(.inline)
