@@ -47,7 +47,7 @@ struct RecordingStateView: View {
                 .padding(.trailing, 16)
             }
 
-            Text(timerInterval: recordingStartDate...(.distantFuture), countsDown: false)
+            Text(recordingStartDate, style: .timer)
                 .font(.system(size: 64, weight: .medium, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(.primary)
