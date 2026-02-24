@@ -435,7 +435,8 @@ struct VivaDictaApp: App {
             "com.openai.chat": "com.openai.chat://",
             "ai.perplexity.app": "perplexity-app://",
             "com.anthropic.claude": "claude://",
-            "md.obsidian": "obsidian://"
+            "md.obsidian": "obsidian://",
+            "im.monica.app.monica": "monica://"
             // Add more as needed
         ]
         
