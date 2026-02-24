@@ -22,6 +22,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case deepgram
     case mistral
     case soniox
+    case zai
+    case kimi
     case vercelAIGateway
     case huggingFace
     case ollama
@@ -53,6 +55,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "OpenRouter"
         case .grok:
             "Grok (x.ai)"
+        case .zai:
+            "Z.AI"
+        case .kimi:
+            "Kimi (Moonshot)"
         case .vercelAIGateway:
             "Vercel AI Gateway"
         case .huggingFace:
@@ -83,6 +89,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "cerebras"
         case .grok:
             "grok"
+        case .zai:
+            "zai"
+        case .kimi:
+            "moonshot"
         case .openRouter:
             "openrouter"
         case .elevenLabs:
@@ -123,6 +133,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .mistral,
         .cerebras,
         .grok,
+        .zai,
+        .kimi,
         .openRouter,
         .vercelAIGateway,
         .huggingFace,
@@ -146,6 +158,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .mistral,
         .cerebras,
         .grok,
+        .zai,
+        .kimi,
         .openRouter,
         .vercelAIGateway,
         .huggingFace]
@@ -168,6 +182,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://openrouter.ai/api/v1/chat/completions"
         case .grok:
             return "https://api.x.ai/v1/chat/completions"
+        case .zai:
+            return "https://api.z.ai/api/paas/v4/chat/completions"
+        case .kimi:
+            return "https://api.moonshot.ai/v1/chat/completions"
         case .elevenLabs:
             return "https://api.elevenlabs.io/v1/speech-to-text"
         case .deepgram:
@@ -206,6 +224,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "gpt-5-mini"
         case .grok:
             return "grok-4-1-fast"
+        case .zai:
+            return "glm-5"
+        case .kimi:
+            return "kimi-k2.5"
         case .elevenLabs:
             return "scribe_v1"
         case .deepgram:
@@ -244,6 +266,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .openAI: "openAIAPIKey"
         case .openRouter: "openRouterAPIKey"
         case .grok: "grokAPIKey"
+        case .zai: "zaiAPIKey"
+        case .kimi: "kimiAPIKey"
         case .elevenLabs: "elevenLabsAPIKey"
         case .deepgram: "deepgramAPIKey"
         case .mistral: "mistralAPIKey"
@@ -310,6 +334,20 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "grok-4",
                 "grok-4-heavy",
                 "grok-code-fast-1"
+            ]
+        case .zai:
+            return [
+                "glm-5",
+                "glm-4.7",
+                "glm-4.6"
+            ]
+        case .kimi:
+            return [
+                "kimi-k2.5",
+                "kimi-k2",
+                "moonshot-v1-128k",
+                "moonshot-v1-32k",
+                "moonshot-v1-8k"
             ]
         case .elevenLabs:
             return []
