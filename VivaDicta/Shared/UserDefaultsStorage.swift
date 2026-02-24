@@ -48,6 +48,9 @@ enum UserDefaultsStorage {
         // iCloud
         static let isICloudSyncEnabled = "isICloudSyncEnabled"
 
+        // Auto-copy
+        static let isAutoCopyAfterRecordingEnabled = "isAutoCopyAfterRecordingEnabled"
+
         // Custom OpenAI Provider Configuration
         static let customOpenAIEndpointURL = "customOpenAIEndpointURL"
         static let customOpenAIModelName = "customOpenAIModelName"

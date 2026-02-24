@@ -21,6 +21,8 @@ struct SettingsView: View {
     private var isVADEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isTextFormattingEnabled)
     private var isTextFormattingEnabled = true
+    @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
+    private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
     private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -159,6 +161,19 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isTextFormattingEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    Toggle(isOn: $isAutoCopyAfterRecordingEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Copy to Clipboard")
+                                .font(.body)
+                            Text("Automatically copy transcription to clipboard after recording")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isAutoCopyAfterRecordingEnabled) { _, _ in
                         HapticManager.selectionChanged()
                     }
                 }

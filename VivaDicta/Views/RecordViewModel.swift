@@ -550,6 +550,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let textToShare = enhancedText ?? transcribedText
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
+                // Auto-copy to clipboard if enabled
+                if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
+                    ClipboardManager.copyToClipboard(textToShare)
+                }
+
                 HapticManager.heartbeat()
                 self.recordingState = .idle
 
@@ -686,6 +691,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Share with keyboard
                     AppGroupCoordinator.shared.shareTranscribedText(pending.text)
+
+                    // Auto-copy to clipboard if enabled
+                    if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
+                        ClipboardManager.copyToClipboard(pending.text)
+                    }
 
                     // Request app rating after successful transcription
                     RateAppManager.requestReviewIfAppropriate()
