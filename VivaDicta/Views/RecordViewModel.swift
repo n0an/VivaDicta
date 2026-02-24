@@ -177,6 +177,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 return
             }
 
+            // Capture clipboard content at recording start for AI context
+            aiService.captureClipboardContext()
+
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
                 logger.logInfo("🎙️ Using prewarm session for recording")
@@ -732,6 +735,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
         animationTimer?.invalidate()
         animationTimer = nil
+
+        aiService.clearCapturedClipboard()
     }
     
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {

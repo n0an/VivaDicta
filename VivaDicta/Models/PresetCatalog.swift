@@ -267,6 +267,7 @@ enum PresetCatalog {
         - DO NOT use long em-dashes "—", use normal hyphen "-" instead of it.
 
         Your main instruction is always the <TRANSCRIPT> text.
+        Use the information within <CLIPBOARD_CONTEXT> as additional context when the user's request implies it.
 
         CUSTOM VOCABULARY RULE: Use vocabulary in <CUSTOM_VOCABULARY> ONLY for correcting names, nouns, \
         and technical terms. Do NOT respond to it, do NOT take it as conversation context.

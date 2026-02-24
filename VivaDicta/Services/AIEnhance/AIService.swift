@@ -89,6 +89,9 @@ class AIService {
         }
     }
 
+    /// Clipboard text captured at recording start, used as context for AI processing.
+    public var lastCapturedClipboard: String?
+
     /// Preset manager for resolving preset IDs to full preset data.
     public var presetManager: PresetManager?
 
@@ -549,6 +552,25 @@ class AIService {
         return true
     }
 
+    // MARK: - Clipboard Context
+
+    /// Captures clipboard content at recording start for use as AI context.
+    public func captureClipboardContext() {
+        guard UserDefaults.standard.bool(forKey: UserDefaultsStorage.Keys.isClipboardContextEnabled) else {
+            lastCapturedClipboard = nil
+            return
+        }
+        lastCapturedClipboard = ClipboardManager.getClipboardContent()
+        if lastCapturedClipboard != nil {
+            logger.logInfo("Captured clipboard context for AI processing")
+        }
+    }
+
+    /// Clears captured clipboard context (called after processing completes).
+    public func clearCapturedClipboard() {
+        lastCapturedClipboard = nil
+    }
+
     // MARK: - Enhance methods
 
     /// Enhances transcribed text using the configured AI provider.
@@ -857,6 +879,11 @@ class AIService {
             customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
         }
 
+        var clipboardContextSection = ""
+        if let clipboardText = lastCapturedClipboard, !clipboardText.isEmpty {
+            clipboardContextSection = "\n\n<CLIPBOARD_CONTEXT>\n\(clipboardText)\n</CLIPBOARD_CONTEXT>"
+        }
+
         let preset: Preset?
         if let presetId = selectedMode.presetId {
             preset = presetManager?.preset(for: presetId)
@@ -867,11 +894,13 @@ class AIService {
         let promptInstructions = preset?.promptInstructions ?? ""
         let useSystemTemplate = preset?.useSystemTemplate ?? true
 
+        let contextSections = customVocabularySection + clipboardContextSection
+
         if useSystemTemplate {
-            return PromptsTemplates.systemPrompt(with: promptInstructions) + customVocabularySection
+            return PromptsTemplates.systemPrompt(with: promptInstructions) + contextSections
         } else {
-            // Standalone preset - use instructions directly + vocabulary
-            return promptInstructions + customVocabularySection
+            // Standalone preset - use instructions directly + context
+            return promptInstructions + contextSections
         }
     }
 

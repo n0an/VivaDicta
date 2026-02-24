@@ -120,7 +120,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         [
             CloudModel(
                 name: "whisper-large-v3-turbo",
-                displayName: "Whisper Large v3 Turbo",
+                displayName: "Whisper Large Turbo",
                 description: "Ultra-fast Whisper inference on Groq's LPU achieving 200x+ real-time speed. Free tier with generous daily limits",
                 provider: .groq,
                 recommended: true,
