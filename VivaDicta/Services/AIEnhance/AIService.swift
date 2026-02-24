@@ -226,7 +226,8 @@ class AIService {
             aiProvider: mode.aiProvider,
             aiModel: mode.aiModel,
             aiEnhanceEnabled: mode.aiEnhanceEnabled,
-            useClipboardContext: mode.useClipboardContext
+            useClipboardContext: mode.useClipboardContext,
+            useClipboardAsSelectedText: mode.useClipboardAsSelectedText
         )
 
         addMode(duplicatedMode)
@@ -291,7 +292,8 @@ class AIService {
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false,
-                    useClipboardContext: mode.useClipboardContext
+                    useClipboardContext: mode.useClipboardContext,
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
@@ -314,7 +316,8 @@ class AIService {
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false,
-                    useClipboardContext: mode.useClipboardContext
+                    useClipboardContext: mode.useClipboardContext,
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
@@ -337,7 +340,8 @@ class AIService {
                     aiProvider: nil,
                     aiModel: "",
                     aiEnhanceEnabled: false,
-                    useClipboardContext: mode.useClipboardContext
+                    useClipboardContext: mode.useClipboardContext,
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
@@ -399,7 +403,8 @@ class AIService {
                 aiProvider: defaultMode.aiProvider,
                 aiModel: defaultMode.aiModel,
                 aiEnhanceEnabled: defaultMode.aiEnhanceEnabled,
-                useClipboardContext: defaultMode.useClipboardContext
+                useClipboardContext: defaultMode.useClipboardContext,
+                useClipboardAsSelectedText: defaultMode.useClipboardAsSelectedText
             )
 
             // Update the mode
@@ -895,7 +900,11 @@ class AIService {
 
         var clipboardContextSection = ""
         if let clipboardText = lastCapturedClipboard, !clipboardText.isEmpty {
-            clipboardContextSection = "\n\n<CLIPBOARD_CONTEXT>\n\(clipboardText)\n</CLIPBOARD_CONTEXT>"
+            if selectedMode.useClipboardAsSelectedText {
+                clipboardContextSection = "\n\n<CURRENTLY_SELECTED_TEXT>\n\(clipboardText)\n</CURRENTLY_SELECTED_TEXT>"
+            } else {
+                clipboardContextSection = "\n\n<CLIPBOARD_CONTEXT>\n\(clipboardText)\n</CLIPBOARD_CONTEXT>"
+            }
         }
 
         let preset: Preset?
@@ -1395,7 +1404,8 @@ class AIService {
                     aiProvider: nil,
                     aiModel: "",
                     aiEnhanceEnabled: false,
-                    useClipboardContext: mode.useClipboardContext
+                    useClipboardContext: mode.useClipboardContext,
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }

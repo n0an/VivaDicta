@@ -67,6 +67,11 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Whether clipboard content should be captured and used as context for AI processing.
     let useClipboardContext: Bool
 
+    /// Whether clipboard text should be treated as selected text (wrapped in `<CURRENTLY_SELECTED_TEXT>` tags)
+    /// instead of clipboard context (wrapped in `<CLIPBOARD_CONTEXT>` tags).
+    /// When enabled, the LLM treats clipboard content as the primary material to act on (rewrite, translate, etc.).
+    let useClipboardAsSelectedText: Bool
+
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
          name: String,
@@ -77,7 +82,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
          aiProvider: AIProvider? = nil,
          aiModel: String,
          aiEnhanceEnabled: Bool,
-         useClipboardContext: Bool = false) {
+         useClipboardContext: Bool = false,
+         useClipboardAsSelectedText: Bool = false) {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -88,6 +94,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.aiModel = aiModel
         self.aiEnhanceEnabled = aiEnhanceEnabled
         self.useClipboardContext = useClipboardContext
+        self.useClipboardAsSelectedText = useClipboardAsSelectedText
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -104,6 +111,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         aiModel = try container.decode(String.self, forKey: .aiModel)
         aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
+        useClipboardAsSelectedText = try container.decodeIfPresent(Bool.self, forKey: .useClipboardAsSelectedText) ?? false
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -123,7 +131,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case id, name, transcriptionProvider, transcriptionModel, transcriptionLanguage
         case presetId, userPrompt
         case aiProvider, aiModel, aiEnhanceEnabled
-        case useClipboardContext
+        case useClipboardContext, useClipboardAsSelectedText
     }
 
     /// Encodes using the new format only (presetId).
@@ -139,6 +147,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(aiModel, forKey: .aiModel)
         try container.encode(aiEnhanceEnabled, forKey: .aiEnhanceEnabled)
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
+        try container.encode(useClipboardAsSelectedText, forKey: .useClipboardAsSelectedText)
     }
 
     /// The default mode used when no custom mode is configured.
