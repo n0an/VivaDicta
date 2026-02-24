@@ -124,6 +124,12 @@ private struct PresetRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
+            if !preset.isBuiltIn {
+                Capsule()
+                    .fill(.orange)
+                    .frame(width: 4)
+            }
+
             PresetIconView(icon: preset.icon)
                 .frame(width: 24)
                 .foregroundStyle(.secondary)

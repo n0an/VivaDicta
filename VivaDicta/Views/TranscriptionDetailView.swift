@@ -666,6 +666,12 @@ private struct PresetPickerSheet: View {
             onSelect(preset)
         } label: {
             HStack(spacing: 10) {
+                if !preset.isBuiltIn {
+                    Capsule()
+                        .fill(.orange)
+                        .frame(width: 4)
+                }
+
                 PresetIconView(icon: preset.icon)
                     .frame(width: 20)
                     .foregroundStyle(.secondary)
