@@ -7,39 +7,13 @@
 
 import SwiftUI
 import KeyboardKit
-import SiriWaveView
 
 struct RecordingStateView: View {
-    
-    @State var rippleEffectOrigin: CGPoint = .zero
-    @State var rippleEffectTrigger = false
-    
-    @State private var maskTimer: CGFloat = 0.0
-
-    @State var isSymbolAnimating = false
 
     @Bindable var dictationState: KeyboardDictationState
-    
-    @State var timer: Timer?
 
-    private var rectangleSpeed: CGFloat {
+    @State private var recordingStartDate = Date()
 
-        switch dictationState.uiState {
-        case .recording:
-            // Logarithmic scaling: fast growth initially, then slower
-            // Using log(1 + x*k) / log(1 + k) to map [0,1] to [0,1] logarithmically
-            let k: CGFloat = 4.0 // Controls the curve shape (higher = steeper initial growth)
-            let normalizedLevel = min(max(dictationState.currentAudioLevel, 0), 1) // Ensure 0-1 range
-            let logarithmicLevel = log(1 + normalizedLevel * k) / log(1 + k)
-            return logarithmicLevel * 0.2 // Scale to appropriate speed range
-        case .processing:
-            return 0.03
-        default:
-            return 0
-        }
-
-    }
-    
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -58,9 +32,7 @@ struct RecordingStateView: View {
                 .padding(.leading, 16)
 
                 Spacer()
-                
-                // Cancel button (X)
-                
+
                 Button {
                     HapticManager.lightImpact()
                     dictationState.requestCancelRecording()
@@ -74,11 +46,13 @@ struct RecordingStateView: View {
                 }
                 .padding(.trailing, 16)
             }
-            OrbView(maskTimer: maskTimer)
+
+            Text(timerInterval: recordingStartDate...(.distantFuture), countsDown: false)
+                .font(.system(size: 64, weight: .medium, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.primary)
                 .padding(.bottom, 40)
-            
-            // Stop Button
-            
+
             Button(action: {
                 HapticManager.mediumImpact()
                 dictationState.requestStopRecording()
@@ -87,7 +61,7 @@ struct RecordingStateView: View {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
-                    
+
                     Text("Stop")
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
@@ -97,23 +71,14 @@ struct RecordingStateView: View {
                 .background(.red, in: .capsule)
             }
         }
-        
         .onAppear {
-            timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
-                Task { @MainActor in
-                    maskTimer += rectangleSpeed
-                }
-            }
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
+            recordingStartDate = Date()
         }
     }
 }
 
 // MARK: - Preview
-//
+
 #Preview {
     RecordingStateView(
         dictationState: KeyboardDictationState()
