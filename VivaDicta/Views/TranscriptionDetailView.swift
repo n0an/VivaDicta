@@ -341,11 +341,17 @@ struct TranscriptionDetailView: View {
             Section("Share") {
                 // Share currently selected text (if it's a variation)
                 if selectedIsVariation {
+                    let presetIcon = PresetCatalog.icon(for: selectedChipId)
+                    let menuImage = if UIImage(systemName: presetIcon) != nil {
+                        Image(systemName: presetIcon)
+                    } else {
+                        Image(systemName: "sparkles")
+                    }
                     ShareLink(item: displayedText) {
                         Label {
                             Text(selectedLabel)
                         } icon: {
-                            PresetIconView(icon: PresetCatalog.icon(for: selectedChipId))
+                            menuImage
                         }
                     }
                 }
