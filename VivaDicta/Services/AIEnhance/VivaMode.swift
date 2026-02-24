@@ -64,6 +64,9 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Whether AI processing is enabled for this mode.
     let aiEnhanceEnabled: Bool
 
+    /// Whether clipboard content should be captured and used as context for AI processing.
+    let useClipboardContext: Bool
+
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
          name: String,
@@ -73,7 +76,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
          presetId: String? = nil,
          aiProvider: AIProvider? = nil,
          aiModel: String,
-         aiEnhanceEnabled: Bool) {
+         aiEnhanceEnabled: Bool,
+         useClipboardContext: Bool = false) {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -83,6 +87,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.aiProvider = aiProvider
         self.aiModel = aiModel
         self.aiEnhanceEnabled = aiEnhanceEnabled
+        self.useClipboardContext = useClipboardContext
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -98,6 +103,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
         aiModel = try container.decode(String.self, forKey: .aiModel)
         aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
+        useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -117,6 +123,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case id, name, transcriptionProvider, transcriptionModel, transcriptionLanguage
         case presetId, userPrompt
         case aiProvider, aiModel, aiEnhanceEnabled
+        case useClipboardContext
     }
 
     /// Encodes using the new format only (presetId).
@@ -131,6 +138,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encodeIfPresent(aiProvider, forKey: .aiProvider)
         try container.encode(aiModel, forKey: .aiModel)
         try container.encode(aiEnhanceEnabled, forKey: .aiEnhanceEnabled)
+        try container.encode(useClipboardContext, forKey: .useClipboardContext)
     }
 
     /// The default mode used when no custom mode is configured.

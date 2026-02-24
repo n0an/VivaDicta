@@ -225,7 +225,8 @@ class AIService {
             presetId: mode.presetId,
             aiProvider: mode.aiProvider,
             aiModel: mode.aiModel,
-            aiEnhanceEnabled: mode.aiEnhanceEnabled
+            aiEnhanceEnabled: mode.aiEnhanceEnabled,
+            useClipboardContext: mode.useClipboardContext
         )
 
         addMode(duplicatedMode)
@@ -289,7 +290,8 @@ class AIService {
                     presetId: mode.presetId,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
-                    aiEnhanceEnabled: false
+                    aiEnhanceEnabled: false,
+                    useClipboardContext: mode.useClipboardContext
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
@@ -311,7 +313,8 @@ class AIService {
                     presetId: nil,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
-                    aiEnhanceEnabled: false
+                    aiEnhanceEnabled: false,
+                    useClipboardContext: mode.useClipboardContext
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
@@ -333,7 +336,8 @@ class AIService {
                     presetId: mode.presetId,
                     aiProvider: nil,
                     aiModel: "",
-                    aiEnhanceEnabled: false
+                    aiEnhanceEnabled: false,
+                    useClipboardContext: mode.useClipboardContext
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
@@ -394,7 +398,8 @@ class AIService {
                 presetId: defaultMode.presetId,
                 aiProvider: defaultMode.aiProvider,
                 aiModel: defaultMode.aiModel,
-                aiEnhanceEnabled: defaultMode.aiEnhanceEnabled
+                aiEnhanceEnabled: defaultMode.aiEnhanceEnabled,
+                useClipboardContext: defaultMode.useClipboardContext
             )
 
             // Update the mode
@@ -558,7 +563,7 @@ class AIService {
     /// Prefers keyboard-provided clipboard (via shared UserDefaults) over direct read,
     /// since the main app may be in the background during keyboard recording.
     public func captureClipboardContext() {
-        guard UserDefaults.standard.bool(forKey: UserDefaultsStorage.Keys.isClipboardContextEnabled) else {
+        guard selectedMode.useClipboardContext else {
             lastCapturedClipboard = nil
             return
         }
@@ -1389,7 +1394,8 @@ class AIService {
                     presetId: mode.presetId,
                     aiProvider: nil,
                     aiModel: "",
-                    aiEnhanceEnabled: false
+                    aiEnhanceEnabled: false,
+                    useClipboardContext: mode.useClipboardContext
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }

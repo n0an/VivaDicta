@@ -40,9 +40,6 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
     private var audioRetentionDays = 7
 
-    @AppStorage(UserDefaultsStorage.Keys.isClipboardContextEnabled)
-    private var isClipboardContextEnabled = false
-
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
     @State private var showRestartAlert = false
@@ -197,19 +194,6 @@ struct SettingsView: View {
                     }
                     NavigationLink(value: SettingsDestination.presetsSettings) {
                         Text("Presets")
-                    }
-
-                    Toggle(isOn: $isClipboardContextEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Clipboard Context")
-                                .font(.body)
-                            Text("Use clipboard text as context for better AI processing accuracy")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isClipboardContextEnabled) { _, _ in
-                        HapticManager.selectionChanged()
                     }
                 }
 

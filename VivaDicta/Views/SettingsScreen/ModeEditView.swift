@@ -455,6 +455,19 @@ struct ModeEditView: View {
                                 )
                                 .presentationDetents([.medium, .large])
                             }
+
+                            Toggle(isOn: $viewModel.useClipboardContext) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Clipboard Context")
+                                        .font(.body)
+                                    Text("Use clipboard text as context for better AI processing accuracy")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .onChange(of: viewModel.useClipboardContext) { _, _ in
+                                HapticManager.selectionChanged()
+                            }
                         }
                     }
                 }

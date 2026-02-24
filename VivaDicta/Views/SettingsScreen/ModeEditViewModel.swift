@@ -22,6 +22,7 @@ class ModeEditViewModel {
     var aiProvider: AIProvider?
     var aiModel: String?
     var selectedPresetId: String?
+    var useClipboardContext: Bool = false
 
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
@@ -119,6 +120,7 @@ class ModeEditViewModel {
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
             selectedPresetId = existingMode.presetId
+            useClipboardContext = existingMode.useClipboardContext
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -150,7 +152,8 @@ class ModeEditViewModel {
             presetId: aiEnhanceEnabled ? selectedPresetId : nil,
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
-            aiEnhanceEnabled: aiEnhanceEnabled
+            aiEnhanceEnabled: aiEnhanceEnabled,
+            useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false
         )
     }
 

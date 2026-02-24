@@ -51,9 +51,6 @@ enum UserDefaultsStorage {
         // Auto-copy
         static let isAutoCopyAfterRecordingEnabled = "isAutoCopyAfterRecordingEnabled"
 
-        // Clipboard context
-        static let isClipboardContextEnabled = "isClipboardContextEnabled"
-
         // Custom OpenAI Provider Configuration
         static let customOpenAIEndpointURL = "customOpenAIEndpointURL"
         static let customOpenAIModelName = "customOpenAIModelName"
