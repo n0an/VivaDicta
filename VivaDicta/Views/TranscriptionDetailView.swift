@@ -137,7 +137,7 @@ struct TranscriptionDetailView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 0) {
+                HStack(spacing: 8) {
                     Button("Info", systemImage: "info.circle") {
                         showMetaInfo = true
                     }
