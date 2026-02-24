@@ -177,14 +177,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 return
             }
 
-            // Capture clipboard content at recording start for AI context
-            aiService.captureClipboardContext()
-
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
                 logger.logInfo("🎙️ Using prewarm session for recording")
 
                 resetValues()
+                aiService.captureClipboardContext()
                 recordingState = .recording
                 HapticManager.mediumImpact()
 
@@ -230,6 +228,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 }
 
                 resetValues()
+                aiService.captureClipboardContext()
                 recordingState = .recording
                 HapticManager.mediumImpact()
 
@@ -434,6 +433,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Reset state
                     resetValues()
+                    aiService.clearCapturedClipboard()
                     recordingState = .idle
                     AppGroupCoordinator.shared.updateRecordingState(false)
                     AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
@@ -560,6 +560,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 HapticManager.heartbeat()
                 self.recordingState = .idle
+                self.aiService.clearCapturedClipboard()
 
                 // Request app rating after successful transcription
                 RateAppManager.requestReviewIfAppropriate()
@@ -568,6 +569,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 self.prewarmManager.rescheduleSessionTimeout()
 
             } catch {
+                self.aiService.clearCapturedClipboard()
                 if Task.isCancelled {
                     self.recordingState = .idle
                     return
@@ -635,6 +637,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     /// - **Transcribing**: Cancels everything; no data is saved.
     /// - **Enhancing**: Saves the transcription without enhancement.
     func cancelProcessing() {
+        aiService.clearCapturedClipboard()
         switch recordingState {
         case .transcribing:
             // Cancel during transcribing - don't save anything
@@ -735,8 +738,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
         animationTimer?.invalidate()
         animationTimer = nil
-
-        aiService.clearCapturedClipboard()
     }
     
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
