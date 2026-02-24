@@ -146,7 +146,6 @@ struct ModeCycleSelector: View {
                 .onEnded { value in
                     let horizontal = value.translation.width
                     guard abs(horizontal) > abs(value.translation.height) else { return }
-                    print("=== gesture forward == \(horizontal < 0)")
                     cycleModes(forward: horizontal < 0)
                 }
         )
