@@ -1,5 +1,16 @@
 # Firebase Analytics Events - VivaDicta
 
+## Quick: How to Check Unrecognized Host Apps
+
+1. Go to [Google Analytics Explore](https://analytics.google.com/) → open saved exploration **"Unrecognized Host Apps"**
+2. Set the date range you want (top-left)
+3. The table shows bundle IDs of apps where users tried to use the keyboard but we don't have a URL scheme mapped
+4. To add support for a new app: add its bundle ID and URL scheme to `VivaDictaApp.swift` → `getURLSchemeForBundleId()` → `knownSchemes` dictionary
+
+**Note:** Custom dimensions were registered on 2026-02-24. Only data from that date onward has bundle ID breakdowns — earlier events show as "(not set)".
+
+---
+
 ## Overview
 
 VivaDicta uses Firebase Analytics to track key user interactions and app behavior. This document lists all custom analytics events implemented in the app.
