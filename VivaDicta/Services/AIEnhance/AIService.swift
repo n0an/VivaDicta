@@ -555,14 +555,23 @@ class AIService {
     // MARK: - Clipboard Context
 
     /// Captures clipboard content at recording start for use as AI context.
+    /// Prefers keyboard-provided clipboard (via shared UserDefaults) over direct read,
+    /// since the main app may be in the background during keyboard recording.
     public func captureClipboardContext() {
         guard UserDefaults.standard.bool(forKey: UserDefaultsStorage.Keys.isClipboardContextEnabled) else {
             lastCapturedClipboard = nil
             return
         }
-        lastCapturedClipboard = ClipboardManager.getClipboardContent()
-        if lastCapturedClipboard != nil {
-            logger.logInfo("Captured clipboard context for AI processing")
+        // Try keyboard-captured clipboard first (set by keyboard extension before requesting recording)
+        if let keyboardClipboard = AppGroupCoordinator.shared.getAndConsumeKeyboardClipboardContext(),
+           !keyboardClipboard.isEmpty {
+            lastCapturedClipboard = keyboardClipboard
+            logger.logInfo("Captured clipboard context from keyboard extension")
+        } else {
+            lastCapturedClipboard = ClipboardManager.getClipboardContent()
+            if lastCapturedClipboard != nil {
+                logger.logInfo("Captured clipboard context for AI processing")
+            }
         }
     }
 

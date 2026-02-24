@@ -83,6 +83,7 @@ public final class AppGroupCoordinator {
         static let keyboardSessionExpiryTime = "keyboardSessionExpiryTime"
         static let audioLevel = "audioLevel" // 0.0 ... 1.0
         static let transcriptionErrorMessage = "transcriptionErrorMessage"
+        static let keyboardClipboardContext = "keyboardClipboardContext"
     }
 
     nonisolated private enum NotificationNames {
@@ -284,6 +285,27 @@ public final class AppGroupCoordinator {
         defaults.set(newExpiryTime, forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         defaults.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         logger.logError("🔁 Keyboard session expiry refreshed for \(timeoutSeconds) seconds")
+    }
+
+    // MARK: - Keyboard Clipboard Context
+
+    /// Stores clipboard text captured by the keyboard extension for AI context.
+    func setKeyboardClipboardContext(_ text: String?) {
+        if let text {
+            sharedDefaults?.set(text, forKey: UserDefaultsKeys.keyboardClipboardContext)
+        } else {
+            sharedDefaults?.removeObject(forKey: UserDefaultsKeys.keyboardClipboardContext)
+        }
+    }
+
+    /// Retrieves and clears the keyboard-captured clipboard context.
+    func getAndConsumeKeyboardClipboardContext() -> String? {
+        guard let defaults = sharedDefaults else { return nil }
+        let text = defaults.string(forKey: UserDefaultsKeys.keyboardClipboardContext)
+        if text != nil {
+            defaults.removeObject(forKey: UserDefaultsKeys.keyboardClipboardContext)
+        }
+        return text
     }
 
     // MARK: - Transcribed Text Sharing
