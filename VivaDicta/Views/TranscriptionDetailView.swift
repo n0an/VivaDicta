@@ -26,6 +26,7 @@ struct TranscriptionDetailView: View {
     @State private var showEnhancementErrorAlert: Bool = false
     @State private var enhancementErrorMessage: String = ""
     @State private var showPresetPicker: Bool = false
+    @State private var showMetaInfo: Bool = false
     @State private var generatingPresetId: String?
 
     // Ripple effect state for processing animations
@@ -114,6 +115,15 @@ struct TranscriptionDetailView: View {
         .safeAreaInset(edge: .bottom) {
             bottomActionBar
         }
+        .sheet(isPresented: $showMetaInfo) {
+            MetaInfoSheet(
+                transcription: transcription,
+                selectedVariation: selectedIsVariation
+                    ? sortedVariations.first(where: { $0.presetId == selectedChipId })
+                    : nil
+            )
+            .presentationDetents([.medium])
+        }
         .sheet(isPresented: $showPresetPicker) {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
@@ -127,7 +137,12 @@ struct TranscriptionDetailView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                shareMenu
+                HStack(spacing: 0) {
+                    Button("Info", systemImage: "info.circle") {
+                        showMetaInfo = true
+                    }
+                    shareMenu
+                }
             }
         }
         .onAppear {
@@ -576,6 +591,99 @@ struct TranscriptionDetailView: View {
             }
 
             processingState = .idle
+        }
+    }
+}
+
+// MARK: - Meta Info Sheet
+
+private struct MetaInfoSheet: View {
+    let transcription: Transcription
+    let selectedVariation: TranscriptionVariation?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Recording") {
+                    metadataRow(icon: "hourglass", label: "Audio Duration", value: transcription.getDurationFormatted(transcription.audioDuration))
+
+                    #if DEBUG
+                    if transcription.audioFileName != nil {
+                        metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
+                    }
+                    #endif
+                }
+
+                Section("Transcription") {
+                    if let providerName = transcription.transcriptionProviderName {
+                        metadataRow(icon: "waveform", label: "Provider", value: providerName)
+                    }
+                    if let modelName = transcription.transcriptionModelName {
+                        metadataRow(icon: "character.bubble", label: "Model", value: modelName)
+                    }
+                    #if DEBUG
+                    if let duration = transcription.transcriptionDuration {
+                        metadataRow(icon: "clock.fill", label: "Time", value: transcription.getDurationFormatted(duration))
+                        metadataRow(icon: "figure.run.circle.fill", label: "Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
+                    }
+                    #endif
+                }
+
+                if let variation = selectedVariation {
+                    Section("AI Processing — \(variation.presetDisplayName)") {
+                        if let providerName = variation.aiProviderName {
+                            metadataRow(icon: "sparkles", label: "Provider", value: providerName)
+                        }
+                        if let modelName = variation.aiModelName {
+                            metadataRow(icon: "wand.and.sparkles", label: "Model", value: modelName)
+                        }
+                        #if DEBUG
+                        if let duration = variation.processingDuration {
+                            metadataRow(icon: "clock.fill", label: "Processing Time", value: transcription.getDurationFormatted(duration))
+                        }
+                        #endif
+                    }
+                } else {
+                    if transcription.aiProviderName != nil || transcription.aiEnhancementModelName != nil || transcription.promptName != nil {
+                        Section("AI Processing") {
+                            if let providerName = transcription.aiProviderName {
+                                metadataRow(icon: "sparkles", label: "Provider", value: providerName)
+                            }
+                            if let aiModel = transcription.aiEnhancementModelName {
+                                metadataRow(icon: "wand.and.sparkles", label: "Model", value: aiModel)
+                            }
+                            if let promptName = transcription.promptName {
+                                metadataRow(icon: "text.bubble.fill", label: "Preset", value: promptName)
+                            }
+                            #if DEBUG
+                            if let duration = transcription.enhancementDuration {
+                                metadataRow(icon: "clock.fill", label: "Processing Time", value: transcription.getDurationFormatted(duration))
+                            }
+                            #endif
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Info")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func metadataRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 20, alignment: .center)
+
+            Text(label)
+                .font(.subheadline)
+
+            Spacer()
+
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 }
