@@ -342,17 +342,9 @@ struct TranscriptionDetailView: View {
                 // Share currently selected text (if it's a variation)
                 if selectedIsVariation {
                     let presetIcon = PresetCatalog.icon(for: selectedChipId)
-                    let menuImage = if UIImage(systemName: presetIcon) != nil {
-                        Image(systemName: presetIcon)
-                    } else {
-                        Image(systemName: "sparkles")
-                    }
+                    let menuIcon = UIImage(systemName: presetIcon) != nil ? presetIcon : "sparkles"
                     ShareLink(item: displayedText) {
-                        Label {
-                            Text(selectedLabel)
-                        } icon: {
-                            menuImage
-                        }
+                        Label(selectedLabel, systemImage: menuIcon)
                     }
                 }
 
@@ -653,6 +645,7 @@ private struct PresetPickerSheet: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 }
+                .listSectionSpacing(0)
 
                 if selectedCategory == nil {
                     let favorites = typeFilteredPresets.filter(\.isFavorite)
