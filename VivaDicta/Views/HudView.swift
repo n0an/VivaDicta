@@ -84,8 +84,7 @@ struct HudContentView: View {
                 Text(statusText)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.primary)
-                    .customAttribute(EmphasisAttribute())
-                    .transition(TextTransition())
+                    .transition(.blurReplace)
                     .frame(width: 140, height: 24)
             } else {
                 Rectangle()

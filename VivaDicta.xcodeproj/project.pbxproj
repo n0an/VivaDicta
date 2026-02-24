@@ -242,7 +242,6 @@
 				Shared/RippleEffectModifier.swift,
 				Shared/UserDefaultsStorage.swift,
 				Shared/VivaModePicker.swift,
-				Shared/WobbleText.swift,
 				Utilities/LoggerExtension.swift,
 				Utils/ClipboardManager.swift,
 				"Utils/Extensions/Color+Ext.swift",

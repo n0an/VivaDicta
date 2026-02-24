@@ -96,9 +96,7 @@ struct InfoView: View {
     @Environment(\.colorScheme) var colorScheme
     @State var isSymbolAnimating: Bool = false
     @State var isShowing = false
-    @State var isShowingText = false
     @State var timer: Timer?
-    @State var textRenderEffectTimer: Timer?
 
     var body: some View {
         
@@ -128,46 +126,26 @@ struct InfoView: View {
             
             // Processing status label
             
-            
-            if isShowingText {
-                Text(processingStage.statusText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(
-                                edge: .bottom
-                            ).combined(
-                                with: .scale(
-                                    scale: 0.5
-                                )
-                            ),
-                            removal: .opacity
-                        )
+            Text(processingStage.statusText)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.primary)
+                .transition(
+                    .asymmetric(
+                        insertion: .move(
+                            edge: .bottom
+                        ).combined(
+                            with: .scale(
+                                scale: 0.5
+                            )
+                        ),
+                        removal: .opacity
                     )
-                
-                    .frame(width: 150, height: 20)
-            } else {
-                Rectangle()
-                    .fill(.clear)
-                    .frame(width: 150, height: 20)
-            }
+                )
+            
+                .frame(width: 150, height: 20)
         }
-        .animation(.default, value: isShowingText)
         .onAppear {
             isSymbolAnimating = true
-            isShowingText = true
-            
-            textRenderEffectTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
-                Task { @MainActor in
-                    isShowingText = false
-                    
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .seconds(1.2))
-                        isShowingText = true
-                    }
-                }
-            }
             
             timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { _ in
                 Task { @MainActor in
@@ -186,8 +164,6 @@ struct InfoView: View {
         }
         .onDisappear {
             isSymbolAnimating = false
-            textRenderEffectTimer?.invalidate()
-            textRenderEffectTimer = nil
             timer?.invalidate()
             timer = nil
         }
