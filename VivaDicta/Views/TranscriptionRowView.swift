@@ -54,6 +54,7 @@ struct TranscriptionRowView: View {
                 }
                 .labelStyle(.iconOnly)
                 .font(.system(size: 13))
+                .frame(width: 24, height: 24)
                 .foregroundStyle(showCopied ? .green : .secondary)
                 .buttonStyle(.borderless)
                 .contentTransition(.symbolEffect(.replace))
