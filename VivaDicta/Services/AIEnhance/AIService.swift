@@ -151,6 +151,7 @@ class AIService {
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
             refreshConnectedProviders()
+            await dismissTranscriptionTipsIfModelConfigured()
             await autoAssignCloudTranscriptionIfAvailable()
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
@@ -386,6 +387,15 @@ class AIService {
         if modesUpdated {
             saveModes()
         }
+    }
+
+    /// Dismisses "Select Transcription model" tips if any mode already has a model configured.
+    /// Handles the case where the tip donation from auto-assign didn't persist (e.g., app killed during onboarding).
+    private func dismissTranscriptionTipsIfModelConfigured() async {
+        let hasConfiguredModel = modes.contains { !$0.transcriptionModel.isEmpty }
+        guard hasConfiguredModel else { return }
+        await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+        await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
     }
 
     private func autoAssignCloudTranscriptionIfAvailable() async {
