@@ -541,6 +541,7 @@ struct ModeEditView: View {
             Text(error.failureReason)
         })
         .navigationTitle(viewModel.isEditing ? "Edit Mode" : "New Mode")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 if #available(iOS 26, *) {
