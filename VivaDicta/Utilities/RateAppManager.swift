@@ -80,12 +80,10 @@ enum RateAppManager {
     // MARK: - Private
 
     private static func presentReviewRequest() {
-        // Record the request date before showing
-        lastRatingRequestDate = Date()
-
-        // Request review using StoreKit
+        // Only record the request date if we actually have a foreground scene to present in
         if let scene = UIApplication.shared.connectedScenes
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            lastRatingRequestDate = Date()
             AppStore.requestReview(in: scene)
         }
     }
