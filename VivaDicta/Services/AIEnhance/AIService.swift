@@ -396,19 +396,15 @@ class AIService {
         guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }),
               modes[defaultModeIndex].transcriptionModel.isEmpty else { return }
 
-        for provider in TranscriptionModelProvider.cloudProviders {
-            guard let aiProvider = provider.mappedAIProvider,
-                  connectedProviders.contains(aiProvider),
-                  let modelName = provider.defaultCloudTranscriptionModel else { continue }
+        // Validate each discovered API key with a lightweight network call before assigning
+        guard let discovery = await TranscriptionModelProvider.discoverValidatedCloudProvider() else { return }
 
-            updateDefaultModeIfNeeded(provider: provider, modelName: modelName)
-            logger.logInfo("Auto-assigned cloud transcription provider: \(provider.rawValue) with model: \(modelName)")
+        updateDefaultModeIfNeeded(provider: discovery.provider, modelName: discovery.modelName)
+        logger.logInfo("Auto-assigned cloud transcription provider: \(discovery.provider.rawValue) with model: \(discovery.modelName)")
 
-            // Dismiss "Select Transcription model" tips since a model is now configured
-            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
-            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
-            return
-        }
+        // Dismiss "Select Transcription model" tips since a model is now configured
+        await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+        await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
     }
 
     public func updateDefaultModeIfNeeded(provider: TranscriptionModelProvider, modelName: String) {
