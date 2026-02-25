@@ -406,8 +406,8 @@ class AIService {
         guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }),
               modes[defaultModeIndex].transcriptionModel.isEmpty else { return }
 
-        // Validate each discovered API key with a lightweight network call before assigning
-        guard let discovery = await TranscriptionModelProvider.discoverValidatedCloudProvider() else { return }
+        // API keys are validated when saved — just check keychain presence
+        guard let discovery = TranscriptionModelProvider.discoverCloudProvider() else { return }
 
         updateDefaultModeIfNeeded(provider: discovery.provider, modelName: discovery.modelName)
         logger.logInfo("Auto-assigned cloud transcription provider: \(discovery.provider.rawValue) with model: \(discovery.modelName)")

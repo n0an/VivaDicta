@@ -105,62 +105,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
 
-    /// Discovers the first cloud transcription provider with a valid API key.
-    /// Iterates providers in `cloudProviders` order, validates each key with a lightweight
-    /// network call before returning. Returns nil if no valid key is found.
-    static func discoverValidatedCloudProvider() async -> (provider: TranscriptionModelProvider, modelName: String)? {
+    /// Discovers the first cloud transcription provider that has an API key in the keychain.
+    /// API keys are validated when saved, so no network call is needed here.
+    static func discoverCloudProvider() -> (provider: TranscriptionModelProvider, modelName: String)? {
         for provider in cloudProviders {
             guard let aiProvider = provider.mappedAIProvider,
                   let modelName = provider.defaultCloudTranscriptionModel,
-                  let apiKey = aiProvider.apiKey else { continue }
-            if await provider.validateTranscriptionAPIKey(apiKey) {
-                return (provider, modelName)
-            }
+                  aiProvider.apiKey != nil else { continue }
+            return (provider, modelName)
         }
         return nil
-    }
-
-    /// Validates a transcription API key with a lightweight GET request.
-    private func validateTranscriptionAPIKey(_ key: String) async -> Bool {
-        guard let (request, validStatusCode) = validationRequest(forKey: key) else { return false }
-        do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            return (response as? HTTPURLResponse)?.statusCode == validStatusCode
-        } catch {
-            return false
-        }
-    }
-
-    /// Builds a lightweight validation request for each transcription provider.
-    private func validationRequest(forKey key: String) -> (URLRequest, Int)? {
-        var request: URLRequest
-        switch self {
-        case .groq:
-            request = URLRequest(url: URL(string: "https://api.groq.com/openai/v1/models")!)
-            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        case .mistral:
-            request = URLRequest(url: URL(string: "https://api.mistral.ai/v1/models")!)
-            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        case .gemini:
-            request = URLRequest(url: URL(string: "https://generativelanguage.googleapis.com/v1/models?key=\(key)")!)
-        case .deepgram:
-            request = URLRequest(url: URL(string: "https://api.deepgram.com/v1/auth/token")!)
-            request.addValue("Token \(key)", forHTTPHeaderField: "Authorization")
-        case .openAI:
-            request = URLRequest(url: URL(string: "https://api.openai.com/v1/models")!)
-            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        case .elevenLabs:
-            request = URLRequest(url: URL(string: "https://api.elevenlabs.io/v1/user")!)
-            request.addValue(key, forHTTPHeaderField: "xi-api-key")
-        case .soniox:
-            request = URLRequest(url: URL(string: "https://api.soniox.com/v1/files")!)
-            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        default:
-            return nil
-        }
-        request.httpMethod = "GET"
-        request.timeoutInterval = 10
-        return (request, 200)
     }
 
     public var mappedAIProvider: AIProvider? {
