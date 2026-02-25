@@ -1284,7 +1284,6 @@ class AIService {
         logger.logNotice("🔧 Custom AI Test - URL: '\(endpointURL)'")
         logger.logNotice("🔧 Custom AI Test - Model: '\(modelName)'")
 
-        // Use URL directly - user provides the full chat/completions endpoint (matches VoiceInk approach)
         guard let url = URL(string: endpointURL) else {
             logger.logError("🔧 Custom AI Test - Invalid URL: '\(endpointURL)'")
             return (false, "Invalid endpoint URL format")
@@ -1303,8 +1302,7 @@ class AIService {
         if let apiKey, !apiKey.isEmpty {
             request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
-
-        // Minimal test request - match VoiceInk's approach (no max_tokens)
+        
         let testBody: [String: Any] = [
             "model": modelName,
             "messages": [
