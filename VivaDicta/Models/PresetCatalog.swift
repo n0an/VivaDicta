@@ -360,12 +360,12 @@ enum PresetCatalog {
         "journal_entry": "📔",
         "philosophical": "🤔",
         "blog": "✒️",
-        "instagram": "📸",
-        "facebook": "👥",
-        "youtube": "🎬",
-        "twitter": "🐦",
-        "threads": "🧵",
-        "linkedin": "💼",
+        "instagram": "asset:instagram",
+        "facebook": "asset:facebook",
+        "youtube": "asset:youtube",
+        "twitter": "asset:twitter",
+        "threads": "asset:threads",
+        "linkedin": "asset:linkedin",
     ]
 
     // MARK: - CloudKit UUID Mapping
