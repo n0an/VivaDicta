@@ -55,5 +55,8 @@ enum UserDefaultsStorage {
         static let customOpenAIEndpointURL = "customOpenAIEndpointURL"
         static let customOpenAIModelName = "customOpenAIModelName"
         static let customOpenAIIsVerified = "customOpenAIIsVerified"
+
+        // First-launch auto-assignment
+        static let didAutoAssignCloudTranscription = "didAutoAssignCloudTranscription"
     }
 }

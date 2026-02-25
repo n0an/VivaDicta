@@ -92,6 +92,19 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
     
+    var defaultCloudTranscriptionModel: String? {
+        switch self {
+        case .groq: "whisper-large-v3-turbo"
+        case .mistral: "voxtral-mini-latest"
+        case .gemini: "gemini-3-flash-preview"
+        case .deepgram: "nova-3"
+        case .elevenLabs: "scribe_v2"
+        case .openAI: "gpt-4o-mini-transcribe"
+        case .soniox: "stt-async-v4"
+        default: nil
+        }
+    }
+
     public var mappedAIProvider: AIProvider? {
         switch self {
         case .openAI:

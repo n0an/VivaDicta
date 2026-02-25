@@ -150,6 +150,7 @@ class AIService {
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
             refreshConnectedProviders()
+            autoAssignCloudTranscriptionIfAvailable()
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
             }
@@ -383,6 +384,25 @@ class AIService {
 
         if modesUpdated {
             saveModes()
+        }
+    }
+
+    private func autoAssignCloudTranscriptionIfAvailable() {
+        let appPrivate = UserDefaultsStorage.appPrivate
+        guard !appPrivate.bool(forKey: UserDefaultsStorage.Keys.didAutoAssignCloudTranscription) else { return }
+        appPrivate.set(true, forKey: UserDefaultsStorage.Keys.didAutoAssignCloudTranscription)
+
+        guard let defaultModeIndex = modes.firstIndex(where: { $0.name == "Default" }),
+              modes[defaultModeIndex].transcriptionModel.isEmpty else { return }
+
+        for provider in TranscriptionModelProvider.cloudProviders {
+            guard let aiProvider = provider.mappedAIProvider,
+                  connectedProviders.contains(aiProvider),
+                  let modelName = provider.defaultCloudTranscriptionModel else { continue }
+
+            updateDefaultModeIfNeeded(provider: provider, modelName: modelName)
+            logger.logInfo("Auto-assigned cloud transcription provider: \(provider.rawValue) with model: \(modelName)")
+            return
         }
     }
 
