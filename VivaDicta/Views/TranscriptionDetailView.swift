@@ -145,7 +145,7 @@ struct TranscriptionDetailView: View {
                 showConfigureAI = false
                 appState.shouldNavigateToModeSettings = true
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.height(240)])
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -627,9 +627,7 @@ private struct ConfigureAISheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
+        VStack(spacing: 16) {
             Image(systemName: "sparkles")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
@@ -652,8 +650,6 @@ private struct ConfigureAISheet: View {
             }
             .buttonStyle(.borderedProminent)
             .padding(.horizontal, 40)
-
-            Spacer()
         }
     }
 }
