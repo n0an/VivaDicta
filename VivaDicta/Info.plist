@@ -70,6 +70,8 @@
 		<string>perplexity-app</string>
 		<string>claude</string>
 		<string>obsidian</string>
+		<string>monica</string>
+		<string>mem</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

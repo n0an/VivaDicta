@@ -318,11 +318,18 @@ struct VivaDictaApp: App {
             // No URL scheme found - show the keyboard flow sheet as fallback
             appState.showKeyboardFlowSheet = true
 
-            // Log unrecognized host app to Firebase Analytics
-            // This helps track which apps users are trying to use but we don't have URL schemes for yet
-            Analytics.logEvent("unrecognized_host_app", parameters: [
-                "bundle_id": hostId
-            ])
+            // Known system services that have no URL scheme - don't log as unrecognized
+            let knownNoSchemeHosts: Set<String> = [
+                "com.apple.SafariViewService"  // SFSafariViewController in-app browser
+            ]
+
+            if !knownNoSchemeHosts.contains(hostId) {
+                // Log unrecognized host app to Firebase Analytics
+                // This helps track which apps users are trying to use but we don't have URL schemes for yet
+                Analytics.logEvent("unrecognized_host_app", parameters: [
+                    "bundle_id": hostId
+                ])
+            }
         }
     }
     
@@ -436,7 +443,8 @@ struct VivaDictaApp: App {
             "ai.perplexity.app": "perplexity-app://",
             "com.anthropic.claude": "claude://",
             "md.obsidian": "obsidian://",
-            "im.monica.app.monica": "monica://"
+            "im.monica.app.monica": "monica://",
+            "com.mem-labs.mem": "mem://"
             // Add more as needed
         ]
         
