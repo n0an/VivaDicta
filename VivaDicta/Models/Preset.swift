@@ -34,7 +34,8 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
     /// Short user-visible description of what the preset does.
     var presetDescription: String
 
-    /// Grouping category: "Rewrite", "Summarize", "Translate", "Other".
+    /// Grouping category: "Rewrite", "Format", "Style", "Communication", "Summarize",
+    /// "Learn & Study", "Dive Deep", "Writing", "Social Media", "Translate", "Assistant", "Other".
     var category: String
 
     /// The prompt text. For enhancement presets, this gets wrapped in the system template.

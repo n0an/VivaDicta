@@ -55,13 +55,21 @@ class PresetManager {
         presets.contains { $0.isFavorite }
     }
 
-    /// Returns ordered category names.
+    /// Returns ordered category names using explicit category ordering.
     var categories: [String] {
         var seen = Set<String>()
-        return presets.compactMap { preset in
-            if seen.contains(preset.category) { return nil }
-            seen.insert(preset.category)
-            return preset.category
+        var result: [String] = []
+        for preset in presets {
+            if !seen.contains(preset.category) {
+                seen.insert(preset.category)
+                result.append(preset.category)
+            }
+        }
+        return result.sorted { lhs, rhs in
+            let lhsIdx = PresetCatalog.categoryOrder.firstIndex(of: lhs) ?? Int.max
+            let rhsIdx = PresetCatalog.categoryOrder.firstIndex(of: rhs) ?? Int.max
+            if lhsIdx != rhsIdx { return lhsIdx < rhsIdx }
+            return lhs < rhs
         }
     }
 

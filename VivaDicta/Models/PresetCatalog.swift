@@ -45,81 +45,6 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let professional = Preset(
-        id: "professional",
-        name: "Professional",
-        icon: "💼",
-        presetDescription: "Formal business tone",
-        category: "Rewrite",
-        promptInstructions: """
-        Rewrite the <TRANSCRIPT> text in a professional, formal tone. \
-        Maintain all facts and meaning. Improve structure and clarity. \
-        Use business-appropriate language. Output only the rewritten text, nothing else.
-        """,
-        useSystemTemplate: true,
-        wrapInTranscriptTags: true,
-        isBuiltIn: true
-    )
-
-    static let casual = Preset(
-        id: "casual",
-        name: "Casual",
-        icon: "😊",
-        presetDescription: "Relaxed & friendly tone",
-        category: "Rewrite",
-        promptInstructions: """
-        Rewrite the <TRANSCRIPT> text in a casual, friendly tone. \
-        Keep it natural and conversational. Maintain all meaning. \
-        Output only the rewritten text, nothing else.
-        """,
-        useSystemTemplate: true,
-        wrapInTranscriptTags: true,
-        isBuiltIn: true
-    )
-
-    static let email = Preset(
-        id: "email",
-        name: "Email",
-        icon: "📧",
-        presetDescription: "Format as email",
-        category: "Rewrite",
-        promptInstructions: """
-        - Rewrite the <TRANSCRIPT> text as a complete email with proper formatting: include a greeting (Hi), body paragraphs (2-4 sentences each), and closing (Thanks).
-        - Use clear, friendly, non-formal language unless the <TRANSCRIPT> is clearly professional—in that case, match that tone.
-        - Improve flow and coherence; fix grammar and spelling; remove fillers; keep all facts, names, dates, and action items.
-        - Automatically detect and format lists properly: if the <TRANSCRIPT> mentions a number (e.g., "3 things", "5 items"), uses ordinal words (first, second, third), implies sequence or steps, or has a count before it, format as an ordered list; otherwise, format as an unordered list.
-        - Write numbers as numerals (e.g., 'five' → '5', 'twenty dollars' → '$20').
-        - Do not invent new content, but structure it as a proper email format.
-        - Don't add any information not available in the <TRANSCRIPT> text ever.
-        """,
-        useSystemTemplate: true,
-        wrapInTranscriptTags: true,
-        isBuiltIn: true
-    )
-
-    static let chat = Preset(
-        id: "chat",
-        name: "Chat",
-        icon: "💬",
-        presetDescription: "Quick chat message",
-        category: "Rewrite",
-        promptInstructions: """
-        - Rewrite the <TRANSCRIPT> text as a chat message: informal, concise, and conversational.
-        - Keep emotive markers and emojis if present; don't invent new ones.
-        - Lightly fix grammar, remove fillers and repeated words, and improve flow without changing meaning.
-        - Keep the original tone; only be professional if the <TRANSCRIPT> already is.
-        - Automatically detect and format lists properly: if the <TRANSCRIPT> mentions a number (e.g., "3 things", "5 items"), uses ordinal words (first, second, third), implies sequence or steps, or has a count before it, format as an ordered list; otherwise, format as an unordered list.
-        - Write numbers as numerals (e.g., 'five' → '5', 'twenty dollars' → '$20').
-        - Format like a modern chat message - short lines, natural breaks, emoji-friendly.
-        - Do not add greetings, sign-offs, or commentary.
-        - Output only the chat message.
-        - Don't add any information not available in the <TRANSCRIPT> text ever.
-        """,
-        useSystemTemplate: true,
-        wrapInTranscriptTags: true,
-        isBuiltIn: true
-    )
-
     static let coding = Preset(
         id: "coding",
         name: "Coding",
@@ -161,6 +86,205 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
+    static let simplify = Preset(
+        id: "simplify",
+        name: "Simplify",
+        icon: "🔤",
+        presetDescription: "Use simpler words and sentences",
+        category: "Rewrite",
+        promptInstructions: """
+        Simplify the <TRANSCRIPT> using simpler words and shorter sentences. \
+        Make it easier to understand while keeping the meaning. \
+        Output only the simplified text, nothing else. \
+        Don't add any information not available in the <TRANSCRIPT> ever.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let proofreading = Preset(
+        id: "proofreading",
+        name: "Proofreading",
+        icon: "🔍",
+        presetDescription: "Fix spelling & grammar",
+        category: "Rewrite",
+        promptInstructions: """
+        Proofread the <TRANSCRIPT> and fix all punctuation, spelling, and grammar errors. \
+        Do not change the meaning, tone, or structure. Output only the corrected text.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Format Presets
+
+    static let structured = Preset(
+        id: "structured",
+        name: "Structured",
+        icon: "📄",
+        presetDescription: "Add headings & sections",
+        category: "Format",
+        promptInstructions: """
+        Organize and format the <TRANSCRIPT> into a well-structured document. \
+        Add appropriate headings, sections, and formatting. \
+        Ensure logical flow and clear hierarchy. Output only the structured text.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let list = Preset(
+        id: "list",
+        name: "List",
+        icon: "📋",
+        presetDescription: "Convert to bullet points",
+        category: "Format",
+        promptInstructions: """
+        Convert the <TRANSCRIPT> into a clear, organized bullet point list. \
+        Group related items together. Use sub-bullets for details when needed. \
+        Output only the bullet point list.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let table = Preset(
+        id: "table",
+        name: "Table",
+        icon: "🗂️",
+        presetDescription: "Organize into a table",
+        category: "Format",
+        promptInstructions: """
+        Organize the information from the <TRANSCRIPT> into a plain-text table. \
+        Choose appropriate column headers based on the content. \
+        Use | to separate columns and - for the header separator line. \
+        Pad each cell with spaces so columns are aligned. \
+        Do NOT add a title, header, or label before or after the table. \
+        Do NOT invent or fabricate information. Only include what is present in the <TRANSCRIPT>. \
+        If information for a cell is not available, leave it empty. \
+        Output only the table, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Style Presets
+
+    static let professional = Preset(
+        id: "professional",
+        name: "Professional",
+        icon: "💼",
+        presetDescription: "Formal business tone",
+        category: "Style",
+        promptInstructions: """
+        Rewrite the <TRANSCRIPT> text in a professional, formal tone. \
+        Maintain all facts and meaning. Improve structure and clarity. \
+        Use business-appropriate language. Output only the rewritten text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let casual = Preset(
+        id: "casual",
+        name: "Casual",
+        icon: "😊",
+        presetDescription: "Relaxed & friendly tone",
+        category: "Style",
+        promptInstructions: """
+        Rewrite the <TRANSCRIPT> text in a casual, friendly tone. \
+        Keep it natural and conversational. Maintain all meaning. \
+        Output only the rewritten text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let short = Preset(
+        id: "short",
+        name: "Short",
+        icon: "✂️",
+        presetDescription: "Trim to essentials",
+        category: "Style",
+        promptInstructions: """
+        Rewrite the <TRANSCRIPT> to be concise and to the point. \
+        Remove unnecessary words, condense long sentences, and keep only essential information. \
+        Preserve the core meaning. Output only the shortened text.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let expand = Preset(
+        id: "elaborated",
+        name: "Expand",
+        icon: "🔬",
+        presetDescription: "Expand with more detail",
+        category: "Style",
+        promptInstructions: """
+        Expand and elaborate on the <TRANSCRIPT>. \
+        Add more detail, context, and explanation where appropriate. \
+        Develop ideas more fully while keeping the original meaning. \
+        Output only the elaborated text.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Communication Presets
+
+    static let email = Preset(
+        id: "email",
+        name: "Email",
+        icon: "📧",
+        presetDescription: "Format as email",
+        category: "Communication",
+        promptInstructions: """
+        - Rewrite the <TRANSCRIPT> text as a complete email with proper formatting: include a greeting (Hi), body paragraphs (2-4 sentences each), and closing (Thanks).
+        - Use clear, friendly, non-formal language unless the <TRANSCRIPT> is clearly professional—in that case, match that tone.
+        - Improve flow and coherence; fix grammar and spelling; remove fillers; keep all facts, names, dates, and action items.
+        - Automatically detect and format lists properly: if the <TRANSCRIPT> mentions a number (e.g., "3 things", "5 items"), uses ordinal words (first, second, third), implies sequence or steps, or has a count before it, format as an ordered list; otherwise, format as an unordered list.
+        - Write numbers as numerals (e.g., 'five' → '5', 'twenty dollars' → '$20').
+        - Do not invent new content, but structure it as a proper email format.
+        - Don't add any information not available in the <TRANSCRIPT> text ever.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let chat = Preset(
+        id: "chat",
+        name: "Chat",
+        icon: "💬",
+        presetDescription: "Quick chat message",
+        category: "Communication",
+        promptInstructions: """
+        - Rewrite the <TRANSCRIPT> text as a chat message: informal, concise, and conversational.
+        - Keep emotive markers and emojis if present; don't invent new ones.
+        - Lightly fix grammar, remove fillers and repeated words, and improve flow without changing meaning.
+        - Keep the original tone; only be professional if the <TRANSCRIPT> already is.
+        - Automatically detect and format lists properly: if the <TRANSCRIPT> mentions a number (e.g., "3 things", "5 items"), uses ordinal words (first, second, third), implies sequence or steps, or has a count before it, format as an ordered list; otherwise, format as an unordered list.
+        - Write numbers as numerals (e.g., 'five' → '5', 'twenty dollars' → '$20').
+        - Format like a modern chat message - short lines, natural breaks, emoji-friendly.
+        - Do not add greetings, sign-offs, or commentary.
+        - Output only the chat message.
+        - Don't add any information not available in the <TRANSCRIPT> text ever.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
     // MARK: - Summarize Presets
 
     static let summary = Preset(
@@ -189,6 +313,314 @@ enum PresetCatalog {
         Extract all action items, tasks, and to-dos from the <TRANSCRIPT> text. \
         Format as a numbered checklist. Include who is responsible if mentioned. \
         Output only the action items list, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let takeaways = Preset(
+        id: "takeaways",
+        name: "Takeaways",
+        icon: "📌",
+        presetDescription: "Key lessons & next steps",
+        category: "Summarize",
+        promptInstructions: """
+        Extract key takeaways, lessons learned, and follow-up items from the <TRANSCRIPT>. \
+        Organize into main learnings and next steps. Output only the takeaways.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let mindMap = Preset(
+        id: "mind_map",
+        name: "Mind Map",
+        icon: "🕸️",
+        presetDescription: "Map out main ideas",
+        category: "Summarize",
+        promptInstructions: """
+        Create a hierarchical mind map outline from the <TRANSCRIPT>. \
+        Use indentation to show relationships between main topics and subtopics. \
+        Start with the central theme. Output only the mind map structure.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let keyPoints = Preset(
+        id: "key_points",
+        name: "Key Points",
+        icon: "🎯",
+        presetDescription: "Extract important points",
+        category: "Summarize",
+        promptInstructions: """
+        Extract the most important points from the <TRANSCRIPT>. \
+        Condense them into a short bulleted list. \
+        Do NOT add a title, header, or label. Start directly with the first bullet point. \
+        Output only the key points, nothing else. \
+        Don't add any information not available in the <TRANSCRIPT> ever.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Learn & Study Presets
+
+    static let studyNotes = Preset(
+        id: "study_note",
+        name: "Study Notes",
+        icon: "🎓",
+        presetDescription: "Condensed study notes",
+        category: "Learn & Study",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into concise study notes. \
+        Highlight key concepts, important terms, and main ideas. \
+        Use bullet points and bold for emphasis. Output only the study notes.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let definitions = Preset(
+        id: "definitions",
+        name: "Definitions",
+        icon: "📖",
+        presetDescription: "Glossary of key terms",
+        category: "Learn & Study",
+        promptInstructions: """
+        Extract and define all key terms, concepts, and technical vocabulary from the <TRANSCRIPT>. \
+        Format as a glossary with term followed by clear definition. Output only the definitions.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let quiz = Preset(
+        id: "quiz",
+        name: "Quiz",
+        icon: "🧩",
+        presetDescription: "Test your understanding",
+        category: "Learn & Study",
+        promptInstructions: """
+        Create a quiz based on the <TRANSCRIPT> content. \
+        Generate 5-10 questions (mix of multiple choice and short answer) that test understanding of the key points. \
+        Include answers at the end. Output only the quiz.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Dive Deep Presets
+
+    static let insights = Preset(
+        id: "insights",
+        name: "Insights",
+        icon: "🧠",
+        presetDescription: "Deeper patterns & observations",
+        category: "Dive Deep",
+        promptInstructions: """
+        Analyze the <TRANSCRIPT> and extract deep insights, patterns, and non-obvious observations. \
+        Present lessons learned and ideas that emerge from the content. Output only the insights.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let prosCons = Preset(
+        id: "pros_cons",
+        name: "Pros & Cons",
+        icon: "⚖️",
+        presetDescription: "Weigh both sides",
+        category: "Dive Deep",
+        promptInstructions: """
+        Analyze the <TRANSCRIPT> and create a structured pros and cons list. \
+        Identify advantages, disadvantages, trade-offs, and considerations. \
+        Format as a clear comparison. Output only the pros & cons list.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let newIdeas = Preset(
+        id: "new_ideas",
+        name: "New Ideas",
+        icon: "💡",
+        presetDescription: "Brainstorm possibilities",
+        category: "Dive Deep",
+        promptInstructions: """
+        Based on the <TRANSCRIPT>, generate creative ideas, suggestions, and possibilities. \
+        Think beyond what's explicitly stated. Organize ideas by theme or feasibility. \
+        Output only the ideas.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let hiddenGems = Preset(
+        id: "hidden_gems",
+        name: "Hidden Gems",
+        icon: "💎",
+        presetDescription: "Spot overlooked details",
+        category: "Dive Deep",
+        promptInstructions: """
+        Find the most valuable, overlooked, or non-obvious information in the <TRANSCRIPT>. \
+        Highlight surprising facts, useful details, and important points that might be easily missed. \
+        Output only the hidden gems.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Writing Presets
+
+    static let journalEntry = Preset(
+        id: "journal_entry",
+        name: "Journal Entry",
+        icon: "📔",
+        presetDescription: "Reflect on emotions",
+        category: "Writing",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a reflective journal entry. \
+        Highlight feelings, emotions, and personal insights. \
+        Write in first person with an introspective tone. Output only the journal entry.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let philosophical = Preset(
+        id: "philosophical",
+        name: "Philosophical",
+        icon: "🤔",
+        presetDescription: "Reflect with depth",
+        category: "Writing",
+        promptInstructions: """
+        Analyze the <TRANSCRIPT> from a philosophical perspective. \
+        Explore deeper meanings, underlying assumptions, and thought-provoking questions. \
+        Offer reflective commentary. Output only the philosophical analysis.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let blog = Preset(
+        id: "blog",
+        name: "Blog",
+        icon: "✒️",
+        presetDescription: "Write a blog article",
+        category: "Writing",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a long-form blog post with a compelling title, \
+        introduction, body sections with headings, and conclusion. Output only the blog post.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    // MARK: - Social Media Presets
+
+    static let instagram = Preset(
+        id: "instagram",
+        name: "Instagram",
+        icon: "asset:instagram",
+        presetDescription: "Caption for Instagram",
+        category: "Social Media",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into an engaging Instagram caption. \
+        Keep it concise, use a hook opening, include relevant emoji, and suggest hashtags. \
+        Output only the caption.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let facebook = Preset(
+        id: "facebook",
+        name: "Facebook",
+        icon: "asset:facebook",
+        presetDescription: "Draft a Facebook post",
+        category: "Social Media",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a medium-sized Facebook post. \
+        Make it engaging and conversational. Include a hook and call to action. \
+        Output only the post.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let youtube = Preset(
+        id: "youtube",
+        name: "YouTube",
+        icon: "asset:youtube",
+        presetDescription: "Script for YouTube",
+        category: "Social Media",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a YouTube video script. \
+        Include hook, intro, main points with transitions, and outro with call to action. \
+        Output only the script.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let twitter = Preset(
+        id: "twitter",
+        name: "X (Twitter)",
+        icon: "asset:twitter",
+        presetDescription: "Compose a tweet",
+        category: "Social Media",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a short-form tweet (max 280 characters). \
+        Make it punchy, engaging, and shareable. Output only the tweet.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let threads = Preset(
+        id: "threads",
+        name: "Threads",
+        icon: "asset:threads",
+        presetDescription: "Draft a Threads post",
+        category: "Social Media",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a short-form Threads post. \
+        Keep it conversational and engaging. Output only the post.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let linkedin = Preset(
+        id: "linkedin",
+        name: "LinkedIn",
+        icon: "asset:linkedin",
+        presetDescription: "Professional LinkedIn post",
+        category: "Social Media",
+        promptInstructions: """
+        Transform the <TRANSCRIPT> into a professional LinkedIn post. \
+        Use a compelling hook, share insights or lessons learned, and end with a call to action or question. \
+        Keep a professional but authentic tone. Output only the post.
         """,
         useSystemTemplate: true,
         wrapInTranscriptTags: true,
@@ -279,32 +711,86 @@ enum PresetCatalog {
 
     // MARK: - All Built-In
 
+    /// All built-in presets ordered by category (matching macOS sort order).
     static let allBuiltIn: [Preset] = [
+        // Rewrite
         regular,
-        professional,
-        casual,
-        email,
-        chat,
         coding,
         rewrite,
+        simplify,
+        proofreading,
+        // Format
+        structured,
+        list,
+        table,
+        // Style
+        professional,
+        casual,
+        short,
+        expand,
+        // Communication
+        email,
+        chat,
+        // Summarize
         summary,
         actionPoints,
+        takeaways,
+        mindMap,
+        keyPoints,
+        // Learn & Study
+        studyNotes,
+        definitions,
+        quiz,
+        // Dive Deep
+        insights,
+        prosCons,
+        newIdeas,
+        hiddenGems,
+        // Writing
+        journalEntry,
+        philosophical,
+        blog,
+        // Social Media
+        instagram,
+        facebook,
+        youtube,
+        twitter,
+        threads,
+        linkedin,
+        // Translate
         translateEnglish,
         translateRussian,
         translateSpanish,
+        // Assistant
         assistant,
     ]
 
     /// All built-in preset IDs for quick lookup.
     static let builtInIds: Set<String> = Set(allBuiltIn.map(\.id))
 
-    /// Ordered category names preserving insertion order.
+    /// Explicit category ordering matching macOS for deterministic display.
+    static let categoryOrder: [String] = [
+        "Rewrite", "Format", "Style", "Communication",
+        "Summarize", "Learn & Study", "Dive Deep",
+        "Writing", "Social Media",
+        "Translate", "Assistant", "Other"
+    ]
+
+    /// Ordered category names using explicit category ordering.
     static var categories: [String] {
         var seen = Set<String>()
-        return allBuiltIn.compactMap { preset in
-            if seen.contains(preset.category) { return nil }
-            seen.insert(preset.category)
-            return preset.category
+        var result: [String] = []
+        for preset in allBuiltIn {
+            if !seen.contains(preset.category) {
+                seen.insert(preset.category)
+                result.append(preset.category)
+            }
+        }
+        return result.sorted { lhs, rhs in
+            let lhsIdx = categoryOrder.firstIndex(of: lhs) ?? Int.max
+            let rhsIdx = categoryOrder.firstIndex(of: rhs) ?? Int.max
+            if lhsIdx != rhsIdx { return lhsIdx < rhsIdx }
+            return lhs < rhs
         }
     }
 
@@ -330,43 +816,13 @@ enum PresetCatalog {
     }
 
     /// Returns the icon for a preset ID.
-    /// Checks built-in presets first, then macOS-only presets, then falls back to ✨.
+    /// Checks built-in presets first, then falls back to default.
     static func icon(for presetId: String) -> String {
         if let icon = allBuiltIn.first(where: { $0.id == presetId })?.icon {
             return icon
         }
-        return macOSOnlyPresetIcons[presetId] ?? "✨"
+        return "✨"
     }
-
-    /// Icons for presets that exist only on macOS but may sync via CloudKit.
-    private static let macOSOnlyPresetIcons: [String: String] = [
-        "short": "✂️",
-        "elaborated": "🔬",
-        "simplify": "🔤",
-        "takeaways": "📌",
-        "mind_map": "🕸️",
-        "key_points": "🎯",
-        "study_note": "🎓",
-        "definitions": "📖",
-        "quiz": "🧩",
-        "insights": "🧠",
-        "pros_cons": "⚖️",
-        "new_ideas": "💡",
-        "hidden_gems": "💎",
-        "proofreading": "🔍",
-        "structured": "📄",
-        "list": "📋",
-        "table": "🗂️",
-        "journal_entry": "📔",
-        "philosophical": "🤔",
-        "blog": "✒️",
-        "instagram": "asset:instagram",
-        "facebook": "asset:facebook",
-        "youtube": "asset:youtube",
-        "twitter": "asset:twitter",
-        "threads": "asset:threads",
-        "linkedin": "asset:linkedin",
-    ]
 
     // MARK: - CloudKit UUID Mapping
 
@@ -376,16 +832,42 @@ enum PresetCatalog {
         "regular":       UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
         "summary":       UUID(uuidString: "00000000-0000-0000-0000-000000000010")!,
         "action_points": UUID(uuidString: "00000000-0000-0000-0000-000000000011")!,
+        "takeaways":     UUID(uuidString: "00000000-0000-0000-0000-000000000012")!,
+        "mind_map":      UUID(uuidString: "00000000-0000-0000-0000-000000000013")!,
+        "key_points":    UUID(uuidString: "00000000-0000-0000-0000-000000000014")!,
         "professional":  UUID(uuidString: "00000000-0000-0000-0000-000000000020")!,
         "casual":        UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
         "email":         UUID(uuidString: "00000000-0000-0000-0000-000000000022")!,
         "chat":          UUID(uuidString: "00000000-0000-0000-0000-000000000023")!,
         "coding":        UUID(uuidString: "00000000-0000-0000-0000-000000000024")!,
         "rewrite":       UUID(uuidString: "00000000-0000-0000-0000-000000000025")!,
+        "short":         UUID(uuidString: "00000000-0000-0000-0000-000000000026")!,
+        "elaborated":    UUID(uuidString: "00000000-0000-0000-0000-000000000027")!,
+        "simplify":      UUID(uuidString: "00000000-0000-0000-0000-000000000028")!,
         "translate_en":  UUID(uuidString: "00000000-0000-0000-0000-000000000030")!,
         "translate_ru":  UUID(uuidString: "00000000-0000-0000-0000-000000000031")!,
         "translate_es":  UUID(uuidString: "00000000-0000-0000-0000-000000000032")!,
         "assistant":     UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
+        "study_note":    UUID(uuidString: "00000000-0000-0000-0000-000000000050")!,
+        "definitions":   UUID(uuidString: "00000000-0000-0000-0000-000000000051")!,
+        "quiz":          UUID(uuidString: "00000000-0000-0000-0000-000000000053")!,
+        "insights":      UUID(uuidString: "00000000-0000-0000-0000-000000000060")!,
+        "pros_cons":     UUID(uuidString: "00000000-0000-0000-0000-000000000061")!,
+        "new_ideas":     UUID(uuidString: "00000000-0000-0000-0000-000000000062")!,
+        "hidden_gems":   UUID(uuidString: "00000000-0000-0000-0000-000000000063")!,
+        "proofreading":  UUID(uuidString: "00000000-0000-0000-0000-000000000071")!,
+        "structured":    UUID(uuidString: "00000000-0000-0000-0000-000000000072")!,
+        "list":          UUID(uuidString: "00000000-0000-0000-0000-000000000073")!,
+        "table":         UUID(uuidString: "00000000-0000-0000-0000-000000000074")!,
+        "journal_entry": UUID(uuidString: "00000000-0000-0000-0000-000000000090")!,
+        "philosophical": UUID(uuidString: "00000000-0000-0000-0000-000000000091")!,
+        "blog":          UUID(uuidString: "00000000-0000-0000-0000-000000000092")!,
+        "instagram":     UUID(uuidString: "00000000-0000-0000-0000-000000000100")!,
+        "facebook":      UUID(uuidString: "00000000-0000-0000-0000-000000000101")!,
+        "youtube":       UUID(uuidString: "00000000-0000-0000-0000-000000000103")!,
+        "twitter":       UUID(uuidString: "00000000-0000-0000-0000-000000000104")!,
+        "threads":       UUID(uuidString: "00000000-0000-0000-0000-000000000105")!,
+        "linkedin":      UUID(uuidString: "00000000-0000-0000-0000-000000000106")!,
     ]
 
     /// Reverse lookup: UUID → built-in preset ID string.
