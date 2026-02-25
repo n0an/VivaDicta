@@ -253,6 +253,34 @@ struct ModeEditView: View {
             
             if viewModel.isTranscriptionProviderConfigured(viewModel.transcriptionProvider) {
 
+                Section("Text Processing") {
+                    Toggle(isOn: $viewModel.isAutoTextFormattingEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Automatic Text Formatting")
+                                .font(.body)
+                            Text("Splits text into readable paragraphs")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: viewModel.isAutoTextFormattingEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    Toggle(isOn: $viewModel.isSmartInsertEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Smart Insert")
+                                .font(.body)
+                            Text("Auto-adjust spacing and capitalization when inserting text via keyboard")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: viewModel.isSmartInsertEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+                }
+
                 Section(header: Text("AI Processing"),
                         footer: aiEnhancementSectionFooter) {
 

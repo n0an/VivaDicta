@@ -24,6 +24,8 @@ class ModeEditViewModel {
     var selectedPresetId: String?
     var useClipboardContext: Bool = false
     var useClipboardAsSelectedText: Bool = false
+    var isAutoTextFormattingEnabled: Bool = false
+    var isSmartInsertEnabled: Bool = false
 
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
@@ -123,6 +125,8 @@ class ModeEditViewModel {
             selectedPresetId = existingMode.presetId
             useClipboardContext = existingMode.useClipboardContext
             useClipboardAsSelectedText = existingMode.useClipboardAsSelectedText
+            isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
+            isSmartInsertEnabled = existingMode.isSmartInsertEnabled
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -156,7 +160,9 @@ class ModeEditViewModel {
             aiModel: aiModel ?? "",
             aiEnhanceEnabled: aiEnhanceEnabled,
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
-            useClipboardAsSelectedText: (aiEnhanceEnabled && useClipboardContext) ? useClipboardAsSelectedText : false
+            useClipboardAsSelectedText: (aiEnhanceEnabled && useClipboardContext) ? useClipboardAsSelectedText : false,
+            isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
+            isSmartInsertEnabled: isSmartInsertEnabled
         )
     }
 

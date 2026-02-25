@@ -72,6 +72,12 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// When enabled, the LLM treats clipboard content as the primary material to act on (rewrite, translate, etc.).
     let useClipboardAsSelectedText: Bool
 
+    /// Whether automatic text formatting (paragraph splitting) is applied after transcription and AI processing.
+    let isAutoTextFormattingEnabled: Bool
+
+    /// Whether smart insert (auto-adjust spacing and capitalization) is applied when inserting text via keyboard.
+    let isSmartInsertEnabled: Bool
+
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
          name: String,
@@ -83,7 +89,9 @@ struct VivaMode: Identifiable, Hashable, Codable {
          aiModel: String,
          aiEnhanceEnabled: Bool,
          useClipboardContext: Bool = false,
-         useClipboardAsSelectedText: Bool = false) {
+         useClipboardAsSelectedText: Bool = false,
+         isAutoTextFormattingEnabled: Bool = false,
+         isSmartInsertEnabled: Bool = false) {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -95,6 +103,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.aiEnhanceEnabled = aiEnhanceEnabled
         self.useClipboardContext = useClipboardContext
         self.useClipboardAsSelectedText = useClipboardAsSelectedText
+        self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
+        self.isSmartInsertEnabled = isSmartInsertEnabled
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -112,6 +122,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         useClipboardAsSelectedText = try container.decodeIfPresent(Bool.self, forKey: .useClipboardAsSelectedText) ?? false
+        isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
+        isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -132,6 +144,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case presetId, userPrompt
         case aiProvider, aiModel, aiEnhanceEnabled
         case useClipboardContext, useClipboardAsSelectedText
+        case isAutoTextFormattingEnabled, isSmartInsertEnabled
     }
 
     /// Encodes using the new format only (presetId).
@@ -148,6 +161,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(aiEnhanceEnabled, forKey: .aiEnhanceEnabled)
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
         try container.encode(useClipboardAsSelectedText, forKey: .useClipboardAsSelectedText)
+        try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)
+        try container.encode(isSmartInsertEnabled, forKey: .isSmartInsertEnabled)
     }
 
     /// The default mode used when no custom mode is configured.

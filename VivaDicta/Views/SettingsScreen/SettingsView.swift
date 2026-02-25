@@ -19,8 +19,6 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
     private var isVADEnabled = true
-    @AppStorage(UserDefaultsStorage.Keys.isTextFormattingEnabled)
-    private var isTextFormattingEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
@@ -30,7 +28,6 @@ struct SettingsView: View {
     @State private var prewarmErrorMessage = ""
     
     @AppStorage(UserDefaultsStorage.Keys.displaySiriTip) private var displaySiriTip: Bool = true
-    @State private var isSmartFormattingEnabled = AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled
     @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
     @State private var isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
     @State private var isSoundFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
@@ -151,19 +148,6 @@ struct SettingsView: View {
                         HapticManager.selectionChanged()
                     }
 
-                    Toggle(isOn: $isTextFormattingEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Automatic Text Formatting")
-                                .font(.body)
-                            Text("Splits text into readable paragraphs")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isTextFormattingEnabled) { _, _ in
-                        HapticManager.selectionChanged()
-                    }
-
                     Toggle(isOn: $isAutoCopyAfterRecordingEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Copy to Clipboard")
@@ -198,20 +182,6 @@ struct SettingsView: View {
                 }
 
                 Section("Keyboard") {
-                    Toggle(isOn: $isSmartFormattingEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Smart Insert")
-                                .font(.body)
-                            Text("Auto-adjust spacing and capitalization when inserting text")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isSmartFormattingEnabled) { _, newValue in
-                        HapticManager.selectionChanged()
-                        AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled = newValue
-                    }
-
                     Toggle(isOn: $isKeepInClipboardEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Copy to Clipboard")

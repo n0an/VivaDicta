@@ -202,8 +202,8 @@ class TranscriptionManager {
 
         var result = TranscriptionOutputFilter.filter(text)
 
-        // Aply text formatting if enabled
-        if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
+        // Apply text formatting if enabled for current mode
+        if currentMode.isAutoTextFormattingEnabled {
             result = TextFormatter.format(result)
         }
 

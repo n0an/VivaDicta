@@ -18,7 +18,7 @@ class KeyboardViewController: KeyboardInputViewController {
         guard !text.isEmpty else { return }
 
         let finalText: String
-        if AppGroupCoordinator.shared.isSmartFormattingOnPasteEnabled {
+        if dictationState.vivaModeManager.selectedVivaMode.isSmartInsertEnabled {
             let context = TextInsertionFormatter.getInsertionContext(from: textDocumentProxy)
             finalText = TextInsertionFormatter.formatTextForInsertion(text, context: context)
         } else {

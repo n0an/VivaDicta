@@ -227,7 +227,9 @@ class AIService {
             aiModel: mode.aiModel,
             aiEnhanceEnabled: mode.aiEnhanceEnabled,
             useClipboardContext: mode.useClipboardContext,
-            useClipboardAsSelectedText: mode.useClipboardAsSelectedText
+            useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+            isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+            isSmartInsertEnabled: mode.isSmartInsertEnabled
         )
 
         addMode(duplicatedMode)
@@ -293,7 +295,9 @@ class AIService {
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+                    isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
@@ -317,7 +321,9 @@ class AIService {
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+                    isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
@@ -341,7 +347,9 @@ class AIService {
                     aiModel: "",
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+                    isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
@@ -404,7 +412,9 @@ class AIService {
                 aiModel: defaultMode.aiModel,
                 aiEnhanceEnabled: defaultMode.aiEnhanceEnabled,
                 useClipboardContext: defaultMode.useClipboardContext,
-                useClipboardAsSelectedText: defaultMode.useClipboardAsSelectedText
+                useClipboardAsSelectedText: defaultMode.useClipboardAsSelectedText,
+                isAutoTextFormattingEnabled: defaultMode.isAutoTextFormattingEnabled,
+                isSmartInsertEnabled: defaultMode.isSmartInsertEnabled
             )
 
             // Update the mode
@@ -615,8 +625,7 @@ class AIService {
         do {
             var result = try await makeRequest(text: text)
             let isAssistantPreset = selectedMode.presetId == "assistant"
-            if isAssistantPreset,
-               UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
+            if isAssistantPreset, selectedMode.isAutoTextFormattingEnabled {
                 result = TextFormatter.format(result)
             }
             let endTime = Date()
@@ -669,8 +678,7 @@ class AIService {
         lastUserMessageSent = formattedText
 
         var result = try await makeRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: formattedText)
-        if preset.id == "assistant",
-           UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isTextFormattingEnabled) as? Bool ?? true {
+        if preset.id == "assistant", selectedMode.isAutoTextFormattingEnabled {
             result = TextFormatter.format(result)
         }
         let duration = Date().timeIntervalSince(startTime)
@@ -1403,7 +1411,9 @@ class AIService {
                     aiModel: "",
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText
+                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+                    isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }
