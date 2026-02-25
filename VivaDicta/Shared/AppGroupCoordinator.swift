@@ -409,13 +409,10 @@ public final class AppGroupCoordinator {
     }
 
     /// Whether to copy transcription to clipboard after inserting
-    /// Defaults to true if not set
+    /// Defaults to false if not set
     public var isKeepTranscriptInClipboardEnabled: Bool {
         get {
-            if sharedDefaults?.object(forKey: AppGroupCoordinator.kKeepTranscriptInClipboard) == nil {
-                return true
-            }
-            return sharedDefaults?.bool(forKey: AppGroupCoordinator.kKeepTranscriptInClipboard) ?? true
+            return sharedDefaults?.bool(forKey: AppGroupCoordinator.kKeepTranscriptInClipboard) ?? false
         }
         set {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kKeepTranscriptInClipboard)
