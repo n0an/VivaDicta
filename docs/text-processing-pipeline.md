@@ -89,7 +89,7 @@ Formats continuous transcription text into readable paragraphs using the `Natura
 - `AIService.enhance()` -- after `AIEnhancementOutputFilter` (Assistant preset only)
 - `AIService.generateVariation()` -- after `AIEnhancementOutputFilter` (Assistant preset only)
 
-**Conditional:** Setting `isTextFormattingEnabled` (default: `true`).
+**Conditional:** Per-mode setting `VivaMode.isAutoTextFormattingEnabled` (default: `true` for existing modes, `false` for new modes).
 
 ---
 
@@ -181,7 +181,7 @@ Smart formatting when inserting transcribed text from the keyboard extension.
 
 **Called from:** `KeyboardViewController.handleTranscription()`.
 
-**Conditional:** Setting `isSmartFormattingOnPasteEnabled`.
+**Conditional:** Per-mode setting `VivaMode.isSmartInsertEnabled` (default: `true` for existing modes, `false` for new modes).
 
 ---
 
@@ -191,14 +191,14 @@ Smart formatting when inserting transcribed text from the keyboard extension.
 |---|-----------|-------|---------------|---------|
 | 1 | `TranscriptionOutputFilter.filter()` | After transcription | Yes | -- |
 | 2 | `TranscriptionOutputFilter.hasMeaningfulContent()` | Gate check | Yes | -- |
-| 3 | `TextFormatter.format()` | Paragraph formatting | No | `isTextFormattingEnabled` |
+| 3 | `TextFormatter.format()` | Paragraph formatting | No | `VivaMode.isAutoTextFormattingEnabled` |
 | 4 | `ReplacementsService.applyReplacements()` | Word replacements | No | `isReplacementsEnabled` |
 | 5 | `CustomVocabulary.getTerms()` | AI prompt injection | No | `isSpellingCorrectionsEnabled` |
 | 6 | `PromptsTemplates.systemPrompt()` | AI system message | When `useSystemTemplate=true` | -- |
 | 7 | `formatTranscriptForLLM()` | AI user message | When `wrapInTranscriptTags=true` | -- |
 | 8 | `AIEnhancementOutputFilter.filter()` | After AI response | Yes | -- |
-| 9 | `TextFormatter.format()` | After AI response (Assistant only) | No | `isTextFormattingEnabled` |
-| 10 | `TextInsertionFormatter` | Keyboard insertion | No | `isSmartFormattingOnPasteEnabled` |
+| 9 | `TextFormatter.format()` | After AI response (Assistant only) | No | `VivaMode.isAutoTextFormattingEnabled` |
+| 10 | `TextInsertionFormatter` | Keyboard insertion | No | `VivaMode.isSmartInsertEnabled` |
 
 ### Server-Side Processing
 
