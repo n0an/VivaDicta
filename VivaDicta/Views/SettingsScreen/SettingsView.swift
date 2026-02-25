@@ -451,6 +451,10 @@ struct SettingsView: View {
                 appState.shouldNavigateToModels = false
                 navigationPath.append(SettingsDestination.transcriptionModels)
             }
+            if appState.shouldNavigateToModeSettings {
+                appState.shouldNavigateToModeSettings = false
+                navigationPath.append(appState.aiService.selectedMode)
+            }
         }
         .safeAreaInset(edge: .bottom) {
             if navigationPath.isEmpty {

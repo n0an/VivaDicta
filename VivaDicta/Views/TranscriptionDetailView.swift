@@ -27,6 +27,7 @@ struct TranscriptionDetailView: View {
     @State private var enhancementErrorMessage: String = ""
     @State private var showPresetPicker: Bool = false
     @State private var showMetaInfo: Bool = false
+    @State private var showConfigureAI: Bool = false
     @State private var generatingPresetId: String?
 
     // Ripple effect state for processing animations
@@ -61,6 +62,10 @@ struct TranscriptionDetailView: View {
             return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
         }
         return "Original"
+    }
+
+    private var isAIConfigured: Bool {
+        appState.aiService.isProperlyConfigured()
     }
 
     private var audioURL: URL? {
@@ -134,6 +139,13 @@ struct TranscriptionDetailView: View {
                 }
             )
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showConfigureAI) {
+            ConfigureAISheet {
+                showConfigureAI = false
+                appState.shouldNavigateToModeSettings = true
+            }
+            .presentationDetents([.medium])
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -270,59 +282,68 @@ struct TranscriptionDetailView: View {
 
                 // Button 2: AI Presets picker
                 Button {
-                    showPresetPicker = true
+                    if isAIConfigured {
+                        showPresetPicker = true
+                    } else {
+                        showConfigureAI = true
+                    }
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
                         Text("AI")
                     }
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(isAIConfigured ? .white : .secondary)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                     .background {
-                        if colorScheme == .dark {
-                            // Dark mode: edge-glow HUD style
-                            AnimatedMeshGradient()
-                                .mask(
-                                    Capsule()
-                                        .stroke(lineWidth: 14)
-                                        .blur(radius: 6)
-                                )
-                                .blendMode(.lighten)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(lineWidth: 2)
-                                        .fill(Color.white)
-                                        .blur(radius: 1.5)
-                                        .blendMode(.overlay)
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(lineWidth: 0.5)
-                                        .fill(Color.white)
-                                        .blur(radius: 0.5)
-                                        .blendMode(.overlay)
-                                )
-                                .background(.black)
-                                .clipShape(.capsule)
+                        if isAIConfigured {
+                            if colorScheme == .dark {
+                                // Dark mode: edge-glow HUD style
+                                AnimatedMeshGradient()
+                                    .mask(
+                                        Capsule()
+                                            .stroke(lineWidth: 14)
+                                            .blur(radius: 6)
+                                    )
+                                    .blendMode(.lighten)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(lineWidth: 2)
+                                            .fill(Color.white)
+                                            .blur(radius: 1.5)
+                                            .blendMode(.overlay)
+                                    )
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(lineWidth: 0.5)
+                                            .fill(Color.white)
+                                            .blur(radius: 0.5)
+                                            .blendMode(.overlay)
+                                    )
+                                    .background(.black)
+                                    .clipShape(.capsule)
+                            } else {
+                                // Light mode: full gradient fill
+                                AnimatedMeshGradient2()
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(lineWidth: 1)
+                                            .fill(Color.white)
+                                            .blur(radius: 1)
+                                            .blendMode(.overlay)
+                                    )
+                                    .clipShape(.capsule)
+                                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                            }
                         } else {
-                            // Light mode: full gradient fill
-                            AnimatedMeshGradient2()
-                                .overlay(
-                                    Capsule()
-                                        .stroke(lineWidth: 1)
-                                        .fill(Color.white)
-                                        .blur(radius: 1)
-                                        .blendMode(.overlay)
-                                )
-                                .clipShape(.capsule)
-                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                            Capsule()
+                                .fill(Color(.systemGray5))
                         }
                     }
                 }
                 .buttonStyle(.plain)
-                .disabled(generatingPresetId != nil || !appState.aiService.isProperlyConfigured())
+                .disabled(generatingPresetId != nil)
 
                 Spacer()
 
@@ -494,7 +515,11 @@ struct TranscriptionDetailView: View {
 
     private var addVariationButton: some View {
         Button {
-            showPresetPicker = true
+            if isAIConfigured {
+                showPresetPicker = true
+            } else {
+                showConfigureAI = true
+            }
         } label: {
             HStack(spacing: 3) {
                 Image(systemName: "sparkles")
@@ -515,7 +540,7 @@ struct TranscriptionDetailView: View {
             .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)
-        .disabled(generatingPresetId != nil || !appState.aiService.isProperlyConfigured())
+        .disabled(generatingPresetId != nil)
     }
 
     // MARK: - Generate Variation
@@ -591,6 +616,44 @@ struct TranscriptionDetailView: View {
             }
 
             processingState = .idle
+        }
+    }
+}
+
+// MARK: - Configure AI Sheet
+
+private struct ConfigureAISheet: View {
+    let onOpenSettings: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "sparkles")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+
+            Text("AI Processing Not Configured")
+                .font(.title3.bold())
+
+            Text("Set up an AI provider in your mode settings to use AI text processing.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Button {
+                onOpenSettings()
+            } label: {
+                Text("Open Mode Settings")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 40)
+
+            Spacer()
         }
     }
 }

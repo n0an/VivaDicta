@@ -61,9 +61,7 @@ struct MainView: View {
             }
         }
         .onChange(of: appState.shouldNavigateToModels) { _, newValue in
-            if newValue {
-                showingSettings = true
-            }
+            if newValue { showingSettings = true }
         }
         .onChange(of: appState.shouldTranscribeSharedAudio) { _, newValue in
             if newValue {
@@ -110,6 +108,9 @@ struct MainView: View {
             SettingsView()
                 .interactiveDismissDisabled(true)
                 .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
+        }
+        .onChange(of: appState.shouldNavigateToModeSettings) { _, newValue in
+            if newValue { showingSettings = true }
         }
         .fileImporter(
             isPresented: $showingFileImport,

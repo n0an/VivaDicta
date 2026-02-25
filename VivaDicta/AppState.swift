@@ -76,6 +76,9 @@ class AppState {
     /// Triggers navigation to the Models screen.
     var shouldNavigateToModels: Bool = false
 
+    /// Triggers navigation to the current mode's settings screen.
+    var shouldNavigateToModeSettings: Bool = false
+
     /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
 
