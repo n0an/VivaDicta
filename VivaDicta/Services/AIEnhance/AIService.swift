@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 import os
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
@@ -150,7 +151,7 @@ class AIService {
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
             refreshConnectedProviders()
-            autoAssignCloudTranscriptionIfAvailable()
+            await autoAssignCloudTranscriptionIfAvailable()
             if connectedProviders.contains(.openRouter) {
                 await fetchOpenRouterModels()
             }
@@ -387,7 +388,7 @@ class AIService {
         }
     }
 
-    private func autoAssignCloudTranscriptionIfAvailable() {
+    private func autoAssignCloudTranscriptionIfAvailable() async {
         let appPrivate = UserDefaultsStorage.appPrivate
         guard !appPrivate.bool(forKey: UserDefaultsStorage.Keys.didAutoAssignCloudTranscription) else { return }
         appPrivate.set(true, forKey: UserDefaultsStorage.Keys.didAutoAssignCloudTranscription)
@@ -402,6 +403,10 @@ class AIService {
 
             updateDefaultModeIfNeeded(provider: provider, modelName: modelName)
             logger.logInfo("Auto-assigned cloud transcription provider: \(provider.rawValue) with model: \(modelName)")
+
+            // Dismiss "Select Transcription model" tips since a model is now configured
+            await SelectTranscriptionModelTipMainView.selectModelEvent.donate()
+            await SelectTranscriptionModelTipSettingsView.selectModelEvent.donate()
             return
         }
     }
