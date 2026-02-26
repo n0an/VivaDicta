@@ -251,6 +251,9 @@ struct VivaDictaApp: App {
                 OnboardingView {
                     HapticManager.celebration()
                     hasCompletedOnboarding = true
+                    // Stamp version so What's New doesn't show for fresh installs
+                    let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+                    UserDefaultsStorage.appPrivate.set(currentVersion, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
                     Analytics.logEvent("onboarding_completed", parameters: nil)
                 }
             }

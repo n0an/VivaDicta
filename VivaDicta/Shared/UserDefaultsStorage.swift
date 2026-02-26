@@ -58,5 +58,8 @@ enum UserDefaultsStorage {
 
         // First-launch auto-assignment
         static let didAutoAssignCloudTranscription = "didAutoAssignCloudTranscription"
+
+        // What's New
+        static let lastSeenWhatsNewVersion = "lastSeenWhatsNewVersion"
     }
 }

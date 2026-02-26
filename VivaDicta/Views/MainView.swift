@@ -28,6 +28,7 @@ struct MainView: View {
 
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
+    @State private var showWhatsNew = false
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
@@ -76,6 +77,13 @@ struct MainView: View {
             KeyboardFlowSheet()
                 .presentationDetents([.fraction(0.3)])
                 .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showWhatsNew) {
+            if let release = whatsNewRelease {
+                WhatsNewView(release: release) {
+                    showWhatsNew = false
+                }
+            }
         }
         .onAppear { handleOnAppear() }
         .task {
@@ -224,6 +232,11 @@ struct MainView: View {
         }
     }
 
+    private var whatsNewRelease: WhatsNewRelease? {
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        return WhatsNewCatalog.release(for: currentVersion)
+    }
+
     private func handleOnAppear() {
         SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
         SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
@@ -241,6 +254,21 @@ struct MainView: View {
             try? await Task.sleep(for: .seconds(2))
             let count = transcriptions.count
             RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
+        }
+
+        checkAndShowWhatsNew()
+    }
+
+    private func checkAndShowWhatsNew() {
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        let lastSeen = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
+
+        guard lastSeen != currentVersion,
+              WhatsNewCatalog.release(for: currentVersion) != nil else { return }
+
+        Task {
+            try? await Task.sleep(for: .milliseconds(800))
+            showWhatsNew = true
         }
     }
 
