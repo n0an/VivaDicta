@@ -99,7 +99,12 @@ struct PresetFormView: View {
             }
 
             Section("Description") {
-                TextField("Short description", text: $presetDescription)
+                if let preset = existingPreset, preset.isBuiltIn {
+                    Text(presetDescription)
+                        .foregroundStyle(.secondary)
+                } else {
+                    TextField("Short description", text: $presetDescription)
+                }
             }
 
             if isAssistantPreset {
