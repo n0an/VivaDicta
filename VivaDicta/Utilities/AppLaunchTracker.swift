@@ -25,11 +25,6 @@ enum AppLaunchTracker {
         defaults.object(forKey: UserDefaultsStorage.Keys.firstLaunchDate) as? Date
     }
 
-    /// All app launch dates, ordered from oldest to newest.
-    static var allLaunchDates: [Date] {
-        defaults.object(forKey: UserDefaultsStorage.Keys.allLaunchDates) as? [Date] ?? []
-    }
-
     /// The number of days since the first app launch.
     /// Returns 0 if first launch date is not recorded.
     static var daysSinceFirstLaunch: Int {
@@ -46,11 +41,6 @@ enum AppLaunchTracker {
         if firstLaunchDate == nil {
             defaults.set(now, forKey: UserDefaultsStorage.Keys.firstLaunchDate)
         }
-
-        // Record this launch date to the history
-        var dates = allLaunchDates
-        dates.append(now)
-        defaults.set(dates, forKey: UserDefaultsStorage.Keys.allLaunchDates)
 
         // Increment launch count
         let currentCount = launchCount
