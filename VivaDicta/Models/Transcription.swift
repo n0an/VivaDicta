@@ -86,6 +86,9 @@ class Transcription {
     /// Emoji of the Power Mode active during transcription (synced from macOS).
     var powerModeEmoji: String?
 
+    /// UUID of the Viva Mode active during transcription.
+    var powerModeId: String?
+
     /// Status of the transcription (pending/completed/failed, synced from macOS).
     var transcriptionStatus: String?
 
@@ -117,7 +120,8 @@ class Transcription {
          aiProviderName: String? = nil,
          promptName: String? = nil,
          transcriptionDuration: TimeInterval? = nil,
-         enhancementDuration: TimeInterval? = nil) {
+         enhancementDuration: TimeInterval? = nil,
+         powerModeId: String? = nil) {
         self.text = text
         self.enhancedText = enhancedText
         self.timestamp = Date()
@@ -130,6 +134,7 @@ class Transcription {
         self.promptName = promptName
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
+        self.powerModeId = powerModeId
     }
 
     

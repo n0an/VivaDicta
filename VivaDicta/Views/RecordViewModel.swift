@@ -514,7 +514,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     aiProviderName: enhancedText != nil ? aiService.selectedMode.aiProvider?.displayName : nil,
                     promptName: promptName,
                     transcriptionDuration: transcriptionDuration,
-                    enhancementDuration: enhancementDur
+                    enhancementDuration: enhancementDur,
+                    powerModeId: aiService.selectedMode.id.uuidString
                 )
 
                 modelContext.insert(transcription)
@@ -678,7 +679,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     aiProviderName: nil,
                     promptName: nil,
                     transcriptionDuration: pending.transcriptionDuration,
-                    enhancementDuration: nil
+                    enhancementDuration: nil,
+                    powerModeId: aiService.selectedMode.id.uuidString
                 )
 
                 pending.modelContext.insert(transcription)
