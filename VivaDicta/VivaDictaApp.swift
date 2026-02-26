@@ -323,7 +323,9 @@ struct VivaDictaApp: App {
 
             // Known system services that have no URL scheme - don't log as unrecognized
             let knownNoSchemeHosts: Set<String> = [
-                "com.apple.SafariViewService"  // SFSafariViewController in-app browser
+                "com.apple.SafariViewService",  // SFSafariViewController in-app browser
+                "com.apple.springboard",        // iOS home screen
+                "ai.x.GrokApp"                  // Grok AI - no known URL scheme
             ]
 
             if !knownNoSchemeHosts.contains(hostId) {
@@ -447,7 +449,8 @@ struct VivaDictaApp: App {
             "com.anthropic.claude": "claude://",
             "md.obsidian": "obsidian://",
             "im.monica.app.monica": "monica://",
-            "com.mem-labs.mem": "mem://"
+            "com.mem-labs.mem": "mem://",
+            "com.google.OPA": "google://"
             // Add more as needed
         ]
         

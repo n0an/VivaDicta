@@ -72,6 +72,7 @@
 		<string>obsidian</string>
 		<string>monica</string>
 		<string>mem</string>
+		<string>google</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
