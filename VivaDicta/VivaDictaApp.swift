@@ -94,6 +94,9 @@ struct VivaDictaApp: App {
         // This handles the case where app terminates when enabling Full Access
         if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding) {
             UserDefaultsStorage.appPrivate.set(true, forKey: UserDefaultsStorage.Keys.hasCompletedOnboarding)
+            // Stamp version so What's New doesn't show for fresh installs
+            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+            UserDefaultsStorage.appPrivate.set(currentVersion, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
             UserDefaultsStorage.appPrivate.removeObject(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding)
         }
         
