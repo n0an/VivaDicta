@@ -148,6 +148,15 @@ struct TranscriptionDetailView: View {
             .presentationDetents([.height(240)])
         }
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VivaModePicker(
+                    modes: appState.aiService.modes,
+                    selectedModeName: Binding(
+                        get: { appState.aiService.selectedModeName },
+                        set: { appState.aiService.selectedModeName = $0 }
+                    )
+                )
+            }
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 8) {
                     Button("Info", systemImage: "info.circle") {

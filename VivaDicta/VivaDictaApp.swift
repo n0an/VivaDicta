@@ -328,7 +328,8 @@ struct VivaDictaApp: App {
             let knownNoSchemeHosts: Set<String> = [
                 "com.apple.SafariViewService",  // SFSafariViewController in-app browser
                 "com.apple.springboard",        // iOS home screen
-                "ai.x.GrokApp"                  // Grok AI - no known URL scheme
+                "ai.x.GrokApp",                 // Grok AI - no known URL scheme
+                "com.dmitrii.medvedev.gptalk"    // GPChat/Xenova AI - no known URL scheme
             ]
 
             if !knownNoSchemeHosts.contains(hostId) {
