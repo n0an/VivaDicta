@@ -677,7 +677,7 @@ private struct MetaInfoSheet: View {
 
                     #if DEBUG
                     if transcription.audioFileName != nil {
-                        metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted())
+                        metadataRow(icon: "doc.fill", label: "Audio File Size", value: transcription.getAudioFileSizeFormatted(), debugOnly: true)
                     }
                     #endif
                 }
@@ -691,23 +691,24 @@ private struct MetaInfoSheet: View {
                     }
                     #if DEBUG
                     if let duration = transcription.transcriptionDuration {
-                        metadataRow(icon: "clock.fill", label: "Time", value: transcription.getDurationFormatted(duration))
-                        metadataRow(icon: "figure.run.circle.fill", label: "Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration))
+                        metadataRow(icon: "clock.fill", label: "Time", value: transcription.getDurationFormatted(duration), debugOnly: true)
+                        metadataRow(icon: "figure.run.circle.fill", label: "Factor", value: transcription.getFactor(audioDuration: transcription.audioDuration, transcriptionDuration: duration), debugOnly: true)
                     }
                     #endif
                 }
 
                 if let variation = selectedVariation {
-                    Section("AI Processing — \(variation.presetDisplayName)") {
+                    Section("AI Processing") {
                         if let providerName = variation.aiProviderName {
                             metadataRow(icon: "sparkles", label: "Provider", value: providerName)
                         }
                         if let modelName = variation.aiModelName {
                             metadataRow(icon: "wand.and.sparkles", label: "Model", value: modelName)
                         }
+                        metadataRow(icon: "text.bubble.fill", label: "Preset", value: variation.presetDisplayName)
                         #if DEBUG
                         if let duration = variation.processingDuration {
-                            metadataRow(icon: "clock.fill", label: "Processing Time", value: transcription.getDurationFormatted(duration))
+                            metadataRow(icon: "clock.fill", label: "Processing Time", value: transcription.getDurationFormatted(duration), debugOnly: true)
                         }
                         #endif
                     }
@@ -725,7 +726,7 @@ private struct MetaInfoSheet: View {
                             }
                             #if DEBUG
                             if let duration = transcription.enhancementDuration {
-                                metadataRow(icon: "clock.fill", label: "Processing Time", value: transcription.getDurationFormatted(duration))
+                                metadataRow(icon: "clock.fill", label: "Processing Time", value: transcription.getDurationFormatted(duration), debugOnly: true)
                             }
                             #endif
                         }
@@ -737,21 +738,23 @@ private struct MetaInfoSheet: View {
         }
     }
 
-    private func metadataRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 12) {
+    private func metadataRow(icon: String, label: String, value: String, debugOnly: Bool = false) -> some View {
+        let tintColor: Color = debugOnly ? .orange : .secondary
+        return HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.footnote.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(tintColor)
                 .frame(width: 20, alignment: .center)
 
             Text(label)
                 .font(.subheadline)
+                .foregroundStyle(debugOnly ? .orange : .primary)
 
             Spacer()
 
             Text(value)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(tintColor)
         }
     }
 }
@@ -765,12 +768,18 @@ private struct PresetPickerSheet: View {
 
     @State private var filter: PresetFilter = .all
     @State private var selectedCategory: String?
+    @State private var searchText = ""
 
     private var typeFilteredPresets: [Preset] {
-        switch filter {
+        let byType: [Preset] = switch filter {
         case .all: presetManager.presets
         case .system: presetManager.presets.filter(\.isBuiltIn)
         case .custom: presetManager.presets.filter { !$0.isBuiltIn }
+        }
+        guard !searchText.isEmpty else { return byType }
+        return byType.filter {
+            $0.name.localizedStandardContains(searchText) ||
+            $0.presetDescription.localizedStandardContains(searchText)
         }
     }
 
@@ -842,6 +851,7 @@ private struct PresetPickerSheet: View {
                     }
                 }
             }
+            .searchable(text: $searchText, prompt: "Search presets")
             .onChange(of: filter) { _, _ in
                 selectedCategory = nil
             }
