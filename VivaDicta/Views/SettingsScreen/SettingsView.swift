@@ -177,7 +177,7 @@ struct SettingsView: View {
                         Text("AI Providers")
                     }
                     NavigationLink(value: SettingsDestination.presetsSettings) {
-                        Text("Presets")
+                        Text("AI Presets")
                     }
                 }
 

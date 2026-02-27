@@ -119,7 +119,7 @@ struct PresetSettings: View {
             }
         }
         .toolbarTitleDisplayMode(.inlineLarge)
-        .navigationTitle("Presets")
+        .navigationTitle("AI Presets")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add Preset", systemImage: "plus") {
