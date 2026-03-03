@@ -73,6 +73,7 @@
 		<string>monica</string>
 		<string>mem</string>
 		<string>google</string>
+		<string>tinder</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

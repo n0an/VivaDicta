@@ -329,7 +329,10 @@ struct VivaDictaApp: App {
                 "com.apple.SafariViewService",  // SFSafariViewController in-app browser
                 "com.apple.springboard",        // iOS home screen
                 "ai.x.GrokApp",                 // Grok AI - no known URL scheme
-                "com.dmitrii.medvedev.gptalk"    // GPChat/Xenova AI - no known URL scheme
+                "com.dmitrii.medvedev.gptalk",   // GPChat/Xenova AI - no known URL scheme
+                "com.saner.ai",                  // Saner AI - no known URL scheme
+                "dk.FirstForm.SnappyNotesiOS",   // Snappy Notes - no known URL scheme
+                "com.ai.venice"                  // Venice AI - no known URL scheme
             ]
 
             if !knownNoSchemeHosts.contains(hostId) {
@@ -454,8 +457,8 @@ struct VivaDictaApp: App {
             "md.obsidian": "obsidian://",
             "im.monica.app.monica": "monica://",
             "com.mem-labs.mem": "mem://",
-            "com.google.OPA": "google://"
-            // Add more as needed
+            "com.google.OPA": "google://",
+            "com.cardify.tinder": "tinder://"
         ]
         
         return knownSchemes[bundleId]
