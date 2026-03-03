@@ -135,9 +135,11 @@ final class KeyboardDictationState {
         }
 
         if AppGroupCoordinator.shared.isKeyboardSessionActive {
-            // Capture clipboard from keyboard context for AI processing
-            // (keyboard has direct access to the active app's clipboard)
-            AppGroupCoordinator.shared.setKeyboardClipboardContext(UIPasteboard.general.string)
+            if vivaModeManager.selectedVivaMode.useClipboardContext {
+                // Capture clipboard from keyboard context for AI processing
+                // (keyboard has direct access to the active app's clipboard)
+                AppGroupCoordinator.shared.setKeyboardClipboardContext(UIPasteboard.general.string)
+            }
             AppGroupCoordinator.shared.requestStartRecording()
             
             // TODO: why delay? Refactor to Task
