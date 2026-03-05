@@ -1,5 +1,7 @@
 # Analyze Unrecognized Host Apps
 
+**Last run:** 2026-02-28 (commit cc118f12 — added new host app mappings from analytics data)
+
 You are given the following context:
 $ARGUMENTS
 
