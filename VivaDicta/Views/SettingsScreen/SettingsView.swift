@@ -355,6 +355,34 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+
+                    Button {
+                        requestAppStoreReview()
+                    } label: {
+                        HStack {
+                            Image(systemName: "star")
+                                .foregroundStyle(.yellow)
+                            Text("Review in App Store")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    ShareLink(item: URL(string: "https://apps.apple.com/app/id6758147238")!) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundStyle(.green)
+                            Text("Share VivaDicta")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
             .navigationDestination(for: VivaMode.self) { mode in
@@ -497,6 +525,12 @@ App Version: \(appVersion) (\(buildNumber))
 Device: \(deviceModel)
 iOS Version: \(systemVersion)
 """
+    }
+
+    private func requestAppStoreReview() {
+        if let url = URL(string: "https://apps.apple.com/app/id6758147238?action=write-review") {
+            UIApplication.shared.open(url)
+        }
     }
 
     private func openSupportEmailFallback() {
