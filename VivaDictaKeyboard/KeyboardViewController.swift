@@ -27,6 +27,8 @@ class KeyboardViewController: KeyboardInputViewController {
 
         textDocumentProxy.insertText(finalText)
 
+        AppGroupCoordinator.shared.recordKeyboardSuccessfulUse()
+
         if AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled {
             ClipboardManager.copyToClipboard(finalText)
         }

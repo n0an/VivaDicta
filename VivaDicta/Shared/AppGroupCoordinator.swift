@@ -69,6 +69,9 @@ public final class AppGroupCoordinator {
     
     public static let isHapticsEnabled = "isHapticsEnabled"
 
+    // Keyboard success tracking (for deferred rating request in main app)
+    public static let kKeyboardFirstSuccessfulUse = "keyboardFirstSuccessfulUse"
+
     // Share Extension
     public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"
     public static let kPendingLanguageOverride = "pendingLanguageOverride"
@@ -306,6 +309,25 @@ public final class AppGroupCoordinator {
             defaults.removeObject(forKey: UserDefaultsKeys.keyboardClipboardContext)
         }
         return text
+    }
+
+    // MARK: - Keyboard Success Tracking
+
+    /// Called from keyboard extension after first successful transcription insertion.
+    /// The main app checks this flag on launch to trigger a deferred rating request.
+    public func recordKeyboardSuccessfulUse() {
+        guard sharedDefaults?.bool(forKey: AppGroupCoordinator.kKeyboardFirstSuccessfulUse) != true else { return }
+        sharedDefaults?.set(true, forKey: AppGroupCoordinator.kKeyboardFirstSuccessfulUse)
+        sharedDefaults?.synchronize()
+    }
+
+    /// Returns true if keyboard was used successfully and clears the flag.
+    /// Call from main app on launch to trigger a deferred rating request.
+    public func consumeKeyboardSuccessFlag() -> Bool {
+        guard sharedDefaults?.bool(forKey: AppGroupCoordinator.kKeyboardFirstSuccessfulUse) == true else { return false }
+        sharedDefaults?.set(false, forKey: AppGroupCoordinator.kKeyboardFirstSuccessfulUse)
+        sharedDefaults?.synchronize()
+        return true
     }
 
     // MARK: - Transcribed Text Sharing

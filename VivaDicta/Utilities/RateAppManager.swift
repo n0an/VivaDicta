@@ -16,17 +16,19 @@ enum RateAppManager {
     // MARK: - Configuration
 
     /// Minimum number of app launches before requesting a rating.
-    private static let minimumLaunchCount = 5
+    private static let minimumLaunchCount = 3
 
     /// Minimum number of days since first launch before requesting a rating.
-    private static let minimumDaysSinceInstall = 3
+    private static let minimumDaysSinceInstall = 1
 
     /// Minimum days since install for passive users who may not launch frequently.
     /// Used as an alternative to launch-count-based conditions.
-    private static let minimumDaysSinceInstallWide = 30
+    private static let minimumDaysSinceInstallWide = 14
 
     /// Minimum number of days between rating requests.
-    private static let minimumDaysBetweenRequests = 90
+    /// Apple allows up to 3 requests per 365-day period and silently suppresses extras,
+    /// so calling more often doesn't hurt — Apple controls whether the dialog actually shows.
+    private static let minimumDaysBetweenRequests = 60
 
     // MARK: - Private
 

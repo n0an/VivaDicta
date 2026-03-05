@@ -615,6 +615,7 @@ struct TranscriptionDetailView: View {
                 }
 
                 HapticManager.heartbeat()
+                RateAppManager.requestReviewIfAppropriate()
             } catch is CancellationError {
                 generatingPresetId = nil
             } catch {

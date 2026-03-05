@@ -254,6 +254,11 @@ struct MainView: View {
             try? await Task.sleep(for: .seconds(2))
             let count = transcriptions.count
             RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
+
+            // Deferred rating request after first successful keyboard use
+            if AppGroupCoordinator.shared.consumeKeyboardSuccessFlag() {
+                RateAppManager.requestReviewIfAppropriate()
+            }
         }
 
         checkAndShowWhatsNew()
