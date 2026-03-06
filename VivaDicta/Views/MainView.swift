@@ -73,11 +73,14 @@ struct MainView: View {
                 appState.shouldTranscribeSharedAudio = false
             }
         }
-        .sheet(isPresented: $appState.showKeyboardFlowSheet) {
-            KeyboardFlowSheet()
-                .presentationDetents([.fraction(0.3)])
-                .presentationDragIndicator(.hidden)
+        .overlay(alignment: .top) {
+            if appState.showKeyboardFlowToast {
+                KeyboardFlowToast()
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
+        .animation(.spring(duration: 0.4, bounce: 0.2), value: appState.showKeyboardFlowToast)
         .sheet(isPresented: $showWhatsNew) {
             if let release = whatsNewRelease {
                 WhatsNewView(release: release) {

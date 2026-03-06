@@ -234,7 +234,7 @@ struct VivaDictaApp: App {
                     }
                     .onChange(of: scenePhase) { oldPhase, newPhase in
                         if oldPhase == .active && newPhase == .inactive {
-                            appState.showKeyboardFlowSheet = false
+                            appState.showKeyboardFlowToast = false
                         }
                         
                         switch newPhase {
@@ -269,8 +269,8 @@ struct VivaDictaApp: App {
         // Keyboard session flow:
         // 1. If we CAN return to host app: Start recording → Return to host
         //    User sees recording already happening when they arrive
-        // 2. If we CANNOT return: Show keyboard flow sheet → User manually switches
-        //    User will manually start recording after switching
+        // 2. If we CANNOT return: Start recording → Show toast → User manually switches
+        //    User sees recording already happening when they arrive
         
         logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
         logger.logInfo("🔄 Attempting to return to host: \(hostId)")
@@ -288,13 +288,13 @@ struct VivaDictaApp: App {
                     // Check if we have a transcription model selected
                     guard let vm = appState.recordViewModel else {
                         logger.logError("❌ RecordViewModel not available")
-                        appState.showKeyboardFlowSheet = true
+                        appState.showKeyboardFlowToast = true
                         return
                     }
                     
                     if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
-                        logger.logWarning("⚠️ No transcription model selected - showing keyboard flow sheet")
-                        appState.showKeyboardFlowSheet = true
+                        logger.logWarning("⚠️ No transcription model selected - showing keyboard flow toast")
+                        appState.showKeyboardFlowToast = true
                         return
                     }
                     
@@ -315,13 +315,13 @@ struct VivaDictaApp: App {
                     }
                 } else {
                     logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                    // Can't open URL - don't start recording, show keyboard flow sheet
-                    appState.showKeyboardFlowSheet = true
+                    // Can't open URL - don't start recording, show keyboard flow toast
+                    appState.showKeyboardFlowToast = true
                 }
             }
         } else {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
-            // No URL scheme found - start recording and show keyboard flow sheet
+            // No URL scheme found - start recording and show keyboard flow toast
             // so user can switch back manually and find recording already in progress
             Task { @MainActor in
                 if let vm = appState.recordViewModel,
@@ -329,7 +329,7 @@ struct VivaDictaApp: App {
                     logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
                     vm.startCaptureAudio()
                 }
-                appState.showKeyboardFlowSheet = true
+                appState.showKeyboardFlowToast = true
             }
 
             // Known system services that have no URL scheme - don't log as unrecognized
@@ -398,8 +398,8 @@ struct VivaDictaApp: App {
                     if let hostId = hostId {
                         attemptReturnToHost(hostId: hostId)
                     } else {
-                        // No host ID available, show the keyboard flow sheet as fallback
-                        appState.showKeyboardFlowSheet = true
+                        // No host ID available, show the keyboard flow toast as fallback
+                        appState.showKeyboardFlowToast = true
                     }
                     
                     
@@ -407,8 +407,8 @@ struct VivaDictaApp: App {
                     
                 } catch {
                     logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
-                    // If prewarm fails, still try to show keyboard flow sheet as fallback
-                    appState.showKeyboardFlowSheet = true
+                    // If prewarm fails, still try to show keyboard flow toast as fallback
+                    appState.showKeyboardFlowToast = true
                 }
             }
         } else if url.absoluteString == "startRecordFromWidget" {

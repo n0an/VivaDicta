@@ -82,8 +82,8 @@ class AppState {
     /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
 
-    /// Controls display of the keyboard flow activation sheet.
-    var showKeyboardFlowSheet: Bool = false
+    /// Controls display of the keyboard flow toast.
+    var showKeyboardFlowToast: Bool = false
 
     /// Indicates pending shared audio from the Share Extension.
     var shouldTranscribeSharedAudio: Bool = false
