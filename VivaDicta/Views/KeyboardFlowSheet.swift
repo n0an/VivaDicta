@@ -25,7 +25,7 @@ struct KeyboardFlowSheet: View {
                     .font(.system(size: 40))
                     .foregroundStyle(.orange)
 
-                Text("Swipe back to start using\nVivaDicta dictation")
+                Text("Swipe back to continue\nVivaDicta dictation")
                     .font(.title3)
                     .fontWeight(.medium)
                     .multilineTextAlignment(.center)

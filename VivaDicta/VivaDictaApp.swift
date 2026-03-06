@@ -321,8 +321,16 @@ struct VivaDictaApp: App {
             }
         } else {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
-            // No URL scheme found - show the keyboard flow sheet as fallback
-            appState.showKeyboardFlowSheet = true
+            // No URL scheme found - start recording and show keyboard flow sheet
+            // so user can switch back manually and find recording already in progress
+            Task { @MainActor in
+                if let vm = appState.recordViewModel,
+                   vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
+                    logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
+                    vm.startCaptureAudio()
+                }
+                appState.showKeyboardFlowSheet = true
+            }
 
             // Known system services that have no URL scheme - don't log as unrecognized
             let knownNoSchemeHosts: Set<String> = [
