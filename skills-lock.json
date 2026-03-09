@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "swift-concurrency": {
+      "source": "avdlee/swift-concurrency-agent-skill",
+      "sourceType": "github",
+      "computedHash": "fb91a851df4a0aabcb8eb8f9b3af98aa2fda5775c0f2ebc9aa61e8206e37d6ef"
+    },
     "swiftui-pro": {
       "source": "twostraws/swiftui-agent-skill",
       "sourceType": "github",
