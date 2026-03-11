@@ -217,11 +217,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .groq:
             return "openai/gpt-oss-120b"
         case .gemini:
-            return "gemini-2.5-flash-lite"
+            return "gemini-3-flash-preview"
         case .anthropic:
-            return "claude-sonnet-4-5"
+            return "claude-sonnet-4-6"
         case .openAI:
-            return "gpt-5-mini"
+            return "gpt-5.4"
         case .grok:
             return "grok-4-1-fast"
         case .zai:
@@ -321,6 +321,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .openAI:
             return [
+                "gpt-5.4",
+                "gpt-5.3-chat-latest",
                 "gpt-5.2",
                 "gpt-5.1",
                 "gpt-5-mini",
