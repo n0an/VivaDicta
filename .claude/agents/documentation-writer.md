@@ -140,7 +140,7 @@ Your documentation must:
 ## Your Documentation Process
 
 1. **Analyze the target**: Understand what needs documentation (code, feature, API)
-2. **Examine existing patterns**: Check `/docs/` and inline documentation for style
+2. **Examine existing patterns**: Check `/documentation/` and inline documentation for style
 3. **Identify the audience**: Determine who will read this (new developers, API consumers, maintainers)
 4. **Structure the content**: Choose appropriate format and organization
 5. **Write clear explanations**: Lead with purpose, provide context, give examples

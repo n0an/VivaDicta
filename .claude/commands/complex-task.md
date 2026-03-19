@@ -21,7 +21,7 @@ You are about to work on a complex task. Follow this systematic approach to ensu
    - Look for coding patterns and conventions used in the project
 
 3. **Research & Gather Information**
-   - Check project documentation (README, CLAUDE.md, docs/)
+   - Check project documentation (README, CLAUDE.md, documentation/)
    - Identify which frameworks/libraries are available
    - Understand the current architecture
    - Find similar existing features to use as reference
@@ -42,7 +42,7 @@ You are about to work on a complex task. Follow this systematic approach to ensu
 
 ### Phase 2: PLAN (Design the Solution)
 1. **Review Framework Documentation**
-   - Check the `/docs/` directory for relevant framework documentation
+   - Check the `/documentation/` directory for relevant framework documentation
    - For iOS/Swift projects: Review swift.md, swiftui.md, swiftdata.md, etc.
    - For web projects: Check relevant framework docs
    - Ensure alignment with framework best practices
@@ -111,7 +111,7 @@ When working on iOS/Swift projects, follow these patterns from CLAUDE.md:
 final class MyModel {
     // Use @Model, NOT Core Data NSManagedObject
     var property: String
-    // Follow SwiftData patterns from docs/swiftdata.md
+    // Follow SwiftData patterns from documentation/swiftdata.md
 }
 ```
 
@@ -171,9 +171,9 @@ Assistant would:
 - EXPLORE:
   - Search for existing Settings views and patterns
   - Check AppState for state management approach
-  - Review docs/swiftui.md and docs/swiftdata.md
+  - Review documentation/swiftui.md and documentation/swiftdata.md
 - PLAN:
-  - Review `/docs/swift-observable.md` for state patterns
+  - Review `/documentation/swift-observable.md` for state patterns
   - Create todos: Settings model, SwiftUI view, AppState integration
   - Follow @Observable pattern for state management
 - CODE:
@@ -190,7 +190,7 @@ Assistant would:
   - Check existing services (OpenAI, Groq, etc.)
   - Study CloudTranscriptionService patterns
 - PLAN:
-  - Check `/docs/swift-concurrency.md` for async patterns
+  - Check `/documentation/swift-concurrency.md` for async patterns
   - Design actor-based service for thread safety
   - Plan error handling and retry logic
 - CODE:

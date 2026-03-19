@@ -9,7 +9,7 @@ Use this skill when you need to automate iOS Simulator interactions, including t
 
 ## Additional Resources
 
-- [AXe Documentation](../../docs/Tools/Axe_README.md) - Complete AXe reference including advanced features, architecture, and troubleshooting
+- [AXe Documentation](../../documentation/Tools/Axe_README.md) - Complete AXe reference including advanced features, architecture, and troubleshooting
 
 ## Skill Flow
 

@@ -33,7 +33,7 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 1. **RecordView/RecordViewModel** — records audio via AVAudioRecorder
 2. **TranscriptionManager** — routes to on-device (WhisperKit/Parakeet) or cloud provider
 3. **AIService** — AI text processing using the mode's active preset. Builds system/user messages via `PromptsTemplates`, sends to cloud providers or Apple Foundation Model
-4. **Text Processing Pipeline** — multi-stage: raw text → word replacements → custom vocabulary → AI processing → output filter → paragraph formatting → text insertion formatting. See `docs/text-processing-pipeline.md`
+4. **Text Processing Pipeline** — multi-stage: raw text → word replacements → custom vocabulary → AI processing → output filter → paragraph formatting → text insertion formatting. See `documentation/text-processing-pipeline.md`
 5. **Transcription** (SwiftData) — persisted with `text`, `enhancedText`, audio file reference, and linked `TranscriptionVariation` records
 
 ### Data Model: Transcription + Variations (Dual-Write Pattern)
@@ -127,7 +127,7 @@ GitHub Actions workflow for automated code review with iOS test execution. TypeS
 
 ## Documentation
 
-Reference docs are in `/docs/references/` (Swift, SwiftUI, SwiftData, Xcode, etc.). WWDC session transcripts in `/docs/references/wwdc-transcripts/`. Text processing pipeline documented in `/docs/text-processing-pipeline.md`.
+Reference docs are in `/documentation/references/` (Swift, SwiftUI, SwiftData, Xcode, etc.). WWDC session transcripts in `/documentation/references/wwdc-transcripts/`. Text processing pipeline documented in `/documentation/text-processing-pipeline.md`.
 
 Additional Xcode documentation at `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`.
 

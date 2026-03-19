@@ -13,7 +13,7 @@ Analyze unrecognized host app bundle IDs from Firebase/Google Analytics and dete
 
 1. **Read the current mappings** from `VivaDicta/VivaDictaApp.swift` — find the `knownSchemes` dictionary inside `getURLSchemeForBundleId()`
 
-2. **Get the analytics data** — the user will provide a screenshot or list of bundle IDs from the Google Analytics "Unrecognized Host Apps" exploration (see `docs/firebase-analytics-events.md` for how to access it)
+2. **Get the analytics data** — the user will provide a screenshot or list of bundle IDs from the Google Analytics "Unrecognized Host Apps" exploration (see `documentation/firebase-analytics-events.md` for how to access it)
 
 3. **Cross-reference** each bundle ID against the existing `knownSchemes` dictionary and categorize into:
 

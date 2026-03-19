@@ -108,7 +108,7 @@ When asked to review code for testing:
 - Explain trade-offs when suggesting testing approaches
 - Highlight critical scenarios that must be tested
 - Provide working code examples, not pseudocode
-- Reference relevant documentation from /docs/ when applicable
+- Reference relevant documentation from /documentation/ when applicable
 - Point out testing anti-patterns if you see them
 
 Your goal is to ensure the VivaDicta codebase has robust, maintainable test coverage that gives developers confidence to refactor and add features without fear of breaking existing functionality.
