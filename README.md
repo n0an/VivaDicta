@@ -81,9 +81,10 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 **Platform & Tech**
 - Apple Foundation Model — free on-device AI processing, no API key needed
 - Swift 6 with strict concurrency
-- SwiftUI + SwiftData with CloudKit sync
+- SwiftUI
+- SwiftData with CloudKit sync
 - App Intents — Siri and Shortcuts integration
-- CoreSpotlight — indexed transcriptions for system search
+- CoreSpotlight — indexed transcriptions for iOS spotlight search
 - Shortcuts — quickly record a note and more
 
 ## Architecture
@@ -98,11 +99,25 @@ AVAudioEngine    Cloud STT      PromptsTemplates
 (keyboard)       providers
 ```
 
+Main app ↔ extensions IPC via `AppGroupCoordinator` (Darwin Notifications + Shared UserDefaults):
+
+```
+┌─────────────┐   Darwin Notifications   ┌───────────────────┐
+│   Main App   │◄────────────────────────►│ Keyboard Extension │
+│              │   Shared UserDefaults    │                   │
+│ RecordView   │◄────────────────────────►│  Dictation State  │
+│ Model        │                          └───────────────────┘
+│              │◄──► Widget + Live Activity
+│              │◄──► Share Extension
+│              │◄──► Action Extension
+└─────────────┘
+```
+
 Core components:
 
 | Component | Role |
 |-----------|------|
-| `AppGroupCoordinator` | Cross-process communication (keyboard, widget, share, action extensions) |
+| `AppGroupCoordinator` | Cross-process communication using Darwin Notifications (custom keyboard, widgets, share, action extensions) |
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
 | `AIService` | AI text processing, 15+ providers, mode/API key management |
@@ -182,9 +197,9 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 <p align="center">
   Made with ❤️ by Anton Novoselov
   <br><br>
-  <a href="https://twitter.com/vivadicta"><img src="https://img.shields.io/badge/-𝕏-000?style=flat-square&logo=x&logoColor=white" alt="X"></a>
+  <a href="https://twitter.com/vivadicta"><img src="https://img.shields.io/twitter/follow/vivadicta?style=social" alt="X"></a>
   &nbsp;
-  <a href="https://github.com/n0an"><img src="https://img.shields.io/badge/-GitHub-000?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+  <a href="https://github.com/n0an"><img src="https://img.shields.io/github/followers/n0an?style=social" alt="GitHub"></a>
   &nbsp;
-  <a href="https://www.linkedin.com/in/anton-novoselov/"><img src="https://img.shields.io/badge/-LinkedIn-000?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
+  <a href="https://www.linkedin.com/in/anton-novoselov/"><img src="https://img.shields.io/badge/LinkedIn-anton--novoselov-blue?style=social&logo=linkedin" alt="LinkedIn"></a>
 </p>
