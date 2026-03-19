@@ -1,13 +1,28 @@
 # ``VivaDicta``
 
-<!--@START_MENU_TOKEN@-->Summary<!--@END_MENU_TOKEN@-->
+Dictate Anywhere You Type
 
 ## Overview
 
-<!--@START_MENU_TOKEN@-->Text<!--@END_MENU_TOKEN@-->
+Transform speech into perfectly polished text with AI. Completely free, endlessly flexible, and private by design.
+
+![Overview](overview.png)
 
 ## Topics
 
-### <!--@START_MENU_TOKEN@-->Group<!--@END_MENU_TOKEN@-->
+### Essentials
+- <doc:AppGroupCoordinatorArchitecture>
 
-- <!--@START_MENU_TOKEN@-->``Symbol``<!--@END_MENU_TOKEN@-->
+### Models
+- ``Transcription``
+- ``TranscriptionEntity``
+- ``TranscriptionModel``
+
+### Service
+- ``TranscriptionService``
+- ``AIService``
+- ``KeychainService``
+
+### Persistence
+- ``DataController``
+

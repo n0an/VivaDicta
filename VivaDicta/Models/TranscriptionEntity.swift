@@ -118,7 +118,10 @@ struct TranscriptionEntity: IndexedEntity {
     }
 
     // MARK: - Display Helpers
-
+    
+    /// Show description of the TranscriptionEntity
+    /// - Parameter prefix: prefix how many symbols to show `Int`
+    /// - Returns: shows description of the entity `String`
     func text(withPrefix prefix: Int = 50) -> String {
         let textToUse = enhancedText ?? text
         return String(textToUse.prefix(prefix))
