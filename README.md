@@ -13,8 +13,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-iOS%2018%2B-blue" alt="Platform">
-  <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift">
+  <img src="https://img.shields.io/badge/Xcode-26%2B-blue?logo=xcode&logoColor=white" alt="Xcode 26+">
+  <img src="https://img.shields.io/badge/iOS-26.0%2B-orange?logo=apple&logoColor=white" alt="iOS 26.0+">
+  <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift 6.0">
   <img src="https://img.shields.io/github/license/n0an/VivaDicta" alt="License">
 </p>
 
