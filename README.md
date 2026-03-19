@@ -203,9 +203,9 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 <p align="center">
   Made with ❤️ by Anton Novoselov
   <br><br>
-  <a href="https://twitter.com/vivadicta"><img src="https://img.shields.io/twitter/follow/vivadicta?style=flat" alt="X"></a>
+  <a href="https://twitter.com/vivadicta"><img src="https://img.shields.io/twitter/follow/vivadicta?style=social" alt="X"></a>
   &nbsp;
-  <a href="https://github.com/n0an"><img src="https://img.shields.io/github/followers/n0an?style=flat" alt="GitHub"></a>
+  <a href="https://github.com/n0an"><img src="https://img.shields.io/github/followers/n0an?style=social" alt="GitHub"></a>
   &nbsp;
-  <a href="https://www.linkedin.com/in/anton-novoselov/"><img src="https://img.shields.io/badge/LinkedIn-anton--novoselov-blue?style=flat&logo=linkedin" alt="LinkedIn"></a>
+  <a href="https://www.linkedin.com/in/anton-novoselov/"><img src="https://img.shields.io/badge/LinkedIn-anton--novoselov-blue?style=social&logo=linkedin" alt="LinkedIn"></a>
 </p>
