@@ -60,7 +60,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 **VivaModes**
 - Configurable profiles combining transcription provider, AI provider, model, preset, and language
 - Each mode remembers its settings — switch contexts with one tap
-- Clipboard and selected text context — copy a message and dictate your reply, paste an email and voice-dictate a response
+- Clipboard context — AI uses copied text as context when processing your dictation (e.g., copy a message, then dictate your reply)
 
 **Custom Keyboard**
 - System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
@@ -68,21 +68,23 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Swipe to switch between modes without leaving the app you're typing in
 
 **Personalization**
-- Custom dictionary for names and terms (Kubernetes, Dr. Johnson, etc.)
+- Custom dictionary for names and terms (OpenClaw, Dr. Johnson, etc.)
 - Word replacements and shortcuts (e.g., "my email" → support@vivadicta.com)
 - Audio recordings saved alongside transcriptions
 
 **Sync & Extensions**
-- iCloud sync across iPhone and Mac — transcriptions, presets, custom dictionary, and API keys
-- Home/Lock screen widgets + Live Activity for recording status
-- Share Extension for importing audio files from other apps
-- Action Extension for processing text from other apps
+- iCloud sync across iPhone, iPad and Mac — transcriptions, presets, custom dictionary, and API keys
+- Home/Lock screen widgets and Control in control center to quickly record note
+- Live Activity for recording status
+- Share Extension and Action Extension for importing audio files from other apps
 
 **Platform & Tech**
 - Apple Foundation Model — free on-device AI processing, no API key needed
 - Swift 6 with strict concurrency
 - SwiftUI + SwiftData with CloudKit sync
-- App Intents (Siri/Shortcuts) + CoreSpotlight
+- App Intents - Siri/Shortcuts
+- CoreSpotlight - index recorded notes
+- Shortcuts - quickly record note and more
 
 ## Architecture
 
@@ -100,11 +102,11 @@ Core components:
 
 | Component | Role |
 |-----------|------|
+| `AppGroupCoordinator` | Cross-process communication (keyboard, widget, share, action extensions) |
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
 | `AIService` | AI text processing, 15+ providers, mode/API key management |
 | `PresetManager` | Built-in + custom presets, CloudKit sync |
-| `AppGroupCoordinator` | Cross-process communication (keyboard, widget, share, action extensions) |
 | `AudioPrewarmManager` | Continuous audio engine for keyboard extension low-latency recording |
 
 See the [architecture documentation](documentation/) for detailed diagrams and flows.

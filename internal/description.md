@@ -51,7 +51,7 @@ Switch between AI-powered modes for different contexts. Each mode remembers its 
 
 CLIPBOARD & SELECTED TEXT CONTEXT
 
-AI processing can use your clipboard or selected text as additional context. Copy a message and dictate your reply, or paste an email and voice-dictate your response. Configurable per mode.
+AI processing can use your clipboard or selected text as additional context. For example, copy a message you received, then dictate your reply — AI knows what you're responding to. Configurable per mode.
 
 NOW ON iPHONE AND MAC
 
