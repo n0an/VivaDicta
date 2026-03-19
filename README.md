@@ -5,7 +5,7 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  iOS voice transcription app with on-device and cloud AI processing
+  Transform your voice into polished text with AI
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
@@ -41,33 +41,48 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 ## Features
 
 **Transcription**
-- On-device: WhisperKit (OpenAI Whisper), Parakeet (NVIDIA)
-- Cloud: OpenAI, Groq, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, custom endpoint
-- Automatic language detection or 100+ language selection
+- On-device: WhisperKit (OpenAI Whisper), Parakeet (NVIDIA) — professional-grade models running entirely on your device
+- Cloud: OpenAI, Groq, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, or any OpenAI-compatible endpoint
+- 100+ languages with automatic detection
 - Filler word removal, paragraph formatting, custom word replacements
 
-**AI Processing**
-- 15+ AI providers: Apple Foundation Model (on-device), Anthropic, OpenAI, Gemini, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
-- 40+ built-in presets: Cleanup, Summary, Email, Chat, Coding, Action Points, Translation to selected languages and more
-- Custom AI presets with full control
-- Clipboard context awareness for smarter processing
+**AI Presets**
+- 40+ built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate
+- **AI Assistant** — ask questions, fact-check, explain, reformat, or give instructions by voice
+- **Auto-Translation** — speak in one language, get output in another
+- Each result saved as a variation — compare different AI outputs side by side
+- Create custom presets with full prompt control, mark favorites for quick access
 
-**Architecture**
-- VivaModes: configurable profiles combining transcription provider, AI provider, model, preset, and language
-- Dual-write pattern: each AI output stored as a `TranscriptionVariation` for comparison
-- Multi-stage text processing pipeline with toggleable stages
+**AI Providers**
+- 15+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
+- Bring your own AI via any OpenAI-compatible API endpoint
 
-**Extensions**
-- Custom keyboard with recording, transcription, and AI processing
-- Home/Lock screen widgets + Live Activity
+**VivaModes**
+- Configurable profiles combining transcription provider, AI provider, model, preset, and language
+- Each mode remembers its settings — switch contexts with one tap
+- Clipboard and selected text context — copy a message and dictate your reply, paste an email and voice-dictate a response
+
+**Custom Keyboard**
+- System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
+- Full transcription + AI processing pipeline right from the keyboard
+- Swipe to switch between modes without leaving the app you're typing in
+
+**Personalization**
+- Custom dictionary for names and terms (Kubernetes, Dr. Johnson, etc.)
+- Word replacements and shortcuts (e.g., "my email" → support@vivadicta.com)
+- Audio recordings saved alongside transcriptions
+
+**Sync & Extensions**
+- iCloud sync across iPhone and Mac — transcriptions, presets, custom dictionary, and API keys
+- Home/Lock screen widgets + Live Activity for recording status
 - Share Extension for importing audio files from other apps
-- Action Extension for importing and processing audio files from other apps
+- Action Extension for processing text from other apps
 
-**Platform**
+**Platform & Tech**
+- Apple Foundation Model — free on-device AI processing, no API key needed
 - Swift 6 with strict concurrency
 - SwiftUI + SwiftData with CloudKit sync
-- App Intents
-- CoreSpotlight
+- App Intents (Siri/Shortcuts) + CoreSpotlight
 
 ## Architecture
 
@@ -159,3 +174,15 @@ The CI will run a build check on your PR automatically.
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Made with ❤️ by Anton Novoselov
+  <br><br>
+  <a href="https://twitter.com/vivadicta"><img src="https://img.shields.io/badge/-𝕏-000?style=flat-square&logo=x&logoColor=white" alt="X"></a>
+  &nbsp;
+  <a href="https://github.com/n0an"><img src="https://img.shields.io/badge/-GitHub-000?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+  &nbsp;
+  <a href="https://www.linkedin.com/in/anton-novoselov/"><img src="https://img.shields.io/badge/-LinkedIn-000?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
+</p>
