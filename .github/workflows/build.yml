@@ -1,0 +1,39 @@
+name: Build Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print Xcode version
+        run: xcodebuild -version
+
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Resolve Swift Packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+            -scheme VivaDicta
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -scheme VivaDicta \
+            -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+            -destination generic/platform=iOS \
+            -configuration Debug \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify
