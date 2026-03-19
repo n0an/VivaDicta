@@ -5,23 +5,23 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  Open-source iOS voice transcription app with on-device and cloud AI processing.
+  iOS voice transcription app with on-device and cloud AI processing
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
-  <a href="https://n0an.github.io/VivaDicta/">Documentation</a>
+  <a href="https://n0an.github.io/VivaDicta/">DocC Documentation</a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Xcode-26%2B-blue?logo=xcode&logoColor=white" alt="Xcode 26+">
-  <img src="https://img.shields.io/badge/iOS-18%2B-orange?logo=apple&logoColor=white" alt="iOS 26.0+">
+  <img src="https://img.shields.io/badge/iOS-18%2B-orange?logo=apple&logoColor=white" alt="iOS 18.0+">
   <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift 6.0">
   <img src="https://img.shields.io/github/license/n0an/VivaDicta" alt="License">
 </p>
 
 ---
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. It supports 10+ transcription providers, 17 AI providers, a custom keyboard extension, and syncs across devices via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. It supports 10+ transcription providers, 15+ AI providers, a custom keyboard extension, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
 
 ## Screenshots
 
@@ -35,7 +35,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 <p align="center">
   <img src="assets/readme/ai-providers.png" width="350" alt="AI Providers">
   &nbsp;&nbsp;
-  <img src="assets/readme/transcription-models.png" width="350" alt="AI Providers">
+  <img src="assets/readme/transcription-models.png" width="350" alt="Transcription Models">
 </p>
 
 ## Features
@@ -43,13 +43,13 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 **Transcription**
 - On-device: WhisperKit (OpenAI Whisper), Parakeet (NVIDIA)
 - Cloud: OpenAI, Groq, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, custom endpoint
-- Automatic language detection or 99+ language selection
+- Automatic language detection or 100+ language selection
 - Filler word removal, paragraph formatting, custom word replacements
 
 **AI Processing**
-- 17 providers: Apple Foundation Models (on-device), Anthropic, OpenAI, Gemini, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
-- 15+ built-in presets: Regular cleanup, Summary, Email, Chat, Coding, Action Points, translations
-- Custom presets with full prompt control
+- 15+ AI providers: Apple Foundation Model (on-device), Anthropic, OpenAI, Gemini, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
+- 40+ built-in presets: Cleanup, Summary, Email, Chat, Coding, Action Points, Translation to selected languages and more
+- Custom AI presets with full control
 - Clipboard context awareness for smarter processing
 
 **Architecture**
@@ -60,14 +60,14 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 **Extensions**
 - Custom keyboard with recording, transcription, and AI processing
 - Home/Lock screen widgets + Live Activity
-- Share Extension for audio files from other apps
-- Action Extension for processing text from other apps
+- Share Extension for importing audio files from other apps
+- Action Extension for importing and processing audio files from other apps
 
 **Platform**
 - Swift 6 with strict concurrency
 - SwiftUI + SwiftData with CloudKit sync
-- CoreSpotlight + App Intents for Siri/Shortcuts
-- Companion macOS app sync via shared CloudKit container
+- App Intents
+- CoreSpotlight
 
 ## Architecture
 
@@ -87,7 +87,7 @@ Core components:
 |-----------|------|
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
-| `AIService` | AI text processing, 17 providers, mode/API key management |
+| `AIService` | AI text processing, 15+ providers, mode/API key management |
 | `PresetManager` | Built-in + custom presets, CloudKit sync |
 | `AppGroupCoordinator` | Cross-process communication (keyboard, widget, share, action extensions) |
 | `AudioPrewarmManager` | Continuous audio engine for keyboard extension low-latency recording |
@@ -99,7 +99,6 @@ See the [architecture documentation](documentation/) for detailed diagrams and f
 **Requirements:**
 - Xcode 26+
 - iOS 18+ deployment target
-- macOS with Apple Silicon (for on-device models)
 
 ```bash
 # Clone
