@@ -78,10 +78,12 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Live Activity for recording status
 - Share Extension and Action Extension for importing audio files from other apps
 
-**Platform & Tech**
+## Platform & Tech
+
 - Apple Foundation Model — free on-device AI processing, no API key needed
 - Swift 6 with strict concurrency
 - SwiftUI
+- Liquid Glass
 - SwiftData with CloudKit sync
 - App Intents — Siri and Shortcuts integration
 - CoreSpotlight — indexed transcriptions for iOS spotlight search
