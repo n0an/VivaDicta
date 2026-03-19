@@ -4,7 +4,7 @@ export DOCC_JSON_PRETTYPRINT="YES"
 
 xcrun xcodebuild docbuild \
     -scheme VivaDicta \
-    -destination 'generic/platform=iOS Simulator' \
+    -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
     -derivedDataPath "$PWD/.derivedData"
 
 xcrun docc process-archive transform-for-static-hosting \
