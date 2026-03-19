@@ -26,16 +26,16 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 ## Screenshots
 
 <p align="center">
-  <img src="assets/readme/detail-screen.png" alt="Transcription Detail">
+  <img src="assets/readme/detail-screen.png" width="300" alt="Transcription Detail">
   &nbsp;&nbsp;
-  <img src="assets/readme/mode-edit.png" alt="Mode Configuration">
+  <img src="assets/readme/mode-edit.png" width="300" alt="Mode Configuration">
   &nbsp;&nbsp;
 </p>
 
 <p align="center">
-  <img src="assets/readme/ai-providers.png" alt="AI Providers">
+  <img src="assets/readme/ai-providers.png" width="300" alt="AI Providers">
   &nbsp;&nbsp;
-  <img src="assets/readme/transcription-models.png" alt="AI Providers">
+  <img src="assets/readme/transcription-models.png" width="300" alt="AI Providers">
 </p>
 
 ## Features
