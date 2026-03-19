@@ -73,8 +73,8 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Audio recordings saved alongside transcriptions
 
 **Sync & Extensions**
-- iCloud sync across iPhone, iPad and Mac — transcriptions, presets, custom dictionary, and API keys
-- Home/Lock screen widgets and Control in control center to quickly record note
+- iCloud sync across iPhone, iPad, and Mac — transcriptions, presets, custom dictionary, and API keys
+- Home and Lock screen widgets and Control Center control to quickly record a note
 - Live Activity for recording status
 - Share Extension and Action Extension for importing audio files from other apps
 
@@ -82,9 +82,9 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Apple Foundation Model — free on-device AI processing, no API key needed
 - Swift 6 with strict concurrency
 - SwiftUI + SwiftData with CloudKit sync
-- App Intents - Siri/Shortcuts
-- CoreSpotlight - index recorded notes
-- Shortcuts - quickly record note and more
+- App Intents — Siri and Shortcuts integration
+- CoreSpotlight — indexed transcriptions for system search
+- Shortcuts — quickly record a note and more
 
 ## Architecture
 
