@@ -63,7 +63,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Clipboard context — AI uses copied text as context when processing your dictation (e.g., copy a message, then dictate your reply)
 
 **Custom Keyboard**
-<p align="center">
+<p>
 <img src="assets/readme/keyboard.png" width="220" alt="AI Providers">
 </p>
 - System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
