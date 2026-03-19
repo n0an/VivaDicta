@@ -121,17 +121,19 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 
 When an EXISTING file needs to be added to ADDITIONAL targets, notify the user to manually add it in Xcode. NEW files are automatically added to the main app target.
 
-## AI-Powered PR Review
-
-GitHub Actions workflow for automated code review with iOS test execution. TypeScript scripts in `/lib/agents/`.
-
 ## Documentation
 
-Reference docs are in `/documentation/references/` (Swift, SwiftUI, SwiftData, Xcode, etc.). WWDC session transcripts in `/documentation/references/wwdc-transcripts/`. Text processing pipeline documented in `/documentation/text-processing-pipeline.md`.
+- **Architecture docs**: `/documentation/` — Recording pipeline, Transcription system, AI processing, Text processing pipeline, Preset system, AppGroupCoordinator
+- **Reference docs**: `/documentation/references/` (Swift, SwiftUI, SwiftData, Xcode, etc.)
+- **WWDC transcripts**: `/documentation/references/wwdc-transcripts/`
+- **Text processing pipeline**: `/documentation/text-processing-pipeline.md`
+- **DocC site**: https://n0an.github.io/VivaDicta/ — built via `./build-docc.sh`, hosted on `gh-pages` branch
+- **Additional Xcode docs**: `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`
+- **All WWDC transcripts index**: https://gist.github.com/auramagi/9c040c2233dfe71c24c76942e186f788
 
-Additional Xcode documentation at `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`.
+### Building DocC Documentation
 
-All WWDC transcripts index: https://gist.github.com/auramagi/9c040c2233dfe71c24c76942e186f788
+Run `./build-docc.sh` from the project root on the `main` branch. The script builds the DocC archive, transforms it for static hosting, and deploys to the `gh-pages` branch automatically.
 
 ## Swift Instructions
 
