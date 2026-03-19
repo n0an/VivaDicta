@@ -479,7 +479,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showMailCompose) {
             MailComposeView(
                 subject: "VivaDicta Support Request",
-                recipients: ["anton.novoselov@gmail.com"],
+                recipients: ["support@vivadicta.com"],
                 body: supportEmailBody
             )
         }
@@ -538,7 +538,7 @@ iOS Version: \(systemVersion)
         let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let encodedBody = supportEmailBody.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
-        if let url = URL(string: "mailto:anton.novoselov@gmail.com?subject=\(encodedSubject)&body=\(encodedBody)") {
+        if let url = URL(string: "mailto:support@vivadicta.com?subject=\(encodedSubject)&body=\(encodedBody)") {
             UIApplication.shared.open(url)
         }
     }
