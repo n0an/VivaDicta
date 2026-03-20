@@ -21,7 +21,7 @@ struct VivaDictaLiveActivity: Widget {
                     HStack {
                         
                         Text("VivaDicta")
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                             .font(.system(size: 20, weight: .semibold))
                             .padding(.leading, 24)
                         
@@ -30,7 +30,7 @@ struct VivaDictaLiveActivity: Widget {
                         Button(intent: ToggleSessionIntent(isSessionActive: false)) {
                             Image(systemName: "power.circle.fill")
                                 .font(.system(size: 40))
-                                .foregroundColor(.orange)
+                                .foregroundStyle(.orange)
                         }
                         .buttonStyle(.plain)
                         .padding(.trailing, 24)
@@ -48,7 +48,7 @@ struct VivaDictaLiveActivity: Widget {
                     Spacer()
                     VStack(alignment: .leading, spacing: 4) {
                         Text("VivaDicta")
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                             .font(.system(size: 20, weight: .semibold))
                         Text(context.state.state.statusText)
                             .foregroundStyle(.secondary)
@@ -68,13 +68,13 @@ struct VivaDictaLiveActivity: Widget {
                             Button(intent: ToggleSessionIntent(isSessionActive: false)) {
                                 Image(systemName: context.state.state.iconName)
                                     .font(.system(size: 40))
-                                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                                    .foregroundStyle(context.state.state.iconColor == "orange" ? .orange : .blue)
                             }
                             .buttonStyle(.plain)
                         } else {
                             Image(systemName: context.state.state.iconName)
                                 .font(.system(size: 40))
-                                .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                                .foregroundStyle(context.state.state.iconColor == "orange" ? .orange : .blue)
                         }
                     }
                     .padding(.trailing, 12)
@@ -86,10 +86,10 @@ struct VivaDictaLiveActivity: Widget {
                 EmptyView()
             } compactTrailing: {
                 Image(systemName: context.state.state.iconName)
-                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                    .foregroundStyle(context.state.state.iconColor == "orange" ? .orange : .blue)
             } minimal: {
                 Image(systemName: context.state.state.iconName)
-                    .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
+                    .foregroundStyle(context.state.state.iconColor == "orange" ? .orange : .blue)
             }
         }
     }

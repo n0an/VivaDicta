@@ -29,7 +29,7 @@ struct HudViewDarkBounceOnly: View {
                 .font(.system(size: 17, weight: .semibold))
                 .animation(.easeInOut(duration: 0.3), value: statusText)
         }
-        .foregroundColor(.white)
+        .foregroundStyle(.white)
         .padding()
         
         .background(
