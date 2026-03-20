@@ -30,10 +30,11 @@ jobs:
 
       - name: Run Tests
         run: |
+          set -o pipefail
           xcodebuild test \
             -scheme VivaDicta \
             -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
             -configuration Debug \
             -skipMacroValidation \
-            CODE_SIGNING_ALLOWED=NO | xcbeautify
+            CODE_SIGNING_ALLOWED=NO 2>&1 | xcbeautify
