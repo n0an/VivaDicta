@@ -108,6 +108,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		183A98CF2F6DA0AA00C5D007 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDicta" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				TextInsertionFormatter.swift,
+			);
+			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
+		};
 		186E24542EA199EF00B19EDF /* Exceptions for "VivaDicta" folder in "VivaDictaTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -294,6 +301,7 @@
 		18E1B49F2E8C6FF400BE8A11 /* VivaDictaKeyboard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				183A98CF2F6DA0AA00C5D007 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDicta" target */,
 				18E1B4A62E8C6FF400BE8A11 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDictaKeyboard" target */,
 			);
 			path = VivaDictaKeyboard;

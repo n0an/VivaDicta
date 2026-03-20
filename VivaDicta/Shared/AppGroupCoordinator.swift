@@ -148,6 +148,11 @@ public final class AppGroupCoordinator {
         setupNotificationObservers()
     }
 
+    /// Test-only initializer with injectable UserDefaults and no Darwin notification observers.
+    init(userDefaults: UserDefaults) {
+        sharedDefaults = userDefaults
+    }
+
     nonisolated deinit {
         removeNotificationObservers()
     }
