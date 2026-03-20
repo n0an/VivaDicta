@@ -6,7 +6,6 @@
 //
 
 import Foundation
-//import FluidAudio
 
 enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
     case parakeet

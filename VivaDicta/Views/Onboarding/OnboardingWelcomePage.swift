@@ -21,7 +21,6 @@ struct OnboardingWelcomePage: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 200)
-//                    .padding(.bottom, 40)
 
                 // Title
                 VStack(spacing: 4) {

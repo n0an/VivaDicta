@@ -89,7 +89,6 @@ struct OnboardingSecondaryButton: View {
             Text(title)
                 .font(.headline)
                 .foregroundColor(.primary)
-//                .colorInvert()
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
                 .background(Color.gray.opacity(0.3).gradient, in: .rect(cornerRadius: 16))

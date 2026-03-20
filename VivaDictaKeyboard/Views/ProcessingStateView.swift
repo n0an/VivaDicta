@@ -108,7 +108,6 @@ struct InfoView: View {
                     Image(systemName: processingStage.statusIcon)
                         .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
                         .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-//                        .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
                         .foregroundStyle(.primary)
                         .font(.system(size: 50, weight: .semibold))
                 } else {

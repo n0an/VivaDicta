@@ -226,5 +226,4 @@ struct CloudModelCard: View {
         }
     }
     .padding()
-//    .background(.gray)
 }

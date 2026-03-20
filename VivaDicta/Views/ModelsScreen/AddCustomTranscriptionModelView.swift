@@ -154,7 +154,6 @@ struct AddCustomTranscriptionModelView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-//                        .tint(.blue)
                         .padding(.vertical, 8)
                     }
                     .padding(.horizontal)

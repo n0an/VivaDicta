@@ -79,16 +79,10 @@ struct SelectTranscriptionModelTipMainView: Tip {
     }
     
     var rules: [Rule] {
-//        #Rule(Self.$isTranscriptionReady) { $0 == false }
-        
         #Rule(Self.selectModelEvent) { event in
             event.donations.count == 0
         }
     }
-    
-//    var options: [Option] {
-//        MaxDisplayCount(20)
-//    }
 }
 
 
@@ -127,47 +121,20 @@ struct SelectTranscriptionModelTipSettingsView: Tip {
     }
     
     var rules: [Rule] {
-//        #Rule(Self.$isTranscriptionReady) { $0 == false }
-        
         #Rule(Self.selectModelEvent) { event in
             event.donations.count == 0
         }
     }
-    
+
 }
 
 struct SelectAIEnhacementTip: Tip {
     var title: Text {
         Text("Add AI Processing")
-//            .foregroundStyle(MeshGradient(
-//                width: 2,
-//                height: 2,
-//                points: [
-//                    [0, 0], [1, 0],
-//                    [0, 1], [1, 1]
-//                ],
-//                colors: [
-//                    .purple, .red,
-//                    .blue, .pink
-//                ]
-//            ))
-        
     }
 
     var message: Text? {
         Text("Improve transcriptions with AI")
-//            .foregroundStyle(MeshGradient(
-//                width: 2,
-//                height: 2,
-//                points: [
-//                    [0, 0], [1, 0],
-//                    [0, 1], [1, 1]
-//                ],
-//                colors: [
-//                    .purple, .red,
-//                    .blue, .pink
-//                ]
-//            ))
     }
 
     var image: Image? {
