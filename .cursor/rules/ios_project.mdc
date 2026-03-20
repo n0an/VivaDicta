@@ -1,4 +1,0 @@
----
-globs: VivaDicta/**,VivaDictaTests/**,VivaDicta.xcodeproj/**
-alwaysApply: false
----
