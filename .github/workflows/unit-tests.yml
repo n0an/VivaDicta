@@ -29,7 +29,14 @@ jobs:
             -scheme VivaDicta
 
       - name: List available simulators
-        run: xcrun simctl list devices available
+        run: |
+          xcrun simctl list runtimes
+          xcrun simctl list devices available
+
+      - name: Boot simulator
+        run: |
+          xcrun simctl boot "iPhone 17 Pro" || true
+          xcrun simctl bootstatus "iPhone 17 Pro" -b
 
       - name: Run Tests
         run: |
