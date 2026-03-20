@@ -53,32 +53,32 @@ struct ModeEditViewModelTests {
         #expect(viewModel.isValid == false)
     }
 
-    @Test func testIsValid_aiEnhancementDisabled_noAIConfigNeeded() {
+    @Test func testIsValid_aiProcessingDisabled_noAIConfigNeeded() {
         let viewModel = makeViewModel()
         viewModel.modeName = "Test Mode"
         viewModel.transcriptionProvider = .parakeet
         viewModel.transcriptionModel = "test-model"
         viewModel.aiEnhanceEnabled = false
 
-        // When AI enhancement is disabled, we don't need AI config
+        // When AI processing is disabled, we don't need AI config
         // But we still need transcription to be configured
         // Note: isTranscriptionProviderConfigured depends on downloaded models
         // For this test, we're checking the logic flow
         #expect(viewModel.aiEnhanceEnabled == false)
     }
 
-    @Test func testIsValid_aiEnhancementEnabled_noProvider_returnsFalse() {
+    @Test func testIsValid_aiProcessingEnabled_noProvider_returnsFalse() {
         let viewModel = makeViewModel()
         viewModel.modeName = "Test Mode"
         viewModel.transcriptionModel = "test-model"
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = nil
 
-        // Should be invalid because AI enhancement is enabled but no provider
+        // Should be invalid because AI processing is enabled but no provider
         #expect(viewModel.aiEnhancementValidationMessage == "Select an AI provider")
     }
 
-    @Test func testIsValid_aiEnhancementEnabled_noModel_returnsFalse() {
+    @Test func testIsValid_aiProcessingEnabled_noModel_returnsFalse() {
         let viewModel = makeViewModel()
         viewModel.modeName = "Test Mode"
         viewModel.transcriptionModel = "test-model"
@@ -89,7 +89,7 @@ struct ModeEditViewModelTests {
         #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue")
     }
 
-    @Test func testIsValid_aiEnhancementEnabled_emptyModel_returnsFalse() {
+    @Test func testIsValid_aiProcessingEnabled_emptyModel_returnsFalse() {
         let viewModel = makeViewModel()
         viewModel.modeName = "Test Mode"
         viewModel.transcriptionModel = "test-model"
@@ -100,7 +100,7 @@ struct ModeEditViewModelTests {
         #expect(viewModel.aiEnhancementValidationMessage != nil)
     }
 
-    @Test func testIsValid_aiEnhancementEnabled_noPreset_returnsFalse() {
+    @Test func testIsValid_aiProcessingEnabled_noPreset_returnsFalse() {
         let viewModel = makeViewModel()
         viewModel.modeName = "Test Mode"
         viewModel.transcriptionModel = "test-model"
@@ -149,16 +149,16 @@ struct ModeEditViewModelTests {
         #expect(viewModel.transcriptionValidationMessage != nil)
     }
 
-    // MARK: - aiEnhancementValidationMessage Tests
+    // MARK: - AI Processing Validation Message Tests
 
-    @Test func testAIEnhancementValidationMessage_disabled_returnsNil() {
+    @Test func testAIProcessingValidationMessage_disabled_returnsNil() {
         let viewModel = makeViewModel()
         viewModel.aiEnhanceEnabled = false
 
         #expect(viewModel.aiEnhancementValidationMessage == nil)
     }
 
-    @Test func testAIEnhancementValidationMessage_noProvider() {
+    @Test func testAIProcessingValidationMessage_noProvider() {
         let viewModel = makeViewModel()
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = nil
@@ -166,7 +166,7 @@ struct ModeEditViewModelTests {
         #expect(viewModel.aiEnhancementValidationMessage == "Select an AI provider")
     }
 
-    @Test func testAIEnhancementValidationMessage_noAPIKey() {
+    @Test func testAIProcessingValidationMessage_noAPIKey() {
         let viewModel = makeViewModel()
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = .openAI
@@ -175,7 +175,7 @@ struct ModeEditViewModelTests {
         #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue")
     }
 
-    @Test func testAIEnhancementValidationMessage_noPreset() {
+    @Test func testAIProcessingValidationMessage_noPreset() {
         let viewModel = makeViewModel()
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = .openAI

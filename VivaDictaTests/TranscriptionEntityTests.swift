@@ -61,7 +61,7 @@ struct TranscriptionEntityTests {
 
     // MARK: - Text With Prefix Tests
 
-    @Test func textWithPrefix_usesEnhancedTextWhenAvailable() {
+    @Test func textWithPrefix_usesAIProcessedTextWhenAvailable() {
         let entity = TranscriptionEntity(
             id: UUID(),
             text: "Original text",
@@ -75,7 +75,7 @@ struct TranscriptionEntityTests {
         #expect(result == "Enhanced text")
     }
 
-    @Test func textWithPrefix_usesOriginalTextWhenNoEnhanced() {
+    @Test func textWithPrefix_usesOriginalTextWhenNoAIProcessed() {
         let entity = TranscriptionEntity(
             id: UUID(),
             text: "Original text only",
@@ -186,7 +186,7 @@ struct TranscriptionEntityTests {
         #expect(attributes.title == "Short note")
     }
 
-    @Test func searchableAttributes_setsTitle_fromEnhancedTextWhenAvailable() {
+    @Test func searchableAttributes_setsTitle_fromAIProcessedTextWhenAvailable() {
         let entity = TranscriptionEntity(
             id: UUID(),
             text: "Original",
