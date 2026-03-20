@@ -467,6 +467,7 @@ struct VivaDictaApp: App {
             "com.mem-labs.mem": "mem://",
             "com.google.OPA": "google://",
             "com.cardify.tinder": "tinder://",
+            // Test comment for Claude review workflow verification
             "com.readdle.smartemail": "readdle-spark://",
             "com.hammerandchisel.discord": "discord://",
             "com.google.GoogleMobile": "googlemobileapp://",
