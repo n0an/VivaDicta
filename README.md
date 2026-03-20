@@ -95,28 +95,24 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 ## Architecture
 
-```
-Recording → Transcription → AI Processing → Storage
-    │              │               │            │
-    ▼              ▼               ▼            ▼
-AVAudioRecorder  WhisperKit     AIService    SwiftData
-  or             Parakeet       17 providers  + CloudKit
-AVAudioEngine    Cloud STT      PromptsTemplates
-(keyboard)       providers
+```mermaid
+graph LR
+    R[🎙️ Recording] --> T[📝 Transcription] --> AI[🤖 AI Processing] --> S[💾 Storage]
+
+    R -.- R1[AVAudioRecorder<br/>AVAudioEngine]
+    T -.- T1[WhisperKit · Parakeet<br/>Cloud STT providers]
+    AI -.- AI1[AIService<br/>17 providers]
+    S -.- S1[SwiftData<br/>+ CloudKit]
 ```
 
 Main app ↔ extensions IPC via `AppGroupCoordinator` (Darwin Notifications + Shared UserDefaults):
 
-```
-┌─────────────┐   Darwin Notifications   ┌───────────────────┐
-│   Main App   │◄────────────────────────►│ Keyboard Extension │
-│              │   Shared UserDefaults    │                   │
-│ RecordView   │◄────────────────────────►│  Dictation State  │
-│ Model        │                          └───────────────────┘
-│              │◄──► Widget + Live Activity
-│              │◄──► Share Extension
-│              │◄──► Action Extension
-└─────────────┘
+```mermaid
+graph LR
+    K[⌨️ Keyboard Extension] <-->|Darwin Notifications<br/>Shared UserDefaults| M[📱 Main App]
+    W[🧩 Widget + Live Activity] <--> M
+    SE[📤 Share Extension] <--> M
+    AE[⚡ Action Extension] <--> M
 ```
 
 Core components:
