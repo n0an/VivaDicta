@@ -25,7 +25,6 @@ struct ScrollToTopButton: View {
                 .shadow(color: .black.opacity(1), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(.plain)
-//        .tint(.primary)
     }
 }
 

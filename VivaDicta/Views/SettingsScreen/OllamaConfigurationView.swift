@@ -57,17 +57,6 @@ struct OllamaConfigurationView: View {
                         Capsule()
                             .stroke(connectionStatus.borderColor, lineWidth: connectionStatus.borderWidth)
                     }
-//                    .onChange(of: serverURL) { _, newValue in
-//                        if newValue.isEmpty {
-//                            connectionStatus = .unknown
-//                            aiService.ollamaServerURL = AIProvider.ollamaDefaultServerURL
-//                        } else if isValidOllamaURL(newValue) {
-//                            connectionStatus = .unknown
-//                            aiService.ollamaServerURL = newValue
-//                        } else {
-//                            connectionStatus = .invalidURL
-//                        }
-//                    }
             }
             .padding(.horizontal)
 

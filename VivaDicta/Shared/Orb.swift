@@ -105,9 +105,6 @@ struct OrbView: View {
             .onAppear {
                 timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
                     Task { @MainActor in
-//                        print("currentAudioLevel = \(currentAudioLevel)")
-//                        print("rectangleSpeed = \(rectangleSpeed)\n")
-
                         tick += 1
                         if tick % 60 == 0 {
                             currentAudioLevel += 0.05
@@ -127,8 +124,7 @@ struct OrbView: View {
                 timer?.invalidate()
             }
     }
-//    .border(.blue, width: 1)
-    
+
 }
 
 
@@ -172,7 +168,6 @@ struct ChartDataPoint: Identifiable {
                 y: .value("Speed", point.logarithmicSpeed)
             )
             .foregroundStyle(Color.blue)
-//            .lineStyle(StrokeStyle(lineWidth: 3))
             .symbolSize(0)
 
             // Linear curve for comparison
@@ -181,7 +176,6 @@ struct ChartDataPoint: Identifiable {
                 y: .value("Speed", point.linearSpeed)
             )
             .foregroundStyle(Color.red.opacity(0.7))
-//            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
             .symbolSize(0)
         }
         .frame(height: 350)

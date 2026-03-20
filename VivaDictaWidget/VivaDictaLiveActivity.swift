@@ -91,9 +91,6 @@ struct VivaDictaLiveActivity: Widget {
                 Image(systemName: context.state.state.iconName)
                     .foregroundColor(context.state.state.iconColor == "orange" ? .orange : .blue)
             }
-            
-            
-            //            .keylineTint(Color.red)
         }
     }
 }
