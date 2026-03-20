@@ -74,6 +74,16 @@
 		<string>mem</string>
 		<string>google</string>
 		<string>tinder</string>
+		<string>readdle-spark</string>
+		<string>discord</string>
+		<string>googlemobileapp</string>
+		<string>sgnl</string>
+		<string>fsnotes</string>
+		<string>threema</string>
+		<string>barcelona</string>
+		<string>logseq</string>
+		<string>github</string>
+		<string>grok</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

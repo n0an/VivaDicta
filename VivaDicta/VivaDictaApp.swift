@@ -466,7 +466,17 @@ struct VivaDictaApp: App {
             "im.monica.app.monica": "monica://",
             "com.mem-labs.mem": "mem://",
             "com.google.OPA": "google://",
-            "com.cardify.tinder": "tinder://"
+            "com.cardify.tinder": "tinder://",
+            "com.readdle.smartemail": "readdle-spark://",
+            "com.hammerandchisel.discord": "discord://",
+            "com.google.GoogleMobile": "googlemobileapp://",
+            "org.whispersystems.signal": "sgnl://",
+            "co.fluder.mobile.FSNotes-iOS": "fsnotes://",
+            "ch.threema.iapp": "threema://",
+            "com.burbn.barcelona": "barcelona://",
+            "com.briansunter.logseq-dev": "logseq://",
+            "com.github.stormbreaker.prod": "github://",
+            "ai.x.GrokApp": "grok://"
         ]
         
         return knownSchemes[bundleId]
