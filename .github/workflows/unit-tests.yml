@@ -3,35 +3,37 @@ name: Unit-tests
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: macos-26
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Select Xcode 26.3
-      run: |
-        sudo xcode-select -s /Applications/Xcode_26.3.app
-        xcodebuild -version
+      - name: Select Xcode 26.3
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.3.app
+          xcodebuild -version
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
+      - name: Install xcbeautify
+        run: brew install xcbeautify
 
-    - name: Clear Swift Package Cache
-      run: |
-        rm -rf ~/Library/Caches/org.swift.swiftpm
-        rm -rf .build
-        rm -rf VivaDicta.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
+      - name: Resolve Swift Packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+            -scheme VivaDicta
 
-    - name: Resolve Swift Packages
-      run: |
-        xcodebuild -resolvePackageDependencies \
-        -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-        -scheme VivaDicta
-
-    - name: Run Tests
-      run: |
-        xcodebuild test -scheme VivaDicta \
-        -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-        -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' | xcbeautify
+      - name: Run Tests
+        run: |
+          xcodebuild test \
+            -scheme VivaDicta \
+            -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+            -configuration Debug \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify
