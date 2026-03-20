@@ -15,7 +15,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Xcode-26%2B-blue?logo=xcode&logoColor=white" alt="Xcode 26+">
   <img src="https://img.shields.io/badge/iOS-18%2B-orange?logo=apple&logoColor=white" alt="iOS 18.0+">
-  <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift 6.0">
+  <img src="https://img.shields.io/badge/swift-6.2-orange" alt="Swift 6.2">
   <img src="https://img.shields.io/github/license/n0an/VivaDicta" alt="License">
 </p>
 
