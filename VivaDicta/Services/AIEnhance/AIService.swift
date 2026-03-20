@@ -117,7 +117,9 @@ class AIService {
         }
     }
 
-    private let userDefaults = UserDefaultsStorage.shared
+    private let userDefaults: UserDefaults
+    private let modesStorageKey: String
+    private let selectedModeStorageKey: String
     private let baseTimeout: TimeInterval = 30
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
@@ -134,6 +136,9 @@ class AIService {
     }
 
     init() {
+        self.userDefaults = UserDefaultsStorage.shared
+        self.modesStorageKey = AppGroupCoordinator.vivaModesKey
+        self.selectedModeStorageKey = AppGroupCoordinator.selectedVivaModeKey
         self.selectedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
 
         // Load Custom OpenAI configuration from UserDefaults
@@ -165,6 +170,20 @@ class AIService {
             // Ollama models are fetched on-demand when user configures Ollama
         }
     }
+
+    /// Test-only initializer with injectable UserDefaults and no network side effects.
+    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode") {
+        self.userDefaults = userDefaults
+        self.modesStorageKey = modesStorageKey
+        self.selectedModeStorageKey = selectedModeStorageKey
+        self.selectedModeName = userDefaults.string(forKey: selectedModeStorageKey) ?? VivaMode.defaultMode.name
+        self.customOpenAIEndpointURL = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIEndpointURL) ?? ""
+        self.customOpenAIModelName = userDefaults.string(forKey: UserDefaultsStorage.Keys.customOpenAIModelName) ?? ""
+        self.customOpenAIIsVerified = userDefaults.bool(forKey: UserDefaultsStorage.Keys.customOpenAIIsVerified)
+
+        loadModes()
+        self.selectedMode = getMode(name: selectedModeName)
+    }
     
     public func getMode(name: String) -> VivaMode {
         return modes.first { $0.name == name } ?? VivaMode.defaultMode
@@ -172,7 +191,7 @@ class AIService {
 
     /// Reload the selected mode from UserDefaults (used when keyboard or share extension changes the mode)
     public func reloadSelectedModeFromExtension() {
-        let savedModeName = userDefaults.string(forKey: AppGroupCoordinator.selectedVivaModeKey) ?? VivaMode.defaultMode.name
+        let savedModeName = userDefaults.string(forKey: selectedModeStorageKey) ?? VivaMode.defaultMode.name
         if savedModeName != selectedModeName {
             logger.logInfo("📱 Reloading VivaMode from extension: \(savedModeName)")
             selectedModeName = savedModeName
@@ -464,7 +483,7 @@ class AIService {
     }
 
     private func loadModes() {
-        if let savedModesData = userDefaults.data(forKey: AppGroupCoordinator.vivaModesKey),
+        if let savedModesData = userDefaults.data(forKey: modesStorageKey),
            let savedModes = try? JSONDecoder().decode([VivaMode].self, from: savedModesData) {
             modes = savedModes
         } else {
@@ -479,13 +498,13 @@ class AIService {
             logger.logError("Failed to encode Viva Modes")
             return
         }
-        userDefaults.set(encoded, forKey: AppGroupCoordinator.vivaModesKey)
+        userDefaults.set(encoded, forKey: modesStorageKey)
         userDefaults.synchronize() // Force immediate write to disk
         logger.logInfo("Saved \(self.modes.count) Viva Modes to shared storage")
     }
 
     private func saveSelectedModeName(_ modeName: String) {
-        userDefaults.setValue(modeName, forKey: AppGroupCoordinator.selectedVivaModeKey)
+        userDefaults.setValue(modeName, forKey: selectedModeStorageKey)
         logger.logInfo("Saved Viva Mode: \(modeName)")
     }
     
