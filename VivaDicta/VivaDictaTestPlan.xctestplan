@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "9D6DEFC5-3EB9-43B3-A7BA-924E1AC2437D",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:VivaDicta.xcodeproj",
+        "identifier" : "18351E562E634FF000944940",
+        "name" : "VivaDictaTests"
+      }
+    }
+  ],
+  "version" : 1
+}
