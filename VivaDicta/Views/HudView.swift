@@ -154,7 +154,7 @@ struct HudContentView: View {
             cancelButtonTimer?.invalidate()
             cancelButtonTimer = nil
         }
-        .foregroundColor(.white)
+        .foregroundStyle(.white)
         .padding()
     }
 

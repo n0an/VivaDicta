@@ -18,7 +18,7 @@ struct ScrollToTopButton: View {
         } label: {
             Image(systemName: "arrow.up")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(Color(.systemBackground))
+                .foregroundStyle(Color(.systemBackground))
                 .frame(width: 44, height: 44)
                 .background(backgroundColor)
                 .clipShape(.circle)

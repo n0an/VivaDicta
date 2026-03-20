@@ -130,7 +130,7 @@ struct ErrorStateView: View {
             // Error icon
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 50))
-                .foregroundColor(.orange)
+                .foregroundStyle(.orange)
                 .padding(.bottom, 10)
 
             // Error message
@@ -139,7 +139,7 @@ struct ErrorStateView: View {
 
             Text(errorMessage)
                 .font(.system(size: 16))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
@@ -147,7 +147,7 @@ struct ErrorStateView: View {
             Button(action: onDismiss) {
                 Text("Dismiss")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(width: 120, height: 44)
                     .background(Color.blue)
                     .cornerRadius(22)
