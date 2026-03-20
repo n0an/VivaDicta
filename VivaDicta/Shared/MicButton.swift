@@ -26,7 +26,7 @@ struct MicButton: View {
         } label: {
             
             Image(systemName: "microphone.circle")
-                .foregroundStyle(.primary)
+                .foregroundColor(.primary)
                 .font(.system(size: fontSize))
                 .padding(padding)
                 .background(backgroundColor.gradient, in: .circle)

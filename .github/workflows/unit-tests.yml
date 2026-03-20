@@ -28,6 +28,9 @@ jobs:
             -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
             -scheme VivaDicta
 
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
       - name: Run Tests
         run: |
           set -o pipefail
@@ -37,4 +40,11 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
             -configuration Debug \
             -skipMacroValidation \
-            CODE_SIGNING_ALLOWED=NO 2>&1 | xcbeautify
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee xcodebuild.log | xcbeautify
+
+      - name: Upload raw log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
