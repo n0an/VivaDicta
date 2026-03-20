@@ -123,7 +123,12 @@ When an EXISTING file needs to be added to ADDITIONAL targets, notify the user t
 
 ## Documentation
 
-- **Architecture docs**: `/documentation/` — Recording pipeline, Transcription system, AI processing, Text processing pipeline, Preset system, AppGroupCoordinator
+- **Architecture docs**: `/documentation/` — covers all major subsystems:
+  - Recording pipeline, Transcription system, AI processing, Text processing pipeline
+  - Preset system, AppGroupCoordinator
+  - Data persistence & CloudKit sync, Deep linking & URL routing
+  - Keyboard extension, App Intents & Shortcuts
+  - Widget & Live Activity, Hot Mic / Audio Prewarm
 - **Text processing pipeline**: `/documentation/text-processing-pipeline.md`
 - **DocC site**: https://n0an.github.io/VivaDicta/ — built via `./build-docc.sh`, hosted on `gh-pages` branch
 - **Additional Xcode docs**: `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`
