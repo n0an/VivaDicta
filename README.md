@@ -22,7 +22,7 @@
 ---
 
 <p align="center">
-  <img src="assets/hero.png" alt="VivaDicta — Transcription list and on-device models">
+  <img src="assets/hero-banner.png" alt="VivaDicta — Transcription list and on-device models">
 </p>
 
 VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. It supports 10+ transcription providers, 15+ AI providers, a custom keyboard extension, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
