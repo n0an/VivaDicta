@@ -64,8 +64,8 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 
 - **VivaDictaKeyboard** — custom keyboard extension with recording/transcription. Communicates with main app via `AppGroupCoordinator` and shared UserDefaults
 - **VivaDictaWidget** — home/lock screen widgets + Live Activity for recording status
-- **ActionExtension** — action extension for processing text from other apps
-- **ShareExtension** — share extension for receiving audio/text from other apps
+- **ActionExtension** — action extension for receiving audio from other apps
+- **ShareExtension** — share extension for receiving audio from other apps
 
 ### Cross-Platform Sync
 
