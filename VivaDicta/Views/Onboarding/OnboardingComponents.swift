@@ -88,7 +88,7 @@ struct OnboardingSecondaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
                 .background(Color.gray.opacity(0.3).gradient, in: .rect(cornerRadius: 16))
