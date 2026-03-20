@@ -81,8 +81,8 @@ You are an elite iOS Testing Specialist with deep expertise in Swift Testing fra
 ## Running Tests
 
 Use the project's build commands:
-- All tests: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test | xcbeautify`
-- Single test: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test -only-testing:VivaDictaTests/TestClassName/testMethodName | xcbeautify`
+- All tests: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test | xcsift`
+- Single test: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test -only-testing:VivaDictaTests/TestClassName/testMethodName | xcsift`
 
 ## Quality Standards
 
