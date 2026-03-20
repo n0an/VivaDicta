@@ -124,8 +124,6 @@ When an EXISTING file needs to be added to ADDITIONAL targets, notify the user t
 ## Documentation
 
 - **Architecture docs**: `/documentation/` — Recording pipeline, Transcription system, AI processing, Text processing pipeline, Preset system, AppGroupCoordinator
-- **Reference docs**: `/documentation/references/` (Swift, SwiftUI, SwiftData, Xcode, etc.)
-- **WWDC transcripts**: `/documentation/references/wwdc-transcripts/`
 - **Text processing pipeline**: `/documentation/text-processing-pipeline.md`
 - **DocC site**: https://n0an.github.io/VivaDicta/ — built via `./build-docc.sh`, hosted on `gh-pages` branch
 - **Additional Xcode docs**: `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`
