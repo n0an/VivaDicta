@@ -5,18 +5,15 @@ on:
 
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: macos-26
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Select Xcode 26.1.1
+    - name: Select Xcode 26.3
       run: |
-        sudo xcode-select -s /Applications/Xcode_26.1.1.app
+        sudo xcode-select -s /Applications/Xcode_26.3.app
         xcodebuild -version
-        
-    - name: List Available Simulators
-      run: xcrun simctl list devices
 
     - name: Install xcbeautify
       run: brew install xcbeautify
@@ -37,4 +34,4 @@ jobs:
       run: |
         xcodebuild test -scheme VivaDicta \
         -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-        -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.1" | xcbeautify
+        -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' | xcbeautify
