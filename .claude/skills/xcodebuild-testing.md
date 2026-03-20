@@ -18,7 +18,7 @@ Use this skill when you need to run unit tests, UI tests, or specific test cases
   - "run tests and show me the results"
 - Notes:
   - Uses native `xcodebuild test` command (not XcodeBuildMCP)
-  - Output piped through `xcbeautify` for readable formatting
+  - Output piped through `xcsift` (or `xcbeautify`) for readable formatting
   - Default simulator: iPhone 17 Pro, OS=26.0
   - Tests run in Debug configuration
   - Workspace path: `./VivaDicta.xcodeproj/project.xcworkspace`
@@ -64,14 +64,14 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test | xcbeautify
+  test 2>&1 | xcsift
 
 # Alternative: Save test results to file
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test 2>&1 | tee test_results.txt | xcbeautify
+  test 2>&1 | tee test_results.txt 2>&1 | xcsift
 ```
 
 **Available parameters:**
@@ -82,7 +82,7 @@ xcodebuild -scheme VivaDicta \
 - `test`: The xcodebuild action to run tests
 
 **Notes:**
-- `xcbeautify` formats the output for better readability
+- `xcsift` formats the output for better readability (alternatively `xcbeautify`)
 - `tee` allows saving output to file while still displaying it
 - Simulator will be booted automatically if not already running
 - Tests run in parallel by default (can be disabled with `-parallel-testing-enabled NO`)
@@ -108,7 +108,7 @@ You need three pieces of information:
 xcodebuild -scheme VivaDicta \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -dry-run 2>&1 | grep "Test Case" | xcbeautify
+  test -dry-run 2>&1 | grep "Test Case" 2>&1 | xcsift
 
 # Or search in test files
 find . -name "*Tests.swift" -exec grep -H "func test" {} \;
@@ -122,7 +122,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -only-testing:VivaDictaTests/TranscriptionManagerTests/testWhisperKitTranscription | xcbeautify
+  test -only-testing:VivaDictaTests/TranscriptionManagerTests/testWhisperKitTranscription 2>&1 | xcsift
 
 # Run multiple specific tests
 xcodebuild -scheme VivaDicta \
@@ -131,7 +131,7 @@ xcodebuild -scheme VivaDicta \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
   test \
   -only-testing:VivaDictaTests/TranscriptionManagerTests/testWhisperKitTranscription \
-  -only-testing:VivaDictaTests/TranscriptionManagerTests/testParakeetTranscription | xcbeautify
+  -only-testing:VivaDictaTests/TranscriptionManagerTests/testParakeetTranscription 2>&1 | xcsift
 ```
 
 **Parameters:**
@@ -165,7 +165,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -only-testing:VivaDictaTests/TranscriptionManagerTests | xcbeautify
+  test -only-testing:VivaDictaTests/TranscriptionManagerTests 2>&1 | xcsift
 
 # Run multiple test classes
 xcodebuild -scheme VivaDicta \
@@ -174,7 +174,7 @@ xcodebuild -scheme VivaDicta \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
   test \
   -only-testing:VivaDictaTests/TranscriptionManagerTests \
-  -only-testing:VivaDictaTests/AIServiceTests | xcbeautify
+  -only-testing:VivaDictaTests/AIServiceTests 2>&1 | xcsift
 ```
 
 **Notes:**
@@ -207,7 +207,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test | xcbeautify
+  test 2>&1 | xcsift
 ```
 
 ### 4D. Stop Log Capture and Analyze
@@ -235,7 +235,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -only-testing:VivaDictaTests/MyFeatureTests/testNewFeature | xcbeautify
+  test -only-testing:VivaDictaTests/MyFeatureTests/testNewFeature 2>&1 | xcsift
 ```
 
 ### Test Run with Results Saved
@@ -246,7 +246,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test 2>&1 | tee logs/test_results_$(date +%Y%m%d_%H%M%S).txt | xcbeautify
+  test 2>&1 | tee logs/test_results_$(date +%Y%m%d_%H%M%S).txt 2>&1 | xcsift
 
 # Check exit code
 echo "Test exit code: $?"
@@ -263,7 +263,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
-  test | xcbeautify
+  test 2>&1 | xcsift
 ```
 
 ### Run Only Failed Tests from Previous Run
@@ -274,7 +274,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -only-testing:VivaDictaTests/FailedTestClass/testThatFailed | xcbeautify
+  test -only-testing:VivaDictaTests/FailedTestClass/testThatFailed 2>&1 | xcsift
 ```
 
 ### Parallel Test Execution
@@ -285,14 +285,14 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -parallel-testing-enabled YES | xcbeautify
+  test -parallel-testing-enabled YES 2>&1 | xcsift
 
 # Disable parallel testing (for debugging race conditions)
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -parallel-testing-enabled NO | xcbeautify
+  test -parallel-testing-enabled NO 2>&1 | xcsift
 ```
 
 ### Test Run with Code Coverage
@@ -303,7 +303,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -enableCodeCoverage YES | xcbeautify
+  test -enableCodeCoverage YES 2>&1 | xcsift
 
 # View coverage report location
 # DerivedData/<project>/Logs/Test/*.xcresult
@@ -317,7 +317,7 @@ xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
-  test -only-testing:VivaDictaTests/UITests/testLoginFlow | xcbeautify
+  test -only-testing:VivaDictaTests/UITests/testLoginFlow 2>&1 | xcsift
 
 # 2. If test fails, capture screenshot using xcrun simctl
 xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
@@ -348,9 +348,9 @@ xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
 - Check test target is included in scheme: `xcodebuild -list`
 - Ensure test files are members of test target in Xcode
 
-**xcbeautify not found:**
-- Install xcbeautify: `brew install xcbeautify`
-- Or run without it (remove `| xcbeautify` from command)
+**xcsift not found:**
+- Install xcsift: `brew install xcsift` (or use `xcbeautify` as alternative: `brew install xcbeautify`)
+- Or run without it (remove `2>&1 | xcsift` from command)
 
 **Specific test not found:**
 - Verify test method starts with `test` prefix
@@ -365,9 +365,9 @@ xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
 
 ## Best Practices
 
-1. **Use xcbeautify for readable output:**
-   - Always pipe through `xcbeautify` for formatted output
-   - Install with: `brew install xcbeautify`
+1. **Use xcsift for readable output:**
+   - Always pipe through `xcsift` for formatted output (project standard)
+   - Install with: `brew install xcsift` (or `xcbeautify` as alternative)
 
 2. **Run specific tests during development:**
    - Faster feedback loop
@@ -397,7 +397,7 @@ xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
 
 7. **Check exit codes in scripts:**
    ```bash
-   xcodebuild ... test | xcbeautify
+   xcodebuild ... test 2>&1 | xcsift
    if [ $? -ne 0 ]; then
      echo "Tests failed!"
      exit 1
@@ -407,7 +407,7 @@ xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
 8. **Organize test output:**
    ```bash
    mkdir -p logs/test-results
-   xcodebuild ... test 2>&1 | tee logs/test-results/run_$(date +%Y%m%d_%H%M%S).txt | xcbeautify
+   xcodebuild ... test 2>&1 | tee logs/test-results/run_$(date +%Y%m%d_%H%M%S).txt 2>&1 | xcsift
    ```
 
 9. **Use test plans for different configurations:**
