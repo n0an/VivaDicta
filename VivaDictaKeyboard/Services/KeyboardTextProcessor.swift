@@ -19,6 +19,7 @@ final class KeyboardTextProcessor {
     private let logger = Logger(category: .keyboardExtension)
     private var currentTask: Task<Void, Never>?
     private var resultContinuation: CheckedContinuation<String, Error>?
+    private var isProcessing = false
 
     /// Processes selected text in the host text field using the specified mode.
     ///
@@ -29,10 +30,19 @@ final class KeyboardTextProcessor {
         mode: VivaMode,
         dictationState: KeyboardDictationState
     ) {
-        // Cancel any in-progress processing
+        // Prevent double invocation
+        guard !isProcessing else {
+            logger.logInfo("📝 [TextProcessor] Ignoring duplicate invocation — already processing")
+            print("📝 [TextProcessor] Ignoring duplicate invocation — already processing")
+            return
+        }
+
+        // Cancel any stale state
         cancel()
 
+        isProcessing = true
         currentTask = Task {
+            defer { isProcessing = false }
             do {
                 try await performProcessing(proxy: proxy, mode: mode, dictationState: dictationState)
             } catch is CancellationError {
@@ -50,6 +60,7 @@ final class KeyboardTextProcessor {
         resultContinuation = nil
         currentTask?.cancel()
         currentTask = nil
+        isProcessing = false
     }
 
     private func performProcessing(
@@ -85,6 +96,10 @@ final class KeyboardTextProcessor {
             self.resultContinuation = continuation
 
             dictationState.onTextProcessingResult = { [weak self] result in
+                guard !result.isEmpty else {
+                    print("📝 [TextProcessor] Ignoring empty result from callback")
+                    return
+                }
                 self?.resultContinuation?.resume(returning: result)
                 self?.resultContinuation = nil
             }
