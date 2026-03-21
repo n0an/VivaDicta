@@ -58,7 +58,7 @@ struct TextProcessingStateView: View {
 
     private var isAnimating: Bool {
         switch phase {
-        case .readingText, .sendingToApp, .waitingForResult, .replacing:
+        case .sendingToApp, .waitingForResult:
             true
         default:
             false
@@ -67,12 +67,8 @@ struct TextProcessingStateView: View {
 
     private var statusIcon: String {
         switch phase {
-        case .readingText:
-            "text.cursor"
         case .sendingToApp, .waitingForResult:
             "sparkles"
-        case .replacing:
-            "text.insert"
         case .completed:
             "checkmark.circle.fill"
         case .error:
@@ -84,14 +80,10 @@ struct TextProcessingStateView: View {
 
     private var statusText: String {
         switch phase {
-        case .readingText:
-            "Reading text..."
         case .sendingToApp:
             "Sending to app..."
         case .waitingForResult(let modeName):
             "Processing: \(modeName)..."
-        case .replacing:
-            "Replacing text..."
         case .completed:
             "Done"
         case .error(let message):

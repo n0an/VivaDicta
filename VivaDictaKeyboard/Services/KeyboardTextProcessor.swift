@@ -7,23 +7,21 @@
 
 import UIKit
 
-/// Orchestrates the full text processing pipeline from the keyboard extension:
-/// 1. Read text from host text field via `UITextDocumentProxy`
+/// Orchestrates the text processing pipeline from the keyboard extension:
+/// 1. Read selected text from host text field via `UITextDocumentProxy`
 /// 2. Send to main app for AI processing via `AppGroupCoordinator`
 /// 3. Wait for result
-/// 4. Replace text in the host text field
+/// 4. Replace the selection with the processed text
 @MainActor
 final class KeyboardTextProcessor {
 
     private var currentTask: Task<Void, Never>?
     private var resultContinuation: CheckedContinuation<String, Error>?
 
-    /// Processes text in the host text field using the specified mode.
+    /// Processes selected text in the host text field using the specified mode.
     ///
-    /// - Parameters:
-    ///   - proxy: The text document proxy for the host text field.
-    ///   - mode: The VivaMode to use for AI processing.
-    ///   - dictationState: The keyboard state to update with progress.
+    /// The user must select text before tapping a mode. If no text is selected,
+    /// an error is shown.
     func processText(
         proxy: UITextDocumentProxy,
         mode: VivaMode,
@@ -57,22 +55,15 @@ final class KeyboardTextProcessor {
         mode: VivaMode,
         dictationState: KeyboardDictationState
     ) async throws {
-        // Phase 1: Read text from host text field
-        dictationState.textProcessingPhase = .readingText
-        try Task.checkCancellation()
+        // Phase 1: Read selected text
+        let readResult = TextDocumentProxyReader.readText(from: proxy)
 
-        let readResult = await TextDocumentProxyReader.readText(from: proxy)
-
-        let (text, wasSelected): (String, Bool)
+        let text: String
         switch readResult {
         case .selectedText(let t):
             text = t
-            wasSelected = true
-        case .fullText(let t):
-            text = t
-            wasSelected = false
-        case .empty:
-            dictationState.textProcessingPhase = .error("No text found in the text field")
+        case .noSelection:
+            dictationState.textProcessingPhase = .error("Select text to process")
             autoDismissError(dictationState: dictationState)
             return
         }
@@ -82,7 +73,6 @@ final class KeyboardTextProcessor {
         // Phase 2: Send to main app
         dictationState.textProcessingPhase = .sendingToApp
 
-        // Set up callbacks to receive result
         let processedText: String = try await withCheckedThrowingContinuation { continuation in
             self.resultContinuation = continuation
 
@@ -102,19 +92,12 @@ final class KeyboardTextProcessor {
 
         try Task.checkCancellation()
 
-        // Phase 3: Replace text in host text field
-        dictationState.textProcessingPhase = .replacing
-
-        if wasSelected {
-            TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
-        } else {
-            await TextDocumentProxyWriter.replaceAllText(in: proxy, with: processedText)
-        }
+        // Phase 3: Replace selected text
+        TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
 
         // Phase 4: Done
         dictationState.textProcessingPhase = .completed
 
-        // Auto-return to idle after a brief moment
         try? await Task.sleep(for: .seconds(1))
         if dictationState.textProcessingPhase == .completed {
             dictationState.textProcessingPhase = .idle

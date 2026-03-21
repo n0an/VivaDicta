@@ -35,10 +35,8 @@ final class KeyboardDictationState {
 
     enum TextProcessingPhase: Equatable {
         case idle
-        case readingText
         case sendingToApp
         case waitingForResult(modeName: String)
-        case replacing
         case completed
         case error(String)
     }
