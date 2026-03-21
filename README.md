@@ -27,6 +27,8 @@
 
 > Started as "I don't want to pay for WisprFlow." Ended up building something more flexible - on-device transcription, 15+ AI providers, and full control over your voice-to-text pipeline.
 
+https://github.com/user-attachments/assets/f503d6f4-b10b-4841-bc04-abf505b58ea0
+
 VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. It supports 10+ transcription providers, 15+ AI providers, a custom keyboard extension, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
 
 ## Screenshots
