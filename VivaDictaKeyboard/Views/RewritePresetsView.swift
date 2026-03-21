@@ -22,8 +22,18 @@ struct RewriteModesView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 6) {
+        VStack(spacing: 0) {
+            // Header with V/T segment
+            HStack {
+                KeyboardTabSegment(dictationState: dictationState)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+
+            ScrollView {
+                LazyVStack(spacing: 6) {
                 ForEach(modes) { mode in
                     Button {
                         HapticManager.mediumImpact()
@@ -51,6 +61,7 @@ struct RewriteModesView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
-        .scrollIndicators(.hidden)
+            .scrollIndicators(.hidden)
+        }
     }
 }
