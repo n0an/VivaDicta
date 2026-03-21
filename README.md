@@ -25,6 +25,8 @@
   <img src="assets/hero-v2.png" alt="VivaDicta — Dictate Anywhere You Type">
 </p>
 
+> Started as "I don't want to pay for WisprFlow." Ended up building something more flexible - on-device transcription, 15+ AI providers, and full control over your voice-to-text pipeline.
+
 VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. It supports 10+ transcription providers, 15+ AI providers, a custom keyboard extension, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
 
 ## Screenshots
