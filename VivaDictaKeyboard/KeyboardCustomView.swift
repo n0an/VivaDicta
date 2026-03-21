@@ -37,18 +37,15 @@ struct KeyboardCustomView: View {
                             dictationState.textProcessingPhase = .idle
                         }
                     )
-                } else if dictationState.isShowingRewritePresets {
-                    RewritePresetsView(
-                        onPresetSelected: { preset in
+                } else if dictationState.activeTab == .textProcessing {
+                    RewriteModesView(
+                        onModeSelected: { mode in
                             guard let vc = keyboardVC else { return }
                             vc.textProcessor.processText(
                                 proxy: vc.textDocumentProxy,
-                                preset: preset,
+                                mode: mode,
                                 dictationState: dictationState
                             )
-                        },
-                        onDismiss: {
-                            dictationState.isShowingRewritePresets = false
                         }
                     )
                 } else {

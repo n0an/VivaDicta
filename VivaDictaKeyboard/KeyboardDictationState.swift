@@ -21,22 +21,29 @@ final class KeyboardDictationState {
     // Audio level from main app recording (0.0 to 1.0)
     var currentAudioLevel: CGFloat = 0.0
 
+    // MARK: - Keyboard Tab
+
+    /// The active keyboard tab: `.keyboard` for normal typing, `.textProcessing` for rewrite mode.
+    enum KeyboardTab: Int {
+        case keyboard = 0
+        case textProcessing = 1
+    }
+
+    var activeTab: KeyboardTab = .keyboard
+
     // MARK: - Text Processing (Rewrite)
 
     enum TextProcessingPhase: Equatable {
         case idle
         case readingText
         case sendingToApp
-        case waitingForResult(presetName: String)
+        case waitingForResult(modeName: String)
         case replacing
         case completed
         case error(String)
     }
 
     var textProcessingPhase: TextProcessingPhase = .idle
-
-    /// Whether the keyboard is showing the rewrite presets view.
-    var isShowingRewritePresets = false
 
     /// Callback for when the main app returns a processed text result.
     var onTextProcessingResult: ((String) -> Void)?

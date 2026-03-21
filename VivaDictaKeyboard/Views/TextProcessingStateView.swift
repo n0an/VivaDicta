@@ -88,8 +88,8 @@ struct TextProcessingStateView: View {
             "Reading text..."
         case .sendingToApp:
             "Sending to app..."
-        case .waitingForResult(let presetName):
-            "Processing: \(presetName)..."
+        case .waitingForResult(let modeName):
+            "Processing: \(modeName)..."
         case .replacing:
             "Replacing text..."
         case .completed:

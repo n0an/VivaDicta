@@ -18,15 +18,15 @@ final class KeyboardTextProcessor {
     private var currentTask: Task<Void, Never>?
     private var resultContinuation: CheckedContinuation<String, Error>?
 
-    /// Processes text in the host text field using the specified preset.
+    /// Processes text in the host text field using the specified mode.
     ///
     /// - Parameters:
     ///   - proxy: The text document proxy for the host text field.
-    ///   - preset: The preset to use for AI processing.
+    ///   - mode: The VivaMode to use for AI processing.
     ///   - dictationState: The keyboard state to update with progress.
     func processText(
         proxy: UITextDocumentProxy,
-        preset: Preset,
+        mode: VivaMode,
         dictationState: KeyboardDictationState
     ) {
         // Cancel any in-progress processing
@@ -34,7 +34,7 @@ final class KeyboardTextProcessor {
 
         currentTask = Task {
             do {
-                try await performProcessing(proxy: proxy, preset: preset, dictationState: dictationState)
+                try await performProcessing(proxy: proxy, mode: mode, dictationState: dictationState)
             } catch is CancellationError {
                 dictationState.textProcessingPhase = .idle
             } catch {
@@ -54,7 +54,7 @@ final class KeyboardTextProcessor {
 
     private func performProcessing(
         proxy: UITextDocumentProxy,
-        preset: Preset,
+        mode: VivaMode,
         dictationState: KeyboardDictationState
     ) async throws {
         // Phase 1: Read text from host text field
@@ -96,8 +96,8 @@ final class KeyboardTextProcessor {
                 self?.resultContinuation = nil
             }
 
-            AppGroupCoordinator.shared.requestTextProcessing(text: text, presetId: preset.id)
-            dictationState.textProcessingPhase = .waitingForResult(presetName: preset.name)
+            AppGroupCoordinator.shared.requestTextProcessing(text: text, modeName: mode.name)
+            dictationState.textProcessingPhase = .waitingForResult(modeName: mode.name)
         }
 
         try Task.checkCancellation()
@@ -118,7 +118,6 @@ final class KeyboardTextProcessor {
         try? await Task.sleep(for: .seconds(1))
         if dictationState.textProcessingPhase == .completed {
             dictationState.textProcessingPhase = .idle
-            dictationState.isShowingRewritePresets = false
         }
     }
 

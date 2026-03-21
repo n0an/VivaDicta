@@ -877,21 +877,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             return
         }
 
-        guard let preset = appState.presetManager.preset(for: pending.presetId) else {
-            logger.logError("📝 Preset not found: \(pending.presetId)")
-            AppGroupCoordinator.shared.shareTextProcessingError("Preset not found")
-            return
-        }
+        logger.logInfo("📝 Processing text from keyboard with mode: \(pending.modeName), text length: \(pending.text.count)")
 
-        logger.logInfo("📝 Processing text from keyboard with preset: \(preset.name), text length: \(pending.text.count)")
-
-        // Reload the selected VivaMode from extension to use correct AI provider/model
-        appState.aiService.reloadSelectedModeFromExtension()
+        // Select the mode specified by the keyboard
+        let mode = appState.aiService.getMode(name: pending.modeName)
+        appState.aiService.selectedMode = mode
 
         Task {
             do {
-                let (result, duration) = try await appState.aiService.generateVariation(text: pending.text, preset: preset)
-                logger.logInfo("📝 Text processing completed in \(String(format: "%.1f", duration))s, result length: \(result.count)")
+                let (result, _, _) = try await appState.aiService.enhance(pending.text)
+                logger.logInfo("📝 Text processing completed, result length: \(result.count)")
                 AppGroupCoordinator.shared.shareTextProcessingResult(result)
             } catch {
                 logger.logError("📝 Text processing failed: \(error.localizedDescription)")

@@ -90,7 +90,7 @@ public final class AppGroupCoordinator {
 
         // Text processing (keyboard rewrite feature)
         static let textProcessingInput = "textProcessingInput"
-        static let textProcessingPresetId = "textProcessingPresetId"
+        static let textProcessingModeName = "textProcessingModeName"
         static let textProcessingResult = "textProcessingResult"
         static let textProcessingErrorMessage = "textProcessingErrorMessage"
     }
@@ -190,7 +190,7 @@ public final class AppGroupCoordinator {
 
         // Clear stale text processing state
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingInput)
-        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingModeName)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingResult)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingErrorMessage)
 
@@ -340,26 +340,26 @@ public final class AppGroupCoordinator {
 
     // MARK: - Text Processing (Keyboard Rewrite)
 
-    /// Sends text and preset ID from the keyboard extension to the main app for AI processing.
-    public func requestTextProcessing(text: String, presetId: String) {
+    /// Sends text and mode name from the keyboard extension to the main app for AI processing.
+    public func requestTextProcessing(text: String, modeName: String) {
         sharedDefaults?.set(text, forKey: UserDefaultsKeys.textProcessingInput)
-        sharedDefaults?.set(presetId, forKey: UserDefaultsKeys.textProcessingPresetId)
+        sharedDefaults?.set(modeName, forKey: UserDefaultsKeys.textProcessingModeName)
         sharedDefaults?.synchronize()
         postDarwinNotification(NotificationNames.requestTextProcessing)
-        logger.logError("📝 Keyboard requested text processing with preset: \(presetId), text length: \(text.count)")
+        logger.logError("📝 Keyboard requested text processing with mode: \(modeName), text length: \(text.count)")
     }
 
     /// Retrieves and clears the pending text processing request (called by main app).
-    func getAndConsumePendingTextProcessing() -> (text: String, presetId: String)? {
+    func getAndConsumePendingTextProcessing() -> (text: String, modeName: String)? {
         guard let defaults = sharedDefaults,
               let text = defaults.string(forKey: UserDefaultsKeys.textProcessingInput),
-              let presetId = defaults.string(forKey: UserDefaultsKeys.textProcessingPresetId),
+              let modeName = defaults.string(forKey: UserDefaultsKeys.textProcessingModeName),
               !text.isEmpty else {
             return nil
         }
         defaults.removeObject(forKey: UserDefaultsKeys.textProcessingInput)
-        defaults.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
-        return (text, presetId)
+        defaults.removeObject(forKey: UserDefaultsKeys.textProcessingModeName)
+        return (text, modeName)
     }
 
     /// Shares the AI-processed text result back to the keyboard extension (called by main app).

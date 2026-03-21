@@ -85,6 +85,39 @@ class KeyboardViewController: KeyboardInputViewController {
 }
 
 
+// MARK: - Keyboard Tab Segment
+struct KeyboardTabSegment: View {
+    @Bindable var dictationState: KeyboardDictationState
+
+    var body: some View {
+        HStack(spacing: 0) {
+            tabButton(label: "V", tab: .keyboard)
+            tabButton(label: "T", tab: .textProcessing)
+        }
+        .background(.quaternary, in: .capsule)
+    }
+
+    private func tabButton(label: String, tab: KeyboardDictationState.KeyboardTab) -> some View {
+        Button {
+            HapticManager.selectionChanged()
+            dictationState.activeTab = tab
+        } label: {
+            Text(label)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(dictationState.activeTab == tab ? .white : .primary)
+                .frame(width: 28, height: 28)
+                .background(
+                    dictationState.activeTab == tab
+                        ? AnyShapeStyle(.orange)
+                        : AnyShapeStyle(.clear),
+                    in: .circle
+                )
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Mode Cycle Selector
 struct ModeCycleSelector: View {
     @Bindable var dictationState: KeyboardDictationState
@@ -180,26 +213,13 @@ struct VivaDictaKeyboardToolbarView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Mode selector on the left
-            ModeCycleSelector(dictationState: dictationState)
+            // Tab segmented control + Mode selector on the left
+            HStack(spacing: 8) {
+                KeyboardTabSegment(dictationState: dictationState)
+                ModeCycleSelector(dictationState: dictationState)
+            }
 
             Spacer()
-
-            // Rewrite button
-            Button {
-                HapticManager.selectionChanged()
-                dictationState.isShowingRewritePresets = true
-            } label: {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(.orange)
-                    .frame(width: 36, height: 36)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 12)
-            .accessibilityLabel("Rewrite text")
-            .accessibilityHint("Open AI text processing presets")
 
             // Always show MicButton - it handles notReady state by opening main app
             if #available(iOS 26.0, *) {
