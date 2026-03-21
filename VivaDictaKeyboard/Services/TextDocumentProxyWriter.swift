@@ -51,7 +51,7 @@ final class TextDocumentProxyWriter {
         // Keep moving forward until there's no text after the cursor
         while let after = proxy.documentContextAfterInput, !after.isEmpty {
             proxy.adjustTextPosition(byCharacterOffset: after.count)
-            await Task.sleep(for: cursorMoveDelay)
+            try? await Task.sleep(for: cursorMoveDelay)
         }
     }
 
@@ -66,7 +66,7 @@ final class TextDocumentProxyWriter {
             for _ in 0..<before.count {
                 proxy.deleteBackward()
             }
-            await Task.sleep(for: deleteBatchDelay)
+            try? await Task.sleep(for: deleteBatchDelay)
         }
     }
 }

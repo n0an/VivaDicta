@@ -87,6 +87,12 @@ public final class AppGroupCoordinator {
         static let audioLevel = "audioLevel" // 0.0 ... 1.0
         static let transcriptionErrorMessage = "transcriptionErrorMessage"
         static let keyboardClipboardContext = "keyboardClipboardContext"
+
+        // Text processing (keyboard rewrite feature)
+        static let textProcessingInput = "textProcessingInput"
+        static let textProcessingPresetId = "textProcessingPresetId"
+        static let textProcessingResult = "textProcessingResult"
+        static let textProcessingErrorMessage = "textProcessingErrorMessage"
     }
 
     nonisolated private enum NotificationNames {
@@ -107,6 +113,11 @@ public final class AppGroupCoordinator {
         static let startRecordingFromControl = "com.antonnovoselov.VivaDicta.startRecordingFromControl"
         static let terminateSessionFromLiveActivity = "com.antonnovoselov.VivaDicta.terminateSessionFromLiveActivity"
         static let vivaModeChanged = "com.antonnovoselov.VivaDicta.vivaModeChanged"
+
+        // Text processing (keyboard rewrite feature)
+        static let requestTextProcessing = "com.antonnovoselov.VivaDicta.requestTextProcessing"
+        static let textProcessingCompleted = "com.antonnovoselov.VivaDicta.textProcessingCompleted"
+        static let textProcessingError = "com.antonnovoselov.VivaDicta.textProcessingError"
     }
 
     /// Status of the transcription pipeline, shared with extensions.
@@ -142,6 +153,11 @@ public final class AppGroupCoordinator {
     @MainActor var onTerminateSessionFromLiveActivity: (() -> Void)?
     @MainActor var onVivaModeChanged: (() -> Void)?
 
+    // Text processing (keyboard rewrite feature)
+    @MainActor var onTextProcessingRequested: (() -> Void)?
+    @MainActor var onTextProcessingCompleted: ((String) -> Void)?
+    @MainActor var onTextProcessingError: ((String) -> Void)?
+
     // MARK: - Initialization
     private init() {
         sharedDefaults = UserDefaults(suiteName: appGroupId)
@@ -171,6 +187,12 @@ public final class AppGroupCoordinator {
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.transcriptionErrorMessage)
 
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.lastRecordingTimestamp)
+
+        // Clear stale text processing state
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingInput)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingResult)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingErrorMessage)
 
         logger.logError("🧹 Complete session state reset on app launch - fresh start")
     }
@@ -314,6 +336,66 @@ public final class AppGroupCoordinator {
             defaults.removeObject(forKey: UserDefaultsKeys.keyboardClipboardContext)
         }
         return text
+    }
+
+    // MARK: - Text Processing (Keyboard Rewrite)
+
+    /// Sends text and preset ID from the keyboard extension to the main app for AI processing.
+    public func requestTextProcessing(text: String, presetId: String) {
+        sharedDefaults?.set(text, forKey: UserDefaultsKeys.textProcessingInput)
+        sharedDefaults?.set(presetId, forKey: UserDefaultsKeys.textProcessingPresetId)
+        sharedDefaults?.synchronize()
+        postDarwinNotification(NotificationNames.requestTextProcessing)
+        logger.logError("📝 Keyboard requested text processing with preset: \(presetId), text length: \(text.count)")
+    }
+
+    /// Retrieves and clears the pending text processing request (called by main app).
+    func getAndConsumePendingTextProcessing() -> (text: String, presetId: String)? {
+        guard let defaults = sharedDefaults,
+              let text = defaults.string(forKey: UserDefaultsKeys.textProcessingInput),
+              let presetId = defaults.string(forKey: UserDefaultsKeys.textProcessingPresetId),
+              !text.isEmpty else {
+            return nil
+        }
+        defaults.removeObject(forKey: UserDefaultsKeys.textProcessingInput)
+        defaults.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
+        return (text, presetId)
+    }
+
+    /// Shares the AI-processed text result back to the keyboard extension (called by main app).
+    func shareTextProcessingResult(_ text: String) {
+        sharedDefaults?.set(text, forKey: UserDefaultsKeys.textProcessingResult)
+        sharedDefaults?.synchronize()
+        postDarwinNotification(NotificationNames.textProcessingCompleted)
+        logger.logError("📝 Shared text processing result, length: \(text.count)")
+    }
+
+    /// Shares a text processing error message with the keyboard extension (called by main app).
+    func shareTextProcessingError(_ message: String) {
+        sharedDefaults?.set(message, forKey: UserDefaultsKeys.textProcessingErrorMessage)
+        sharedDefaults?.synchronize()
+        postDarwinNotification(NotificationNames.textProcessingError)
+        logger.logError("📝 Shared text processing error: \(message)")
+    }
+
+    /// Retrieves and clears the text processing result (called by keyboard extension).
+    func getAndConsumeTextProcessingResult() -> String? {
+        guard let defaults = sharedDefaults else { return nil }
+        let text = defaults.string(forKey: UserDefaultsKeys.textProcessingResult)
+        if text != nil {
+            defaults.removeObject(forKey: UserDefaultsKeys.textProcessingResult)
+        }
+        return text
+    }
+
+    /// Retrieves and clears the text processing error message (called by keyboard extension).
+    func getAndConsumeTextProcessingError() -> String? {
+        guard let defaults = sharedDefaults else { return nil }
+        let message = defaults.string(forKey: UserDefaultsKeys.textProcessingErrorMessage)
+        if message != nil {
+            defaults.removeObject(forKey: UserDefaultsKeys.textProcessingErrorMessage)
+        }
+        return message
     }
 
     // MARK: - Keyboard Success Tracking
@@ -764,6 +846,46 @@ public final class AppGroupCoordinator {
             nil,
             .deliverImmediately
         )
+
+        // Text processing (keyboard rewrite)
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleTextProcessingRequestedNotification()
+            },
+            NotificationNames.requestTextProcessing as CFString,
+            nil,
+            .deliverImmediately
+        )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleTextProcessingCompletedNotification()
+            },
+            NotificationNames.textProcessingCompleted as CFString,
+            nil,
+            .deliverImmediately
+        )
+
+        CFNotificationCenterAddObserver(
+            center,
+            Unmanaged.passUnretained(self).toOpaque(),
+            { (center, observer, name, object, userInfo) in
+                guard let observer = observer else { return }
+                let coordinator = Unmanaged<AppGroupCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleTextProcessingErrorNotification()
+            },
+            NotificationNames.textProcessingError as CFString,
+            nil,
+            .deliverImmediately
+        )
     }
 
     nonisolated private func removeNotificationObservers() {
@@ -890,6 +1012,28 @@ public final class AppGroupCoordinator {
     nonisolated private func handleVivaModeChangedNotification() {
         Task { @MainActor in
             await onVivaModeChanged?()
+        }
+    }
+
+    // Text processing (keyboard rewrite)
+
+    nonisolated private func handleTextProcessingRequestedNotification() {
+        Task { @MainActor in
+            await onTextProcessingRequested?()
+        }
+    }
+
+    nonisolated private func handleTextProcessingCompletedNotification() {
+        Task { @MainActor in
+            let text = await getAndConsumeTextProcessingResult() ?? ""
+            await onTextProcessingCompleted?(text)
+        }
+    }
+
+    nonisolated private func handleTextProcessingErrorNotification() {
+        Task { @MainActor in
+            let message = await getAndConsumeTextProcessingError() ?? "Text processing failed"
+            await onTextProcessingError?(message)
         }
     }
 }

@@ -66,7 +66,7 @@ final class TextDocumentProxyReader {
         // First, return to original position by moving forward past all the text we just read
         if !textBeforeCursor.isEmpty {
             proxy.adjustTextPosition(byCharacterOffset: textBeforeCursor.count)
-            await Task.sleep(for: cursorMoveDelay)
+            try? await Task.sleep(for: cursorMoveDelay)
         }
 
         let textAfterCursor = await readForward(from: proxy)
@@ -98,7 +98,7 @@ final class TextDocumentProxyReader {
 
             // Move cursor backward by the length of what we just read
             proxy.adjustTextPosition(byCharacterOffset: -context.count)
-            await Task.sleep(for: cursorMoveDelay)
+            try? await Task.sleep(for: cursorMoveDelay)
         }
 
         // Deduplicate overlapping chunks.
@@ -131,7 +131,7 @@ final class TextDocumentProxyReader {
 
             // Move cursor forward by the length of what we just read
             proxy.adjustTextPosition(byCharacterOffset: context.count)
-            await Task.sleep(for: cursorMoveDelay)
+            try? await Task.sleep(for: cursorMoveDelay)
         }
 
         return deduplicateChunks(chunks)
