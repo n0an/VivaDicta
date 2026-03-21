@@ -11,6 +11,7 @@ import KeyboardKit
 struct KeyboardCustomView: View {
 
     @Environment(KeyboardDictationState.self) var dictationState
+    @Environment(\.openURL) private var openURL
     @State private var processingStage: ProcessingStage = .waitingToStart
     @State private var showFullAccessPrompt = false
 
@@ -46,6 +47,9 @@ struct KeyboardCustomView: View {
                                 mode: mode,
                                 dictationState: dictationState
                             )
+                        },
+                        onOpenApp: {
+                            openMainApp()
                         },
                         onBackspace: { controller.textDocumentProxy.deleteBackward() },
                         onNewline: { controller.textDocumentProxy.insertText("\n") },
@@ -123,6 +127,18 @@ struct KeyboardCustomView: View {
                 .transition(.move(edge: .bottom))
                 .zIndex(1)
             }
+        }
+    }
+
+    private func openMainApp() {
+        var urlString = "vivadicta://record-for-keyboard"
+        if let hostId = keyboardVC?.hostApplicationBundleId {
+            if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                urlString += "?hostId=\(encodedHostId)"
+            }
+        }
+        if let url = URL(string: urlString) {
+            openURL(url)
         }
     }
 

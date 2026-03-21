@@ -16,9 +16,9 @@ import SwiftUI
 /// When the main app session is not active, shows a prompt to open the main app.
 struct RewriteModesView: View {
     @Environment(KeyboardDictationState.self) var dictationState
-    @Environment(\.openURL) private var openURL
 
     let onModeSelected: (VivaMode) -> Void
+    let onOpenApp: () -> Void
     let onBackspace: () -> Void
     let onNewline: () -> Void
     let onSpace: () -> Void
@@ -106,9 +106,7 @@ struct RewriteModesView: View {
 
             Button {
                 HapticManager.mediumImpact()
-                if let url = URL(string: "vivadicta://record-for-keyboard") {
-                    openURL(url)
-                }
+                onOpenApp()
             } label: {
                 Label("Open VivaDicta", systemImage: "arrow.up.forward.app")
                     .font(.system(size: 16, weight: .semibold))
