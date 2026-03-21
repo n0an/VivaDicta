@@ -46,7 +46,10 @@ struct KeyboardCustomView: View {
                                 mode: mode,
                                 dictationState: dictationState
                             )
-                        }
+                        },
+                        onBackspace: { controller.textDocumentProxy.deleteBackward() },
+                        onNewline: { controller.textDocumentProxy.insertText("\n") },
+                        onSpace: { controller.textDocumentProxy.insertText(" ") }
                     )
                 } else {
                     switch dictationState.uiState {
