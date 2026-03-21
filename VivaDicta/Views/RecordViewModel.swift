@@ -855,5 +855,48 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             self.logger.logInfo("📱 VivaMode changed from keyboard extension")
             self.appState?.aiService.reloadSelectedModeFromExtension()
         }
+
+        // Handle text processing request from keyboard (rewrite feature)
+        AppGroupCoordinator.shared.onTextProcessingRequested = { [weak self] in
+            guard let self = self else { return }
+            self.handleKeyboardTextProcessingRequest()
+        }
+    }
+
+    // MARK: - Keyboard Text Processing
+
+    private func handleKeyboardTextProcessingRequest() {
+        guard let pending = AppGroupCoordinator.shared.getAndConsumePendingTextProcessing() else {
+            logger.logError("📝 Text processing requested but no pending data found")
+            AppGroupCoordinator.shared.shareTextProcessingError("No text to process")
+            return
+        }
+
+        guard let appState else {
+            AppGroupCoordinator.shared.shareTextProcessingError("App not ready")
+            return
+        }
+
+        guard let preset = appState.presetManager.preset(for: pending.presetId) else {
+            logger.logError("📝 Preset not found: \(pending.presetId)")
+            AppGroupCoordinator.shared.shareTextProcessingError("Preset not found")
+            return
+        }
+
+        logger.logInfo("📝 Processing text from keyboard with preset: \(preset.name), text length: \(pending.text.count)")
+
+        // Reload the selected VivaMode from extension to use correct AI provider/model
+        appState.aiService.reloadSelectedModeFromExtension()
+
+        Task {
+            do {
+                let (result, duration) = try await appState.aiService.generateVariation(text: pending.text, preset: preset)
+                logger.logInfo("📝 Text processing completed in \(String(format: "%.1f", duration))s, result length: \(result.count)")
+                AppGroupCoordinator.shared.shareTextProcessingResult(result)
+            } catch {
+                logger.logError("📝 Text processing failed: \(error.localizedDescription)")
+                AppGroupCoordinator.shared.shareTextProcessingError(error.localizedDescription)
+            }
+        }
     }
 }
