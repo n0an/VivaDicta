@@ -21,9 +21,32 @@ final class KeyboardDictationState {
     // Audio level from main app recording (0.0 to 1.0)
     var currentAudioLevel: CGFloat = 0.0
 
+    // MARK: - Text Processing (Rewrite)
+
+    enum TextProcessingPhase: Equatable {
+        case idle
+        case readingText
+        case sendingToApp
+        case waitingForResult(presetName: String)
+        case replacing
+        case completed
+        case error(String)
+    }
+
+    var textProcessingPhase: TextProcessingPhase = .idle
+
+    /// Whether the keyboard is showing the rewrite presets view.
+    var isShowingRewritePresets = false
+
+    /// Callback for when the main app returns a processed text result.
+    var onTextProcessingResult: ((String) -> Void)?
+
+    /// Callback for when the main app returns a text processing error.
+    var onTextProcessingError: ((String) -> Void)?
+
     // MARK: - VivaMode Manager
     var vivaModeManager = VivaModeManager()
-    
+
     // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
 
@@ -107,6 +130,14 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onAudioLevelUpdated = { [weak self] level in
             DispatchQueue.main.async { self?.currentAudioLevel = level }
         }
+
+        // Text processing callbacks (rewrite feature)
+        AppGroupCoordinator.shared.onTextProcessingCompleted = { [weak self] text in
+            DispatchQueue.main.async { self?.onTextProcessingResult?(text) }
+        }
+        AppGroupCoordinator.shared.onTextProcessingError = { [weak self] message in
+            DispatchQueue.main.async { self?.onTextProcessingError?(message) }
+        }
     }
     
     nonisolated func stop() {
@@ -121,6 +152,8 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onTranscriptionError = nil
             AppGroupCoordinator.shared.onTranscriptionCancelled = nil
             AppGroupCoordinator.shared.onAudioLevelUpdated = nil
+            AppGroupCoordinator.shared.onTextProcessingCompleted = nil
+            AppGroupCoordinator.shared.onTextProcessingError = nil
             errorDismissTimer?.invalidate()
             errorDismissTimer = nil
         }

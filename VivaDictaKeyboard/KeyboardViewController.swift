@@ -11,8 +11,9 @@ import SwiftUI
 import os
 
 class KeyboardViewController: KeyboardInputViewController {
-    
+
     let dictationState = KeyboardDictationState()
+    let textProcessor = KeyboardTextProcessor()
 
     private func handleTranscription(_ text: String) {
         guard !text.isEmpty else { return }
@@ -183,6 +184,22 @@ struct VivaDictaKeyboardToolbarView: View {
             ModeCycleSelector(dictationState: dictationState)
 
             Spacer()
+
+            // Rewrite button
+            Button {
+                HapticManager.selectionChanged()
+                dictationState.isShowingRewritePresets = true
+            } label: {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .frame(width: 36, height: 36)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 12)
+            .accessibilityLabel("Rewrite text")
+            .accessibilityHint("Open AI text processing presets")
 
             // Always show MicButton - it handles notReady state by opening main app
             if #available(iOS 26.0, *) {

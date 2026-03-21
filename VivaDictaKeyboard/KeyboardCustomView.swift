@@ -20,65 +20,94 @@ struct KeyboardCustomView: View {
         controller.hasFullAccess
     }
 
+    private var keyboardVC: KeyboardViewController? {
+        controller as? KeyboardViewController
+    }
+
     var body: some View {
         ZStack {
             // Main keyboard content - fades out when full access prompt is shown
             Group {
-                switch dictationState.uiState {
-                case .recording:
-                    RecordingStateView(dictationState: dictationState)
-
-                case .processing:
-                    ProcessingStateView(
-                        processingStage: processingStage,
+                // Text processing state takes priority
+                if dictationState.textProcessingPhase != .idle {
+                    TextProcessingStateView(
+                        phase: dictationState.textProcessingPhase,
                         onCancel: {
-                            // Cancel processing and notify main app to stop and reschedule session
-                            dictationState.errorMessage = nil
-                            dictationState.transcriptionStatus = .idle
-                            dictationState.requestCancelRecording()
+                            keyboardVC?.textProcessor.cancel()
+                            dictationState.textProcessingPhase = .idle
                         }
                     )
-                    .onAppear {
-                        updateProcessingStage()
-                    }
-                    .onChange(of: dictationState.transcriptionStatus) { _, _ in
-                        updateProcessingStage()
-                    }
-
-                case .error:
-                    ErrorStateView(
-                        errorMessage: dictationState.errorMessage ?? "An error occurred",
+                } else if dictationState.isShowingRewritePresets {
+                    RewritePresetsView(
+                        onPresetSelected: { preset in
+                            guard let vc = keyboardVC else { return }
+                            vc.textProcessor.processText(
+                                proxy: vc.textDocumentProxy,
+                                preset: preset,
+                                dictationState: dictationState
+                            )
+                        },
                         onDismiss: {
-                            // Clear error and return to keyboard
-                            dictationState.errorMessage = nil
-                            dictationState.transcriptionStatus = .idle
-                            AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                            dictationState.isShowingRewritePresets = false
                         }
                     )
+                } else {
+                    switch dictationState.uiState {
+                    case .recording:
+                        RecordingStateView(dictationState: dictationState)
 
-                case .notReady, .ready:
-                    // Show normal keyboard for idle and ready states
-                    VStack(spacing: 0) {
-                        KeyboardView(
-//                            state: controller.state,
-                            services: controller.services,
-                            buttonContent: { $0.view },
-                            buttonView: { $0.view },
-                            collapsedView: { $0.view },
-                            emojiKeyboard: { $0.view },
-                            toolbar: { _ in
-                                VivaDictaKeyboardToolbarView(
-                                    controller: controller as? KeyboardViewController,
-                                    hasFullAccess: hasFullAccess,
-                                    onShowFullAccessPrompt: {
-                                        withAnimation(.spring(duration: 0.35)) {
-                                            showFullAccessPrompt = true
-                                        }
-                                    }
-                                )
-                                .environment(self.dictationState)
+                    case .processing:
+                        ProcessingStateView(
+                            processingStage: processingStage,
+                            onCancel: {
+                                // Cancel processing and notify main app to stop and reschedule session
+                                dictationState.errorMessage = nil
+                                dictationState.transcriptionStatus = .idle
+                                dictationState.requestCancelRecording()
                             }
                         )
+                        .onAppear {
+                            updateProcessingStage()
+                        }
+                        .onChange(of: dictationState.transcriptionStatus) { _, _ in
+                            updateProcessingStage()
+                        }
+
+                    case .error:
+                        ErrorStateView(
+                            errorMessage: dictationState.errorMessage ?? "An error occurred",
+                            onDismiss: {
+                                // Clear error and return to keyboard
+                                dictationState.errorMessage = nil
+                                dictationState.transcriptionStatus = .idle
+                                AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                            }
+                        )
+
+                    case .notReady, .ready:
+                        // Show normal keyboard for idle and ready states
+                        VStack(spacing: 0) {
+                            KeyboardView(
+    //                            state: controller.state,
+                                services: controller.services,
+                                buttonContent: { $0.view },
+                                buttonView: { $0.view },
+                                collapsedView: { $0.view },
+                                emojiKeyboard: { $0.view },
+                                toolbar: { _ in
+                                    VivaDictaKeyboardToolbarView(
+                                        controller: keyboardVC,
+                                        hasFullAccess: hasFullAccess,
+                                        onShowFullAccessPrompt: {
+                                            withAnimation(.spring(duration: 0.35)) {
+                                                showFullAccessPrompt = true
+                                            }
+                                        }
+                                    )
+                                    .environment(self.dictationState)
+                                }
+                            )
+                        }
                     }
                 }
             }
