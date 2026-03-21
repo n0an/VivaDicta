@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import os
 
 /// Orchestrates the text processing pipeline from the keyboard extension:
 /// 1. Read selected text from host text field via `UITextDocumentProxy`
@@ -15,6 +16,7 @@ import UIKit
 @MainActor
 final class KeyboardTextProcessor {
 
+    private let logger = Logger(category: .keyboardExtension)
     private var currentTask: Task<Void, Never>?
     private var resultContinuation: CheckedContinuation<String, Error>?
 
@@ -62,7 +64,11 @@ final class KeyboardTextProcessor {
         switch readResult {
         case .selectedText(let t):
             text = t
+            logger.logInfo("📝 [TextProcessor] Selected text read (\(t.count) chars): \(t)")
+            print("📝 [TextProcessor] Selected text read (\(t.count) chars): \(t)")
         case .noSelection:
+            logger.logInfo("📝 [TextProcessor] No text selected")
+            print("📝 [TextProcessor] No text selected")
             dictationState.textProcessingPhase = .error("Select text to process")
             autoDismissError(dictationState: dictationState)
             return
@@ -72,6 +78,8 @@ final class KeyboardTextProcessor {
 
         // Phase 2: Send to main app
         dictationState.textProcessingPhase = .sendingToApp
+        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text: \(text)")
+        print("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text: \(text)")
 
         let processedText: String = try await withCheckedThrowingContinuation { continuation in
             self.resultContinuation = continuation
@@ -93,6 +101,11 @@ final class KeyboardTextProcessor {
         try Task.checkCancellation()
 
         // Phase 3: Replace selected text
+        logger.logInfo("📝 [TextProcessor] AI result received (\(processedText.count) chars): \(processedText)")
+        print("📝 [TextProcessor] AI result received (\(processedText.count) chars): \(processedText)")
+
+        logger.logInfo("📝 [TextProcessor] Pasting result into host app")
+        print("📝 [TextProcessor] Pasting result into host app: \(processedText)")
         TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
 
         // Phase 4: Done
