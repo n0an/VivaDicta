@@ -17,7 +17,7 @@ import UIKit
 final class TextDocumentProxyWriter {
 
     /// Delay between cursor movements during navigation.
-    private static let cursorMoveDelay: Duration = .milliseconds(30)
+    private static let cursorMoveDelay: Duration = .milliseconds(100)
 
     /// Delay between delete batches to let the proxy update.
     private static let deleteBatchDelay: Duration = .milliseconds(10)

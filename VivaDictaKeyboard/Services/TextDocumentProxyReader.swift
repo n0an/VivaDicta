@@ -29,7 +29,7 @@ final class TextDocumentProxyReader {
     private static let maxCharacterLimit = 50_000
 
     /// Delay between cursor movements to allow the proxy to update its context.
-    private static let cursorMoveDelay: Duration = .milliseconds(30)
+    private static let cursorMoveDelay: Duration = .milliseconds(100)
 
     /// Reads text from the host text field.
     ///
