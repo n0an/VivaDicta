@@ -131,7 +131,7 @@ struct KeyboardCustomView: View {
     }
 
     private func openMainApp() {
-        var urlString = "vivadicta://record-for-keyboard"
+        var urlString = "vivadicta://activate-for-keyboard"
         if let hostId = keyboardVC?.hostApplicationBundleId {
             if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
                 urlString += "?hostId=\(encodedHostId)"
