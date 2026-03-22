@@ -210,7 +210,5 @@ https://github.com/user-attachments/assets/d22f06b3-78f6-4eaf-9026-f11c0ea7bf57
   <br><br>
   <a href="https://twitter.com/_antonnovoselov"><img src="https://img.shields.io/twitter/follow/_antonnovoselov?style=social" alt="X"></a>
   &nbsp;
-  <a href="https://github.com/n0an"><img src="https://img.shields.io/github/followers/n0an?style=social" alt="GitHub"></a>
-  &nbsp;
   <a href="https://www.linkedin.com/in/anton-novoselov/"><img src="https://img.shields.io/badge/LinkedIn-anton--novoselov-blue?style=social&logo=linkedin" alt="LinkedIn"></a>
 </p>
