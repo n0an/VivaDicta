@@ -50,6 +50,7 @@ struct RecentNotesView: View {
                 emptyStateView
             } else {
                 notesListView
+                    .padding(.horizontal, 24)
             }
         }
         .frame(height: 260)
@@ -75,15 +76,19 @@ struct RecentNotesView: View {
                                 .foregroundStyle(.primary)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
-
-                            Text(note.timestamp, format: .dateTime.month(.abbreviated).day().hour().minute())
-                                .font(.system(size: 11))
-                                .foregroundStyle(.tertiary)
+                                .padding(.bottom, 8)
+                            
+                            Divider()
+//                            Text(note.timestamp, format: .dateTime.month(.abbreviated).day().hour().minute())
+//                                .font(.system(size: 11))
+//                                .foregroundStyle(.tertiary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                        .padding(.top, 8)
+//                        .background(.primary, in: .rect(cornerRadius: 10))
+
+//                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
                 }
@@ -112,6 +117,7 @@ struct RecentNotesView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
         }
+        .background(.white, in: .rect(cornerRadius: 10))
         .scrollIndicators(.hidden)
     }
 
@@ -142,8 +148,8 @@ struct RecentNotesView: View {
 
     @ViewBuilder
     private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
+        let last = icon == "delete.backward"
         if #available(iOS 26.0, *) {
-            let last = icon == "delete.backward"
             
             Button {
                 HapticManager.lightImpact()
@@ -171,7 +177,7 @@ struct RecentNotesView: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.primary)
                     .frame(width: 40, height: 24)
-                    .background(.quaternary, in: .capsule(style: .continuous))
+                    .background((last ? Color.red : .blue).opacity(0.5), in: .capsule(style: .continuous))
                     .contentShape(.rect)
             }
             .padding(.vertical, 8)

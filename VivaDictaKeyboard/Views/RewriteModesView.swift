@@ -127,8 +127,8 @@ struct RewriteModesView: View {
 
     @ViewBuilder
     private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
+        let last = icon == "delete.backward"
         if #available(iOS 26.0, *) {
-            let last = icon == "delete.backward"
             
             Button {
                 HapticManager.lightImpact()
@@ -156,7 +156,7 @@ struct RewriteModesView: View {
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.primary)
                     .frame(width: 40, height: 24)
-                    .background(.quaternary, in: .capsule(style: .continuous))
+                    .background((last ? Color.red : .blue).opacity(0.5), in: .capsule(style: .continuous))
                     .contentShape(.rect)
             }
             .padding(.vertical, 8)
