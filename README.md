@@ -133,7 +133,7 @@ Core components:
 | `PresetManager` | Built-in + custom presets, CloudKit sync |
 | `AudioPrewarmManager` | Continuous audio engine for keyboard extension low-latency recording |
 
-See the [architecture documentation](documentation/) for detailed diagrams and flows.
+See the [documentation](documentation/README.md) for detailed diagrams and flows.
 
 ## Building
 
