@@ -110,7 +110,7 @@ struct KeyboardTabToggle: View {
                         .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isGlowAnimating ? 360 : 0)))
                         .blur(radius: 10)
                         .onAppear {
-                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                            withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
                                 isGlowAnimating = true
                             }
                         }
@@ -121,7 +121,7 @@ struct KeyboardTabToggle: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .glassEffectColor(isInteractive: true, color: .indigo, opacity: 0.5)
+        .glassEffectColor(isInteractive: true, color: .indigo, opacity: 0.7)
     }
 }
 
