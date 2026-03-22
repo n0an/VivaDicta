@@ -36,11 +36,14 @@ struct RecentNotesView: View {
                 // Utility buttons: space, return, backspace
                 HStack(spacing: 4) {
                     
-                    utilityButton(icon: "space", action: onSpace)
+                    utilityButton(icon: "arrow.counterclockwise", color: .yellow, action: onSpace)
                         .shadow(color: .black.opacity(0.2), radius: 6)
-                    utilityButton(icon: "return", action: onNewline)
+                    
+                    utilityButton(icon: "space", color: .blue, action: onSpace)
                         .shadow(color: .black.opacity(0.2), radius: 6)
-                    utilityButton(icon: "delete.backward", action: onBackspace)
+                    utilityButton(icon: "return", color: .blue, action: onNewline)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
+                    utilityButton(icon: "delete.backward", color: .red, action: onBackspace)
                         .shadow(color: .black.opacity(0.2), radius: 6)
                 }
             }
@@ -146,30 +149,42 @@ struct RecentNotesView: View {
     
     
     // MARK: - Utility Button
+    
+    enum UtilityButtonPlacement {
+        case first
+        case mid
+        case last
+    }
 
     @ViewBuilder
-    private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
-        let isBackspace = icon == "delete.backward"
-        let tintColor: Color = isBackspace ? .red : .blue
-        if #available(iOS 26.0, *) {
-            RepeatableButton(action: action) {
-                utilityButtonLabel(icon: icon)
-                    .frame(width: 36, height: 20)
+    private func utilityButton(
+        icon: String,
+        color: Color,
+        placement: UtilityButtonPlacement = .mid,
+        action: @escaping () -> Void) -> some View {
+            
+//            let isBackspace = icon == "delete.backward"
+//            let tintColor: Color = isBackspace ? .red : .blue
+            if #available(iOS 26.0, *) {
+                RepeatableButton(action: action) {
+                    utilityButtonLabel(icon: icon)
+                        .frame(width: 36, height: 20)
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
+                .glassEffect(.regular.tint(color.opacity(0.3)).interactive())
+                .padding(.trailing, placement == .first ? 4 : 0)
+                .padding(.trailing, placement == .last ? 0 : 4)
+            } else {
+                RepeatableButton(action: action) {
+                    utilityButtonLabel(icon: icon)
+                        .frame(width: 40, height: 24)
+                        .background(color.opacity(0.5), in: .capsule(style: .continuous))
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
             }
-            .padding(.vertical, 4)
-            .padding(.horizontal, 8)
-            .glassEffect(.regular.tint(tintColor.opacity(0.3)).interactive())
-            .padding(.trailing, isBackspace ? 0 : 4)
-        } else {
-            RepeatableButton(action: action) {
-                utilityButtonLabel(icon: icon)
-                    .frame(width: 40, height: 24)
-                    .background(tintColor.opacity(0.5), in: .capsule(style: .continuous))
-            }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
         }
-    }
 
     private func utilityButtonLabel(icon: String) -> some View {
         Image(systemName: icon)
