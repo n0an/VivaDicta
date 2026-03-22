@@ -13,6 +13,7 @@ import SwiftUI
 struct RecentNotesView: View {
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
 
     let onNoteSelected: (String) -> Void
     
@@ -117,7 +118,7 @@ struct RecentNotesView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
         }
-        .background(.white, in: .rect(cornerRadius: 10))
+        .background(colorScheme == .dark ? Color(uiColor: .quaternarySystemFill) : Color.white, in: .rect(cornerRadius: 10))
         .scrollIndicators(.hidden)
     }
 
