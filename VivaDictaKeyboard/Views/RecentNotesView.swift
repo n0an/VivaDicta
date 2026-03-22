@@ -41,10 +41,14 @@ struct RecentNotesView: View {
                 HStack(spacing: 4) {
 
                     if lastPastedLength > 0 {
-                        utilityButton(icon: "arrow.uturn.backward", color: .yellow) {
+                        Button {
+                            HapticManager.lightImpact()
                             onRevert(lastPastedLength)
-                            lastPastedLength = 0
+                            withAnimation { lastPastedLength = 0 }
+                        } label: {
+                            revertButtonLabel
                         }
+                        .buttonStyle(.plain)
                         .shadow(color: .black.opacity(0.2), radius: 6)
                         .transition(.scale.combined(with: .opacity))
                     }
@@ -196,6 +200,27 @@ struct RecentNotesView: View {
                 .padding(.horizontal, 16)
             }
         }
+
+    @ViewBuilder
+    private var revertButtonLabel: some View {
+        if #available(iOS 26.0, *) {
+            Image(systemName: "arrow.uturn.backward")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 36, height: 20)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
+                .glassEffect(.regular.tint(Color.yellow.opacity(0.3)).interactive())
+        } else {
+            Image(systemName: "arrow.uturn.backward")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 40, height: 24)
+                .background(Color.yellow.opacity(0.5), in: .capsule(style: .continuous))
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+        }
+    }
 
     private func utilityButtonLabel(icon: String) -> some View {
         Image(systemName: icon)
