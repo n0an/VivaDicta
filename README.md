@@ -181,9 +181,9 @@ VivaDicta/
 
 ## Documentation
 
-- **[DocC API Reference](https://n0an.github.io/VivaDicta/)** — generated API documentation
 - **[Architecture Docs](documentation/)** — recording pipeline, transcription system, AI processing, text pipeline, preset system, AppGroupCoordinator
 - **[Text Processing Pipeline](documentation/text-processing-pipeline.md)** — 7-stage pipeline from raw audio to formatted text
+- **[DocC API Reference](https://n0an.github.io/VivaDicta/)** — generated API documentation
 
 ## Contributing
 
