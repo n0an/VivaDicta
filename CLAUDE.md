@@ -15,6 +15,7 @@ When @.claude/skills is mentioned or when starting a task:
 
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
+- When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
 
 ## Build Commands
 
