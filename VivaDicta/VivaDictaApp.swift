@@ -429,8 +429,9 @@ struct VivaDictaApp: App {
 
                     logger.logInfo("🎙️ Keyboard session activated for text processing")
 
+                    // Return to host app without starting recording
                     if let hostId = hostId {
-                        attemptReturnToHost(hostId: hostId)
+                        returnToHost(hostId: hostId)
                     } else {
                         appState.showKeyboardFlowToast = true
                     }
@@ -457,6 +458,33 @@ struct VivaDictaApp: App {
     }
     
     
+    /// Returns to the host app without starting recording.
+    /// Used by the text processing keyboard flow.
+    private func returnToHost(hostId: String) {
+        logger.logInfo("🔄 Returning to host app (no recording): \(hostId)")
+
+        if let urlScheme = getURLSchemeForBundleId(hostId),
+           let url = URL(string: urlScheme) {
+            Task { @MainActor in
+                if UIApplication.shared.canOpenURL(url) {
+                    UIApplication.shared.open(url, options: [:]) { success in
+                        if success {
+                            self.logger.logInfo("✅ Returned to host app: \(hostId)")
+                        } else {
+                            self.logger.logError("❌ Failed to open host app: \(hostId)")
+                        }
+                    }
+                } else {
+                    logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
+                    appState.showKeyboardFlowToast = true
+                }
+            }
+        } else {
+            logger.logInfo("❌ No URL scheme for host: \(hostId)")
+            appState.showKeyboardFlowToast = true
+        }
+    }
+
     private func getURLSchemeForBundleId(_ bundleId: String) -> String? {
         // Map of common apps and their URL schemes
         // Note: This is not comprehensive and many apps don't have public URL schemes
