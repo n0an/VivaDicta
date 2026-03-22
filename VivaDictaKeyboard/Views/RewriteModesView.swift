@@ -29,7 +29,7 @@ struct RewriteModesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header: V/T segment on left, utility buttons on right
+            // Header: switcher on left, utility buttons on right
             HStack {
                 KeyboardTabToggle(dictationState: dictationState)
 

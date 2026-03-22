@@ -43,7 +43,13 @@ struct KeyboardCustomView: View {
                         onNoteSelected: { text in
                             controller.textDocumentProxy.insertText(text)
                             HapticManager.heartbeat()
-                        }
+                        },
+                        onOpenApp: {
+                            openMainApp()
+                        },
+                        onBackspace: { controller.textDocumentProxy.deleteBackward() },
+                        onNewline: { controller.textDocumentProxy.insertText("\n") },
+                        onSpace: { controller.textDocumentProxy.insertText(" ") }
                     )
                 } else if dictationState.activeTab == .textProcessing {
                     RewriteModesView(

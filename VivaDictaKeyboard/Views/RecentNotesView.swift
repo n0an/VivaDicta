@@ -15,16 +15,33 @@ struct RecentNotesView: View {
     @Environment(\.openURL) private var openURL
 
     let onNoteSelected: (String) -> Void
+    
+    let onOpenApp: () -> Void
+    let onBackspace: () -> Void
+    let onNewline: () -> Void
+    let onSpace: () -> Void
 
     private let displayLimit = 5
     @State private var notes: [RecentNote] = []
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Header: switcher on left, utility buttons on right
             HStack {
                 KeyboardTabToggle(dictationState: dictationState)
+
                 Spacer()
+
+                // Utility buttons: space, return, backspace
+                HStack(spacing: 4) {
+                    
+                    utilityButton(icon: "space", action: onSpace)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
+                    utilityButton(icon: "return", action: onNewline)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
+                    utilityButton(icon: "delete.backward", action: onBackspace)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
@@ -117,6 +134,49 @@ struct RecentNotesView: View {
                 .foregroundStyle(.tertiary)
 
             Spacer()
+        }
+    }
+    
+    
+    // MARK: - Utility Button
+
+    @ViewBuilder
+    private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
+        if #available(iOS 26.0, *) {
+            let last = icon == "delete.backward"
+            
+            Button {
+                HapticManager.lightImpact()
+                action()
+            } label: {
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .frame(width: 36, height: 20)
+                    .contentShape(.rect)
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+            .buttonStyle(.plain)
+            .glassEffect(.regular.tint((last ? Color.red : .blue).opacity(0.3)).interactive())
+            .padding(.trailing, (last ? 0 : 4))
+        } else {
+            Button {
+                HapticManager.lightImpact()
+                action()
+            } label: {
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .frame(width: 40, height: 24)
+                    .background(.quaternary, in: .capsule(style: .continuous))
+                    .contentShape(.rect)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .buttonStyle(.plain)
         }
     }
 }
