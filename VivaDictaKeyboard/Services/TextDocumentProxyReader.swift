@@ -7,24 +7,40 @@
 
 import UIKit
 
-/// Reads selected text from a host app's text field via `UITextDocumentProxy`.
+/// Reads text from a host app's text field via `UITextDocumentProxy`.
 ///
-/// Only supports reading explicitly selected text. Full-document reading via cursor
-/// navigation is unreliable across host apps (truncation behavior varies), so users
-/// must select the text they want to process.
+/// Two modes:
+/// - **Selected text**: Returns `selectedText` directly — most reliable.
+/// - **Text before cursor**: Returns `documentContextBeforeInput` — the chunk
+///   of text before the current cursor position. The host app decides how much
+///   text to return (typically a large chunk, but varies by app).
 @MainActor
 final class TextDocumentProxyReader {
 
     enum ReadResult {
+        /// User explicitly selected text.
         case selectedText(String)
-        case noSelection
+        /// Text before cursor (no explicit selection).
+        case textBeforeCursor(String)
+        /// No text available.
+        case empty
     }
 
-    /// Reads the currently selected text from the host text field.
+    /// Reads text from the host text field.
+    ///
+    /// If text is selected, returns the selection. Otherwise, returns whatever
+    /// `documentContextBeforeInput` provides at the current cursor position.
     static func readText(from proxy: UITextDocumentProxy) -> ReadResult {
+        // Prefer explicit selection
         if let selected = proxy.selectedText, !selected.isEmpty {
             return .selectedText(selected)
         }
-        return .noSelection
+
+        // Fall back to text before cursor
+        if let before = proxy.documentContextBeforeInput, !before.isEmpty {
+            return .textBeforeCursor(before)
+        }
+
+        return .empty
     }
 }

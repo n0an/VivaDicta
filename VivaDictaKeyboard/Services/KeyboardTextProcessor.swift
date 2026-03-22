@@ -9,10 +9,11 @@ import UIKit
 import os
 
 /// Orchestrates the text processing pipeline from the keyboard extension:
-/// 1. Read selected text from host text field via `UITextDocumentProxy`
+/// 1. Read text from host text field via `UITextDocumentProxy`
+///    (selected text, or text before cursor if nothing selected)
 /// 2. Send to main app for AI processing via `AppGroupCoordinator`
 /// 3. Wait for result
-/// 4. Replace the selection with the processed text
+/// 4. Replace the original text with the processed result
 @MainActor
 final class KeyboardTextProcessor {
 
@@ -21,10 +22,10 @@ final class KeyboardTextProcessor {
     private var resultContinuation: CheckedContinuation<String, Error>?
     private var isProcessing = false
 
-    /// Processes selected text in the host text field using the specified mode.
+    /// Processes text in the host text field using the specified mode.
     ///
-    /// The user must select text before tapping a mode. If no text is selected,
-    /// an error is shown.
+    /// If text is selected, processes the selection. Otherwise, processes
+    /// `documentContextBeforeInput` (text before cursor).
     func processText(
         proxy: UITextDocumentProxy,
         mode: VivaMode,
@@ -68,19 +69,26 @@ final class KeyboardTextProcessor {
         mode: VivaMode,
         dictationState: KeyboardDictationState
     ) async throws {
-        // Phase 1: Read selected text
+        // Phase 1: Read text
         let readResult = TextDocumentProxyReader.readText(from: proxy)
 
         let text: String
+        let isSelection: Bool
         switch readResult {
         case .selectedText(let t):
             text = t
+            isSelection = true
             logger.logInfo("📝 [TextProcessor] Selected text read (\(t.count) chars): \(t)")
             print("📝 [TextProcessor] Selected text read (\(t.count) chars): \(t)")
-        case .noSelection:
-            logger.logInfo("📝 [TextProcessor] No text selected")
-            print("📝 [TextProcessor] No text selected")
-            dictationState.textProcessingPhase = .error("Select text to process")
+        case .textBeforeCursor(let t):
+            text = t
+            isSelection = false
+            logger.logInfo("📝 [TextProcessor] Text before cursor read (\(t.count) chars): \(t)")
+            print("📝 [TextProcessor] Text before cursor read (\(t.count) chars): \(t)")
+        case .empty:
+            logger.logInfo("📝 [TextProcessor] No text found")
+            print("📝 [TextProcessor] No text found")
+            dictationState.textProcessingPhase = .error("No text to process")
             autoDismissError(dictationState: dictationState)
             return
         }
@@ -89,8 +97,8 @@ final class KeyboardTextProcessor {
 
         // Phase 2: Send to main app
         dictationState.textProcessingPhase = .sendingToApp
-        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text: \(text)")
-        print("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text: \(text)")
+        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text (\(text.count) chars)")
+        print("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text (\(text.count) chars): \(text)")
 
         let processedText: String = try await withCheckedThrowingContinuation { continuation in
             self.resultContinuation = continuation
@@ -116,13 +124,19 @@ final class KeyboardTextProcessor {
 
         try Task.checkCancellation()
 
-        // Phase 3: Replace selected text
+        // Phase 3: Replace text
         logger.logInfo("📝 [TextProcessor] AI result received (\(processedText.count) chars): \(processedText)")
         print("📝 [TextProcessor] AI result received (\(processedText.count) chars): \(processedText)")
 
-        logger.logInfo("📝 [TextProcessor] Pasting result into host app")
-        print("📝 [TextProcessor] Pasting result into host app: \(processedText)")
-        TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
+        if isSelection {
+            logger.logInfo("📝 [TextProcessor] Replacing selected text")
+            print("📝 [TextProcessor] Replacing selected text")
+            TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
+        } else {
+            logger.logInfo("📝 [TextProcessor] Replacing \(text.count) chars before cursor")
+            print("📝 [TextProcessor] Replacing \(text.count) chars before cursor")
+            await TextDocumentProxyWriter.replaceTextBeforeCursor(in: proxy, charCount: text.count, with: processedText)
+        }
 
         // Phase 4: Done
         dictationState.textProcessingPhase = .completed
