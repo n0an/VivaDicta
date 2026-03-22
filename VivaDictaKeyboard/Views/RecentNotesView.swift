@@ -16,14 +16,18 @@ struct RecentNotesView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let onNoteSelected: (String) -> Void
-    
+
     let onOpenApp: () -> Void
     let onBackspace: () -> Void
     let onNewline: () -> Void
     let onSpace: () -> Void
+    /// Called with the number of characters to delete (revert last paste).
+    let onRevert: (Int) -> Void
 
     private let displayLimit = 5
     @State private var notes: [RecentNote] = []
+    /// Length of the last pasted note, used for revert. Zero means nothing to revert.
+    @State private var lastPastedLength: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,10 +39,16 @@ struct RecentNotesView: View {
 
                 // Utility buttons: space, return, backspace
                 HStack(spacing: 4) {
-                    
-                    utilityButton(icon: "arrow.counterclockwise", color: .yellow, action: onSpace)
+
+                    if lastPastedLength > 0 {
+                        utilityButton(icon: "arrow.uturn.backward", color: .yellow) {
+                            onRevert(lastPastedLength)
+                            lastPastedLength = 0
+                        }
                         .shadow(color: .black.opacity(0.2), radius: 6)
-                    
+                        .transition(.scale.combined(with: .opacity))
+                    }
+
                     utilityButton(icon: "space", color: .blue, action: onSpace)
                         .shadow(color: .black.opacity(0.2), radius: 6)
                     utilityButton(icon: "return", color: .blue, action: onNewline)
@@ -73,6 +83,7 @@ struct RecentNotesView: View {
                     Button {
                         HapticManager.mediumImpact()
                         onNoteSelected(note.text)
+                        withAnimation { lastPastedLength = note.text.count }
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(note.text)

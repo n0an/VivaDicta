@@ -49,7 +49,13 @@ struct KeyboardCustomView: View {
                         },
                         onBackspace: { controller.textDocumentProxy.deleteBackward() },
                         onNewline: { controller.textDocumentProxy.insertText("\n") },
-                        onSpace: { controller.textDocumentProxy.insertText(" ") }
+                        onSpace: { controller.textDocumentProxy.insertText(" ") },
+                        onRevert: { charCount in
+                            for _ in 0..<charCount {
+                                controller.textDocumentProxy.deleteBackward()
+                            }
+                            HapticManager.lightImpact()
+                        }
                     )
                 } else if dictationState.activeTab == .textProcessing {
                     RewriteModesView(
