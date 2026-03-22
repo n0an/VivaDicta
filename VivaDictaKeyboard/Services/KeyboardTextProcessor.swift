@@ -34,7 +34,6 @@ final class KeyboardTextProcessor {
         // Prevent double invocation
         guard !isProcessing else {
             logger.logInfo("📝 [TextProcessor] Ignoring duplicate invocation — already processing")
-            print("📝 [TextProcessor] Ignoring duplicate invocation — already processing")
             return
         }
 
@@ -79,15 +78,12 @@ final class KeyboardTextProcessor {
             text = t
             isSelection = true
             logger.logInfo("📝 [TextProcessor] Selected text read (\(t.count) chars): \(t)")
-            print("📝 [TextProcessor] Selected text read (\(t.count) chars): \(t)")
         case .textBeforeCursor(let t):
             text = t
             isSelection = false
             logger.logInfo("📝 [TextProcessor] Text before cursor read (\(t.count) chars): \(t)")
-            print("📝 [TextProcessor] Text before cursor read (\(t.count) chars): \(t)")
         case .empty:
             logger.logInfo("📝 [TextProcessor] No text found")
-            print("📝 [TextProcessor] No text found")
             dictationState.textProcessingPhase = .error("No text to process")
             autoDismissError(dictationState: dictationState)
             return
@@ -97,15 +93,14 @@ final class KeyboardTextProcessor {
 
         // Phase 2: Send to main app
         dictationState.textProcessingPhase = .sendingToApp
-        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text (\(text.count) chars)")
-        print("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text (\(text.count) chars): \(text)")
+        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text (\(text.count) chars): \(text)")
 
         let processedText: String = try await withCheckedThrowingContinuation { continuation in
             self.resultContinuation = continuation
 
             dictationState.onTextProcessingResult = { [weak self] result in
                 if result.isEmpty {
-                    print("📝 [TextProcessor] Received empty result — treating as error")
+                    self?.logger.logInfo("📝 [TextProcessor] Received empty result — treating as error")
                     self?.resultContinuation?.resume(throwing: TextProcessingError.processingFailed("AI returned empty result"))
                 } else {
                     self?.resultContinuation?.resume(returning: result)
@@ -126,15 +121,12 @@ final class KeyboardTextProcessor {
 
         // Phase 3: Replace text
         logger.logInfo("📝 [TextProcessor] AI result received (\(processedText.count) chars): \(processedText)")
-        print("📝 [TextProcessor] AI result received (\(processedText.count) chars): \(processedText)")
 
         if isSelection {
             logger.logInfo("📝 [TextProcessor] Replacing selected text")
-            print("📝 [TextProcessor] Replacing selected text")
             TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
         } else {
             logger.logInfo("📝 [TextProcessor] Replacing \(text.count) chars before cursor")
-            print("📝 [TextProcessor] Replacing \(text.count) chars before cursor")
             await TextDocumentProxyWriter.replaceTextBeforeCursor(in: proxy, charCount: text.count, with: processedText)
         }
 
