@@ -65,18 +65,11 @@ struct RewriteModesView: View {
                         HapticManager.mediumImpact()
                         onModeSelected(mode)
                     } label: {
-                        HStack(spacing: 12) {
-                            Text(mode.name)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-
-                            Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.tertiary)
-                        }
+                        Text(mode.name)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
