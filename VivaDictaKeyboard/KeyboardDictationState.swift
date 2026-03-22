@@ -1,6 +1,7 @@
 import SwiftUI
 
 
+@MainActor
 @Observable
 final class KeyboardDictationState {
     // MARK: - Published state
@@ -64,8 +65,8 @@ final class KeyboardDictationState {
     // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
 
-    // MARK: - Auto-dismiss timer
-    private var errorDismissTimer: Timer?
+    // MARK: - Auto-dismiss
+    private var errorDismissTask: Task<Void, Never>?
 
     // MARK: - Init
     init() {
@@ -115,55 +116,49 @@ final class KeyboardDictationState {
         // Refresh VivaModes when keyboard starts
         vivaModeManager.refreshVivaModes()
 
-        // TODO: Refactor to Task all below
         AppGroupCoordinator.shared.onRecordingStateChanged = { [weak self] state in
-            DispatchQueue.main.async { self?.isRecording = state }
+            self?.isRecording = state
         }
         AppGroupCoordinator.shared.onKeyboardSessionActivated = { [weak self] in
-            DispatchQueue.main.async { self?.isSessionActive = true }
+            self?.isSessionActive = true
         }
         AppGroupCoordinator.shared.onKeyboardSessionExpired = { [weak self] in
-            DispatchQueue.main.async {
-                self?.isSessionActive = false
-                self?.onSessionExpired?()
-            }
+            self?.isSessionActive = false
+            self?.onSessionExpired?()
         }
         AppGroupCoordinator.shared.onTranscriptionTranscribing = { [weak self] in
-            DispatchQueue.main.async { self?.transcriptionStatus = .transcribing }
+            self?.transcriptionStatus = .transcribing
         }
         AppGroupCoordinator.shared.onTranscriptionEnhancing = { [weak self] in
-            DispatchQueue.main.async { self?.transcriptionStatus = .enhancing }
+            self?.transcriptionStatus = .enhancing
         }
         AppGroupCoordinator.shared.onTranscriptionCompleted = { [weak self] transcription in
-            DispatchQueue.main.async {
-                self?.transcriptionStatus = .completed
-                self?.onTranscriptionReady?(transcription)
-            }
+            self?.transcriptionStatus = .completed
+            self?.onTranscriptionReady?(transcription)
         }
         AppGroupCoordinator.shared.onTranscriptionError = { [weak self] in
-            DispatchQueue.main.async { self?.transcriptionStatus = .error }
+            self?.transcriptionStatus = .error
         }
         AppGroupCoordinator.shared.onTranscriptionCancelled = { [weak self] in
-            DispatchQueue.main.async { self?.transcriptionStatus = .idle }
+            self?.transcriptionStatus = .idle
         }
         AppGroupCoordinator.shared.onTranscriptionErrorMessage = { [weak self] message in
-            DispatchQueue.main.async { self?.errorMessage = message }
+            self?.errorMessage = message
         }
         AppGroupCoordinator.shared.onAudioLevelUpdated = { [weak self] level in
-            DispatchQueue.main.async { self?.currentAudioLevel = level }
+            self?.currentAudioLevel = level
         }
 
         // Text processing callbacks (rewrite feature)
         AppGroupCoordinator.shared.onTextProcessingCompleted = { [weak self] text in
-            DispatchQueue.main.async { self?.onTextProcessingResult?(text) }
+            self?.onTextProcessingResult?(text)
         }
         AppGroupCoordinator.shared.onTextProcessingError = { [weak self] message in
-            DispatchQueue.main.async { self?.onTextProcessingError?(message) }
+            self?.onTextProcessingError?(message)
         }
     }
     
     nonisolated func stop() {
-        // Clear all callbacks - these are @MainActor isolated but setting to nil is safe
         Task { @MainActor in
             AppGroupCoordinator.shared.onRecordingStateChanged = nil
             AppGroupCoordinator.shared.onKeyboardSessionActivated = nil
@@ -176,8 +171,8 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onAudioLevelUpdated = nil
             AppGroupCoordinator.shared.onTextProcessingCompleted = nil
             AppGroupCoordinator.shared.onTextProcessingError = nil
-            errorDismissTimer?.invalidate()
-            errorDismissTimer = nil
+            errorDismissTask?.cancel()
+            errorDismissTask = nil
         }
     }
 
@@ -196,10 +191,10 @@ final class KeyboardDictationState {
                 AppGroupCoordinator.shared.setKeyboardClipboardContext(UIPasteboard.general.string)
             }
             AppGroupCoordinator.shared.requestStartRecording()
-            
-            // TODO: why delay? Refactor to Task
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                guard let self = self else { return }
+
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1.0))
+                guard let self else { return }
                 if !self.isRecording {
                     self.isSessionActive = false
                 }
@@ -219,14 +214,12 @@ final class KeyboardDictationState {
 
     // MARK: - Error Auto-dismiss
     private func autoDismissError() {
-        errorDismissTimer?.invalidate()
-        errorDismissTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
-            // TODO: Refactor to Task
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                if self.transcriptionStatus == .error && self.errorMessage != nil {
-                    self.clearError()
-                }
+        errorDismissTask?.cancel()
+        errorDismissTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5.0))
+            guard let self, !Task.isCancelled else { return }
+            if self.transcriptionStatus == .error && self.errorMessage != nil {
+                self.clearError()
             }
         }
     }
@@ -235,7 +228,7 @@ final class KeyboardDictationState {
         errorMessage = nil
         transcriptionStatus = .idle
         AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
-        errorDismissTimer?.invalidate()
-        errorDismissTimer = nil
+        errorDismissTask?.cancel()
+        errorDismissTask = nil
     }
 }
