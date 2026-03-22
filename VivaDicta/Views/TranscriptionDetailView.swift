@@ -1003,7 +1003,6 @@ private struct TextEditSheet: View {
                         if #available(iOS 26, *) {
                             Button(role: .confirm) {
                                 onSave(editableText)
-                                HapticManager.lightImpact()
                                 dismiss()
                             }
                             .tint(.blue)
@@ -1011,7 +1010,6 @@ private struct TextEditSheet: View {
                         } else {
                             Button("Done") {
                                 onSave(editableText)
-                                HapticManager.lightImpact()
                                 dismiss()
                             }
                             .disabled(editableText == text)
