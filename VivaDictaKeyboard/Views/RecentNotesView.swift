@@ -107,9 +107,7 @@ struct RecentNotesView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
                         .padding(.top, 8)
-//                        .background(.primary, in: .rect(cornerRadius: 10))
-
-//                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                        .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                 }

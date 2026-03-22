@@ -10,16 +10,14 @@ import SwiftData
 
 extension RecentNotesCache {
     /// Syncs the cache with SwiftData, populating it with the most recent transcriptions.
-    /// Called on app foreground to ensure the cache reflects existing data.
     @MainActor
-    static func syncFromDatabase(modelContainer: ModelContainer) {
-        let context = modelContainer.mainContext
+    static func syncFromDatabase(modelContext: ModelContext) {
         var descriptor = FetchDescriptor<Transcription>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = 10
 
-        guard let transcriptions = try? context.fetch(descriptor) else { return }
+        guard let transcriptions = try? modelContext.fetch(descriptor) else { return }
 
         let notes = transcriptions.map { transcription in
             RecentNote(

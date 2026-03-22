@@ -257,6 +257,7 @@ struct TranscriptionsContentView: View {
 
         do {
             try modelContext.save()
+            RecentNotesCache.syncFromDatabase(modelContext: modelContext)
         } catch {
             logger.logError("Failed to save after deletion: \(error.localizedDescription)")
         }
