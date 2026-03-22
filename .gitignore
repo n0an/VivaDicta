@@ -120,3 +120,6 @@ llmtemp/
 llmtempArchive/docs/
 docs/
 internal/
+
+
+settings.local.json
