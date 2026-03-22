@@ -182,6 +182,6 @@ open logs/vivadicta_device_*.logarchive
 
 ## Additional Resources
 
-- [iOS Log Capture Skill](../.claude/skills/ios-log-capture.md) - Complete log capture reference
+- [iOS Log Capture Skill](../../.claude/skills/ios-log-capture.md) - Complete log capture reference
 - Apple Developer: `man log` - log command documentation
 - Console.app - GUI for viewing `.logarchive` files

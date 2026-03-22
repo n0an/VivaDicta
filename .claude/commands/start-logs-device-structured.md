@@ -59,5 +59,5 @@ Prepare for device log capture by recording the current timestamp. When ready to
 
 ## Additional Resources
 
-- [iOS Log Capture Skill](../.claude/skills/ios-log-capture.md) - Complete log capture reference
+- [iOS Log Capture Skill](../../.claude/skills/ios-log-capture.md) - Complete log capture reference
 - Apple Developer: `man log` - log command documentation
