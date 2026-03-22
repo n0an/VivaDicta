@@ -29,7 +29,12 @@ final class KeyboardDictationState {
         case textProcessing = 1
     }
 
-    var activeTab: KeyboardTab = .keyboard
+    var activeTab: KeyboardTab = .keyboard {
+        didSet {
+            UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)?
+                .set(activeTab.rawValue, forKey: "keyboardActiveTab")
+        }
+    }
 
     // MARK: - Text Processing (Rewrite)
 
@@ -66,6 +71,11 @@ final class KeyboardDictationState {
         self.isRecording = AppGroupCoordinator.shared.isRecording
         self.isSessionActive = AppGroupCoordinator.shared.isKeyboardSessionActive
         self.transcriptionStatus = AppGroupCoordinator.shared.transcriptionStatus
+
+        // Restore last active tab
+        let savedTab = UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)?
+            .integer(forKey: "keyboardActiveTab") ?? 0
+        self.activeTab = KeyboardTab(rawValue: savedTab) ?? .keyboard
     }
 
     // MARK: - UI Derivations
