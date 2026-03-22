@@ -127,7 +127,7 @@ final class KeyboardTextProcessor {
             TextDocumentProxyWriter.replaceSelectedText(in: proxy, with: processedText)
         } else {
             logger.logInfo("📝 [TextProcessor] Replacing \(text.count) chars before cursor")
-            await TextDocumentProxyWriter.replaceTextBeforeCursor(in: proxy, charCount: text.count, with: processedText)
+            TextDocumentProxyWriter.replaceTextBeforeCursor(in: proxy, charCount: text.count, with: processedText)
         }
 
         // Phase 4: Done
