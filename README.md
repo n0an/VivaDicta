@@ -9,7 +9,7 @@
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
-  <a href="https://n0an.github.io/VivaDicta/">DocC Documentation</a>
+  <a href="documentation/README.md">Documentation</a>
 </p>
 
 <p align="center">
