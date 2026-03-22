@@ -49,6 +49,7 @@ struct RewriteModesView: View {
             // Content: modes list or "open app" prompt
             if dictationState.isSessionActive {
                 modesListView
+                    .padding(.horizontal, 24)
             } else {
                 openAppPromptView
             }
