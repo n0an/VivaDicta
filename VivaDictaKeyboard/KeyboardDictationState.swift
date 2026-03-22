@@ -27,6 +27,7 @@ final class KeyboardDictationState {
     enum KeyboardTab: Int {
         case keyboard = 0
         case textProcessing = 1
+        case recentNotes = 2
     }
 
     var activeTab: KeyboardTab = .keyboard {

@@ -554,6 +554,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let textToShare = enhancedText ?? transcribedText
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
+                // Cache for keyboard "Recent Notes" feature
+                RecentNotesCache.addNote(
+                    id: transcription.id.uuidString,
+                    text: textToShare,
+                    timestamp: transcription.timestamp
+                )
+
                 // Auto-copy to clipboard if enabled
                 if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
                     ClipboardManager.copyToClipboard(textToShare)
@@ -699,6 +706,13 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Share with keyboard
                     AppGroupCoordinator.shared.shareTranscribedText(pending.text)
+
+                    // Cache for keyboard "Recent Notes" feature
+                    RecentNotesCache.addNote(
+                        id: transcription.id.uuidString,
+                        text: pending.text,
+                        timestamp: transcription.timestamp
+                    )
 
                     // Auto-copy to clipboard if enabled
                     if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {

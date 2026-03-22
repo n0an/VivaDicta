@@ -38,6 +38,13 @@ struct KeyboardCustomView: View {
                             dictationState.textProcessingPhase = .idle
                         }
                     )
+                } else if dictationState.activeTab == .recentNotes {
+                    RecentNotesView(
+                        onNoteSelected: { text in
+                            controller.textDocumentProxy.insertText(text)
+                            HapticManager.heartbeat()
+                        }
+                    )
                 } else if dictationState.activeTab == .textProcessing {
                     RewriteModesView(
                         onModeSelected: { mode in

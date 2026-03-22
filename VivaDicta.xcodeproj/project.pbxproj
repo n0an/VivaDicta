@@ -245,6 +245,7 @@
 				Shared/AppGroupCoordinator.swift,
 				Shared/MicButton.swift,
 				Shared/Orb.swift,
+				Shared/RecentNotesCache.swift,
 				Shared/RecordingState.swift,
 				Shared/RippleEffect.metal,
 				Shared/RippleEffectModifier.swift,
