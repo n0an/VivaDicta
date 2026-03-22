@@ -37,14 +37,127 @@ struct RewriteModesView: View {
 
                 // Utility buttons: space, return, backspace
                 HStack(spacing: 4) {
-                    utilityButton(icon: "space", action: onSpace)
-                    utilityButton(icon: "return", action: onNewline)
-                    utilityButton(icon: "delete.backward", action: onBackspace)
+                    
+                    if #available(iOS 26.0, *) {
+                        Button {
+                            HapticManager.lightImpact()
+                            onSpace()
+                        } label: {
+                            
+                            Image(systemName: "space")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 20)
+                                .contentShape(.rect)
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                        .padding(.trailing, 4)
+                    } else {
+                        Button {
+                            HapticManager.lightImpact()
+                            onSpace()
+                        } label: {
+                            
+                            Image(systemName: "space")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .frame(width: 40, height: 24)
+                                .background(.quaternary, in: .capsule(style: .continuous))
+                                .contentShape(.rect)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .buttonStyle(.plain)
+                    }
+                    
+                    
+                    if #available(iOS 26.0, *) {
+                        Button {
+                            HapticManager.lightImpact()
+                            onNewline()
+                        } label: {
+                            
+                            Image(systemName: "return")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 20)
+                                .contentShape(.rect)
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                        .padding(.trailing, 4)
+                    } else {
+                        Button {
+                            HapticManager.lightImpact()
+                            onNewline()
+                        } label: {
+                            
+                            Image(systemName: "return")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 20)
+                                .background(.quaternary, in: .capsule(style: .continuous))
+                                .contentShape(.rect)
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .buttonStyle(.plain)
+                    }
+                    
+                    
+                    if #available(iOS 26.0, *) {
+                        Button {
+                            HapticManager.lightImpact()
+                            onBackspace()
+                        } label: {
+                            
+                            Image(systemName: "delete.backward")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .frame(width: 36, height: 20)
+                                .contentShape(.rect)
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.tint(.red.opacity(0.3)).interactive())
+                        .padding(.trailing, 4)
+                    } else {
+                        Button {
+                            HapticManager.lightImpact()
+                            onBackspace()
+                        } label: {
+                            
+                            Image(systemName: "delete.backward")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .frame(width: 40, height: 24)
+                                .background(.quaternary, in: .capsule(style: .continuous))
+                                .contentShape(.rect)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .buttonStyle(.plain)
+                    }
+                    
+                    
+//                    utilityButton(icon: "space", action: onSpace)
+//                    utilityButton(icon: "return", action: onNewline)
+//                    utilityButton(icon: "delete.backward", action: onBackspace)
                 }
             }
+            .debugBorder()
             .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
+            .debugBorder()
+//            .padding(.top, 16)
+//            .debugBorder()
+//            .padding(.bottom, 8)
+//            .debugBorder()
 
             // Content: modes list or "open app" prompt
             if dictationState.isSessionActive {
@@ -125,18 +238,56 @@ struct RewriteModesView: View {
 
     // MARK: - Utility Button
 
-    private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button {
-            HapticManager.lightImpact()
-            action()
-        } label: {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: 36, height: 36)
-                .background(.quaternary, in: .rect(cornerRadius: 8))
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-    }
+//    private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
+//        
+//        if #available(iOS 26.0, *) {
+//            Button {
+//                HapticManager.lightImpact()
+//                action()
+//            } label: {
+//                
+//                Image(systemName: icon)
+//                    .font(.system(size: 16, weight: .medium))
+//                    .foregroundStyle(.primary)
+//                    .frame(width: 40, height: 24)
+//                    .background(.quaternary, in: .capsule(style: .continuous))
+//                    .contentShape(.rect)
+//            }
+//            .padding(.vertical, 8)
+//            .padding(.horizontal, 16)
+//            .buttonStyle(.plain)
+//            .glassEffect(.regular.tint(.gray.opacity(0.3)).interactive())
+//        } else {
+//            Button {
+//                HapticManager.lightImpact()
+//                action()
+//            } label: {
+//                
+//                Image(systemName: icon)
+//                    .font(.system(size: 16, weight: .medium))
+//                    .foregroundStyle(.primary)
+//                    .frame(width: 40, height: 24)
+//                    .background(.quaternary, in: .capsule(style: .continuous))
+//                    .contentShape(.rect)
+//            }
+//            .padding(.vertical, 8)
+//            .padding(.horizontal, 16)
+//            .buttonStyle(.plain)
+//        }
+//        
+//        
+//        
+////        Button {
+////            HapticManager.lightImpact()
+////            action()
+////        } label: {
+////            Image(systemName: icon)
+////                .font(.system(size: 16, weight: .medium))
+////                .foregroundStyle(.primary)
+////                .frame(width: 36, height: 36)
+////                .background(.quaternary, in: .rect(cornerRadius: 8))
+////                .contentShape(.rect)
+////        }
+////        .buttonStyle(.plain)
+//    }
 }
