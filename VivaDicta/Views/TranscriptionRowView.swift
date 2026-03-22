@@ -71,14 +71,11 @@ struct TranscriptionRowView: View {
             }
         )
         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showGradient)
-        .onAppear {
+        .task {
             if isNewlyInserted {
                 showGradient = true
-                
-                // Remove completely after animation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    showGradient = false
-                }
+                try? await Task.sleep(for: .seconds(0.5))
+                showGradient = false
             }
         }
     }
