@@ -21,6 +21,7 @@ struct RewriteModesView: View {
     let onModeSelected: (VivaMode) -> Void
     let onOpenApp: () -> Void
     let onBackspace: () -> Void
+    let onDeleteWord: () -> Void
     let onNewline: () -> Void
     let onSpace: () -> Void
 
@@ -43,7 +44,7 @@ struct RewriteModesView: View {
                         .shadow(color: .black.opacity(0.2), radius: 6)
                     utilityButton(icon: "return", color: .blue, action: onNewline)
                         .shadow(color: .black.opacity(0.2), radius: 6)
-                    utilityButton(icon: "delete.backward", color: .red, action: onBackspace)
+                    utilityButton(icon: "delete.backward", color: .red, action: onBackspace, longHoldAction: onDeleteWord)
                         .shadow(color: .black.opacity(0.2), radius: 6)
                 }
             }
@@ -139,30 +140,29 @@ struct RewriteModesView: View {
         icon: String,
         color: Color,
         placement: UtilityButtonPlacement = .mid,
-        action: @escaping () -> Void) -> some View {
-            
-//            let isBackspace = icon == "delete.backward"
-//            let tintColor: Color = isBackspace ? .red : .blue
-            if #available(iOS 26.0, *) {
-                RepeatableButton(action: action) {
-                    utilityButtonLabel(icon: icon)
-                        .frame(width: 36, height: 20)
-                }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .glassEffect(.regular.tint(color.opacity(0.3)).interactive())
-                .padding(.trailing, placement == .first ? 4 : 0)
-                .padding(.trailing, placement == .last ? 0 : 4)
-            } else {
-                RepeatableButton(action: action) {
-                    utilityButtonLabel(icon: icon)
-                        .frame(width: 40, height: 24)
-                        .background(color.opacity(0.5), in: .capsule(style: .continuous))
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
+        action: @escaping () -> Void,
+        longHoldAction: (() -> Void)? = nil
+    ) -> some View {
+        if #available(iOS 26.0, *) {
+            RepeatableButton(action: action, longHoldAction: longHoldAction) {
+                utilityButtonLabel(icon: icon)
+                    .frame(width: 36, height: 20)
             }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+            .glassEffect(.regular.tint(color.opacity(0.3)).interactive())
+            .padding(.trailing, placement == .first ? 4 : 0)
+            .padding(.trailing, placement == .last ? 0 : 4)
+        } else {
+            RepeatableButton(action: action, longHoldAction: longHoldAction) {
+                utilityButtonLabel(icon: icon)
+                    .frame(width: 40, height: 24)
+                    .background(color.opacity(0.5), in: .capsule(style: .continuous))
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
         }
+    }
 
     private func utilityButtonLabel(icon: String) -> some View {
         Image(systemName: icon)

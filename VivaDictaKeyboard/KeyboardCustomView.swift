@@ -48,6 +48,7 @@ struct KeyboardCustomView: View {
                             openMainApp()
                         },
                         onBackspace: { controller.textDocumentProxy.deleteBackward() },
+                        onDeleteWord: { deleteWordBeforeCursor() },
                         onNewline: { controller.textDocumentProxy.insertText("\n") },
                         onSpace: { controller.textDocumentProxy.insertText(" ") },
                         onRevert: { charCount in
@@ -71,6 +72,7 @@ struct KeyboardCustomView: View {
                             openMainApp()
                         },
                         onBackspace: { controller.textDocumentProxy.deleteBackward() },
+                        onDeleteWord: { deleteWordBeforeCursor() },
                         onNewline: { controller.textDocumentProxy.insertText("\n") },
                         onSpace: { controller.textDocumentProxy.insertText(" ") }
                     )
@@ -146,6 +148,32 @@ struct KeyboardCustomView: View {
                 .transition(.move(edge: .bottom))
                 .zIndex(1)
             }
+        }
+    }
+
+    private func deleteWordBeforeCursor() {
+        let proxy = controller.textDocumentProxy
+        guard let before = proxy.documentContextBeforeInput, !before.isEmpty else {
+            proxy.deleteBackward()
+            return
+        }
+        // Walk backward: skip trailing whitespace, then skip the word
+        var index = before.endIndex
+        // Skip trailing whitespace
+        while index > before.startIndex {
+            let prev = before.index(before: index)
+            if !before[prev].isWhitespace { break }
+            index = prev
+        }
+        // Skip word characters
+        while index > before.startIndex {
+            let prev = before.index(before: index)
+            if before[prev].isWhitespace { break }
+            index = prev
+        }
+        let charsToDelete = max(before.distance(from: index, to: before.endIndex), 1)
+        for _ in 0..<charsToDelete {
+            proxy.deleteBackward()
         }
     }
 
