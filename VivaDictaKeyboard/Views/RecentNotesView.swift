@@ -26,8 +26,8 @@ struct RecentNotesView: View {
 
     private let displayLimit = 5
     @State private var notes: [RecentNote] = []
-    /// Length of the last pasted note, used for revert. Zero means nothing to revert.
-    @State private var lastPastedLength: Int = 0
+    /// Stack of pasted note lengths for multi-level revert.
+    @State private var pastedLengths: [Int] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,11 +40,13 @@ struct RecentNotesView: View {
                 // Utility buttons: space, return, backspace
                 HStack(spacing: 4) {
 
-                    if lastPastedLength > 0 {
+                    if !pastedLengths.isEmpty {
                         Button {
                             HapticManager.lightImpact()
-                            onRevert(lastPastedLength)
-                            withAnimation { lastPastedLength = 0 }
+                            if let last = pastedLengths.last {
+                                onRevert(last)
+                                withAnimation { _ = pastedLengths.removeLast() }
+                            }
                         } label: {
                             revertButtonLabel
                         }
@@ -87,7 +89,7 @@ struct RecentNotesView: View {
                     Button {
                         HapticManager.mediumImpact()
                         onNoteSelected(note.text)
-                        withAnimation { lastPastedLength = note.text.count }
+                        withAnimation { pastedLengths.append(note.text.count) }
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(note.text)
