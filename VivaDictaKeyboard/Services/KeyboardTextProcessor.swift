@@ -123,7 +123,6 @@ final class KeyboardTextProcessor {
 
             AppGroupCoordinator.shared.requestTextProcessing(text: text, modeName: mode.name)
             dictationState.textProcessingPhase = .waitingForResult(modeName: mode.name)
-            HapticManager.heartbeat()
         }
 
         try Task.checkCancellation()
@@ -140,7 +139,7 @@ final class KeyboardTextProcessor {
         }
 
         // Phase 4: Done
-        HapticManager.success()
+        HapticManager.heartbeat()
         AppGroupCoordinator.shared.recordKeyboardSuccessfulUse()
         dictationState.textProcessingPhase = .completed
 
