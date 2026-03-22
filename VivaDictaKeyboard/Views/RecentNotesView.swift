@@ -118,7 +118,7 @@ struct RecentNotesView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
         }
-        .background(colorScheme == .dark ? Color(uiColor: .quaternarySystemFill) : Color.white, in: .rect(cornerRadius: 10))
+        .background(colorScheme == .dark ? Color( .quaternarySystemFill).opacity(0.5) : Color.white, in: .rect(cornerRadius: 10))
         .scrollIndicators(.hidden)
     }
 

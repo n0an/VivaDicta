@@ -16,6 +16,7 @@ import SwiftUI
 /// When the main app session is not active, shows a prompt to open the main app.
 struct RewriteModesView: View {
     @Environment(KeyboardDictationState.self) var dictationState
+    @Environment(\.colorScheme) private var colorScheme
 
     let onModeSelected: (VivaMode) -> Void
     let onOpenApp: () -> Void
@@ -79,7 +80,8 @@ struct RewriteModesView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                            .background(colorScheme == .dark ? Color(.quaternarySystemFill).opacity(0.5) : Color.white, in: .rect(cornerRadius: 10))
+
                         }
                         .buttonStyle(.plain)
                     }
