@@ -29,6 +29,7 @@ struct TranscriptionDetailView: View {
     @State private var showMetaInfo: Bool = false
     @State private var showConfigureAI: Bool = false
     @State private var generatingPresetId: String?
+    @State private var showTextEditor: Bool = false
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -139,6 +140,14 @@ struct TranscriptionDetailView: View {
                 }
             )
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showTextEditor) {
+            TextEditSheet(
+                text: displayedText,
+                title: selectedLabel
+            ) { updatedText in
+                saveEditedText(updatedText)
+            }
         }
         .sheet(isPresented: $showConfigureAI) {
             ConfigureAISheet {
@@ -289,6 +298,12 @@ struct TranscriptionDetailView: View {
 
                 Spacer()
 
+                // Invisible spacer to balance Edit + Copy on the right
+                Color.clear
+                    .frame(width: 44, height: 44)
+
+                Spacer()
+
                 // Button 2: AI Presets picker
                 Button {
                     if isAIConfigured {
@@ -356,7 +371,18 @@ struct TranscriptionDetailView: View {
 
                 Spacer()
 
-                // Button 3: Copy
+                // Button 3: Edit
+                Button {
+                    showTextEditor = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 20))
+                        .frame(width: 44, height: 44)
+                }
+
+                Spacer()
+
+                // Button 4: Copy
                 Button {
                     UIPasteboard.general.string = displayedText
                     HapticManager.success()
@@ -423,6 +449,26 @@ struct TranscriptionDetailView: View {
         processingTask?.cancel()
         processingTask = nil
         processingState = .idle
+    }
+
+    private func saveEditedText(_ updatedText: String) {
+        if selectedChipId == "original" {
+            transcription.text = updatedText
+        } else if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
+            variation.text = updatedText
+            // Keep enhancedText in sync if this is the latest variation
+            if variation.presetId == sortedVariations.last?.presetId {
+                transcription.enhancedText = updatedText
+            }
+        }
+
+        // Update Spotlight index
+        let entity = transcription.entity
+        Task.detached {
+            await appState.updateTranscriptionEntityInSpotlight(entity)
+        }
+
+        HapticManager.success()
     }
 
     private func retranscribe() {
@@ -911,6 +957,68 @@ private struct PresetPickerSheet: View {
             }
         }
         .tint(.primary)
+    }
+}
+
+// MARK: - Text Edit Sheet
+
+private struct TextEditSheet: View {
+    let text: String
+    let title: String
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var editableText: String = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            TextEditor(text: $editableText)
+                .focused($isFocused)
+                .contentMargins(.horizontal, 16, for: .scrollContent)
+                .contentMargins(.bottom, 100, for: .scrollContent)
+                .scrollDismissesKeyboard(.interactively)
+                .navigationTitle(title)
+                .toolbarTitleDisplayMode(.inline)
+                .onAppear {
+                    editableText = text
+                    isFocused = true
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        if #available(iOS 26, *) {
+                            Button(role: .cancel) {
+                                HapticManager.lightImpact()
+                                dismiss()
+                            }
+                        } else {
+                            Button("Cancel") {
+                                HapticManager.lightImpact()
+                                dismiss()
+                            }
+                        }
+                    }
+
+                    ToolbarItem(placement: .topBarTrailing) {
+                        if #available(iOS 26, *) {
+                            Button(role: .confirm) {
+                                onSave(editableText)
+                                HapticManager.lightImpact()
+                                dismiss()
+                            }
+                            .tint(.blue)
+                            .disabled(editableText == text)
+                        } else {
+                            Button("Done") {
+                                onSave(editableText)
+                                HapticManager.lightImpact()
+                                dismiss()
+                            }
+                            .disabled(editableText == text)
+                        }
+                    }
+                }
+        }
     }
 }
 
