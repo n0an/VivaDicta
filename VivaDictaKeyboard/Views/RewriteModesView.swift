@@ -44,6 +44,7 @@ struct RewriteModesView: View {
                 }
             }
             .padding(.horizontal, 16)
+            .padding(.vertical, 16)
             
             // Content: modes list or "open app" prompt
             if dictationState.isSessionActive {
