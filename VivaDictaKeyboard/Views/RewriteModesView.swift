@@ -39,8 +39,11 @@ struct RewriteModesView: View {
                 HStack(spacing: 4) {
                     
                     utilityButton(icon: "space", action: onSpace)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
                     utilityButton(icon: "return", action: onNewline)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
                     utilityButton(icon: "delete.backward", action: onBackspace)
+                        .shadow(color: .black.opacity(0.2), radius: 6)
                 }
             }
             .padding(.horizontal, 16)
