@@ -241,6 +241,7 @@ struct VivaDictaApp: App {
                         case .active:
                             logger.logInfo("🎬 App became active - checking for stale Live Activity")
                             appState.checkAndEndStaleLiveActivity()
+                            RecentNotesCache.syncFromDatabase(modelContainer: modelContainer)
                         case .inactive:
                             logger.logInfo("🎬 App became inactive")
                         case .background:
