@@ -48,6 +48,7 @@ final class KeyboardTextProcessor {
             } catch is CancellationError {
                 dictationState.textProcessingPhase = .idle
             } catch {
+                HapticManager.error()
                 dictationState.textProcessingPhase = .error(error.localizedDescription)
                 autoDismissError(dictationState: dictationState)
             }
@@ -138,6 +139,7 @@ final class KeyboardTextProcessor {
         }
 
         // Phase 4: Done
+        HapticManager.heartbeat()
         AppGroupCoordinator.shared.recordKeyboardSuccessfulUse()
         dictationState.textProcessingPhase = .completed
 

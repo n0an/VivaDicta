@@ -235,6 +235,7 @@
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,
 				PrivacyInfo.xcprivacy,
+				Resources/Haptics/TranscriptionComplete.ahap,
 				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
