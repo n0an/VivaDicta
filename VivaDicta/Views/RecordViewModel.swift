@@ -879,11 +879,17 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
         logger.logInfo("📝 Processing text from keyboard with mode: \(pending.modeName), text length: \(pending.text.count)")
 
-        // Select the mode specified by the keyboard
-        let mode = appState.aiService.getMode(name: pending.modeName)
-        appState.aiService.selectedMode = mode
+        // Extend session while processing (same pattern as recording flow)
+        let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
+        AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
+
+        // Temporarily switch to the requested mode, then restore
+        let previousMode = appState.aiService.selectedMode
+        let requestedMode = appState.aiService.getMode(name: pending.modeName)
+        appState.aiService.selectedMode = requestedMode
 
         Task {
+            defer { appState.aiService.selectedMode = previousMode }
             do {
                 let (result, _, _) = try await appState.aiService.enhance(pending.text)
                 logger.logInfo("📝 Text processing completed, result length: \(result.count)")

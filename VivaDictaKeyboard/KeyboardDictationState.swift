@@ -49,6 +49,9 @@ final class KeyboardDictationState {
     /// Callback for when the main app returns a text processing error.
     var onTextProcessingError: ((String) -> Void)?
 
+    /// Callback for when the keyboard session expires during text processing.
+    var onSessionExpired: (() -> Void)?
+
     // MARK: - VivaMode Manager
     var vivaModeManager = VivaModeManager()
 
@@ -109,7 +112,10 @@ final class KeyboardDictationState {
             DispatchQueue.main.async { self?.isSessionActive = true }
         }
         AppGroupCoordinator.shared.onKeyboardSessionExpired = { [weak self] in
-            DispatchQueue.main.async { self?.isSessionActive = false }
+            DispatchQueue.main.async {
+                self?.isSessionActive = false
+                self?.onSessionExpired?()
+            }
         }
         AppGroupCoordinator.shared.onTranscriptionTranscribing = { [weak self] in
             DispatchQueue.main.async { self?.transcriptionStatus = .transcribing }

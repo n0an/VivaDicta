@@ -113,6 +113,13 @@ final class KeyboardTextProcessor {
                 self?.resultContinuation = nil
             }
 
+            // Session expiry = main app went away
+            dictationState.onSessionExpired = { [weak self] in
+                self?.logger.logInfo("📝 [TextProcessor] Session expired during text processing")
+                self?.resultContinuation?.resume(throwing: TextProcessingError.processingFailed("Session expired. Open VivaDicta and try again."))
+                self?.resultContinuation = nil
+            }
+
             AppGroupCoordinator.shared.requestTextProcessing(text: text, modeName: mode.name)
             dictationState.textProcessingPhase = .waitingForResult(modeName: mode.name)
         }
@@ -131,6 +138,7 @@ final class KeyboardTextProcessor {
         }
 
         // Phase 4: Done
+        AppGroupCoordinator.shared.recordKeyboardSuccessfulUse()
         dictationState.textProcessingPhase = .completed
 
         try? await Task.sleep(for: .seconds(1))
