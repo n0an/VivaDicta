@@ -35,8 +35,10 @@ final class AppleFoundationModelService {
         }
 
         logger.logNotice("Apple Foundation Model - Starting enhancement")
-
-        let session = LanguageModelSession(instructions: systemMessage)
+        
+        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+        
+        let session = LanguageModelSession(model: model, instructions: systemMessage)
         let prompt = Prompt { userMessage }
 
         do {

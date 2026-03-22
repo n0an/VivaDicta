@@ -9,7 +9,7 @@
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
-  <a href="https://n0an.github.io/VivaDicta/">DocC Documentation</a>
+  <a href="documentation/README.md">Documentation</a>
 </p>
 
 <p align="center">
@@ -98,6 +98,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - App Intents — Siri and Shortcuts integration
 - CoreSpotlight — indexed transcriptions for iOS spotlight search
 - Shortcuts — quickly record a note and more
+- iCloud Keychain — secure API key storage synced across devices
 
 ## Architecture
 
@@ -132,7 +133,7 @@ Core components:
 | `PresetManager` | Built-in + custom presets, CloudKit sync |
 | `AudioPrewarmManager` | Continuous audio engine for keyboard extension low-latency recording |
 
-See the [architecture documentation](documentation/) for detailed diagrams and flows.
+See the [documentation](documentation/README.md) for detailed diagrams and flows.
 
 ## Building
 
@@ -180,9 +181,9 @@ VivaDicta/
 
 ## Documentation
 
-- **[DocC API Reference](https://n0an.github.io/VivaDicta/)** — generated API documentation
 - **[Architecture Docs](documentation/)** — recording pipeline, transcription system, AI processing, text pipeline, preset system, AppGroupCoordinator
 - **[Text Processing Pipeline](documentation/text-processing-pipeline.md)** — 7-stage pipeline from raw audio to formatted text
+- **[DocC API Reference](https://n0an.github.io/VivaDicta/)** — generated API documentation
 
 ## Contributing
 

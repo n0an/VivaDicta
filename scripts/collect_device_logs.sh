@@ -3,12 +3,20 @@
 # Device log collection script
 # This script requires sudo access and will prompt for your password
 
+# Resolve project root (directory containing this script's parent)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${PROJECT_ROOT}"
+
 # Read timestamp and UDID from temp files
 if [ ! -f "llmtemp/.device-log-start-time" ] || [ ! -f "llmtemp/.device-log-udid" ]; then
   echo "Error: Start timestamp or UDID not found."
   echo "Please run /start-logs-device-structured first."
   exit 1
 fi
+
+# Ensure logs directory exists
+mkdir -p logs
 
 START_TIME=$(cat llmtemp/.device-log-start-time)
 UDID=$(cat llmtemp/.device-log-udid)
@@ -38,6 +46,7 @@ if [ $? -eq 0 ]; then
   # Extract and filter logs
   log show "${LOGARCHIVE}" \
     --predicate 'subsystem == "com.antonnovoselov.VivaDicta"' \
+    --info \
     --style compact > "${LOGFILE}"
 
   echo "✓ Filtered logs saved: ${LOGFILE}"
@@ -45,8 +54,8 @@ if [ $? -eq 0 ]; then
 
   # Show summary
   TOTAL_LINES=$(wc -l < "${LOGFILE}")
-  ERRORS=$(grep -ic "error" "${LOGFILE}" || echo "0")
-  WARNINGS=$(grep -ic "warning" "${LOGFILE}" || echo "0")
+  ERRORS=$(grep -ic "error" "${LOGFILE}" 2>/dev/null || echo "0")
+  WARNINGS=$(grep -ic "warning" "${LOGFILE}" 2>/dev/null || echo "0")
 
   echo "Summary:"
   echo "  Total log entries: ${TOTAL_LINES}"
@@ -54,7 +63,7 @@ if [ $? -eq 0 ]; then
   echo "  Warnings: ${WARNINGS}"
   echo ""
 
-  if [ ${ERRORS} -gt 0 ] || [ ${WARNINGS} -gt 0 ]; then
+  if [ "${ERRORS}" -gt 0 ] 2>/dev/null || [ "${WARNINGS}" -gt 0 ] 2>/dev/null; then
     echo "Recent errors/warnings:"
     grep -iE "error|warning" "${LOGFILE}" | tail -20
   fi

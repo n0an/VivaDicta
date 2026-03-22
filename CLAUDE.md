@@ -15,6 +15,7 @@ When @.claude/skills is mentioned or when starting a task:
 
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
+- When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
 
 ## Build Commands
 
@@ -137,6 +138,13 @@ When an EXISTING file needs to be added to ADDITIONAL targets, notify the user t
 ### Building DocC Documentation
 
 Run `./build-docc.sh` from the project root on the `main` branch. The script builds the DocC archive, transforms it for static hosting, and deploys to the `gh-pages` branch automatically.
+
+## Debugging & Logs
+
+- **Simulator logs**: `/start-logs` + `/stop-logs`
+- **Device logs (main app only, real-time)**: `/start-logs-device` + `/stop-logs-device` — launches app via `devicectl` with `ENABLE_PRINT_LOGS=1`
+- **Device logs (all processes, post-hoc)**: `/start-logs-device-structured` + `/stop-logs-device-structured` — uses `sudo log collect` to capture OSLog from main app AND extensions (keyboard, widget, share). Use this when debugging interaction between main app and extensions.
+- All logging uses `Logger` from `os` framework via `LoggerExtension.swift`. Use `logger.logInfo()`, `logger.logError()` etc. — never raw `print()`.
 
 ## Swift Instructions
 

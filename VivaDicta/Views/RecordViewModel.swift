@@ -855,5 +855,54 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             self.logger.logInfo("📱 VivaMode changed from keyboard extension")
             self.appState?.aiService.reloadSelectedModeFromExtension()
         }
+
+        // Handle text processing request from keyboard (rewrite feature)
+        AppGroupCoordinator.shared.onTextProcessingRequested = { [weak self] in
+            guard let self = self else { return }
+            self.handleKeyboardTextProcessingRequest()
+        }
+    }
+
+    // MARK: - Keyboard Text Processing
+
+    private func handleKeyboardTextProcessingRequest() {
+        guard let pending = AppGroupCoordinator.shared.getAndConsumePendingTextProcessing() else {
+            logger.logError("📝 Text processing requested but no pending data found")
+            AppGroupCoordinator.shared.shareTextProcessingError("No text to process")
+            return
+        }
+
+        guard let appState else {
+            AppGroupCoordinator.shared.shareTextProcessingError("App not ready")
+            return
+        }
+
+        logger.logInfo("📝 Processing text from keyboard with mode: \(pending.modeName), text length: \(pending.text.count)")
+
+        // Extend session while processing (same pattern as recording flow)
+        let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
+        AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
+
+        // Temporarily switch to the requested mode, then restore
+        let previousMode = appState.aiService.selectedMode
+        let requestedMode = appState.aiService.getMode(name: pending.modeName)
+        appState.aiService.selectedMode = requestedMode
+
+        Task {
+            defer { appState.aiService.selectedMode = previousMode }
+            do {
+                let (result, _, _) = try await appState.aiService.enhance(pending.text)
+                logger.logInfo("📝 Text processing completed, result length: \(result.count)")
+                if result.isEmpty {
+                    logger.logError("📝 Text processing returned empty result")
+                    AppGroupCoordinator.shared.shareTextProcessingError("AI returned empty result")
+                } else {
+                    AppGroupCoordinator.shared.shareTextProcessingResult(result)
+                }
+            } catch {
+                logger.logError("📝 Text processing failed: \(error.localizedDescription)")
+                AppGroupCoordinator.shared.shareTextProcessingError(error.localizedDescription)
+            }
+        }
     }
 }

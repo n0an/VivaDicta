@@ -21,9 +21,45 @@ final class KeyboardDictationState {
     // Audio level from main app recording (0.0 to 1.0)
     var currentAudioLevel: CGFloat = 0.0
 
+    // MARK: - Keyboard Tab
+
+    /// The active keyboard tab: `.keyboard` for normal typing, `.textProcessing` for rewrite mode.
+    enum KeyboardTab: Int {
+        case keyboard = 0
+        case textProcessing = 1
+    }
+
+    var activeTab: KeyboardTab = .keyboard {
+        didSet {
+            UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)?
+                .set(activeTab.rawValue, forKey: "keyboardActiveTab")
+        }
+    }
+
+    // MARK: - Text Processing (Rewrite)
+
+    enum TextProcessingPhase: Equatable {
+        case idle
+        case sendingToApp
+        case waitingForResult(modeName: String)
+        case completed
+        case error(String)
+    }
+
+    var textProcessingPhase: TextProcessingPhase = .idle
+
+    /// Callback for when the main app returns a processed text result.
+    var onTextProcessingResult: ((String) -> Void)?
+
+    /// Callback for when the main app returns a text processing error.
+    var onTextProcessingError: ((String) -> Void)?
+
+    /// Callback for when the keyboard session expires during text processing.
+    var onSessionExpired: (() -> Void)?
+
     // MARK: - VivaMode Manager
     var vivaModeManager = VivaModeManager()
-    
+
     // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
 
@@ -35,6 +71,11 @@ final class KeyboardDictationState {
         self.isRecording = AppGroupCoordinator.shared.isRecording
         self.isSessionActive = AppGroupCoordinator.shared.isKeyboardSessionActive
         self.transcriptionStatus = AppGroupCoordinator.shared.transcriptionStatus
+
+        // Restore last active tab
+        let savedTab = UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)?
+            .integer(forKey: "keyboardActiveTab") ?? 0
+        self.activeTab = KeyboardTab(rawValue: savedTab) ?? .keyboard
     }
 
     // MARK: - UI Derivations
@@ -81,7 +122,10 @@ final class KeyboardDictationState {
             DispatchQueue.main.async { self?.isSessionActive = true }
         }
         AppGroupCoordinator.shared.onKeyboardSessionExpired = { [weak self] in
-            DispatchQueue.main.async { self?.isSessionActive = false }
+            DispatchQueue.main.async {
+                self?.isSessionActive = false
+                self?.onSessionExpired?()
+            }
         }
         AppGroupCoordinator.shared.onTranscriptionTranscribing = { [weak self] in
             DispatchQueue.main.async { self?.transcriptionStatus = .transcribing }
@@ -107,6 +151,14 @@ final class KeyboardDictationState {
         AppGroupCoordinator.shared.onAudioLevelUpdated = { [weak self] level in
             DispatchQueue.main.async { self?.currentAudioLevel = level }
         }
+
+        // Text processing callbacks (rewrite feature)
+        AppGroupCoordinator.shared.onTextProcessingCompleted = { [weak self] text in
+            DispatchQueue.main.async { self?.onTextProcessingResult?(text) }
+        }
+        AppGroupCoordinator.shared.onTextProcessingError = { [weak self] message in
+            DispatchQueue.main.async { self?.onTextProcessingError?(message) }
+        }
     }
     
     nonisolated func stop() {
@@ -121,6 +173,8 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onTranscriptionError = nil
             AppGroupCoordinator.shared.onTranscriptionCancelled = nil
             AppGroupCoordinator.shared.onAudioLevelUpdated = nil
+            AppGroupCoordinator.shared.onTextProcessingCompleted = nil
+            AppGroupCoordinator.shared.onTextProcessingError = nil
             errorDismissTimer?.invalidate()
             errorDismissTimer = nil
         }

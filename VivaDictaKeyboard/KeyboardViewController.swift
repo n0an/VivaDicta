@@ -11,8 +11,9 @@ import SwiftUI
 import os
 
 class KeyboardViewController: KeyboardInputViewController {
-    
+
     let dictationState = KeyboardDictationState()
+    let textProcessor = KeyboardTextProcessor()
 
     private func handleTranscription(_ text: String) {
         guard !text.isEmpty else { return }
@@ -83,6 +84,46 @@ class KeyboardViewController: KeyboardInputViewController {
 
 }
 
+
+// MARK: - Keyboard Tab Toggle
+struct KeyboardTabToggle: View {
+    @Bindable var dictationState: KeyboardDictationState
+
+    private var icon: String {
+        dictationState.activeTab == .keyboard ? "sparkles" : "keyboard"
+    }
+
+    @State private var isGlowAnimating = false
+
+    var body: some View {
+        Button {
+            HapticManager.selectionChanged()
+            dictationState.activeTab = dictationState.activeTab == .keyboard
+                ? .textProcessing : .keyboard
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 30, height: 30)
+                .background {
+                    Circle()
+                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isGlowAnimating ? 360 : 0)))
+                        .blur(radius: 10)
+                        .onAppear {
+                            withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
+                                isGlowAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isGlowAnimating = false
+                        }
+                }
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .glassEffectColor(isInteractive: true, color: .indigo, opacity: 0.7)
+    }
+}
 
 // MARK: - Mode Cycle Selector
 struct ModeCycleSelector: View {
@@ -179,8 +220,11 @@ struct VivaDictaKeyboardToolbarView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Mode selector on the left
-            ModeCycleSelector(dictationState: dictationState)
+            // Tab segmented control + Mode selector on the left
+            HStack(spacing: 16) {
+                KeyboardTabToggle(dictationState: dictationState)
+                ModeCycleSelector(dictationState: dictationState)
+            }
 
             Spacer()
 

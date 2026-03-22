@@ -75,9 +75,9 @@ For capturing console logs from iOS apps running in Simulator or on physical dev
 - Related commands:
   - `/start-logs` - Start simulator log capture
   - `/stop-logs` - Stop simulator log capture and view summary
-  - `/start-logs-device` - Launch app on device with print logging
+  - `/start-logs-device` - Launch app on device with print logging (main app process only, real-time)
   - `/stop-logs-device` - Stop device log capture
-  - `/start-logs-device-structured` - Record timestamp for device logs
+  - `/start-logs-device-structured` - Record timestamp for device logs (captures all processes including extensions — use when debugging interaction between main app and keyboard/widget/share extensions)
   - `/stop-logs-device-structured` - Collect structured device logs
 
 ### iOS Simulator Screenshot
