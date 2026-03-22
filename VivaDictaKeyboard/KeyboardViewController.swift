@@ -94,36 +94,19 @@ struct KeyboardTabToggle: View {
     }
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            Button {
-                HapticManager.selectionChanged()
-                dictationState.activeTab = dictationState.activeTab == .keyboard
-                    ? .textProcessing : .keyboard
-            } label: {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .frame(width: 30, height: 30)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.tint(.indigo.opacity(0.5)).interactive())
-            
-        } else {
-            Button {
-                HapticManager.selectionChanged()
-                dictationState.activeTab = dictationState.activeTab == .keyboard
-                    ? .textProcessing : .keyboard
-            } label: {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .frame(width: 30, height: 30)
-                    .background(.indigo, in: .circle)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
+        Button {
+            HapticManager.selectionChanged()
+            dictationState.activeTab = dictationState.activeTab == .keyboard
+                ? .textProcessing : .keyboard
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 30, height: 30)
+                .contentShape(.rect)
         }
+        .buttonStyle(.plain)
+        .glassEffectColor(isInteractive: true, color: .indigo, opacity: 0.5)
     }
 }
 
