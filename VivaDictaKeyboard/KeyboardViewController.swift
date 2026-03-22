@@ -90,28 +90,23 @@ struct KeyboardTabSegment: View {
     @Bindable var dictationState: KeyboardDictationState
 
     var body: some View {
-        HStack(spacing: 0) {
-            tabButton(label: "V", tab: .keyboard)
-            tabButton(label: "T", tab: .textProcessing)
+        HStack(spacing: 6) {
+            tabButton(icon: "keyboard", tab: .keyboard)
+            tabButton(icon: "sparkles", tab: .textProcessing)
         }
-        .background(.quaternary, in: .capsule)
     }
 
-    private func tabButton(label: String, tab: KeyboardDictationState.KeyboardTab) -> some View {
-        Button {
+    private func tabButton(icon: String, tab: KeyboardDictationState.KeyboardTab) -> some View {
+        let isActive = dictationState.activeTab == tab
+        return Button {
             HapticManager.selectionChanged()
             dictationState.activeTab = tab
         } label: {
-            Text(label)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(dictationState.activeTab == tab ? .white : .primary)
-                .frame(width: 28, height: 28)
-                .background(
-                    dictationState.activeTab == tab
-                        ? AnyShapeStyle(.orange)
-                        : AnyShapeStyle(.clear),
-                    in: .circle
-                )
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(isActive ? .white : .primary)
+                .frame(width: 30, height: 30)
+                .background(isActive ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary), in: .circle)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
