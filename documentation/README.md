@@ -1,4 +1,4 @@
-# Architecture Documentation
+# Documentation
 
 ## Core Systems
 
