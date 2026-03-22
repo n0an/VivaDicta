@@ -59,29 +59,33 @@ struct RewriteModesView: View {
     // MARK: - Modes List
 
     private var modesListView: some View {
-        ScrollView {
-            LazyVStack(spacing: 6) {
-                ForEach(modes) { mode in
-                    Button {
-                        HapticManager.mediumImpact()
-                        onModeSelected(mode)
-                    } label: {
-                        Text(mode.name)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+        VStack {
+            Text("Select Mode")
+                .font(.system(size: 18, weight: .semibold))
+            ScrollView {
+                LazyVStack(spacing: 6) {
+                    ForEach(modes) { mode in
+                        Button {
+                            HapticManager.mediumImpact()
+                            onModeSelected(mode)
+                        } label: {
+                            Text(mode.name)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
     }
 
     // MARK: - Open App Prompt
