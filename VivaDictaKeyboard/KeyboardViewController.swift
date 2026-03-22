@@ -93,6 +93,8 @@ struct KeyboardTabToggle: View {
         dictationState.activeTab == .keyboard ? "sparkles" : "keyboard"
     }
 
+    @State private var isGlowAnimating = false
+
     var body: some View {
         Button {
             HapticManager.selectionChanged()
@@ -103,6 +105,19 @@ struct KeyboardTabToggle: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.primary)
                 .frame(width: 30, height: 30)
+                .background {
+                    Circle()
+                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isGlowAnimating ? 360 : 0)))
+                        .blur(radius: 10)
+                        .onAppear {
+                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isGlowAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isGlowAnimating = false
+                        }
+                }
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
