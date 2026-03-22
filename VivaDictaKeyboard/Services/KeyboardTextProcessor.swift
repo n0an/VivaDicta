@@ -96,11 +96,12 @@ final class KeyboardTextProcessor {
             self.resultContinuation = continuation
 
             dictationState.onTextProcessingResult = { [weak self] result in
-                guard !result.isEmpty else {
-                    print("📝 [TextProcessor] Ignoring empty result from callback")
-                    return
+                if result.isEmpty {
+                    print("📝 [TextProcessor] Received empty result — treating as error")
+                    self?.resultContinuation?.resume(throwing: TextProcessingError.processingFailed("AI returned empty result"))
+                } else {
+                    self?.resultContinuation?.resume(returning: result)
                 }
-                self?.resultContinuation?.resume(returning: result)
                 self?.resultContinuation = nil
             }
 

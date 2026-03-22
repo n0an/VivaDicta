@@ -1025,9 +1025,7 @@ public final class AppGroupCoordinator {
 
     nonisolated private func handleTextProcessingCompletedNotification() {
         Task { @MainActor in
-            guard let text = await getAndConsumeTextProcessingResult(), !text.isEmpty else {
-                return
-            }
+            let text = await getAndConsumeTextProcessingResult() ?? ""
             await onTextProcessingCompleted?(text)
         }
     }

@@ -887,7 +887,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             do {
                 let (result, _, _) = try await appState.aiService.enhance(pending.text)
                 logger.logInfo("📝 Text processing completed, result length: \(result.count)")
-                AppGroupCoordinator.shared.shareTextProcessingResult(result)
+                if result.isEmpty {
+                    logger.logError("📝 Text processing returned empty result")
+                    AppGroupCoordinator.shared.shareTextProcessingError("AI returned empty result")
+                } else {
+                    AppGroupCoordinator.shared.shareTextProcessingResult(result)
+                }
             } catch {
                 logger.logError("📝 Text processing failed: \(error.localizedDescription)")
                 AppGroupCoordinator.shared.shareTextProcessingError(error.localizedDescription)
