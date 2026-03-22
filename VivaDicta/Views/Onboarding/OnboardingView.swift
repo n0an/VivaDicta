@@ -183,7 +183,7 @@ struct OnboardingView: View {
                 permissionState = granted ? .granted : .denied
                 if granted {
                     // Small delay before continuing
-                    try? await Task.sleep(nanoseconds: 300_000_000)
+                    try? await Task.sleep(for: .milliseconds(300))
                     navigateTo(.keyboard)
                 }
             }

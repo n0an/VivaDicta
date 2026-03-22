@@ -304,7 +304,7 @@ struct VivaDictaApp: App {
                     vm.startCaptureAudio()
                     
                     // Small delay to ensure recording is fully started
-                    try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                    try? await Task.sleep(for: .milliseconds(200))
                     
                     // Now return to the host app
                     UIApplication.shared.open(url, options: [:]) { success in

@@ -401,7 +401,7 @@ struct TranscriptionDetailView: View {
 
     private func triggerCopyAnimation() {
         isShimmering = true
-        Task { @MainActor in
+        Task {
             try? await Task.sleep(for: .seconds(0.6))
             isShimmering = false
         }

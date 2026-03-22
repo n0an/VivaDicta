@@ -35,7 +35,7 @@ struct KeyboardIllustration: View {
                     withAnimation(.spring.delay(1.0)) {
                         animate = true
 
-                        Task { @MainActor in
+                        Task {
                             try await Task.sleep(for: .seconds(1.3))
                             withAnimation {
                                 animate = false
