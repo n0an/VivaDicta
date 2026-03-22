@@ -108,13 +108,12 @@ struct RewriteModesView: View {
             } label: {
                 Label("Open VivaDicta", systemImage: "arrow.up.forward.app")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(.orange, in: .capsule)
             }
-            .buttonStyle(.plain)
-            .padding(.top, 4)
+            .prominentButton(color: .orange)
+            .padding(.vertical, 4)
 
             Spacer()
         }
