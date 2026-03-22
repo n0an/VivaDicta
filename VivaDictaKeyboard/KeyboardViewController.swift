@@ -85,28 +85,25 @@ class KeyboardViewController: KeyboardInputViewController {
 }
 
 
-// MARK: - Keyboard Tab Segment
-struct KeyboardTabSegment: View {
+// MARK: - Keyboard Tab Toggle
+struct KeyboardTabToggle: View {
     @Bindable var dictationState: KeyboardDictationState
 
-    var body: some View {
-        HStack(spacing: 6) {
-            tabButton(icon: "keyboard", tab: .keyboard)
-            tabButton(icon: "sparkles", tab: .textProcessing)
-        }
+    private var icon: String {
+        dictationState.activeTab == .keyboard ? "sparkles" : "keyboard"
     }
 
-    private func tabButton(icon: String, tab: KeyboardDictationState.KeyboardTab) -> some View {
-        let isActive = dictationState.activeTab == tab
-        return Button {
+    var body: some View {
+        Button {
             HapticManager.selectionChanged()
-            dictationState.activeTab = tab
+            dictationState.activeTab = dictationState.activeTab == .keyboard
+                ? .textProcessing : .keyboard
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(isActive ? .white : .primary)
+                .foregroundStyle(.primary)
                 .frame(width: 30, height: 30)
-                .background(isActive ? AnyShapeStyle(.orange) : AnyShapeStyle(.quaternary), in: .circle)
+                .background(.quaternary, in: .circle)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -210,7 +207,7 @@ struct VivaDictaKeyboardToolbarView: View {
         HStack(spacing: 0) {
             // Tab segmented control + Mode selector on the left
             HStack(spacing: 8) {
-                KeyboardTabSegment(dictationState: dictationState)
+                KeyboardTabToggle(dictationState: dictationState)
                 ModeCycleSelector(dictationState: dictationState)
             }
 

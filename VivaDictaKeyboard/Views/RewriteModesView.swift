@@ -31,7 +31,7 @@ struct RewriteModesView: View {
         VStack(spacing: 0) {
             // Header: V/T segment on left, utility buttons on right
             HStack {
-                KeyboardTabSegment(dictationState: dictationState)
+                KeyboardTabToggle(dictationState: dictationState)
 
                 Spacer()
 
