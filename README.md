@@ -98,6 +98,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - App Intents — Siri and Shortcuts integration
 - CoreSpotlight — indexed transcriptions for iOS spotlight search
 - Shortcuts — quickly record a note and more
+- iCloud Keychain — secure API key storage synced across devices
 
 ## Architecture
 
