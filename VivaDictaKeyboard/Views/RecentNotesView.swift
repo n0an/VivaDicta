@@ -12,9 +12,11 @@ import SwiftUI
 /// Tapping a note inserts its text at the current cursor position in the host app.
 struct RecentNotesView: View {
     @Environment(KeyboardDictationState.self) var dictationState
+    @Environment(\.openURL) private var openURL
 
     let onNoteSelected: (String) -> Void
 
+    private let displayLimit = 5
     @State private var notes: [RecentNote] = []
 
     var body: some View {
@@ -36,7 +38,7 @@ struct RecentNotesView: View {
         .frame(height: 260)
         .onAppear {
             guard notes.isEmpty else { return }
-            notes = RecentNotesCache.loadNotes()
+            notes = Array(RecentNotesCache.loadNotes().prefix(displayLimit))
         }
     }
 
@@ -68,6 +70,27 @@ struct RecentNotesView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                // Footer: open app for all notes
+                VStack(spacing: 6) {
+                    Text("To see all notes, open VivaDicta")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+
+                    Button {
+                        HapticManager.lightImpact()
+                        if let url = URL(string: "vivadicta://") {
+                            openURL(url)
+                        }
+                    } label: {
+                        Label("Open VivaDicta", systemImage: "arrow.up.forward.app")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.orange)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 8)
+                .padding(.bottom, 4)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
