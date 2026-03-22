@@ -708,6 +708,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Request app rating after successful transcription
                     RateAppManager.requestReviewIfAppropriate()
                 } catch {
+                    HapticManager.error()
                     logger.logError("📱 Failed to save transcription: \(error.localizedDescription)")
                 }
             }
