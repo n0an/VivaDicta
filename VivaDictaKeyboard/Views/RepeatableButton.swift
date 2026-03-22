@@ -89,13 +89,20 @@ struct RepeatableButton<Label: View>: View {
                         }
                     }
                     .onEnded { _ in
-                        isPressed = false
-                        timer?.invalidate()
-                        timer = nil
-                        longHoldTimer?.invalidate()
-                        longHoldTimer = nil
+                        stopTimers()
                     }
             )
+            .onDisappear {
+                stopTimers()
+            }
+    }
+
+    private func stopTimers() {
+        isPressed = false
+        timer?.invalidate()
+        timer = nil
+        longHoldTimer?.invalidate()
+        longHoldTimer = nil
     }
 }
 

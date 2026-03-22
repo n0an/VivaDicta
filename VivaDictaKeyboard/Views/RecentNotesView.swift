@@ -12,7 +12,6 @@ import SwiftUI
 /// Tapping a note inserts its text at the current cursor position in the host app.
 struct RecentNotesView: View {
     @Environment(KeyboardDictationState.self) var dictationState
-    @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
     let onNoteSelected: (String) -> Void
@@ -76,8 +75,14 @@ struct RecentNotesView: View {
         }
         .frame(height: 260)
         .onAppear {
-            guard notes.isEmpty else { return }
-            notes = Array(RecentNotesCache.loadNotes().prefix(displayLimit))
+            reloadNotes()
+        }
+    }
+
+    private func reloadNotes() {
+        let fresh = Array(RecentNotesCache.loadNotes().prefix(displayLimit))
+        if fresh.map(\.id) != notes.map(\.id) {
+            notes = fresh
         }
     }
 
@@ -99,11 +104,8 @@ struct RecentNotesView: View {
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                                 .padding(.bottom, 8)
-                            
+
                             Divider()
-//                            Text(note.timestamp, format: .dateTime.month(.abbreviated).day().hour().minute())
-//                                .font(.system(size: 11))
-//                                .foregroundStyle(.tertiary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
@@ -121,9 +123,7 @@ struct RecentNotesView: View {
 
                     Button {
                         HapticManager.lightImpact()
-                        if let url = URL(string: "vivadicta://") {
-                            openURL(url)
-                        }
+                        onOpenApp()
                     } label: {
                         Label("Open VivaDicta", systemImage: "arrow.up.forward.app")
                             .font(.system(size: 13, weight: .medium))
@@ -137,7 +137,7 @@ struct RecentNotesView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
         }
-        .background(colorScheme == .dark ? Color( .quaternarySystemFill).opacity(0.5) : Color.white, in: .rect(cornerRadius: 10))
+        .background(colorScheme == .dark ? Color(.quaternarySystemFill).opacity(0.5) : Color.white, in: .rect(cornerRadius: 10))
         .scrollIndicators(.hidden)
     }
 

@@ -27,8 +27,7 @@ extension RecentNotesCache {
             )
         }
 
-        // Write directly to shared UserDefaults
         guard let data = try? JSONEncoder().encode(notes) else { return }
-        UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)?.set(data, forKey: "recentNotesCache")
+        sharedDefaults?.set(data, forKey: key)
     }
 }

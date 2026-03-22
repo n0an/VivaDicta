@@ -20,10 +20,10 @@ struct RecentNote: Codable, Identifiable {
 /// Manages a cache of recent transcriptions in shared UserDefaults
 /// for the keyboard extension to read.
 enum RecentNotesCache {
-    private static let key = "recentNotesCache"
+    static let key = "recentNotesCache"
     private static let maxNotes = 10
 
-    private static var sharedDefaults: UserDefaults? {
+    static var sharedDefaults: UserDefaults? {
         UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)
     }
 
