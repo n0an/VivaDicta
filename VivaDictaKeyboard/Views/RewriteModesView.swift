@@ -130,51 +130,24 @@ struct RewriteModesView: View {
     @ViewBuilder
     private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
         let isBackspace = icon == "delete.backward"
+        let tintColor: Color = isBackspace ? .red : .blue
         if #available(iOS 26.0, *) {
-            if isBackspace {
-                RepeatableButton(action: action) {
-                    utilityButtonLabel(icon: icon)
-                        .frame(width: 36, height: 20)
-                }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .glassEffect(.regular.tint(Color.red.opacity(0.3)).interactive())
-            } else {
-                Button {
-                    HapticManager.lightImpact()
-                    action()
-                } label: {
-                    utilityButtonLabel(icon: icon)
-                        .frame(width: 36, height: 20)
-                }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .buttonStyle(.plain)
-                .glassEffect(.regular.tint(Color.blue.opacity(0.3)).interactive())
-                .padding(.trailing, 4)
+            RepeatableButton(action: action) {
+                utilityButtonLabel(icon: icon)
+                    .frame(width: 36, height: 20)
             }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
+            .glassEffect(.regular.tint(tintColor.opacity(0.3)).interactive())
+            .padding(.trailing, isBackspace ? 0 : 4)
         } else {
-            if isBackspace {
-                RepeatableButton(action: action) {
-                    utilityButtonLabel(icon: icon)
-                        .frame(width: 40, height: 24)
-                        .background(Color.red.opacity(0.5), in: .capsule(style: .continuous))
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-            } else {
-                Button {
-                    HapticManager.lightImpact()
-                    action()
-                } label: {
-                    utilityButtonLabel(icon: icon)
-                        .frame(width: 40, height: 24)
-                        .background(Color.blue.opacity(0.5), in: .capsule(style: .continuous))
-                }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .buttonStyle(.plain)
+            RepeatableButton(action: action) {
+                utilityButtonLabel(icon: icon)
+                    .frame(width: 40, height: 24)
+                    .background(tintColor.opacity(0.5), in: .capsule(style: .continuous))
             }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
         }
     }
 
