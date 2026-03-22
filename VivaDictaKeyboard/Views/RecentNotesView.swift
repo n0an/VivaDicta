@@ -33,7 +33,9 @@ struct RecentNotesView: View {
                 notesListView
             }
         }
+        .frame(height: 260)
         .onAppear {
+            guard notes.isEmpty else { return }
             notes = RecentNotesCache.loadNotes()
         }
     }
