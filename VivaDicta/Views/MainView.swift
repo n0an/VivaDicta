@@ -463,6 +463,7 @@ struct MainView: View {
 
         do {
             try modelContext.save()
+            RecentNotesCache.syncFromDatabase(modelContext: modelContext)
         } catch {
             logger.logError("Failed to save after bulk deletion: \(error.localizedDescription)")
         }

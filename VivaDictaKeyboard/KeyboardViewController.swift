@@ -90,7 +90,11 @@ struct KeyboardTabToggle: View {
     @Bindable var dictationState: KeyboardDictationState
 
     private var icon: String {
-        dictationState.activeTab == .keyboard ? "sparkles" : "keyboard"
+        switch dictationState.activeTab {
+        case .keyboard: "sparkles"
+        case .textProcessing: "clock.arrow.trianglehead.counterclockwise.rotate.90"
+        case .recentNotes: "keyboard"
+        }
     }
 
     @State private var isGlowAnimating = false
@@ -98,8 +102,11 @@ struct KeyboardTabToggle: View {
     var body: some View {
         Button {
             HapticManager.selectionChanged()
-            dictationState.activeTab = dictationState.activeTab == .keyboard
-                ? .textProcessing : .keyboard
+            switch dictationState.activeTab {
+            case .keyboard: dictationState.activeTab = .textProcessing
+            case .textProcessing: dictationState.activeTab = .recentNotes
+            case .recentNotes: dictationState.activeTab = .keyboard
+            }
         } label: {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
@@ -220,7 +227,7 @@ struct VivaDictaKeyboardToolbarView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Tab segmented control + Mode selector on the left
+            // Tab switcher button + Mode selector on the left
             HStack(spacing: 16) {
                 KeyboardTabToggle(dictationState: dictationState)
                 ModeCycleSelector(dictationState: dictationState)

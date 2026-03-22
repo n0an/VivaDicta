@@ -16,10 +16,12 @@ import SwiftUI
 /// When the main app session is not active, shows a prompt to open the main app.
 struct RewriteModesView: View {
     @Environment(KeyboardDictationState.self) var dictationState
+    @Environment(\.colorScheme) private var colorScheme
 
     let onModeSelected: (VivaMode) -> Void
     let onOpenApp: () -> Void
     let onBackspace: () -> Void
+    let onDeleteWord: () -> Void
     let onNewline: () -> Void
     let onSpace: () -> Void
 
@@ -29,7 +31,7 @@ struct RewriteModesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header: V/T segment on left, utility buttons on right
+            // Header: switcher on left, utility buttons on right
             HStack {
                 KeyboardTabToggle(dictationState: dictationState)
 
@@ -38,11 +40,11 @@ struct RewriteModesView: View {
                 // Utility buttons: space, return, backspace
                 HStack(spacing: 4) {
                     
-                    utilityButton(icon: "space", action: onSpace)
+                    utilityButton(icon: "space", color: .blue, action: onSpace)
                         .shadow(color: .black.opacity(0.2), radius: 6)
-                    utilityButton(icon: "return", action: onNewline)
+                    utilityButton(icon: "return", color: .blue, action: onNewline)
                         .shadow(color: .black.opacity(0.2), radius: 6)
-                    utilityButton(icon: "delete.backward", action: onBackspace)
+                    utilityButton(icon: "delete.backward", color: .red, action: onBackspace, longHoldAction: onDeleteWord)
                         .shadow(color: .black.opacity(0.2), radius: 6)
                 }
             }
@@ -79,7 +81,8 @@ struct RewriteModesView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                            .background(colorScheme == .dark ? Color(.quaternarySystemFill).opacity(0.5) : Color.white, in: .rect(cornerRadius: 10))
+
                         }
                         .buttonStyle(.plain)
                     }
@@ -125,43 +128,46 @@ struct RewriteModesView: View {
 
     // MARK: - Utility Button
 
+    
+    enum UtilityButtonPlacement {
+        case first
+        case mid
+        case last
+    }
+
     @ViewBuilder
-    private func utilityButton(icon: String, action: @escaping () -> Void) -> some View {
+    private func utilityButton(
+        icon: String,
+        color: Color,
+        placement: UtilityButtonPlacement = .mid,
+        action: @escaping () -> Void,
+        longHoldAction: (() -> Void)? = nil
+    ) -> some View {
         if #available(iOS 26.0, *) {
-            let last = icon == "delete.backward"
-            
-            Button {
-                HapticManager.lightImpact()
-                action()
-            } label: {
-                
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.primary)
+            RepeatableButton(action: action, longHoldAction: longHoldAction) {
+                utilityButtonLabel(icon: icon)
                     .frame(width: 36, height: 20)
-                    .contentShape(.rect)
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 8)
-            .buttonStyle(.plain)
-            .glassEffect(.regular.tint((last ? Color.red : .blue).opacity(0.3)).interactive())
-            .padding(.trailing, (last ? 0 : 4))
+            .glassEffect(.regular.tint(color.opacity(0.3)).interactive())
+            .padding(.trailing, placement == .first ? 4 : 0)
+            .padding(.trailing, placement == .last ? 0 : 4)
         } else {
-            Button {
-                HapticManager.lightImpact()
-                action()
-            } label: {
-                
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.primary)
+            RepeatableButton(action: action, longHoldAction: longHoldAction) {
+                utilityButtonLabel(icon: icon)
                     .frame(width: 40, height: 24)
-                    .background(.quaternary, in: .capsule(style: .continuous))
-                    .contentShape(.rect)
+                    .background(color.opacity(0.5), in: .capsule(style: .continuous))
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 16)
-            .buttonStyle(.plain)
         }
+    }
+
+    private func utilityButtonLabel(icon: String) -> some View {
+        Image(systemName: icon)
+            .font(.system(size: 16, weight: .medium))
+            .foregroundStyle(.primary)
+            .contentShape(.rect)
     }
 }
