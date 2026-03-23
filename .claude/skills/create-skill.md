@@ -115,22 +115,8 @@ Location: `path/to/file.ext`
 
 Location: `.claude/skills/CLAUDE.md`
 
-Add to `## Skill List`:
+Add an entry to the appropriate category section (Development, Testing & Debugging, Simulator, Git & CI, Analytics):
 
 ~~~markdown
-- [`skill-file-name.md`](./skill-file-name.md): [Brief description of what the skill does]
-~~~
-
-Add to `## Skill Directory`:
-
-~~~markdown
-### [Skill Name]
-
-For [brief description of purpose].
-
-- Skill file: [`skill-file-name.md`](./skill-file-name.md)
-- Related queries:
-  - "[Example query 1]"
-  - "[Example query 2]"
-  - "[Example query 3]"
+- [`skill-file-name.md`](./skill-file-name.md) — Brief description of what the skill does
 ~~~

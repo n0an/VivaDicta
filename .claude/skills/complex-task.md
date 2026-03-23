@@ -46,11 +46,10 @@ You are about to work on a complex task. Follow this systematic approach to ensu
    - Clarify priorities if multiple approaches exist
 
 ### Phase 2: PLAN (Design the Solution)
-1. **Review Framework Documentation**
-   - Check the `/documentation/` directory for relevant framework documentation
-   - For iOS/Swift projects: Review swift.md, swiftui.md, swiftdata.md, etc.
-   - For web projects: Check relevant framework docs
-   - Ensure alignment with framework best practices
+1. **Review Project Documentation**
+   - Check the `/documentation/` directory for relevant architecture docs
+   - Review CLAUDE.md for project conventions and best practices
+   - Ensure alignment with existing patterns
 
 2. **Create a Todo List**
    - Use TodoWrite to create a comprehensive task list
@@ -176,9 +175,9 @@ Assistant would:
 - EXPLORE:
   - Search for existing Settings views and patterns
   - Check AppState for state management approach
-  - Review documentation/swiftui.md and documentation/swiftdata.md
+  - Review `/documentation/` for relevant architecture docs
 - PLAN:
-  - Review `/documentation/swift-observable.md` for state patterns
+  - Review existing @Observable patterns in codebase
   - Create todos: Settings model, SwiftUI view, AppState integration
   - Follow @Observable pattern for state management
 - CODE:
@@ -195,7 +194,7 @@ Assistant would:
   - Check existing services (OpenAI, Groq, etc.)
   - Study CloudTranscriptionService patterns
 - PLAN:
-  - Check `/documentation/swift-concurrency.md` for async patterns
+  - Review existing transcription service implementations for async patterns
   - Design actor-based service for thread safety
   - Plan error handling and retry logic
 - CODE:
