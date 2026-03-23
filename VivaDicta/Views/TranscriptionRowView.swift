@@ -27,46 +27,28 @@ struct TranscriptionRowView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
 
-                    if let tag = transcription.sourceTag {
-                        Label(SourceTag.displayName(for: tag), systemImage: SourceTag.icon(for: tag))
-                            .font(.caption2)
-                            .foregroundStyle(SourceTag.color(for: tag))
-                    }
-                }
-
-                Text(displayText)
-                    .font(.body)
-                    .lineLimit(2)
-                    .lineSpacing(2)
-
-                if !assignedTags.isEmpty {
-                    HStack(spacing: 4) {
-                        ForEach(assignedTags.prefix(3)) { tag in
-                            Label(tag.name, systemImage: tag.icon)
+                        if let tag = transcription.sourceTag {
+                            Label(SourceTag.displayName(for: tag), systemImage: SourceTag.icon(for: tag))
                                 .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background((Color(hex: tag.colorHex) ?? .blue).opacity(0.15))
-                                .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
-                                .clipShape(.capsule)
-                        }
-                        if assignedTags.count > 3 {
-                            Text("+\(assignedTags.count - 3)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(SourceTag.color(for: tag))
                         }
                     }
-                }
-            }
 
-            Spacer()
+                    Text(displayText)
+                        .font(.body)
+                        .lineLimit(2)
+                        .lineSpacing(2)
+                }
+
+                Spacer()
 
             VStack(spacing: 6) {
                 Text(transcription.getDurationFormatted(transcription.audioDuration))
@@ -92,6 +74,22 @@ struct TranscriptionRowView: View {
                 .foregroundStyle(showCopied ? .green : .secondary)
                 .buttonStyle(.borderless)
                 .contentTransition(.symbolEffect(.replace))
+            }
+            }
+
+            if !assignedTags.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(assignedTags.prefix(5)) { tag in
+                        Image(systemName: tag.icon)
+                            .font(.caption2)
+                            .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
+                    }
+                    if assignedTags.count > 5 {
+                        Text("+\(assignedTags.count - 5)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .scaleEffect(showGradient ? 1.1 : 1.0)

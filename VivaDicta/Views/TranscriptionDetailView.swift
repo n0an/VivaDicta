@@ -104,12 +104,6 @@ struct TranscriptionDetailView: View {
                         .clipShape(.rect(cornerRadius: 6))
                 }
 
-                // Tag chips
-                TranscriptionTagChipsView(
-                    transcription: transcription,
-                    showTagPicker: $showTagPicker
-                )
-
                 // Chip bar for text variations
                 if hasVariations {
                     variationChipBar
@@ -126,7 +120,16 @@ struct TranscriptionDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            bottomActionBar
+            VStack(spacing: 0) {
+                TranscriptionTagChipsView(
+                    transcription: transcription,
+                    showTagPicker: $showTagPicker
+                )
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                bottomActionBar
+            }
         }
         .sheet(isPresented: $showMetaInfo) {
             MetaInfoSheet(
