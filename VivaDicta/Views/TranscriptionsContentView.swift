@@ -23,6 +23,8 @@ struct TranscriptionsContentView: View {
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
     @State private var showGoToTopButton = false
+    @State private var selectedSourceTags: Set<String> = []
+    @State private var selectedUserTagIds: Set<UUID> = []
 
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
@@ -36,10 +38,20 @@ struct TranscriptionsContentView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            if !allTranscriptions.isEmpty && (!availableSourceTags.isEmpty || !allTags.isEmpty) {
+                TagFilterBar(
+                    sourceTags: availableSourceTags,
+                    userTags: allTags,
+                    selectedSourceTags: $selectedSourceTags,
+                    selectedUserTagIds: $selectedUserTagIds
+                )
+                .padding(.vertical, 8)
+            }
+
             if allTranscriptions.isEmpty {
                 emptyAllStateView
-            } else if filteredTranscriptions.isEmpty && !searchText.isEmpty {
+            } else if displayedTranscriptions.isEmpty {
                 emptyFilteredStateView
             } else {
                 ScrollViewReader { proxy in
@@ -163,8 +175,32 @@ struct TranscriptionsContentView: View {
         }
     }
 
+    private var hasActiveTagFilter: Bool {
+        !selectedSourceTags.isEmpty || !selectedUserTagIds.isEmpty
+    }
+
+    private var availableSourceTags: [String] {
+        var seen = Set<String>()
+        return allTranscriptions.compactMap { $0.sourceTag }.filter { seen.insert($0).inserted }
+    }
+
+    private var tagFilteredTranscriptions: [Transcription] {
+        let base = searchText.isEmpty ? allTranscriptions : filteredTranscriptions
+        guard hasActiveTagFilter else { return base }
+
+        return base.filter { transcription in
+            let matchesSource = selectedSourceTags.isEmpty ||
+                (transcription.sourceTag.map { selectedSourceTags.contains($0) } ?? false)
+
+            let matchesUserTag = selectedUserTagIds.isEmpty ||
+                (transcription.tagAssignments ?? []).contains { selectedUserTagIds.contains($0.tagId) }
+
+            return matchesSource && matchesUserTag
+        }
+    }
+
     private var displayedTranscriptions: [Transcription] {
-        searchText.isEmpty ? allTranscriptions : filteredTranscriptions
+        tagFilteredTranscriptions
     }
 
     private func audioURL(for transcription: Transcription) -> URL? {
