@@ -312,9 +312,14 @@ struct TranscriptionDetailView: View {
 
                 Spacer()
 
-                // Invisible spacer to balance Edit + Copy on the right
-                Color.clear
-                    .frame(width: 44, height: 44)
+                // Button: Tag picker
+                Button {
+                    showTagPicker = true
+                } label: {
+                    Image(systemName: "tag")
+                        .font(.system(size: 20))
+                        .frame(width: 44, height: 44)
+                }
 
                 Spacer()
 
