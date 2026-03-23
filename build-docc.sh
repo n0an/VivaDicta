@@ -16,7 +16,7 @@ fi
 echo "Building DocC documentation..."
 xcrun xcodebuild docbuild \
     -scheme VivaDicta \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+    -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
     -derivedDataPath "$PWD/.derivedData"
 
 # Transform for static hosting into a temp directory

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import WhisperKit
+@preconcurrency import WhisperKit
 import os
 
 /// Service responsible for transcribing audio using WhisperKit models.

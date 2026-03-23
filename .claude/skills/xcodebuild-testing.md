@@ -24,7 +24,7 @@ Use this skill when you need to run unit tests, UI tests, or specific test cases
 - Notes:
   - Uses native `xcodebuild test` command (not XcodeBuildMCP)
   - Output piped through `xcsift` (or `xcbeautify`) for readable formatting
-  - Default simulator: iPhone 17 Pro, OS=26.0
+  - Default simulator: iPhone 17 Pro Max, OS=26.4
   - Tests run in Debug configuration
   - Workspace path: `./VivaDicta.xcodeproj/project.xcworkspace`
   - Scheme: `VivaDicta`
@@ -68,14 +68,14 @@ Use this skill when you need to run unit tests, UI tests, or specific test cases
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test 2>&1 | xcsift
 
 # Alternative: Save test results to file
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test 2>&1 | tee test_results.txt 2>&1 | xcsift
 ```
 
@@ -112,7 +112,7 @@ You need three pieces of information:
 # List all test classes and methods
 xcodebuild -scheme VivaDicta \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -dry-run 2>&1 | grep "Test Case" 2>&1 | xcsift
 
 # Or search in test files
@@ -126,14 +126,14 @@ find . -name "*Tests.swift" -exec grep -H "func test" {} \;
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -only-testing:VivaDictaTests/TranscriptionManagerTests/testWhisperKitTranscription 2>&1 | xcsift
 
 # Run multiple specific tests
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test \
   -only-testing:VivaDictaTests/TranscriptionManagerTests/testWhisperKitTranscription \
   -only-testing:VivaDictaTests/TranscriptionManagerTests/testParakeetTranscription 2>&1 | xcsift
@@ -169,14 +169,14 @@ find . -name "*Tests.swift" | sed 's/.*\///' | sed 's/.swift//'
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -only-testing:VivaDictaTests/TranscriptionManagerTests 2>&1 | xcsift
 
 # Run multiple test classes
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test \
   -only-testing:VivaDictaTests/TranscriptionManagerTests \
   -only-testing:VivaDictaTests/AIServiceTests 2>&1 | xcsift
@@ -211,7 +211,7 @@ This will:
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test 2>&1 | xcsift
 ```
 
@@ -239,7 +239,7 @@ grep "test" logs/sim-*.log
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -only-testing:VivaDictaTests/MyFeatureTests/testNewFeature 2>&1 | xcsift
 ```
 
@@ -250,7 +250,7 @@ xcodebuild -scheme VivaDicta \
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test 2>&1 | tee logs/test_results_$(date +%Y%m%d_%H%M%S).txt 2>&1 | xcsift
 
 # Check exit code
@@ -278,7 +278,7 @@ xcodebuild -scheme VivaDicta \
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -only-testing:VivaDictaTests/FailedTestClass/testThatFailed 2>&1 | xcsift
 ```
 
@@ -289,14 +289,14 @@ xcodebuild -scheme VivaDicta \
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -parallel-testing-enabled YES 2>&1 | xcsift
 
 # Disable parallel testing (for debugging race conditions)
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -parallel-testing-enabled NO 2>&1 | xcsift
 ```
 
@@ -307,7 +307,7 @@ xcodebuild -scheme VivaDicta \
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -enableCodeCoverage YES 2>&1 | xcsift
 
 # View coverage report location
@@ -321,7 +321,7 @@ xcodebuild -scheme VivaDicta \
 xcodebuild -scheme VivaDicta \
   -configuration Debug \
   -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
   test -only-testing:VivaDictaTests/UITests/testLoginFlow 2>&1 | xcsift
 
 # 2. If test fails, capture screenshot using xcrun simctl
@@ -390,7 +390,7 @@ xcrun simctl io booted screenshot logs/test_failure_$(date +%Y%m%d_%H%M%S).png
    - Cross-reference timestamps
 
 5. **Use consistent simulator:**
-   - Stick to project default: iPhone 17 Pro, OS=26.0
+   - Stick to project default: iPhone 17 Pro Max, OS=26.4
    - Document in CLAUDE.md if changed
    - Match CI/CD simulator configuration
 
