@@ -66,7 +66,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         // VAD setting should be shared with keyboard extension
         let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
         
-        let speechAudio: [Float]
+        var speechAudio: [Float]
         
         if durationSeconds < 20.0 || !isVADEnabled {
             speechAudio = audioSamples
@@ -74,7 +74,14 @@ class ParakeetTranscriptionService: TranscriptionService {
             logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
             speechAudio = try await applyVAD(to: audioSamples)
         }
-        
+
+        // Add trailing silence to improve final word punctuation detection
+        let trailingSilenceSamples = 16_000 // 1 second at 16kHz
+        let maxSingleChunkSamples = 240_000
+        if speechAudio.count + trailingSilenceSamples <= maxSingleChunkSamples {
+            speechAudio += [Float](repeating: 0, count: trailingSilenceSamples)
+        }
+
         // Transcribe the audio
         let result = try await asrManager.transcribe(speechAudio)
 
@@ -100,11 +107,16 @@ class ParakeetTranscriptionService: TranscriptionService {
 
         // Initialize VAD manager if needed (uses FluidAudio's default cache)
         if vadManager == nil {
-            vadManager = try await VadManager(config: vadConfig)
+            do {
+                vadManager = try await VadManager(config: vadConfig)
+            } catch {
+                logger.logWarning("⚠️ VAD init failed, falling back to full audio: \(error.localizedDescription)")
+                return audioSamples
+            }
         }
 
         guard let vadManager = vadManager else {
-            logger.logWarning("⚠️ VAD manager initialization failed, using full audio")
+            logger.logWarning("⚠️ VAD manager not available, using full audio")
             return audioSamples
         }
 
