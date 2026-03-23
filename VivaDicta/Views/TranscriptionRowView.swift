@@ -47,11 +47,14 @@ struct TranscriptionRowView: View {
                     .lineSpacing(2)
 
                 if !assignedTags.isEmpty {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         ForEach(assignedTags.prefix(5)) { tag in
                             Image(systemName: tag.icon)
-                                .font(.caption2)
+                                .font(.system(size: 10))
                                 .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
+                                .frame(width: 22, height: 22)
+                                .background((Color(hex: tag.colorHex) ?? .blue).opacity(0.15))
+                                .clipShape(.circle)
                         }
                         if assignedTags.count > 5 {
                             Text("+\(assignedTags.count - 5)")
