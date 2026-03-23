@@ -92,6 +92,9 @@ class Transcription {
     /// Status of the transcription (pending/completed/failed, synced from macOS).
     var transcriptionStatus: String?
 
+    /// Source that created this transcription (app, keyboard, shareExtension, actionExtension, macApp).
+    var sourceTag: String?
+
     /// AI-generated text variations (Summary, Action Points, Professional, etc.).
     @Relationship(deleteRule: .cascade)
     var variations: [TranscriptionVariation]? = []
@@ -121,7 +124,8 @@ class Transcription {
          promptName: String? = nil,
          transcriptionDuration: TimeInterval? = nil,
          enhancementDuration: TimeInterval? = nil,
-         powerModeId: String? = nil) {
+         powerModeId: String? = nil,
+         sourceTag: String? = nil) {
         self.text = text
         self.enhancedText = enhancedText
         self.timestamp = Date()
@@ -135,6 +139,7 @@ class Transcription {
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
         self.powerModeId = powerModeId
+        self.sourceTag = sourceTag
     }
 
     
