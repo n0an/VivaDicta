@@ -144,6 +144,7 @@ struct TagEditorSheet: View {
                                     )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(icon)
                         }
                     }
                     .padding(.vertical, 4)
