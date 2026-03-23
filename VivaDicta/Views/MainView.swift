@@ -25,6 +25,7 @@ struct MainView: View {
     @State private var isSelectionMode = false
     @State private var selectedTranscriptionIDs: Set<UUID> = []
     @State private var showDeleteConfirmation = false
+    @State private var showBulkTagPicker = false
 
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
@@ -149,6 +150,10 @@ struct MainView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content.")
+        }
+        .sheet(isPresented: $showBulkTagPicker) {
+            BulkTagPickerSheet(transcriptionIDs: selectedTranscriptionIDs)
+                .presentationDetents([.medium])
         }
         .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
@@ -375,6 +380,14 @@ struct MainView: View {
     @ToolbarContentBuilder
     private var bottomToolbarContent: some ToolbarContent {
         if isSelectionMode {
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    showBulkTagPicker = true
+                } label: {
+                    Label("Tag", systemImage: "tag")
+                }
+                .disabled(selectedTranscriptionIDs.isEmpty)
+            }
             ToolbarItem(placement: .bottomBar) {
                 Spacer()
             }
