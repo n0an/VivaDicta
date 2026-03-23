@@ -72,6 +72,7 @@ public final class AppGroupCoordinator {
     // Share Extension
     public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"
     public static let kPendingLanguageOverride = "pendingLanguageOverride"
+    public static let kPendingSourceTag = "pendingSourceTag"
 
     nonisolated private enum UserDefaultsKeys {
         static let isRecording = "isRecording"
@@ -615,6 +616,24 @@ public final class AppGroupCoordinator {
         sharedDefaults?.synchronize()
         logger.logInfo("📁 Consumed pending language override: \(language)")
         return language
+    }
+
+    /// Saves the source tag for a pending shared audio transcription
+    public func setPendingSourceTag(_ tag: String) {
+        sharedDefaults?.set(tag, forKey: AppGroupCoordinator.kPendingSourceTag)
+        sharedDefaults?.synchronize()
+        logger.logInfo("🏷️ Saved pending source tag: \(tag)")
+    }
+
+    /// Retrieves and clears the pending source tag
+    public func getAndConsumePendingSourceTag() -> String? {
+        guard let tag = sharedDefaults?.string(forKey: AppGroupCoordinator.kPendingSourceTag) else {
+            return nil
+        }
+        sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingSourceTag)
+        sharedDefaults?.synchronize()
+        logger.logInfo("🏷️ Consumed pending source tag: \(tag)")
+        return tag
     }
 
     // MARK: - Darwin Notifications (Real-time Communication)

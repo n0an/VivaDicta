@@ -21,6 +21,7 @@ private struct PendingTranscriptionData {
     let transcriptionProviderName: String?
     let transcriptionDuration: TimeInterval
     let modelContext: ModelContext
+    let sourceTag: String?
 }
 
 /// View model managing audio recording, transcription, and enhancement workflow.
@@ -370,7 +371,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         try outFile.write(from: outputBuffer)
     }
 
-    func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext) -> Task<Void, Never> {
+    func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext, sourceTag: String? = nil) -> Task<Void, Never> {
         Task { @MainActor in
             do {
                 self.recordingState = .transcribing
@@ -446,7 +447,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 var enhancedText: String? = nil
                 var promptName: String? = nil
                 var enhancementDur: TimeInterval? = nil
-                
+                let resolvedSourceTag = sourceTag ?? (prewarmManager.isSessionActive ? SourceTag.keyboard : SourceTag.app)
+
                 // Check if AI Processing is properly configured
                 if aiService.isProperlyConfigured() {
                     // Check for cancellation before starting enhancement
@@ -461,7 +463,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
                         transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
                         transcriptionDuration: transcriptionDuration,
-                        modelContext: modelContext
+                        modelContext: modelContext,
+                        sourceTag: resolvedSourceTag
                     )
 
                     // Update state to show enhancing animation
@@ -515,7 +518,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     promptName: promptName,
                     transcriptionDuration: transcriptionDuration,
                     enhancementDuration: enhancementDur,
-                    powerModeId: aiService.selectedMode.id.uuidString
+                    powerModeId: aiService.selectedMode.id.uuidString,
+                    sourceTag: resolvedSourceTag
                 )
 
                 modelContext.insert(transcription)
@@ -687,7 +691,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     promptName: nil,
                     transcriptionDuration: pending.transcriptionDuration,
                     enhancementDuration: nil,
-                    powerModeId: aiService.selectedMode.id.uuidString
+                    powerModeId: aiService.selectedMode.id.uuidString,
+                    sourceTag: pending.sourceTag
                 )
 
                 pending.modelContext.insert(transcription)

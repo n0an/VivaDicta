@@ -539,6 +539,7 @@ class ActionViewController: UIViewController {
         }
 
         sharedDefaults.set(audioFileName, forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
+        sharedDefaults.set("actionExtension", forKey: AppGroupCoordinator.kPendingSourceTag)
         sharedDefaults.synchronize()
         logger.info("Saved pending audio filename to UserDefaults: \(audioFileName)")
 

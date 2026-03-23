@@ -592,10 +592,14 @@ struct MainView: View {
                 appState.transcriptionManager.selectedLanguage = languageOverride
             }
 
+            // Consume source tag from extension (shareExtension or actionExtension)
+            let sourceTag = AppGroupCoordinator.shared.getAndConsumePendingSourceTag()
+
             // Start transcription
             vm.transcribingSpeechTask = vm.transcribeSpeechTask(
                 recordURL: destinationURL,
-                modelContext: modelContext
+                modelContext: modelContext,
+                sourceTag: sourceTag
             )
         } catch {
             logger.logError("Failed to copy shared audio file: \(error.localizedDescription)")

@@ -540,6 +540,7 @@ class ShareViewController: UIViewController {
         }
 
         sharedDefaults.set(audioFileName, forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
+        sharedDefaults.set("shareExtension", forKey: AppGroupCoordinator.kPendingSourceTag)
         sharedDefaults.synchronize()
         logger.info("Saved pending audio filename to UserDefaults: \(audioFileName)")
 
