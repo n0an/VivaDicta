@@ -211,7 +211,7 @@ class AIService {
             saveModes()
             
             if selectedMode.id == mode.id {
-                selectedMode = mode
+                selectedModeName = mode.name
             }
             
             logger.logInfo("Updated mode: \(mode.name)")
