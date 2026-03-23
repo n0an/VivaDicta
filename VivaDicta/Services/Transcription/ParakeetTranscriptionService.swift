@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import FluidAudio
+@preconcurrency import FluidAudio
 import os
 
 class ParakeetTranscriptionService: TranscriptionService {

@@ -8,7 +8,7 @@
 
 import Foundation
 import SwiftUI
-import ActivityKit
+@preconcurrency import ActivityKit
 import os
 import CoreSpotlight
 import SwiftData

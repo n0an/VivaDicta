@@ -17,4 +17,7 @@ enum SettingsDestination: Hashable {
     // Dictionary
     case correctSpelling
     case replacements
+
+    // Organization
+    case tags
 }

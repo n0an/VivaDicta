@@ -13,9 +13,9 @@ All skills live in `.claude/skills/`. Use `/create-skill` to create new ones whe
 
 ## Build Commands
 
-- Build: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' build 2>&1 | xcsift`
-- Run tests: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test 2>&1 | xcsift`
-- Run single test: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0' test -only-testing:VivaDictaTests/TestClassName/testMethodName 2>&1 | xcsift`
+- Build: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' build 2>&1 | xcsift`
+- Run tests: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' test 2>&1 | xcsift`
+- Run single test: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' test -only-testing:VivaDictaTests/TestClassName/testMethodName 2>&1 | xcsift`
 
 ## App Overview
 

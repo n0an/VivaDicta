@@ -30,6 +30,7 @@ struct TranscriptionDetailView: View {
     @State private var showConfigureAI: Bool = false
     @State private var generatingPresetId: String?
     @State private var showTextEditor: Bool = false
+    @State private var showTagPicker: Bool = false
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -119,7 +120,16 @@ struct TranscriptionDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            bottomActionBar
+            VStack(spacing: 0) {
+                TranscriptionTagChipsView(
+                    transcription: transcription,
+                    showTagPicker: $showTagPicker
+                )
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                bottomActionBar
+            }
         }
         .sheet(isPresented: $showMetaInfo) {
             MetaInfoSheet(
@@ -148,6 +158,10 @@ struct TranscriptionDetailView: View {
             ) { updatedText in
                 saveEditedText(updatedText)
             }
+        }
+        .sheet(isPresented: $showTagPicker) {
+            TagPickerSheet(transcription: transcription)
+                .presentationDetents([.medium])
         }
         .sheet(isPresented: $showConfigureAI) {
             ConfigureAISheet {
@@ -298,9 +312,14 @@ struct TranscriptionDetailView: View {
 
                 Spacer()
 
-                // Invisible spacer to balance Edit + Copy on the right
-                Color.clear
-                    .frame(width: 44, height: 44)
+                // Button: Tag picker
+                Button {
+                    showTagPicker = true
+                } label: {
+                    Image(systemName: "tag")
+                        .font(.system(size: 20))
+                        .frame(width: 44, height: 44)
+                }
 
                 Spacer()
 

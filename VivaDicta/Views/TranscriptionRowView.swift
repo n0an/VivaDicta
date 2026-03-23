@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TranscriptionRowView: View {
     let transcription: Transcription
     let isNewlyInserted: Bool
+    let allTags: [TranscriptionTag]
 
     @Environment(\.colorScheme) var colorScheme
     @State private var showGradient = false
@@ -19,17 +21,48 @@ struct TranscriptionRowView: View {
         transcription.enhancedText ?? transcription.text
     }
 
+    private var assignedTags: [TranscriptionTag] {
+        let assignedIds = Set((transcription.tagAssignments ?? []).map(\.tagId))
+        return allTags.filter { assignedIds.contains($0.id) }
+    }
+
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    if let tag = transcription.sourceTag {
+                        Image(systemName: SourceTag.icon(for: tag))
+                            .font(.caption2)
+                            .foregroundStyle(SourceTag.color(for: tag))
+                    }
+                }
 
                 Text(displayText)
                     .font(.body)
                     .lineLimit(2)
                     .lineSpacing(2)
+
+                if !assignedTags.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(assignedTags.prefix(5)) { tag in
+                            Image(systemName: tag.icon)
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
+                                .frame(width: 22, height: 22)
+                                .background((Color(hex: tag.colorHex) ?? .blue).opacity(0.15))
+                                .clipShape(.circle)
+                        }
+                        if assignedTags.count > 5 {
+                            Text("+\(assignedTags.count - 5)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
 
             Spacer()
@@ -86,7 +119,7 @@ struct TranscriptionRowView: View {
 
     List {
         if let firstTranscription = mockTranscriptions.first {
-            TranscriptionRowView(transcription: firstTranscription, isNewlyInserted: true)
+            TranscriptionRowView(transcription: firstTranscription, isNewlyInserted: true, allTags: [])
         }
     }
     .listStyle(.plain)

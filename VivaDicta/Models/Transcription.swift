@@ -92,9 +92,16 @@ class Transcription {
     /// Status of the transcription (pending/completed/failed, synced from macOS).
     var transcriptionStatus: String?
 
+    /// Source that created this transcription (app, keyboard, shareExtension, actionExtension, macApp).
+    var sourceTag: String?
+
     /// AI-generated text variations (Summary, Action Points, Professional, etc.).
     @Relationship(deleteRule: .cascade)
     var variations: [TranscriptionVariation]? = []
+
+    /// User-assigned tag assignments (many-to-many via junction model).
+    @Relationship(deleteRule: .cascade)
+    var tagAssignments: [TranscriptionTagAssignment]? = []
 
     /// Creates a new transcription with the specified properties.
     ///
@@ -121,7 +128,8 @@ class Transcription {
          promptName: String? = nil,
          transcriptionDuration: TimeInterval? = nil,
          enhancementDuration: TimeInterval? = nil,
-         powerModeId: String? = nil) {
+         powerModeId: String? = nil,
+         sourceTag: String? = nil) {
         self.text = text
         self.enhancedText = enhancedText
         self.timestamp = Date()
@@ -135,6 +143,7 @@ class Transcription {
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
         self.powerModeId = powerModeId
+        self.sourceTag = sourceTag
     }
 
     
@@ -207,7 +216,8 @@ extension Transcription {
             aiProviderName: aiProviderName,
             promptName: promptName,
             transcriptionDuration: transcriptionDuration,
-            enhancementDuration: enhancementDuration
+            enhancementDuration: enhancementDuration,
+            sourceTag: sourceTag
         )
     }
 }
@@ -480,6 +490,10 @@ extension Transcription {
 
         if let aiModel = aiEnhancementModelName {
             keywords.append(aiModel)
+        }
+
+        if let sourceTag {
+            keywords.append(sourceTag)
         }
 
         attributes.keywords = keywords

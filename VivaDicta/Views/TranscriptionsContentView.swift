@@ -12,6 +12,7 @@ import SwiftUI
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
+    @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
     @Binding var searchText: String
     @Binding var isSelectionMode: Bool
@@ -22,6 +23,8 @@ struct TranscriptionsContentView: View {
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
     @State private var showGoToTopButton = false
+    @State private var selectedSourceTags: Set<String> = []
+    @State private var selectedUserTagIds: Set<UUID> = []
 
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
@@ -35,10 +38,20 @@ struct TranscriptionsContentView: View {
     }
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            if !allTranscriptions.isEmpty && (!availableSourceTags.isEmpty || !allTags.isEmpty) {
+                TagFilterBar(
+                    sourceTags: availableSourceTags,
+                    userTags: allTags,
+                    selectedSourceTags: $selectedSourceTags,
+                    selectedUserTagIds: $selectedUserTagIds
+                )
+                .padding(.vertical, 8)
+            }
+
             if allTranscriptions.isEmpty {
                 emptyAllStateView
-            } else if filteredTranscriptions.isEmpty && !searchText.isEmpty {
+            } else if displayedTranscriptions.isEmpty {
                 emptyFilteredStateView
             } else {
                 ScrollViewReader { proxy in
@@ -51,7 +64,8 @@ struct TranscriptionsContentView: View {
                                 SelectableTranscriptionRow(
                                     transcription: transcription,
                                     isSelected: selectedTranscriptionIDs.contains(transcription.id),
-                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                                    allTags: allTags
                                 ) {
                                     toggleSelection(for: transcription)
                                 }
@@ -63,7 +77,8 @@ struct TranscriptionsContentView: View {
                                 } label: {
                                     TranscriptionRowView(
                                         transcription: transcription,
-                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                                        allTags: allTags
                                     )
                                 }
                                 .contextMenu {
@@ -160,8 +175,32 @@ struct TranscriptionsContentView: View {
         }
     }
 
+    private var hasActiveTagFilter: Bool {
+        !selectedSourceTags.isEmpty || !selectedUserTagIds.isEmpty
+    }
+
+    private var availableSourceTags: [String] {
+        var seen = Set<String>()
+        return allTranscriptions.compactMap { $0.sourceTag }.filter { seen.insert($0).inserted }
+    }
+
+    private var tagFilteredTranscriptions: [Transcription] {
+        let base = searchText.isEmpty ? allTranscriptions : filteredTranscriptions
+        guard hasActiveTagFilter else { return base }
+
+        return base.filter { transcription in
+            let matchesSource = selectedSourceTags.isEmpty ||
+                (transcription.sourceTag.map { selectedSourceTags.contains($0) } ?? false)
+
+            let matchesUserTag = selectedUserTagIds.isEmpty ||
+                (transcription.tagAssignments ?? []).contains { selectedUserTagIds.contains($0.tagId) }
+
+            return matchesSource && matchesUserTag
+        }
+    }
+
     private var displayedTranscriptions: [Transcription] {
-        searchText.isEmpty ? allTranscriptions : filteredTranscriptions
+        tagFilteredTranscriptions
     }
 
     private func audioURL(for transcription: Transcription) -> URL? {
@@ -263,8 +302,17 @@ struct TranscriptionsContentView: View {
         }
     }
 
+    @ViewBuilder
     private var emptyFilteredStateView: some View {
-        ContentUnavailableView.search
+        if !searchText.isEmpty {
+            ContentUnavailableView.search
+        } else {
+            ContentUnavailableView(
+                "No Matching Notes",
+                systemImage: "tag",
+                description: Text("No transcriptions match the selected filters.")
+            )
+        }
     }
 
     private var emptyAllStateView: some View {
@@ -282,6 +330,7 @@ private struct SelectableTranscriptionRow: View {
     let transcription: Transcription
     let isSelected: Bool
     let isNewlyInserted: Bool
+    let allTags: [TranscriptionTag]
     let onTap: () -> Void
 
     var body: some View {
@@ -294,7 +343,8 @@ private struct SelectableTranscriptionRow: View {
 
                 TranscriptionRowView(
                     transcription: transcription,
-                    isNewlyInserted: isNewlyInserted
+                    isNewlyInserted: isNewlyInserted,
+                    allTags: allTags
                 )
             }
             .contentShape(Rectangle())

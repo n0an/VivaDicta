@@ -25,7 +25,7 @@ Use this skill when you need to automate iOS Simulator interactions, including t
   - Most commands require a simulator UDID (use `axe list-simulators` to find it)
   - The simulator must be booted and running for most operations
   - AXe uses the iOS Simulator's accessibility framework
-  - For VivaDicta project, the default simulator is: `iPhone 17 Pro, OS=26.0`
+  - For VivaDicta project, the default simulator is: `iPhone 17 Pro Max, OS=26.4`
   - Save screenshots to `llmtemp/screenshots/` directory for temporary test artifacts
 
 ### 1. Determine the Required Action
@@ -256,7 +256,7 @@ axe record-video --udid $UDID --fps 15 --output recording.mp4
 axe list-simulators
 
 # Example output:
-# iPhone 17 Pro (26.0) - B34FF305-5EA8-412B-943F-1D0371CA17FF
+# iPhone 17 Pro Max (26.0) - B34FF305-5EA8-412B-943F-1D0371CA17FF
 # iPhone 16 (25.0) - A12BC456-7DEF-89GH-IJKL-MNOPQRSTUVWX
 ```
 
@@ -271,7 +271,7 @@ axe list-simulators
 
 ```bash
 # 1. Get the simulator UDID
-UDID=$(axe list-simulators | grep "iPhone 17 Pro" | awk '{print $NF}')
+UDID=$(axe list-simulators | grep "iPhone 17 Pro Max" | awk '{print $NF}')
 
 # 2. Tap to focus text field
 axe tap -x 200 -y 300 --udid $UDID
