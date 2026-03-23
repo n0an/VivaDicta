@@ -22,9 +22,17 @@ struct TranscriptionRowView: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+
+                    if let tag = transcription.sourceTag {
+                        Label(SourceTag.displayName(for: tag), systemImage: SourceTag.icon(for: tag))
+                            .font(.caption2)
+                            .foregroundStyle(SourceTag.color(for: tag))
+                    }
+                }
 
                 Text(displayText)
                     .font(.body)

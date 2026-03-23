@@ -39,6 +39,7 @@ struct TranscriptionEntity: IndexedEntity {
     var promptName: String?
     var transcriptionDuration: TimeInterval?
     var enhancementDuration: TimeInterval?
+    var sourceTag: String?
 
     // MARK: - Initialization
 
@@ -55,7 +56,8 @@ struct TranscriptionEntity: IndexedEntity {
         aiProviderName: String? = nil,
         promptName: String? = nil,
         transcriptionDuration: TimeInterval? = nil,
-        enhancementDuration: TimeInterval? = nil
+        enhancementDuration: TimeInterval? = nil,
+        sourceTag: String? = nil
     ) {
         self.id = id
         self.text = text
@@ -70,6 +72,7 @@ struct TranscriptionEntity: IndexedEntity {
         self.promptName = promptName
         self.transcriptionDuration = transcriptionDuration
         self.enhancementDuration = enhancementDuration
+        self.sourceTag = sourceTag
     }
     
     var searchableAttributes: CSSearchableItemAttributeSet {
@@ -101,6 +104,7 @@ struct TranscriptionEntity: IndexedEntity {
         if let promptName = promptName { keywords.append(promptName) }
         if let transcriptionModel = transcriptionModelName { keywords.append(transcriptionModel) }
         if let aiModel = aiEnhancementModelName { keywords.append(aiModel) }
+        if let sourceTag { keywords.append(sourceTag) }
         attributeSet.keywords = keywords
 
         // Duration and dates

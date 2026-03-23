@@ -212,7 +212,8 @@ extension Transcription {
             aiProviderName: aiProviderName,
             promptName: promptName,
             transcriptionDuration: transcriptionDuration,
-            enhancementDuration: enhancementDuration
+            enhancementDuration: enhancementDuration,
+            sourceTag: sourceTag
         )
     }
 }
@@ -485,6 +486,10 @@ extension Transcription {
 
         if let aiModel = aiEnhancementModelName {
             keywords.append(aiModel)
+        }
+
+        if let sourceTag {
+            keywords.append(sourceTag)
         }
 
         attributes.keywords = keywords
