@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 /// A modifer that performs a ripple effect to its content whenever its
 /// trigger value changes.
 struct RippleEffect<T: Equatable>: ViewModifier {
@@ -148,7 +147,6 @@ struct SpatialPressingGesture: UIGestureRecognizerRepresentable {
             }
         }
 }
-
 
 #Preview {
     

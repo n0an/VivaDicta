@@ -188,7 +188,6 @@ class TranscriptionManager {
             throw TranscriptionError.transcriptionFailed
         }
 
-
         let transcriptionService: any TranscriptionService
         switch model.provider {
         case .parakeet:

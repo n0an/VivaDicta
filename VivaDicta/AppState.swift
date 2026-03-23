@@ -343,7 +343,6 @@ class AppState {
     }
 }
 
-
 #if DEBUG
 extension AppState {
     convenience init() {

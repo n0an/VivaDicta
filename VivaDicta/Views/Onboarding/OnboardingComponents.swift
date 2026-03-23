@@ -36,7 +36,6 @@ struct OnboardingFeatureRow<S: ShapeStyle>: View {
     }
 }
 
-
 // MARK: - Primary Button
 
 struct OnboardingPrimaryButton: View {

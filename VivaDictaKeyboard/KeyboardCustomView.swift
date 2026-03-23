@@ -210,8 +210,6 @@ struct KeyboardCustomView: View {
     }
 }
 
-
-
 // MARK: - Error State View
 struct ErrorStateView: View {
     let errorMessage: String

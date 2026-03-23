@@ -73,7 +73,6 @@ class PresetManager {
         }
     }
 
-
     // MARK: - CRUD
 
     /// Adds a new custom preset.

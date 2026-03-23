@@ -209,7 +209,6 @@ class ModelDownloadManager: @unchecked Sendable {
         }
     }
 
-
     // MARK: - Parakeet Model Download
     private func downloadParakeetModel(_ model: ParakeetModel) async throws {
         try Task.checkCancellation()

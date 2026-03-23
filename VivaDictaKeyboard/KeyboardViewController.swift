@@ -84,7 +84,6 @@ class KeyboardViewController: KeyboardInputViewController {
 
 }
 
-
 // MARK: - Keyboard Tab Toggle
 struct KeyboardTabToggle: View {
     @Bindable var dictationState: KeyboardDictationState
@@ -215,7 +214,6 @@ struct ModeCycleSelector: View {
         dictationState.vivaModeManager.selectedVivaMode = modes[newIndex]
     }
 }
-
 
 struct VivaDictaKeyboardToolbarView: View {
     @Environment(KeyboardDictationState.self) var dictationState

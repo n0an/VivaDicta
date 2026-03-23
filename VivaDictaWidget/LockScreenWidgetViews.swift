@@ -41,8 +41,6 @@ struct LockScreenIconCircularView: View {
     }
 }
 
-
-
 struct LockScreenRectangularView: View {
     var body: some View {
         VStack {

@@ -567,8 +567,6 @@ struct VivaDictaApp: App {
     }
 }
 
-
-
 enum QuickActionType: String {
     case startRecord
 }

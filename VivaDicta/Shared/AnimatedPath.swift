@@ -152,7 +152,6 @@ struct AnimatedRectangle: Shape {
     }
     .frame(width: edgeLength, height: edgeLength)
 
-
     
         .onAppear {
              timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in

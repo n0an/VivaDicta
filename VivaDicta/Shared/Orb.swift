@@ -127,7 +127,6 @@ struct OrbView: View {
 
 }
 
-
 struct ChartDataPoint: Identifiable {
     let id = UUID()
     let audioLevel: Double

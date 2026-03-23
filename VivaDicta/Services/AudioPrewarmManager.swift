@@ -344,9 +344,6 @@ enum PrewarmError: Error {
     case recorderNotActive
 }
 
-
-
-
 nonisolated private func installInputTapNonisolated(
     inputNode: AVAudioInputNode,
     format: AVAudioFormat,
@@ -362,8 +359,6 @@ nonisolated private func installInputTapNonisolated(
 
     logger.logError("🎙️ Input tap installed on audio thread")
 }
-
-
 
 /// Thread-safe capture context for audio recording
 nonisolated private final class AudioCaptureContext: @unchecked Sendable {

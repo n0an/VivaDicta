@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 extension View {
     @MainActor
     func glowBackground<S: InsettableShape>(
@@ -86,7 +85,6 @@ private struct GlowStrokeView<S: InsettableShape>: View {
         }
     }
 }
-
 
 private extension Array where Element == Gradient.Stop {
     static var glowStyle: [Gradient.Stop] {

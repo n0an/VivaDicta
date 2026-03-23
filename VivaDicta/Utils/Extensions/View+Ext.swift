@@ -139,8 +139,6 @@ extension View {
     }
 }
 
-
-
 // MARK: - onFirstAppear
 private struct OnFirstAppearModifier: ViewModifier {
     @State private var didPerform = false
@@ -163,7 +161,6 @@ extension View {
         modifier(OnFirstAppearModifier(action: action))
     }
 }
-
 
 // MARK: - minimizedSearch
 extension View {
@@ -246,7 +243,6 @@ extension View {
     }
 }
 
-
 // MARK: - animatedCopyButtonStyle
 struct AnimatedCopyButtonStyle: ViewModifier {
     var color: Color
@@ -309,5 +305,4 @@ struct RecordButtonButtonStyle: ButtonStyle {
         }
     }
 }
-
 

@@ -38,7 +38,6 @@ struct SelectLanguageTip: Tip {
     
 }
 
-
 struct SelectTranscriptionModelTipMainView: Tip {
     
     static let selectModelEvent = Event(id: "selectTranscriptionModel")
@@ -84,7 +83,6 @@ struct SelectTranscriptionModelTipMainView: Tip {
         }
     }
 }
-
 
 struct SelectTranscriptionModelTipSettingsView: Tip {
     

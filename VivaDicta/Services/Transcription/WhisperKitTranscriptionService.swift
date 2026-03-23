@@ -33,7 +33,6 @@ class WhisperKitTranscriptionService: TranscriptionService {
         
         os_signpost(.begin, log: SignpostLog.general, name: "WhisperKit loadModelSP", signpostID: spidLoadModel)
 
-
         // If the same model is already loaded, return early
         if currentModelName == modelPath && modelState == .loaded {
             logger.logNotice("Model \(modelPath) already loaded, skipping reload")

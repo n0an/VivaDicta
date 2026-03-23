@@ -59,7 +59,6 @@ struct VivaDictaLiveActivityAttributes: ActivityAttributes {
     var name: String
 }
 
-
 extension VivaDictaLiveActivityAttributes {
     static var preview: VivaDictaLiveActivityAttributes {
         VivaDictaLiveActivityAttributes(name: "VivaDicta")

@@ -5,11 +5,8 @@
 //  Created by Anton Novoselov on 2025.10.03
 //
 
-
-
 @preconcurrency import Foundation
 import os
-
 
 /// Coordinates communication between the main app and extensions (keyboard, share, widget).
 ///
@@ -75,7 +72,6 @@ public final class AppGroupCoordinator {
     // Share Extension
     public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"
     public static let kPendingLanguageOverride = "pendingLanguageOverride"
-
 
     nonisolated private enum UserDefaultsKeys {
         static let isRecording = "isRecording"

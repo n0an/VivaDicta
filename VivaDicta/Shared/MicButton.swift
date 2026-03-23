@@ -45,18 +45,13 @@ struct MicButton: View {
                             isAnimating = false
                         }
                 }
-            
                 .overlay {
                     Circle()
                         .stroke(.black.opacity(0.5), lineWidth: borderWidth)
                 }
         }
-        
-        
-        
     }
 }
-
 
 #Preview {
     MicButton(

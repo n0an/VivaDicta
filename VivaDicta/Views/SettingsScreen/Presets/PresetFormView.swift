@@ -192,7 +192,6 @@ struct PresetFormView: View {
         return existingPreset?.isBuiltIn == true ? (existingPreset?.name ?? "") : "Edit Preset"
     }
 
-
     private func createPreset() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let newPreset = Preset(

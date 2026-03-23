@@ -121,7 +121,6 @@ extension PromptsTemplates {
         4. Для русского языка не используй букву "ё". Вместо нее всегда используй "е". В итоговом тексте замени все буквы "ё" на букву "е".
         5. DO NOT use long em-dashes "—", use normal hyphen "-" instead of it.
 
-
         Here are the more Important Rules you need to adhere to:
 
         \(instructions)

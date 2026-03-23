@@ -30,7 +30,6 @@ struct HudView: View {
         }
     }
 
-
     var body: some View {
 
         if colorScheme == .light {
@@ -41,8 +40,6 @@ struct HudView: View {
     }
 
 }
-
-
 
 struct HudContentView: View {
 

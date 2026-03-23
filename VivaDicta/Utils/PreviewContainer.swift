@@ -25,7 +25,6 @@ extension PreviewTrait where T == Preview.ViewTraits {
     static var transcriptionsMockData: Self = .modifier(TranscriptionsMockData())
 }
 
-
 struct TranscriptionsMockDataMany: PreviewModifier {
 
     static func makeSharedContext() async throws -> ModelContainer {

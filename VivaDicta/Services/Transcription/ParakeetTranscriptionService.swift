@@ -129,7 +129,6 @@ class ParakeetTranscriptionService: TranscriptionService {
     }
 }
 
-
 enum ParakeetTranscriptionError: LocalizedError {
     case modelValidationFailed(String)
 

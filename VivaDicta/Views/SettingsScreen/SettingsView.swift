@@ -517,7 +517,6 @@ struct SettingsView: View {
 
         return """
 
-
 ---
 Please describe your issue above this line
 ---
@@ -572,7 +571,6 @@ iOS Version: \(systemVersion)
         .environment(AppState())
 }
 #endif
-
 
 // MARK: - Mode Info Row
 

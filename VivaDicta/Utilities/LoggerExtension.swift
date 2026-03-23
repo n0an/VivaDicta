@@ -124,8 +124,6 @@ public extension Logger {
     }
 }
 
-
-
 struct SignpostLog {
     static var pointsOfInterest: OSLog {
         if ProcessInfo.processInfo.environment["SIGNPOST_ENABLED"] == "1" {

@@ -95,7 +95,6 @@ struct VivaDictaLiveActivity: Widget {
     }
 }
 
-
 #Preview("Notification", as: .content, using: VivaDictaLiveActivityAttributes.preview) {
    VivaDictaLiveActivity()
 } contentStates: {

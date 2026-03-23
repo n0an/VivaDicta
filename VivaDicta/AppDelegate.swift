@@ -37,7 +37,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var defferedQuickAction: UIApplicationShortcutItem? = nil
     private let logger = Logger(category: .sceneDelegate)
@@ -86,6 +85,4 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 #endif
-
-
 

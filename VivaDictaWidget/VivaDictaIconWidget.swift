@@ -44,8 +44,6 @@ struct IconWidgetEntry: TimelineEntry {
     }
 }
 
-
-
 struct VivaDictaIconWidgetEntryView : View {
     @Environment(\.widgetFamily) var family
     
@@ -73,7 +71,6 @@ struct VivaDictaIconWidgetEntryView : View {
         }
     }
 }
-
 
 struct VivaDictaIconWidgetEntryViewSmall: View {
     @Environment(\.colorScheme) private var colorScheme

@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 // MARK: - Keyboard Illustration
 
 struct KeyboardIllustration: View {
@@ -46,5 +45,4 @@ struct KeyboardIllustration: View {
             }
     }
 }
-
 
