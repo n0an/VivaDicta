@@ -172,6 +172,12 @@ struct SettingsView: View {
                     }
                 }
                 
+                Section("Organization") {
+                    NavigationLink(value: SettingsDestination.tags) {
+                        Label("Tags", systemImage: "tag")
+                    }
+                }
+
                 Section("AI Processing") {
                     NavigationLink(value: SettingsDestination.aiProviders) {
                         Text("AI Providers")
@@ -409,6 +415,8 @@ struct SettingsView: View {
                     ReplacementsView()
                 case .aiProviders:
                     AIProviders()
+                case .tags:
+                    TagManagementView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in
