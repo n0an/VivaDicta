@@ -62,7 +62,7 @@ struct TagPickerSheet: View {
             .navigationTitle("Tags")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {

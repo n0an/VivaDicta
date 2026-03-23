@@ -72,7 +72,7 @@ struct BulkTagPickerSheet: View {
             .navigationTitle("Tag \(transcriptions.count) Notes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
