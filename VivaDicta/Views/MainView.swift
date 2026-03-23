@@ -152,7 +152,7 @@ struct MainView: View {
             Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content.")
         }
         .sheet(isPresented: $showBulkTagPicker) {
-            BulkTagPickerSheet(transcriptionIDs: selectedTranscriptionIDs)
+            BulkTagPickerSheet(transcriptions: transcriptions.filter { selectedTranscriptionIDs.contains($0.id) })
                 .presentationDetents([.medium])
         }
         .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {

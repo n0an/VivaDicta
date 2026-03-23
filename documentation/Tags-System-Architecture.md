@@ -169,7 +169,6 @@ All tag models sync via the `iCloud.com.antonnovoselov.VivaDicta` private CloudK
 | `Models/SourceTag.swift` | Source tag constants and display helpers |
 | `Models/TranscriptionTag.swift` | User tag SwiftData model |
 | `Models/TranscriptionTagAssignment.swift` | Junction model for tag assignments |
-| `Services/TagService.swift` | CRUD operations for tags and assignments |
 | `Utilities/ColorHex.swift` | `Color(hex:)` and `.hexString` extensions |
 | `Views/SettingsScreen/Tags/TagManagementView.swift` | Tag list in Settings |
 | `Views/SettingsScreen/Tags/TagEditorSheet.swift` | Create/edit tag form |

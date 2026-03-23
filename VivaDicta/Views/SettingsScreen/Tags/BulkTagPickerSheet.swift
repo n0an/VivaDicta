@@ -10,22 +10,17 @@ import SwiftData
 
 /// Sheet for assigning/removing tags on multiple transcriptions at once.
 struct BulkTagPickerSheet: View {
-    let transcriptionIDs: Set<UUID>
+    let transcriptions: [Transcription]
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
-    @Query private var allTranscriptions: [Transcription]
 
     @State private var showCreateTag = false
-
-    private var selectedTranscriptions: [Transcription] {
-        allTranscriptions.filter { transcriptionIDs.contains($0.id) }
-    }
 
     /// Returns how many of the selected transcriptions have this tag assigned
     private func assignmentCount(for tag: TranscriptionTag) -> Int {
         let tagId = tag.id
-        return selectedTranscriptions.filter { transcription in
+        return transcriptions.filter { transcription in
             (transcription.tagAssignments ?? []).contains { $0.tagId == tagId }
         }.count
     }
@@ -42,7 +37,7 @@ struct BulkTagPickerSheet: View {
                 } else {
                     ForEach(allTags) { tag in
                         let count = assignmentCount(for: tag)
-                        let allAssigned = count == transcriptionIDs.count
+                        let allAssigned = count == transcriptions.count
                         let someAssigned = count > 0 && !allAssigned
 
                         Button {
@@ -74,7 +69,7 @@ struct BulkTagPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Tag \(transcriptionIDs.count) Notes")
+            .navigationTitle("Tag \(transcriptions.count) Notes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -102,7 +97,7 @@ struct BulkTagPickerSheet: View {
 
         if allCurrentlyAssigned {
             // Remove from all selected
-            for transcription in selectedTranscriptions {
+            for transcription in transcriptions {
                 if let assignments = transcription.tagAssignments {
                     for assignment in assignments where assignment.tagId == tagId {
                         modelContext.delete(assignment)
@@ -111,7 +106,7 @@ struct BulkTagPickerSheet: View {
             }
         } else {
             // Add to all selected that don't have it
-            for transcription in selectedTranscriptions {
+            for transcription in transcriptions {
                 let alreadyAssigned = (transcription.tagAssignments ?? []).contains { $0.tagId == tagId }
                 if !alreadyAssigned {
                     let assignment = TranscriptionTagAssignment(tagId: tagId, transcription: transcription)

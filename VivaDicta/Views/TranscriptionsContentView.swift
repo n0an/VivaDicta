@@ -302,8 +302,17 @@ struct TranscriptionsContentView: View {
         }
     }
 
+    @ViewBuilder
     private var emptyFilteredStateView: some View {
-        ContentUnavailableView.search
+        if !searchText.isEmpty {
+            ContentUnavailableView.search
+        } else {
+            ContentUnavailableView(
+                "No Matching Notes",
+                systemImage: "tag",
+                description: Text("No transcriptions match the selected filters.")
+            )
+        }
     }
 
     private var emptyAllStateView: some View {
