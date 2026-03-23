@@ -1,3 +1,9 @@
+---
+name: stop-logs
+description: Stop the active simulator log capture session and display a summary of captured logs
+disable-model-invocation: true
+---
+
 # stop-logs
 
 You are given the following context:

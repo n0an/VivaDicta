@@ -1,3 +1,8 @@
+---
+name: ios-simulator-screenshot
+description: Capture screenshots from iOS Simulator using native xcrun simctl command for documentation and debugging
+---
+
 # iOS Simulator Screenshot Capture
 
 Use this skill when you need to capture screenshots from the iOS Simulator for documentation, debugging, or visual verification.

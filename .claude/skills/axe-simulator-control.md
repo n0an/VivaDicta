@@ -1,3 +1,8 @@
+---
+name: axe-simulator-control
+description: Automate iOS Simulator interactions using AXe for taps, gestures, text input, hardware buttons, and video recording
+---
+
 # AXe Simulator Control
 
 Use this skill when you need to automate iOS Simulator interactions, including taps, gestures, text input, hardware buttons, or video recording.

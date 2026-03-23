@@ -1,3 +1,8 @@
+---
+name: ios-log-capture
+description: Reference guide for capturing console logs from iOS apps in Simulator or physical devices using native logging tools
+---
+
 # iOS Log Capture
 
 Use this skill when you need to capture console logs from iOS apps running in Simulator or on physical devices for debugging, testing, or monitoring purposes.

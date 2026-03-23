@@ -1,3 +1,9 @@
+---
+name: start-logs-device-structured
+description: Record timestamp for structured device log collection from physical iOS device (captures all processes including extensions)
+disable-model-invocation: true
+---
+
 # start-logs-device-structured
 
 ## Task

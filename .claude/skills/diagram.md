@@ -1,3 +1,9 @@
+---
+name: diagram
+description: Create ASCII diagrams representing component architecture, data flow, or codebase structure
+disable-model-invocation: true
+---
+
 # diagram
 
 You are given the following context:

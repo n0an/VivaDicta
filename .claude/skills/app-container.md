@@ -1,3 +1,9 @@
+---
+name: app-container
+description: Print the path to VivaDicta's app container directory in the iOS Simulator
+disable-model-invocation: true
+---
+
 # app-container
 
 Print the path to VivaDicta's app container directory in the iOS Simulator.

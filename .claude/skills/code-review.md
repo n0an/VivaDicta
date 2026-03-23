@@ -1,3 +1,9 @@
+---
+name: code-review
+description: Perform a comprehensive code review of the current git diff changes
+disable-model-invocation: true
+---
+
 # code-review
 
 You are given the following context:

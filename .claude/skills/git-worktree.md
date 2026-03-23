@@ -1,3 +1,9 @@
+---
+name: git-worktree
+description: Manage git worktrees for working on multiple branches simultaneously
+disable-model-invocation: true
+---
+
 # git-worktree
 
 You are given the following context:
