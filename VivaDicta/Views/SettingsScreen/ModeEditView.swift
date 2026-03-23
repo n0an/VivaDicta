@@ -684,12 +684,18 @@ private struct ModePresetPickerSheet: View {
     @Binding var selectedPresetId: String?
     @State private var filter: PresetFilter = .all
     @State private var selectedCategory: String?
+    @State private var searchText = ""
 
     private var typeFilteredPresets: [Preset] {
-        switch filter {
+        let byType: [Preset] = switch filter {
         case .all: presetManager.presets
         case .system: presetManager.presets.filter(\.isBuiltIn)
         case .custom: presetManager.presets.filter { !$0.isBuiltIn }
+        }
+        guard !searchText.isEmpty else { return byType }
+        return byType.filter {
+            $0.name.localizedStandardContains(searchText) ||
+            $0.presetDescription.localizedStandardContains(searchText)
         }
     }
 
@@ -760,6 +766,7 @@ private struct ModePresetPickerSheet: View {
                     }
                 }
             }
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search presets")
             .onChange(of: filter) { _, _ in
                 selectedCategory = nil
             }

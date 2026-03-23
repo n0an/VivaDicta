@@ -898,7 +898,7 @@ private struct PresetPickerSheet: View {
                     }
                 }
             }
-            .searchable(text: $searchText, prompt: "Search presets")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search presets")
             .onChange(of: filter) { _, _ in
                 selectedCategory = nil
             }
