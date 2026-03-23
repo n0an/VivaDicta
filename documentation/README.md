@@ -10,6 +10,7 @@
 | [Text Processing Pipeline](Text-Processing-Pipeline-Architecture.md) | Multi-stage pipeline: replacements, vocabulary, AI, output filters, formatting |
 | [Preset System](Preset-System-Architecture.md) | Built-in and custom presets, preset catalog, sync with CloudKit |
 | [Data Persistence & CloudKit Sync](Data-Persistence-CloudKit-Architecture.md) | SwiftData models, CloudKit container, cross-device sync |
+| [Tags System](Tags-System-Architecture.md) | Source tags, user tags, filtering logic, tag management |
 
 ## Extensions & Integrations
 
