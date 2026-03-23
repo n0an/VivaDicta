@@ -99,6 +99,10 @@ class Transcription {
     @Relationship(deleteRule: .cascade)
     var variations: [TranscriptionVariation]? = []
 
+    /// User-assigned tag assignments (many-to-many via junction model).
+    @Relationship(deleteRule: .cascade)
+    var tagAssignments: [TranscriptionTagAssignment]? = []
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:
