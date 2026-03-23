@@ -287,7 +287,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // In prewarm mode, we need a small delay to ensure file is flushed to disk
             // before trying to move it
             Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+                try? await Task.sleep(for: .milliseconds(100))
 
                 resetValues()
 

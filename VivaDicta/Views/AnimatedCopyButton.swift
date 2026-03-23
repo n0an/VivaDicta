@@ -49,7 +49,7 @@ struct AnimatedCopyButton: View {
         isCopied = true
         onCopy?()
 
-        Task { @MainActor in
+        Task {
             try? await Task.sleep(for: .seconds(1.5))
             isCopied = false
         }
