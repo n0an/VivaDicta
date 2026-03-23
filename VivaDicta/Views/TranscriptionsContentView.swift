@@ -12,6 +12,7 @@ import SwiftUI
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
+    @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
     @Binding var searchText: String
     @Binding var isSelectionMode: Bool
@@ -51,7 +52,8 @@ struct TranscriptionsContentView: View {
                                 SelectableTranscriptionRow(
                                     transcription: transcription,
                                     isSelected: selectedTranscriptionIDs.contains(transcription.id),
-                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                                    allTags: allTags
                                 ) {
                                     toggleSelection(for: transcription)
                                 }
@@ -63,7 +65,8 @@ struct TranscriptionsContentView: View {
                                 } label: {
                                     TranscriptionRowView(
                                         transcription: transcription,
-                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id)
+                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                                        allTags: allTags
                                     )
                                 }
                                 .contextMenu {
@@ -282,6 +285,7 @@ private struct SelectableTranscriptionRow: View {
     let transcription: Transcription
     let isSelected: Bool
     let isNewlyInserted: Bool
+    let allTags: [TranscriptionTag]
     let onTap: () -> Void
 
     var body: some View {
@@ -294,7 +298,8 @@ private struct SelectableTranscriptionRow: View {
 
                 TranscriptionRowView(
                     transcription: transcription,
-                    isNewlyInserted: isNewlyInserted
+                    isNewlyInserted: isNewlyInserted,
+                    allTags: allTags
                 )
             }
             .contentShape(Rectangle())

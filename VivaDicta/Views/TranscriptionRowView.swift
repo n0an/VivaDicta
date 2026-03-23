@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TranscriptionRowView: View {
     let transcription: Transcription
     let isNewlyInserted: Bool
+    let allTags: [TranscriptionTag]
 
     @Environment(\.colorScheme) var colorScheme
     @State private var showGradient = false
@@ -17,6 +19,11 @@ struct TranscriptionRowView: View {
 
     private var displayText: String {
         transcription.enhancedText ?? transcription.text
+    }
+
+    private var assignedTags: [TranscriptionTag] {
+        let assignedIds = Set((transcription.tagAssignments ?? []).map(\.tagId))
+        return allTags.filter { assignedIds.contains($0.id) }
     }
 
     var body: some View {
@@ -38,6 +45,25 @@ struct TranscriptionRowView: View {
                     .font(.body)
                     .lineLimit(2)
                     .lineSpacing(2)
+
+                if !assignedTags.isEmpty {
+                    HStack(spacing: 4) {
+                        ForEach(assignedTags.prefix(3)) { tag in
+                            Label(tag.name, systemImage: tag.icon)
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background((Color(hex: tag.colorHex) ?? .blue).opacity(0.15))
+                                .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
+                                .clipShape(.capsule)
+                        }
+                        if assignedTags.count > 3 {
+                            Text("+\(assignedTags.count - 3)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
 
             Spacer()
@@ -94,7 +120,7 @@ struct TranscriptionRowView: View {
 
     List {
         if let firstTranscription = mockTranscriptions.first {
-            TranscriptionRowView(transcription: firstTranscription, isNewlyInserted: true)
+            TranscriptionRowView(transcription: firstTranscription, isNewlyInserted: true, allTags: [])
         }
     }
     .listStyle(.plain)

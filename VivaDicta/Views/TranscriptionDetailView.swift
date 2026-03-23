@@ -30,6 +30,7 @@ struct TranscriptionDetailView: View {
     @State private var showConfigureAI: Bool = false
     @State private var generatingPresetId: String?
     @State private var showTextEditor: Bool = false
+    @State private var showTagPicker: Bool = false
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -103,6 +104,12 @@ struct TranscriptionDetailView: View {
                         .clipShape(.rect(cornerRadius: 6))
                 }
 
+                // Tag chips
+                TranscriptionTagChipsView(
+                    transcription: transcription,
+                    showTagPicker: $showTagPicker
+                )
+
                 // Chip bar for text variations
                 if hasVariations {
                     variationChipBar
@@ -148,6 +155,10 @@ struct TranscriptionDetailView: View {
             ) { updatedText in
                 saveEditedText(updatedText)
             }
+        }
+        .sheet(isPresented: $showTagPicker) {
+            TagPickerSheet(transcription: transcription)
+                .presentationDetents([.medium])
         }
         .sheet(isPresented: $showConfigureAI) {
             ConfigureAISheet {
