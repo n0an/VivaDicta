@@ -27,6 +27,8 @@ struct TagEditorSheet: View {
     @State private var name: String
     @State private var selectedColorHex: String
     @State private var selectedIcon: String
+    @State private var customColor: Color = .blue
+    @State private var useCustomColor = false
     @FocusState private var isNameFocused: Bool
 
     private static let colorPalette: [(name: String, hex: String)] = [
@@ -62,6 +64,9 @@ struct TagEditorSheet: View {
             _name = State(initialValue: tag.name)
             _selectedColorHex = State(initialValue: tag.colorHex)
             _selectedIcon = State(initialValue: tag.icon)
+            let isCustom = !Self.colorPalette.contains(where: { $0.hex == tag.colorHex })
+            _useCustomColor = State(initialValue: isCustom)
+            _customColor = State(initialValue: Color(hex: tag.colorHex) ?? .blue)
         }
     }
 
@@ -82,12 +87,13 @@ struct TagEditorSheet: View {
                         ForEach(Self.colorPalette, id: \.hex) { color in
                             Button {
                                 selectedColorHex = color.hex
+                                useCustomColor = false
                             } label: {
                                 Circle()
                                     .fill(Color(hex: color.hex) ?? .blue)
                                     .frame(width: 36, height: 36)
                                     .overlay {
-                                        if selectedColorHex == color.hex {
+                                        if !useCustomColor && selectedColorHex == color.hex {
                                             Image(systemName: "checkmark")
                                                 .font(.caption.bold())
                                                 .foregroundStyle(.white)
@@ -99,6 +105,12 @@ struct TagEditorSheet: View {
                         }
                     }
                     .padding(.vertical, 4)
+
+                    ColorPicker("Custom Color", selection: $customColor, supportsOpacity: false)
+                        .onChange(of: customColor) { _, newColor in
+                            useCustomColor = true
+                            selectedColorHex = newColor.hexString
+                        }
                 }
 
                 Section("Icon") {
