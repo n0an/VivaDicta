@@ -1,3 +1,9 @@
+---
+name: commit-to-git
+description: Commit changes to git following project guidelines with proper confirmation flow
+disable-model-invocation: true
+---
+
 # Commit to Git
 
 Use this skill when the user asks to commit changes to git, or when you've completed work and changes are ready to be committed.

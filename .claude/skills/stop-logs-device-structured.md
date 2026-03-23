@@ -1,3 +1,9 @@
+---
+name: stop-logs-device-structured
+description: Collect structured device logs since the timestamp recorded by start-logs-device-structured using sudo log collect
+disable-model-invocation: true
+---
+
 # stop-logs-device-structured
 
 You are given the following context:

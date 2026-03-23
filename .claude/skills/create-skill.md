@@ -1,3 +1,9 @@
+---
+name: create-skill
+description: Create a new skill file in .claude/skills/ with proper structure and index registration
+disable-model-invocation: true
+---
+
 # Create Skill
 
 Use this skill when you need to create a new skill for the skill library, either from scratch or based on a completed workflow.
@@ -27,9 +33,21 @@ Create a new skill when:
 
 ### 2. Create the skill file
 
+Anytime you are asked to create a new skill, create it at the following path:
+
+```
+.claude/skills/
+  - <skill-name>.md
+```
+
 Follow this template structure:
 
 ~~~~md
+---
+name: skill-name
+description: One-line description of what this skill does and when to use it
+---
+
 # [Skill Name - Use Title Case]
 
 Use this skill when [specific, clear trigger scenario].
@@ -55,13 +73,13 @@ Use this skill when [specific, clear trigger scenario].
 - [Condition 1]
 - [Condition 2]
 
-→ Continue with **Path A** (steps 2A-NA)
+> Continue with **Path A** (steps 2A-NA)
 
 **Option B** if:
 - [Condition 1]
 - [Condition 2]
 
-→ Continue with **Path B** (steps 2B-NB)
+> Continue with **Path B** (steps 2B-NB)
 
 [If no decision needed, go straight to the step:]
 

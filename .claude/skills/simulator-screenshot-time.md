@@ -1,3 +1,9 @@
+---
+name: simulator-screenshot-time
+description: Set the iOS Simulator status bar to screenshot-ready state with clean time, battery, and signal
+disable-model-invocation: true
+---
+
 # Simulator Screenshot Time
 
 You are given the following context:

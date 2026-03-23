@@ -1,3 +1,9 @@
+---
+name: pr
+description: Create a GitHub Pull Request with proper title, description, and branch management
+disable-model-invocation: true
+---
+
 # pr
 
 You are given the following context:

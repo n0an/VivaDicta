@@ -1,3 +1,8 @@
+---
+name: add-new-screen
+description: Add a new screen (View) to the VivaDicta iOS app with proper navigation and architecture patterns
+---
+
 # Add New Screen
 
 Use this skill when adding a new screen (View) to the VivaDicta iOS app.

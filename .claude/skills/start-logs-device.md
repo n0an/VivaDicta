@@ -1,3 +1,9 @@
+---
+name: start-logs-device
+description: Launch VivaDicta on a physical iOS device with print logging enabled for real-time console capture
+disable-model-invocation: true
+---
+
 # start-logs-device
 
 ## Task

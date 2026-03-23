@@ -1,3 +1,9 @@
+---
+name: feature-plan
+description: Create a comprehensive implementation plan for a new VivaDicta feature
+disable-model-invocation: true
+---
+
 # Feature Planning Prompt
 
 You are helping plan a new feature for VivaDicta, an iOS voice transcription app. Please analyze the requested feature and provide a comprehensive implementation plan.
@@ -31,7 +37,7 @@ For the requested feature, provide:
 - Service layer changes
 - Integration points with existing code
 
-### 3. Architecture Considerations  
+### 3. Architecture Considerations
 - Thread safety and Swift concurrency patterns
 - State management updates (AppState changes)
 - SwiftData schema modifications if needed

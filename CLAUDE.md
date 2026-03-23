@@ -5,13 +5,7 @@ If you don't know answer - it's ok to say that you don't know. It's not necessar
 
 ## Skills
 
-When @.claude/skills is mentioned or when starting a task:
-
-1. Read .claude/skills/CLAUDE.md
-2. Scan the index for relevant skills
-3. Mention which skills you're referencing
-4. Note any deviations from the skill pattern and why
-5. Suggest new skills when you see repeated patterns (use `.claude/commands/create-skill.md` to create a new skill)
+All skills live in `.claude/skills/`. Use `/create-skill` to create new ones when you see repeated patterns.
 
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands

@@ -1,3 +1,8 @@
+---
+name: xcodebuild-testing
+description: Run unit tests, UI tests, or specific test cases for VivaDicta using xcodebuild command-line tool
+---
+
 # Xcodebuild Testing
 
 Use this skill when you need to run unit tests, UI tests, or specific test cases for the VivaDicta iOS app using xcodebuild command-line tool.

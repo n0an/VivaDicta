@@ -1,3 +1,9 @@
+---
+name: screenshot
+description: Capture a screenshot of the iOS Simulator and optionally analyze it
+disable-model-invocation: true
+---
+
 # screenshot
 
 You are given the following context:

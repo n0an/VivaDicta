@@ -1,3 +1,8 @@
+---
+name: complex-task
+description: Systematic Explore-Plan-Code framework for tackling complex implementation tasks
+---
+
 # complex-task
 
 You are given the following context:
@@ -149,13 +154,13 @@ func fetchData() async throws -> Data {
 ```
 
 ### Swift 6 Concurrency Checklist
-- ✅ Enable strict concurrency checking in build settings
-- ✅ All UI updates isolated to @MainActor
-- ✅ Use actors for shared mutable state (e.g., WhisperContext)
-- ✅ Mark types as Sendable when crossing concurrency boundaries
-- ✅ Avoid completion handlers - use async/await
-- ✅ Remember: SwiftUI Views are implicitly @MainActor
-- ✅ Use `nonisolated` for non-UI async functions when appropriate
+- Enable strict concurrency checking in build settings
+- All UI updates isolated to @MainActor
+- Use actors for shared mutable state (e.g., WhisperContext)
+- Mark types as Sendable when crossing concurrency boundaries
+- Avoid completion handlers - use async/await
+- Remember: SwiftUI Views are implicitly @MainActor
+- Use `nonisolated` for non-UI async functions when appropriate
 
 ### Performance Optimization
 - Use `@State` with `onChange` modifiers for expensive filtering

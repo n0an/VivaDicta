@@ -1,3 +1,9 @@
+---
+name: start-logs
+description: Start a real-time log capture session for VivaDicta in the iOS Simulator
+disable-model-invocation: true
+---
+
 # start-logs
 
 ## Task

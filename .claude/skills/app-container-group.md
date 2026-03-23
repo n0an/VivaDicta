@@ -1,3 +1,9 @@
+---
+name: app-container-group
+description: Print the path to VivaDicta's App Group container directory in the iOS Simulator
+disable-model-invocation: true
+---
+
 # app-container-group
 
 Print the path to VivaDicta's App Group container directory in the iOS Simulator.

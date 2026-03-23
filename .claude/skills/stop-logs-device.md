@@ -1,3 +1,9 @@
+---
+name: stop-logs-device
+description: Stop the active device log capture session and report the log file location
+disable-model-invocation: true
+---
+
 # stop-logs-device
 
 ## Task
