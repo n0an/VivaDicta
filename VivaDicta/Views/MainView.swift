@@ -291,7 +291,7 @@ struct MainView: View {
     private var trailingToolbarContent: some ToolbarContent {
         if isSelectionMode {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Cancel") {
+                Button("Done") {
                     HapticManager.lightImpact()
                     exitSelectionMode()
                 }
