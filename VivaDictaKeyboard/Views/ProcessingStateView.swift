@@ -70,7 +70,7 @@ struct ProcessingStateView: View {
                         .background(.gray.opacity(0.1), in: .circle)
                         .contentShape(.rect)
                 }
-                .padding(.horizontal, 8)
+                .padding(.trailing, 16)
             }
             .padding(.bottom, 23)
             

@@ -18,6 +18,7 @@ struct ModeEditView: View {
     @State private var showingAlert: Bool = false
     @State private var modeEditViewError: SettingsError = .duplicateModeName("")
     @State private var showCustomTranscriptionConfiguration: Bool = false
+    @FocusState private var isNameFieldFocused: Bool
     @State private var showPresetPicker: Bool = false
     @State private var showAIModelPicker: Bool = false
     
@@ -74,6 +75,18 @@ struct ModeEditView: View {
         Form {
             Section("Mode Details") {
                 TextField("Mode Name", text: $viewModel.modeName)
+                    .focused($isNameFieldFocused)
+                    .overlay(alignment: .trailing) {
+                        if isNameFieldFocused && !viewModel.modeName.isEmpty {
+                            Button("Clear", systemImage: "xmark.circle.fill") {
+                                viewModel.modeName = ""
+                            }
+                            .labelStyle(.iconOnly)
+                            .foregroundStyle(.secondary)
+                            .padding(8)
+                            .contentShape(.rect)
+                        }
+                    }
             }
             
             Section(header: Text("Transcription"),
@@ -507,6 +520,7 @@ struct ModeEditView: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                                .padding(.leading)
                                 .onChange(of: viewModel.useClipboardAsSelectedText) { _, _ in
                                     HapticManager.selectionChanged()
                                 }

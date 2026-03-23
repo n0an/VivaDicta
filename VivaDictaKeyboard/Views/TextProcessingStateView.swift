@@ -32,7 +32,8 @@ struct TextProcessingStateView: View {
                         .background(.gray.opacity(0.1), in: .circle)
                         .contentShape(.rect)
                 }
-                .padding(.horizontal, 8)
+                .buttonStyle(.plain)
+                .padding(.trailing, 16)
             }
             .padding(.bottom, 16)
 
