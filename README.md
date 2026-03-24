@@ -5,7 +5,7 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  Transform your voice into polished text with AI
+  iOS voice-to-text app powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 15+ AI providers
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
