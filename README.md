@@ -5,7 +5,7 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  iOS voice-to-text app powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 15+ AI providers
+  iOS voice-to-text app with AI voice keyboard — dictate into any app, powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 15+ AI providers
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
@@ -27,7 +27,7 @@
 
 > Started as "I don't want to pay for WisprFlow." Ended up building something more flexible - on-device transcription, 15+ AI providers, and full control over your voice-to-text pipeline.
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. It supports 10+ transcription providers, 15+ AI providers, a custom keyboard extension, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. It supports 10+ transcription providers, 15+ AI providers, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
 
 ## Screenshots
 
