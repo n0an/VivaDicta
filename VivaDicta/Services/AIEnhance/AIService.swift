@@ -602,6 +602,9 @@ class AIService {
                 logger.logWarning("Custom OpenAI model name not configured")
                 return false
             }
+        } else if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled,
+                  let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+            // Anthropic with Claude CLI Server doesn't need API key
         } else {
             // Check if API key exists for the selected cloud provider
             guard getAPIKey(for: aiProvider) != nil else {
@@ -796,6 +799,31 @@ class AIService {
 
         // Cloud providers - compute system message only when needed
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
+
+        // Claude CLI Server: route Anthropic requests through remote server when enabled
+        if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled,
+           let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+            let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            logger.logDebug("AI Processing - Using Claude CLI Server at \(serverURL)")
+            do {
+                let result = try await ClaudeCLIServerClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: selectedMode.aiModel
+                )
+                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredResult
+            } catch {
+                // Fall back to API key if server fails and key exists
+                if self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Claude CLI Server failed, falling back to API key: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.localizedDescription)
+                }
+            }
+        }
 
         // Cloud providers require API key
         guard let apiKey = self.getAPIKey(for: aiProvider) else {
@@ -1490,8 +1518,14 @@ class AIService {
 
         // Add cloud providers that have API keys configured
         providers += AIProvider.allCases.filter { provider in
-            provider.requiresAPIKey &&
-            provider.apiKey != nil
+            if provider == .anthropic {
+                // Anthropic is connected if it has an API key OR Claude CLI Server is enabled
+                let serverConfigured = ClaudeCLIServerClient.isEnabled
+                    && ClaudeCLIServerClient.serverURL != nil
+                    && !ClaudeCLIServerClient.serverURL!.isEmpty
+                return serverConfigured || provider.apiKey != nil
+            }
+            return provider.requiresAPIKey && provider.apiKey != nil
         }
 
         connectedProviders = providers

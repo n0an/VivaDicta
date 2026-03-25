@@ -90,6 +90,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>VivaDicta connects to Claude CLI Server running on your Mac for AI text processing.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
