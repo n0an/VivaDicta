@@ -27,7 +27,7 @@
 
 > Started as "I don't want to pay for WisprFlow." Ended up building something more flexible - on-device transcription, 15+ AI providers, and full control over your voice-to-text pipeline.
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. It supports 10+ transcription providers, 15+ AI providers, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Models for free, fully on-device AI. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. It supports 10+ transcription providers, 15+ AI providers, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
 
 ## Screenshots
 
@@ -68,9 +68,9 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Each mode remembers its settings — switch contexts with one tap
 - Clipboard context — AI uses copied text as context when processing your dictation (e.g., copy a message, then dictate your reply)
 
-**Custom Keyboard**
+**Custom AI Voice Keyboard**
 <p>
-<img src="assets/readme/keyboard.png" width="220" alt="Custom Keyboard">
+<img src="assets/readme/keyboard.png" width="220" alt="Custom AI voice Keyboard">
 </p>
 
 - System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
