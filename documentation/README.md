@@ -7,6 +7,7 @@
 | [Recording & Audio Pipeline](Recording-Audio-Pipeline-Architecture.md) | AVAudioRecorder setup, audio session management, file handling |
 | [Transcription System](Transcription-System-Architecture.md) | On-device (WhisperKit/Parakeet) and cloud transcription routing |
 | [AI Processing](AI-Processing-Architecture.md) | Multi-provider AI text processing, prompt building, mode/preset routing |
+| [OAuth](OAuth-Architecture.md) | OAuth PKCE sign-in for ChatGPT/Gemini, local callback server bridge, token lifecycle |
 | [Text Processing Pipeline](Text-Processing-Pipeline-Architecture.md) | Multi-stage pipeline: replacements, vocabulary, AI, output filters, formatting |
 | [Preset System](Preset-System-Architecture.md) | Built-in and custom presets, preset catalog, sync with CloudKit |
 | [Data Persistence & CloudKit Sync](Data-Persistence-CloudKit-Architecture.md) | SwiftData models, CloudKit container, cross-device sync |

@@ -103,11 +103,19 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                            } else if provider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("CLI")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             } else if provider == .openAI && appState.aiService.isChatGPTSignedIn {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("ChatGPT")
+                                    Text("OAuth")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
