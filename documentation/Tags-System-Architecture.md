@@ -26,6 +26,7 @@ The tags system allows users to organize and filter transcriptions. It has two l
 │  │  • "shareExtension"   │     │                                      │  │
 │  │  • "actionExtension"  │     │  Junction model pattern for          │  │
 │  │  • "macApp"           │     │  CloudKit-safe many-to-many          │  │
+│  │  • "youtube"          │     │                                      │  │
 │  └─────────────────────┘     └──────────────────────────────────────┘  │
 │                                                                          │
 │  ┌────────────────────────────────────────────────────────────────────┐  │
@@ -51,6 +52,7 @@ A simple `String?` property on the `Transcription` model. Set once at creation t
 | `"shareExtension"` | Share extension | `square.and.arrow.down` |
 | `"actionExtension"` | Action extension | `bolt.fill` |
 | `"macApp"` | macOS companion app | `desktopcomputer` |
+| `"youtube"` | macOS YouTube transcription | `play.rectangle.fill` |
 | `nil` | Created before source tracking | No badge shown |
 
 Constants and display helpers are in `SourceTag.swift`.
@@ -91,6 +93,7 @@ Source tags are set automatically at transcription creation time:
 | Share extension | `AppGroupCoordinator.setPendingSourceTag("shareExtension")` |
 | Action extension | `AppGroupCoordinator.setPendingSourceTag("actionExtension")` |
 | macOS app | Hardcoded `sourceTag: "macApp"` at all creation sites |
+| YouTube transcription (macOS) | Hardcoded `sourceTag: "youtube"` in YouTubeTranscriptionManager |
 
 For shared audio (share/action extensions), the source tag is stored in `AppGroupCoordinator` shared UserDefaults and consumed by `MainView.handleSharedAudioTranscription()` when the main app processes the audio.
 

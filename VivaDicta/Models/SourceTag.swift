@@ -17,6 +17,7 @@ enum SourceTag {
     static let shareExtension = "shareExtension"
     static let actionExtension = "actionExtension"
     static let macApp = "macApp"
+    static let youtube = "youtube"
 
     static func displayName(for tag: String?) -> String {
         switch tag {
@@ -25,6 +26,7 @@ enum SourceTag {
         case shareExtension: "Shared"
         case actionExtension: "Action"
         case macApp: "Mac"
+        case youtube: "YouTube"
         default: "Unknown"
         }
     }
@@ -36,6 +38,7 @@ enum SourceTag {
         case shareExtension: "square.and.arrow.down"
         case actionExtension: "bolt.fill"
         case macApp: "desktopcomputer"
+        case youtube: "play.rectangle.fill"
         default: "questionmark.circle"
         }
     }
@@ -47,6 +50,7 @@ enum SourceTag {
         case shareExtension: .orange
         case actionExtension: .green
         case macApp: .teal
+        case youtube: .red
         default: .secondary
         }
     }
