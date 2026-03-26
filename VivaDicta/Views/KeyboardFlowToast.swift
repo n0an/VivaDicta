@@ -22,7 +22,7 @@ struct KeyboardFlowToast: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
-        .background(.ultraThinMaterial)
+        .glassEffectOrMaterial()
         .clipShape(.capsule)
         .shadow(color: .black.opacity(0.15), radius: 10, y: 5)
         .onAppear {
