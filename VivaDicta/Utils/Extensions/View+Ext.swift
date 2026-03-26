@@ -171,6 +171,25 @@ extension View {
     }
 }
 
+// MARK: - glassEffectOrMaterial
+struct GlassEffectOrMaterialModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive())
+        } else {
+            content
+                .background(.ultraThinMaterial)
+        }
+    }
+}
+
+extension View {
+    func glassEffectOrMaterial() -> some View {
+        modifier(GlassEffectOrMaterialModifier())
+    }
+}
+
 // MARK: - glassEffectClear
 struct GlassEffectClearModifier: ViewModifier {
     

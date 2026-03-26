@@ -127,6 +127,7 @@ struct TranscriptionDetailView: View {
                 )
                 .padding(.horizontal)
                 .padding(.vertical, 8)
+                .glassEffectOrMaterial()
 
                 bottomActionBar
             }
