@@ -27,6 +27,11 @@ final class KeychainService: Sendable {
             logger.logError("Failed to convert value to data for key: \(key)")
             return false
         }
+        return save(data: data, forKey: key, syncable: syncable)
+    }
+
+    @discardableResult
+    func save(data: Data, forKey key: String, syncable: Bool = true) -> Bool {
         delete(forKey: key, syncable: syncable)
 
         var query = baseQuery(forKey: key, syncable: syncable)

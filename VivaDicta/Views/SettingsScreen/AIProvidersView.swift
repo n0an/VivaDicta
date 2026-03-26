@@ -103,6 +103,14 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                            } else if provider == .openAI && appState.aiService.isChatGPTSignedIn {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("ChatGPT")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             } else if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
@@ -129,6 +137,8 @@ struct AIProviders: View {
                 CustomOpenAIConfigurationView(aiService: appState.aiService)
             } else if provider == .anthropic {
                 AnthropicConfigurationView(aiService: appState.aiService)
+            } else if provider == .openAI {
+                OpenAIConfigurationView(aiService: appState.aiService)
             } else {
                 AddAPIKeyView(
                     provider: provider,

@@ -53,6 +53,8 @@ public enum LogCategory: String {
     case presetMigration = "PresetMigration"
     case presetSync = "PresetSync"
     case keychainService = "KeychainService"
+    case oauthManager = "OAuthManager"
+    case chatGPTAPI = "ChatGPTAPIClient"
 
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"
