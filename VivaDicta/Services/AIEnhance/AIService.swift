@@ -45,6 +45,12 @@ class AIService {
 
     /// List of AI providers that have valid API keys or are otherwise available.
     public var connectedProviders: [AIProvider] = []
+
+    // MARK: - ChatGPT OAuth
+    public var isChatGPTSignedIn: Bool = false
+    public var chatGPTEmail: String?
+    public var isChatGPTSigningIn: Bool = false
+
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
     public var huggingFaceModels: [String] = []
@@ -155,6 +161,7 @@ class AIService {
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
+            refreshChatGPTOAuthState()
             refreshConnectedProviders()
             await dismissTranscriptionTipsIfModelConfigured()
             await autoAssignCloudTranscriptionIfAvailable()
@@ -604,6 +611,8 @@ class AIService {
             }
         } else if aiProvider == .anthropic && connectedProviders.contains(.anthropic) {
             // Anthropic is connected (via API key or CLI Server)
+        } else if aiProvider == .openAI && connectedProviders.contains(.openAI) {
+            // OpenAI is connected (via ChatGPT OAuth or API key)
         } else {
             // Check if API key exists for the selected cloud provider
             guard getAPIKey(for: aiProvider) != nil else {
@@ -824,13 +833,39 @@ class AIService {
             }
         }
 
+        // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
+        let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+
+        // ChatGPT OAuth: route OpenAI requests through ChatGPT backend API when signed in
+        if aiProvider == .openAI && isChatGPTSignedIn {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            do {
+                let provider = OpenAIChatGPTOAuthProvider()
+                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let model = selectedMode.aiModel.isEmpty ? ChatGPTAPIClient.defaultModel : selectedMode.aiModel
+                let result = try await ChatGPTAPIClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: model,
+                    accessToken: token,
+                    accountId: accountId
+                )
+                return AIEnhancementOutputFilter.filter(result)
+            } catch let error as OAuthError {
+                // If OAuth fails and we have an API key, fall through to standard path
+                if self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("ChatGPT OAuth failed, falling back to API key: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "ChatGPT OAuth error")
+                }
+            }
+        }
+
         // Cloud providers require API key
         guard let apiKey = self.getAPIKey(for: aiProvider) else {
             throw EnhancementError.notConfigured
         }
-
-        // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
-        let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Store for TranscriptionVariation
         lastSystemMessageSent = resolvedSystemMessage
@@ -1515,13 +1550,16 @@ class AIService {
             providers.append(.customOpenAI)
         }
 
-        // Add cloud providers that have API keys configured
+        // Add cloud providers that have API keys configured or OAuth signed in
         providers += AIProvider.allCases.filter { provider in
             if provider == .anthropic {
                 // Anthropic is connected if it has an API key OR Claude CLI Server is verified
                 let serverConfigured = ClaudeCLIServerClient.isEnabled
                     && ClaudeCLIServerClient.isVerified
                 return serverConfigured || provider.apiKey != nil
+            }
+            if provider == .openAI {
+                return isChatGPTSignedIn || provider.apiKey != nil
             }
             return provider.requiresAPIKey && provider.apiKey != nil
         }
@@ -1904,6 +1942,10 @@ class AIService {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
+        // ChatGPT OAuth: show only Codex-supported models when signed in
+        if provider == .openAI && isChatGPTSignedIn {
+            return ChatGPTAPIClient.supportedModels
+        }
         return provider.availableModels
     }
     
@@ -2103,4 +2145,40 @@ enum EnhancementError: LocalizedError {
             return "An error occurred: \(message)"
         }
     }
+}
+
+// MARK: - ChatGPT OAuth
+
+extension AIService {
+    /// Refreshes the ChatGPT OAuth state from stored credentials.
+    @MainActor
+    func refreshChatGPTOAuthState() {
+        let provider = OpenAIChatGPTOAuthProvider()
+        isChatGPTSignedIn = OAuthManager.shared.isSignedIn(provider: provider)
+        chatGPTEmail = OAuthManager.shared.accountEmail(for: provider)
+    }
+
+    /// Signs in to ChatGPT via OAuth.
+    @MainActor
+    func signInWithChatGPT() async throws {
+        isChatGPTSigningIn = true
+        defer { isChatGPTSigningIn = false }
+
+        let provider = OpenAIChatGPTOAuthProvider()
+        let credential = try await OAuthManager.shared.signIn(provider: provider)
+        isChatGPTSignedIn = true
+        chatGPTEmail = credential.accountEmail
+        refreshConnectedProviders()
+    }
+
+    /// Signs out from ChatGPT OAuth.
+    @MainActor
+    func signOutFromChatGPT() {
+        let provider = OpenAIChatGPTOAuthProvider()
+        OAuthManager.shared.signOut(provider: provider)
+        isChatGPTSignedIn = false
+        chatGPTEmail = nil
+        refreshConnectedProviders()
+    }
+
 }

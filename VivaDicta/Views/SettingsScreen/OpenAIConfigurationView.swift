@@ -1,0 +1,349 @@
+// Copyright © 2026 Anton Novoselov. All rights reserved.
+
+import SwiftUI
+
+struct OpenAIConfigurationView: View {
+    @Environment(\.dismiss) private var dismiss
+    let aiService: AIService
+
+    // API Key state
+    @State private var apiKey: String = ""
+    @State private var isVerifying = false
+    @State private var verificationError: String?
+    @State private var hasExistingKey = false
+    @State private var showDeleteConfirmation = false
+
+    // OAuth error
+    @State private var showOAuthError = false
+    @State private var oauthErrorMessage = ""
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 8) {
+                    if let iconName = AIProvider.openAI.iconName {
+                        Image(iconName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 64, height: 64)
+                    }
+
+                    Text("OpenAI")
+                        .font(.title2)
+
+                    if aiService.connectedProviders.contains(.openAI) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(aiService.isChatGPTSignedIn ? "ChatGPT Connected" : "API Key Configured")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(.top, 8)
+
+                // ChatGPT OAuth section
+                chatGPTSection
+
+                // API Key section
+                apiKeySection
+            }
+            .padding()
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .navigationTitle("OpenAI")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            let existingKey = AIProvider.openAI.apiKey
+            apiKey = existingKey ?? ""
+            hasExistingKey = existingKey != nil
+        }
+        .alert("Sign-In Error", isPresented: $showOAuthError) {
+            Button("OK") {}
+        } message: {
+            Text(oauthErrorMessage)
+        }
+        .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                deleteAPIKey()
+            }
+        } message: {
+            Text("Are you sure you want to delete the API key for OpenAI? This action cannot be undone.")
+        }
+    }
+
+    // MARK: - ChatGPT OAuth Section
+
+    private var chatGPTSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ChatGPT Account")
+                .font(.headline)
+
+            Text("Use your ChatGPT Plus/Pro subscription — no API key needed.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if aiService.isChatGPTSignedIn {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Signed in")
+                            .font(.callout)
+                        if let email = aiService.chatGPTEmail {
+                            Text(email)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Button("Sign Out", role: .destructive) {
+                        aiService.signOutFromChatGPT()
+                    }
+                    .controlSize(.small)
+                }
+            } else {
+                if #available(iOS 26.0, *) {
+                    Button {
+                        signInWithChatGPT()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if aiService.isChatGPTSigningIn {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("Sign in with ChatGPT")
+                                .font(.headline.weight(.medium))
+                        }
+                    }
+                    .disabled(aiService.isChatGPTSigningIn)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        signInWithChatGPT()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if aiService.isChatGPTSigningIn {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("Sign in with ChatGPT")
+                                .font(.headline.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
+                    }
+                    .disabled(aiService.isChatGPTSigningIn)
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding()
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.secondary)
+        }
+    }
+
+    // MARK: - API Key Section
+
+    private var apiKeySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("API Key")
+                .font(.headline)
+
+            Text("Or use an OpenAI API key directly.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("API Key", text: $apiKey)
+                .privacySensitive()
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding()
+                .background {
+                    Capsule()
+                        .stroke(verificationError != nil ? .red : .gray, lineWidth: verificationError != nil ? 1.5 : 0.5)
+                }
+                .onChange(of: apiKey) { _, _ in
+                    verificationError = nil
+                }
+
+            if let error = verificationError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            if #available(iOS 26.0, *) {
+                HStack {
+                    Button {
+                        saveAPIKey()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isVerifying {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("Save API Key")
+                                .font(.headline.weight(.medium))
+                        }
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
+
+                    Button {
+                        pasteAndSave()
+                    } label: {
+                        Text("Paste")
+                            .font(.headline.weight(.medium))
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.gray.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
+                }
+
+                if hasExistingKey {
+                    Button {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.red.opacity(0.2)).interactive())
+                    .padding(.top, 4)
+                }
+            } else {
+                HStack {
+                    Button {
+                        saveAPIKey()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isVerifying {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("Save API Key")
+                                .font(.headline.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
+                    .buttonStyle(.plain)
+
+                    Button {
+                        pasteAndSave()
+                    } label: {
+                        Text("Paste")
+                            .font(.headline.weight(.medium))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.gray, lineWidth: 2)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if hasExistingKey {
+                    Button {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.red, lineWidth: 1.5)
+                    }
+                    .padding(.top, 4)
+                }
+            }
+        }
+        .padding()
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.secondary)
+        }
+    }
+
+    // MARK: - Actions
+
+    private func signInWithChatGPT() {
+        Task {
+            do {
+                try await aiService.signInWithChatGPT()
+            } catch {
+                oauthErrorMessage = error.localizedDescription
+                showOAuthError = true
+            }
+        }
+    }
+
+    private func saveAPIKey() {
+        Task {
+            isVerifying = true
+            verificationError = nil
+            HapticManager.mediumImpact()
+
+            let success = await aiService.saveAPIKey(apiKey, for: .openAI)
+            isVerifying = false
+            if success {
+                hasExistingKey = true
+                HapticManager.success()
+            } else {
+                verificationError = "Invalid API key"
+                HapticManager.error()
+            }
+        }
+    }
+
+    private func pasteAndSave() {
+        if let clipboardString = UIPasteboard.general.string {
+            let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                apiKey = trimmed
+                saveAPIKey()
+            }
+        }
+    }
+
+    private func deleteAPIKey() {
+        KeychainService.shared.delete(forKey: AIProvider.openAI.keychainKey)
+        apiKey = ""
+        hasExistingKey = false
+        aiService.refreshConnectedProviders()
+        HapticManager.success()
+    }
+}
