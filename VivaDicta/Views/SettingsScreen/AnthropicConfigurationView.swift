@@ -395,7 +395,10 @@ struct AnthropicConfigurationView: View {
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()
-        aiService.disableAIEnhancementForModesUsingProvider(.anthropic)
+        // Only disable modes if CLI Server isn't keeping Anthropic connected
+        if !aiService.connectedProviders.contains(.anthropic) {
+            aiService.disableAIEnhancementForModesUsingProvider(.anthropic)
+        }
     }
 }
 
