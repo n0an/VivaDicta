@@ -24,6 +24,7 @@ struct AnthropicConfigurationView: View {
     @State private var serverToken = KeychainService.shared.getString(forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false) ?? ""
     @State private var isTestingConnection = false
     @State private var connectionTestResult: Bool?
+    @State private var showCLIWarning = false
 
     var body: some View {
         ScrollView {
@@ -76,6 +77,17 @@ struct AnthropicConfigurationView: View {
                 connectionTestResult = true
             }
         }
+        .alert("Claude CLI Warning", isPresented: $showCLIWarning) {
+            Button("Cancel", role: .cancel) { }
+            Button("Enable") {
+                isServerEnabled = true
+                UserDefaults.standard.set(true, forKey: ClaudeCLIServerClient.isEnabledKey)
+                connectionTestResult = nil
+                aiService.refreshConnectedProviders()
+            }
+        } message: {
+            Text("Claude Code is designed and licensed for software development use. Using it for general text enhancement may fall outside Anthropic's intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk. VivaDicta is not responsible for any consequences to your Anthropic account.\n\nAlternative: use an Anthropic API key for unrestricted usage.")
+        }
         .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -97,15 +109,20 @@ struct AnthropicConfigurationView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Toggle("Use Claude CLI Server", isOn: $isServerEnabled)
-                .onChange(of: isServerEnabled) { _, newValue in
-                    UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.isEnabledKey)
-                    if !newValue {
+            Toggle("Use Claude CLI Server", isOn: Binding(
+                get: { isServerEnabled },
+                set: { newValue in
+                    if newValue {
+                        showCLIWarning = true
+                    } else {
+                        isServerEnabled = false
+                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isEnabledKey)
                         UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isVerifiedKey)
+                        connectionTestResult = nil
+                        aiService.refreshConnectedProviders()
                     }
-                    connectionTestResult = nil
-                    aiService.refreshConnectedProviders()
                 }
+            ))
 
             if isServerEnabled {
                 TextField("Server URL (e.g. http://192.168.1.5:3456)", text: $serverURL)
