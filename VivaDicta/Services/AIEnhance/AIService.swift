@@ -1943,6 +1943,10 @@ class AIService {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
+        // ChatGPT OAuth: show only Codex-supported models when signed in
+        if provider == .openAI && isChatGPTSignedIn {
+            return ChatGPTAPIClient.supportedModels
+        }
         return provider.availableModels
     }
     
