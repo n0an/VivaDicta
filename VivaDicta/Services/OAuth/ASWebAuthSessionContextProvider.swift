@@ -3,6 +3,7 @@
 import AuthenticationServices
 import UIKit
 
+@MainActor
 class ASWebAuthSessionContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
     static let shared = ASWebAuthSessionContextProvider()
 

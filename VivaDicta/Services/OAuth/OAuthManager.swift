@@ -36,7 +36,9 @@ final class OAuthManager: Sendable {
         let state = PKCEGenerator.generateState()
 
         // Build authorization URL
-        var components = URLComponents(string: provider.authorizeURL)!
+        guard var components = URLComponents(string: provider.authorizeURL) else {
+            throw OAuthError.tokenExchangeFailed("Invalid authorization URL")
+        }
         var queryItems = [
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "client_id", value: provider.clientId),

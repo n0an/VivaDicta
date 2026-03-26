@@ -50,7 +50,6 @@ class AIService {
     public var isChatGPTSignedIn: Bool = false
     public var chatGPTEmail: String?
     public var isChatGPTSigningIn: Bool = false
-    public var chatGPTModels: [String] = []
 
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
@@ -2179,16 +2178,7 @@ extension AIService {
         OAuthManager.shared.signOut(provider: provider)
         isChatGPTSignedIn = false
         chatGPTEmail = nil
-        chatGPTModels = []
         refreshConnectedProviders()
     }
 
-    /// Returns the list of available models for the OpenAI provider,
-    /// preferring ChatGPT OAuth models when signed in.
-    func chatGPTAvailableModels() -> [String] {
-        if isChatGPTSignedIn {
-            return chatGPTModels.isEmpty ? ChatGPTAPIClient.supportedModels : chatGPTModels
-        }
-        return AIProvider.openAI.availableModels
-    }
 }
