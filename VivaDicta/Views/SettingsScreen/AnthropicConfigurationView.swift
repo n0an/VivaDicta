@@ -134,18 +134,47 @@ struct AnthropicConfigurationView: View {
                     }
 
                 HStack {
-                    Button {
-                        saveAndTestConnection()
-                    } label: {
-                        HStack(spacing: 6) {
-                            if isTestingConnection {
-                                ProgressView()
-                                    .controlSize(.small)
+                    if #available(iOS 26.0, *) {
+                        Button {
+                            saveAndTestConnection()
+                        } label: {
+                            HStack(spacing: 6) {
+                                if isTestingConnection {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                                Text("Test & Save")
+                                    .font(.headline.weight(.medium))
                             }
-                            Text("Test Connection")
                         }
+                        .disabled(serverURL.isEmpty || isTestingConnection)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            saveAndTestConnection()
+                        } label: {
+                            HStack(spacing: 6) {
+                                if isTestingConnection {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                                Text("Test & Save")
+                                    .font(.headline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.blue, lineWidth: 2)
+                            }
+                        }
+                        .disabled(serverURL.isEmpty || isTestingConnection)
+                        .buttonStyle(.plain)
                     }
-                    .disabled(serverURL.isEmpty || isTestingConnection)
 
                     if let result = connectionTestResult {
                         HStack(spacing: 4) {
@@ -196,42 +225,121 @@ struct AnthropicConfigurationView: View {
                     .foregroundStyle(.red)
             }
 
-            HStack {
-                Button {
-                    saveAPIKey()
-                } label: {
-                    HStack(spacing: 6) {
-                        if isVerifying {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                        Text("Save API Key")
-                    }
-                }
-                .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
-
-                Button {
-                    if let clipboardString = UIPasteboard.general.string {
-                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            apiKey = trimmed
-                            saveAPIKey()
+            if #available(iOS 26.0, *) {
+                HStack {
+                    Button {
+                        saveAPIKey()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isVerifying {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("Save API Key")
+                                .font(.headline.weight(.medium))
                         }
                     }
-                } label: {
-                    Text("Paste & Save")
-                }
-            }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
 
-            if hasExistingKey {
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                    HapticManager.warning()
-                } label: {
-                    Text("Delete API Key")
-                        .font(.subheadline)
+                    Button {
+                        if let clipboardString = UIPasteboard.general.string {
+                            let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmed.isEmpty {
+                                apiKey = trimmed
+                                saveAPIKey()
+                            }
+                        }
+                    } label: {
+                        Text("Paste")
+                            .font(.headline.weight(.medium))
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.gray.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
                 }
-                .padding(.top, 4)
+
+                if hasExistingKey {
+                    Button {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.red.opacity(0.2)).interactive())
+                    .padding(.top, 4)
+                }
+            } else {
+                HStack {
+                    Button {
+                        saveAPIKey()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if isVerifying {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Text("Save API Key")
+                                .font(.headline.weight(.medium))
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
+                    .buttonStyle(.plain)
+
+                    Button {
+                        if let clipboardString = UIPasteboard.general.string {
+                            let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmed.isEmpty {
+                                apiKey = trimmed
+                                saveAPIKey()
+                            }
+                        }
+                    } label: {
+                        Text("Paste")
+                            .font(.headline.weight(.medium))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.gray, lineWidth: 2)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if hasExistingKey {
+                    Button {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.red, lineWidth: 1.5)
+                    }
+                    .padding(.top, 4)
+                }
             }
         }
         .padding()
