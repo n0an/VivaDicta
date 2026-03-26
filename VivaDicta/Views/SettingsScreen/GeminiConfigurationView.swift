@@ -2,7 +2,7 @@
 
 import SwiftUI
 
-struct OpenAIConfigurationView: View {
+struct GeminiConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
     let aiService: AIService
 
@@ -22,21 +22,21 @@ struct OpenAIConfigurationView: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 8) {
-                    if let iconName = AIProvider.openAI.iconName {
+                    if let iconName = AIProvider.gemini.iconName {
                         Image(iconName)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 64, height: 64)
                     }
 
-                    Text("OpenAI")
+                    Text("Gemini")
                         .font(.title2)
 
-                    if aiService.connectedProviders.contains(.openAI) {
+                    if aiService.connectedProviders.contains(.gemini) {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(aiService.isChatGPTSignedIn ? "ChatGPT Connected" : "API Key Configured")
+                            Text(aiService.isGeminiSignedIn ? "Google Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -44,8 +44,8 @@ struct OpenAIConfigurationView: View {
                 }
                 .padding(.top, 8)
 
-                // ChatGPT OAuth section
-                chatGPTSection
+                // Google OAuth section
+                geminiOAuthSection
 
                 // API Key section
                 apiKeySection
@@ -53,10 +53,10 @@ struct OpenAIConfigurationView: View {
             .padding()
         }
         .scrollDismissesKeyboard(.interactively)
-        .navigationTitle("OpenAI")
+        .navigationTitle("Gemini")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            let existingKey = AIProvider.openAI.apiKey
+            let existingKey = AIProvider.gemini.apiKey
             apiKey = existingKey ?? ""
             hasExistingKey = existingKey != nil
         }
@@ -71,29 +71,29 @@ struct OpenAIConfigurationView: View {
                 deleteAPIKey()
             }
         } message: {
-            Text("Are you sure you want to delete the API key for OpenAI? This action cannot be undone.")
+            Text("Are you sure you want to delete the API key for Gemini? This action cannot be undone.")
         }
     }
 
-    // MARK: - ChatGPT OAuth Section
+    // MARK: - Google OAuth Section
 
-    private var chatGPTSection: some View {
+    private var geminiOAuthSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("ChatGPT Account")
+            Text("Google Account")
                 .font(.headline)
 
-            Text("Use your ChatGPT Plus/Pro subscription — no API key needed.")
+            Text("Use your Google account with Gemini — no API key needed.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            if aiService.isChatGPTSignedIn {
+            if aiService.isGeminiSignedIn {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Signed in")
                             .font(.callout)
-                        if let email = aiService.chatGPTEmail {
+                        if let email = aiService.geminiEmail {
                             Text(email)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -101,39 +101,39 @@ struct OpenAIConfigurationView: View {
                     }
                     Spacer()
                     Button("Sign Out", role: .destructive) {
-                        aiService.signOutFromChatGPT()
+                        aiService.signOutFromGemini()
                     }
                     .controlSize(.small)
                 }
             } else {
                 if #available(iOS 26.0, *) {
                     Button {
-                        signInWithChatGPT()
+                        signInWithGemini()
                     } label: {
                         HStack(spacing: 6) {
-                            if aiService.isChatGPTSigningIn {
+                            if aiService.isGeminiSigningIn {
                                 ProgressView()
                                     .controlSize(.small)
                             }
-                            Text("Sign in with ChatGPT")
+                            Text("Sign in with Google")
                                 .font(.headline.weight(.medium))
                         }
                     }
-                    .disabled(aiService.isChatGPTSigningIn)
+                    .disabled(aiService.isGeminiSigningIn)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
                     .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
                     .buttonStyle(.plain)
                 } else {
                     Button {
-                        signInWithChatGPT()
+                        signInWithGemini()
                     } label: {
                         HStack(spacing: 6) {
-                            if aiService.isChatGPTSigningIn {
+                            if aiService.isGeminiSigningIn {
                                 ProgressView()
                                     .controlSize(.small)
                             }
-                            Text("Sign in with ChatGPT")
+                            Text("Sign in with Google")
                                 .font(.headline.weight(.medium))
                                 .foregroundStyle(.primary)
                         }
@@ -144,7 +144,7 @@ struct OpenAIConfigurationView: View {
                                 .stroke(.blue, lineWidth: 2)
                         }
                     }
-                    .disabled(aiService.isChatGPTSigningIn)
+                    .disabled(aiService.isGeminiSigningIn)
                     .buttonStyle(.plain)
                 }
             }
@@ -164,7 +164,7 @@ struct OpenAIConfigurationView: View {
             Text("API Key")
                 .font(.headline)
 
-            Text("Or use an OpenAI API key directly.")
+            Text("Or use a Gemini API key directly.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -301,10 +301,10 @@ struct OpenAIConfigurationView: View {
 
     // MARK: - Actions
 
-    private func signInWithChatGPT() {
+    private func signInWithGemini() {
         Task {
             do {
-                try await aiService.signInWithChatGPT()
+                try await aiService.signInWithGemini()
             } catch {
                 oauthErrorMessage = error.localizedDescription
                 showOAuthError = true
@@ -318,7 +318,7 @@ struct OpenAIConfigurationView: View {
             verificationError = nil
             HapticManager.mediumImpact()
 
-            let success = await aiService.saveAPIKey(apiKey, for: .openAI)
+            let success = await aiService.saveAPIKey(apiKey, for: .gemini)
             isVerifying = false
             if success {
                 hasExistingKey = true
@@ -341,7 +341,7 @@ struct OpenAIConfigurationView: View {
     }
 
     private func deleteAPIKey() {
-        KeychainService.shared.delete(forKey: AIProvider.openAI.keychainKey)
+        KeychainService.shared.delete(forKey: AIProvider.gemini.keychainKey)
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()

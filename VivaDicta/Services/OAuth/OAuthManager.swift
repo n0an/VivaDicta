@@ -58,7 +58,14 @@ final class OAuthManager: Sendable {
         }
 
         // Start local callback server that bridges localhost redirect → custom scheme
-        let callbackServer = OAuthCallbackServer(port: 1455, customSchemeRedirectBase: "vivadicta://auth/callback")
+        let callbackPort: UInt16 = {
+            if let urlComponents = URLComponents(string: provider.redirectURI),
+               let port = urlComponents.port {
+                return UInt16(port)
+            }
+            return 1455
+        }()
+        let callbackServer = OAuthCallbackServer(port: callbackPort, customSchemeRedirectBase: "vivadicta://auth/callback")
         let listener = try await callbackServer.start()
         defer { listener.cancel() }
 
