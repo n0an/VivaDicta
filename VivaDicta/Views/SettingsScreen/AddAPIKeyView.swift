@@ -11,14 +11,14 @@ struct AddAPIKeyView: View {
     @Environment(\.dismiss) var dismiss
     let provider: AIProvider
     let aiService: AIService
-    
+
     @State private var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
     @State private var clearButtonVisible = false
     @State private var showDeleteConfirmation = false
     @State private var hasExistingKey = false
-    
+
     var onSave: (AIProvider) -> Void
     
     var body: some View {
@@ -177,6 +177,10 @@ struct AddAPIKeyView: View {
             clearButtonVisible = !apiKey.isEmpty
         }
         .padding()
+        .contentShape(.rect)
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         .navigationTitle("API Key")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

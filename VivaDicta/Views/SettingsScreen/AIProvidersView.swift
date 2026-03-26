@@ -127,6 +127,8 @@ struct AIProviders: View {
                 OllamaConfigurationView(aiService: appState.aiService)
             } else if provider == .customOpenAI {
                 CustomOpenAIConfigurationView(aiService: appState.aiService)
+            } else if provider == .anthropic {
+                AnthropicConfigurationView(aiService: appState.aiService)
             } else {
                 AddAPIKeyView(
                     provider: provider,
