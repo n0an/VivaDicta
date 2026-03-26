@@ -127,6 +127,24 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
+                            } else if provider == .copilot && appState.aiService.isCopilotSignedIn {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    if let username = appState.aiService.copilotUsername {
+                                        Text("@\(username)")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            } else if provider == .copilot && !appState.aiService.isCopilotSignedIn {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "person.badge.key")
+                                        .foregroundStyle(.orange)
+                                    Text("Sign In")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             } else if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
@@ -157,6 +175,8 @@ struct AIProviders: View {
                 OpenAIConfigurationView(aiService: appState.aiService)
             } else if provider == .gemini {
                 GeminiConfigurationView(aiService: appState.aiService)
+            } else if provider == .copilot {
+                CopilotConfigurationView(aiService: appState.aiService)
             } else {
                 AddAPIKeyView(
                     provider: provider,
