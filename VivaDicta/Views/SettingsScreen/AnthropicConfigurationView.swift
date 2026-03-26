@@ -39,6 +39,16 @@ struct AnthropicConfigurationView: View {
 
                     Text("Anthropic")
                         .font(.title2)
+
+                    if aiService.connectedProviders.contains(.anthropic) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(isServerEnabled && ClaudeCLIServerClient.isVerified ? "CLI Server Connected" : "API Key Configured")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 .padding(.top, 8)
 
