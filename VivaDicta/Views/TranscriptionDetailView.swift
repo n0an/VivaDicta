@@ -277,14 +277,22 @@ struct TranscriptionDetailView: View {
 
     private var textContentView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(displayedText)
-                .font(.system(size: 16, weight: .regular, design: .default))
-                .lineSpacing(2)
-                .textSelection(.enabled)
-                .redacted(reason: processingState != .idle ? .placeholder : [])
+            if processingState != .idle {
+                // Lightweight placeholder to avoid expensive CoreText layout on large text
+                Text("The art of writing is the art of discovering what you believe. Every word you speak is a seed, and every thought refined becomes a garden of clarity and understanding.")
+                    .font(.system(size: 16, weight: .regular, design: .default))
+                    .lineSpacing(2)
+                    .redacted(reason: .placeholder)
+            } else {
+                Text(displayedText)
+                    .font(.system(size: 16, weight: .regular, design: .default))
+                    .lineSpacing(2)
+                    .textSelection(.enabled)
+            }
         }
         .modifier(ConditionalShimmer(isActive: isShimmering))
     }
+
 
     // MARK: - Bottom Action Bar
 
