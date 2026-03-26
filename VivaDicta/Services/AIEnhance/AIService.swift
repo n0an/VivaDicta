@@ -602,8 +602,8 @@ class AIService {
                 logger.logWarning("Custom OpenAI model name not configured")
                 return false
             }
-        } else if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
-            // Anthropic with verified Claude CLI Server doesn't need API key
+        } else if aiProvider == .anthropic && connectedProviders.contains(.anthropic) {
+            // Anthropic is connected (via API key or CLI Server)
         } else {
             // Check if API key exists for the selected cloud provider
             guard getAPIKey(for: aiProvider) != nil else {
