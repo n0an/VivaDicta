@@ -120,7 +120,7 @@ class AIService {
     private let userDefaults: UserDefaults
     private let modesStorageKey: String
     private let selectedModeStorageKey: String
-    private let baseTimeout: TimeInterval = 30
+    private let baseTimeout: TimeInterval = 300
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
     private var _appleFoundationModelService: Any?

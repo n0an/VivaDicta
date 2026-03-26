@@ -38,11 +38,6 @@ enum ClaudeCLIServerClient {
         }
     }
 
-    struct ModelsResponse: Decodable {
-        let models: [String]
-        let `default`: String?
-    }
-
     // MARK: - UserDefaults Keys
 
     static let isEnabledKey = "isClaudeCLIServerClientEnabled"
@@ -142,29 +137,6 @@ enum ClaudeCLIServerClient {
         }
     }
 
-    // MARK: - Fetch Models
-
-    static func fetchModels() async -> [String] {
-        guard let baseURL = serverURL, !baseURL.isEmpty else { return [] }
-
-        let urlString = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/models"
-        guard let url = URL(string: urlString) else { return [] }
-
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 10
-
-        if let token = authToken, !token.isEmpty {
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let result = try JSONDecoder().decode(ModelsResponse.self, from: data)
-            return result.models
-        } catch {
-            return []
-        }
-    }
 }
 
 enum ClaudeCLIServerError: LocalizedError {
