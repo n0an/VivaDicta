@@ -19,13 +19,6 @@ struct AddAPIKeyView: View {
     @State private var showDeleteConfirmation = false
     @State private var hasExistingKey = false
 
-    // Claude CLI Server state (Anthropic only)
-    @State private var isServerEnabled = UserDefaults.standard.bool(forKey: ClaudeCLIServerClient.isEnabledKey)
-    @State private var serverURL = UserDefaults.standard.string(forKey: ClaudeCLIServerClient.serverURLKey) ?? ""
-    @State private var serverToken = KeychainService.shared.getString(forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false) ?? ""
-    @State private var isTestingConnection = false
-    @State private var connectionTestResult: Bool?
-
     var onSave: (AIProvider) -> Void
     
     var body: some View {
@@ -173,11 +166,6 @@ struct AddAPIKeyView: View {
                 }
             }
 
-            // Claude CLI Server section (Anthropic only)
-            if provider == .anthropic {
-                claudeCLIServerSection
-            }
-
             Spacer()
         }
         .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
@@ -222,100 +210,6 @@ struct AddAPIKeyView: View {
             }
         } message: {
             Text("Are you sure you want to delete the API key for \(provider.displayName)? This action cannot be undone.")
-        }
-    }
-
-    // MARK: - Claude CLI Server Section
-
-    private var claudeCLIServerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-                .padding(.top, 8)
-
-            Text("Claude CLI Server")
-                .font(.headline)
-
-            Text("Use your Claude subscription via a Mac running VivaDicta with Claude CLI. No API key needed.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Toggle("Use Claude CLI Server", isOn: $isServerEnabled)
-                .onChange(of: isServerEnabled) { _, newValue in
-                    UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.isEnabledKey)
-                    if !newValue {
-                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isVerifiedKey)
-                    }
-                    connectionTestResult = nil
-                    aiService.refreshConnectedProviders()
-                }
-
-            if isServerEnabled {
-                TextField("Server URL (e.g. http://192.168.1.5:3456)", text: $serverURL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
-                    .padding()
-                    .background {
-                        Capsule()
-                            .stroke(.gray, lineWidth: 0.5)
-                    }
-                    .onChange(of: serverURL) { _, _ in
-                        connectionTestResult = nil
-                    }
-
-                SecureField("Auth Token", text: $serverToken)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .padding()
-                    .background {
-                        Capsule()
-                            .stroke(.gray, lineWidth: 0.5)
-                    }
-                    .onChange(of: serverToken) { _, _ in
-                        connectionTestResult = nil
-                    }
-
-                HStack {
-                    Button {
-                        saveAndTestConnection()
-                    } label: {
-                        HStack(spacing: 6) {
-                            if isTestingConnection {
-                                ProgressView()
-                                    .controlSize(.small)
-                            }
-                            Text("Test Connection")
-                        }
-                    }
-                    .disabled(serverURL.isEmpty || isTestingConnection)
-
-                    if let result = connectionTestResult {
-                        HStack(spacing: 4) {
-                            Image(systemName: result ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundStyle(result ? .green : .red)
-                            Text(result ? "Connected" : "Failed")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.horizontal)
-    }
-
-    private func saveAndTestConnection() {
-        // Save URL and token when user explicitly taps Test Connection
-        UserDefaults.standard.set(serverURL, forKey: ClaudeCLIServerClient.serverURLKey)
-        KeychainService.shared.save(serverToken, forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false)
-
-        Task {
-            isTestingConnection = true
-            let success = await ClaudeCLIServerClient.testConnection()
-            connectionTestResult = success
-            UserDefaults.standard.set(success, forKey: ClaudeCLIServerClient.isVerifiedKey)
-            isTestingConnection = false
-            aiService.refreshConnectedProviders()
         }
     }
 
