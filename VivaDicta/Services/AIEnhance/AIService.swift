@@ -2324,7 +2324,8 @@ extension AIService {
 
         let credential = try await CopilotOAuthManager.shared.pollForToken(
             deviceCode: deviceCode.deviceCode,
-            interval: deviceCode.interval
+            interval: deviceCode.interval,
+            expiresIn: deviceCode.expiresIn
         )
         isCopilotSignedIn = true
         copilotUsername = credential.githubUsername

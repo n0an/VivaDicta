@@ -34,7 +34,10 @@ final class CopilotOAuthManager: Sendable {
 
     /// Starts the device code flow. Returns the user code and verification URI.
     func startDeviceCodeFlow() async throws -> DeviceCodeResponse {
-        var request = URLRequest(url: URL(string: deviceCodeURL)!)
+        guard let url = URL(string: deviceCodeURL) else {
+            throw CopilotOAuthError.deviceCodeFailed("Invalid device code URL")
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -66,16 +69,19 @@ final class CopilotOAuthManager: Sendable {
     }
 
     /// Polls GitHub until the user authorizes the device code.
-    func pollForToken(deviceCode: String, interval: Int) async throws -> CopilotCredential {
+    func pollForToken(deviceCode: String, interval: Int, expiresIn: Int = 900) async throws -> CopilotCredential {
         let pollInterval = max(interval, 5)
-        let maxAttempts = 180 / pollInterval
+        let maxAttempts = expiresIn / pollInterval
 
         for attempt in 0..<maxAttempts {
             if attempt > 0 {
                 try await Task.sleep(for: .seconds(pollInterval))
             }
 
-            var request = URLRequest(url: URL(string: accessTokenURL)!)
+            guard let tokenURL = URL(string: accessTokenURL) else {
+                throw CopilotOAuthError.tokenExchangeFailed("Invalid token URL")
+            }
+            var request = URLRequest(url: tokenURL)
             request.httpMethod = "POST"
             request.addValue("application/json", forHTTPHeaderField: "Accept")
             request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
