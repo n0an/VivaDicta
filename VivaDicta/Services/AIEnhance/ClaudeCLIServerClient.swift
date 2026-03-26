@@ -47,6 +47,7 @@ enum ClaudeCLIServerClient {
 
     static let isEnabledKey = "isClaudeCLIServerClientEnabled"
     static let serverURLKey = "claudeCLIServerClientURL"
+    static let isVerifiedKey = "isClaudeCLIServerClientVerified"
 
     // MARK: - Keychain Keys
 
@@ -64,6 +65,10 @@ enum ClaudeCLIServerClient {
 
     static var authToken: String? {
         KeychainService.shared.getString(forKey: authTokenKeychainKey, syncable: false)
+    }
+
+    static var isVerified: Bool {
+        UserDefaults.standard.bool(forKey: isVerifiedKey)
     }
 
     // MARK: - Enhance

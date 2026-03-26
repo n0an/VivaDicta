@@ -242,6 +242,9 @@ struct AddAPIKeyView: View {
             Toggle("Use Claude CLI Server", isOn: $isServerEnabled)
                 .onChange(of: isServerEnabled) { _, newValue in
                     UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.isEnabledKey)
+                    if !newValue {
+                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isVerifiedKey)
+                    }
                     connectionTestResult = nil
                     aiService.refreshConnectedProviders()
                 }
@@ -256,8 +259,7 @@ struct AddAPIKeyView: View {
                         Capsule()
                             .stroke(.gray, lineWidth: 0.5)
                     }
-                    .onChange(of: serverURL) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.serverURLKey)
+                    .onChange(of: serverURL) { _, _ in
                         connectionTestResult = nil
                     }
 
@@ -269,18 +271,13 @@ struct AddAPIKeyView: View {
                         Capsule()
                             .stroke(.gray, lineWidth: 0.5)
                     }
-                    .onChange(of: serverToken) { _, newValue in
-                        KeychainService.shared.save(newValue, forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false)
+                    .onChange(of: serverToken) { _, _ in
                         connectionTestResult = nil
                     }
 
                 HStack {
                     Button {
-                        Task {
-                            isTestingConnection = true
-                            connectionTestResult = await ClaudeCLIServerClient.testConnection()
-                            isTestingConnection = false
-                        }
+                        saveAndTestConnection()
                     } label: {
                         HStack(spacing: 6) {
                             if isTestingConnection {
@@ -305,6 +302,21 @@ struct AddAPIKeyView: View {
             }
         }
         .padding(.horizontal)
+    }
+
+    private func saveAndTestConnection() {
+        // Save URL and token when user explicitly taps Test Connection
+        UserDefaults.standard.set(serverURL, forKey: ClaudeCLIServerClient.serverURLKey)
+        KeychainService.shared.save(serverToken, forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false)
+
+        Task {
+            isTestingConnection = true
+            let success = await ClaudeCLIServerClient.testConnection()
+            connectionTestResult = success
+            UserDefaults.standard.set(success, forKey: ClaudeCLIServerClient.isVerifiedKey)
+            isTestingConnection = false
+            aiService.refreshConnectedProviders()
+        }
     }
 
     private func deleteAPIKey() {
