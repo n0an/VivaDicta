@@ -479,6 +479,22 @@ struct ModeEditView: View {
                                         }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .gemini {
+                                    // Gemini has dedicated config (OAuth + API key)
+                                    NavigationLink {
+                                        GeminiConfigurationView(aiService: viewModel.aiService)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.orange)
+                                            Text("Configure Gemini")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
                                     // Cloud provider needs API key
                                     NavigationLink {

@@ -58,7 +58,14 @@ final class OAuthManager: Sendable {
         }
 
         // Start local callback server that bridges localhost redirect → custom scheme
-        let callbackServer = OAuthCallbackServer(port: 1455, customSchemeRedirectBase: "vivadicta://auth/callback")
+        let callbackPort: UInt16 = {
+            if let urlComponents = URLComponents(string: provider.redirectURI),
+               let port = urlComponents.port {
+                return UInt16(port)
+            }
+            return 1455
+        }()
+        let callbackServer = OAuthCallbackServer(port: callbackPort, customSchemeRedirectBase: "vivadicta://auth/callback")
         let listener = try await callbackServer.start()
         defer { listener.cancel() }
 
@@ -180,7 +187,7 @@ final class OAuthManager: Sendable {
 
         for (attempt, delay) in delays.enumerated() {
             do {
-                var refreshed = try await tokenRequest(body: body, provider: provider)
+                var refreshed = try await tokenRequest(body: body, provider: provider, existingRefreshToken: credential.refreshToken)
                 // Preserve projectId from the original credential (project doesn't change on refresh)
                 if refreshed.projectId == nil, let existingProjectId = credential.projectId {
                     refreshed = OAuthCredential(
@@ -207,7 +214,7 @@ final class OAuthManager: Sendable {
 
     // MARK: - Shared Token Request
 
-    private func tokenRequest(body: [String: String], provider: some OAuthProvider) async throws -> OAuthCredential {
+    private func tokenRequest(body: [String: String], provider: some OAuthProvider, existingRefreshToken: String? = nil) async throws -> OAuthCredential {
         guard let url = URL(string: provider.tokenURL) else {
             throw OAuthError.tokenExchangeFailed("Invalid token URL")
         }
@@ -240,10 +247,11 @@ final class OAuthManager: Sendable {
             throw OAuthError.tokenExchangeFailed("Invalid JSON response")
         }
 
-        guard let accessToken = json["access_token"] as? String,
-              let refreshToken = json["refresh_token"] as? String else {
-            throw OAuthError.tokenExchangeFailed("Missing tokens in response")
+        guard let accessToken = json["access_token"] as? String else {
+            throw OAuthError.tokenExchangeFailed("Missing access token in response")
         }
+        // Google's refresh endpoint omits refresh_token — fall back to existing one
+        let refreshToken = json["refresh_token"] as? String ?? existingRefreshToken ?? ""
 
         let expiresIn = json["expires_in"] as? TimeInterval ?? 3600
         let expiresAt = Date().addingTimeInterval(expiresIn)

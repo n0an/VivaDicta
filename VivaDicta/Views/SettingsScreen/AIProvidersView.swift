@@ -119,6 +119,14 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
+                            } else if provider == .gemini && appState.aiService.isGeminiSignedIn {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("OAuth")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             } else if !appState.aiService.connectedProviders.contains(provider) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
@@ -147,6 +155,8 @@ struct AIProviders: View {
                 AnthropicConfigurationView(aiService: appState.aiService)
             } else if provider == .openAI {
                 OpenAIConfigurationView(aiService: appState.aiService)
+            } else if provider == .gemini {
+                GeminiConfigurationView(aiService: appState.aiService)
             } else {
                 AddAPIKeyView(
                     provider: provider,

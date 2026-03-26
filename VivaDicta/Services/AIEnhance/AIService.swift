@@ -51,6 +51,11 @@ class AIService {
     public var chatGPTEmail: String?
     public var isChatGPTSigningIn: Bool = false
 
+    // MARK: - Gemini OAuth
+    public var isGeminiSignedIn: Bool = false
+    public var geminiEmail: String?
+    public var isGeminiSigningIn: Bool = false
+
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
     public var huggingFaceModels: [String] = []
@@ -162,6 +167,7 @@ class AIService {
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
             refreshChatGPTOAuthState()
+            refreshGeminiOAuthState()
             refreshConnectedProviders()
             await dismissTranscriptionTipsIfModelConfigured()
             await autoAssignCloudTranscriptionIfAvailable()
@@ -613,6 +619,8 @@ class AIService {
             // Anthropic is connected (via API key or CLI Server)
         } else if aiProvider == .openAI && connectedProviders.contains(.openAI) {
             // OpenAI is connected (via ChatGPT OAuth or API key)
+        } else if aiProvider == .gemini && connectedProviders.contains(.gemini) {
+            // Gemini is connected (via Gemini OAuth or API key)
         } else {
             // Check if API key exists for the selected cloud provider
             guard getAPIKey(for: aiProvider) != nil else {
@@ -858,6 +866,35 @@ class AIService {
                     logger.logWarning("ChatGPT OAuth failed, falling back to API key: \(error.localizedDescription)")
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "ChatGPT OAuth error")
+                }
+            }
+        }
+
+        // Gemini OAuth: route Gemini requests through OAuth when signed in
+        if aiProvider == .gemini && isGeminiSignedIn {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            do {
+                let provider = GeminiOAuthProvider()
+                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
+                let result = try await GeminiAPIClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: model,
+                    accessToken: token,
+                    projectId: projectId
+                )
+                return AIEnhancementOutputFilter.filter(result)
+            } catch let error as EnhancementError {
+                // Rate limit etc. — don't fall through, surface directly
+                throw error
+            } catch let error as OAuthError {
+                // If OAuth fails and we have an API key, fall through to standard path
+                if self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Gemini OAuth failed, falling back to API key: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
                 }
             }
         }
@@ -1561,6 +1598,9 @@ class AIService {
             if provider == .openAI {
                 return isChatGPTSignedIn || provider.apiKey != nil
             }
+            if provider == .gemini {
+                return isGeminiSignedIn || provider.apiKey != nil
+            }
             return provider.requiresAPIKey && provider.apiKey != nil
         }
 
@@ -1946,6 +1986,10 @@ class AIService {
         if provider == .openAI && isChatGPTSignedIn {
             return ChatGPTAPIClient.supportedModels
         }
+        // Gemini OAuth: show only Cloud Code Assist-supported models when signed in
+        if provider == .gemini && isGeminiSignedIn {
+            return GeminiAPIClient.supportedModels
+        }
         return provider.availableModels
     }
     
@@ -2180,5 +2224,39 @@ extension AIService {
         chatGPTEmail = nil
         refreshConnectedProviders()
     }
+}
 
+// MARK: - Gemini OAuth
+
+extension AIService {
+    /// Refreshes the Gemini OAuth state from stored credentials.
+    @MainActor
+    func refreshGeminiOAuthState() {
+        let provider = GeminiOAuthProvider()
+        isGeminiSignedIn = OAuthManager.shared.isSignedIn(provider: provider)
+        geminiEmail = OAuthManager.shared.accountEmail(for: provider)
+    }
+
+    /// Signs in to Gemini via OAuth.
+    @MainActor
+    func signInWithGemini() async throws {
+        isGeminiSigningIn = true
+        defer { isGeminiSigningIn = false }
+
+        let provider = GeminiOAuthProvider()
+        let credential = try await OAuthManager.shared.signIn(provider: provider)
+        isGeminiSignedIn = true
+        geminiEmail = credential.accountEmail
+        refreshConnectedProviders()
+    }
+
+    /// Signs out from Gemini OAuth.
+    @MainActor
+    func signOutFromGemini() {
+        let provider = GeminiOAuthProvider()
+        OAuthManager.shared.signOut(provider: provider)
+        isGeminiSignedIn = false
+        geminiEmail = nil
+        refreshConnectedProviders()
+    }
 }
