@@ -56,6 +56,8 @@ public enum LogCategory: String {
     case oauthManager = "OAuthManager"
     case chatGPTAPI = "ChatGPTAPIClient"
     case geminiOAuthAPI = "GeminiAPIClient"
+    case copilotOAuth = "CopilotOAuth"
+    case copilotAPI = "CopilotAPIClient"
 
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"

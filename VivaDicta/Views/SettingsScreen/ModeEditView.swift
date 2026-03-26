@@ -495,6 +495,22 @@ struct ModeEditView: View {
                                         }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .copilot {
+                                    // Copilot has dedicated config (device code OAuth)
+                                    NavigationLink {
+                                        CopilotConfigurationView(aiService: viewModel.aiService)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "person.badge.key")
+                                                .foregroundStyle(.orange)
+                                            Text("Sign in with GitHub")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
                                     // Cloud provider needs API key
                                     NavigationLink {

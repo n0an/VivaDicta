@@ -56,6 +56,12 @@ class AIService {
     public var geminiEmail: String?
     public var isGeminiSigningIn: Bool = false
 
+    // MARK: - GitHub Copilot
+    public var isCopilotSignedIn: Bool = false
+    public var copilotUsername: String?
+    public var isCopilotSigningIn: Bool = false
+    public var copilotModels: [String] = []
+
     public var openRouterModels: [String] = []
     public var vercelAIGatewayModels: [String] = []
     public var huggingFaceModels: [String] = []
@@ -168,6 +174,7 @@ class AIService {
         Task { @MainActor in
             refreshChatGPTOAuthState()
             refreshGeminiOAuthState()
+            refreshCopilotOAuthState()
             refreshConnectedProviders()
             await dismissTranscriptionTipsIfModelConfigured()
             await autoAssignCloudTranscriptionIfAvailable()
@@ -621,6 +628,8 @@ class AIService {
             // OpenAI is connected (via ChatGPT OAuth or API key)
         } else if aiProvider == .gemini && connectedProviders.contains(.gemini) {
             // Gemini is connected (via Gemini OAuth or API key)
+        } else if aiProvider == .copilot && isCopilotSignedIn {
+            // Copilot is connected (OAuth only, no API key)
         } else {
             // Check if API key exists for the selected cloud provider
             guard getAPIKey(for: aiProvider) != nil else {
@@ -896,6 +905,27 @@ class AIService {
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
                 }
+            }
+        }
+
+        // GitHub Copilot: route through Copilot API when signed in
+        if aiProvider == .copilot && isCopilotSignedIn {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            do {
+                let token = try await CopilotOAuthManager.shared.validCopilotToken()
+                let model = selectedMode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : selectedMode.aiModel
+                let result = try await CopilotAPIClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: model,
+                    copilotToken: token
+                )
+                return AIEnhancementOutputFilter.filter(result)
+            } catch let error as EnhancementError {
+                throw error
+            } catch {
+                throw EnhancementError.customError(error.localizedDescription)
             }
         }
 
@@ -1601,6 +1631,9 @@ class AIService {
             if provider == .gemini {
                 return isGeminiSignedIn || provider.apiKey != nil
             }
+            if provider == .copilot {
+                return isCopilotSignedIn
+            }
             return provider.requiresAPIKey && provider.apiKey != nil
         }
 
@@ -1990,6 +2023,10 @@ class AIService {
         if provider == .gemini && isGeminiSignedIn {
             return GeminiAPIClient.supportedModels
         }
+        // Copilot: show dynamically fetched models
+        if provider == .copilot && isCopilotSignedIn {
+            return copilotModels.isEmpty ? [CopilotAPIClient.defaultModel] : copilotModels
+        }
         return provider.availableModels
     }
     
@@ -2257,6 +2294,54 @@ extension AIService {
         OAuthManager.shared.signOut(provider: provider)
         isGeminiSignedIn = false
         geminiEmail = nil
+        refreshConnectedProviders()
+    }
+}
+
+// MARK: - Copilot OAuth
+
+extension AIService {
+    @MainActor
+    func refreshCopilotOAuthState() {
+        isCopilotSignedIn = CopilotOAuthManager.shared.isSignedIn
+        copilotUsername = CopilotOAuthManager.shared.accountInfo
+
+        // Fetch available models if signed in
+        if isCopilotSignedIn {
+            Task {
+                if let token = try? await CopilotOAuthManager.shared.validCopilotToken() {
+                    let models = await CopilotAPIClient.fetchModels(copilotToken: token)
+                    self.copilotModels = models
+                }
+            }
+        }
+    }
+
+    @MainActor
+    func signInWithCopilot(deviceCode: DeviceCodeResponse) async throws {
+        isCopilotSigningIn = true
+        defer { isCopilotSigningIn = false }
+
+        let credential = try await CopilotOAuthManager.shared.pollForToken(
+            deviceCode: deviceCode.deviceCode,
+            interval: deviceCode.interval
+        )
+        isCopilotSignedIn = true
+        copilotUsername = credential.githubUsername
+        refreshConnectedProviders()
+
+        // Fetch models after sign-in
+        if let token = try? await CopilotOAuthManager.shared.validCopilotToken() {
+            copilotModels = await CopilotAPIClient.fetchModels(copilotToken: token)
+        }
+    }
+
+    @MainActor
+    func signOutFromCopilot() {
+        CopilotOAuthManager.shared.signOut()
+        isCopilotSignedIn = false
+        copilotUsername = nil
+        copilotModels = []
         refreshConnectedProviders()
     }
 }

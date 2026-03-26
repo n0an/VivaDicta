@@ -26,6 +26,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case kimi
     case vercelAIGateway
     case huggingFace
+    case copilot
     case ollama
     case customOpenAI
 
@@ -63,6 +64,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Vercel AI Gateway"
         case .huggingFace:
             "HuggingFace"
+        case .copilot:
+            "GitHub Copilot"
         case .ollama:
             "Ollama"
         case .customOpenAI:
@@ -105,6 +108,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "vercel"
         case .huggingFace:
             "huggingface-color"
+        case .copilot:
+            "githubcopilot"
         case .ollama:
             "ollama"
         case .customOpenAI:
@@ -120,7 +125,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     /// Returns true if this provider requires an API key
     /// Note: customOpenAI doesn't require API key through the standard flow - it's handled separately
     var requiresAPIKey: Bool {
-        self != .apple && self != .ollama && self != .customOpenAI
+        self != .apple && self != .ollama && self != .customOpenAI && self != .copilot
     }
 
     /// Cloud-based AI providers (require API key, network connection)
@@ -129,6 +134,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .anthropic,
         .openAI,
         .gemini,
+        .copilot,
         .groq,
         .mistral,
         .cerebras,
@@ -154,6 +160,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .anthropic,
         .openAI,
         .gemini,
+        .copilot,
         .groq,
         .mistral,
         .cerebras,
@@ -198,6 +205,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
         case .huggingFace:
             return "https://router.huggingface.co/v1/chat/completions"
+        case .copilot:
+            return "https://api.individual.githubcopilot.com/chat/completions"
         case .ollama:
             return "" // URL is configurable, stored in UserDefaults
         case .customOpenAI:
@@ -246,6 +255,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "anthropic/claude-sonnet-4.5"
         case .huggingFace:
             return "openai/gpt-oss-120b"
+        case .copilot:
+            return "gpt-4o"
         case .ollama:
             return "llama3.2"
         case .customOpenAI:
@@ -275,7 +286,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
-        case .apple, .ollama: ""
+        case .apple, .ollama, .copilot: ""
         }
     }
 
@@ -379,6 +390,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return []
         case .huggingFace:
             return []
+        case .copilot:
+            return [] // Models are fetched dynamically from Copilot API
         case .ollama:
             return [] // Models are fetched dynamically from Ollama server
         case .customOpenAI:
