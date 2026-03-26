@@ -24,6 +24,7 @@ struct MainView: View {
     // Selection mode state
     @State private var isSelectionMode = false
     @State private var selectedTranscriptionIDs: Set<UUID> = []
+    @State private var displayedTranscriptionIDs: Set<UUID> = []
     @State private var showDeleteConfirmation = false
     @State private var showBulkTagPicker = false
 
@@ -106,7 +107,8 @@ struct MainView: View {
         TranscriptionsContentView(
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
-            selectedTranscriptionIDs: $selectedTranscriptionIDs
+            selectedTranscriptionIDs: $selectedTranscriptionIDs,
+            displayedTranscriptionIDs: $displayedTranscriptionIDs
         )
         .searchable(text: $searchText, placement: .toolbar, prompt: "Search notes")
         .minimizedSearch()
@@ -433,7 +435,7 @@ struct MainView: View {
     // MARK: - Selection Mode
 
     private var allDisplayedSelected: Bool {
-        !transcriptions.isEmpty && selectedTranscriptionIDs.count == transcriptions.count
+        !displayedTranscriptionIDs.isEmpty && displayedTranscriptionIDs.isSubset(of: selectedTranscriptionIDs)
     }
 
     private func enterSelectionMode() {
@@ -448,9 +450,9 @@ struct MainView: View {
 
     private func toggleSelectAll() {
         if allDisplayedSelected {
-            selectedTranscriptionIDs = []
+            selectedTranscriptionIDs.subtract(displayedTranscriptionIDs)
         } else {
-            selectedTranscriptionIDs = Set(transcriptions.map(\.id))
+            selectedTranscriptionIDs.formUnion(displayedTranscriptionIDs)
         }
     }
 

@@ -17,6 +17,7 @@ struct TranscriptionsContentView: View {
     @Binding var searchText: String
     @Binding var isSelectionMode: Bool
     @Binding var selectedTranscriptionIDs: Set<UUID>
+    @Binding var displayedTranscriptionIDs: Set<UUID>
 
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var searchTask: Task<Void, Never>?
@@ -31,10 +32,11 @@ struct TranscriptionsContentView: View {
 
     @Environment(AppState.self) var appState
 
-    init(searchText: Binding<String>, isSelectionMode: Binding<Bool>, selectedTranscriptionIDs: Binding<Set<UUID>>) {
+    init(searchText: Binding<String>, isSelectionMode: Binding<Bool>, selectedTranscriptionIDs: Binding<Set<UUID>>, displayedTranscriptionIDs: Binding<Set<UUID>>) {
         self._searchText = searchText
         self._isSelectionMode = isSelectionMode
         self._selectedTranscriptionIDs = selectedTranscriptionIDs
+        self._displayedTranscriptionIDs = displayedTranscriptionIDs
     }
 
     var body: some View {
@@ -142,6 +144,7 @@ struct TranscriptionsContentView: View {
         .onAppear {
             filteredTranscriptions = allTranscriptions
             previousTranscriptionCount = allTranscriptions.count
+            syncDisplayedIDs()
         }
         .onChange(of: searchText) { _, newValue in
             performDebouncedSearch(with: newValue)
@@ -172,6 +175,16 @@ struct TranscriptionsContentView: View {
             } else {
                 performDebouncedSearch(with: searchText)
             }
+            syncDisplayedIDs()
+        }
+        .onChange(of: filteredTranscriptions) {
+            syncDisplayedIDs()
+        }
+        .onChange(of: selectedSourceTags) {
+            syncDisplayedIDs()
+        }
+        .onChange(of: selectedUserTagIds) {
+            syncDisplayedIDs()
         }
     }
 
@@ -201,6 +214,10 @@ struct TranscriptionsContentView: View {
 
     private var displayedTranscriptions: [Transcription] {
         tagFilteredTranscriptions
+    }
+
+    private func syncDisplayedIDs() {
+        displayedTranscriptionIDs = Set(displayedTranscriptions.map(\.id))
     }
 
     private func audioURL(for transcription: Transcription) -> URL? {
@@ -362,7 +379,8 @@ private struct SelectableTranscriptionRow: View {
         TranscriptionsContentView(
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
-            selectedTranscriptionIDs: $selectedIDs
+            selectedTranscriptionIDs: $selectedIDs,
+            displayedTranscriptionIDs: .constant([])
         )
     }
     .environment(AppState())
