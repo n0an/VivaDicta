@@ -226,7 +226,7 @@ struct VivaDictaKeyboardToolbarView: View {
     var body: some View {
         HStack(spacing: 0) {
             // Tab switcher button + Mode selector on the left
-            HStack(spacing: 16) {
+            HStack(spacing: 24) {
                 KeyboardTabToggle(dictationState: dictationState)
                 ModeCycleSelector(dictationState: dictationState)
             }
