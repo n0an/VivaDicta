@@ -269,7 +269,7 @@ class AIService {
             aiModel: mode.aiModel,
             aiEnhanceEnabled: mode.aiEnhanceEnabled,
             useClipboardContext: mode.useClipboardContext,
-            useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+
             isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
             isSmartInsertEnabled: mode.isSmartInsertEnabled
         )
@@ -337,7 +337,7 @@ class AIService {
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+        
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
@@ -363,7 +363,7 @@ class AIService {
                     aiModel: mode.aiModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+        
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
@@ -389,7 +389,7 @@ class AIService {
                     aiModel: "",
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+        
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )
@@ -482,7 +482,6 @@ class AIService {
                 aiModel: defaultMode.aiModel,
                 aiEnhanceEnabled: defaultMode.aiEnhanceEnabled,
                 useClipboardContext: defaultMode.useClipboardContext,
-                useClipboardAsSelectedText: defaultMode.useClipboardAsSelectedText,
                 isAutoTextFormattingEnabled: defaultMode.isAutoTextFormattingEnabled,
                 isSmartInsertEnabled: defaultMode.isSmartInsertEnabled
             )
@@ -1087,11 +1086,7 @@ class AIService {
 
         var clipboardContextSection = ""
         if let clipboardText = lastCapturedClipboard, !clipboardText.isEmpty {
-            if selectedMode.useClipboardAsSelectedText {
-                clipboardContextSection = "\n\n<CURRENTLY_SELECTED_TEXT>\n\(clipboardText)\n</CURRENTLY_SELECTED_TEXT>"
-            } else {
-                clipboardContextSection = "\n\n<CLIPBOARD_CONTEXT>\n\(clipboardText)\n</CLIPBOARD_CONTEXT>"
-            }
+            clipboardContextSection = "\n\n<CLIPBOARD_CONTEXT>\n\(clipboardText)\n</CLIPBOARD_CONTEXT>"
         }
 
         let preset: Preset?
@@ -1590,7 +1585,7 @@ class AIService {
                     aiModel: "",
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-                    useClipboardAsSelectedText: mode.useClipboardAsSelectedText,
+        
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled
                 )

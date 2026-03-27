@@ -574,21 +574,6 @@ struct ModeEditView: View {
                                 HapticManager.selectionChanged()
                             }
 
-                            if viewModel.useClipboardContext {
-                                Toggle(isOn: $viewModel.useClipboardAsSelectedText) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Use as Selected Text")
-                                            .font(.body)
-                                        Text("Treat clipboard text as selected text for AI to act on (rewrite, translate, etc.)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .padding(.leading)
-                                .onChange(of: viewModel.useClipboardAsSelectedText) { _, _ in
-                                    HapticManager.selectionChanged()
-                                }
-                            }
                         }
                     }
                 }

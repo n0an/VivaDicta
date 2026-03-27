@@ -23,7 +23,6 @@ class ModeEditViewModel {
     var aiModel: String?
     var selectedPresetId: String?
     var useClipboardContext: Bool = false
-    var useClipboardAsSelectedText: Bool = false
     var isAutoTextFormattingEnabled: Bool = false
     var isSmartInsertEnabled: Bool = false
 
@@ -124,7 +123,6 @@ class ModeEditViewModel {
             aiModel = existingMode.aiModel
             selectedPresetId = existingMode.presetId
             useClipboardContext = existingMode.useClipboardContext
-            useClipboardAsSelectedText = existingMode.useClipboardAsSelectedText
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
             isSmartInsertEnabled = existingMode.isSmartInsertEnabled
 
@@ -160,7 +158,6 @@ class ModeEditViewModel {
             aiModel: aiModel ?? "",
             aiEnhanceEnabled: aiEnhanceEnabled,
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
-            useClipboardAsSelectedText: (aiEnhanceEnabled && useClipboardContext) ? useClipboardAsSelectedText : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
             isSmartInsertEnabled: isSmartInsertEnabled
         )

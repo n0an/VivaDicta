@@ -201,7 +201,6 @@ struct AIServiceModeTests {
             aiModel: "claude-sonnet-4-6",
             aiEnhanceEnabled: true,
             useClipboardContext: true,
-            useClipboardAsSelectedText: true,
             isAutoTextFormattingEnabled: true,
             isSmartInsertEnabled: true
         )
@@ -218,7 +217,7 @@ struct AIServiceModeTests {
         #expect(dup.aiModel == original.aiModel)
         #expect(dup.aiEnhanceEnabled == original.aiEnhanceEnabled)
         #expect(dup.useClipboardContext == original.useClipboardContext)
-        #expect(dup.useClipboardAsSelectedText == original.useClipboardAsSelectedText)
+
         #expect(dup.isAutoTextFormattingEnabled == original.isAutoTextFormattingEnabled)
         #expect(dup.isSmartInsertEnabled == original.isSmartInsertEnabled)
     }
