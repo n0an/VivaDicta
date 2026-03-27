@@ -207,6 +207,12 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 https://github.com/user-attachments/assets/d22f06b3-78f6-4eaf-9026-f11c0ea7bf57
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=n0an/VivaDicta&type=Date)](https://star-history.com/#n0an/VivaDicta&Date)
+
+---
+
 <p align="center">
   Made with ❤️ by Anton Novoselov
   <br><br>
