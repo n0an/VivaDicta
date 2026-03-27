@@ -103,7 +103,8 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-                            } else if provider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                            } else if (provider == .anthropic || provider == .openAI || provider == .gemini)
+                                        && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)

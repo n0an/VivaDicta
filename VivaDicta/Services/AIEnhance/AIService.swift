@@ -852,6 +852,54 @@ class AIService {
         // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
+        // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
+        if aiProvider == .openAI && ClaudeCLIServerClient.isEnabled,
+           let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            logger.logDebug("AI Processing - Using Codex CLI Server at \(serverURL)")
+            do {
+                let result = try await ClaudeCLIServerClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: selectedMode.aiModel,
+                    provider: "codex"
+                )
+                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredResult
+            } catch {
+                if isChatGPTSignedIn || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Codex CLI Server failed, falling back: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.localizedDescription)
+                }
+            }
+        }
+
+        // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
+        if aiProvider == .gemini && ClaudeCLIServerClient.isEnabled,
+           let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            logger.logDebug("AI Processing - Using Gemini CLI Server at \(serverURL)")
+            do {
+                let result = try await ClaudeCLIServerClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: selectedMode.aiModel,
+                    provider: "gemini"
+                )
+                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredResult
+            } catch {
+                if isGeminiSignedIn || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Gemini CLI Server failed, falling back: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.localizedDescription)
+                }
+            }
+        }
+
         // ChatGPT OAuth: route OpenAI requests through ChatGPT backend API when signed in
         if aiProvider == .openAI && isChatGPTSignedIn {
             lastSystemMessageSent = resolvedSystemMessage
@@ -1621,10 +1669,12 @@ class AIService {
                 return serverConfigured || provider.apiKey != nil
             }
             if provider == .openAI {
-                return isChatGPTSignedIn || provider.apiKey != nil
+                let cliServer = ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified
+                return cliServer || isChatGPTSignedIn || provider.apiKey != nil
             }
             if provider == .gemini {
-                return isGeminiSignedIn || provider.apiKey != nil
+                let cliServer = ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified
+                return cliServer || isGeminiSignedIn || provider.apiKey != nil
             }
             if provider == .copilot {
                 return isCopilotSignedIn
@@ -2010,12 +2060,12 @@ class AIService {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
-        // ChatGPT OAuth: show only Codex-supported models when signed in
-        if provider == .openAI && isChatGPTSignedIn {
+        // OpenAI: show OAuth model list when connected via ChatGPT or CLI server
+        if provider == .openAI && (isChatGPTSignedIn || (ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified)) {
             return ChatGPTAPIClient.supportedModels
         }
-        // Gemini OAuth: show only Cloud Code Assist-supported models when signed in
-        if provider == .gemini && isGeminiSignedIn {
+        // Gemini: show OAuth model list when connected via Google or CLI server
+        if provider == .gemini && (isGeminiSignedIn || (ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified)) {
             return GeminiAPIClient.supportedModels
         }
         // Copilot: show dynamically fetched models

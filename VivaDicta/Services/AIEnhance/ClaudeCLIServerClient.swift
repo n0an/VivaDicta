@@ -13,6 +13,7 @@ enum ClaudeCLIServerClient {
         let text: String
         let systemPrompt: String
         let model: String
+        let provider: String
     }
 
     struct EnhanceResponse: Decodable {
@@ -30,11 +31,21 @@ enum ClaudeCLIServerClient {
         let status: String
         let claudeAvailable: Bool
         let claudePath: String?
+        let codexAvailable: Bool?
+        let codexPath: String?
+        let geminiAvailable: Bool?
+        let geminiPath: String?
+        let version: String?
 
         enum CodingKeys: String, CodingKey {
             case status
             case claudeAvailable = "claude_available"
             case claudePath = "claude_path"
+            case codexAvailable = "codex_available"
+            case codexPath = "codex_path"
+            case geminiAvailable = "gemini_available"
+            case geminiPath = "gemini_path"
+            case version
         }
     }
 
@@ -71,7 +82,8 @@ enum ClaudeCLIServerClient {
     static func enhance(
         text: String,
         systemPrompt: String,
-        model: String
+        model: String,
+        provider: String = "claude"
     ) async throws -> String {
         guard let baseURL = serverURL, !baseURL.isEmpty else {
             throw ClaudeCLIServerError.invalidURL
@@ -91,7 +103,7 @@ enum ClaudeCLIServerClient {
             request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
-        let body = EnhanceRequest(text: text, systemPrompt: systemPrompt, model: model)
+        let body = EnhanceRequest(text: text, systemPrompt: systemPrompt, model: model, provider: provider)
         request.httpBody = try JSONEncoder().encode(body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -113,7 +125,7 @@ enum ClaudeCLIServerClient {
 
     // MARK: - Test Connection
 
-    static func testConnection() async -> Bool {
+    static func testConnection(provider: String = "claude") async -> Bool {
         guard let baseURL = serverURL, !baseURL.isEmpty else { return false }
 
         let urlString = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/health"
@@ -131,7 +143,11 @@ enum ClaudeCLIServerClient {
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else { return false }
             let health = try JSONDecoder().decode(HealthResponse.self, from: data)
-            return health.claudeAvailable
+            switch provider {
+            case "codex": return health.codexAvailable ?? false
+            case "gemini": return health.geminiAvailable ?? false
+            default: return health.claudeAvailable
+            }
         } catch {
             return false
         }

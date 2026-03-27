@@ -36,13 +36,18 @@ struct GeminiConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(aiService.isGeminiSignedIn ? "Google Connected" : "API Key Configured")
+                            Text(geminiConnectionLabel)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
                 .padding(.top, 8)
+
+                // CLI Server section
+                if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                    geminiCLIServerSection
+                }
 
                 // Google OAuth section
                 geminiOAuthSection
@@ -292,6 +297,42 @@ struct GeminiConfigurationView: View {
                 }
             }
         }
+        .padding()
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.secondary)
+        }
+    }
+
+    // MARK: - CLI Server Section
+
+    private var geminiConnectionLabel: String {
+        if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+            return "CLI Server Connected"
+        } else if aiService.isGeminiSignedIn {
+            return "Google Connected"
+        } else {
+            return "API Key Configured"
+        }
+    }
+
+    private var geminiCLIServerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Gemini CLI via Mac")
+                .font(.headline)
+
+            Text("Use your Gemini CLI subscription via the Mac CLI server. Configured in Anthropic provider settings.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("CLI Server Connected — Gemini CLI available")
+                    .font(.callout)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background {
             RoundedRectangle(cornerRadius: 12)

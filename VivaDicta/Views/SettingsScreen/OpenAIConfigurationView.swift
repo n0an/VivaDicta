@@ -36,13 +36,18 @@ struct OpenAIConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(aiService.isChatGPTSignedIn ? "ChatGPT Connected" : "API Key Configured")
+                            Text(openAIConnectionLabel)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
                 .padding(.top, 8)
+
+                // CLI Server section
+                if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                    cliServerSection
+                }
 
                 // ChatGPT OAuth section
                 chatGPTSection
@@ -292,6 +297,42 @@ struct OpenAIConfigurationView: View {
                 }
             }
         }
+        .padding()
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.secondary)
+        }
+    }
+
+    // MARK: - CLI Server Section
+
+    private var openAIConnectionLabel: String {
+        if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+            return "CLI Server Connected"
+        } else if aiService.isChatGPTSignedIn {
+            return "ChatGPT Connected"
+        } else {
+            return "API Key Configured"
+        }
+    }
+
+    private var cliServerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Codex CLI via Mac")
+                .font(.headline)
+
+            Text("Use your OpenAI Codex CLI subscription via the Mac CLI server. Configured in Anthropic provider settings.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("CLI Server Connected — Codex CLI available")
+                    .font(.callout)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background {
             RoundedRectangle(cornerRadius: 12)
