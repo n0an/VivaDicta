@@ -64,6 +64,16 @@ struct CLIServerConfigurationView: View {
         }
         .navigationTitle("Mac CLI Server")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            // Re-fetch health on appear if server is connected
+            if isServerEnabled && ClaudeCLIServerClient.isVerified && healthResponse == nil {
+                healthResponse = await ClaudeCLIServerClient.fetchHealth()
+                if let health = healthResponse {
+                    ClaudeCLIServerClient.saveAvailability(from: health)
+                    aiService.refreshConnectedProviders()
+                }
+            }
+        }
         .alert("Usage Notice", isPresented: $showCLIWarning) {
             Button("Cancel", role: .cancel) { }
             Button("Enable") {
@@ -97,6 +107,7 @@ struct CLIServerConfigurationView: View {
                         UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isVerifiedKey)
                         connectionTestResult = nil
                         healthResponse = nil
+                        ClaudeCLIServerClient.clearAvailability()
                         aiService.refreshConnectedProviders()
                     }
                 }
@@ -276,10 +287,15 @@ struct CLIServerConfigurationView: View {
 
             // Fetch health details for CLI availability
             if success {
-                healthResponse = await ClaudeCLIServerClient.fetchHealth()
+                let health = await ClaudeCLIServerClient.fetchHealth()
+                healthResponse = health
+                if let health {
+                    ClaudeCLIServerClient.saveAvailability(from: health)
+                }
                 HapticManager.success()
             } else {
                 healthResponse = nil
+                ClaudeCLIServerClient.clearAvailability()
                 HapticManager.error()
             }
         }

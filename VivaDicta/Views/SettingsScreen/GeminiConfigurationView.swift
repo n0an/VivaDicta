@@ -370,7 +370,7 @@ struct GeminiConfigurationView: View {
             Text("Gemini CLI via Mac")
                 .font(.headline)
 
-            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)

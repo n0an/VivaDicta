@@ -825,7 +825,7 @@ class AIService {
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
 
         // Claude CLI Server: route Anthropic requests through remote server when enabled
-        if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled,
+        if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable,
            let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
             let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = resolvedSystemMessage
@@ -853,7 +853,7 @@ class AIService {
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
-        if aiProvider == .openAI && ClaudeCLIServerClient.isEnabled,
+        if aiProvider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable,
            let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
@@ -877,7 +877,7 @@ class AIService {
         }
 
         // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
-        if aiProvider == .gemini && ClaudeCLIServerClient.isEnabled,
+        if aiProvider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable,
            let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
@@ -1663,18 +1663,23 @@ class AIService {
         // Add cloud providers that have API keys configured or OAuth signed in
         providers += AIProvider.allCases.filter { provider in
             if provider == .anthropic {
-                // Anthropic is connected if it has an API key OR Claude CLI Server is verified
-                let serverConfigured = ClaudeCLIServerClient.isEnabled
+                // Anthropic is connected if it has an API key OR Claude CLI is available
+                let cliAvailable = ClaudeCLIServerClient.isEnabled
                     && ClaudeCLIServerClient.isVerified
-                return serverConfigured || provider.apiKey != nil
+                    && ClaudeCLIServerClient.isClaudeCliAvailable
+                return cliAvailable || provider.apiKey != nil
             }
             if provider == .openAI {
-                let cliServer = ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified
-                return cliServer || isChatGPTSignedIn || provider.apiKey != nil
+                let cliAvailable = ClaudeCLIServerClient.isEnabled
+                    && ClaudeCLIServerClient.isVerified
+                    && ClaudeCLIServerClient.isCodexCliAvailable
+                return cliAvailable || isChatGPTSignedIn || provider.apiKey != nil
             }
             if provider == .gemini {
-                let cliServer = ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified
-                return cliServer || isGeminiSignedIn || provider.apiKey != nil
+                let cliAvailable = ClaudeCLIServerClient.isEnabled
+                    && ClaudeCLIServerClient.isVerified
+                    && ClaudeCLIServerClient.isGeminiCliAvailable
+                return cliAvailable || isGeminiSignedIn || provider.apiKey != nil
             }
             if provider == .copilot {
                 return isCopilotSignedIn

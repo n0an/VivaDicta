@@ -55,6 +55,12 @@ enum ClaudeCLIServerClient {
     static let serverURLKey = "claudeCLIServerClientURL"
     static let isVerifiedKey = "isClaudeCLIServerClientVerified"
 
+    // MARK: - Per-CLI Availability Keys
+
+    static let claudeCliAvailableKey = "cliServer_claudeAvailable"
+    static let codexCliAvailableKey = "cliServer_codexAvailable"
+    static let geminiCliAvailableKey = "cliServer_geminiAvailable"
+
     // MARK: - Keychain Keys
 
     static let authTokenKeychainKey = "claudeCLIServerClientToken"
@@ -75,6 +81,30 @@ enum ClaudeCLIServerClient {
 
     static var isVerified: Bool {
         UserDefaults.standard.bool(forKey: isVerifiedKey)
+    }
+
+    static var isClaudeCliAvailable: Bool {
+        UserDefaults.standard.bool(forKey: claudeCliAvailableKey)
+    }
+
+    static var isCodexCliAvailable: Bool {
+        UserDefaults.standard.bool(forKey: codexCliAvailableKey)
+    }
+
+    static var isGeminiCliAvailable: Bool {
+        UserDefaults.standard.bool(forKey: geminiCliAvailableKey)
+    }
+
+    static func saveAvailability(from health: HealthResponse) {
+        UserDefaults.standard.set(health.claudeAvailable, forKey: claudeCliAvailableKey)
+        UserDefaults.standard.set(health.codexAvailable ?? false, forKey: codexCliAvailableKey)
+        UserDefaults.standard.set(health.geminiAvailable ?? false, forKey: geminiCliAvailableKey)
+    }
+
+    static func clearAvailability() {
+        UserDefaults.standard.set(false, forKey: claudeCliAvailableKey)
+        UserDefaults.standard.set(false, forKey: codexCliAvailableKey)
+        UserDefaults.standard.set(false, forKey: geminiCliAvailableKey)
     }
 
     // MARK: - Enhance

@@ -38,7 +38,7 @@ struct AnthropicConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? "CLI Server Connected" : "API Key Configured")
+                            Text(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable ? "CLI Server Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -85,7 +85,7 @@ struct AnthropicConfigurationView: View {
             Text("Claude CLI via Mac")
                 .font(.headline)
 
-            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)

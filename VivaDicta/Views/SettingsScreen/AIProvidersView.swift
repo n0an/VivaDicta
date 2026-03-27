@@ -143,8 +143,23 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-                            } else if (provider == .anthropic || provider == .openAI || provider == .gemini)
-                                        && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                            } else if provider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("CLI")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if provider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("CLI")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if provider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
