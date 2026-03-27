@@ -75,6 +75,14 @@ struct MainView: View {
                 appState.shouldTranscribeSharedAudio = false
             }
         }
+        .onChange(of: appState.openedAudioFileURL) { _, newValue in
+            if newValue != nil {
+                showingSettings = false
+                showingRecordingSheet = false
+                router.popToRoot()
+                handleOpenedAudioTranscription()
+            }
+        }
         .overlay(alignment: .top) {
             if appState.showKeyboardFlowToast {
                 KeyboardFlowToast()
@@ -556,6 +564,33 @@ struct MainView: View {
             HapticManager.error()
             showFileErrorAlert = true
         }
+    }
+
+    private func handleOpenedAudioTranscription() {
+        guard let audioURL = appState.openedAudioFileURL else { return }
+        appState.openedAudioFileURL = nil
+
+        guard let vm = appState.recordViewModel else { return }
+
+        if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+            HapticManager.warning()
+            showNoModelAlert = true
+            return
+        }
+
+        guard FileManager.default.fileExists(atPath: audioURL.path) else {
+            logger.logError("Opened audio file does not exist: \(audioURL.lastPathComponent)")
+            fileErrorMessage = "The audio file could not be found."
+            HapticManager.error()
+            showFileErrorAlert = true
+            return
+        }
+
+        vm.transcribingSpeechTask = vm.transcribeSpeechTask(
+            recordURL: audioURL,
+            modelContext: modelContext,
+            sourceTag: SourceTag.app
+        )
     }
 
     private func handleSharedAudioTranscription() {

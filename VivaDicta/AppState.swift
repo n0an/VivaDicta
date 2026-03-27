@@ -88,6 +88,9 @@ class AppState {
     /// Indicates pending shared audio from the Share Extension.
     var shouldTranscribeSharedAudio: Bool = false
 
+    /// Audio file URL received via "Open With" from Files app.
+    var openedAudioFileURL: URL?
+
     init(modelContainer: ModelContainer) {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()

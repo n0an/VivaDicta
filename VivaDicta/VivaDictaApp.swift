@@ -358,6 +358,12 @@ struct VivaDictaApp: App {
     private func handleDeepLink(_ url: URL) {
         logger.logInfo("📱 Received deep link: \(url.absoluteString)")
 
+        // Handle audio files opened via "Open With" from Files app
+        if url.isFileURL {
+            handleOpenWithAudioFile(url)
+            return
+        }
+
         // Handle universal links from vivadicta.com
         if url.host == "vivadicta.com" || url.host == "www.vivadicta.com" {
             logger.logInfo("🔗 Universal link opened: \(url.absoluteString)")
@@ -460,6 +466,29 @@ struct VivaDictaApp: App {
     }
     
     
+    private func handleOpenWithAudioFile(_ url: URL) {
+        logger.logInfo("📂 Received audio file via Open With: \(url.lastPathComponent)")
+
+        guard url.startAccessingSecurityScopedResource() else {
+            logger.logError("❌ Failed to access security-scoped resource")
+            return
+        }
+
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        let audioDirectory = FileManager.appDirectory(for: .audio)
+        let fileExtension = url.pathExtension.isEmpty ? "m4a" : url.pathExtension
+        let destinationURL = audioDirectory.appendingPathComponent("\(UUID().uuidString).\(fileExtension)")
+
+        do {
+            try FileManager.default.copyItem(at: url, to: destinationURL)
+            logger.logInfo("📂 Copied audio file to: \(destinationURL.lastPathComponent)")
+            appState.openedAudioFileURL = destinationURL
+        } catch {
+            logger.logError("❌ Failed to copy opened audio file: \(error.localizedDescription)")
+        }
+    }
+
     /// Returns to the host app without starting recording.
     /// Used by the text processing keyboard flow.
     private func returnToHost(hostId: String) {
