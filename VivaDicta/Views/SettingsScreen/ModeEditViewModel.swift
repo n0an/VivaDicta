@@ -61,6 +61,18 @@ class ModeEditViewModel {
         return hasName && transcriptionReady && aiEnhancementReady
     }
 
+    var hasNameError: Bool {
+        modeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var hasTranscriptionError: Bool {
+        transcriptionValidationMessage != nil
+    }
+
+    var hasAIProcessingError: Bool {
+        aiEnhancementValidationMessage != nil
+    }
+
     // MARK: - Validation Messages
     var transcriptionValidationMessage: String? {
         if !isTranscriptionProviderConfigured(transcriptionProvider) {
@@ -78,28 +90,30 @@ class ModeEditViewModel {
         return nil
     }
 
+    private static let disableHint = ", or disable AI Processing"
+
     var aiEnhancementValidationMessage: String? {
         guard aiEnhanceEnabled else { return nil }
         guard let provider = aiProvider else {
-            return "Select an AI provider"
+            return "Select an AI provider\(Self.disableHint)"
         }
         if !isProviderReady(provider) {
             if provider == .apple {
-                return "Apple Intelligence is not available on this device"
+                return "Apple Intelligence is not available on this device\(Self.disableHint)"
             }
             if provider == .ollama {
-                return "Configure Ollama server in AI Providers settings"
+                return "Configure Ollama server in AI Providers settings\(Self.disableHint)"
             }
             if provider == .customOpenAI {
-                return "Configure Custom AI Provider in AI Providers settings"
+                return "Configure Custom AI Provider in AI Providers settings\(Self.disableHint)"
             }
-            return "Add API key to continue"
+            return "Add API key to continue\(Self.disableHint)"
         }
         if aiModel == nil || aiModel!.isEmpty {
-            return "Select an AI model"
+            return "Select an AI model\(Self.disableHint)"
         }
         if selectedPresetId == nil {
-            return "Select a preset"
+            return "Select a preset\(Self.disableHint)"
         }
         return nil
     }

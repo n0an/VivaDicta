@@ -21,6 +21,8 @@ struct ModeEditView: View {
     @FocusState private var isNameFieldFocused: Bool
     @State private var showPresetPicker: Bool = false
     @State private var showAIModelPicker: Bool = false
+    @State private var hasAttemptedSave: Bool = false
+    @State private var shakeTrigger: Int = 0
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
 
@@ -72,10 +74,12 @@ struct ModeEditView: View {
     }
     
     var body: some View {
+        ScrollViewReader { scrollProxy in
         Form {
-            Section("Mode Details") {
+            Section {
                 TextField("Mode Name", text: $viewModel.modeName)
                     .focused($isNameFieldFocused)
+                    .id("nameSection")
                     .overlay(alignment: .trailing) {
                         if isNameFieldFocused && !viewModel.modeName.isEmpty {
                             Button("Clear", systemImage: "xmark.circle.fill") {
@@ -87,9 +91,13 @@ struct ModeEditView: View {
                             .contentShape(.rect)
                         }
                     }
+            } header: {
+                modeDetailsSectionHeader
+            } footer: {
+                nameValidationFooter
             }
             
-            Section(header: Text("Transcription"),
+            Section(header: transcriptionSectionHeader,
                     footer: transcriptionSectionFooter) {
                 
                 Picker(selection: $viewModel.transcriptionProvider) {
@@ -128,6 +136,7 @@ struct ModeEditView: View {
                     }
                 }
                 .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                .id("transcriptionSection")
                 .onChange(of: viewModel.transcriptionProvider) { _, newProvider in
                     HapticManager.selectionChanged()
                     viewModel.updateTranscriptionProvider(newProvider)
@@ -294,7 +303,7 @@ struct ModeEditView: View {
                     }
                 }
 
-                Section(header: Text("AI Processing"),
+                Section(header: aiProcessingSectionHeader,
                         footer: aiEnhancementSectionFooter) {
 
                     if !viewModel.aiEnhanceEnabled {
@@ -303,6 +312,7 @@ struct ModeEditView: View {
                     }
 
                     Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
+                        .id("aiProcessingSection")
 
                     if viewModel.aiEnhanceEnabled {
                         Picker(selection: $viewModel.aiProvider) {
@@ -637,15 +647,14 @@ struct ModeEditView: View {
             ToolbarItem(placement: .confirmationAction) {
                 if #available(iOS 26, *) {
                     Button(role: .confirm) {
-                        saveMode()
+                        handleSaveTapped(scrollProxy: scrollProxy)
                     }
-                    .disabled(!viewModel.isValid)
-                    .tint(.blue)
+                    .tint(viewModel.isValid ? .blue : .gray)
                 } else {
                     Button("Save") {
-                        saveMode()
+                        handleSaveTapped(scrollProxy: scrollProxy)
                     }
-                    .disabled(!viewModel.isValid)
+                    .foregroundStyle(viewModel.isValid ? .blue : .gray)
                 }
             }
         }
@@ -654,6 +663,7 @@ struct ModeEditView: View {
                 handleCustomTranscriptionSaved()
             })
         }
+        } // ScrollViewReader
     }
     @ViewBuilder
     private var transcriptionSectionFooter: some View {
@@ -662,6 +672,14 @@ struct ModeEditView: View {
                 .foregroundStyle(.orange)
                 .font(.caption)
                 .accessibilityLabel("Required: \(validationMessage)")
+                .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakeTrigger) { content, value in
+                    content.offset(x: value)
+                } keyframes: { _ in
+                    SpringKeyframe(8, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(-6, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(4, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(0, duration: 0.1, spring: .bouncy)
+                }
         } else if !viewModel.transcriptionFooterText.isEmpty {
             Text(viewModel.transcriptionFooterText)
         }
@@ -674,8 +692,96 @@ struct ModeEditView: View {
                 .foregroundStyle(.orange)
                 .font(.caption)
                 .accessibilityLabel("Required: \(validationMessage)")
+                .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakeTrigger) { content, value in
+                    content.offset(x: value)
+                } keyframes: { _ in
+                    SpringKeyframe(8, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(-6, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(4, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(0, duration: 0.1, spring: .bouncy)
+                }
         } else {
             Text("Configure how the raw transcription should be processed and refined.")
+        }
+    }
+
+    // MARK: - Section Headers
+
+    private var modeDetailsSectionHeader: some View {
+        HStack(spacing: 4) {
+            Text("Mode Details")
+            if hasAttemptedSave && viewModel.hasNameError {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption2)
+            }
+        }
+    }
+
+    private var transcriptionSectionHeader: some View {
+        HStack(spacing: 4) {
+            Text("Transcription")
+            if viewModel.hasTranscriptionError {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption2)
+                    .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakeTrigger) { content, value in
+                        content.offset(x: value)
+                    } keyframes: { _ in
+                        SpringKeyframe(8, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(-6, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(4, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(0, duration: 0.1, spring: .bouncy)
+                    }
+            }
+        }
+    }
+
+    private var aiProcessingSectionHeader: some View {
+        HStack(spacing: 4) {
+            Text("AI Processing")
+            if viewModel.hasAIProcessingError {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption2)
+                    .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakeTrigger) { content, value in
+                        content.offset(x: value)
+                    } keyframes: { _ in
+                        SpringKeyframe(8, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(-6, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(4, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(0, duration: 0.1, spring: .bouncy)
+                    }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var nameValidationFooter: some View {
+        if hasAttemptedSave && viewModel.hasNameError {
+            Label("Enter a mode name to continue", systemImage: "info.circle")
+                .foregroundStyle(.orange)
+                .font(.caption)
+        }
+    }
+
+    private func handleSaveTapped(scrollProxy: ScrollViewProxy) {
+        if viewModel.isValid {
+            saveMode()
+        } else {
+            hasAttemptedSave = true
+            HapticManager.error()
+            shakeTrigger += 1
+
+            withAnimation {
+                if viewModel.hasNameError {
+                    scrollProxy.scrollTo("nameSection", anchor: .center)
+                } else if viewModel.hasTranscriptionError {
+                    scrollProxy.scrollTo("transcriptionSection", anchor: .top)
+                } else if viewModel.hasAIProcessingError {
+                    scrollProxy.scrollTo("aiProcessingSection", anchor: .top)
+                }
+            }
         }
     }
 
