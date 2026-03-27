@@ -18,13 +18,6 @@ struct AnthropicConfigurationView: View {
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
 
-    // Claude CLI Server state
-    @State private var isServerEnabled = UserDefaults.standard.bool(forKey: ClaudeCLIServerClient.isEnabledKey)
-    @State private var serverURL = UserDefaults.standard.string(forKey: ClaudeCLIServerClient.serverURLKey) ?? ""
-    @State private var serverToken = KeychainService.shared.getString(forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false) ?? ""
-    @State private var isTestingConnection = false
-    @State private var connectionTestResult: Bool?
-    @State private var showCLIWarning = false
 
     var body: some View {
         ScrollView {
@@ -45,7 +38,7 @@ struct AnthropicConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(isServerEnabled && ClaudeCLIServerClient.isVerified ? "CLI Server Connected" : "API Key Configured")
+                            Text(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? "CLI Server Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -53,11 +46,14 @@ struct AnthropicConfigurationView: View {
                 }
                 .padding(.top, 8)
 
-                // Claude CLI Server section
-                cliServerSection
+                // CLI Server section
+                cliServerStatusSection
 
                 // API Key section
                 apiKeySection
+
+                // Fallback chain
+                fallbackChainNote
             }
             .padding()
         }
@@ -71,22 +67,6 @@ struct AnthropicConfigurationView: View {
             let existingKey = AIProvider.anthropic.apiKey
             apiKey = existingKey ?? ""
             hasExistingKey = existingKey != nil
-
-            // Show verified status if previously verified
-            if isServerEnabled && ClaudeCLIServerClient.isVerified {
-                connectionTestResult = true
-            }
-        }
-        .alert("Claude CLI Warning", isPresented: $showCLIWarning) {
-            Button("Cancel", role: .cancel) { }
-            Button("Enable") {
-                isServerEnabled = true
-                UserDefaults.standard.set(true, forKey: ClaudeCLIServerClient.isEnabledKey)
-                connectionTestResult = nil
-                aiService.refreshConnectedProviders()
-            }
-        } message: {
-            Text("Claude Code is designed and licensed for software development use. Using it for general text enhancement may fall outside Anthropic's intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk. VivaDicta is not responsible for any consequences to your Anthropic account.\n\nAlternative: use an Anthropic API key for unrestricted usage.")
         }
         .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -98,113 +78,34 @@ struct AnthropicConfigurationView: View {
         }
     }
 
-    // MARK: - Claude CLI Server Section
+    // MARK: - CLI Server Status Section
 
-    private var cliServerSection: some View {
+    private var cliServerStatusSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Claude CLI Server")
+            Text("Claude CLI via Mac")
                 .font(.headline)
 
-            Text("Use your Claude subscription via a Mac running VivaDicta with Claude CLI. No API key needed.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Toggle("Use Claude CLI Server", isOn: Binding(
-                get: { isServerEnabled },
-                set: { newValue in
-                    if newValue {
-                        showCLIWarning = true
-                    } else {
-                        isServerEnabled = false
-                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isEnabledKey)
-                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isVerifiedKey)
-                        connectionTestResult = nil
-                        aiService.refreshConnectedProviders()
-                    }
-                }
-            ))
-
-            if isServerEnabled {
-                TextField("Server URL (e.g. http://192.168.1.5:3456)", text: $serverURL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
-                    .padding()
-                    .background {
-                        Capsule()
-                            .stroke(.gray, lineWidth: 0.5)
-                    }
-                    .onChange(of: serverURL) { _, _ in
-                        connectionTestResult = nil
-                    }
-
-                SecureField("Auth Token", text: $serverToken)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .padding()
-                    .background {
-                        Capsule()
-                            .stroke(.gray, lineWidth: 0.5)
-                    }
-                    .onChange(of: serverToken) { _, _ in
-                        connectionTestResult = nil
-                    }
-
+            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
                 HStack {
-                    if #available(iOS 26.0, *) {
-                        Button {
-                            saveAndTestConnection()
-                        } label: {
-                            HStack(spacing: 6) {
-                                if isTestingConnection {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                }
-                                Text("Test & Save")
-                                    .font(.headline.weight(.medium))
-                            }
-                        }
-                        .disabled(serverURL.isEmpty || isTestingConnection)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
-                        .buttonStyle(.plain)
-                    } else {
-                        Button {
-                            saveAndTestConnection()
-                        } label: {
-                            HStack(spacing: 6) {
-                                if isTestingConnection {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                }
-                                Text("Test & Save")
-                                    .font(.headline.weight(.medium))
-                                    .foregroundStyle(.primary)
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
-                            .background {
-                                Capsule()
-                                    .stroke(.blue, lineWidth: 2)
-                            }
-                        }
-                        .disabled(serverURL.isEmpty || isTestingConnection)
-                        .buttonStyle(.plain)
-                    }
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("CLI Server Connected — Claude CLI available")
+                        .font(.callout)
+                }
+            } else {
+                Text("Use your Claude subscription via a Mac running VivaDicta. Configure the connection in Mac CLI Server settings.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                    if let result = connectionTestResult {
-                        HStack(spacing: 4) {
-                            Image(systemName: result ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundStyle(result ? .green : .red)
-                            Text(result ? "Connected" : "Failed")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                NavigationLink {
+                    CLIServerConfigurationView(aiService: aiService)
+                } label: {
+                    Text("Configure Mac CLI Server")
+                        .font(.callout)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background {
             RoundedRectangle(cornerRadius: 12)
@@ -366,26 +267,46 @@ struct AnthropicConfigurationView: View {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Fallback Chain
 
-    private func saveAndTestConnection() {
-        UserDefaults.standard.set(serverURL, forKey: ClaudeCLIServerClient.serverURLKey)
-        KeychainService.shared.save(serverToken, forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false)
+    private var fallbackChainNote: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Fallback Chain", systemImage: "arrow.triangle.branch")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
 
-        Task {
-            isTestingConnection = true
-            let success = await ClaudeCLIServerClient.testConnection()
-            connectionTestResult = success
-            UserDefaults.standard.set(success, forKey: ClaudeCLIServerClient.isVerifiedKey)
-            isTestingConnection = false
-            aiService.refreshConnectedProviders()
-            if success {
-                HapticManager.success()
-            } else {
-                HapticManager.error()
+            HStack(spacing: 6) {
+                Text("CLI Server")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text("API Key")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(hasExistingKey ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
             }
+            .foregroundStyle(.secondary)
+
+            Text("If the first available method fails, the next one is tried automatically.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.secondary)
         }
     }
+
+    // MARK: - Actions
 
     private func saveAPIKey() {
         Task {

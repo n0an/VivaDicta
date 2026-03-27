@@ -45,15 +45,16 @@ struct OpenAIConfigurationView: View {
                 .padding(.top, 8)
 
                 // CLI Server section
-                if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
-                    cliServerSection
-                }
+                cliServerSection
 
                 // ChatGPT OAuth section
                 chatGPTSection
 
                 // API Key section
                 apiKeySection
+
+                // Fallback chain
+                fallbackChainNote
             }
             .padding()
         }
@@ -304,6 +305,54 @@ struct OpenAIConfigurationView: View {
         }
     }
 
+    // MARK: - Fallback Chain
+
+    private var fallbackChainNote: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Fallback Chain", systemImage: "arrow.triangle.branch")
+                .font(.subheadline.bold())
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 6) {
+                Text("CLI Server")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text("ChatGPT")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(aiService.isChatGPTSignedIn ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text("API Key")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(hasExistingKey ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
+            }
+            .foregroundStyle(.secondary)
+
+            Text("If the first available method fails, the next one is tried automatically.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.background.secondary)
+        }
+    }
+
     // MARK: - CLI Server Section
 
     private var openAIConnectionLabel: String {
@@ -321,15 +370,24 @@ struct OpenAIConfigurationView: View {
             Text("Codex CLI via Mac")
                 .font(.headline)
 
-            Text("Use your OpenAI Codex CLI subscription via the Mac CLI server. Configured in Anthropic provider settings.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("CLI Server Connected — Codex CLI available")
+                        .font(.callout)
+                }
+            } else {
+                Text("Use your OpenAI Codex CLI subscription via the Mac CLI server.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Text("CLI Server Connected — Codex CLI available")
-                    .font(.callout)
+                NavigationLink {
+                    CLIServerConfigurationView(aiService: aiService)
+                } label: {
+                    Text("Configure Mac CLI Server")
+                        .font(.callout)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

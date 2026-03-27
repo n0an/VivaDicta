@@ -125,6 +125,29 @@ enum ClaudeCLIServerClient {
 
     // MARK: - Test Connection
 
+    static func fetchHealth() async -> HealthResponse? {
+        guard let baseURL = serverURL, !baseURL.isEmpty else { return nil }
+
+        let urlString = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/health"
+        guard let url = URL(string: urlString) else { return nil }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 10
+
+        if let token = authToken, !token.isEmpty {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else { return nil }
+            return try JSONDecoder().decode(HealthResponse.self, from: data)
+        } catch {
+            return nil
+        }
+    }
+
     static func testConnection(provider: String = "claude") async -> Bool {
         guard let baseURL = serverURL, !baseURL.isEmpty else { return false }
 
@@ -146,7 +169,12 @@ enum ClaudeCLIServerClient {
             switch provider {
             case "codex": return health.codexAvailable ?? false
             case "gemini": return health.geminiAvailable ?? false
-            default: return health.claudeAvailable
+            case "claude": return health.claudeAvailable
+            default:
+                // No specific provider — succeed if any CLI is available
+                return health.claudeAvailable
+                    || (health.codexAvailable ?? false)
+                    || (health.geminiAvailable ?? false)
             }
         } catch {
             return false

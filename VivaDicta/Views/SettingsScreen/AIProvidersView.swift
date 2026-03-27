@@ -40,6 +40,46 @@ struct AIProviders: View {
                 }
             }
 
+            // Mac CLI Server Section
+            Section {
+                NavigationLink {
+                    CLIServerConfigurationView(aiService: appState.aiService)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "desktopcomputer")
+                            .font(.title2)
+                            .foregroundStyle(.blue.gradient)
+                            .frame(width: 28, height: 28)
+
+                        Text("Mac CLI Server")
+
+                        Spacer()
+
+                        if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                Text("Connected")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            HStack(spacing: 4) {
+                                Image(systemName: "gear")
+                                    .foregroundStyle(.orange)
+                                Text("Configure")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Mac")
+            } footer: {
+                Text("Use CLI tools (Claude, Codex, Gemini) on your Mac for AI processing via local network. No API keys needed — uses your existing subscriptions.")
+            }
+
             // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
