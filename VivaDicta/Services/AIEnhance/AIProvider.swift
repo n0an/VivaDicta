@@ -338,6 +338,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "gpt-5.4-nano",
                 "gpt-5.2",
                 "gpt-5.1",
+                "gpt-5-mini",
+                "gpt-5-nano",
                 "o4-mini",
                 "o3",
                 "o3-mini",
