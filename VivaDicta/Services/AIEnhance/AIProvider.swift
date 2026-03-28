@@ -22,6 +22,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case deepgram
     case mistral
     case soniox
+    case cohere
     case zai
     case kimi
     case vercelAIGateway
@@ -50,6 +51,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Gemini"
         case .soniox:
             "Soniox"
+        case .cohere:
+            "Cohere"
         case .anthropic:
             "Anthropic"
         case .openRouter:
@@ -104,6 +107,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "deepgram"
         case .soniox:
             nil
+        case .cohere:
+            "cohere-color"
         case .vercelAIGateway:
             "vercel"
         case .huggingFace:
@@ -201,6 +206,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.mistral.ai/v1/chat/completions"
         case .soniox:
             return "https://api.soniox.com/v1"
+        case .cohere:
+            return "https://api.cohere.com/v2"
         case .vercelAIGateway:
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
         case .huggingFace:
@@ -247,6 +254,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "openai/gpt-oss-120b"
         case .soniox:
             return "stt-async-v4"
+        case .cohere:
+            return "cohere-transcribe-03-2026"
         case .vercelAIGateway:
             // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
             // (e.g., "claude-sonnet-4.5") unlike direct Anthropic API which uses hyphens
@@ -283,6 +292,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .deepgram: "deepgramAPIKey"
         case .mistral: "mistralAPIKey"
         case .soniox: "sonioxAPIKey"
+        case .cohere: "cohereAPIKey"
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
@@ -386,6 +396,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .soniox:
             return []
+        case .cohere:
+            return [] // Transcription-only provider, no chat models
         case .openRouter:
             return []
         case .vercelAIGateway:

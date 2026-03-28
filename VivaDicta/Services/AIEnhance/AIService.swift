@@ -1737,6 +1737,8 @@ class AIService {
             return await verifyMistralAPIKey(key)
         case .soniox:
             return await verifySonioxAPIKey(key)
+        case .cohere:
+            return await verifyCohereAPIKey(key)
         case .vercelAIGateway:
             return await verifyVercelAIGatewayAPIKey(key)
         case .huggingFace:
@@ -1917,6 +1919,26 @@ class AIService {
             return httpResponse.statusCode == 200
         } catch {
             logger.logError("Soniox API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func verifyCohereAPIKey(_ key: String) async -> Bool {
+        let url = URL(string: "https://api.cohere.com/v2/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+
+            return httpResponse.statusCode == 200
+        } catch {
+            logger.logError("Cohere API key verification failed: \(error.localizedDescription)")
             return false
         }
     }
