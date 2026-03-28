@@ -25,9 +25,9 @@
   <img src="assets/hero-v2.png" alt="VivaDicta — Dictate Anywhere You Type">
 </p>
 
-> Started as "I don't want to pay for WisprFlow." Ended up building something more flexible - on-device transcription, 15+ AI providers, and full control over your voice-to-text pipeline.
+> Started as "I don't want to pay for WisprFlow." Ended up building something more flexible — on-device transcription, 15+ AI providers, OAuth sign-in, CLI agent bridge, and full control over your voice-to-text pipeline.
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Models for free, fully on-device AI. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. It supports 10+ transcription providers, 15+ AI providers, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Models for free, fully on-device AI. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also **rewrite existing text in any app** — select text, apply an AI preset, and get the result in place. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 10+ transcription providers, 15+ AI providers, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
 
 ## Screenshots
 
@@ -53,15 +53,21 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Filler word removal, paragraph formatting, custom word replacements
 
 **AI Presets**
-- 40+ built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate
+- 43 built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate (11 languages)
 - **AI Assistant** — ask questions, fact-check, explain, reformat, or give instructions by voice
 - **Auto-Translation** — speak in one language, get output in another
 - Each result saved as a variation — compare different AI outputs side by side
 - Create custom presets with full prompt control, mark favorites for quick access
 
 **AI Providers**
-- 15+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
+- 15+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, GitHub Copilot, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
+- **OAuth sign-in** for ChatGPT, Gemini, and GitHub Copilot — use your existing subscription, no API keys needed
 - Bring your own AI via any OpenAI-compatible API endpoint
+
+**VivAgents — CLI Agent Bridge**
+- Route AI processing through CLI agents (Claude Code, Codex, Gemini CLI) running on your Mac or a remote server
+- Use your existing CLI subscriptions instead of separate API keys
+- Per-agent toggles, health monitoring, and automatic fallback to API keys if the server is unavailable
 
 **VivaModes**
 - Configurable profiles combining transcription provider, AI provider, model, preset, and language
@@ -75,7 +81,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 - System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
 - Full transcription + AI processing pipeline right from the keyboard
-- AI-process any text in any app — rewrite, summarize, translate, or apply any preset without leaving the app
+- **AI text processing in any app** — select existing text in any app and rewrite, summarize, translate, or apply any preset without leaving it. The keyboard reads the text, sends it to the main app for AI processing via IPC, and replaces it in place
 - Swipe to switch between modes without leaving the app you're typing in
 
 **Personalization**
@@ -100,6 +106,8 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - 7-stage text processing pipeline with customizable transforms
 - App Intents — Siri and Shortcuts integration
 - CoreSpotlight — indexed transcriptions for iOS spotlight search
+- OAuth 2.0 with PKCE via local server bridge (NWListener) for ChatGPT, Gemini, and GitHub Copilot
+- VivAgents client for routing AI through CLI agents on Mac/remote server
 - iCloud Keychain for secure cross-device API key sync
 
 ## Architecture
@@ -131,7 +139,7 @@ Core components:
 | `AppGroupCoordinator` | Cross-process communication using Darwin Notifications (custom keyboard, widgets, share, action extensions) |
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
-| `AIService` | AI text processing, 15+ providers, mode/API key management |
+| `AIService` | AI text processing, 15+ providers, OAuth, VivAgents, mode/API key management |
 | `PresetManager` | Built-in + custom presets, CloudKit sync |
 | `AudioPrewarmManager` | Continuous audio engine for keyboard extension low-latency recording |
 
@@ -159,7 +167,7 @@ xcodebuild build \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-> **Note:** On-device transcription models (WhisperKit, Parakeet) are downloaded on first use. Cloud providers require API keys configured in the app's settings.
+> **Note:** On-device transcription models (WhisperKit, Parakeet) are downloaded on first use. Cloud AI providers work via API keys, OAuth sign-in (ChatGPT, Gemini, Copilot), or VivAgents server connection.
 
 ## Project Structure
 
