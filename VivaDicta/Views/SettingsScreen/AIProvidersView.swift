@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AIProviders: View {
     @Environment(AppState.self) private var appState
+    @State private var refreshID = UUID()
 
     var body: some View {
         List {
@@ -225,7 +226,9 @@ struct AIProviders: View {
                 }
             }
         }
+        .id(refreshID)
         .onAppear {
+            refreshID = UUID()
             appState.aiService.refreshConnectedProviders()
         }
         .navigationTitle("AI Providers")

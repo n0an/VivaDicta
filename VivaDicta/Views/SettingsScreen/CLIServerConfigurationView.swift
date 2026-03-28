@@ -11,10 +11,10 @@ struct CLIServerConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
     let aiService: AIService
 
-    // Server state
-    @State private var isServerEnabled = UserDefaults.standard.bool(forKey: VivAgentsClient.isEnabledKey)
-    @State private var serverURL = UserDefaults.standard.string(forKey: VivAgentsClient.serverURLKey) ?? ""
-    @State private var serverToken = KeychainService.shared.getString(forKey: VivAgentsClient.authTokenKeychainKey, syncable: false) ?? ""
+    // Server state — loaded in onAppear to always reflect current UserDefaults
+    @State private var isServerEnabled = false
+    @State private var serverURL = ""
+    @State private var serverToken = ""
     @State private var isTestingConnection = false
     @State private var connectionTestResult: Bool?
     @State private var showCLIWarning = false
@@ -74,6 +74,12 @@ struct CLIServerConfigurationView: View {
                 .disabled(!hasUnsavedChanges)
                 .bold()
             }
+        }
+        .onAppear {
+            isServerEnabled = UserDefaults.standard.bool(forKey: VivAgentsClient.isEnabledKey)
+            serverURL = UserDefaults.standard.string(forKey: VivAgentsClient.serverURLKey) ?? ""
+            serverToken = KeychainService.shared.getString(forKey: VivAgentsClient.authTokenKeychainKey, syncable: false) ?? ""
+            hasUnsavedChanges = false
         }
         .task {
             // Re-fetch health on appear if server is connected
