@@ -11,15 +11,15 @@ struct CLIServerConfigurationView: View {
     let aiService: AIService
 
     // Server state
-    @State private var isServerEnabled = UserDefaults.standard.bool(forKey: ClaudeCLIServerClient.isEnabledKey)
-    @State private var serverURL = UserDefaults.standard.string(forKey: ClaudeCLIServerClient.serverURLKey) ?? ""
-    @State private var serverToken = KeychainService.shared.getString(forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false) ?? ""
+    @State private var isServerEnabled = UserDefaults.standard.bool(forKey: VivAgentsClient.isEnabledKey)
+    @State private var serverURL = UserDefaults.standard.string(forKey: VivAgentsClient.serverURLKey) ?? ""
+    @State private var serverToken = KeychainService.shared.getString(forKey: VivAgentsClient.authTokenKeychainKey, syncable: false) ?? ""
     @State private var isTestingConnection = false
     @State private var connectionTestResult: Bool?
     @State private var showCLIWarning = false
 
     // Health response for per-CLI availability
-    @State private var healthResponse: ClaudeCLIServerClient.HealthResponse?
+    @State private var healthResponse: VivAgentsClient.HealthResponse?
 
     var body: some View {
         ScrollView {
@@ -33,7 +33,7 @@ struct CLIServerConfigurationView: View {
                     Text("CLI Agents Server")
                         .font(.title2)
 
-                    if isServerEnabled && ClaudeCLIServerClient.isVerified {
+                    if isServerEnabled && VivAgentsClient.isVerified {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
@@ -49,7 +49,7 @@ struct CLIServerConfigurationView: View {
                 connectionSection
 
                 // CLI availability
-                if isServerEnabled && ClaudeCLIServerClient.isVerified {
+                if isServerEnabled && VivAgentsClient.isVerified {
                     availabilitySection
                 }
 
@@ -66,10 +66,10 @@ struct CLIServerConfigurationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             // Re-fetch health on appear if server is connected
-            if isServerEnabled && ClaudeCLIServerClient.isVerified && healthResponse == nil {
-                healthResponse = await ClaudeCLIServerClient.fetchHealth()
+            if isServerEnabled && VivAgentsClient.isVerified && healthResponse == nil {
+                healthResponse = await VivAgentsClient.fetchHealth()
                 if let health = healthResponse {
-                    ClaudeCLIServerClient.saveAvailability(from: health)
+                    VivAgentsClient.saveAvailability(from: health)
                     aiService.refreshConnectedProviders()
                 }
             }
@@ -78,7 +78,7 @@ struct CLIServerConfigurationView: View {
             Button("Cancel", role: .cancel) { }
             Button("Enable") {
                 isServerEnabled = true
-                UserDefaults.standard.set(true, forKey: ClaudeCLIServerClient.isEnabledKey)
+                UserDefaults.standard.set(true, forKey: VivAgentsClient.isEnabledKey)
             }
         } message: {
             Text("CLI agents (Claude, Codex, Gemini) are designed for software development use. Using them for general text processing may fall outside the intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk.")
@@ -103,11 +103,11 @@ struct CLIServerConfigurationView: View {
                         showCLIWarning = true
                     } else {
                         isServerEnabled = false
-                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isEnabledKey)
-                        UserDefaults.standard.set(false, forKey: ClaudeCLIServerClient.isVerifiedKey)
+                        UserDefaults.standard.set(false, forKey: VivAgentsClient.isEnabledKey)
+                        UserDefaults.standard.set(false, forKey: VivAgentsClient.isVerifiedKey)
                         connectionTestResult = nil
                         healthResponse = nil
-                        ClaudeCLIServerClient.clearAvailability()
+                        VivAgentsClient.clearAvailability()
                         aiService.refreshConnectedProviders()
                     }
                 }
@@ -274,28 +274,28 @@ struct CLIServerConfigurationView: View {
     // MARK: - Actions
 
     private func saveAndTestConnection() {
-        UserDefaults.standard.set(serverURL, forKey: ClaudeCLIServerClient.serverURLKey)
-        KeychainService.shared.save(serverToken, forKey: ClaudeCLIServerClient.authTokenKeychainKey, syncable: false)
+        UserDefaults.standard.set(serverURL, forKey: VivAgentsClient.serverURLKey)
+        KeychainService.shared.save(serverToken, forKey: VivAgentsClient.authTokenKeychainKey, syncable: false)
 
         Task {
             isTestingConnection = true
-            let success = await ClaudeCLIServerClient.testConnection(provider: "any")
+            let success = await VivAgentsClient.testConnection(provider: "any")
             connectionTestResult = success
-            UserDefaults.standard.set(success, forKey: ClaudeCLIServerClient.isVerifiedKey)
+            UserDefaults.standard.set(success, forKey: VivAgentsClient.isVerifiedKey)
             isTestingConnection = false
             aiService.refreshConnectedProviders()
 
             // Fetch health details for CLI availability
             if success {
-                let health = await ClaudeCLIServerClient.fetchHealth()
+                let health = await VivAgentsClient.fetchHealth()
                 healthResponse = health
                 if let health {
-                    ClaudeCLIServerClient.saveAvailability(from: health)
+                    VivAgentsClient.saveAvailability(from: health)
                 }
                 HapticManager.success()
             } else {
                 healthResponse = nil
-                ClaudeCLIServerClient.clearAvailability()
+                VivAgentsClient.clearAvailability()
                 HapticManager.error()
             }
         }

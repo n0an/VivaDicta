@@ -59,7 +59,7 @@ public enum LogCategory: String {
     case geminiOAuthAPI = "GeminiAPIClient"
     case copilotOAuth = "CopilotOAuth"
     case copilotAPI = "CopilotAPIClient"
-    case cliServerClient = "CLIServerClient"
+    case vivAgentsClient = "VivAgentsClient"
 
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"

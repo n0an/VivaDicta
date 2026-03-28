@@ -55,7 +55,7 @@ struct AIProviders: View {
 
                         Spacer()
 
-                        if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+                        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundStyle(.green)
@@ -143,7 +143,7 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-                            } else if provider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliActive {
+                            } else if provider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
@@ -151,7 +151,7 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
-                            } else if provider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliActive {
+                            } else if provider == .openAI && VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
@@ -159,7 +159,7 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
-                            } else if provider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliActive {
+                            } else if provider == .gemini && VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)

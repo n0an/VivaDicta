@@ -17,7 +17,7 @@ struct AnthropicConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
-    @State private var isClaudeCliEnabled = ClaudeCLIServerClient.isClaudeCliEnabled
+    @State private var isClaudeCliEnabled = VivAgentsClient.isClaudeCliEnabled
 
 
     var body: some View {
@@ -39,7 +39,7 @@ struct AnthropicConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliActive ? "CLI Server Connected" : "API Key Configured")
+                            Text(VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive ? "CLI Server Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -86,10 +86,10 @@ struct AnthropicConfigurationView: View {
             Text("Claude CLI Agent")
                 .font(.headline)
 
-            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable {
+            if VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliAvailable {
                 Toggle("Use Claude CLI Agent", isOn: $isClaudeCliEnabled)
                     .onChange(of: isClaudeCliEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.claudeCliEnabledKey)
+                        UserDefaults.standard.set(newValue, forKey: VivAgentsClient.claudeCliEnabledKey)
                         aiService.refreshConnectedProviders()
                     }
 
@@ -289,7 +289,7 @@ struct AnthropicConfigurationView: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)

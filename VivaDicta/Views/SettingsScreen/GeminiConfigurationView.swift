@@ -12,7 +12,7 @@ struct GeminiConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
-    @State private var isGeminiCliEnabled = ClaudeCLIServerClient.isGeminiCliEnabled
+    @State private var isGeminiCliEnabled = VivAgentsClient.isGeminiCliEnabled
 
     // OAuth error
     @State private var showOAuthError = false
@@ -319,7 +319,7 @@ struct GeminiConfigurationView: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
@@ -357,7 +357,7 @@ struct GeminiConfigurationView: View {
     // MARK: - CLI Server Section
 
     private var geminiConnectionLabel: String {
-        if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
             return "CLI Server Connected"
         } else if aiService.isGeminiSignedIn {
             return "Google Connected"
@@ -371,10 +371,10 @@ struct GeminiConfigurationView: View {
             Text("Gemini CLI Agent")
                 .font(.headline)
 
-            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable {
+            if VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliAvailable {
                 Toggle("Use Gemini CLI Agent", isOn: $isGeminiCliEnabled)
                     .onChange(of: isGeminiCliEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.geminiCliEnabledKey)
+                        UserDefaults.standard.set(newValue, forKey: VivAgentsClient.geminiCliEnabledKey)
                         aiService.refreshConnectedProviders()
                     }
 

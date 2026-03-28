@@ -12,7 +12,7 @@ struct OpenAIConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
-    @State private var isCodexCliEnabled = ClaudeCLIServerClient.isCodexCliEnabled
+    @State private var isCodexCliEnabled = VivAgentsClient.isCodexCliEnabled
 
     // OAuth error
     @State private var showOAuthError = false
@@ -319,7 +319,7 @@ struct OpenAIConfigurationView: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
@@ -357,7 +357,7 @@ struct OpenAIConfigurationView: View {
     // MARK: - CLI Server Section
 
     private var openAIConnectionLabel: String {
-        if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified {
+        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
             return "CLI Server Connected"
         } else if aiService.isChatGPTSignedIn {
             return "ChatGPT Connected"
@@ -371,10 +371,10 @@ struct OpenAIConfigurationView: View {
             Text("Codex CLI Agent")
                 .font(.headline)
 
-            if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable {
+            if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliAvailable {
                 Toggle("Use Codex CLI Agent", isOn: $isCodexCliEnabled)
                     .onChange(of: isCodexCliEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.codexCliEnabledKey)
+                        UserDefaults.standard.set(newValue, forKey: VivAgentsClient.codexCliEnabledKey)
                         aiService.refreshConnectedProviders()
                     }
 
