@@ -10,6 +10,7 @@ All skills live in `.claude/skills/`. Use `/create-skill` to create new ones whe
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
 - When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
+- When opening a PR, immediately post a comment with "@claude please review this PR" to request a review — do this by default. Skip only if the user explicitly says not to request a review. After requesting the review, start polling PR comments every 1 minute (using `/loop 1m`) to fetch Claude's review. Stop polling once the full review is received and show it to the user.
 
 ## Build Commands
 
