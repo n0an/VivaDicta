@@ -825,7 +825,7 @@ class AIService {
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
 
         // Claude CLI Server: route Anthropic requests through remote server when enabled
-        if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable,
+        if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliActive,
            let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
             let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = resolvedSystemMessage
@@ -853,7 +853,7 @@ class AIService {
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
-        if aiProvider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable,
+        if aiProvider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliActive,
            let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
@@ -877,7 +877,7 @@ class AIService {
         }
 
         // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
-        if aiProvider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable,
+        if aiProvider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliActive,
            let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
@@ -1672,13 +1672,13 @@ class AIService {
             if provider == .openAI {
                 let cliAvailable = ClaudeCLIServerClient.isEnabled
                     && ClaudeCLIServerClient.isVerified
-                    && ClaudeCLIServerClient.isCodexCliAvailable
+                    && ClaudeCLIServerClient.isCodexCliActive
                 return cliAvailable || isChatGPTSignedIn || provider.apiKey != nil
             }
             if provider == .gemini {
                 let cliAvailable = ClaudeCLIServerClient.isEnabled
                     && ClaudeCLIServerClient.isVerified
-                    && ClaudeCLIServerClient.isGeminiCliAvailable
+                    && ClaudeCLIServerClient.isGeminiCliActive
                 return cliAvailable || isGeminiSignedIn || provider.apiKey != nil
             }
             if provider == .copilot {

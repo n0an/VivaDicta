@@ -12,6 +12,7 @@ struct GeminiConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
+    @State private var isGeminiCliEnabled = ClaudeCLIServerClient.isGeminiCliEnabled
 
     // OAuth error
     @State private var showOAuthError = false
@@ -371,11 +372,19 @@ struct GeminiConfigurationView: View {
                 .font(.headline)
 
             if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text("CLI Server Connected — Gemini CLI available")
-                        .font(.callout)
+                Toggle("Use Gemini CLI Agent", isOn: $isGeminiCliEnabled)
+                    .onChange(of: isGeminiCliEnabled) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.geminiCliEnabledKey)
+                        aiService.refreshConnectedProviders()
+                    }
+
+                if isGeminiCliEnabled {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("Gemini CLI active")
+                            .font(.callout)
+                    }
                 }
             } else {
                 Text("Use your Gemini CLI subscription via the CLI Agents Server. No API key needed.")

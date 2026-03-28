@@ -12,6 +12,7 @@ struct OpenAIConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
+    @State private var isCodexCliEnabled = ClaudeCLIServerClient.isCodexCliEnabled
 
     // OAuth error
     @State private var showOAuthError = false
@@ -371,11 +372,19 @@ struct OpenAIConfigurationView: View {
                 .font(.headline)
 
             if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text("CLI Server Connected — Codex CLI available")
-                        .font(.callout)
+                Toggle("Use Codex CLI Agent", isOn: $isCodexCliEnabled)
+                    .onChange(of: isCodexCliEnabled) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.codexCliEnabledKey)
+                        aiService.refreshConnectedProviders()
+                    }
+
+                if isCodexCliEnabled {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("Codex CLI active")
+                            .font(.callout)
+                    }
                 }
             } else {
                 Text("Use your OpenAI Codex CLI subscription via the CLI Agents Server. No API key needed.")

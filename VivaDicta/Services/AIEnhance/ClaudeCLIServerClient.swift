@@ -61,6 +61,12 @@ enum ClaudeCLIServerClient {
     static let codexCliAvailableKey = "cliServer_codexAvailable"
     static let geminiCliAvailableKey = "cliServer_geminiAvailable"
 
+    // MARK: - Per-Provider Enable Keys (user preference on iOS)
+
+    static let claudeCliEnabledKey = "cliServer_claudeEnabled"
+    static let codexCliEnabledKey = "cliServer_codexEnabled"
+    static let geminiCliEnabledKey = "cliServer_geminiEnabled"
+
     // MARK: - Keychain Keys
 
     static let authTokenKeychainKey = "claudeCLIServerClientToken"
@@ -94,6 +100,24 @@ enum ClaudeCLIServerClient {
     static var isGeminiCliAvailable: Bool {
         UserDefaults.standard.bool(forKey: geminiCliAvailableKey)
     }
+
+    // Per-provider user preference (defaults to true)
+    static var isClaudeCliEnabled: Bool {
+        UserDefaults.standard.object(forKey: claudeCliEnabledKey) == nil || UserDefaults.standard.bool(forKey: claudeCliEnabledKey)
+    }
+
+    static var isCodexCliEnabled: Bool {
+        UserDefaults.standard.object(forKey: codexCliEnabledKey) == nil || UserDefaults.standard.bool(forKey: codexCliEnabledKey)
+    }
+
+    static var isGeminiCliEnabled: Bool {
+        UserDefaults.standard.object(forKey: geminiCliEnabledKey) == nil || UserDefaults.standard.bool(forKey: geminiCliEnabledKey)
+    }
+
+    /// Whether a specific CLI agent is both available on server AND enabled by user
+    static var isClaudeCliActive: Bool { isClaudeCliAvailable && isClaudeCliEnabled }
+    static var isCodexCliActive: Bool { isCodexCliAvailable && isCodexCliEnabled }
+    static var isGeminiCliActive: Bool { isGeminiCliAvailable && isGeminiCliEnabled }
 
     static func saveAvailability(from health: HealthResponse) {
         UserDefaults.standard.set(health.claudeAvailable, forKey: claudeCliAvailableKey)

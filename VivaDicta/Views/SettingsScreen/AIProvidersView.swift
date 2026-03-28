@@ -143,7 +143,7 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-                            } else if provider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable {
+                            } else if provider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
@@ -151,7 +151,7 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
-                            } else if provider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable {
+                            } else if provider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
@@ -159,7 +159,7 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
-                            } else if provider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable {
+                            } else if provider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)

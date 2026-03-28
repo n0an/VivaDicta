@@ -17,6 +17,7 @@ struct AnthropicConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
+    @State private var isClaudeCliEnabled = ClaudeCLIServerClient.isClaudeCliEnabled
 
 
     var body: some View {
@@ -38,7 +39,7 @@ struct AnthropicConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable ? "CLI Server Connected" : "API Key Configured")
+                            Text(ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliActive ? "CLI Server Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -86,11 +87,19 @@ struct AnthropicConfigurationView: View {
                 .font(.headline)
 
             if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text("CLI Server Connected — Claude CLI available")
-                        .font(.callout)
+                Toggle("Use Claude CLI Agent", isOn: $isClaudeCliEnabled)
+                    .onChange(of: isClaudeCliEnabled) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: ClaudeCLIServerClient.claudeCliEnabledKey)
+                        aiService.refreshConnectedProviders()
+                    }
+
+                if isClaudeCliEnabled {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("Claude CLI active")
+                            .font(.callout)
+                    }
                 }
             } else {
                 Text("Use your Claude subscription via the CLI Agents Server. No API key needed.")
