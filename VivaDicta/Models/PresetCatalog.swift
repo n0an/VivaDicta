@@ -677,6 +677,134 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
+    static let translateChinese = Preset(
+        id: "translate_zh",
+        name: "Chinese",
+        icon: "🇨🇳",
+        presetDescription: "Translate to Chinese",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into Chinese (Simplified). \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translateFrench = Preset(
+        id: "translate_fr",
+        name: "French",
+        icon: "🇫🇷",
+        presetDescription: "Translate to French",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into French. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translateGerman = Preset(
+        id: "translate_de",
+        name: "German",
+        icon: "🇩🇪",
+        presetDescription: "Translate to German",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into German. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translatePortuguese = Preset(
+        id: "translate_pt",
+        name: "Portuguese",
+        icon: "🇧🇷",
+        presetDescription: "Translate to Portuguese",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into Portuguese. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translateJapanese = Preset(
+        id: "translate_ja",
+        name: "Japanese",
+        icon: "🇯🇵",
+        presetDescription: "Translate to Japanese",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into Japanese. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translateKorean = Preset(
+        id: "translate_ko",
+        name: "Korean",
+        icon: "🇰🇷",
+        presetDescription: "Translate to Korean",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into Korean. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translateArabic = Preset(
+        id: "translate_ar",
+        name: "Arabic",
+        icon: "🇸🇦",
+        presetDescription: "Translate to Arabic",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into Arabic. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
+    static let translateItalian = Preset(
+        id: "translate_it",
+        name: "Italian",
+        icon: "🇮🇹",
+        presetDescription: "Translate to Italian",
+        category: "Translate",
+        promptInstructions: """
+        Translate the <TRANSCRIPT> text into Italian. \
+        Preserve the original meaning, tone, and structure as closely as possible. \
+        Output only the translated text, nothing else.
+        """,
+        useSystemTemplate: true,
+        wrapInTranscriptTags: true,
+        isBuiltIn: true
+    )
+
     // MARK: - Assistant Preset (useSystemTemplate = false)
 
     static let assistant = Preset(
@@ -761,6 +889,14 @@ enum PresetCatalog {
         translateEnglish,
         translateRussian,
         translateSpanish,
+        translateChinese,
+        translateFrench,
+        translateGerman,
+        translatePortuguese,
+        translateJapanese,
+        translateKorean,
+        translateArabic,
+        translateItalian,
         // Assistant
         assistant,
     ]
@@ -847,6 +983,14 @@ enum PresetCatalog {
         "translate_en":  UUID(uuidString: "00000000-0000-0000-0000-000000000030")!,
         "translate_ru":  UUID(uuidString: "00000000-0000-0000-0000-000000000031")!,
         "translate_es":  UUID(uuidString: "00000000-0000-0000-0000-000000000032")!,
+        "translate_zh":  UUID(uuidString: "00000000-0000-0000-0000-000000000033")!,
+        "translate_fr":  UUID(uuidString: "00000000-0000-0000-0000-000000000034")!,
+        "translate_de":  UUID(uuidString: "00000000-0000-0000-0000-000000000035")!,
+        "translate_pt":  UUID(uuidString: "00000000-0000-0000-0000-000000000036")!,
+        "translate_ja":  UUID(uuidString: "00000000-0000-0000-0000-000000000037")!,
+        "translate_ko":  UUID(uuidString: "00000000-0000-0000-0000-000000000038")!,
+        "translate_ar":  UUID(uuidString: "00000000-0000-0000-0000-000000000039")!,
+        "translate_it":  UUID(uuidString: "00000000-0000-0000-0000-00000000003A")!,
         "assistant":     UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
         "study_note":    UUID(uuidString: "00000000-0000-0000-0000-000000000050")!,
         "definitions":   UUID(uuidString: "00000000-0000-0000-0000-000000000051")!,
