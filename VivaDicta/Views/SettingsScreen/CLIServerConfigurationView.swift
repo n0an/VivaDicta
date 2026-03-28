@@ -282,6 +282,11 @@ struct CLIServerConfigurationView: View {
             Text("The VivAgents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone or iPad connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+
+            Link(destination: URL(string: "https://vivadicta.com/ios/docs/vivagents")!) {
+                Label("Setup Guide", systemImage: "book")
+                    .font(.caption)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
