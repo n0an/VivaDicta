@@ -67,12 +67,20 @@ struct CLIServerConfigurationView: View {
         .navigationTitle("VivAgents Server")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Save") {
-                    saveSettings()
+            ToolbarItem(placement: .confirmationAction) {
+                if #available(iOS 26, *) {
+                    Button(role: .confirm) {
+                        saveSettings()
+                    }
+                    .disabled(!hasUnsavedChanges)
+                    .tint(hasUnsavedChanges ? .blue : .gray)
+                } else {
+                    Button("Save") {
+                        saveSettings()
+                    }
+                    .disabled(!hasUnsavedChanges)
+                    .foregroundStyle(hasUnsavedChanges ? .blue : .gray)
                 }
-                .disabled(!hasUnsavedChanges)
-                .bold()
             }
         }
         .onAppear {
