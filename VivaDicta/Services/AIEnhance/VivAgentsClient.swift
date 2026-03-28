@@ -54,9 +54,9 @@ enum VivAgentsClient {
 
     // MARK: - UserDefaults Keys
 
-    static let isEnabledKey = "isVivAgentsClientEnabled"
+    static let isEnabledKey = "isClaudeCLIServerClientEnabled"
     static let serverURLKey = "claudeCLIServerClientURL"
-    static let isVerifiedKey = "isVivAgentsClientVerified"
+    static let isVerifiedKey = "isClaudeCLIServerClientVerified"
 
     // MARK: - Per-CLI Availability Keys
 
