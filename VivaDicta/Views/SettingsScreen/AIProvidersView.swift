@@ -147,7 +147,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("CLI")
+                                    Text("VivAgents")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -155,7 +155,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("CLI")
+                                    Text("VivAgents")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -163,7 +163,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("CLI")
+                                    Text("VivAgents")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }

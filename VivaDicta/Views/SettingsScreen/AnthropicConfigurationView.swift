@@ -285,7 +285,7 @@ struct AnthropicConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("VivAgents Server")
+                Text("VivAgents")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
