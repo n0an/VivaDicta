@@ -107,6 +107,7 @@ claude_session_*
 .claude_memory
 .claude_cache
 *.claude_temp
+.claude/scheduled_tasks.lock
 
 # But keep CLAUDE.md files
 !CLAUDE.md
