@@ -17,6 +17,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case mistral
     case gemini
     case soniox
+    case cohere
     case customTranscription
     
     var id: Self { self }
@@ -41,6 +42,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Gemini"
         case .soniox:
             "Soniox"
+        case .cohere:
+            "Cohere"
         case .customTranscription:
             "Custom"
         }
@@ -52,6 +55,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     static let cloudProviders: [TranscriptionModelProvider] = [
         .groq,
+        .cohere,
         .mistral,
         .gemini,
         .deepgram,
@@ -100,6 +104,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-4o-mini-transcribe"
         case .soniox: "stt-async-v4"
+        case .cohere: "cohere-transcribe-03-2026"
         default: nil
         }
     }
@@ -132,6 +137,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .gemini
         case .soniox:
             return .soniox
+        case .cohere:
+            return .cohere
         default:
             return nil
         }
@@ -154,7 +161,20 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
+            CloudModel(
+                name: "cohere-transcribe-03-2026",
+                displayName: "Cohere Transcribe",
+                description: "Best-in-class accuracy (5.4 WER) across 14 languages. Free trial tier with rate limits, no credit card required",
+                provider: .cohere,
+                recommended: true,
+                speed: 0.85,
+                accuracy: 0.98,
+                cost: 0.1,
+                supportManyLanguages: true,
+                supportedLanguages: cohereLanguages
+            ),
+
             CloudModel(
                 name: "voxtral-mini-latest",
                 displayName: "Voxtral Mini V2",
@@ -338,6 +358,12 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static func getLanguageDictionary(supportManyLanguages: Bool) -> [String: String] {
         supportManyLanguages ? allLanguages : ["en": "English"]
     }
+
+    /// Cohere supports 14 languages. No auto-detect — language must be specified.
+    static let cohereLanguages: [String: String] = {
+        let codes = ["en", "fr", "de", "it", "es", "pt", "el", "nl", "pl", "zh", "ja", "ko", "vi", "ar"]
+        return allLanguages.filter { codes.contains($0.key) }
+    }()
     
     static var allParakeetModels: [ParakeetModel] {
         [
