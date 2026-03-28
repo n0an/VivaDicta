@@ -294,6 +294,12 @@ struct CLIServerConfigurationView: View {
     // MARK: - Actions
 
     private func saveSettings() {
+        if isServerEnabled && !serverURL.isEmpty {
+            // When enabled with URL, test connection first (same as Test & Save)
+            saveAndTestConnection()
+            return
+        }
+
         UserDefaults.standard.set(isServerEnabled, forKey: VivAgentsClient.isEnabledKey)
 
         if !isServerEnabled {
