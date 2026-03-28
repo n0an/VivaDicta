@@ -367,7 +367,7 @@ struct GeminiConfigurationView: View {
 
     private var geminiCLIServerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Gemini CLI via Mac")
+            Text("Gemini CLI Agent")
                 .font(.headline)
 
             if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliAvailable {
@@ -378,14 +378,14 @@ struct GeminiConfigurationView: View {
                         .font(.callout)
                 }
             } else {
-                Text("Use your Gemini CLI subscription via the Mac CLI server.")
+                Text("Use your Gemini CLI subscription via the CLI Agents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 NavigationLink {
                     CLIServerConfigurationView(aiService: aiService)
                 } label: {
-                    Text("Configure Mac CLI Server")
+                    Text("Configure CLI Agents Server")
                         .font(.callout)
                 }
             }

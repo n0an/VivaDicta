@@ -82,7 +82,7 @@ struct AnthropicConfigurationView: View {
 
     private var cliServerStatusSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Claude CLI via Mac")
+            Text("Claude CLI Agent")
                 .font(.headline)
 
             if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliAvailable {
@@ -93,14 +93,14 @@ struct AnthropicConfigurationView: View {
                         .font(.callout)
                 }
             } else {
-                Text("Use your Claude subscription via a Mac running VivaDicta. Configure the connection in Mac CLI Server settings.")
+                Text("Use your Claude subscription via the CLI Agents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 NavigationLink {
                     CLIServerConfigurationView(aiService: aiService)
                 } label: {
-                    Text("Configure Mac CLI Server")
+                    Text("Configure CLI Agents Server")
                         .font(.callout)
                 }
             }

@@ -26,11 +26,11 @@ struct CLIServerConfigurationView: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 8) {
-                    Image(systemName: "desktopcomputer")
+                    Image(systemName: "server.rack")
                         .font(.system(size: 48))
                         .foregroundStyle(.blue.gradient)
 
-                    Text("Mac CLI Server")
+                    Text("CLI Agents Server")
                         .font(.title2)
 
                     if isServerEnabled && ClaudeCLIServerClient.isVerified {
@@ -62,7 +62,7 @@ struct CLIServerConfigurationView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
-        .navigationTitle("Mac CLI Server")
+        .navigationTitle("CLI Agents Server")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             // Re-fetch health on appear if server is connected
@@ -81,7 +81,7 @@ struct CLIServerConfigurationView: View {
                 UserDefaults.standard.set(true, forKey: ClaudeCLIServerClient.isEnabledKey)
             }
         } message: {
-            Text("CLI tools (Claude, Codex, Gemini) are designed for software development use. Using them for general text processing may fall outside the intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk.")
+            Text("CLI agents (Claude, Codex, Gemini) are designed for software development use. Using them for general text processing may fall outside the intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk.")
         }
     }
 
@@ -92,7 +92,7 @@ struct CLIServerConfigurationView: View {
             Text("Connection")
                 .font(.headline)
 
-            Text("Connect to VivaDicta on your Mac to use CLI tools (Claude, Codex, Gemini) for AI processing. Same WiFi or Tailscale required.")
+            Text("Connect to a server running CLI agents (Claude, Codex, Gemini) for AI processing. Can be your Mac with VivaDicta or a remote server.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -206,10 +206,10 @@ struct CLIServerConfigurationView: View {
 
     private var availabilitySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Available CLIs")
+            Text("Available Agents")
                 .font(.headline)
 
-            Text("CLIs detected on your Mac. Each can be individually shared from the macOS app.")
+            Text("CLI agents detected on the server. Each can be individually enabled from the server configuration.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -259,7 +259,7 @@ struct CLIServerConfigurationView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.secondary)
 
-            Text("The Mac CLI Server runs on your Mac inside VivaDicta. Your iPhone connects to it over the local network and routes AI requests through the CLI tools installed on your Mac — using your existing subscriptions with no API keys needed.")
+            Text("The CLI Agents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }

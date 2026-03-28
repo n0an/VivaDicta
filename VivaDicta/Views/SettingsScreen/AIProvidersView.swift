@@ -40,18 +40,18 @@ struct AIProviders: View {
                 }
             }
 
-            // Mac CLI Server Section
+            // CLI Agents Server Section
             Section {
                 NavigationLink {
                     CLIServerConfigurationView(aiService: appState.aiService)
                 } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: "desktopcomputer")
+                        Image(systemName: "server.rack")
                             .font(.title2)
                             .foregroundStyle(.blue.gradient)
                             .frame(width: 28, height: 28)
 
-                        Text("Mac CLI Server")
+                        Text("CLI Agents Server")
 
                         Spacer()
 
@@ -75,9 +75,9 @@ struct AIProviders: View {
                     }
                 }
             } header: {
-                Text("Mac")
+                Text("Server")
             } footer: {
-                Text("Use CLI tools (Claude, Codex, Gemini) on your Mac for AI processing via local network. No API keys needed — uses your existing subscriptions.")
+                Text("Route AI processing through CLI agents (Claude, Codex, Gemini) running on your Mac or remote server. Uses your existing subscriptions — no API keys needed.")
             }
 
             // Cloud Section
@@ -202,12 +202,22 @@ struct AIProviders: View {
                                         .foregroundStyle(.secondary)
                                 }
                             } else if !appState.aiService.connectedProviders.contains(provider) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundStyle(.orange)
-                                    Text("Add API Key")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                                if provider == .anthropic || provider == .openAI || provider == .gemini {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "gear")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                } else {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Add API Key")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }

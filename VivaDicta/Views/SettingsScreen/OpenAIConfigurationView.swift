@@ -367,7 +367,7 @@ struct OpenAIConfigurationView: View {
 
     private var cliServerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Codex CLI via Mac")
+            Text("Codex CLI Agent")
                 .font(.headline)
 
             if ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliAvailable {
@@ -378,14 +378,14 @@ struct OpenAIConfigurationView: View {
                         .font(.callout)
                 }
             } else {
-                Text("Use your OpenAI Codex CLI subscription via the Mac CLI server.")
+                Text("Use your OpenAI Codex CLI subscription via the CLI Agents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 NavigationLink {
                     CLIServerConfigurationView(aiService: aiService)
                 } label: {
-                    Text("Configure Mac CLI Server")
+                    Text("Configure CLI Agents Server")
                         .font(.callout)
                 }
             }
