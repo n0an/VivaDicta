@@ -66,13 +66,16 @@ struct CohereTranscriptionService {
 
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
 
-        // Cohere requires a language — default to English if auto or empty
+        // Cohere requires a language from its supported set — fall back to English
+        let supportedCodes = Set(TranscriptionModelProvider.cohereLanguages.keys)
         let language: String
-        if selectedLanguage == "auto" || selectedLanguage.isEmpty {
+        if selectedLanguage == "auto" || selectedLanguage.isEmpty || !supportedCodes.contains(selectedLanguage) {
             language = "en"
         } else {
             language = selectedLanguage
         }
+
+        logger.logInfo("Using language: \(language) (selected: \(selectedLanguage))")
 
         // Model (must appear before file)
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
