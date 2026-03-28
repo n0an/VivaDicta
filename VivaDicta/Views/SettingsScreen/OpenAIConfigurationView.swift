@@ -315,7 +315,7 @@ struct OpenAIConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("CLI Server")
+                Text("VivAgents")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -358,7 +358,7 @@ struct OpenAIConfigurationView: View {
 
     private var openAIConnectionLabel: String {
         if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
-            return "CLI Server Connected"
+            return "VivAgents Server Connected"
         } else if aiService.isChatGPTSignedIn {
             return "ChatGPT Connected"
         } else {
@@ -387,14 +387,14 @@ struct OpenAIConfigurationView: View {
                     }
                 }
             } else {
-                Text("Use your OpenAI Codex CLI subscription via the CLI Agents Server. No API key needed.")
+                Text("Use your OpenAI Codex CLI subscription via the VivAgents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 NavigationLink {
                     CLIServerConfigurationView(aiService: aiService)
                 } label: {
-                    Text("Configure CLI Agents Server")
+                    Text("Configure VivAgents Server")
                         .font(.callout)
                 }
             }

@@ -30,7 +30,7 @@ struct CLIServerConfigurationView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(.blue.gradient)
 
-                    Text("CLI Agents Server")
+                    Text("VivAgents Server")
                         .font(.title2)
 
                     if isServerEnabled && VivAgentsClient.isVerified {
@@ -62,7 +62,7 @@ struct CLIServerConfigurationView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
-        .navigationTitle("CLI Agents Server")
+        .navigationTitle("VivAgents Server")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             // Re-fetch health on appear if server is connected
@@ -96,7 +96,7 @@ struct CLIServerConfigurationView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Toggle("Enable CLI Server", isOn: Binding(
+            Toggle("Enable VivAgents Server", isOn: Binding(
                 get: { isServerEnabled },
                 set: { newValue in
                     if newValue {
@@ -259,7 +259,7 @@ struct CLIServerConfigurationView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.secondary)
 
-            Text("The CLI Agents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone or iPad connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
+            Text("The VivAgents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone or iPad connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }

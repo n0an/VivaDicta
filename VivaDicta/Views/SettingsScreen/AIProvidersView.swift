@@ -40,7 +40,7 @@ struct AIProviders: View {
                 }
             }
 
-            // CLI Agents Server Section
+            // VivAgents Server Section
             Section {
                 NavigationLink {
                     CLIServerConfigurationView(aiService: appState.aiService)
@@ -51,7 +51,7 @@ struct AIProviders: View {
                             .foregroundStyle(.blue.gradient)
                             .frame(width: 28, height: 28)
 
-                        Text("CLI Agents Server")
+                        Text("VivAgents Server")
 
                         Spacer()
 
