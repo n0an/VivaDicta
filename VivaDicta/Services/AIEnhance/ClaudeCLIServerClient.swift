@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import os
 
 enum ClaudeCLIServerClient {
+
+    private static let logger = Logger(category: .cliServerClient)
 
     struct EnhanceRequest: Encodable {
         let text: String
@@ -160,21 +163,63 @@ enum ClaudeCLIServerClient {
         let body = EnhanceRequest(text: text, systemPrompt: systemPrompt, model: model, provider: provider)
         request.httpBody = try JSONEncoder().encode(body)
 
+        logger.logInfo("CLI Server request: provider=\(provider), model=\(model), textLength=\(text.count)")
+
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
+            logger.logError("CLI Server: invalid response (not HTTP)")
             throw ClaudeCLIServerError.invalidResponse
         }
 
+        logger.logInfo("CLI Server response: HTTP \(httpResponse.statusCode)")
+
         if httpResponse.statusCode == 200 {
             let result = try JSONDecoder().decode(EnhanceResponse.self, from: data)
+            logger.logInfo("CLI Server success: resultLength=\(result.result.count), duration=\(result.duration ?? 0)s")
             return result.result
         } else {
+            let rawBody = String(data: data, encoding: .utf8) ?? "(non-UTF8 body)"
+            logger.logError("CLI Server error: HTTP \(httpResponse.statusCode), body=\(rawBody)")
+
             if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                throw ClaudeCLIServerError.serverError(errorResponse.error)
+                let message = Self.humanReadableError(errorResponse.error, code: errorResponse.code, httpStatus: httpResponse.statusCode, provider: provider)
+                throw ClaudeCLIServerError.serverError(message)
             }
             throw ClaudeCLIServerError.httpError(httpResponse.statusCode)
         }
+    }
+
+    /// Maps raw server errors to user-friendly messages
+    private static func humanReadableError(_ message: String, code: String?, httpStatus: Int, provider: String) -> String {
+        let lowered = message.lowercased()
+
+        // Rate limiting
+        if httpStatus == 429 || lowered.contains("rate limit") || lowered.contains("too many requests") || lowered.contains("overloaded") {
+            let providerName = switch provider {
+            case "codex": "Codex"
+            case "gemini": "Gemini"
+            default: "Claude"
+            }
+            return "\(providerName) CLI rate limit reached. Please wait a moment and try again."
+        }
+
+        // CLI not available / disabled
+        if lowered.contains("sharing is disabled") || lowered.contains("not available") || lowered.contains("not found") {
+            return message
+        }
+
+        // Invalid JSON from CLI
+        if lowered.contains("invalid json") {
+            let providerName = switch provider {
+            case "codex": "Codex"
+            case "gemini": "Gemini"
+            default: "Claude"
+            }
+            return "\(providerName) CLI returned an invalid response. This may be a temporary issue — please try again."
+        }
+
+        return message
     }
 
     // MARK: - Test Connection

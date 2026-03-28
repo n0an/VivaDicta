@@ -106,7 +106,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 ```mermaid
 graph LR
-    R[🎙️ Recording] --> T[📝 Transcription] --> AI[🤖 AI Processing] --> S[💾 Storage]
+    R[Recording] --> T[Transcription] --> AI[AI Processing] --> S[Storage]
 
     R -.- R1[AVAudioRecorder<br/>AVAudioEngine]
     T -.- T1[WhisperKit · Parakeet<br/>Cloud STT providers]
@@ -118,10 +118,10 @@ Main app ↔ extensions IPC via `AppGroupCoordinator` (Darwin Notifications + Sh
 
 ```mermaid
 graph LR
-    K[⌨️ Keyboard Extension] <-->|Darwin Notifications<br/>Shared UserDefaults| M[📱 Main App]
-    W[🧩 Widget + Live Activity] <--> M
-    SE[📤 Share Extension] <--> M
-    AE[⚡ Action Extension] <--> M
+    K[Keyboard Extension] <-->|Darwin Notifications<br/>Shared UserDefaults| M[Main App]
+    W[Widget + Live Activity] <--> M
+    SE[Share Extension] <--> M
+    AE[Action Extension] <--> M
 ```
 
 Core components:

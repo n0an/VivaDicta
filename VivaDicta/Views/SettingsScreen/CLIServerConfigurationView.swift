@@ -259,7 +259,7 @@ struct CLIServerConfigurationView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.secondary)
 
-            Text("The CLI Agents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
+            Text("The CLI Agents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone or iPad connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
