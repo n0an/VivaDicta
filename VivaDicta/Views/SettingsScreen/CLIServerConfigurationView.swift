@@ -295,8 +295,10 @@ struct CLIServerConfigurationView: View {
     }
 
     private func saveAndTestConnection() {
+        UserDefaults.standard.set(isServerEnabled, forKey: VivAgentsClient.isEnabledKey)
         UserDefaults.standard.set(serverURL, forKey: VivAgentsClient.serverURLKey)
         KeychainService.shared.save(serverToken, forKey: VivAgentsClient.authTokenKeychainKey, syncable: false)
+        hasUnsavedChanges = false
 
         Task {
             isTestingConnection = true
