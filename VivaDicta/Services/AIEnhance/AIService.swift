@@ -825,14 +825,14 @@ class AIService {
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
 
         // Claude CLI Server: route Anthropic requests through remote server when enabled
-        if aiProvider == .anthropic && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isClaudeCliActive,
-           let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+        if aiProvider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive,
+           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
             let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             logger.logDebug("AI Processing - Using Claude CLI Server at \(serverURL)")
             do {
-                let result = try await ClaudeCLIServerClient.enhance(
+                let result = try await VivAgentsClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: selectedMode.aiModel
@@ -853,13 +853,13 @@ class AIService {
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
         // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
-        if aiProvider == .openAI && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isCodexCliActive,
-           let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+        if aiProvider == .openAI && VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive,
+           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             logger.logDebug("AI Processing - Using Codex CLI Server at \(serverURL)")
             do {
-                let result = try await ClaudeCLIServerClient.enhance(
+                let result = try await VivAgentsClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: selectedMode.aiModel,
@@ -877,13 +877,13 @@ class AIService {
         }
 
         // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
-        if aiProvider == .gemini && ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isGeminiCliActive,
-           let serverURL = ClaudeCLIServerClient.serverURL, !serverURL.isEmpty {
+        if aiProvider == .gemini && VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
+           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             logger.logDebug("AI Processing - Using Gemini CLI Server at \(serverURL)")
             do {
-                let result = try await ClaudeCLIServerClient.enhance(
+                let result = try await VivAgentsClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: selectedMode.aiModel,
@@ -1664,21 +1664,21 @@ class AIService {
         providers += AIProvider.allCases.filter { provider in
             if provider == .anthropic {
                 // Anthropic is connected if it has an API key OR Claude CLI is available
-                let cliAvailable = ClaudeCLIServerClient.isEnabled
-                    && ClaudeCLIServerClient.isVerified
-                    && ClaudeCLIServerClient.isClaudeCliAvailable
+                let cliAvailable = VivAgentsClient.isEnabled
+                    && VivAgentsClient.isVerified
+                    && VivAgentsClient.isClaudeCliAvailable
                 return cliAvailable || provider.apiKey != nil
             }
             if provider == .openAI {
-                let cliAvailable = ClaudeCLIServerClient.isEnabled
-                    && ClaudeCLIServerClient.isVerified
-                    && ClaudeCLIServerClient.isCodexCliActive
+                let cliAvailable = VivAgentsClient.isEnabled
+                    && VivAgentsClient.isVerified
+                    && VivAgentsClient.isCodexCliActive
                 return cliAvailable || isChatGPTSignedIn || provider.apiKey != nil
             }
             if provider == .gemini {
-                let cliAvailable = ClaudeCLIServerClient.isEnabled
-                    && ClaudeCLIServerClient.isVerified
-                    && ClaudeCLIServerClient.isGeminiCliActive
+                let cliAvailable = VivAgentsClient.isEnabled
+                    && VivAgentsClient.isVerified
+                    && VivAgentsClient.isGeminiCliActive
                 return cliAvailable || isGeminiSignedIn || provider.apiKey != nil
             }
             if provider == .copilot {
@@ -2088,11 +2088,11 @@ class AIService {
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
         // OpenAI: show OAuth model list when connected via ChatGPT or CLI server
-        if provider == .openAI && (isChatGPTSignedIn || (ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified)) {
+        if provider == .openAI && (isChatGPTSignedIn || (VivAgentsClient.isEnabled && VivAgentsClient.isVerified)) {
             return ChatGPTAPIClient.supportedModels
         }
         // Gemini: show OAuth model list when connected via Google or CLI server
-        if provider == .gemini && (isGeminiSignedIn || (ClaudeCLIServerClient.isEnabled && ClaudeCLIServerClient.isVerified)) {
+        if provider == .gemini && (isGeminiSignedIn || (VivAgentsClient.isEnabled && VivAgentsClient.isVerified)) {
             return GeminiAPIClient.supportedModels
         }
         // Copilot: show dynamically fetched models

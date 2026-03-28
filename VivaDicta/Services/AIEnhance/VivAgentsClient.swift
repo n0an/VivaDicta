@@ -1,5 +1,5 @@
 //
-//  ClaudeCLIServerClient.swift
+//  VivAgentsClient.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2026.03.25
@@ -8,9 +8,9 @@
 import Foundation
 import os
 
-enum ClaudeCLIServerClient {
+enum VivAgentsClient {
 
-    private static let logger = Logger(category: .cliServerClient)
+    private static let logger = Logger(category: .vivAgentsClient)
 
     struct EnhanceRequest: Encodable {
         let text: String
@@ -143,12 +143,12 @@ enum ClaudeCLIServerClient {
         provider: String = "claude"
     ) async throws -> String {
         guard let baseURL = serverURL, !baseURL.isEmpty else {
-            throw ClaudeCLIServerError.invalidURL
+            throw VivAgentsClientError.invalidURL
         }
 
-        let urlString = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/enhance"
+        let urlString = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/process"
         guard let url = URL(string: urlString) else {
-            throw ClaudeCLIServerError.invalidURL
+            throw VivAgentsClientError.invalidURL
         }
 
         var request = URLRequest(url: url)
@@ -163,30 +163,30 @@ enum ClaudeCLIServerClient {
         let body = EnhanceRequest(text: text, systemPrompt: systemPrompt, model: model, provider: provider)
         request.httpBody = try JSONEncoder().encode(body)
 
-        logger.logInfo("CLI Server request: provider=\(provider), model=\(model), textLength=\(text.count)")
+        logger.logInfo("VivAgents request: provider=\(provider), model=\(model), textLength=\(text.count)")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.logError("CLI Server: invalid response (not HTTP)")
-            throw ClaudeCLIServerError.invalidResponse
+            logger.logError("VivAgents: invalid response (not HTTP)")
+            throw VivAgentsClientError.invalidResponse
         }
 
-        logger.logInfo("CLI Server response: HTTP \(httpResponse.statusCode)")
+        logger.logInfo("VivAgents response: HTTP \(httpResponse.statusCode)")
 
         if httpResponse.statusCode == 200 {
             let result = try JSONDecoder().decode(EnhanceResponse.self, from: data)
-            logger.logInfo("CLI Server success: resultLength=\(result.result.count), duration=\(result.duration ?? 0)s")
+            logger.logInfo("VivAgents success: resultLength=\(result.result.count), duration=\(result.duration ?? 0)s")
             return result.result
         } else {
             let rawBody = String(data: data, encoding: .utf8) ?? "(non-UTF8 body)"
-            logger.logError("CLI Server error: HTTP \(httpResponse.statusCode), body=\(rawBody)")
+            logger.logError("VivAgents error: HTTP \(httpResponse.statusCode), body=\(rawBody)")
 
             if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
                 let message = Self.humanReadableError(errorResponse.error, code: errorResponse.code, httpStatus: httpResponse.statusCode, provider: provider)
-                throw ClaudeCLIServerError.serverError(message)
+                throw VivAgentsClientError.serverError(message)
             }
-            throw ClaudeCLIServerError.httpError(httpResponse.statusCode)
+            throw VivAgentsClientError.httpError(httpResponse.statusCode)
         }
     }
 
@@ -282,7 +282,7 @@ enum ClaudeCLIServerClient {
 
 }
 
-enum ClaudeCLIServerError: LocalizedError {
+enum VivAgentsClientError: LocalizedError {
     case invalidURL
     case invalidResponse
     case serverError(String)
@@ -291,13 +291,13 @@ enum ClaudeCLIServerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            "Invalid Claude CLI Server URL."
+            "Invalid VivAgents server URL."
         case .invalidResponse:
-            "Invalid response from Claude CLI server."
+            "Invalid response from VivAgents server."
         case .serverError(let message):
             message
         case .httpError(let code):
-            "Claude CLI server returned HTTP \(code)."
+            "VivAgents server returned HTTP \(code)."
         }
     }
 }
