@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AIProviders: View {
     @Environment(AppState.self) private var appState
+    @State private var refreshID = UUID()
 
     var body: some View {
         List {
@@ -40,7 +41,7 @@ struct AIProviders: View {
                 }
             }
 
-            // CLI Agents Server Section
+            // VivAgents Server Section
             Section {
                 NavigationLink {
                     CLIServerConfigurationView(aiService: appState.aiService)
@@ -51,7 +52,7 @@ struct AIProviders: View {
                             .foregroundStyle(.blue.gradient)
                             .frame(width: 28, height: 28)
 
-                        Text("CLI Agents Server")
+                        Text("VivAgents Server")
 
                         Spacer()
 
@@ -147,7 +148,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("CLI")
+                                    Text("VivAgents")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -155,7 +156,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("CLI")
+                                    Text("VivAgents")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -163,7 +164,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("CLI")
+                                    Text("VivAgents")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -225,7 +226,9 @@ struct AIProviders: View {
                 }
             }
         }
+        .id(refreshID)
         .onAppear {
+            refreshID = UUID()
             appState.aiService.refreshConnectedProviders()
         }
         .navigationTitle("AI Providers")

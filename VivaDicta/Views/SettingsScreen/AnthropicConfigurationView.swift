@@ -39,7 +39,7 @@ struct AnthropicConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive ? "CLI Server Connected" : "API Key Configured")
+                            Text(VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive ? "VivAgents Server Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -47,7 +47,7 @@ struct AnthropicConfigurationView: View {
                 }
                 .padding(.top, 8)
 
-                // CLI Server section
+                // VivAgents Server section
                 cliServerStatusSection
 
                 // API Key section
@@ -79,7 +79,7 @@ struct AnthropicConfigurationView: View {
         }
     }
 
-    // MARK: - CLI Server Status Section
+    // MARK: - VivAgents Server Status Section
 
     private var cliServerStatusSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -102,14 +102,14 @@ struct AnthropicConfigurationView: View {
                     }
                 }
             } else {
-                Text("Use your Claude subscription via the CLI Agents Server. No API key needed.")
+                Text("Use your Claude subscription via the VivAgents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 NavigationLink {
                     CLIServerConfigurationView(aiService: aiService)
                 } label: {
-                    Text("Configure CLI Agents Server")
+                    Text("Configure VivAgents Server")
                         .font(.callout)
                 }
             }
@@ -285,7 +285,7 @@ struct AnthropicConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("CLI Server")
+                Text("VivAgents")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -342,7 +342,7 @@ struct AnthropicConfigurationView: View {
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()
-        // Only disable modes if CLI Server isn't keeping Anthropic connected
+        // Only disable modes if VivAgents Server isn't keeping Anthropic connected
         if !aiService.connectedProviders.contains(.anthropic) {
             aiService.disableAIEnhancementForModesUsingProvider(.anthropic)
         }
