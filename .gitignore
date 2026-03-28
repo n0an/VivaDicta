@@ -6,6 +6,7 @@ Icon?
 ._*
 
 meta/
+metadata/
 
 # Xcode
 build/
