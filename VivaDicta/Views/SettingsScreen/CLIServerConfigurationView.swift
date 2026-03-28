@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CLIServerConfigurationView: View {
+    @Environment(\.dismiss) private var dismiss
     let aiService: AIService
 
     // Server state
@@ -17,6 +18,7 @@ struct CLIServerConfigurationView: View {
     @State private var isTestingConnection = false
     @State private var connectionTestResult: Bool?
     @State private var showCLIWarning = false
+    @State private var hasUnsavedChanges = false
 
     // Health response for per-CLI availability
     @State private var healthResponse: VivAgentsClient.HealthResponse?
@@ -64,6 +66,15 @@ struct CLIServerConfigurationView: View {
         }
         .navigationTitle("VivAgents Server")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Save") {
+                    saveSettings()
+                }
+                .disabled(!hasUnsavedChanges)
+                .bold()
+            }
+        }
         .task {
             // Re-fetch health on appear if server is connected
             if isServerEnabled && VivAgentsClient.isVerified && healthResponse == nil {
@@ -78,7 +89,7 @@ struct CLIServerConfigurationView: View {
             Button("Cancel", role: .cancel) { }
             Button("Enable") {
                 isServerEnabled = true
-                UserDefaults.standard.set(true, forKey: VivAgentsClient.isEnabledKey)
+                hasUnsavedChanges = true
             }
         } message: {
             Text("CLI agents (Claude, Codex, Gemini) are designed for software development use. Using them for general text processing may fall outside the intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk.")
@@ -103,12 +114,7 @@ struct CLIServerConfigurationView: View {
                         showCLIWarning = true
                     } else {
                         isServerEnabled = false
-                        UserDefaults.standard.set(false, forKey: VivAgentsClient.isEnabledKey)
-                        UserDefaults.standard.set(false, forKey: VivAgentsClient.isVerifiedKey)
-                        connectionTestResult = nil
-                        healthResponse = nil
-                        VivAgentsClient.clearAvailability()
-                        aiService.refreshConnectedProviders()
+                        hasUnsavedChanges = true
                     }
                 }
             ))
@@ -272,6 +278,21 @@ struct CLIServerConfigurationView: View {
     }
 
     // MARK: - Actions
+
+    private func saveSettings() {
+        UserDefaults.standard.set(isServerEnabled, forKey: VivAgentsClient.isEnabledKey)
+
+        if !isServerEnabled {
+            UserDefaults.standard.set(false, forKey: VivAgentsClient.isVerifiedKey)
+            connectionTestResult = nil
+            healthResponse = nil
+            VivAgentsClient.clearAvailability()
+        }
+
+        aiService.refreshConnectedProviders()
+        hasUnsavedChanges = false
+        HapticManager.success()
+    }
 
     private func saveAndTestConnection() {
         UserDefaults.standard.set(serverURL, forKey: VivAgentsClient.serverURLKey)
