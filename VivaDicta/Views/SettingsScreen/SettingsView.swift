@@ -587,6 +587,14 @@ private struct ModeInfoRow: View {
     let connectedProviders: [AIProvider]
     let presetManager: PresetManager
 
+    private var isTranscriptionProviderAvailable: Bool {
+        guard let aiProvider = mode.transcriptionProvider.mappedAIProvider else {
+            // On-device providers (WhisperKit, Parakeet) or custom are always available
+            return true
+        }
+        return connectedProviders.contains(aiProvider)
+    }
+
     private var transcriptionModelDisplayName: String {
         // For custom transcription, show the actual configured model name
         if mode.transcriptionProvider == .customTranscription {
@@ -628,7 +636,7 @@ private struct ModeInfoRow: View {
             Text(mode.name)
                 .font(.body.weight(.medium))
 
-            if !mode.transcriptionModel.isEmpty {
+            if !mode.transcriptionModel.isEmpty && isTranscriptionProviderAvailable {
                 HStack(alignment: .top, spacing: 0) {
                     // Transcription info - takes 50% width
                     HStack(alignment: .top, spacing: 4) {

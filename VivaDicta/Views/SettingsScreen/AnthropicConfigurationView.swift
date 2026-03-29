@@ -45,6 +45,9 @@ struct AnthropicConfigurationView: View {
                 }
                 .padding(.top, 8)
 
+                // Model availability note
+                modelAvailabilityNote
+
                 // VivAgents Server section
                 cliServerStatusSection
 
@@ -75,6 +78,19 @@ struct AnthropicConfigurationView: View {
         } message: {
             Text("Are you sure you want to delete the API key for Anthropic? This action cannot be undone.")
         }
+    }
+
+    // MARK: - Model Availability Note
+
+    private var modelAvailabilityNote: some View {
+        Label {
+            Text("OAuth and CLI agent connections support a limited set of models. Use an API key for full model access.")
+        } icon: {
+            Image(systemName: "info.circle")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - VivAgents Server Status Section
