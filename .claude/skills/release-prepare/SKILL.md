@@ -56,6 +56,8 @@ Use `references/whats-new-screen.md` for the full guide on adding What's New con
 Write App Store release notes and save to Obsidian vault at:
 `Projects/VivaDicta/what's new/whats-new-X.Y.Z.md`
 
+**Format**: No frontmatter, no markdown header — plain text only, ready to copy-paste into App Store Connect.
+
 **IMPORTANT**: App Store What's New (release notes) limit is **4,000 characters**. Always verify the character count.
 
 Use the same English text for all localizations (for ASO reasons).
@@ -71,7 +73,9 @@ Check if the current App Store description needs updating for new features.
 
 Previous descriptions are stored at: `Projects/VivaDicta/description/`
 
-**IMPORTANT**: App Store description limit is **4,000 characters**. Always verify the character count before finalizing. Count only the description text, excluding frontmatter.
+**Format**: No frontmatter, no markdown header — plain text only, ready to copy-paste into App Store Connect.
+
+**IMPORTANT**: App Store description limit is **4,000 characters**. Always verify the character count before finalizing.
 
 If updating, save the new version as `description-X.Y.Z.md` in the same directory.
 
