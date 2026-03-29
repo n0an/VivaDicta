@@ -45,11 +45,11 @@ struct GeminiConfigurationView: View {
                 }
                 .padding(.top, 8)
 
-                // CLI Server section
-                geminiCLIServerSection
-
                 // Google OAuth section
                 geminiOAuthSection
+
+                // CLI Server section
+                geminiCLIServerSection
 
                 // API Key section
                 apiKeySection
@@ -315,20 +315,20 @@ struct GeminiConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("VivAgents")
-                    .font(.caption.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
-                    .clipShape(.capsule)
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
                 Text("Google")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(aiService.isGeminiSignedIn ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text("VivAgents")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
@@ -357,10 +357,10 @@ struct GeminiConfigurationView: View {
     // MARK: - CLI Server Section
 
     private var geminiConnectionLabel: String {
-        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
-            return "VivAgents Server Connected"
-        } else if aiService.isGeminiSignedIn {
+        if aiService.isGeminiSignedIn {
             return "Google Connected"
+        } else if VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive {
+            return "VivAgents Server Connected"
         } else {
             return "API Key Configured"
         }

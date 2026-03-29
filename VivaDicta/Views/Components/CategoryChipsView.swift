@@ -49,7 +49,10 @@ private struct CategoryChip: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            HapticManager.selectionChanged()
+            action()
+        } label: {
             HStack(spacing: 4) {
                 if let icon {
                     Image(systemName: icon)
