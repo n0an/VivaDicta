@@ -2094,12 +2094,12 @@ class AIService {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
-        // OpenAI: show OAuth model list when connected via ChatGPT or CLI server
-        if provider == .openAI && (isChatGPTSignedIn || (VivAgentsClient.isEnabled && VivAgentsClient.isVerified)) {
+        // OpenAI: show OAuth model list when connected via ChatGPT or Codex CLI agent
+        if provider == .openAI && (isChatGPTSignedIn || VivAgentsClient.isCodexCliActive) {
             return ChatGPTAPIClient.supportedModels
         }
-        // Gemini: show OAuth model list when connected via Google or CLI server
-        if provider == .gemini && (isGeminiSignedIn || (VivAgentsClient.isEnabled && VivAgentsClient.isVerified)) {
+        // Gemini: show OAuth model list when connected via Google or Gemini CLI agent
+        if provider == .gemini && (isGeminiSignedIn || VivAgentsClient.isGeminiCliActive) {
             return GeminiAPIClient.supportedModels
         }
         // Copilot: show dynamically fetched models
