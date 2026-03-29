@@ -37,12 +37,6 @@ enum WhatsNewCatalog {
         headline: "What's New in VivaDicta 2.1",
         features: [
             WhatsNewFeature(
-                icon: "tag",
-                iconColors: [.orange, .yellow],
-                title: "Tags & Organization",
-                description: "Create custom tags with colors and icons. Auto-track where each note came from — app, keyboard, extension, or Mac."
-            ),
-            WhatsNewFeature(
                 icon: "keyboard.badge.ellipsis",
                 iconColors: [.purple, .pink],
                 title: "Keyboard AI Processing",
@@ -65,6 +59,12 @@ enum WhatsNewCatalog {
                 iconColors: [.green, .mint],
                 title: "Cohere Transcription",
                 description: "New cloud provider with best-in-class accuracy across 14 languages. Free trial included."
+            ),
+            WhatsNewFeature(
+                icon: "tag",
+                iconColors: [.orange, .yellow],
+                title: "Tags & Organization",
+                description: "Create custom tags with colors and icons. Auto-track where each note came from — app, keyboard, extension, or Mac."
             ),
             WhatsNewFeature(
                 icon: "globe",
