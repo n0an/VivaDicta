@@ -102,6 +102,7 @@ struct AddAPIKeyView: View {
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
+                .padding(.top, 4)
             }
 
             if clearButtonVisible {

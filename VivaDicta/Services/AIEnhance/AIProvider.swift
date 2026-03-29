@@ -145,6 +145,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .huggingFace: URL(string: "https://huggingface.co/settings/tokens")
         case .zai: URL(string: "https://open.z.ai/")
         case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
+        case .cohere: URL(string: "https://dashboard.cohere.com/api-keys")
         default: nil
         }
     }
