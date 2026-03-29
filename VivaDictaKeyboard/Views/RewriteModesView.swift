@@ -170,6 +170,7 @@ struct RewriteModesView: View {
                 .textCase(.uppercase)
                 .padding(.horizontal, 4)
                 .padding(.top, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             LazyVGrid(columns: gridColumns, spacing: 6) {
                 ForEach(presets) { preset in
@@ -177,6 +178,7 @@ struct RewriteModesView: View {
                 }
             }
         }
+        .background(Color.white.opacity(0.001))
     }
 
     private func presetCell(_ preset: Preset) -> some View {
@@ -333,6 +335,7 @@ private struct KeyboardCategoryChipsView: View {
                 }
             }
             .padding(.horizontal, 16)
+            .contentShape(.rect)
         }
         .scrollIndicators(.hidden)
     }
