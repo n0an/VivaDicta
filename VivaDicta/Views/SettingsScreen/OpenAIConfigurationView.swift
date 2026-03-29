@@ -45,11 +45,11 @@ struct OpenAIConfigurationView: View {
                 }
                 .padding(.top, 8)
 
-                // CLI Server section
-                cliServerSection
-
                 // ChatGPT OAuth section
                 chatGPTSection
+
+                // CLI Server section
+                cliServerSection
 
                 // API Key section
                 apiKeySection
@@ -315,20 +315,20 @@ struct OpenAIConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("VivAgents")
-                    .font(.caption.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
-                    .clipShape(.capsule)
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
                 Text("ChatGPT")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(aiService.isChatGPTSignedIn ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .clipShape(.capsule)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                Text("VivAgents")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
@@ -357,10 +357,10 @@ struct OpenAIConfigurationView: View {
     // MARK: - CLI Server Section
 
     private var openAIConnectionLabel: String {
-        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
-            return "VivAgents Server Connected"
-        } else if aiService.isChatGPTSignedIn {
+        if aiService.isChatGPTSignedIn {
             return "ChatGPT Connected"
+        } else if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
+            return "VivAgents Server Connected"
         } else {
             return "API Key Configured"
         }

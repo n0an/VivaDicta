@@ -118,6 +118,7 @@ struct PresetSettings: View {
         }
         .searchable(text: $searchText, prompt: "Search presets")
         .onChange(of: filter) { _, _ in
+            HapticManager.selectionChanged()
             selectedCategory = nil
         }
         .onChange(of: presetManager.hasFavorites) {
@@ -130,6 +131,7 @@ struct PresetSettings: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Add Preset", systemImage: "plus") {
+                    HapticManager.mediumImpact()
                     showCreatePreset = true
                 }
             }
@@ -194,6 +196,7 @@ private struct PresetRowView: View {
 
             if let onToggleFavorite {
                 Button {
+                    HapticManager.lightImpact()
                     onToggleFavorite()
                 } label: {
                     Image(systemName: preset.isFavorite ? "heart.fill" : "heart")

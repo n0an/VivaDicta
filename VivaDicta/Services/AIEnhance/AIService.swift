@@ -852,54 +852,6 @@ class AIService {
         // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
-        // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
-        if aiProvider == .openAI && VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive,
-           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            logger.logDebug("AI Processing - Using Codex CLI Server at \(serverURL)")
-            do {
-                let result = try await VivAgentsClient.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: selectedMode.aiModel,
-                    provider: "codex"
-                )
-                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-                return filteredResult
-            } catch {
-                if isChatGPTSignedIn || self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Codex CLI Server failed, falling back: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.localizedDescription)
-                }
-            }
-        }
-
-        // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
-        if aiProvider == .gemini && VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
-           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            logger.logDebug("AI Processing - Using Gemini CLI Server at \(serverURL)")
-            do {
-                let result = try await VivAgentsClient.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: selectedMode.aiModel,
-                    provider: "gemini"
-                )
-                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-                return filteredResult
-            } catch {
-                if isGeminiSignedIn || self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Gemini CLI Server failed, falling back: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.localizedDescription)
-                }
-            }
-        }
-
         // ChatGPT OAuth: route OpenAI requests through ChatGPT backend API when signed in
         if aiProvider == .openAI && isChatGPTSignedIn {
             lastSystemMessageSent = resolvedSystemMessage
@@ -917,9 +869,9 @@ class AIService {
                 )
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as OAuthError {
-                // If OAuth fails and we have an API key, fall through to standard path
-                if self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("ChatGPT OAuth failed, falling back to API key: \(error.localizedDescription)")
+                // If OAuth fails, fall through to CLI or API key
+                if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("ChatGPT OAuth failed, falling back: \(error.localizedDescription)")
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "ChatGPT OAuth error")
                 }
@@ -946,11 +898,59 @@ class AIService {
                 // Rate limit etc. — don't fall through, surface directly
                 throw error
             } catch let error as OAuthError {
-                // If OAuth fails and we have an API key, fall through to standard path
-                if self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Gemini OAuth failed, falling back to API key: \(error.localizedDescription)")
+                // If OAuth fails, fall through to CLI or API key
+                if (VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Gemini OAuth failed, falling back: \(error.localizedDescription)")
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
+                }
+            }
+        }
+
+        // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
+        if aiProvider == .openAI && VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive,
+           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            logger.logDebug("AI Processing - Using Codex CLI Server at \(serverURL)")
+            do {
+                let result = try await VivAgentsClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: selectedMode.aiModel,
+                    provider: "codex"
+                )
+                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredResult
+            } catch {
+                if self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Codex CLI Server failed, falling back to API key: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.localizedDescription)
+                }
+            }
+        }
+
+        // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
+        if aiProvider == .gemini && VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
+           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+            lastSystemMessageSent = resolvedSystemMessage
+            lastUserMessageSent = formattedText
+            logger.logDebug("AI Processing - Using Gemini CLI Server at \(serverURL)")
+            do {
+                let result = try await VivAgentsClient.enhance(
+                    text: formattedText,
+                    systemPrompt: resolvedSystemMessage,
+                    model: selectedMode.aiModel,
+                    provider: "gemini"
+                )
+                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+                return filteredResult
+            } catch {
+                if self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Gemini CLI Server failed, falling back to API key: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.localizedDescription)
                 }
             }
         }
