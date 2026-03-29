@@ -37,4 +37,4 @@ Skills are recipes for common tasks. Scan this index for relevant skills based o
 
 ## Analytics
 
-- [`analyze-unrecognized-apps.md`](./analyze-unrecognized-apps.md) — Analyze unrecognized host app bundle IDs from Firebase
+- [`analyze-unrecognized-apps`](./analyze-unrecognized-apps/SKILL.md) — Analyze unrecognized host app bundle IDs from Firebase

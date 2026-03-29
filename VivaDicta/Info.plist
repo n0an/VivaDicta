@@ -106,6 +106,13 @@
 		<string>logseq</string>
 		<string>github</string>
 		<string>grok</string>
+		<string>shellfish</string>
+		<string>termius</string>
+		<string>msteams</string>
+		<string>reddit</string>
+		<string>ia-writer</string>
+		<string>gemini-app</string>
+		<string>yandextranslate</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

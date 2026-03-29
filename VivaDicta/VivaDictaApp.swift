@@ -338,11 +338,23 @@ struct VivaDictaApp: App {
             let knownNoSchemeHosts: Set<String> = [
                 "com.apple.SafariViewService",  // SFSafariViewController in-app browser
                 "com.apple.springboard",        // iOS home screen
-                "ai.x.GrokApp",                 // Grok AI - no known URL scheme
-                "com.dmitrii.medvedev.gptalk",   // GPChat/Xenova AI - no known URL scheme
-                "com.saner.ai",                  // Saner AI - no known URL scheme
-                "dk.FirstForm.SnappyNotesiOS",   // Snappy Notes - no known URL scheme
-                "com.ai.venice"                  // Venice AI - no known URL scheme
+                "com.apple.Spotlight",          // Spotlight search
+                "com.apple.journal",            // Apple Journal
+                "com.apple.AppleMediaServicesUI.ComposeReviewExtension", // App Store review
+                "com.antonnovoselov.VivaDicta", // Own app
+                "com.dmitrii.medvedev.gptalk",  // GPChat/Xenova AI - no known URL scheme
+                "com.saner.ai",                 // Saner AI - no known URL scheme
+                "dk.FirstForm.SnappyNotesiOS",  // Snappy Notes - no known URL scheme
+                "com.ai.venice",                // Venice AI - no known URL scheme
+                "com.replay.Echo",              // Echo by Replay - no known URL scheme
+                "com.avast.ios.security",       // Avast Security - no known URL scheme
+                "com.elaborapp.NoteBox",        // NoteBox - no known URL scheme
+                "com.ios.aquaMagic062516.cn",   // Unknown app
+                "com.lixkit.diary",             // Diary app - no known URL scheme
+                "com.weichart.Zettel",          // Zettel Notes - no known URL scheme
+                "h3p.Neon-Vision-Editor",       // Neon Vision Editor - no known URL scheme
+                "mystxtalk",                    // Unknown messaging app
+                "ru.ozon.sellerApp"             // Ozon Seller - no known URL scheme
             ]
 
             if !knownNoSchemeHosts.contains(hostId) {
@@ -563,7 +575,14 @@ struct VivaDictaApp: App {
             "com.burbn.barcelona": "barcelona://",
             "com.briansunter.logseq-dev": "logseq://",
             "com.github.stormbreaker.prod": "github://",
-            "ai.x.GrokApp": "grok://"
+            "ai.x.GrokApp": "grok://",
+            "com.appliedphasor.secure-shellfish": "shellfish://",
+            "com.crystalnix.ServerAuditor": "termius://",
+            "com.microsoft.skype.teams": "msteams://",
+            "com.reddit.Reddit": "reddit://",
+            "pro.writer": "ia-writer://",
+            "com.google.gemini": "gemini-app://",
+            "ru.yandex.mobile.translate": "yandextranslate://"
         ]
         
         return knownSchemes[bundleId]

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Analyze Unrecognized Host Apps
 
-**Last run:** 2026-02-28 (commit cc118f12 — added new host app mappings from analytics data)
+**Last run:** 2026-03-29 — added 7 URL scheme mappings (ShellFish, Termius, Teams, Reddit, iA Writer, Gemini, Yandex Translate) and 12 knownNoSchemeHosts entries
 
 You are given the following context:
 $ARGUMENTS
