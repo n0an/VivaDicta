@@ -335,28 +335,53 @@ private struct KeyboardCategoryChipsView: View {
                 }
             }
             .padding(.horizontal, 16)
+            .padding(.vertical, 4)
             .contentShape(.rect)
         }
         .scrollIndicators(.hidden)
     }
 
+    @ViewBuilder
     private func chip(title: String, icon: String? = nil, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 10))
+        if #available(iOS 26.0, *) {
+            Button(action: action) {
+                HStack(spacing: 4) {
+                    if let icon {
+                        Image(systemName: icon)
+                            .font(.system(size: 10))
+                    }
+                    Text(title)
                 }
-                Text(title)
+                .font(.system(size: 13))
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .foregroundStyle(isSelected ? .white : .primary)
             }
-            .font(.system(size: 13))
-            .fontWeight(isSelected ? .semibold : .regular)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .foregroundStyle(isSelected ? .white : .primary)
-            .background(isSelected ? Color.accentColor : Color(.systemGray5))
-            .clipShape(.capsule)
+            .buttonStyle(.plain)
+            .glassEffect(
+                isSelected
+                ? .regular.tint(Color.pink.opacity(0.6))
+                : .regular.interactive()
+            )
+        } else {
+            Button(action: action) {
+                HStack(spacing: 4) {
+                    if let icon {
+                        Image(systemName: icon)
+                            .font(.system(size: 10))
+                    }
+                    Text(title)
+                }
+                .font(.system(size: 13))
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .background(isSelected ? Color.accentColor : Color(.systemGray5))
+                .clipShape(.capsule)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 }
