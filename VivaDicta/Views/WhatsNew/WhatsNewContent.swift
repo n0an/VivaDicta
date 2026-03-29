@@ -28,8 +28,58 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
-        "2.0": release_2_0
+        "2.0": release_2_0,
+        "2.1": release_2_1
     ]
+
+    private static let release_2_1 = WhatsNewRelease(
+        id: "2.1",
+        headline: "What's New in VivaDicta 2.1",
+        features: [
+            WhatsNewFeature(
+                icon: "tag",
+                iconColors: [.orange, .yellow],
+                title: "Tags & Organization",
+                description: "Create custom tags with colors and icons. Auto-track where each note came from — app, keyboard, extension, or Mac."
+            ),
+            WhatsNewFeature(
+                icon: "keyboard.badge.ellipsis",
+                iconColors: [.purple, .pink],
+                title: "Keyboard AI Processing",
+                description: "Process text directly from the VivaDicta keyboard. Translate, rewrite, or summarize in any app."
+            ),
+            WhatsNewFeature(
+                icon: "doc.on.clipboard",
+                iconColors: [.teal, .cyan],
+                title: "Keyboard Recent Notes",
+                description: "Quickly insert recent transcriptions from the keyboard without opening the app."
+            ),
+            WhatsNewFeature(
+                icon: "person.badge.key",
+                iconColors: [.blue, .indigo],
+                title: "AI Subscriptions",
+                description: "Use your Claude, ChatGPT, Gemini, or Copilot subscriptions — no API keys needed."
+            ),
+            WhatsNewFeature(
+                icon: "waveform.badge.plus",
+                iconColors: [.green, .mint],
+                title: "Cohere Transcription",
+                description: "New cloud provider with best-in-class accuracy across 14 languages. Free trial included."
+            ),
+            WhatsNewFeature(
+                icon: "globe",
+                iconColors: [.cyan, .blue],
+                title: "New Translation Presets",
+                description: "Eight new languages: Chinese, French, German, Portuguese, Japanese, Korean, Arabic, and Italian."
+            ),
+            WhatsNewFeature(
+                icon: "pencil.and.outline",
+                iconColors: [.pink, .orange],
+                title: "Quality of Life",
+                description: "Edit notes directly, improved mode validation feedback, and various keyboard enhancements."
+            )
+        ]
+    )
 
     private static let release_2_0 = WhatsNewRelease(
         id: "2.0",

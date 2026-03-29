@@ -78,13 +78,13 @@ To re-trigger the What's New sheet for testing, clear the stored version:
 
 ```swift
 // In a debug action or via lldb:
-UserDefaults.standard.removeObject(forKey: "lastSeenWhatsNewVersion")
+UserDefaultsStorage.appPrivate.removeObject(forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
 ```
 
 Or set it to a different version:
 
 ```swift
-UserDefaults.standard.set("1.9.0", forKey: "lastSeenWhatsNewVersion")
+UserDefaultsStorage.appPrivate.set("1.9.0", forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
 ```
 
 Then relaunch the app. The sheet will appear if `WhatsNewCatalog` has content for the current bundle version.
