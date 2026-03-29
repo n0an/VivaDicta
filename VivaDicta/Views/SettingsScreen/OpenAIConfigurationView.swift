@@ -328,7 +328,7 @@ struct OpenAIConfigurationView: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isVerified ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .background(VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
@@ -359,7 +359,7 @@ struct OpenAIConfigurationView: View {
     private var openAIConnectionLabel: String {
         if aiService.isChatGPTSignedIn {
             return "ChatGPT Connected"
-        } else if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
+        } else if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive {
             return "VivAgents Server Connected"
         } else {
             return "API Key Configured"
