@@ -13,7 +13,6 @@ struct OpenAIConfigurationView: View {
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
     @State private var isCodexCliEnabled = VivAgentsClient.isCodexCliEnabled
-
     // OAuth error
     @State private var showOAuthError = false
     @State private var oauthErrorMessage = ""
@@ -174,6 +173,17 @@ struct OpenAIConfigurationView: View {
             Text("Or use an OpenAI API key directly.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if let apiKeyURL = AIProvider.openAI.apiKeyURL {
+                Button {
+                    UIApplication.shared.open(apiKeyURL)
+                } label: {
+                    Label("Get API Key", systemImage: "key")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+            }
 
             TextField("API Key", text: $apiKey)
                 .privacySensitive()

@@ -13,7 +13,6 @@ struct GeminiConfigurationView: View {
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
     @State private var isGeminiCliEnabled = VivAgentsClient.isGeminiCliEnabled
-
     // OAuth error
     @State private var showOAuthError = false
     @State private var oauthErrorMessage = ""
@@ -174,6 +173,17 @@ struct GeminiConfigurationView: View {
             Text("Or use a Gemini API key directly.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if let apiKeyURL = AIProvider.gemini.apiKeyURL {
+                Button {
+                    UIApplication.shared.open(apiKeyURL)
+                } label: {
+                    Label("Get API Key", systemImage: "key")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+            }
 
             TextField("API Key", text: $apiKey)
                 .privacySensitive()
