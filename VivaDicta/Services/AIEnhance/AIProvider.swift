@@ -281,10 +281,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "cohere-transcribe-03-2026"
         case .vercelAIGateway:
             // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
-            // (e.g., "claude-sonnet-4.5") unlike direct Anthropic API which uses hyphens
-            // (e.g., "claude-sonnet-4-5"). Models are fetched dynamically, so this must
+            // (e.g., "claude-sonnet-4.6") unlike direct Anthropic API which uses hyphens
+            // (e.g., "claude-sonnet-4-6"). Models are fetched dynamically, so this must
             // match Vercel's actual naming convention.
-            return "anthropic/claude-sonnet-4.5"
+            return "anthropic/claude-sonnet-4.6"
         case .huggingFace:
             return "openai/gpt-oss-120b"
         case .copilot:
@@ -340,7 +340,6 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "llama-3.3-70b-versatile",
                 "moonshotai/kimi-k2-instruct-0905",
                 "qwen/qwen3-32b",
-                "meta-llama/llama-4-scout-17b-16e-instruct",
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b"
             ]
@@ -352,9 +351,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "gemini-3-flash-preview",
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
-                "gemini-2.5-flash-lite",
-                "gemini-flash-latest",
-                "gemini-flash-lite-latest"
+                "gemini-2.5-flash-lite"
             ]
         case .anthropic:
             return [
@@ -411,8 +408,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return [
                 "mistral-large-latest",
                 "mistral-medium-latest",
-                "mistral-small-latest",
-                "mistral-saba-latest"
+                "mistral-small-latest"
             ]
         case .soniox:
             return []
