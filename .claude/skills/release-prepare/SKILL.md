@@ -12,6 +12,8 @@ Use this skill when preparing a new VivaDicta release for App Store submission.
 - `asc-release-flow` — drive the App Store Connect submission flow
 - `asc-whats-new-writer` — generate App Store release notes
 - `asc-metadata-sync` — sync and validate App Store metadata
+- `asc-localize-metadata` — sync metadata across localizations (used for ASO, not actual translation)
+- `asc-aso-audit` — run ASO audit on App Store metadata and surface keyword gaps
 
 ## Skill Flow
 
@@ -60,7 +62,7 @@ Write App Store release notes and save to Obsidian vault at:
 
 **IMPORTANT**: App Store What's New (release notes) limit is **4,000 characters**. Always verify the character count.
 
-Use the same English text for all localizations (for ASO reasons).
+**ASO strategy**: All localizations use English text — no actual translations. Different localizations may have different English text variations to target different keywords. This applies to description, what's new, keywords, and subtitle.
 
 Source features from:
 - Obsidian vault: `Projects/VivaDicta/feature-changelog.md`
