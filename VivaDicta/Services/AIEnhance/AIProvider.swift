@@ -127,6 +127,28 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         self == .apple || self == .customOpenAI
     }
 
+    /// URL to obtain an API key for this provider.
+    var apiKeyURL: URL? {
+        switch self {
+        case .groq: URL(string: "https://console.groq.com/keys")
+        case .openAI: URL(string: "https://platform.openai.com/api-keys")
+        case .gemini: URL(string: "https://makersuite.google.com/app/apikey")
+        case .anthropic: URL(string: "https://console.anthropic.com/settings/keys")
+        case .mistral: URL(string: "https://console.mistral.ai/api-keys")
+        case .elevenLabs: URL(string: "https://elevenlabs.io/speech-synthesis")
+        case .deepgram: URL(string: "https://console.deepgram.com/api-keys")
+        case .soniox: URL(string: "https://console.soniox.com/")
+        case .openRouter: URL(string: "https://openrouter.ai/keys")
+        case .cerebras: URL(string: "https://cloud.cerebras.ai/")
+        case .grok: URL(string: "https://console.x.ai/")
+        case .vercelAIGateway: URL(string: "https://vercel.com/account/tokens")
+        case .huggingFace: URL(string: "https://huggingface.co/settings/tokens")
+        case .zai: URL(string: "https://open.z.ai/")
+        case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
+        default: nil
+        }
+    }
+
     /// Returns true if this provider requires an API key
     /// Note: customOpenAI doesn't require API key through the standard flow - it's handled separately
     var requiresAPIKey: Bool {

@@ -90,6 +90,17 @@ struct CloudModelConfigurationView: View {
             }
             
 
+            if let apiKeyURL = model.provider.mappedAIProvider?.apiKeyURL {
+                Button {
+                    UIApplication.shared.open(apiKeyURL)
+                } label: {
+                    Label("Get API Key", systemImage: "key")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+            }
+
             if clearButtonVisible {
                 if #available(iOS 26.0, *) {
                     Button {

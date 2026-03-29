@@ -18,8 +18,6 @@ struct AnthropicConfigurationView: View {
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
     @State private var isClaudeCliEnabled = VivAgentsClient.isClaudeCliEnabled
-
-
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -132,6 +130,17 @@ struct AnthropicConfigurationView: View {
             Text("Or use an Anthropic API key directly.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if let apiKeyURL = AIProvider.anthropic.apiKeyURL {
+                Button {
+                    UIApplication.shared.open(apiKeyURL)
+                } label: {
+                    Label("Get API Key", systemImage: "key")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+            }
 
             TextField("API Key", text: $apiKey)
                 .privacySensitive()
