@@ -1075,6 +1075,13 @@ class AIService {
                 requestBody["reasoning_effort"] = reasoningEffort
             }
 
+            // Add extra body parameters for models that need custom config
+            if let extraBody = ReasoningConfig.getExtraBodyParameters(for: selectedMode.aiModel) {
+                for (key, value) in extraBody {
+                    requestBody[key] = value
+                }
+            }
+
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
             do {
