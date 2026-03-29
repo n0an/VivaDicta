@@ -31,7 +31,7 @@ class PresetManager {
     var syncService: PresetSyncService?
 
     init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
-         storageKey: String = "Presets_v1") {
+         storageKey: String = UserDefaultsStorage.SharedKeys.presets) {
         self.userDefaults = userDefaults
         self.storageKey = storageKey
         loadPresets()

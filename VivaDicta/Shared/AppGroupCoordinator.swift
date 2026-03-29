@@ -88,6 +88,7 @@ public final class AppGroupCoordinator {
         // Text processing (keyboard rewrite feature)
         static let textProcessingInput = "textProcessingInput"
         static let textProcessingModeName = "textProcessingModeName"
+        static let textProcessingPresetId = "textProcessingPresetId"
         static let textProcessingResult = "textProcessingResult"
         static let textProcessingErrorMessage = "textProcessingErrorMessage"
     }
@@ -188,6 +189,7 @@ public final class AppGroupCoordinator {
         // Clear stale text processing state
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingInput)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingModeName)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingResult)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingErrorMessage)
 
@@ -337,26 +339,33 @@ public final class AppGroupCoordinator {
 
     // MARK: - Text Processing (Keyboard Rewrite)
 
-    /// Sends text and mode name from the keyboard extension to the main app for AI processing.
-    public func requestTextProcessing(text: String, modeName: String) {
+    /// Sends text, mode name, and optional preset ID from the keyboard extension to the main app for AI processing.
+    public func requestTextProcessing(text: String, modeName: String, presetId: String? = nil) {
         sharedDefaults?.set(text, forKey: UserDefaultsKeys.textProcessingInput)
         sharedDefaults?.set(modeName, forKey: UserDefaultsKeys.textProcessingModeName)
+        if let presetId {
+            sharedDefaults?.set(presetId, forKey: UserDefaultsKeys.textProcessingPresetId)
+        } else {
+            sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
+        }
         sharedDefaults?.synchronize()
         postDarwinNotification(NotificationNames.requestTextProcessing)
-        logger.logError("📝 Keyboard requested text processing with mode: \(modeName), text length: \(text.count)")
+        logger.logError("📝 Keyboard requested text processing with mode: \(modeName), preset: \(presetId ?? "nil"), text length: \(text.count)")
     }
 
     /// Retrieves and clears the pending text processing request (called by main app).
-    func getAndConsumePendingTextProcessing() -> (text: String, modeName: String)? {
+    func getAndConsumePendingTextProcessing() -> (text: String, modeName: String, presetId: String?)? {
         guard let defaults = sharedDefaults,
               let text = defaults.string(forKey: UserDefaultsKeys.textProcessingInput),
               let modeName = defaults.string(forKey: UserDefaultsKeys.textProcessingModeName),
               !text.isEmpty else {
             return nil
         }
+        let presetId = defaults.string(forKey: UserDefaultsKeys.textProcessingPresetId)
         defaults.removeObject(forKey: UserDefaultsKeys.textProcessingInput)
         defaults.removeObject(forKey: UserDefaultsKeys.textProcessingModeName)
-        return (text, modeName)
+        defaults.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
+        return (text, modeName, presetId)
     }
 
     /// Shares the AI-processed text result back to the keyboard extension (called by main app).
@@ -1040,15 +1049,19 @@ public final class AppGroupCoordinator {
 
     nonisolated private func handleTextProcessingCompletedNotification() {
         Task { @MainActor in
+            // Only consume the result if a callback is set — prevents the main app
+            // from racing with the keyboard extension and deleting the result first.
+            guard let callback = onTextProcessingCompleted else { return }
             let text = await getAndConsumeTextProcessingResult() ?? ""
-            await onTextProcessingCompleted?(text)
+            callback(text)
         }
     }
 
     nonisolated private func handleTextProcessingErrorNotification() {
         Task { @MainActor in
+            guard let callback = onTextProcessingError else { return }
             let message = await getAndConsumeTextProcessingError() ?? "Text processing failed"
-            await onTextProcessingError?(message)
+            callback(message)
         }
     }
 }

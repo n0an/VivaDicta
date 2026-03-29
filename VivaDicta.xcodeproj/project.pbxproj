@@ -225,6 +225,7 @@
 		18E1C8232E8EE47200BE8A11 /* Exceptions for "VivaDicta" folder in "VivaDictaKeyboard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Assets.xcassets,
 				"Extensions/FileManager+Directories.swift",
 				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
@@ -815,8 +816,8 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				EAGER_LINKING = YES;
 				DEVELOPMENT_TEAM = TDX2FNZ56U;
+				EAGER_LINKING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

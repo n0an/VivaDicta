@@ -129,3 +129,5 @@ internal/
 
 settings.local.json
 skills-lock.json
+
+.trees/

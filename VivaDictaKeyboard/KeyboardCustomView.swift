@@ -60,11 +60,12 @@ struct KeyboardCustomView: View {
                     )
                 } else if dictationState.activeTab == .textProcessing {
                     RewriteModesView(
-                        onModeSelected: { mode in
+                        onPresetSelected: { mode, presetId in
                             guard let vc = keyboardVC else { return }
                             vc.textProcessor.processText(
                                 proxy: vc.textDocumentProxy,
                                 mode: mode,
+                                presetId: presetId,
                                 dictationState: dictationState
                             )
                         },
