@@ -344,7 +344,7 @@ private struct KeyboardCategoryChipsView: View {
     @ViewBuilder
     private func chip(title: String, icon: String? = nil, isSelected: Bool, action: @escaping () -> Void) -> some View {
         if #available(iOS 26.0, *) {
-            Button(action: action) {
+            Button { HapticManager.selectionChanged(); action() } label: {
                 HStack(spacing: 4) {
                     if let icon {
                         Image(systemName: icon)
@@ -365,7 +365,7 @@ private struct KeyboardCategoryChipsView: View {
                 : .regular.interactive()
             )
         } else {
-            Button(action: action) {
+            Button { HapticManager.selectionChanged(); action() } label: {
                 HStack(spacing: 4) {
                     if let icon {
                         Image(systemName: icon)
