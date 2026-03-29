@@ -104,7 +104,7 @@ struct OpenAIConfigurationView: View {
             Text("ChatGPT Account")
                 .font(.headline)
 
-            Text("Use your ChatGPT Plus/Pro subscription — no API key needed.")
+            Text("Use your ChatGPT Plus/Pro subscription — no API key needed. May have rate limits.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -186,7 +186,7 @@ struct OpenAIConfigurationView: View {
             Text("API Key")
                 .font(.headline)
 
-            Text("Or use an OpenAI API key directly.")
+            Text("Fastest and most reliable option. No rate limits.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

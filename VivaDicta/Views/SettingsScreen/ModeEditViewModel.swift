@@ -186,9 +186,9 @@ class ModeEditViewModel {
             return !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
         case .customTranscription:
             return CustomTranscriptionModelManager.shared.isConfigured
-        default: // Cloud transcription models
+        default: // Cloud transcription models require an actual API key (OAuth/CLI won't work)
             guard let mappedAIProvider = provider.mappedAIProvider else { return false }
-            return self.hasAPIKey(for: mappedAIProvider)
+            return mappedAIProvider.apiKey != nil
         }
     }
 

@@ -104,7 +104,7 @@ struct GeminiConfigurationView: View {
             Text("Google Account")
                 .font(.headline)
 
-            Text("Use your Google account with Gemini — no API key needed.")
+            Text("Use your Google account with Gemini — no API key needed. May have rate limits and slower responses.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -186,7 +186,7 @@ struct GeminiConfigurationView: View {
             Text("API Key")
                 .font(.headline)
 
-            Text("Or use a Gemini API key directly.")
+            Text("Fastest and most reliable option. No rate limits.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

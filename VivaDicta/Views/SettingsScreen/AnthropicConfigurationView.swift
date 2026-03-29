@@ -143,7 +143,7 @@ struct AnthropicConfigurationView: View {
             Text("API Key")
                 .font(.headline)
 
-            Text("Or use an Anthropic API key directly.")
+            Text("Fastest and most reliable option. No rate limits.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
