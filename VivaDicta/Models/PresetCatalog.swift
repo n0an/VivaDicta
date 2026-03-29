@@ -943,7 +943,7 @@ enum PresetCatalog {
             return builtIn.name
         }
         // Look up custom preset name from shared UserDefaults
-        if let data = UserDefaultsStorage.shared.data(forKey: "Presets_v1"),
+        if let data = UserDefaultsStorage.shared.data(forKey: UserDefaultsStorage.SharedKeys.presets),
            let presets = try? JSONDecoder().decode([Preset].self, from: data),
            let preset = presets.first(where: { $0.id == presetId }) {
             return preset.name

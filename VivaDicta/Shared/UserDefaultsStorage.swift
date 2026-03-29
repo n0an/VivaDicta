@@ -21,6 +21,12 @@ enum UserDefaultsStorage {
         UserDefaults.standard
     }
 
+    // MARK: - Shared Keys (used by main app + extensions)
+
+    enum SharedKeys {
+        static let presets = "Presets_v1"
+    }
+
     // MARK: - App-Private Keys
 
     enum Keys {

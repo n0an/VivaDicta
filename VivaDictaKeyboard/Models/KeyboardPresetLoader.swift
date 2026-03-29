@@ -12,7 +12,7 @@ import Foundation
 /// The keyboard doesn't have access to `PresetManager`, but `Preset` and `PresetCatalog`
 /// are available via target membership. This loader reads the persisted preset array directly.
 enum KeyboardPresetLoader {
-    private static let storageKey = "Presets_v1"
+    private static let storageKey = UserDefaultsStorage.SharedKeys.presets
 
     /// Loads all presets from shared UserDefaults.
     static func loadPresets() -> [Preset] {
