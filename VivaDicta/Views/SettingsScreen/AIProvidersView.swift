@@ -41,46 +41,6 @@ struct AIProviders: View {
                 }
             }
 
-            // VivAgents Server Section
-            Section {
-                NavigationLink {
-                    CLIServerConfigurationView(aiService: appState.aiService)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "server.rack")
-                            .font(.title2)
-                            .foregroundStyle(.blue.gradient)
-                            .frame(width: 28, height: 28)
-
-                        Text("VivAgents Server")
-
-                        Spacer()
-
-                        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                Text("Connected")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "gear")
-                                    .foregroundStyle(.orange)
-                                Text("Configure")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("Server")
-            } footer: {
-                Text("Route AI processing through CLI agents (Claude, Codex, Gemini) running on your Mac or remote server. Uses your existing subscriptions — no API keys needed.")
-            }
-
             // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
@@ -144,6 +104,22 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
+                            } else if provider == .openAI && appState.aiService.isChatGPTSignedIn {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("ChatGPT")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if provider == .gemini && appState.aiService.isGeminiSignedIn {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                    Text("Google")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             } else if provider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
@@ -165,22 +141,6 @@ struct AIProviders: View {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
                                     Text("VivAgents")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } else if provider == .openAI && appState.aiService.isChatGPTSignedIn {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                    Text("OAuth")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } else if provider == .gemini && appState.aiService.isGeminiSignedIn {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                    Text("OAuth")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -224,6 +184,46 @@ struct AIProviders: View {
                         }
                     }
                 }
+            }
+
+            // VivAgents Server Section
+            Section {
+                NavigationLink {
+                    CLIServerConfigurationView(aiService: appState.aiService)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "server.rack")
+                            .font(.title2)
+                            .foregroundStyle(.blue.gradient)
+                            .frame(width: 28, height: 28)
+
+                        Text("VivAgents Server")
+
+                        Spacer()
+
+                        if VivAgentsClient.isEnabled && VivAgentsClient.isVerified {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                Text("Connected")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            HStack(spacing: 4) {
+                                Image(systemName: "gear")
+                                    .foregroundStyle(.orange)
+                                Text("Configure")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Server")
+            } footer: {
+                Text("Route AI processing through CLI agents (Claude, Codex, Gemini) running on your Mac or remote server. Uses your existing subscriptions — no API keys needed.")
             }
         }
         .id(refreshID)

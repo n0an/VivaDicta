@@ -156,6 +156,7 @@ struct PresetFormView: View {
             if !isCreateMode, let preset = existingPreset {
                 ToolbarItem(placement: .principal) {
                     Button {
+                        HapticManager.lightImpact()
                         presetManager.toggleFavorite(presetId: preset.id)
                     } label: {
                         Image(systemName: presetManager.preset(for: preset.id)?.isFavorite == true ? "heart.fill" : "heart")
