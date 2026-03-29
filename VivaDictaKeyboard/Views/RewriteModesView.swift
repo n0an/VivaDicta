@@ -134,7 +134,7 @@ struct RewriteModesView: View {
             .padding(.bottom, 6)
 
             ScrollView {
-                LazyVStack(spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     // Favorites section when no category filter is active
                     if selectedCategory == nil {
                         let favorites = presets.filter(\.isFavorite)
@@ -150,70 +150,76 @@ struct RewriteModesView: View {
                         )
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 12)
                 .padding(.bottom, 8)
             }
             .scrollIndicators(.hidden)
         }
     }
 
+    private let gridColumns = [
+        GridItem(.flexible(), spacing: 6),
+        GridItem(.flexible(), spacing: 6)
+    ]
+
     private func presetSection(title: String, presets: [Preset]) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 4)
                 .padding(.top, 10)
 
-            ForEach(presets) { preset in
-                presetRow(preset)
+            LazyVGrid(columns: gridColumns, spacing: 6) {
+                ForEach(presets) { preset in
+                    presetCell(preset)
+                }
             }
         }
     }
 
-    private func presetRow(_ preset: Preset) -> some View {
+    private func presetCell(_ preset: Preset) -> some View {
         Button {
             HapticManager.mediumImpact()
             onPresetSelected(dictationState.vivaModeManager.selectedVivaMode, preset.id)
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 if !preset.isBuiltIn {
                     Capsule()
                         .fill(.orange)
-                        .frame(width: 4, height: 20)
+                        .frame(width: 3, height: 18)
                 }
 
                 PresetIconView(icon: preset.icon)
-                    .frame(width: 20)
+                    .frame(width: 18)
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(preset.name)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     if !preset.presetDescription.isEmpty {
                         Text(preset.presetDescription)
-                            .font(.system(size: 12))
+                            .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
                 }
-
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 if preset.isFavorite {
                     Image(systemName: "heart.fill")
-                        .font(.system(size: 12))
+                        .font(.system(size: 10))
                         .foregroundStyle(.red.opacity(0.6))
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
             .background(
                 colorScheme == .dark ? Color(.quaternarySystemFill).opacity(0.5) : Color.white,
-                in: .rect(cornerRadius: 10)
+                in: .rect(cornerRadius: 8)
             )
         }
         .buttonStyle(.plain)

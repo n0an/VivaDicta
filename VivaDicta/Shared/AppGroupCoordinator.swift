@@ -1049,15 +1049,19 @@ public final class AppGroupCoordinator {
 
     nonisolated private func handleTextProcessingCompletedNotification() {
         Task { @MainActor in
+            // Only consume the result if a callback is set — prevents the main app
+            // from racing with the keyboard extension and deleting the result first.
+            guard let callback = onTextProcessingCompleted else { return }
             let text = await getAndConsumeTextProcessingResult() ?? ""
-            await onTextProcessingCompleted?(text)
+            callback(text)
         }
     }
 
     nonisolated private func handleTextProcessingErrorNotification() {
         Task { @MainActor in
+            guard let callback = onTextProcessingError else { return }
             let message = await getAndConsumeTextProcessingError() ?? "Text processing failed"
-            await onTextProcessingError?(message)
+            callback(message)
         }
     }
 }
