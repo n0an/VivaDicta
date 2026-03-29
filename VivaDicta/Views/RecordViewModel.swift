@@ -897,7 +897,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             return
         }
 
-        logger.logInfo("📝 Processing text from keyboard with mode: \(pending.modeName), text length: \(pending.text.count)")
+        logger.logInfo("📝 Processing text from keyboard with mode: \(pending.modeName), preset: \(pending.presetId ?? "nil"), text length: \(pending.text.count)")
 
         // Extend session while processing (same pattern as recording flow)
         let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
@@ -911,7 +911,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task {
             defer { appState.aiService.selectedMode = previousMode }
             do {
-                let (result, _, _) = try await appState.aiService.enhance(pending.text)
+                let result: String
+                // If a preset ID is specified, use generateVariation with that preset
+                if let presetId = pending.presetId,
+                   let preset = appState.aiService.presetManager?.preset(for: presetId) {
+                    let (text, _) = try await appState.aiService.generateVariation(text: pending.text, preset: preset)
+                    result = text
+                } else {
+                    let (text, _, _) = try await appState.aiService.enhance(pending.text)
+                    result = text
+                }
                 logger.logInfo("📝 Text processing completed, result length: \(result.count)")
                 if result.isEmpty {
                     logger.logError("📝 Text processing returned empty result")

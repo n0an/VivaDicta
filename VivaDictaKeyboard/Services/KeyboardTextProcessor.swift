@@ -22,13 +22,14 @@ final class KeyboardTextProcessor {
     private var resultContinuation: CheckedContinuation<String, Error>?
     private var isProcessing = false
 
-    /// Processes text in the host text field using the specified mode.
+    /// Processes text in the host text field using the specified mode and optional preset.
     ///
     /// If text is selected, processes the selection. Otherwise, processes
     /// `documentContextBeforeInput` (text before cursor).
     func processText(
         proxy: UITextDocumentProxy,
         mode: VivaMode,
+        presetId: String? = nil,
         dictationState: KeyboardDictationState
     ) {
         // Prevent double invocation
@@ -44,7 +45,7 @@ final class KeyboardTextProcessor {
         currentTask = Task {
             defer { isProcessing = false }
             do {
-                try await performProcessing(proxy: proxy, mode: mode, dictationState: dictationState)
+                try await performProcessing(proxy: proxy, mode: mode, presetId: presetId, dictationState: dictationState)
             } catch is CancellationError {
                 dictationState.textProcessingPhase = .idle
             } catch {
@@ -67,6 +68,7 @@ final class KeyboardTextProcessor {
     private func performProcessing(
         proxy: UITextDocumentProxy,
         mode: VivaMode,
+        presetId: String? = nil,
         dictationState: KeyboardDictationState
     ) async throws {
         // Phase 1: Read text
@@ -94,7 +96,7 @@ final class KeyboardTextProcessor {
 
         // Phase 2: Send to main app
         dictationState.textProcessingPhase = .sendingToApp
-        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), text (\(text.count) chars): \(text)")
+        logger.logInfo("📝 [TextProcessor] Sending to AI with mode: \(mode.name), preset: \(presetId ?? "nil"), text (\(text.count) chars): \(text)")
 
         let processedText: String = try await withCheckedThrowingContinuation { continuation in
             self.resultContinuation = continuation
@@ -121,7 +123,7 @@ final class KeyboardTextProcessor {
                 self?.resultContinuation = nil
             }
 
-            AppGroupCoordinator.shared.requestTextProcessing(text: text, modeName: mode.name)
+            AppGroupCoordinator.shared.requestTextProcessing(text: text, modeName: mode.name, presetId: presetId)
             dictationState.textProcessingPhase = .waitingForResult(modeName: mode.name)
         }
 
