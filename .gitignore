@@ -75,6 +75,9 @@ GoogleService-Info.plist
 # SPM build artifacts
 .build/
 
+# Build benchmark artifacts
+.build-benchmark/
+
 # Temporary files
 *.tmp
 *.temp
@@ -125,3 +128,4 @@ internal/
 
 
 settings.local.json
+skills-lock.json
