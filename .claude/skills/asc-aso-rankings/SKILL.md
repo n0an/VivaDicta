@@ -1,47 +1,48 @@
 ---
 name: asc-aso-rankings
-description: Pull current keyword rankings from Astro MCP, compare against a baseline snapshot, and save a new snapshot to the vault. Use to measure ASO impact after metadata changes.
-argument-hint: [version to snapshot, e.g. "2.1.0"]
+description: Pull current keyword rankings from Astro MCP, compare against the previous rankings check, and save a new rankings file to the vault. Use to measure ASO impact after metadata changes.
+argument-hint: [optional notes, e.g. "2 week check"]
 ---
 
-# ASO Rankings Snapshot & Comparison
+# ASO Rankings Check
 
-Pull keyword rankings from Astro MCP, compare against the previous baseline snapshot, and save a new snapshot to the Obsidian vault.
+Pull keyword rankings from Astro MCP, compare against the previous check, and save a new rankings file to the Obsidian vault.
 
-## When to Use
+## Vault Structure
 
-- 2-4 weeks after a metadata update goes live
-- Periodically to track ranking trends
-- After a new version is approved and live on the App Store
+```
+Projects/VivaDicta/ASO/
+  app-store-keywords.md       — index (changelog, links, reference)
+  metadata-{version}.md       — titles/subtitles/keywords per release (one per version)
+  rankings/
+    rankings-YYYY-MM-DD.md    — rankings check per date (many per version)
+```
 
-## Prerequisites
+- **Metadata files** are tied to a release version and date. Only created when a new version ships.
+- **Rankings files** are dated point-in-time checks. Can be created anytime (weekly, bi-weekly, etc.)
 
-- App tracked in Astro MCP (app ID: `6758147238`)
-- Keywords tracked in Astro for the US store
-- Previous snapshot exists in vault at `Projects/VivaDicta/ASO/`
-
-## Steps
-
-### 1. Pull Current Rankings
-
-Call `mcp__astro__get_app_keywords` with appId `6758147238` to get all tracked keywords with current rankings, popularity, difficulty, and ranking changes.
-
-### 2. Load Previous Snapshot
-
-Read the most recent snapshot from the vault:
+Vault path:
 ```
 /Users/antonnovoselov/Library/Mobile Documents/iCloud~md~obsidian/Documents/Second Brain Vault/Projects/VivaDicta/ASO/
 ```
 
-Look at the Snapshots table in `app-store-keywords.md` to find the latest snapshot file.
+## Steps
+
+### 1. Load Previous Rankings
+
+Read `app-store-keywords.md` to find the latest rankings check in the "Rankings Checks" table. Read that file to get the previous rankings for comparison.
+
+### 2. Pull Current Rankings
+
+Call `mcp__astro__get_app_keywords` with appId `6758147238` to get all tracked keywords with current rankings, popularity, difficulty, and ranking changes.
 
 ### 3. Compare Rankings
 
-For each keyword, compare current rank vs. the baseline snapshot:
+For each keyword, compare current rank vs. the previous check:
 
-- **Improved**: rank went from #1000 → any number, or rank decreased (closer to #1)
+- **Improved**: rank decreased (closer to #1), or entered top 250 from #1000
 - **Declined**: rank increased (further from #1), or dropped to #1000
-- **New**: keyword wasn't in the previous snapshot
+- **New kw**: keyword wasn't tracked in the previous check
 - **Stable**: rank unchanged or moved ≤ 5 positions
 
 Calculate summary stats:
@@ -53,74 +54,68 @@ Calculate summary stats:
 
 ### 4. Check Competitor Rankings
 
-For the top 3 competitors (Otter, Wispr Flow, Whisper Transcription), call `mcp__astro__get_app_keywords` to get their current rankings for comparison.
+For the top 3 competitors, call `mcp__astro__get_app_keywords`:
 
-Competitor app IDs:
 - Otter: `1276437113`
 - Wispr Flow: `6497229487`
 - Whisper Transcription: `1668083311`
 
-### 5. Save New Snapshot
+### 5. Save Rankings File
 
-Write a new snapshot file to the vault following the established format:
-
+Write to:
 ```
-/Users/antonnovoselov/Library/Mobile Documents/iCloud~md~obsidian/Documents/Second Brain Vault/Projects/VivaDicta/ASO/aso-snapshot-{version}.md
+rankings/rankings-YYYY-MM-DD.md
 ```
 
-**No frontmatter** — these are raw reference files (see obsidian skill exception for ASO files).
+**No frontmatter** — raw reference files.
 
-Snapshot format:
+Format:
 ```markdown
-# ASO Snapshot — VivaDicta v{version}
+# Rankings — YYYY-MM-DD
 
-Date: YYYY-MM-DD
+Live metadata: v{version} ({n} locales)
+Keywords tracked: {n}
 
-## Title & Subtitle
+## VivaDicta Rankings (US store)
 
-| Locale | Title | Subtitle |
-...
-
-## Keywords
-
-### {locale} ({chars}/100)
-...
-
-## Rankings (US store)
-
-| Keyword | Pop | Difficulty | Rank | Prev Rank | Change |
+| Keyword | Pop | Difficulty | Rank | Prev Check | Change |
+|---------|-----|-----------|------|------------|--------|
 ...
 
 **Ranked: X/Y | Unranked: Z/Y**
 
-## Cross-Field Combos
-...
+## Competitors (US store)
 
-## Top Competitors (US store)
+| Keyword | Pop | VivaDicta | Otter | Wispr Flow | Whisper Trans. |
+|---------|-----|-----------|-------|------------|----------------|
 ...
 ```
 
-### 6. Update Tracker
+Sort keywords by: ranked first (ascending by rank), then unranked sorted by popularity descending.
 
-Update `app-store-keywords.md` in the vault:
-- Add the new snapshot to the Snapshots table
-- If the version status was "in review" or "submitted", update to "live"
+### 6. Update Index
+
+In `app-store-keywords.md`, add a new row to the "Rankings Checks" table:
+
+```
+| YYYY-MM-DD | v{version} | {ranked}/{total} | [rankings-YYYY-MM-DD.md](rankings/rankings-YYYY-MM-DD.md) |
+```
 
 ### 7. Present Comparison Report
 
 Show a summary to the user:
 
 ```
-### Rankings Comparison: v{old} → v{new}
+### Rankings Check: YYYY-MM-DD (vs previous: YYYY-MM-DD)
 
-**Overall:** X/Y ranked (was A/B) — {net change}
+**Overall:** X/Y ranked (was A/B)
 **Improved:** list of keywords that moved up
 **Declined:** list of keywords that moved down
 **New rankings:** keywords that entered top 250 for the first time
 **Still unranked:** count of keywords at #1000
 
-### Notable Changes
-- Best performer: "{keyword}" at #{rank} (was #{prev})
+### Notable
+- Best performer: "{keyword}" at #{rank}
 - Biggest gain: "{keyword}" +{positions} positions
 
 ### vs Competitors
@@ -130,7 +125,8 @@ Show a summary to the user:
 
 ## Notes
 
-- Rankings take time to update after metadata changes — wait at least 2 weeks
-- Astro updates rankings daily; the snapshot captures a point-in-time view
+- Rankings take 1-2 weeks to settle after metadata changes
+- Astro updates rankings daily; each check is a point-in-time snapshot
 - Keywords at #1000 mean unranked (not in top 250)
 - Focus on keywords with popularity > 20 for meaningful impact assessment
+- Recommended cadence: bi-weekly, or weekly right after a metadata change
