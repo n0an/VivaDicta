@@ -119,6 +119,7 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 - Never use `@Attribute(.unique)`
 - Model properties must have default values or be optional
 - All relationships must be optional
+- **Schema deployment**: When SwiftData models change (new models, fields, or relationships), the CloudKit schema must be deployed from Development to Production via the CloudKit Dashboard **before** submitting the app update. Otherwise iCloud sync silently fails for App Store users. See `/release-prepare` skill Step 8.
 
 ## Xcode Target Management
 

@@ -86,7 +86,21 @@ If updating, save the new version as `description-X.Y.Z.md` in the same director
 Move shipped features from "Unreleased" to "Released" section in:
 `Projects/VivaDicta/feature-changelog.md` (Obsidian vault)
 
-### Step 8 — Final checklist
+### Step 8 — CloudKit schema deployment
+
+If this release added or modified any SwiftData `@Model` classes that sync via CloudKit (new models, new fields, new relationships), deploy the schema to Production **before** submitting the build:
+
+1. Run the app from Xcode to auto-create the schema in Development
+2. Go to https://icloud.developer.apple.com → container `iCloud.com.antonnovoselov.VivaDicta`
+3. Stay in the **Development** environment
+4. Check if Indexes/Record Types/Security Roles show "Modified"
+5. If yes → click **Deploy Schema Changes...** at the bottom of the sidebar → confirm → Deploy
+
+If no SwiftData models changed, skip this step.
+
+See `Projects/VivaDicta/CloudKit Schema Deployment.md` in the Obsidian vault for full details.
+
+### Step 9 — Final checklist
 
 Before handing off to `asc-release-flow`:
 - [ ] Version and build number bumped across all targets
@@ -96,4 +110,5 @@ Before handing off to `asc-release-flow`:
 - [ ] App Store release notes prepared
 - [ ] App Store description updated if needed (under 4,000 chars)
 - [ ] Feature changelog updated
+- [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Changes committed and pushed on release branch
