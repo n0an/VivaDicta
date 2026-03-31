@@ -64,8 +64,7 @@ struct WhatsNewView: View {
             VStack(spacing: 0) {
                 Divider()
                 OnboardingPrimaryButton(title: "Continue") {
-                    let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-                    UserDefaultsStorage.appPrivate.set(currentVersion, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
+                    UserDefaultsStorage.appPrivate.set(release.id, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
                     onDismiss()
                 }
                 .padding(.horizontal, 24)

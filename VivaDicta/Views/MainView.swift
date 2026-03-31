@@ -286,8 +286,8 @@ struct MainView: View {
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         let lastSeen = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
 
-        guard lastSeen != currentVersion,
-              WhatsNewCatalog.release(for: currentVersion) != nil else { return }
+        guard let release = WhatsNewCatalog.release(for: currentVersion),
+              lastSeen != release.id else { return }
 
         Task {
             try? await Task.sleep(for: .milliseconds(800))

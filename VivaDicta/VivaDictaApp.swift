@@ -94,9 +94,11 @@ struct VivaDictaApp: App {
         // This handles the case where app terminates when enabling Full Access
         if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding) {
             UserDefaultsStorage.appPrivate.set(true, forKey: UserDefaultsStorage.Keys.hasCompletedOnboarding)
-            // Stamp version so What's New doesn't show for fresh installs
+            // Stamp latest release ID so What's New doesn't show for fresh installs
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-            UserDefaultsStorage.appPrivate.set(currentVersion, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
+            if let release = WhatsNewCatalog.release(for: currentVersion) {
+                UserDefaultsStorage.appPrivate.set(release.id, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
+            }
             UserDefaultsStorage.appPrivate.removeObject(forKey: UserDefaultsStorage.Keys.didTapOpenSettingsInOnboarding)
         }
         
@@ -256,9 +258,11 @@ struct VivaDictaApp: App {
                 OnboardingView {
                     HapticManager.celebration()
                     hasCompletedOnboarding = true
-                    // Stamp version so What's New doesn't show for fresh installs
+                    // Stamp latest release ID so What's New doesn't show for fresh installs
                     let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-                    UserDefaultsStorage.appPrivate.set(currentVersion, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
+                    if let release = WhatsNewCatalog.release(for: currentVersion) {
+                        UserDefaultsStorage.appPrivate.set(release.id, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
+                    }
                     Analytics.logEvent("onboarding_completed", parameters: nil)
                 }
             }
@@ -418,7 +422,13 @@ struct VivaDictaApp: App {
                     if let hostId = hostId {
                         attemptReturnToHost(hostId: hostId)
                     } else {
-                        // No host ID available, show the keyboard flow toast as fallback
+                        // No host ID available (e.g. iOS 26.4 broke hostApplicationBundleId)
+                        // Start recording and show toast so user can manually switch back
+                        if let vm = appState.recordViewModel,
+                           vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
+                            logger.logInfo("🎙️ Starting recording before showing manual switch toast (no hostId)")
+                            vm.startCaptureAudio()
+                        }
                         appState.showKeyboardFlowToast = true
                     }
                     
