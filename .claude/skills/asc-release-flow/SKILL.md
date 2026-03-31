@@ -330,6 +330,10 @@ asc review submissions-submit --id "SUBMISSION_ID" --confirm
 - For macOS, upload the `.pkg` separately, then use the same readiness and submission flow.
 - `asc publish testflight` is still the fastest TestFlight shortcut, but for App Store readiness prefer `asc submit preflight`, `asc release stage`, and `asc release run`.
 
+## Known Quirks
+
+- **`asc review submissions-create` creates an empty draft** — calling `submissions-create` alone does NOT add the app version to the submission. It creates a draft with "Items Ready to Submit (0)". You MUST follow up with `asc review items-add --submission "SUBMISSION_ID" --item-type appStoreVersions --item-id "VERSION_ID"` and then `asc review submissions-submit --id "SUBMISSION_ID" --confirm`. If you skip the items-add step, the user will see an empty draft in App Store Connect that can't be submitted. Prefer `asc submit create` for simple single-version submissions, or tell the user to click "Add for Review" in App Store Connect.
+
 ## Notes
 - `asc release stage --confirm` is the safest one-command way to prepare a version without submitting it.
 - `asc release run --dry-run` is the closest thing to a one-command answer for "will this full release flow work?"

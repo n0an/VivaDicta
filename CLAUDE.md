@@ -12,6 +12,13 @@ All skills live in `.claude/skills/`. Use `/create-skill` to create new ones whe
 - When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
 - When opening a PR, immediately post a comment with "@claude please review this PR" to request a review — do this by default. Skip only if the user explicitly says not to request a review. After requesting the review, start polling PR comments every 2 minutes (using `/loop 2m`) to fetch Claude's review. Stop polling once the full review is received and show it to the user.
 
+## App Store Connect
+
+- **App ID**: `6758147238`
+- **App Name**: VivaDicta - Speech to Text
+- **Bundle ID**: `com.antonnovoselov.VivaDicta`
+- **Submission quirk**: `asc review submissions-create` creates an empty draft — it does NOT add the version item. Either use `asc submit create` for simple submissions, or follow `submissions-create` with `items-add` + `submissions-submit`. When in doubt, tell the user to submit via the "Add for Review" button in App Store Connect.
+
 ## Build Commands
 
 - Build: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' build 2>&1 | xcsift`
