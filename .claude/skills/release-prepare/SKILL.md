@@ -113,4 +113,5 @@ Before handing off to `asc-release-flow`:
 - [ ] App Store description updated if needed (under 4,000 chars)
 - [ ] Feature changelog updated
 - [ ] CloudKit schema deployed if SwiftData models changed
+- [ ] Review Notes cleaned up (remove any rejection-specific notes from previous submissions, keep only testing instructions)
 - [ ] Changes committed and pushed on release branch
