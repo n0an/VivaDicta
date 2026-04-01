@@ -917,13 +917,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VivaDicta/VivaDicta.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDicta/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to record your voice note";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta uses the microphone to record your speech and transcribe it into text using on-device or cloud speech recognition.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -957,13 +957,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VivaDicta/VivaDicta.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDicta/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to record your voice note";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta uses the microphone to record your speech and transcribe it into text using on-device or cloud speech recognition.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1047,7 +1047,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -1077,7 +1077,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -1107,7 +1107,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
@@ -1137,7 +1137,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
@@ -1237,13 +1237,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VivaDicta/VivaDicta.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDicta/Info.plist;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Need to record your voice note";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta uses the microphone to record your speech and transcribe it into text using on-device or cloud speech recognition.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1301,7 +1301,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VivaDictaKeyboard/VivaDictaKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
@@ -1333,7 +1333,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWidget/Info.plist;
@@ -1367,7 +1367,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -1397,7 +1397,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
@@ -1427,7 +1427,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VivaDictaKeyboard/VivaDictaKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
@@ -1458,7 +1458,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VivaDictaKeyboard/VivaDictaKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
@@ -1490,7 +1490,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWidget/Info.plist;
@@ -1525,7 +1525,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2111;
+				CURRENT_PROJECT_VERSION = 2112;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWidget/Info.plist;

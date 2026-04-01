@@ -102,29 +102,16 @@ If the user wants it, draft a 170-char promotional text that:
 
 Show the draft to the user with character count. Wait for approval before localizing.
 
-## Phase 3: Localize
+## Phase 3: Apply to All Locales
 
-Translate the approved notes to all existing locales.
+**IMPORTANT**: All locales use the same English text — do NOT translate. Different localizations are used as an ASO tool for keyword targeting, not for actual translation. Copy the approved en-US What's New text to every locale unchanged.
 
-### Translation Rules
-
-- Use formal register and formal "you" forms (Russian: вы, German: Sie, French: vous, Spanish: usted, Dutch: u, Italian: Lei)
-- Adapt tone to local market — playful English may need adjustment for formal markets (ja, de-DE)
-- Do NOT literally translate idioms — adapt them to local equivalents
-- A playful tone in English may need to be more respectful or formal in other cultures
-
-### Locale-Specific Keyword Echo
-
-For each locale:
-1. Read `keywords` from `metadata/version/{latest}/{locale}.json`
-2. Echo locale-specific keywords naturally in the translated notes
-3. If keywords field is empty, skip echo for that locale
+**Exception — zh-Hans (China)**: Remove all foreign AI brand names (ChatGPT, OpenAI, GPT, Gemini, Copilot, Claude) due to China DST regulations. Use generic terms instead. See `Projects/VivaDicta/China App Store Metadata Policy.md` in the Obsidian vault.
 
 ### Validate
 
-- All translations must be ≤ 4,000 characters
+- All locales must be ≤ 4,000 characters
 - Promotional text must be ≤ 170 characters per locale
-- If a translation exceeds the limit, shorten it — never truncate mid-sentence
 
 ## Phase 4: Review & Upload
 
