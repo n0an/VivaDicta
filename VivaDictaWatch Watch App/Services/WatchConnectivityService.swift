@@ -85,8 +85,15 @@ extension WatchConnectivityService: WCSessionDelegate {
         didFinish fileTransfer: WCSessionFileTransfer,
         error: (any Error)?
     ) {
-        let fileName = fileTransfer.file.fileURL.lastPathComponent
+        let fileURL = fileTransfer.file.fileURL
+        let fileName = fileURL.lastPathComponent
         let errorMessage = error?.localizedDescription
+
+        // Clean up temp file after successful transfer
+        if error == nil {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
         Task { @MainActor in
             if let errorMessage {
                 logger.error("File transfer failed: \(errorMessage)")

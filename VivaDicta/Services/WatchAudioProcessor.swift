@@ -130,17 +130,16 @@ final class WatchAudioProcessor {
         }
     }
 
-    /// Checks for orphaned audio files in WatchAudio/ that were never transcribed
+    /// Checks for orphaned watch audio files that were never transcribed
     /// (e.g. if iOS killed the app during background processing).
     func processOrphanedFiles() async {
-        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let audioDir = documentsDir.appending(path: "WatchAudio")
+        let audioDir = FileManager.appDirectory(for: .audio)
 
         let fm = FileManager.default
         guard fm.fileExists(atPath: audioDir.path) else { return }
 
         guard let files = try? fm.contentsOfDirectory(at: audioDir, includingPropertiesForKeys: nil)
-            .filter({ $0.pathExtension == "wav" }) else { return }
+            .filter({ $0.lastPathComponent.hasPrefix("watch-") && $0.pathExtension == "wav" }) else { return }
 
         guard !files.isEmpty else { return }
 

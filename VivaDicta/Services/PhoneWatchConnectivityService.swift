@@ -88,12 +88,11 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
         let recordingTimestamp = Date(timeIntervalSince1970: timestamp)
 
-        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let audioDir = documentsDir.appending(path: "WatchAudio")
+        let audioDir = URL.documentsDirectory.appending(path: "Audio")
 
         do {
             try FileManager.default.createDirectory(at: audioDir, withIntermediateDirectories: true)
-            let destURL = audioDir.appending(path: "\(UUID().uuidString).wav")
+            let destURL = audioDir.appending(path: "watch-\(UUID().uuidString).wav")
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 
