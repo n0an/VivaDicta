@@ -11,12 +11,19 @@ struct WatchRecordView: View {
     let viewModel: WatchRecordViewModel
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Spacer()
 
             recordButton
 
-            statusLabel
+            if viewModel.state == .recording {
+                Text(formattedDuration)
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+
+            transferStatusView
 
             Spacer()
         }
@@ -32,20 +39,6 @@ struct WatchRecordView: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(viewModel.state == .recording ? .red : .blue)
-    }
-
-    @ViewBuilder
-    private var statusLabel: some View {
-        switch viewModel.state {
-        case .recording:
-            Text(formattedDuration)
-                .font(.caption)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-
-        case .idle:
-            transferStatusView
-        }
     }
 
     @ViewBuilder

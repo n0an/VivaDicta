@@ -60,12 +60,6 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
             transferStatus = .transferring(count: pendingTransferCount)
         } else {
             transferStatus = .allUploaded
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                if case .allUploaded = self.transferStatus {
-                    self.transferStatus = .idle
-                }
-            }
         }
     }
 }
