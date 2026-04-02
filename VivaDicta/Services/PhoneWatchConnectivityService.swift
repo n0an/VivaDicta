@@ -15,9 +15,6 @@ final class PhoneWatchConnectivityService: NSObject {
     /// Processor for transcribing watch audio in the background.
     private var audioProcessor: WatchAudioProcessor?
 
-    /// Sequential processing queue to maintain recording order.
-    private var processingTask: Task<Void, Never>?
-
     func configure(audioProcessor: WatchAudioProcessor) {
         self.audioProcessor = audioProcessor
     }
@@ -34,17 +31,18 @@ final class PhoneWatchConnectivityService: NSObject {
         logger.logInfo("WCSession activating on iPhone")
     }
 
-    private func enqueueProcessing(audioURL: URL, sourceTag: String) {
+    private func processInBackground(audioURL: URL, sourceTag: String, recordingTimestamp: Date) {
         guard let audioProcessor else {
             logger.logError("WatchAudioProcessor not configured")
             return
         }
 
-        let previousTask = processingTask
-        let processor = audioProcessor
-        processingTask = Task {
-            await previousTask?.value
-            await processor.processAudioFile(at: audioURL, sourceTag: sourceTag)
+        Task {
+            await audioProcessor.processAudioFile(
+                at: audioURL,
+                sourceTag: sourceTag,
+                recordingTimestamp: recordingTimestamp
+            )
         }
     }
 }
@@ -80,6 +78,8 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let logger = Logger(category: .watchConnectivity)
 
         let sourceTag = rawMetadata["sourceTag"] as? String ?? "appleWatch"
+        let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
+        let recordingTimestamp = Date(timeIntervalSince1970: timestamp)
 
         let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let audioDir = documentsDir.appending(path: "WatchAudio")
@@ -91,7 +91,7 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 
             Task { @MainActor in
-                self.enqueueProcessing(audioURL: destURL, sourceTag: sourceTag)
+                self.processInBackground(audioURL: destURL, sourceTag: sourceTag, recordingTimestamp: recordingTimestamp)
             }
         } catch {
             logger.logError("Failed to move watch audio file: \(error.localizedDescription)")

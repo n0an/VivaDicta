@@ -40,8 +40,8 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
     }
 
     func transferAudioFile(at url: URL, metadata: [String: Any]) -> Bool {
-        guard let session else {
-            logger.error("WCSession not available")
+        guard let session, session.activationState == .activated else {
+            logger.error("WCSession not available or not activated")
             return false
         }
 

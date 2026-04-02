@@ -32,7 +32,7 @@ final class WatchAudioProcessor {
         self.modelContainer = modelContainer
     }
 
-    func processAudioFile(at audioURL: URL, sourceTag: String) async {
+    func processAudioFile(at audioURL: URL, sourceTag: String, recordingTimestamp: Date = Date()) async {
         do {
             logger.logInfo("Processing watch audio: \(audioURL.lastPathComponent)")
 
@@ -87,6 +87,7 @@ final class WatchAudioProcessor {
                 sourceTag: sourceTag
             )
 
+            transcription.timestamp = recordingTimestamp
             context.insert(transcription)
 
             // Dual-write variation
