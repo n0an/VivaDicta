@@ -159,6 +159,7 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 - Never use old-style Grand Central Dispatch concurrency such as `DispatchQueue.main.async()`. If behavior like this is needed, always use modern Swift concurrency.
 - Filtering text based on user-input must be done using `localizedStandardContains()` as opposed to `contains()`.
 - Avoid force unwraps and force `try` unless it is unrecoverable.
+- Never use legacy `Formatter` subclasses (`DateFormatter`, `NumberFormatter`); always use `FormatStyle` API instead.
 
 ## SwiftUI Instructions
 
@@ -186,3 +187,4 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 - Use `@State` with `onChange` modifiers instead of computed properties for expensive filtering operations.
 - SwiftUI Views are implicitly @MainActor in Swift 6 — explicit annotation usually not needed.
 - Use **@State/@Binding** for SwiftUI state, NOT @StateObject.
+- Prefer newest ScrollView APIs (`ScrollPosition`, `defaultScrollAnchor`) over older scroll management approaches.
