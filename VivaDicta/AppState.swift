@@ -74,8 +74,6 @@ class AppState {
     /// Service for receiving audio files from Apple Watch.
     var watchConnectivityService: PhoneWatchConnectivityService!
 
-    /// Queue for processing watch audio files sequentially.
-    private var watchAudioProcessingTask: Task<Void, Never>?
 
     // MARK: - Navigation State
 
@@ -145,23 +143,13 @@ class AppState {
         // No longer doing batch indexing on app startup
 
         // Set up Watch Connectivity to receive audio from Apple Watch
-        let container = modelContainer
+        let watchProcessor = WatchAudioProcessor(
+            transcriptionManager: transcriptionManager,
+            aiService: aiService,
+            modelContainer: modelContainer
+        )
         watchConnectivityService = PhoneWatchConnectivityService()
-        watchConnectivityService.onAudioFileReceived = { [weak self] audioURL, metadata in
-            guard let self else { return }
-            // Chain watch audio processing sequentially to preserve recording order
-            let previousTask = self.watchAudioProcessingTask
-            self.watchAudioProcessingTask = Task {
-                await previousTask?.value
-                let context = ModelContext(container)
-                let task = self.recordViewModel.transcribeSpeechTask(
-                    recordURL: audioURL,
-                    modelContext: context,
-                    sourceTag: metadata.sourceTag
-                )
-                await task.value
-            }
-        }
+        watchConnectivityService.configure(audioProcessor: watchProcessor)
     }
 
     // This method is called when AIService changes its mode

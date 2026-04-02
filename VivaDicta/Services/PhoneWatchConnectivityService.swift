@@ -8,17 +8,19 @@
 import WatchConnectivity
 import os
 
-struct WatchAudioMetadata: Sendable {
-    let sourceTag: String
-    let timestamp: Double
-    let duration: Double
-}
-
 @Observable @MainActor
 final class PhoneWatchConnectivityService: NSObject {
     private let logger = Logger(category: .watchConnectivity)
 
-    var onAudioFileReceived: ((_ fileURL: URL, _ metadata: WatchAudioMetadata) -> Void)?
+    /// Processor for transcribing watch audio in the background.
+    private var audioProcessor: WatchAudioProcessor?
+
+    /// Sequential processing queue to maintain recording order.
+    private var processingTask: Task<Void, Never>?
+
+    func configure(audioProcessor: WatchAudioProcessor) {
+        self.audioProcessor = audioProcessor
+    }
 
     override init() {
         super.init()
@@ -30,6 +32,20 @@ final class PhoneWatchConnectivityService: NSObject {
         session.delegate = self
         session.activate()
         logger.logInfo("WCSession activating on iPhone")
+    }
+
+    private func enqueueProcessing(audioURL: URL, sourceTag: String) {
+        guard let audioProcessor else {
+            logger.logError("WatchAudioProcessor not configured")
+            return
+        }
+
+        let previousTask = processingTask
+        let processor = audioProcessor
+        processingTask = Task {
+            await previousTask?.value
+            await processor.processAudioFile(at: audioURL, sourceTag: sourceTag)
+        }
     }
 }
 
@@ -63,10 +79,7 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let rawMetadata = file.metadata ?? [:]
         let logger = Logger(category: .watchConnectivity)
 
-        // Extract Sendable values before crossing isolation boundary
         let sourceTag = rawMetadata["sourceTag"] as? String ?? "appleWatch"
-        let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
-        let duration = rawMetadata["duration"] as? Double ?? 0
 
         let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let audioDir = documentsDir.appending(path: "WatchAudio")
@@ -77,14 +90,8 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 
-            let metadata = WatchAudioMetadata(
-                sourceTag: sourceTag,
-                timestamp: timestamp,
-                duration: duration
-            )
-
             Task { @MainActor in
-                self.onAudioFileReceived?(destURL, metadata)
+                self.enqueueProcessing(audioURL: destURL, sourceTag: sourceTag)
             }
         } catch {
             logger.logError("Failed to move watch audio file: \(error.localizedDescription)")
