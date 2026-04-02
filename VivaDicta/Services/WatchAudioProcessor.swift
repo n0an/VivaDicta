@@ -113,4 +113,36 @@ final class WatchAudioProcessor {
             logger.logError("Watch audio processing failed: \(error.localizedDescription)")
         }
     }
+
+    /// Checks for orphaned audio files in WatchAudio/ that were never transcribed
+    /// (e.g. if iOS killed the app during background processing).
+    func processOrphanedFiles() async {
+        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let audioDir = documentsDir.appending(path: "WatchAudio")
+
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: audioDir.path) else { return }
+
+        guard let files = try? fm.contentsOfDirectory(at: audioDir, includingPropertiesForKeys: nil)
+            .filter({ $0.pathExtension == "wav" }) else { return }
+
+        guard !files.isEmpty else { return }
+
+        // Find which filenames already have a Transcription record
+        let context = ModelContext(modelContainer)
+        let existingFileNames: Set<String> = {
+            let descriptor = FetchDescriptor<Transcription>()
+            guard let transcriptions = try? context.fetch(descriptor) else { return [] }
+            return Set(transcriptions.compactMap(\.audioFileName))
+        }()
+
+        let orphaned = files.filter { !existingFileNames.contains($0.lastPathComponent) }
+
+        guard !orphaned.isEmpty else { return }
+        logger.logInfo("Found \(orphaned.count) orphaned watch audio file(s), processing")
+
+        for file in orphaned {
+            await processAudioFile(at: file, sourceTag: SourceTag.appleWatch)
+        }
+    }
 }

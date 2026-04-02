@@ -150,6 +150,11 @@ class AppState {
         )
         watchConnectivityService = PhoneWatchConnectivityService()
         watchConnectivityService.configure(audioProcessor: watchProcessor)
+
+        // Process any orphaned watch audio files from interrupted background sessions
+        Task {
+            await watchProcessor.processOrphanedFiles()
+        }
     }
 
     // This method is called when AIService changes its mode
