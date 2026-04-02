@@ -72,6 +72,11 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         session.activate()
     }
 
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        let logger = Logger(category: .watchConnectivity)
+        logger.logInfo("📲 Received wake message from watch")
+    }
+
     nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
         let sourceURL = file.fileURL
         let rawMetadata = file.metadata ?? [:]

@@ -94,6 +94,14 @@ extension WatchConnectivityService: WCSessionDelegate {
                 logger.info("File transfer completed: \(fileName)")
             }
             transferDidComplete(error: errorMessage)
+
+            // Send a wake message to poke the iPhone app from suspended state
+            if errorMessage == nil, let wcSession = self.session as? WCSession, wcSession.isReachable {
+                wcSession.sendMessage(["wake": true], replyHandler: nil) { error in
+                    // Silently ignore - sendMessage fails if iPhone is unreachable
+                }
+                logger.info("Sent wake message to iPhone")
+            }
         }
     }
 }
