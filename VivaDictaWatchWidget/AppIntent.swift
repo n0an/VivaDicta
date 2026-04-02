@@ -2,17 +2,17 @@
 //  AppIntent.swift
 //  VivaDictaWatchWidget
 //
-//  Created by Anton Novoselov on 02.04.2026.
+//  Created by Anton Novoselov on 2026.04.02
 //
 
-import WidgetKit
 import AppIntents
 
-struct ConfigurationAppIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource { "Configuration" }
-    static var description: IntentDescription { "This is an example widget." }
+struct OpenRecorderIntent: AppIntent {
+    static var title: LocalizedStringResource { "Record Voice Note" }
+    static var description: IntentDescription { "Open VivaDicta and start recording." }
+    static var openAppWhenRun: Bool { true }
 
-    // An example configurable parameter.
-    @Parameter(title: "Favorite Emoji", default: "😃")
-    var favoriteEmoji: String
+    func perform() async throws -> some IntentResult {
+        .result()
+    }
 }

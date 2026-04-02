@@ -2,63 +2,82 @@
 //  VivaDictaWatchWidget.swift
 //  VivaDictaWatchWidget
 //
-//  Created by Anton Novoselov on 02.04.2026.
+//  Created by Anton Novoselov on 2026.04.02
 //
 
 import WidgetKit
 import SwiftUI
 
-struct Provider: AppIntentTimelineProvider {
-    func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
-    }
-
-    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration)
-    }
-    
-    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
-        }
-
-        return Timeline(entries: entries, policy: .atEnd)
-    }
-
-    func recommendations() -> [AppIntentRecommendation<ConfigurationAppIntent>] {
-        // Create an array with all the preconfigured widgets to show.
-        [AppIntentRecommendation(intent: ConfigurationAppIntent(), description: "Example Widget")]
-    }
-
-//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
-//        // Generate a list containing the contexts this widget is relevant in.
-//    }
-}
-
-struct SimpleEntry: TimelineEntry {
+struct RecordEntry: TimelineEntry {
     let date: Date
-    let configuration: ConfigurationAppIntent
 }
 
-struct VivaDictaWatchWidgetEntryView : View {
-    var entry: Provider.Entry
+struct RecordTimelineProvider: TimelineProvider {
+    func placeholder(in context: Context) -> RecordEntry {
+        RecordEntry(date: .now)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (RecordEntry) -> Void) {
+        completion(RecordEntry(date: .now))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<RecordEntry>) -> Void) {
+        let entry = RecordEntry(date: .now)
+        completion(Timeline(entries: [entry], policy: .never))
+    }
+}
+
+struct VivaDictaWatchWidgetEntryView: View {
+    var entry: RecordEntry
+    @Environment(\.widgetFamily) var family
 
     var body: some View {
-        VStack {
-            HStack {
-                Text("Time:")
-                Text(entry.date, style: .time)
-            }
-        
-            Text("Favorite Emoji:")
-            Text(entry.configuration.favoriteEmoji)
+        switch family {
+        case .accessoryCircular:
+            circularView
+        case .accessoryCorner:
+            cornerView
+        case .accessoryRectangular:
+            rectangularView
+        case .accessoryInline:
+            inlineView
+        default:
+            circularView
         }
+    }
+
+    private var circularView: some View {
+        Image(systemName: "mic.fill")
+            .font(.title2)
+            .foregroundStyle(.orange)
+    }
+
+    private var cornerView: some View {
+        Image(systemName: "mic.fill")
+            .font(.title2)
+            .foregroundStyle(.orange)
+            .widgetLabel {
+                Text("Record")
+            }
+    }
+
+    private var rectangularView: some View {
+        HStack {
+            Image(systemName: "mic.fill")
+                .font(.title3)
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading) {
+                Text("VivaDicta")
+                    .font(.headline)
+                Text("Tap to record")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var inlineView: some View {
+        Label("VivaDicta", systemImage: "mic.fill")
     }
 }
 
@@ -66,30 +85,19 @@ struct VivaDictaWatchWidget: Widget {
     let kind: String = "VivaDictaWatchWidget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
+        StaticConfiguration(kind: kind, provider: RecordTimelineProvider()) { entry in
             VivaDictaWatchWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(URL(string: "vivadicta-watch://record"))
         }
+        .configurationDisplayName("Quick Record")
+        .description("Tap to open VivaDicta and record a voice note.")
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryRectangular, .accessoryInline])
     }
 }
 
-extension ConfigurationAppIntent {
-    fileprivate static var smiley: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "😀"
-        return intent
-    }
-    
-    fileprivate static var starEyes: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "🤩"
-        return intent
-    }
-}
-
-#Preview(as: .accessoryRectangular) {
+#Preview(as: .accessoryCircular) {
     VivaDictaWatchWidget()
 } timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-    SimpleEntry(date: .now, configuration: .starEyes)
-}    
+    RecordEntry(date: .now)
+}
