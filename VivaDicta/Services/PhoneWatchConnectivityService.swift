@@ -77,6 +77,8 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let rawMetadata = file.metadata ?? [:]
         let logger = Logger(category: .watchConnectivity)
 
+        logger.logInfo("📲 App woken up by WatchConnectivity to receive file: \(sourceURL.lastPathComponent)")
+
         let sourceTag = rawMetadata["sourceTag"] as? String ?? "appleWatch"
         let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
         let recordingTimestamp = Date(timeIntervalSince1970: timestamp)

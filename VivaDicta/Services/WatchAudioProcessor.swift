@@ -34,12 +34,14 @@ final class WatchAudioProcessor {
 
     func processAudioFile(at audioURL: URL, sourceTag: String, recordingTimestamp: Date = Date()) async {
         do {
-            logger.logInfo("Processing watch audio: \(audioURL.lastPathComponent)")
+            logger.logInfo("⌚ [START] Processing watch audio: \(audioURL.lastPathComponent)")
 
             // Transcribe
+            logger.logInfo("⌚ [TRANSCRIBE START] \(audioURL.lastPathComponent)")
             let transcriptionStart = Date()
             let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURL)
             let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
+            logger.logInfo("⌚ [TRANSCRIBE END] \(audioURL.lastPathComponent) - \(String(format: "%.1f", transcriptionDuration))s")
 
             // Validate
             guard TranscriptionOutputFilter.hasMeaningfulContent(transcribedText) else {
@@ -59,12 +61,14 @@ final class WatchAudioProcessor {
 
             if aiService.isProperlyConfigured() {
                 do {
+                    logger.logInfo("⌚ [ENHANCE START] \(audioURL.lastPathComponent)")
                     let result = try await aiService.enhance(transcribedText)
                     enhancedText = result.0
                     enhancementDuration = result.1
                     promptName = result.2
+                    logger.logInfo("⌚ [ENHANCE END] \(audioURL.lastPathComponent) - \(String(format: "%.1f", enhancementDuration ?? 0))s")
                 } catch {
-                    logger.logWarning("Watch audio AI enhancement failed: \(error.localizedDescription)")
+                    logger.logWarning("⌚ [ENHANCE FAILED] \(audioURL.lastPathComponent): \(error.localizedDescription)")
                 }
             }
 
@@ -107,10 +111,10 @@ final class WatchAudioProcessor {
             }
 
             try context.save()
-            logger.logInfo("Watch audio processed and saved: \(audioURL.lastPathComponent)")
+            logger.logInfo("⌚ [DONE] Watch audio processed and saved: \(audioURL.lastPathComponent)")
 
         } catch {
-            logger.logError("Watch audio processing failed: \(error.localizedDescription)")
+            logger.logError("⌚ [FAILED] Watch audio processing failed: \(error.localizedDescription)")
         }
     }
 
@@ -138,8 +142,11 @@ final class WatchAudioProcessor {
 
         let orphaned = files.filter { !existingFileNames.contains($0.lastPathComponent) }
 
-        guard !orphaned.isEmpty else { return }
-        logger.logInfo("Found \(orphaned.count) orphaned watch audio file(s), processing")
+        guard !orphaned.isEmpty else {
+            logger.logInfo("⌚ [ORPHAN CHECK] No orphaned watch audio files found")
+            return
+        }
+        logger.logInfo("⌚ [ORPHAN CHECK] Found \(orphaned.count) orphaned watch audio file(s), processing")
 
         for file in orphaned {
             await processAudioFile(at: file, sourceTag: SourceTag.appleWatch)
