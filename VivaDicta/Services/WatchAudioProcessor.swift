@@ -24,6 +24,9 @@ final class WatchAudioProcessor {
     private let aiService: AIService
     private let modelContainer: ModelContainer
 
+    /// Tracks filenames currently being processed to avoid duplicates.
+    private var inFlightFiles: Set<String> = []
+
     init(transcriptionManager: TranscriptionManager,
          aiService: AIService,
          modelContainer: ModelContainer) {
@@ -33,8 +36,17 @@ final class WatchAudioProcessor {
     }
 
     func processAudioFile(at audioURL: URL, sourceTag: String, recordingTimestamp: Date = Date()) async {
+        let fileName = audioURL.lastPathComponent
+
+        guard !inFlightFiles.contains(fileName) else {
+            logger.logInfo("⌚ [SKIP] Already processing: \(fileName)")
+            return
+        }
+        inFlightFiles.insert(fileName)
+        defer { inFlightFiles.remove(fileName) }
+
         do {
-            logger.logInfo("⌚ [START] Processing watch audio: \(audioURL.lastPathComponent)")
+            logger.logInfo("⌚ [START] Processing watch audio: \(fileName)")
 
             // Transcribe
             logger.logInfo("⌚ [TRANSCRIBE START] \(audioURL.lastPathComponent)")
@@ -140,7 +152,9 @@ final class WatchAudioProcessor {
             return Set(transcriptions.compactMap(\.audioFileName))
         }()
 
-        let orphaned = files.filter { !existingFileNames.contains($0.lastPathComponent) }
+        let orphaned = files.filter {
+            !existingFileNames.contains($0.lastPathComponent) && !inFlightFiles.contains($0.lastPathComponent)
+        }
 
         guard !orphaned.isEmpty else {
             logger.logInfo("⌚ [ORPHAN CHECK] No orphaned watch audio files found")

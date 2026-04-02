@@ -15,6 +15,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     private let logger = Logger(category: .appDelegate)
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        logger.logInfo("🚀 didFinishLaunchingWithOptions - state: \(application.applicationState.debugDescription)")
         FirebaseApp.configure()
         return true
     }
@@ -23,6 +24,18 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
         configuration.delegateClass = SceneDelegate.self
         return configuration
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        logger.logInfo("🚀 applicationDidBecomeActive")
+    }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        logger.logInfo("🚀 applicationDidEnterBackground")
+    }
+
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        logger.logInfo("🚀 applicationWillEnterForeground")
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -80,6 +93,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 // Set flag to trigger recording when the app finishes launching
                 appState.shouldStartRecording = true
             }
+        }
+    }
+}
+
+extension UIApplication.State {
+    var debugDescription: String {
+        switch self {
+        case .active: "active"
+        case .inactive: "inactive"
+        case .background: "background"
+        @unknown default: "unknown"
         }
     }
 }
