@@ -71,6 +71,9 @@ class AppState {
     /// Service for syncing custom presets via CloudKit.
     var presetSyncService: PresetSyncService!
 
+    /// Service for receiving audio files from Apple Watch.
+    var watchConnectivityService: PhoneWatchConnectivityService!
+
     // MARK: - Navigation State
 
     /// Triggers navigation to the Models screen.
@@ -137,6 +140,19 @@ class AppState {
 
         // Note: Spotlight indexing is now done on-demand when transcriptions are created/deleted
         // No longer doing batch indexing on app startup
+
+        // Set up Watch Connectivity to receive audio from Apple Watch
+        let container = modelContainer
+        watchConnectivityService = PhoneWatchConnectivityService()
+        watchConnectivityService.onAudioFileReceived = { [weak self] audioURL, metadata in
+            guard let self else { return }
+            let context = ModelContext(container)
+            self.recordViewModel.transcribingSpeechTask = self.recordViewModel.transcribeSpeechTask(
+                recordURL: audioURL,
+                modelContext: context,
+                sourceTag: metadata.sourceTag
+            )
+        }
     }
 
     // This method is called when AIService changes its mode

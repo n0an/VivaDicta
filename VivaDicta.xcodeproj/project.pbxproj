@@ -18,6 +18,7 @@
 		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497EF2F268B2700538830 /* FirebaseAnalytics */; };
 		18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497F12F268B2700538830 /* FirebaseCrashlytics */; };
+		18BA24132F7ED0D700C4F68B /* VivaDictaWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -51,6 +52,27 @@
 			remoteGlobalIDString = 189C7AAD2F0D84E2004BAFBF;
 			remoteInfo = ActionExtension;
 		};
+		18BA24002F7ED0D700C4F68B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 181D04CF2E3E55E400D357A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 18BA23F22F7ED0D500C4F68B;
+			remoteInfo = "VivaDictaWatch Watch App";
+		};
+		18BA240A2F7ED0D700C4F68B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 181D04CF2E3E55E400D357A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 18BA23F22F7ED0D500C4F68B;
+			remoteInfo = "VivaDictaWatch Watch App";
+		};
+		18BA24112F7ED0D700C4F68B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 181D04CF2E3E55E400D357A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 18BA23F22F7ED0D500C4F68B;
+			remoteInfo = "VivaDictaWatch Watch App";
+		};
 		18E1B4A32E8C6FF400BE8A11 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 181D04CF2E3E55E400D357A6 /* Project object */;
@@ -78,6 +100,17 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		18BA24142F7ED0D700C4F68B /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				18BA24132F7ED0D700C4F68B /* VivaDictaWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		18E1B4AA2E8C6FF400BE8A11 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -101,6 +134,9 @@
 		189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ActionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 		18B497E42F26822400538830 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
+		18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "VivaDictaWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		18BA23FF2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "VivaDictaWatch Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		18BA24092F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "VivaDictaWatch Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -300,6 +336,21 @@
 			path = ActionExtension;
 			sourceTree = "<group>";
 		};
+		18BA23F42F7ED0D500C4F68B /* VivaDictaWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "VivaDictaWatch Watch App";
+			sourceTree = "<group>";
+		};
+		18BA24022F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "VivaDictaWatch Watch AppTests";
+			sourceTree = "<group>";
+		};
+		18BA240C2F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "VivaDictaWatch Watch AppUITests";
+			sourceTree = "<group>";
+		};
 		18E1B49F2E8C6FF400BE8A11 /* VivaDictaKeyboard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -357,6 +408,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		18BA23F02F7ED0D500C4F68B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA23FC2F7ED0D700C4F68B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA24062F7ED0D700C4F68B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		18E1B49B2E8C6FF400BE8A11 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -399,6 +471,9 @@
 				18E1C7FF2E8E793E00BE8A11 /* VivaDictaWidget */,
 				189C7A8C2F0C6822004BAFBF /* ShareExtension */,
 				189C7AB12F0D84E2004BAFBF /* ActionExtension */,
+				18BA23F42F7ED0D500C4F68B /* VivaDictaWatch Watch App */,
+				18BA24022F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */,
+				18BA240C2F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests */,
 				180E1D682E4A994800AE33B1 /* Frameworks */,
 				181D04D82E3E55E400D357A6 /* Products */,
 			);
@@ -413,6 +488,9 @@
 				18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */,
 				189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */,
 				189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */,
+				18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */,
+				18BA23FF2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests.xctest */,
+				18BA24092F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -430,6 +508,7 @@
 				180E1D6C2E4A994800AE33B1 /* Embed Frameworks */,
 				18E1B4AA2E8C6FF400BE8A11 /* Embed Foundation Extensions */,
 				18B497F32F268D9600538830 /* ShellScript */,
+				18BA24142F7ED0D700C4F68B /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
@@ -438,6 +517,7 @@
 				18E1C80E2E8E793F00BE8A11 /* PBXTargetDependency */,
 				189C7A942F0C6822004BAFBF /* PBXTargetDependency */,
 				189C7ABB2F0D84E2004BAFBF /* PBXTargetDependency */,
+				18BA24122F7ED0D700C4F68B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				181D04D92E3E55E400D357A6 /* VivaDicta */,
@@ -524,6 +604,74 @@
 			productReference = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18BA241E2F7ED0D700C4F68B /* Build configuration list for PBXNativeTarget "VivaDictaWatch Watch App" */;
+			buildPhases = (
+				18BA23EF2F7ED0D500C4F68B /* Sources */,
+				18BA23F02F7ED0D500C4F68B /* Frameworks */,
+				18BA23F12F7ED0D500C4F68B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				18BA23F42F7ED0D500C4F68B /* VivaDictaWatch Watch App */,
+			);
+			name = "VivaDictaWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "VivaDictaWatch Watch App";
+			productReference = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		18BA23FE2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18BA241F2F7ED0D700C4F68B /* Build configuration list for PBXNativeTarget "VivaDictaWatch Watch AppTests" */;
+			buildPhases = (
+				18BA23FB2F7ED0D700C4F68B /* Sources */,
+				18BA23FC2F7ED0D700C4F68B /* Frameworks */,
+				18BA23FD2F7ED0D700C4F68B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18BA24012F7ED0D700C4F68B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				18BA24022F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */,
+			);
+			name = "VivaDictaWatch Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "VivaDictaWatch Watch AppTests";
+			productReference = 18BA23FF2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		18BA24082F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18BA24202F7ED0D700C4F68B /* Build configuration list for PBXNativeTarget "VivaDictaWatch Watch AppUITests" */;
+			buildPhases = (
+				18BA24052F7ED0D700C4F68B /* Sources */,
+				18BA24062F7ED0D700C4F68B /* Frameworks */,
+				18BA24072F7ED0D700C4F68B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18BA240B2F7ED0D700C4F68B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				18BA240C2F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests */,
+			);
+			name = "VivaDictaWatch Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "VivaDictaWatch Watch AppUITests";
+			productReference = 18BA24092F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 18E1B4A72E8C6FF400BE8A11 /* Build configuration list for PBXNativeTarget "VivaDictaKeyboard" */;
@@ -578,7 +726,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					181D04D62E3E55E400D357A6 = {
@@ -593,6 +741,17 @@
 					};
 					189C7AAD2F0D84E2004BAFBF = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					18BA23F22F7ED0D500C4F68B = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					18BA23FE2F7ED0D700C4F68B = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = 18BA23F22F7ED0D500C4F68B;
+					};
+					18BA24082F7ED0D700C4F68B = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = 18BA23F22F7ED0D500C4F68B;
 					};
 					18E1B49D2E8C6FF400BE8A11 = {
 						CreatedOnToolsVersion = 26.0.1;
@@ -629,6 +788,9 @@
 				18E1C7F92E8E793E00BE8A11 /* VivaDictaWidgetExtension */,
 				189C7A8A2F0C6822004BAFBF /* ShareExtension */,
 				189C7AAD2F0D84E2004BAFBF /* ActionExtension */,
+				18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */,
+				18BA23FE2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */,
+				18BA24082F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -661,6 +823,27 @@
 			buildActionMask = 2147483647;
 			files = (
 				18B497E52F26822400538830 /* Settings.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA23F12F7ED0D500C4F68B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA23FD2F7ED0D700C4F68B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA24072F7ED0D700C4F68B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -734,6 +917,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		18BA23EF2F7ED0D500C4F68B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA23FB2F7ED0D700C4F68B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18BA24052F7ED0D700C4F68B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		18E1B49A2E8C6FF400BE8A11 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -765,6 +969,21 @@
 			isa = PBXTargetDependency;
 			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
 			targetProxy = 189C7ABA2F0D84E2004BAFBF /* PBXContainerItemProxy */;
+		};
+		18BA24012F7ED0D700C4F68B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
+			targetProxy = 18BA24002F7ED0D700C4F68B /* PBXContainerItemProxy */;
+		};
+		18BA240B2F7ED0D700C4F68B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
+			targetProxy = 18BA240A2F7ED0D700C4F68B /* PBXContainerItemProxy */;
+		};
+		18BA24122F7ED0D700C4F68B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
+			targetProxy = 18BA24112F7ED0D700C4F68B /* PBXContainerItemProxy */;
 		};
 		18E1B4A42E8C6FF400BE8A11 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1422,6 +1641,246 @@
 			};
 			name = QA;
 		};
+		18BA24152F7ED0D700C4F68B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.antonnovoselov.VivaDicta;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antonnovoselov.VivaDicta.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Debug;
+		};
+		18BA24162F7ED0D700C4F68B /* QA */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.antonnovoselov.VivaDicta;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antonnovoselov.VivaDicta.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = QA;
+		};
+		18BA24172F7ED0D700C4F68B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaWatch;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.antonnovoselov.VivaDicta;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antonnovoselov.VivaDicta.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Release;
+		};
+		18BA24182F7ED0D700C4F68B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.antonnovoselov.VivaDictaWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VivaDictaWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VivaDictaWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Debug;
+		};
+		18BA24192F7ED0D700C4F68B /* QA */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.antonnovoselov.VivaDictaWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VivaDictaWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VivaDictaWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = QA;
+		};
+		18BA241A2F7ED0D700C4F68B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.antonnovoselov.VivaDictaWatch-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VivaDictaWatch Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VivaDictaWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Release;
+		};
+		18BA241B2F7ED0D700C4F68B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.antonnovoselov.VivaDictaWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "VivaDictaWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Debug;
+		};
+		18BA241C2F7ED0D700C4F68B /* QA */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.antonnovoselov.VivaDictaWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "VivaDictaWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = QA;
+		};
+		18BA241D2F7ED0D700C4F68B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.antonnovoselov.VivaDictaWatch-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "VivaDictaWatch Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Release;
+		};
 		18E1B4A82E8C6FF400BE8A11 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1603,6 +2062,36 @@
 				189C7ABE2F0D84E2004BAFBF /* Debug */,
 				18B497DB2F267F2500538830 /* QA */,
 				189C7ABF2F0D84E2004BAFBF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		18BA241E2F7ED0D700C4F68B /* Build configuration list for PBXNativeTarget "VivaDictaWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18BA24152F7ED0D700C4F68B /* Debug */,
+				18BA24162F7ED0D700C4F68B /* QA */,
+				18BA24172F7ED0D700C4F68B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		18BA241F2F7ED0D700C4F68B /* Build configuration list for PBXNativeTarget "VivaDictaWatch Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18BA24182F7ED0D700C4F68B /* Debug */,
+				18BA24192F7ED0D700C4F68B /* QA */,
+				18BA241A2F7ED0D700C4F68B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		18BA24202F7ED0D700C4F68B /* Build configuration list for PBXNativeTarget "VivaDictaWatch Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18BA241B2F7ED0D700C4F68B /* Debug */,
+				18BA241C2F7ED0D700C4F68B /* QA */,
+				18BA241D2F7ED0D700C4F68B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
