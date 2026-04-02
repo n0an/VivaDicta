@@ -64,8 +64,6 @@ Write App Store release notes and save to Obsidian vault at:
 
 **ASO strategy**: All localizations use the same English text — no translations. Different localizations exist for keyword targeting only. This applies to description, what's new, keywords, and subtitle.
 
-**China exception (zh-Hans)**: Remove all foreign AI brand names (ChatGPT, OpenAI, GPT, Gemini, Copilot, Claude) from zh-Hans metadata due to China DST regulations. Use generic terms instead.
-
 Source features from:
 - Obsidian vault: `Projects/VivaDicta/feature-changelog.md`
 - Website changelog: `https://vivadicta.com/ios/changelog`
@@ -81,7 +79,7 @@ Previous descriptions are stored at: `Projects/VivaDicta/description/`
 
 **IMPORTANT**: App Store description limit is **4,000 characters**. Always verify the character count before finalizing.
 
-If updating, save the new version as `description-X.Y.Z.md` in the same directory. Each file contains both the default description and the zh-Hans (China) variant below a `---` separator. When updating, maintain both versions.
+If updating, save the new version as `description-X.Y.Z.md` in the same directory.
 
 ### Step 7 — Update feature changelog
 

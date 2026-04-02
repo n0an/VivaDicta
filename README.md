@@ -169,6 +169,8 @@ xcodebuild build \
 
 > **Note:** On-device transcription models (WhisperKit, Parakeet) are downloaded on first use. Cloud AI providers work via API keys, OAuth sign-in (ChatGPT, Gemini, Copilot), or VivAgents server connection.
 
+> **China mainland:** The app is not available on the China App Store due to DST (Deep Synthesis Technology) regulations around generative AI services. Users in China can still build and install the app directly from source using Xcode.
+
 ## Project Structure
 
 ```

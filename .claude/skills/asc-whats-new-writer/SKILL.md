@@ -104,9 +104,7 @@ Show the draft to the user with character count. Wait for approval before locali
 
 ## Phase 3: Apply to All Locales
 
-**IMPORTANT**: All locales use the same English text — do NOT translate. Different localizations are used as an ASO tool for keyword targeting, not for actual translation. Copy the approved en-US What's New text to every locale unchanged.
-
-**Exception — zh-Hans (China)**: Remove all foreign AI brand names (ChatGPT, OpenAI, GPT, Gemini, Copilot, Claude) due to China DST regulations. Use generic terms instead. See `Projects/VivaDicta/China App Store Metadata Policy.md` in the Obsidian vault.
+**IMPORTANT**: All locales use the same English text — do NOT translate. Different localizations are used as an ASO tool for keyword targeting, not for actual translation. Copy the approved en-US What's New text to every locale unchanged. China mainland is not in our App Availability, so no special handling needed.
 
 ### Validate
 
