@@ -9,16 +9,41 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+struct RecordingControlConfiguration: ControlConfigurationIntent {
+    static let title: LocalizedStringResource = "Recording Control"
+    static let description = IntentDescription("Configure the recording control.")
+
+    @Parameter(title: "Recording Name", default: "Recording")
+    var recordingName: String
+}
+
+struct RecordingControlValueProvider: AppIntentControlValueProvider {
+    func previewValue(configuration: RecordingControlConfiguration) -> Bool {
+        false
+    }
+
+    func currentValue(configuration: RecordingControlConfiguration) async throws -> Bool {
+        let coordinator = AppGroupCoordinator.shared
+        return coordinator.isRecording
+    }
+}
+
 struct VivaDictaWidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
-        
-        StaticControlConfiguration(kind: "VivaDictaControlWidget") {
-            ControlWidgetButton(action: ToggleRecordIntent()) {
-                Image(systemName: "microphone.circle")
+
+        AppIntentControlConfiguration(
+            kind: "VivaDictaControlWidget",
+            provider: RecordingControlValueProvider()
+        ) { isRecording in
+            ControlWidgetToggle(
+                "Recording in VivaDicta",
+                isOn: isRecording,
+                action: ToggleRecordIntent()
+            ) { isTurnedOn in
+                Label("Toggle Recording", systemImage: "microphone.circle")
             }
         }
-        
-        .displayName("Start Recording")
-        .description("Start Recording in VivaDicta")
+        .displayName("Toggle Recording")
+        .description("Toggle recording in VivaDicta")
     }
 }
