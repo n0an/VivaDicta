@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import WatchKit
 import os
 
 @Observable @MainActor
@@ -56,6 +57,7 @@ final class WatchRecordViewModel {
             recordingStartTime = Date()
             recordingDuration = 0
             startDurationTimer()
+            WKInterfaceDevice.current().play(.start)
             logger.info("Recording started")
         } catch {
             logger.error("Failed to start recording: \(error.localizedDescription)")
@@ -76,6 +78,8 @@ final class WatchRecordViewModel {
             "timestamp": Date().timeIntervalSince1970,
             "duration": recordingDuration
         ]
+
+        WKInterfaceDevice.current().play(.stop)
 
         let success = connectivityService.transferAudioFile(at: fileURL, metadata: metadata)
         if !success {

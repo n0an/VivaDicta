@@ -6,39 +6,91 @@
 //
 
 import SwiftUI
+import WatchKit
 
 struct WatchRecordView: View {
     let viewModel: WatchRecordViewModel
+    @State private var isGlowAnimating = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            Spacer()
+        GeometryReader { geometry in
+            let buttonSize = geometry.size.width * 0.5
 
-            recordButton
+            VStack(spacing: 12) {
+                Spacer()
 
-            if viewModel.state == .recording {
-                Text(formattedDuration)
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                recordButton(size: buttonSize)
+
+                if viewModel.state == .recording {
+                    Text(formattedDuration)
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+
+                transferStatusView
+
+                Spacer()
             }
-
-            transferStatusView
-
-            Spacer()
+            .frame(maxWidth: .infinity)
         }
     }
 
-    private var recordButton: some View {
-        Button(action: viewModel.toggleRecording) {
-            Text(viewModel.state == .recording ? "Stop" : "Start")
-                .font(.title3)
-                .bold()
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+    @ViewBuilder
+    private func recordButton(size: CGFloat) -> some View {
+        switch viewModel.state {
+        case .idle:
+            micButton(size: size)
+        case .recording:
+            stopButton(size: size)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(viewModel.state == .recording ? .red : .blue)
+    }
+
+    private func micButton(size: CGFloat) -> some View {
+        Button(action: viewModel.toggleRecording) {
+            Image(systemName: "microphone.circle")
+                .foregroundStyle(.primary)
+                .font(.system(size: size))
+                .padding(6)
+                .background(Color.orange.opacity(0.9).gradient, in: .circle)
+                .background {
+                    Circle()
+                        .fill(AngularGradient(
+                            colors: [.teal, .pink, .teal],
+                            center: .center,
+                            angle: .degrees(isGlowAnimating ? 360 : 0)
+                        ))
+                        .blur(radius: 20)
+                        .onAppear {
+                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isGlowAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isGlowAnimating = false
+                        }
+                }
+                .overlay {
+                    Circle()
+                        .stroke(.black.opacity(0.5), lineWidth: 0.5)
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func stopButton(size: CGFloat) -> some View {
+        Button(action: viewModel.toggleRecording) {
+            Image(systemName: "stop.circle.fill")
+                .foregroundStyle(.white)
+                .font(.system(size: size))
+                .padding(6)
+                .background(Color.red.gradient, in: .circle)
+                .overlay {
+                    Circle()
+                        .stroke(.black.opacity(0.5), lineWidth: 0.5)
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -66,8 +118,7 @@ struct WatchRecordView: View {
     }
 
     private var formattedDuration: String {
-        let minutes = Int(viewModel.recordingDuration) / 60
-        let seconds = Int(viewModel.recordingDuration) % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+        Duration.seconds(viewModel.recordingDuration)
+            .formatted(.time(pattern: .minuteSecond(padMinuteToLength: 2)))
     }
 }
