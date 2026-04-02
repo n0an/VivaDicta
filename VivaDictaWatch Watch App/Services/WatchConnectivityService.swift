@@ -46,19 +46,20 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
         }
 
         session.transferFile(url, metadata: metadata)
-        updatePendingCount()
+        pendingTransferCount += 1
+        transferStatus = .transferring(count: pendingTransferCount)
         logger.info("Queued file transfer: \(url.lastPathComponent), pending: \(self.pendingTransferCount)")
         return true
     }
 
-    private func updatePendingCount() {
-        let count = (session as? WCSession)?.outstandingFileTransfers.count ?? 0
-        pendingTransferCount = count
-        if count > 0 {
-            transferStatus = .transferring(count: count)
+    private func transferDidComplete(error: String?) {
+        pendingTransferCount = max(pendingTransferCount - 1, 0)
+        if let error {
+            transferStatus = .error(error)
+        } else if pendingTransferCount > 0 {
+            transferStatus = .transferring(count: pendingTransferCount)
         } else {
             transferStatus = .allUploaded
-            // Reset to idle after a delay
             Task {
                 try? await Task.sleep(for: .seconds(3))
                 if case .allUploaded = self.transferStatus {
@@ -95,11 +96,10 @@ extension WatchConnectivityService: WCSessionDelegate {
         Task { @MainActor in
             if let errorMessage {
                 logger.error("File transfer failed: \(errorMessage)")
-                transferStatus = .error(errorMessage)
             } else {
                 logger.info("File transfer completed: \(fileName)")
             }
-            updatePendingCount()
+            transferDidComplete(error: errorMessage)
         }
     }
 }
