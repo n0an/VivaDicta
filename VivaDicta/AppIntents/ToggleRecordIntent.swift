@@ -20,12 +20,11 @@ struct ToggleRecordIntent: SetValueIntent {
     func perform() async throws -> some IntentResult {
         await MainActor.run {
             let coordinator = AppGroupCoordinator.shared
-            let isCurrentlyRecording = coordinator.isRecording
 
-            if isCurrentlyRecording {
-                coordinator.requestStopRecording()
-            } else {
+            if value {
                 coordinator.requestStartRecordingFromControl()
+            } else {
+                coordinator.requestStopRecording()
             }
         }
         return .result()
