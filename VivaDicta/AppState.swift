@@ -74,6 +74,9 @@ class AppState {
     /// Service for receiving audio files from Apple Watch.
     var watchConnectivityService: PhoneWatchConnectivityService!
 
+    /// Queue for processing watch audio files sequentially.
+    private var watchAudioProcessingTask: Task<Void, Never>?
+
     // MARK: - Navigation State
 
     /// Triggers navigation to the Models screen.
@@ -146,12 +149,18 @@ class AppState {
         watchConnectivityService = PhoneWatchConnectivityService()
         watchConnectivityService.onAudioFileReceived = { [weak self] audioURL, metadata in
             guard let self else { return }
-            let context = ModelContext(container)
-            self.recordViewModel.transcribingSpeechTask = self.recordViewModel.transcribeSpeechTask(
-                recordURL: audioURL,
-                modelContext: context,
-                sourceTag: metadata.sourceTag
-            )
+            // Chain watch audio processing sequentially to preserve recording order
+            let previousTask = self.watchAudioProcessingTask
+            self.watchAudioProcessingTask = Task {
+                await previousTask?.value
+                let context = ModelContext(container)
+                let task = self.recordViewModel.transcribeSpeechTask(
+                    recordURL: audioURL,
+                    modelContext: context,
+                    sourceTag: metadata.sourceTag
+                )
+                await task.value
+            }
         }
     }
 
