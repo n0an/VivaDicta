@@ -11,7 +11,7 @@ import os
 
 @Observable @MainActor
 final class WatchRecordViewModel {
-    enum RecordingState {
+    enum RecordingState: Equatable {
         case idle
         case recording
     }

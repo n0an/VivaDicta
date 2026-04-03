@@ -38,13 +38,41 @@ struct WatchRecordView: View {
 
     @ViewBuilder
     private func recordButton(size: CGFloat) -> some View {
-        switch viewModel.state {
-        case .idle:
-            micButton(size: size)
-        case .recording:
-            stopButton(size: size)
-        }
+        mainButton(size: size)
+//            .animation(.easeInOut(duration: 0.3), value: viewModel.state)
     }
+    
+    
+    private func mainButton(size: CGFloat) -> some View {
+        Button(action: viewModel.toggleRecording) {
+            Image(systemName: viewModel.state == .idle ? "microphone.circle" : "stop.circle.fill")
+                .contentTransition(.symbolEffect(.replace))
+                .foregroundStyle(.primary)
+                .font(.system(size: size))
+                .padding(6)
+                .glassEffectColor(isInteractive: true, color: viewModel.state == .idle ? .orange : .red, opacity: 0.8)
+                .transition(.opacity)
+                .background {
+                    Circle()
+                        .fill(AngularGradient(
+                            colors: viewModel.state == .idle ? [.teal, .pink, .teal] : [.orange, .green, .orange],
+                            center: .center,
+                            angle: .degrees(isGlowAnimating ? 360 : 0)
+                        ))
+                        .blur(radius: 20)
+                        .onAppear {
+                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isGlowAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isGlowAnimating = false
+                        }
+                }
+        }
+        .buttonStyle(.plain)
+    }
+    
 
     private func micButton(size: CGFloat) -> some View {
         Button(action: viewModel.toggleRecording) {
