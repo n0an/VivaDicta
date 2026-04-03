@@ -39,7 +39,6 @@ struct WatchRecordView: View {
     @ViewBuilder
     private func recordButton(size: CGFloat) -> some View {
         mainButton(size: size)
-//            .animation(.easeInOut(duration: 0.3), value: viewModel.state)
     }
     
     
@@ -72,63 +71,6 @@ struct WatchRecordView: View {
         }
         .buttonStyle(.plain)
     }
-    
-
-    private func micButton(size: CGFloat) -> some View {
-        Button(action: viewModel.toggleRecording) {
-            Image(systemName: "microphone.circle")
-                .foregroundStyle(.primary)
-                .font(.system(size: size))
-                .padding(6)
-                .glassEffectColor(isInteractive: true, color: .orange, opacity: 0.8)
-                .background {
-                    Circle()
-                        .fill(AngularGradient(
-                            colors: [.teal, .pink, .teal],
-                            center: .center,
-                            angle: .degrees(isGlowAnimating ? 360 : 0)
-                        ))
-                        .blur(radius: 20)
-                        .onAppear {
-                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
-                                isGlowAnimating = true
-                            }
-                        }
-                        .onDisappear {
-                            isGlowAnimating = false
-                        }
-                }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func stopButton(size: CGFloat) -> some View {
-        Button(action: viewModel.toggleRecording) {
-            Image(systemName: "stop.circle.fill")
-                .foregroundStyle(.white)
-                .font(.system(size: size))
-                .padding(6)
-                .glassEffectColor(isInteractive: true, color: .red, opacity: 0.8)
-                .background {
-                    Circle()
-                        .fill(AngularGradient(
-                            colors: [.orange, .indigo, .orange],
-                            center: .center,
-                            angle: .degrees(isGlowAnimating ? 360 : 0)
-                        ))
-                        .blur(radius: 20)
-                        .onAppear {
-                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
-                                isGlowAnimating = true
-                            }
-                        }
-                        .onDisappear {
-                            isGlowAnimating = false
-                        }
-                }
-        }
-        .buttonStyle(.plain)
-    }
 
     @ViewBuilder
     private var transferStatusView: some View {
@@ -145,6 +87,7 @@ struct WatchRecordView: View {
             Label("All uploaded", systemImage: "checkmark.icloud")
                 .font(.caption2)
                 .foregroundStyle(.green)
+                .transition(.opacity)
 
         case .error(let message):
             Label(message, systemImage: "exclamationmark.icloud")

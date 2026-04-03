@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import WatchKit
 import os
 
@@ -53,7 +54,9 @@ final class WatchRecordViewModel {
     private func startRecording() {
         do {
             _ = try audioRecorder.startRecording()
-            state = .recording
+            withAnimation(.easeInOut(duration: 0.7)) {
+                state = .recording
+            }
             recordingStartTime = Date()
             recordingDuration = 0
             startDurationTimer()
@@ -86,7 +89,9 @@ final class WatchRecordViewModel {
             logger.error("Failed to queue file transfer")
         }
 
-        state = .idle
+        withAnimation(.easeInOut(duration: 0.7)) {
+            state = .idle
+        }
         recordingDuration = 0
         logger.info("Recording stopped and queued for transfer")
     }

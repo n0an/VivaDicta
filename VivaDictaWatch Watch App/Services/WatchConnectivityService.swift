@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.04.02
 //
 
+import SwiftUI
 import WatchConnectivity
 import WatchKit
 import os
@@ -63,6 +64,14 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
         } else {
             transferStatus = .allUploaded
             WKInterfaceDevice.current().play(.success)
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                if case .allUploaded = self.transferStatus {
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        self.transferStatus = .idle
+                    }
+                }
+            }
         }
     }
 }
