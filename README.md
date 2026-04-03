@@ -174,7 +174,7 @@ See the [documentation](documentation/README.md) for detailed diagrams and flows
 
 **Requirements:**
 - Xcode 26+
-- iOS 18+ deployment target
+- iOS 18+ / watchOS 10+ deployment targets
 
 ```bash
 # Clone
