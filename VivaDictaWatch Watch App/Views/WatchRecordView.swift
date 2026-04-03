@@ -50,7 +50,6 @@ struct WatchRecordView: View {
                 .font(.system(size: size))
                 .padding(6)
                 .glassEffectColor(isInteractive: true, color: viewModel.state == .idle ? .orange : .red, opacity: 0.8)
-                .transition(.opacity)
                 .background {
                     Circle()
                         .fill(AngularGradient(
@@ -82,6 +81,7 @@ struct WatchRecordView: View {
             Label("Uploading \(count) \(count == 1 ? "file" : "files")", systemImage: "icloud.and.arrow.up")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .transition(.opacity)
 
         case .allUploaded:
             Label("All uploaded", systemImage: "checkmark.icloud")
@@ -94,6 +94,7 @@ struct WatchRecordView: View {
                 .font(.caption2)
                 .foregroundStyle(.red)
                 .lineLimit(2)
+                .transition(.opacity)
         }
     }
 

@@ -56,14 +56,18 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
 
     private func transferDidComplete(error: String?) {
         pendingTransferCount = max(pendingTransferCount - 1, 0)
-        if let error {
-            transferStatus = .error(error)
-            WKInterfaceDevice.current().play(.failure)
-        } else if pendingTransferCount > 0 {
-            transferStatus = .transferring(count: pendingTransferCount)
-        } else {
-            transferStatus = .allUploaded
-            WKInterfaceDevice.current().play(.success)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if let error {
+                transferStatus = .error(error)
+                WKInterfaceDevice.current().play(.failure)
+            } else if pendingTransferCount > 0 {
+                transferStatus = .transferring(count: pendingTransferCount)
+            } else {
+                transferStatus = .allUploaded
+                WKInterfaceDevice.current().play(.success)
+            }
+        }
+        if case .allUploaded = transferStatus {
             Task {
                 try? await Task.sleep(for: .seconds(2))
                 if case .allUploaded = self.transferStatus {
