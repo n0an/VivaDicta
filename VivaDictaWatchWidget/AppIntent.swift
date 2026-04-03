@@ -6,6 +6,7 @@
 //
 
 import AppIntents
+import Foundation
 
 struct OpenRecorderIntent: AppIntent {
     static var title: LocalizedStringResource { "Record Voice Note" }
@@ -13,7 +14,12 @@ struct OpenRecorderIntent: AppIntent {
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
-        UserDefaults.standard.set(true, forKey: "shouldStartRecording")
+        // Post Darwin notification to toggle recording in the watch app
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName("com.antonnovoselov.VivaDicta.watch.toggleRecording" as CFString),
+            nil, nil, true
+        )
         return .result()
     }
 }
