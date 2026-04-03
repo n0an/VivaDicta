@@ -212,6 +212,8 @@ VivaDicta/
 ├── VivaDictaWidget/        # Widget + Live Activity
 ├── ShareExtension/         # Share extension
 ├── ActionExtension/        # Action extension
+├── VivaDictaWatch Watch App/ # watchOS companion app
+├── VivaDictaWatchWidget/   # Watch complications + Control Center control
 ├── documentation/          # Architecture docs, references
 └── .github/workflows/      # CI: build check, Claude review, GitGuardian
 ```
