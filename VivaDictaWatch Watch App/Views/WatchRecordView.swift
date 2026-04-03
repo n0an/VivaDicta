@@ -134,7 +134,7 @@ struct WatchRecordView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .glassEffectColor(isInteractive: true, color: .clear)
+        .glassEffectClear(isInteractive: true)
     }
 
     private var formattedDuration: String {

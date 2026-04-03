@@ -169,9 +169,6 @@ class AppState {
         // Update TranscriptionManager's current mode
         transcriptionManager.setCurrentMode(newMode)
 
-        // Sync updated modes to watch
-        watchConnectivityService?.syncModesToWatch(modes: aiService.modes)
-
         // Trigger preload if the new mode uses WhisperKit
         Task {
             await preloadWhisperKitModelIfNeeded()

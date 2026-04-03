@@ -27,6 +27,7 @@ final class WatchAudioProcessor {
     /// Tracks filenames currently being processed to avoid duplicates.
     private var inFlightFiles: Set<String> = []
 
+
     init(transcriptionManager: TranscriptionManager,
          aiService: AIService,
          modelContainer: ModelContainer) {
@@ -53,7 +54,6 @@ final class WatchAudioProcessor {
             transcriptionManager.setCurrentMode(targetMode)
         }
         defer {
-            // Restore original mode
             if modeId != nil {
                 aiService.selectedModeName = previousModeName
                 transcriptionManager.setCurrentMode(aiService.selectedMode)
@@ -61,7 +61,7 @@ final class WatchAudioProcessor {
         }
 
         do {
-            logger.logInfo("⌚ [START] Processing watch audio: \(fileName)")
+            logger.logInfo("⌚ [START] Processing watch audio: \(audioURL.lastPathComponent)")
 
             // Transcribe
             let transcriptionStart = Date()
