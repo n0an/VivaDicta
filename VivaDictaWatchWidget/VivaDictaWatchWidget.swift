@@ -58,12 +58,28 @@ struct VivaDictaWatchWidgetEntryView: View {
                 .resizable()
                 .scaledToFit()
         } else {
-            Image("VivaDictaIcon50")
-                .resizable()
-                .scaledToFit()
-                .luminanceToAlpha()
+            LockScreenIconCircularViewTinted()
         }
     }
+    
+    
+    struct LockScreenIconCircularViewTinted: View {
+        var body: some View {
+            VStack {
+                Image("VivaDictaIcon50")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .luminanceToAlpha()
+            .background {
+                LinearGradient(colors: [.white.opacity(0.4), .clear],
+                                     startPoint: UnitPoint(x: 0.5, y: 1.5), endPoint: .top)
+            }
+            .widgetAccentable()
+            .containerBackground(for: .widget) { }
+        }
+    }
+    
+    
 
     private var cornerView: some View {
         Image(systemName: "mic.fill")
