@@ -177,7 +177,7 @@ struct GlassEffectClearModifier: ViewModifier {
     var isInteractive: Bool
     
     func body(content: Content) -> some View {
-        if #available(iOS 26, *){
+        if #available(watchOS 26, *){
             content
                 .glassEffect(.clear.interactive(isInteractive))
         } else {
