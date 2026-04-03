@@ -6,6 +6,7 @@
 //
 
 import WatchConnectivity
+import WatchKit
 import os
 
 @Observable @MainActor
@@ -56,10 +57,12 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
         pendingTransferCount = max(pendingTransferCount - 1, 0)
         if let error {
             transferStatus = .error(error)
+            WKInterfaceDevice.current().play(.failure)
         } else if pendingTransferCount > 0 {
             transferStatus = .transferring(count: pendingTransferCount)
         } else {
             transferStatus = .allUploaded
+            WKInterfaceDevice.current().play(.success)
         }
     }
 }
