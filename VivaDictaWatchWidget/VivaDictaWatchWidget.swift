@@ -90,18 +90,49 @@ struct VivaDictaWatchWidgetEntryView: View {
             }
     }
 
+    @ViewBuilder
     private var rectangularView: some View {
-        HStack {
-            Image(systemName: "mic.fill")
-                .font(.title3)
-                .foregroundStyle(.orange)
-            VStack(alignment: .leading) {
-                Text("VivaDicta")
-                    .font(.headline)
-                Text("Tap to record")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        if isFullColor {
+            HStack {
+                Image("WatchComplicationIcon")
+                    .resizable()
+                    .scaledToFit()
+                VStack(alignment: .leading) {
+                    Text("VivaDicta")
+                        .font(.headline)
+                    Text("Tap to record")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
+        } else {
+            LockScreenIconRectangularViewTinted()
+        }
+    }
+
+    struct LockScreenIconRectangularViewTinted: View {
+        var body: some View {
+            HStack {
+                VStack {
+                    Image("VivaDictaIcon50")
+                }
+                .frame(maxHeight: .infinity, alignment: .center)
+                .luminanceToAlpha()
+                .background {
+                    LinearGradient(colors: [.white.opacity(0.4), .clear],
+                                   startPoint: UnitPoint(x: 0.5, y: 1.5), endPoint: .top)
+                    .clipShape(.circle)
+                }
+
+                VStack(alignment: .leading) {
+                    Text("VivaDicta")
+                        .font(.headline)
+                    Text("Tap to record")
+                        .font(.caption)
+                }
+            }
+            .widgetAccentable()
+            .containerBackground(for: .widget) { }
         }
     }
 
