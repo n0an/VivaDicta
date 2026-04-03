@@ -30,6 +30,11 @@ struct RecordTimelineProvider: TimelineProvider {
 struct VivaDictaWatchWidgetEntryView: View {
     var entry: RecordEntry
     @Environment(\.widgetFamily) var family
+    @Environment(\.widgetRenderingMode) var renderingMode
+
+    private var isFullColor: Bool {
+        renderingMode == .fullColor
+    }
 
     var body: some View {
         switch family {
@@ -46,10 +51,18 @@ struct VivaDictaWatchWidgetEntryView: View {
         }
     }
 
+    @ViewBuilder
     private var circularView: some View {
-        Image("WatchComplicationIcon")
-            .resizable()
-            .scaledToFit()
+        if isFullColor {
+            Image("WatchComplicationIcon")
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image("VivaDictaIcon50")
+                .resizable()
+                .scaledToFit()
+                .luminanceToAlpha()
+        }
     }
 
     private var cornerView: some View {
