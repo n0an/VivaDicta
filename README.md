@@ -161,6 +161,7 @@ Core components:
 |-----------|------|
 | `AppGroupCoordinator` | Cross-process communication using Darwin Notifications (custom keyboard, widgets, share, action extensions) |
 | `PhoneWatchConnectivityService` | WatchConnectivity file reception, mode syncing, background transcription via `WatchAudioProcessor` |
+| `WatchAppCoordinator` | Darwin notifications between watch app and watch widget extension (Control Center, Action Button) |
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
 | `AIService` | AI text processing, 15+ providers, OAuth, VivAgents, mode/API key management |
