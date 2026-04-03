@@ -53,9 +53,9 @@ struct VivaDictaWatchWidgetEntryView: View {
     }
 
     private var cornerView: some View {
-        Image("WatchComplicationIcon")
-            .resizable()
-            .scaledToFit()
+        Image(systemName: "mic.fill")
+            .font(.system(size: 38, weight: .semibold))
+            .foregroundStyle(.orange)
             .widgetLabel {
                 Text("Record")
             }
@@ -91,7 +91,7 @@ struct VivaDictaWatchWidget: Widget {
                 .widgetURL(URL(string: "vivadicta-watch://record"))
         }
         .configurationDisplayName("Quick Record")
-        .description("Tap to open VivaDicta and record a voice note.")
+        .description("VivaDicta Quick Record")
         .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryRectangular, .accessoryInline])
     }
 }
