@@ -1762,7 +1762,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaWatch;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.antonnovoselov.VivaDicta;
@@ -1797,7 +1797,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaWatch;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.antonnovoselov.VivaDicta;
@@ -1831,7 +1831,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = VivaDictaWatch;
+				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.antonnovoselov.VivaDicta;
