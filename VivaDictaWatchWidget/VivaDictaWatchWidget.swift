@@ -92,7 +92,10 @@ struct VivaDictaWatchWidget: Widget {
         }
         .configurationDisplayName("Quick Record")
         .description("VivaDicta Quick Record")
-        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryRectangular, .accessoryInline])
+        .supportedFamilies([.accessoryCircular,
+                            .accessoryCorner,
+                            .accessoryRectangular,
+                            .accessoryInline])
     }
 }
 
