@@ -52,7 +52,7 @@ struct WatchRecordView: View {
                 .foregroundStyle(.primary)
                 .font(.system(size: size))
                 .padding(6)
-                .background(Color.orange.opacity(0.9).gradient, in: .circle)
+                .glassEffectColor(isInteractive: true, color: .orange, opacity: 0.8)
                 .background {
                     Circle()
                         .fill(AngularGradient(
@@ -70,10 +70,6 @@ struct WatchRecordView: View {
                             isGlowAnimating = false
                         }
                 }
-                .overlay {
-                    Circle()
-                        .stroke(.black.opacity(0.5), lineWidth: 0.5)
-                }
         }
         .buttonStyle(.plain)
     }
@@ -84,10 +80,23 @@ struct WatchRecordView: View {
                 .foregroundStyle(.white)
                 .font(.system(size: size))
                 .padding(6)
-                .background(Color.red.gradient, in: .circle)
-                .overlay {
+                .glassEffectColor(isInteractive: true, color: .red, opacity: 0.8)
+                .background {
                     Circle()
-                        .stroke(.black.opacity(0.5), lineWidth: 0.5)
+                        .fill(AngularGradient(
+                            colors: [.orange, .indigo, .orange],
+                            center: .center,
+                            angle: .degrees(isGlowAnimating ? 360 : 0)
+                        ))
+                        .blur(radius: 20)
+                        .onAppear {
+                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                                isGlowAnimating = true
+                            }
+                        }
+                        .onDisappear {
+                            isGlowAnimating = false
+                        }
                 }
         }
         .buttonStyle(.plain)
@@ -120,5 +129,33 @@ struct WatchRecordView: View {
     private var formattedDuration: String {
         Duration.seconds(viewModel.recordingDuration)
             .formatted(.time(pattern: .minuteSecond(padMinuteToLength: 2)))
+    }
+}
+
+
+struct GlassEffectColorModifier: ViewModifier {
+    var isInteractive: Bool
+    var color: Color
+    var opacity: Double
+    
+    func body(content: Content) -> some View {
+        if #available(watchOS 26, *){
+            content
+                .glassEffect(.regular.tint(color.opacity(opacity)).interactive(isInteractive))
+        } else {
+            content
+                .background(color.gradient, in: .circle)
+        }
+    }
+}
+
+extension View {
+    func glassEffectColor(isInteractive: Bool = true,
+                          color: Color = .clear,
+                          opacity: Double) -> some View {
+        modifier(GlassEffectColorModifier(
+            isInteractive: isInteractive,
+            color: color,
+            opacity: opacity))
     }
 }
