@@ -21,6 +21,13 @@ struct VivaDictaWatchApp: App {
     var body: some Scene {
         WindowGroup {
             WatchRecordView(viewModel: viewModel)
+                .onOpenURL { url in
+                    if url.scheme == "vivadicta-watch" && url.host == "record" {
+                        if viewModel.state == .idle {
+                            viewModel.toggleRecording()
+                        }
+                    }
+                }
         }
     }
 }
