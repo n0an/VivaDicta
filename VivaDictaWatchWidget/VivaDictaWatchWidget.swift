@@ -47,15 +47,15 @@ struct VivaDictaWatchWidgetEntryView: View {
     }
 
     private var circularView: some View {
-        Image(systemName: "mic.fill")
-            .font(.title2)
-            .foregroundStyle(.orange)
+        Image("WatchComplicationIcon")
+            .resizable()
+            .scaledToFit()
     }
 
     private var cornerView: some View {
-        Image(systemName: "mic.fill")
-            .font(.title2)
-            .foregroundStyle(.orange)
+        Image("WatchComplicationIcon")
+            .resizable()
+            .scaledToFit()
             .widgetLabel {
                 Text("Record")
             }
