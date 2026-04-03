@@ -15,6 +15,9 @@ final class PhoneWatchConnectivityService: NSObject {
     /// Processor for transcribing watch audio in the background.
     private var audioProcessor: WatchAudioProcessor?
 
+    /// Modes to sync to watch once session activates.
+    private var pendingModes: [VivaMode]?
+
     func configure(audioProcessor: WatchAudioProcessor) {
         self.audioProcessor = audioProcessor
     }
@@ -31,7 +34,39 @@ final class PhoneWatchConnectivityService: NSObject {
         logger.logInfo("WCSession activating on iPhone")
     }
 
-    private func processInBackground(audioURL: URL, sourceTag: String, recordingTimestamp: Date) {
+    /// Sends the current list of Viva Modes to the watch via application context.
+    func syncModesToWatch(modes: [VivaMode]) {
+        guard WCSession.default.activationState == .activated else {
+            // Session not ready yet - queue for when it activates
+            pendingModes = modes
+            logger.logInfo("WCSession not activated yet, queuing \(modes.count) modes for sync")
+            return
+        }
+
+        sendModesContext(modes)
+    }
+
+    private func sendModesContext(_ modes: [VivaMode]) {
+        let modeData = modes.map { mode in
+            [
+                "id": mode.id.uuidString,
+                "name": mode.name
+            ]
+        }
+
+        // Use both: applicationContext for persistence, transferUserInfo for guaranteed delivery
+        do {
+            try WCSession.default.updateApplicationContext(["modes": modeData])
+            logger.logInfo("Synced \(modes.count) modes to watch via applicationContext")
+        } catch {
+            logger.logError("Failed to sync modes via applicationContext: \(error.localizedDescription)")
+        }
+
+        WCSession.default.transferUserInfo(["modes": modeData])
+        logger.logInfo("Synced \(modes.count) modes to watch via transferUserInfo")
+    }
+
+    private func processInBackground(audioURL: URL, sourceTag: String, recordingTimestamp: Date, modeId: String?) {
         guard let audioProcessor else {
             logger.logError("WatchAudioProcessor not configured")
             return
@@ -41,7 +76,8 @@ final class PhoneWatchConnectivityService: NSObject {
             await audioProcessor.processAudioFile(
                 at: audioURL,
                 sourceTag: sourceTag,
-                recordingTimestamp: recordingTimestamp
+                recordingTimestamp: recordingTimestamp,
+                modeId: modeId
             )
         }
     }
@@ -58,6 +94,12 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             logger.logError("WCSession activation failed: \(error.localizedDescription)")
         } else {
             logger.logInfo("WCSession activated on iPhone: \(String(describing: activationState))")
+            Task { @MainActor in
+                if let pendingModes = self.pendingModes {
+                    self.pendingModes = nil
+                    self.sendModesContext(pendingModes)
+                }
+            }
         }
     }
 
@@ -87,6 +129,7 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let sourceTag = rawMetadata["sourceTag"] as? String ?? "appleWatch"
         let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
         let recordingTimestamp = Date(timeIntervalSince1970: timestamp)
+        let modeId = rawMetadata["modeId"] as? String
 
         let audioDir = URL.documentsDirectory.appending(path: "Audio")
 
@@ -97,7 +140,7 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 
             Task { @MainActor in
-                self.processInBackground(audioURL: destURL, sourceTag: sourceTag, recordingTimestamp: recordingTimestamp)
+                self.processInBackground(audioURL: destURL, sourceTag: sourceTag, recordingTimestamp: recordingTimestamp, modeId: modeId)
             }
         } catch {
             logger.logError("Failed to move watch audio file: \(error.localizedDescription)")

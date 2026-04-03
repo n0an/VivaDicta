@@ -9,7 +9,7 @@ import SwiftUI
 import WatchKit
 
 struct WatchRecordView: View {
-    let viewModel: WatchRecordViewModel
+    @Bindable var viewModel: WatchRecordViewModel
     @State private var isGlowAnimating = false
 
     var body: some View {
@@ -18,7 +18,7 @@ struct WatchRecordView: View {
 
             VStack(spacing: 12) {
                 Spacer()
-
+                
                 mainButton(size: buttonSize)
 
                 if viewModel.state == .recording {
@@ -29,13 +29,25 @@ struct WatchRecordView: View {
                 }
 
                 transferStatusView
-
                 Spacer()
             }
+            .offset(y: -8)
             .frame(maxWidth: .infinity)
         }
+        .toolbar {
+            if !viewModel.availableModes.isEmpty {
+                if viewModel.state == .idle {
+                    ToolbarItem(placement: .topBarLeading) {
+                        modePicker
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarLeading) {
+                        modePicker.hidden()
+                    }
+                }
+            }
+        }
     }
-
 
 
     private func mainButton(size: CGFloat) -> some View {
@@ -94,6 +106,37 @@ struct WatchRecordView: View {
         }
     }
 
+    private var modePicker: some View {
+        let selectedName = viewModel.availableModes.first { $0.id == viewModel.selectedModeId }?.name
+            ?? viewModel.availableModes.first?.name ?? "Default"
+
+        return NavigationLink {
+            List(viewModel.availableModes) { mode in
+                Button {
+                    viewModel.selectedModeId = mode.id
+                } label: {
+                    HStack {
+                        Text(mode.name)
+                        Spacer()
+                        if mode.id == viewModel.selectedModeId {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Mode")
+        } label: {
+            Text(String(selectedName.prefix(7)))
+                .font(.system(size: 11, weight: .semibold))
+                .lineLimit(1)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .glassEffectColor(isInteractive: true, color: .clear)
+    }
+
     private var formattedDuration: String {
         Duration.seconds(viewModel.recordingDuration)
             .formatted(.time(pattern: .minuteSecond(padMinuteToLength: 2)))
@@ -120,10 +163,35 @@ struct GlassEffectColorModifier: ViewModifier {
 extension View {
     func glassEffectColor(isInteractive: Bool = true,
                           color: Color = .clear,
-                          opacity: Double) -> some View {
+                          opacity: Double = 1.0) -> some View {
         modifier(GlassEffectColorModifier(
             isInteractive: isInteractive,
             color: color,
             opacity: opacity))
+    }
+}
+
+
+struct GlassEffectClearModifier: ViewModifier {
+    
+    var isInteractive: Bool
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *){
+            content
+                .glassEffect(.clear.interactive(isInteractive))
+        } else {
+            content
+                .background {
+                    Capsule()
+                        .stroke(.gray, lineWidth: 1)
+                }
+        }
+    }
+}
+
+extension View {
+    func glassEffectClear(isInteractive: Bool = true) -> some View {
+        modifier(GlassEffectClearModifier(isInteractive: isInteractive))
     }
 }

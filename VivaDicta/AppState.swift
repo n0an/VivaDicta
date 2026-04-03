@@ -118,6 +118,10 @@ class AppState {
             self?.handleModeChange(newMode)
         }
 
+        aiService.onModesListChanged = { [weak self] modes in
+            self?.watchConnectivityService?.syncModesToWatch(modes: modes)
+        }
+
         transcriptionManager.onCloudModelsUpdate = { [weak self] in
             self?.handleCloudModelsUpdate()
         }
@@ -151,6 +155,9 @@ class AppState {
         watchConnectivityService = PhoneWatchConnectivityService()
         watchConnectivityService.configure(audioProcessor: watchProcessor)
 
+        // Sync current modes to watch
+        watchConnectivityService.syncModesToWatch(modes: aiService.modes)
+
         // Process any orphaned watch audio files from interrupted background sessions
         Task {
             await watchProcessor.processOrphanedFiles()
@@ -161,6 +168,9 @@ class AppState {
     public func handleModeChange(_ newMode: VivaMode) {
         // Update TranscriptionManager's current mode
         transcriptionManager.setCurrentMode(newMode)
+
+        // Sync updated modes to watch
+        watchConnectivityService?.syncModesToWatch(modes: aiService.modes)
 
         // Trigger preload if the new mode uses WhisperKit
         Task {
