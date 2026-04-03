@@ -38,6 +38,13 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
             wcSession.delegate = self
             wcSession.activate()
             logger.info("WCSession activating")
+
+            // Restore pending transfer count from previous session
+            let outstanding = wcSession.outstandingFileTransfers.count
+            if outstanding > 0 {
+                pendingTransferCount = outstanding
+                transferStatus = .transferring(count: outstanding)
+            }
         }
     }
 

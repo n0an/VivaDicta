@@ -19,7 +19,7 @@ struct WatchRecordView: View {
             VStack(spacing: 12) {
                 Spacer()
 
-                recordButton(size: buttonSize)
+                mainButton(size: buttonSize)
 
                 if viewModel.state == .recording {
                     Text(formattedDuration)
@@ -36,12 +36,8 @@ struct WatchRecordView: View {
         }
     }
 
-    @ViewBuilder
-    private func recordButton(size: CGFloat) -> some View {
-        mainButton(size: size)
-    }
-    
-    
+
+
     private func mainButton(size: CGFloat) -> some View {
         Button(action: viewModel.toggleRecording) {
             Image(systemName: viewModel.state == .idle ? "microphone.circle" : "stop.circle.fill")

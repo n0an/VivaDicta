@@ -49,11 +49,9 @@ final class WatchAudioProcessor {
             logger.logInfo("⌚ [START] Processing watch audio: \(fileName)")
 
             // Transcribe
-            logger.logInfo("⌚ [TRANSCRIBE START] \(audioURL.lastPathComponent)")
             let transcriptionStart = Date()
             let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURL)
             let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
-            logger.logInfo("⌚ [TRANSCRIBE END] \(audioURL.lastPathComponent) - \(String(format: "%.1f", transcriptionDuration))s")
 
             // Validate
             guard TranscriptionOutputFilter.hasMeaningfulContent(transcribedText) else {
@@ -73,14 +71,12 @@ final class WatchAudioProcessor {
 
             if aiService.isProperlyConfigured() {
                 do {
-                    logger.logInfo("⌚ [ENHANCE START] \(audioURL.lastPathComponent)")
                     let result = try await aiService.enhance(transcribedText)
                     enhancedText = result.0
                     enhancementDuration = result.1
                     promptName = result.2
-                    logger.logInfo("⌚ [ENHANCE END] \(audioURL.lastPathComponent) - \(String(format: "%.1f", enhancementDuration ?? 0))s")
                 } catch {
-                    logger.logWarning("⌚ [ENHANCE FAILED] \(audioURL.lastPathComponent): \(error.localizedDescription)")
+                    logger.logWarning("⌚ Watch audio AI enhancement failed: \(error.localizedDescription)")
                 }
             }
 
