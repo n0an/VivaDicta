@@ -15,7 +15,7 @@ struct VivaDictaWatchWidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: OpenRecorderIntent()) {
-                Label("Record", systemImage: "mic.fill")
+                Label("Quick Record", systemImage: "mic.fill")
             }
         }
         .displayName("Quick Record")
