@@ -250,6 +250,13 @@
 			);
 			target = 18BA29242F7F29FD00C4F68B /* VivaDictaWatchWidgetExtension */;
 		};
+		18BA2E4A2F7FB8E700C4F68B /* Exceptions for "VivaDictaWatchWidget" folder in "VivaDictaWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppIntent.swift,
+			);
+			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
+		};
 		18E1B4A62E8C6FF400BE8A11 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDictaKeyboard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -383,6 +390,7 @@
 		18BA29282F7F29FD00C4F68B /* VivaDictaWatchWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				18BA2E4A2F7FB8E700C4F68B /* Exceptions for "VivaDictaWatchWidget" folder in "VivaDictaWatch Watch App" target */,
 				18BA293B2F7F29FE00C4F68B /* Exceptions for "VivaDictaWatchWidget" folder in "VivaDictaWatchWidgetExtension" target */,
 			);
 			path = VivaDictaWatchWidget;

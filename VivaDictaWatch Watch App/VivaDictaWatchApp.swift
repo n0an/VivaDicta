@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct VivaDictaWatchApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var viewModel: WatchRecordViewModel = {
         let connectivityService = WatchConnectivityService()
         let audioRecorder = WatchAudioRecorder()
@@ -23,11 +25,27 @@ struct VivaDictaWatchApp: App {
             WatchRecordView(viewModel: viewModel)
                 .onOpenURL { url in
                     if url.scheme == "vivadicta-watch" && url.host == "record" {
-                        if viewModel.state == .idle {
-                            viewModel.toggleRecording()
-                        }
+                        startRecordingIfIdle()
                     }
                 }
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active {
+                        checkControlLaunch()
+                    }
+                }
+        }
+    }
+
+    private func startRecordingIfIdle() {
+        if viewModel.state == .idle {
+            viewModel.toggleRecording()
+        }
+    }
+
+    private func checkControlLaunch() {
+        if UserDefaults.standard.bool(forKey: "shouldStartRecording") {
+            UserDefaults.standard.set(false, forKey: "shouldStartRecording")
+            startRecordingIfIdle()
         }
     }
 }

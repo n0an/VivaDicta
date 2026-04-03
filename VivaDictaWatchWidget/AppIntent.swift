@@ -13,6 +13,7 @@ struct OpenRecorderIntent: AppIntent {
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
-        .result()
+        UserDefaults.standard.set(true, forKey: "shouldStartRecording")
+        return .result()
     }
 }
