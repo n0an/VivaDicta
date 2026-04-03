@@ -18,6 +18,7 @@ enum SourceTag {
     static let actionExtension = "actionExtension"
     static let macApp = "macApp"
     static let youtube = "youtube"
+    static let appleWatch = "appleWatch"
 
     static func displayName(for tag: String?) -> String {
         switch tag {
@@ -27,6 +28,7 @@ enum SourceTag {
         case actionExtension: "Action"
         case macApp: "Mac"
         case youtube: "YouTube"
+        case appleWatch: "Watch"
         default: "Unknown"
         }
     }
@@ -39,6 +41,7 @@ enum SourceTag {
         case actionExtension: "bolt.fill"
         case macApp: "desktopcomputer"
         case youtube: "play.rectangle.fill"
+        case appleWatch: "applewatch"
         default: "questionmark.circle"
         }
     }
@@ -51,6 +54,7 @@ enum SourceTag {
         case actionExtension: .green
         case macApp: .teal
         case youtube: .red
+        case appleWatch: .mint
         default: .secondary
         }
     }
