@@ -17,6 +17,7 @@
 
 | Document | Description |
 |----------|-------------|
+| [watchOS App](WatchOS-App-Architecture.md) | Watch companion app, WatchConnectivity, complications, mode picker |
 | [Keyboard Extension](Keyboard-Extension-Architecture.md) | Custom keyboard with recording/transcription via AppGroupCoordinator |
 | [Keyboard Text Processing](Keyboard-Text-Processing.md) | AI text processing from keyboard using UITextDocumentProxy and AppGroupCoordinator |
 | [AppGroupCoordinator](AppGroupCoordinator-Architecture.md) | Shared state between main app and extensions via App Groups |

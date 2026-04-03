@@ -15,6 +15,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Xcode-26%2B-blue?logo=xcode&logoColor=white" alt="Xcode 26+">
   <img src="https://img.shields.io/badge/iOS-18%2B-orange?logo=apple&logoColor=white" alt="iOS 18.0+">
+  <img src="https://img.shields.io/badge/watchOS-10%2B-orange?logo=apple&logoColor=white" alt="watchOS 10.0+">
   <img src="https://img.shields.io/badge/swift-6.2-orange" alt="Swift 6.2">
   <img src="https://img.shields.io/github/license/n0an/VivaDicta" alt="License">
 </p>
@@ -89,6 +90,13 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Word replacements and shortcuts (e.g., "my email" → support@vivadicta.com)
 - Audio recordings saved alongside transcriptions
 
+**Apple Watch App**
+- Record voice notes directly on Apple Watch — audio transfers to iPhone via WatchConnectivity
+- Background transcription — notes are processed before you open the iPhone app
+- Watch face complications for one-tap recording
+- Control Center button and Action Button support for start/stop toggle
+- Viva Mode picker — switch modes right on the watch
+
 **Sync & Extensions**
 - iCloud sync across iPhone, iPad, and Mac — transcriptions, presets, custom dictionary, and API keys
 - Home and Lock screen widgets and Control Center control to quickly record a note
@@ -102,7 +110,8 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Swift 6 with strict concurrency
 - SwiftUI + Liquid Glass
 - SwiftData with CloudKit sync
-- Cross-process IPC using Darwin Notifications between 5 targets
+- watchOS companion app with WatchConnectivity file transfer and background transcription
+- Cross-process IPC using Darwin Notifications between 6 targets
 - 7-stage text processing pipeline with customizable transforms
 - App Intents — Siri and Shortcuts integration
 - CoreSpotlight — indexed transcriptions for iOS spotlight search
@@ -128,8 +137,22 @@ Main app ↔ extensions IPC via `AppGroupCoordinator` (Darwin Notifications + Sh
 graph LR
     K[Keyboard Extension] <-->|Darwin Notifications<br/>Shared UserDefaults| M[Main App]
     W[Widget + Live Activity] <--> M
+    WA[Watch App] <-->|WatchConnectivity<br/>transferFile + sendMessage| M
     SE[Share Extension] <--> M
     AE[Action Extension] <--> M
+```
+
+Watch app ↔ iPhone communication via WatchConnectivity:
+
+```mermaid
+graph LR
+    WR[Watch Recorder] -->|transferFile<br/>audio + modeId| PC[PhoneWatchConnectivityService]
+    PC --> WP[WatchAudioProcessor]
+    WP --> T[TranscriptionManager]
+    WP --> AI[AIService]
+    WP --> S[SwiftData]
+    PC -->|updateApplicationContext<br/>mode list| WR
+    WR -->|sendMessage<br/>wake ping| PC
 ```
 
 Core components:
@@ -137,6 +160,7 @@ Core components:
 | Component | Role |
 |-----------|------|
 | `AppGroupCoordinator` | Cross-process communication using Darwin Notifications (custom keyboard, widgets, share, action extensions) |
+| `PhoneWatchConnectivityService` | WatchConnectivity file reception, mode syncing, background transcription via `WatchAudioProcessor` |
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
 | `AIService` | AI text processing, 15+ providers, OAuth, VivAgents, mode/API key management |
