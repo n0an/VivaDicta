@@ -5,6 +5,8 @@
 //  Created by Anton Novoselov on 2025.10.02
 //
 
+// TODO: NOT USED AT THE MOMENT. CAN DELETE, OR USE - DECIDE LATER
+
 import WidgetKit
 import SwiftUI
 
