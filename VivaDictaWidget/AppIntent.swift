@@ -9,6 +9,9 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 
+// TODO: NOT USED AT THE MOMENT. CAN DELETE, OR USE - DECIDE LATER
+// CURRENTLY USED ONLY VivaDictaIconWidget - IT DOESN'T USE ConfigurationAppIntent
+
 struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Configuration"
     static let description: IntentDescription = "Select color"
