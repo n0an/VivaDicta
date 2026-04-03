@@ -12,5 +12,6 @@ protocol WatchConnectivityServiceProtocol: AnyObject {
     var transferStatus: WatchTransferStatus { get }
     var pendingTransferCount: Int { get }
     var isCompanionReachable: Bool { get }
+    var availableModes: [WatchModeInfo] { get }
     func transferAudioFile(at url: URL, metadata: [String: Any]) -> Bool
 }

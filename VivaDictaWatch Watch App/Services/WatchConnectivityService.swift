@@ -17,8 +17,19 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
 
     private let session: WatchSessionProtocol?
 
+    private static let cachedModesKey = "cachedWatchModes"
+
     private(set) var transferStatus: WatchTransferStatus = .idle
     private(set) var pendingTransferCount: Int = 0
+    private(set) var availableModes: [WatchModeInfo] = [] {
+        didSet {
+            // Cache modes to UserDefaults for next launch
+            if !availableModes.isEmpty {
+                let data = availableModes.map { ["id": $0.id, "name": $0.name] }
+                UserDefaults.standard.set(data, forKey: Self.cachedModesKey)
+            }
+        }
+    }
 
     var isCompanionReachable: Bool {
         session?.isReachable ?? false
@@ -45,7 +56,34 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
                 pendingTransferCount = outstanding
                 transferStatus = .transferring(count: outstanding)
             }
+
+            // Load cached modes first, then try application context
+            loadCachedModes()
+            parseModes(from: wcSession.receivedApplicationContext)
         }
+    }
+
+    private func loadCachedModes() {
+        guard let data = UserDefaults.standard.array(forKey: Self.cachedModesKey) as? [[String: String]] else { return }
+        availableModes = data.compactMap { dict in
+            guard let id = dict["id"], let name = dict["name"] else { return nil }
+            return WatchModeInfo(id: id, name: name)
+        }
+        if !availableModes.isEmpty {
+            logger.info("Loaded \(self.availableModes.count) cached modes")
+        }
+    }
+
+    private func parseModes(from context: [String: Any]) {
+        guard let modesData = context["modes"] as? [[String: String]] else {
+            logger.info("No modes key in context, keys: \(Array(context.keys))")
+            return
+        }
+        availableModes = modesData.compactMap { dict in
+            guard let id = dict["id"], let name = dict["name"] else { return nil }
+            return WatchModeInfo(id: id, name: name)
+        }
+        logger.info("Loaded \(self.availableModes.count) modes: \(self.availableModes.map(\.name))")
     }
 
     func transferAudioFile(at url: URL, metadata: [String: Any]) -> Bool {
@@ -100,6 +138,30 @@ extension WatchConnectivityService: WCSessionDelegate {
             } else {
                 logger.info("WCSession activated: \(String(describing: state))")
             }
+        }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveApplicationContext applicationContext: [String: Any]
+    ) {
+        handleModesPayload(applicationContext, source: "applicationContext")
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        handleModesPayload(userInfo, source: "transferUserInfo")
+    }
+
+    nonisolated private func handleModesPayload(_ payload: [String: Any], source: String) {
+        guard let modesData = payload["modes"] as? [[String: String]] else { return }
+        let modes = modesData.compactMap { dict -> WatchModeInfo? in
+            guard let id = dict["id"], let name = dict["name"] else { return nil }
+            return WatchModeInfo(id: id, name: name)
+        }
+        guard !modes.isEmpty else { return }
+        Task { @MainActor in
+            self.availableModes = modes
+            self.logger.info("Received \(modes.count) modes via \(source)")
         }
     }
 

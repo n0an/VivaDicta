@@ -27,6 +27,11 @@ final class WatchRecordViewModel {
 
     private(set) var state: RecordingState = .idle
     private(set) var recordingDuration: TimeInterval = 0
+    var selectedModeId: String? {
+        didSet {
+            UserDefaults.standard.set(selectedModeId, forKey: "selectedWatchModeId")
+        }
+    }
 
     var transferStatus: WatchTransferStatus {
         connectivityService.transferStatus
@@ -36,10 +41,15 @@ final class WatchRecordViewModel {
         connectivityService.pendingTransferCount
     }
 
+    var availableModes: [WatchModeInfo] {
+        connectivityService.availableModes
+    }
+
     init(connectivityService: WatchConnectivityServiceProtocol,
          audioRecorder: WatchAudioRecorderProtocol) {
         self.connectivityService = connectivityService
         self.audioRecorder = audioRecorder
+        self.selectedModeId = UserDefaults.standard.string(forKey: "selectedWatchModeId")
     }
 
     func toggleRecording() {
@@ -76,11 +86,14 @@ final class WatchRecordViewModel {
             return
         }
 
-        let metadata: [String: Any] = [
+        var metadata: [String: Any] = [
             "sourceTag": "appleWatch",
             "timestamp": Date().timeIntervalSince1970,
             "duration": recordingDuration
         ]
+        if let selectedModeId {
+            metadata["modeId"] = selectedModeId
+        }
 
         WKInterfaceDevice.current().play(.stop)
 

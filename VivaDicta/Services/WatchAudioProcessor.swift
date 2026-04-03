@@ -27,6 +27,7 @@ final class WatchAudioProcessor {
     /// Tracks filenames currently being processed to avoid duplicates.
     private var inFlightFiles: Set<String> = []
 
+
     init(transcriptionManager: TranscriptionManager,
          aiService: AIService,
          modelContainer: ModelContainer) {
@@ -35,7 +36,7 @@ final class WatchAudioProcessor {
         self.modelContainer = modelContainer
     }
 
-    func processAudioFile(at audioURL: URL, sourceTag: String, recordingTimestamp: Date = Date()) async {
+    func processAudioFile(at audioURL: URL, sourceTag: String, recordingTimestamp: Date = Date(), modeId: String? = nil) async {
         let fileName = audioURL.lastPathComponent
 
         guard !inFlightFiles.contains(fileName) else {
@@ -45,8 +46,22 @@ final class WatchAudioProcessor {
         inFlightFiles.insert(fileName)
         defer { inFlightFiles.remove(fileName) }
 
+        // Temporarily switch to the requested mode if specified
+        let previousModeName = aiService.selectedModeName
+        if let modeId,
+           let targetMode = aiService.modes.first(where: { $0.id.uuidString == modeId }) {
+            aiService.selectedModeName = targetMode.name
+            transcriptionManager.setCurrentMode(targetMode)
+        }
+        defer {
+            if modeId != nil {
+                aiService.selectedModeName = previousModeName
+                transcriptionManager.setCurrentMode(aiService.selectedMode)
+            }
+        }
+
         do {
-            logger.logInfo("⌚ [START] Processing watch audio: \(fileName)")
+            logger.logInfo("⌚ [START] Processing watch audio: \(audioURL.lastPathComponent)")
 
             // Transcribe
             let transcriptionStart = Date()

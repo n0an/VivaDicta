@@ -120,6 +120,7 @@ class AIService {
     public private(set) var lastUserMessageSent: String?
 
     public var onModeChange: ((VivaMode) -> Void)?
+    public var onModesListChanged: (([VivaMode]) -> Void)?
 
     public var selectedModeName: String {
         didSet {
@@ -520,6 +521,7 @@ class AIService {
         userDefaults.set(encoded, forKey: modesStorageKey)
         userDefaults.synchronize() // Force immediate write to disk
         logger.logInfo("Saved \(self.modes.count) Viva Modes to shared storage")
+        onModesListChanged?(modes)
     }
 
     private func saveSelectedModeName(_ modeName: String) {
