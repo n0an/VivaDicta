@@ -11,47 +11,24 @@ import os
 /// Coordinates communication between the watch app and its widget extension
 /// using Darwin notifications and UserDefaults.
 @MainActor
-final class WatchAppCoordinator {
+final class WatchAppCoordinator: NSObject {
     static let shared = WatchAppCoordinator()
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.watchkitapp",
                                 category: "AppCoordinator")
 
-    private enum Keys {
-        static let isRecording = "watchIsRecording"
-    }
-
-    private enum DarwinNotifications {
-        static let toggleRecording = "com.antonnovoselov.VivaDicta.watch.toggleRecording" as CFString
-        static let recordingStateChanged = "com.antonnovoselov.VivaDicta.watch.recordingStateChanged" as CFString
-    }
+    private nonisolated(unsafe) static let toggleRecordingNotification = "com.antonnovoselov.VivaDicta.watch.toggleRecording" as CFString
 
     var onToggleRecordingRequested: (() -> Void)?
 
-    var isRecording: Bool {
-        get { UserDefaults.standard.bool(forKey: Keys.isRecording) }
-        set {
-            UserDefaults.standard.set(newValue, forKey: Keys.isRecording)
-            postDarwinNotification(DarwinNotifications.recordingStateChanged)
-        }
-    }
-
-    private init() {
-        registerForDarwinNotification(DarwinNotifications.toggleRecording) { [weak self] in
-            Task { @MainActor in
-                self?.logger.info("📡 Received toggle recording request from control")
-                self?.onToggleRecordingRequested?()
-            }
-        }
-    }
-
-    func requestToggleRecording() {
-        postDarwinNotification(DarwinNotifications.toggleRecording)
+    private override init() {
+        super.init()
+        setupNotificationObservers()
     }
 
     // MARK: - Darwin Notification Helpers
 
-    private func postDarwinNotification(_ name: CFString) {
+    nonisolated private func postDarwinNotification(_ name: CFString) {
         CFNotificationCenterPostNotification(
             CFNotificationCenterGetDarwinNotifyCenter(),
             CFNotificationName(name),
@@ -59,26 +36,25 @@ final class WatchAppCoordinator {
         )
     }
 
-    private func registerForDarwinNotification(_ name: CFString, callback: @escaping () -> Void) {
-        let pointer = Unmanaged.passRetained(CallbackWrapper(callback)).toOpaque()
+    nonisolated private func setupNotificationObservers() {
         CFNotificationCenterAddObserver(
             CFNotificationCenterGetDarwinNotifyCenter(),
-            pointer,
-            { _, pointer, _, _, _ in
-                guard let pointer else { return }
-                let wrapper = Unmanaged<CallbackWrapper>.fromOpaque(pointer).takeUnretainedValue()
-                wrapper.callback()
+            Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                let coordinator = Unmanaged<WatchAppCoordinator>.fromOpaque(observer).takeUnretainedValue()
+                coordinator.handleToggleRecordingNotification()
             },
-            name,
+            Self.toggleRecordingNotification,
             nil,
             .deliverImmediately
         )
     }
-}
 
-private final class CallbackWrapper {
-    let callback: () -> Void
-    init(_ callback: @escaping () -> Void) {
-        self.callback = callback
+    nonisolated private func handleToggleRecordingNotification() {
+        Task { @MainActor in
+            logger.info("📡 Received toggle recording request from control")
+            onToggleRecordingRequested?()
+        }
     }
 }
