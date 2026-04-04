@@ -35,15 +35,9 @@ struct WatchRecordView: View {
             .frame(maxWidth: .infinity)
         }
         .toolbar {
-            if !viewModel.availableModes.isEmpty {
-                if viewModel.state == .idle {
-                    ToolbarItem(placement: .topBarLeading) {
-                        modePicker
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarLeading) {
-                        modePicker.hidden()
-                    }
+            if viewModel.state == .idle {
+                ToolbarItem(placement: .topBarLeading) {
+                    modePicker
                 }
             }
         }
@@ -127,14 +121,9 @@ struct WatchRecordView: View {
             }
             .navigationTitle("Mode")
         } label: {
-            Text(String(selectedName.prefix(7)))
-                .font(.system(size: 11, weight: .semibold))
-                .lineLimit(1)
+            Image(systemName: "list.bullet")
+                .font(.system(size: 16, weight: .semibold))
         }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .glassEffectClear(isInteractive: true)
     }
 
     private var formattedDuration: String {
