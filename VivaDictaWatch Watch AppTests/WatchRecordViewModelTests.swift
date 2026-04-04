@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import Testing
 @testable import VivaDictaWatch_Watch_App
 
@@ -72,7 +73,7 @@ struct WatchRecordViewModelTests {
 
         #expect(vm.state == .idle)
         #expect(recorder.stopCallCount == 1)
-        #expect(!recorder.isRecording)
+        #expect(recorder.isRecording == false)
     }
 
     @Test func toggleRecording_startFailure_remainsIdle() {
@@ -97,58 +98,56 @@ struct WatchRecordViewModelTests {
         #expect(connectivity.transferredFiles.count == 1)
     }
 
-    @Test func stopRecording_includesSourceTagInMetadata() {
+    @Test func stopRecording_includesSourceTagInMetadata() throws {
         let (vm, connectivity, _, _) = makeViewModel()
 
         vm.toggleRecording()
         vm.toggleRecording()
 
-        let metadata = connectivity.transferredFiles.first?.metadata
-        #expect(metadata?["sourceTag"] as? String == "appleWatch")
+        let metadata = try #require(connectivity.transferredFiles.first?.metadata)
+        #expect(metadata["sourceTag"] as? String == "appleWatch")
     }
 
-    @Test func stopRecording_includesTimestampInMetadata() {
+    @Test func stopRecording_includesTimestampInMetadata() throws {
         let (vm, connectivity, _, _) = makeViewModel()
         let beforeTime = Date().timeIntervalSince1970
 
         vm.toggleRecording()
         vm.toggleRecording()
 
-        let timestamp = connectivity.transferredFiles.first?.metadata["timestamp"] as? TimeInterval
-        #expect(timestamp != nil)
-        #expect(timestamp! >= beforeTime)
+        let timestamp = try #require(connectivity.transferredFiles.first?.metadata["timestamp"] as? TimeInterval)
+        #expect(timestamp >= beforeTime)
     }
 
-    @Test func stopRecording_includesDurationInMetadata() {
+    @Test func stopRecording_includesDurationInMetadata() throws {
         let (vm, connectivity, _, _) = makeViewModel()
 
         vm.toggleRecording()
         vm.toggleRecording()
 
-        let duration = connectivity.transferredFiles.first?.metadata["duration"] as? TimeInterval
-        #expect(duration != nil)
+        _ = try #require(connectivity.transferredFiles.first?.metadata["duration"] as? TimeInterval)
     }
 
-    @Test func stopRecording_includesModeIdWhenSelected() {
+    @Test func stopRecording_includesModeIdWhenSelected() throws {
         let (vm, connectivity, _, _) = makeViewModel()
         vm.selectedModeId = "professional"
 
         vm.toggleRecording()
         vm.toggleRecording()
 
-        let modeId = connectivity.transferredFiles.first?.metadata["modeId"] as? String
-        #expect(modeId == "professional")
+        let metadata = try #require(connectivity.transferredFiles.first?.metadata)
+        #expect(metadata["modeId"] as? String == "professional")
     }
 
-    @Test func stopRecording_omitsModeIdWhenNil() {
+    @Test func stopRecording_omitsModeIdWhenNil() throws {
         let (vm, connectivity, _, _) = makeViewModel()
         vm.selectedModeId = nil
 
         vm.toggleRecording()
         vm.toggleRecording()
 
-        let metadata = connectivity.transferredFiles.first?.metadata
-        #expect(metadata?["modeId"] == nil)
+        let metadata = try #require(connectivity.transferredFiles.first?.metadata)
+        #expect(metadata["modeId"] == nil)
     }
 
     @Test func stopRecording_transferFailure_stillResetsState() {
@@ -216,6 +215,52 @@ struct WatchRecordViewModelTests {
         vm.toggleRecording()
 
         #expect(vm.recordingDuration == 0)
+    }
+
+    // MARK: - Scene Phase Handling
+
+    @Test func scenePhaseBackground_whileRecording_stopsRecording() {
+        let (vm, connectivity, _, _) = makeViewModel()
+
+        vm.toggleRecording()
+        #expect(vm.state == .recording)
+
+        vm.handleScenePhaseChange(to: .background)
+
+        #expect(vm.state == .idle)
+        #expect(connectivity.transferredFiles.count == 1)
+    }
+
+    @Test func scenePhaseInactive_whileRecording_stopsRecording() {
+        let (vm, connectivity, _, _) = makeViewModel()
+
+        vm.toggleRecording()
+        #expect(vm.state == .recording)
+
+        vm.handleScenePhaseChange(to: .inactive)
+
+        #expect(vm.state == .idle)
+        #expect(connectivity.transferredFiles.count == 1)
+    }
+
+    @Test func scenePhaseBackground_whileIdle_doesNothing() {
+        let (vm, connectivity, _, _) = makeViewModel()
+
+        vm.handleScenePhaseChange(to: .background)
+
+        #expect(vm.state == .idle)
+        #expect(connectivity.transferredFiles.isEmpty)
+    }
+
+    @Test func scenePhaseActive_whileRecording_doesNotStop() {
+        let (vm, _, _, _) = makeViewModel()
+
+        vm.toggleRecording()
+        #expect(vm.state == .recording)
+
+        vm.handleScenePhaseChange(to: .active)
+
+        #expect(vm.state == .recording)
     }
 
     // MARK: - Multiple Record/Stop Cycles

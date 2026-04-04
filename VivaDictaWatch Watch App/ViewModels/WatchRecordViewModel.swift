@@ -114,6 +114,12 @@ final class WatchRecordViewModel {
         logger.info("Recording stopped and queued for transfer")
     }
 
+    func handleScenePhaseChange(to newPhase: ScenePhase) {
+        guard state == .recording, newPhase != .active else { return }
+        logger.info("App left foreground while recording, stopping")
+        stopRecording()
+    }
+
     private func startDurationTimer() {
         durationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor in

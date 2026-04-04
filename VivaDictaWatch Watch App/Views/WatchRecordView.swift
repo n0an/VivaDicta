@@ -10,6 +10,7 @@ import WatchKit
 
 struct WatchRecordView: View {
     @Bindable var viewModel: WatchRecordViewModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var isGlowAnimating = false
 
     var body: some View {
@@ -33,6 +34,9 @@ struct WatchRecordView: View {
             }
             .offset(y: -8)
             .frame(maxWidth: .infinity)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            viewModel.handleScenePhaseChange(to: newPhase)
         }
         .toolbar {
             if !viewModel.availableModes.isEmpty {
@@ -77,6 +81,7 @@ struct WatchRecordView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("WatchRecordView.mainButton")
     }
 
     @ViewBuilder
@@ -124,12 +129,14 @@ struct WatchRecordView: View {
                         }
                     }
                 }
+                .accessibilityIdentifier("WatchRecordView.modeRow.\(mode.id)")
             }
             .navigationTitle("Mode")
         } label: {
             Image(systemName: "list.bullet")
                 .font(.system(size: 16, weight: .semibold))
         }
+        .accessibilityIdentifier("WatchRecordView.modePicker")
     }
 
     private var formattedDuration: String {
