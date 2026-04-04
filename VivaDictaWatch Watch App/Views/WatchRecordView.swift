@@ -35,9 +35,15 @@ struct WatchRecordView: View {
             .frame(maxWidth: .infinity)
         }
         .toolbar {
-            if viewModel.state == .idle {
-                ToolbarItem(placement: .topBarLeading) {
-                    modePicker
+            if !viewModel.availableModes.isEmpty {
+                if viewModel.state == .idle {
+                    ToolbarItem(placement: .topBarLeading) {
+                        modePicker
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Color.clear
+                    }
                 }
             }
         }
