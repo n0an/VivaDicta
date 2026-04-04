@@ -18,13 +18,6 @@
         "identifier" : "18BA23FE2F7ED0D700C4F68B",
         "name" : "VivaDictaWatch Watch AppTests"
       }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:VivaDicta.xcodeproj",
-        "identifier" : "18BA24082F7ED0D700C4F68B",
-        "name" : "VivaDictaWatch Watch AppUITests"
-      }
     }
   ],
   "version" : 1
