@@ -563,8 +563,8 @@
 				181D04D52E3E55E400D357A6 /* Resources */,
 				180E1D6C2E4A994800AE33B1 /* Embed Frameworks */,
 				18E1B4AA2E8C6FF400BE8A11 /* Embed Foundation Extensions */,
-				18B497F32F268D9600538830 /* ShellScript */,
 				18BA24142F7ED0D700C4F68B /* Embed Watch Content */,
+				18B497F32F268D9600538830 /* ShellScript */,
 			);
 			buildRules = (
 			);
