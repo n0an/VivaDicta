@@ -12,6 +12,8 @@ import SwiftUI
 struct VivaDictaWatchWidgetBundle: WidgetBundle {
     var body: some Widget {
         VivaDictaWatchWidget()
-        VivaDictaWatchWidgetControl()
+        if #available(watchOS 26, *) {
+            VivaDictaWatchWidgetControl()
+        }
     }
 }

@@ -9,6 +9,7 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+@available(watchOS 26, *)
 struct VivaDictaWatchWidgetControl: ControlWidget {
     static let kind: String = "com.antonnovoselov.VivaDicta.watchkitapp.RecordControl"
 
