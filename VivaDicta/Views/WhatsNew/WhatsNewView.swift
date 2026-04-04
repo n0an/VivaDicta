@@ -53,6 +53,14 @@ struct WhatsNewView: View {
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
                         }
+
+                        if let learnMoreURL = release.learnMoreURL {
+                            Link(destination: learnMoreURL) {
+                                Label("Learn more about VivaDicta Watch app", systemImage: "book")
+                                    .font(.subheadline.weight(.medium))
+                            }
+                            .padding(.top, 8)
+                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.bottom, 40)

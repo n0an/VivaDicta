@@ -343,6 +343,19 @@ struct SettingsView: View {
                 }
 
                 Section("Support") {
+                    Link(destination: URL(string: "https://vivadicta.com/ios/docs")!) {
+                        HStack {
+                            Image(systemName: "book")
+                                .foregroundStyle(.purple)
+                            Text("Documentation")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
                     Button {
                         if MFMailComposeViewController.canSendMail() {
                             showMailCompose = true

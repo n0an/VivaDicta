@@ -144,6 +144,12 @@ When the watch sends audio via `transferFile()`, followed by a `sendMessage()` w
 - If iPhone is **terminated**: `sendMessage` launches it in background state, files are processed before the user opens the app
 - If iPhone is **unreachable**: files queue in WatchConnectivity and deliver when reconnected
 
+Each received file is protected by a two-layer background task system (see [Background-Task-Architecture.md](Background-Task-Architecture.md)):
+1. **`beginBackgroundTask`** - immediate ~30s execution per file
+2. **`BGProcessingTask` fallback** - if time expires, unfinished work is enqueued and retried when iOS wakes the app
+
+Startup recovery runs in order: queued items first (with full metadata), then orphan scan as catch-all.
+
 Orphan recovery: on app startup, `WatchAudioProcessor.processOrphanedFiles()` scans `Documents/Audio/` for `watch-*.wav` files without matching Transcription records.
 
 ## Key Files

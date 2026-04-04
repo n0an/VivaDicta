@@ -19,6 +19,7 @@ struct WhatsNewRelease: Identifiable {
     let id: String
     let headline: String
     let features: [WhatsNewFeature]
+    var learnMoreURL: URL?
 }
 
 enum WhatsNewCatalog {
@@ -29,8 +30,47 @@ enum WhatsNewCatalog {
 
     private static let releases: [String: WhatsNewRelease] = [
         "2.0": release_2_0,
-        "2.1": release_2_1
+        "2.1": release_2_1,
+        "2.2": release_2_2
     ]
+
+    private static let release_2_2 = WhatsNewRelease(
+        id: "2.2",
+        headline: "What's New in VivaDicta 2.2",
+        features: [
+            WhatsNewFeature(
+                icon: "applewatch",
+                iconColors: [.orange, .yellow],
+                title: "Apple Watch App",
+                description: "Record voice notes on your wrist. Recordings are sent to iPhone for transcription automatically."
+            ),
+            WhatsNewFeature(
+                icon: "dial.medium",
+                iconColors: [.green, .mint],
+                title: "Watch Modes",
+                description: "Switch between Viva Modes on the watch for different transcription and AI processing settings."
+            ),
+            WhatsNewFeature(
+                icon: "watchface.applewatch.case",
+                iconColors: [.blue, .cyan],
+                title: "Complications & Action Button",
+                description: "Add to your watch face for one-tap recording, or assign the Action Button to start and stop."
+            ),
+            WhatsNewFeature(
+                icon: "iphone.and.arrow.right.inward",
+                iconColors: [.purple, .pink],
+                title: "iPhone Control on Watch",
+                description: "Start and stop iPhone recording from your wrist via Control Center, Smart Stack, or Action Button."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.trianglehead.2.clockwise.rotate.90.icloud",
+                iconColors: [.cyan, .blue],
+                title: "Background Transcription",
+                description: "Watch recordings are transcribed in the background - notes are ready when you open the app."
+            )
+        ],
+        learnMoreURL: URL(string: "https://vivadicta.com/ios/docs/watch-general-usage")
+    )
 
     private static let release_2_1 = WhatsNewRelease(
         id: "2.1",
