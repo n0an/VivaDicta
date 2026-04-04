@@ -15,7 +15,8 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.watchkitapp",
                                 category: "WatchConnectivity")
 
-    private let session: WatchSessionProtocol?
+    private let session: WCSession?
+    private let defaults: UserDefaults
 
     private static let cachedModesKey = "cachedWatchModes"
 
@@ -26,7 +27,7 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
             // Cache modes to UserDefaults for next launch
             if !availableModes.isEmpty {
                 let data = availableModes.map { ["id": $0.id, "name": $0.name] }
-                UserDefaults.standard.set(data, forKey: Self.cachedModesKey)
+                defaults.set(data, forKey: Self.cachedModesKey)
             }
         }
     }
@@ -35,23 +36,18 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
         session?.isReachable ?? false
     }
 
-    init(session: WatchSessionProtocol? = nil) {
-        if let session {
-            self.session = session
-        } else if WCSession.isSupported() {
-            self.session = WCSession.default
-        } else {
-            self.session = nil
-        }
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.session = WCSession.isSupported() ? WCSession.default : nil
         super.init()
 
-        if let wcSession = self.session as? WCSession {
-            wcSession.delegate = self
-            wcSession.activate()
+        if let session {
+            session.delegate = self
+            session.activate()
             logger.info("WCSession activating")
 
             // Restore pending transfer count from previous session
-            let outstanding = wcSession.outstandingFileTransfers.count
+            let outstanding = session.outstandingFileTransfers.count
             if outstanding > 0 {
                 pendingTransferCount = outstanding
                 transferStatus = .transferring(count: outstanding)
@@ -59,12 +55,12 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
 
             // Load cached modes first, then try application context
             loadCachedModes()
-            parseModes(from: wcSession.receivedApplicationContext)
+            parseModes(from: session.receivedApplicationContext)
         }
     }
 
     private func loadCachedModes() {
-        guard let data = UserDefaults.standard.array(forKey: Self.cachedModesKey) as? [[String: String]] else { return }
+        guard let data = defaults.array(forKey: Self.cachedModesKey) as? [[String: String]] else { return }
         availableModes = data.compactMap { dict in
             guard let id = dict["id"], let name = dict["name"] else { return nil }
             return WatchModeInfo(id: id, name: name)
@@ -74,7 +70,7 @@ final class WatchConnectivityService: NSObject, WatchConnectivityServiceProtocol
         }
     }
 
-    private func parseModes(from context: [String: Any]) {
+    func parseModes(from context: [String: Any]) {
         guard let modesData = context["modes"] as? [[String: String]] else {
             logger.info("No modes key in context, keys: \(Array(context.keys))")
             return
@@ -188,8 +184,8 @@ extension WatchConnectivityService: WCSessionDelegate {
             transferDidComplete(error: errorMessage)
 
             // Send a wake message to poke the iPhone app from suspended state
-            if errorMessage == nil, let wcSession = self.session as? WCSession, wcSession.isReachable {
-                wcSession.sendMessage(["wake": true], replyHandler: nil) { error in
+            if errorMessage == nil, let session = self.session, session.isReachable {
+                session.sendMessage(["wake": true], replyHandler: nil) { error in
                     // Silently ignore - sendMessage fails if iPhone is unreachable
                 }
                 logger.info("Sent wake message to iPhone")

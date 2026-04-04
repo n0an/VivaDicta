@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "B804D9F0-BF81-4D5F-8B3F-8EC8D7F204CA",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:VivaDicta.xcodeproj",
+        "identifier" : "18BA23FE2F7ED0D700C4F68B",
+        "name" : "VivaDictaWatch Watch AppTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -19,8 +19,11 @@ final class WatchRecordViewModel {
 
     private let connectivityService: WatchConnectivityServiceProtocol
     private let audioRecorder: WatchAudioRecorderProtocol
+    private let defaults: UserDefaults
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta.watchkitapp",
                                 category: "RecordViewModel")
+
+    private static let selectedModeKey = "selectedWatchModeId"
 
     private var durationTimer: Timer?
     private var recordingStartTime: Date?
@@ -29,7 +32,7 @@ final class WatchRecordViewModel {
     private(set) var recordingDuration: TimeInterval = 0
     var selectedModeId: String? {
         didSet {
-            UserDefaults.standard.set(selectedModeId, forKey: "selectedWatchModeId")
+            defaults.set(selectedModeId, forKey: Self.selectedModeKey)
         }
     }
 
@@ -46,10 +49,12 @@ final class WatchRecordViewModel {
     }
 
     init(connectivityService: WatchConnectivityServiceProtocol,
-         audioRecorder: WatchAudioRecorderProtocol) {
+         audioRecorder: WatchAudioRecorderProtocol,
+         defaults: UserDefaults = .standard) {
         self.connectivityService = connectivityService
         self.audioRecorder = audioRecorder
-        self.selectedModeId = UserDefaults.standard.string(forKey: "selectedWatchModeId")
+        self.defaults = defaults
+        self.selectedModeId = defaults.string(forKey: Self.selectedModeKey)
     }
 
     func toggleRecording() {
