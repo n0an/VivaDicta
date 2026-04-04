@@ -74,6 +74,9 @@ class AppState {
     /// Service for receiving audio files from Apple Watch.
     var watchConnectivityService: PhoneWatchConnectivityService!
 
+    /// Service for managing background task protection.
+    var backgroundTaskService: BackgroundTaskService!
+
 
     // MARK: - Navigation State
 
@@ -152,15 +155,24 @@ class AppState {
             aiService: aiService,
             modelContainer: modelContainer
         )
+
+        // Set up background task service
+        backgroundTaskService = BackgroundTaskService(modelContainer: modelContainer)
+        backgroundTaskService.configure(watchAudioProcessor: watchProcessor)
+
         watchConnectivityService = PhoneWatchConnectivityService()
-        watchConnectivityService.configure(audioProcessor: watchProcessor)
+        watchConnectivityService.configure(audioProcessor: watchProcessor, backgroundTaskService: backgroundTaskService)
 
         // Sync current modes to watch
         watchConnectivityService.syncModesToWatch(modes: aiService.modes)
 
-        // Process any orphaned watch audio files from interrupted background sessions
+        // Startup recovery: drain queued items first (they have richer metadata),
+        // then orphan recovery as catch-all fallback. Sequential to prevent duplicates.
+        // Orphan recovery excludes files still in the queue (failed items awaiting retry).
         Task {
-            await watchProcessor.processOrphanedFiles()
+            await backgroundTaskService.processQueue()
+            let queuedFiles = backgroundTaskService.queuedFileNames()
+            await watchProcessor.processOrphanedFiles(excludedFileNames: queuedFiles)
         }
     }
 

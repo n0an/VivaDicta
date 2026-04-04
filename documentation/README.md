@@ -25,6 +25,7 @@
 | [App Intents & Shortcuts](App-Intents-Shortcuts-Architecture.md) | Siri/Shortcuts integration, TranscriptionEntity, Spotlight indexing |
 | [Deep Linking & URL Routing](Deep-Linking-URL-Routing-Architecture.md) | URL scheme handling, navigation routing |
 | [Hot Mic / Audio Prewarm](Hot-Mic-Audio-Prewarm-Architecture.md) | Audio session pre-warming for instant recording start |
+| [Background Tasks](Background-Task-Architecture.md) | Background task protection for Watch audio and main app transcription |
 
 ## Guides & References
 
