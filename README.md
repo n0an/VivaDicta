@@ -46,7 +46,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 </p>
 
 <p align="center">
-  <img src="assets/readme/watch.png" width="500" alt="Apple Watch App">
+  <img src="assets/readme/watch.png" width="350" alt="Apple Watch App">
 </p>
 
 ## Features
