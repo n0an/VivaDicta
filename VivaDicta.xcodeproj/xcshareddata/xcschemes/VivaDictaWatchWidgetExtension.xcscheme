@@ -94,7 +94,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "_XCWidgetFamily"
-            value = "systemMedium"
+            value = "accessoryCircular"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

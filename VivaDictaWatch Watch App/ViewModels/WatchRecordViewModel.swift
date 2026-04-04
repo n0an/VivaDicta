@@ -115,8 +115,8 @@ final class WatchRecordViewModel {
     }
 
     func handleScenePhaseChange(to newPhase: ScenePhase) {
-        guard state == .recording, newPhase != .active else { return }
-        logger.info("App left foreground while recording, stopping")
+        guard state == .recording, newPhase == .background else { return }
+        logger.info("App backgrounded while recording, stopping")
         stopRecording()
     }
 

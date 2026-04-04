@@ -231,16 +231,15 @@ struct WatchRecordViewModelTests {
         #expect(connectivity.transferredFiles.count == 1)
     }
 
-    @Test func scenePhaseInactive_whileRecording_stopsRecording() {
-        let (vm, connectivity, _, _) = makeViewModel()
+    @Test func scenePhaseInactive_whileRecording_continuesRecording() {
+        let (vm, _, _, _) = makeViewModel()
 
         vm.toggleRecording()
         #expect(vm.state == .recording)
 
         vm.handleScenePhaseChange(to: .inactive)
 
-        #expect(vm.state == .idle)
-        #expect(connectivity.transferredFiles.count == 1)
+        #expect(vm.state == .recording)
     }
 
     @Test func scenePhaseBackground_whileIdle_doesNothing() {

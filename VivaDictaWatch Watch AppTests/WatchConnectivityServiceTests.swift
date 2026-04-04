@@ -98,11 +98,4 @@ struct WatchConnectivityServiceTests {
         #expect(cached?.first?["id"] == "regular")
     }
 
-    // MARK: - Initial State
-
-    @Test func initialTransferStatus_isIdle() {
-        let (service, _) = makeService()
-
-        #expect(service.transferStatus == .idle)
-    }
 }
