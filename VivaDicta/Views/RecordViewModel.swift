@@ -373,6 +373,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
     func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext, sourceTag: String? = nil) -> Task<Void, Never> {
         Task { @MainActor in
+            // Begin background task to allow transcription to complete if user switches apps
+            let bgTaskID = appState?.backgroundTaskService.beginBackgroundTask(
+                name: "transcription",
+                onExpiration: {
+                    // Background time expired - transcription will be interrupted
+                    // The audio file remains on disk for orphan recovery on next launch
+                }
+            ) ?? .invalid
+            defer { appState?.backgroundTaskService.endBackgroundTask(bgTaskID) }
+
             do {
                 self.recordingState = .transcribing
 

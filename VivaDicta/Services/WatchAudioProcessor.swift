@@ -25,7 +25,7 @@ final class WatchAudioProcessor {
     private let modelContainer: ModelContainer
 
     /// Tracks filenames currently being processed to avoid duplicates.
-    private var inFlightFiles: Set<String> = []
+    private(set) var inFlightFiles: Set<String> = []
 
 
     init(transcriptionManager: TranscriptionManager,
@@ -143,7 +143,8 @@ final class WatchAudioProcessor {
 
     /// Checks for orphaned watch audio files that were never transcribed
     /// (e.g. if iOS killed the app during background processing).
-    func processOrphanedFiles() async {
+    /// - Parameter excludedFileNames: Filenames to skip (e.g. files still in the background task queue).
+    func processOrphanedFiles(excludedFileNames: Set<String> = []) async {
         let audioDir = FileManager.appDirectory(for: .audio)
 
         let fm = FileManager.default
@@ -163,7 +164,9 @@ final class WatchAudioProcessor {
         }()
 
         let orphaned = files.filter {
-            !existingFileNames.contains($0.lastPathComponent) && !inFlightFiles.contains($0.lastPathComponent)
+            !existingFileNames.contains($0.lastPathComponent) &&
+            !inFlightFiles.contains($0.lastPathComponent) &&
+            !excludedFileNames.contains($0.lastPathComponent)
         }
 
         guard !orphaned.isEmpty else {

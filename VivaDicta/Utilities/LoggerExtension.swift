@@ -64,6 +64,9 @@ public enum LogCategory: String {
     // MARK: - Watch Connectivity
     case watchConnectivity = "WatchConnectivity"
 
+    // MARK: - Background Tasks
+    case backgroundTask = "BackgroundTask"
+
     // MARK: - Keyboard Extension
     case keyboardExtension = "KeyboardExtension"
     case vivaModeManager = "VivaModeManager"

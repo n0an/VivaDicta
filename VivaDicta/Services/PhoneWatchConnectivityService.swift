@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.04.02
 //
 
+import UIKit
 import WatchConnectivity
 import os
 
@@ -15,11 +16,15 @@ final class PhoneWatchConnectivityService: NSObject {
     /// Processor for transcribing watch audio in the background.
     private var audioProcessor: WatchAudioProcessor?
 
+    /// Service for background task protection.
+    private var backgroundTaskService: BackgroundTaskService?
+
     /// Modes to sync to watch once session activates.
     private var pendingModes: [VivaMode]?
 
-    func configure(audioProcessor: WatchAudioProcessor) {
+    func configure(audioProcessor: WatchAudioProcessor, backgroundTaskService: BackgroundTaskService) {
         self.audioProcessor = audioProcessor
+        self.backgroundTaskService = backgroundTaskService
     }
 
     override init() {
@@ -72,6 +77,26 @@ final class PhoneWatchConnectivityService: NSObject {
             return
         }
 
+        let fileName = audioURL.lastPathComponent
+
+        // Proactively enqueue and schedule BGProcessingTask before starting work.
+        // This guarantees the fallback is in the system before any time pressure.
+        // If processing succeeds, we remove from queue and cancel the BGTask.
+        backgroundTaskService?.enqueueForLaterProcessing(
+            audioURL: audioURL,
+            sourceTag: sourceTag,
+            modeId: modeId,
+            recordingTimestamp: recordingTimestamp
+        )
+
+        // Begin background task to prevent iOS from suspending during processing
+        let bgTaskID = backgroundTaskService?.beginBackgroundTask(
+            name: "watch-audio-\(fileName)",
+            onExpiration: {
+                // No need to enqueue here - already done above
+            }
+        ) ?? .invalid
+
         Task {
             await audioProcessor.processAudioFile(
                 at: audioURL,
@@ -79,6 +104,9 @@ final class PhoneWatchConnectivityService: NSObject {
                 recordingTimestamp: recordingTimestamp,
                 modeId: modeId
             )
+            // On success, remove from queue and cancel the BGProcessingTask
+            backgroundTaskService?.removeFromQueueIfProcessed(audioFileName: fileName)
+            backgroundTaskService?.endBackgroundTask(bgTaskID)
         }
     }
 }

@@ -17,6 +17,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         logger.logInfo("🚀 didFinishLaunchingWithOptions - state: \(application.applicationState.debugDescription)")
         FirebaseApp.configure()
+        BackgroundTaskService.registerBGTaskHandler()
         return true
     }
 

@@ -127,6 +127,11 @@
 	<array>
 		<string>audio</string>
 		<string>remote-notification</string>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.antonnovoselov.VivaDicta.transcription-processing</string>
 	</array>
 </dict>
 </plist>
