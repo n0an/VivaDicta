@@ -36,3 +36,23 @@ Format the PR link prominently so it's easy to find.
 If no arguments are provided, create a PR with auto-generated title and description based on the commit history.
 
 Use appropriate flags like `--draft` if the PR is work in progress.
+
+## Post-PR: Request Review and Poll
+
+After the PR is created, **always** do the following (skip only if the user explicitly says not to):
+
+1. **Request a review** by posting a comment on the PR:
+   ```
+   gh pr comment <PR_NUMBER> --body "@claude please review this PR"
+   ```
+2. **Start polling** for Claude's review using `/loop 2m` to check PR comments every 2 minutes:
+   ```
+   gh api repos/<owner>/<repo>/issues/<PR_NUMBER>/comments --jq '.[-1].body' | head -80
+   ```
+3. **Stop polling** once the full review is received (not just "in progress" status).
+4. **Show the review** to the user and ask "WDYT?" to discuss the findings before acting on them.
+
+## Handling Review Feedback
+
+- **Real critical bugs** (regressions, data loss, crashes, security issues): fix them immediately without asking.
+- **Everything else** (style, theoretical issues, nice-to-haves, non-critical improvements): present to the user with your assessment and ask before fixing.
