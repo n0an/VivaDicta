@@ -258,8 +258,10 @@ final class BackgroundTaskService {
     /// Checks if a Transcription record already exists for the given audio filename.
     private func transcriptionExists(for audioFileName: String) -> Bool {
         let context = ModelContext(modelContainer)
-        let descriptor = FetchDescriptor<Transcription>()
-        guard let transcriptions = try? context.fetch(descriptor) else { return false }
-        return transcriptions.contains { $0.audioFileName == audioFileName }
+        var descriptor = FetchDescriptor<Transcription>(
+            predicate: #Predicate { $0.audioFileName == audioFileName }
+        )
+        descriptor.fetchLimit = 1
+        return (try? context.fetchCount(descriptor)) ?? 0 > 0
     }
 }
