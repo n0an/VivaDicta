@@ -56,7 +56,7 @@ struct WatchRecordView: View {
 
     private func mainButton(size: CGFloat) -> some View {
         Button(action: viewModel.toggleRecording) {
-            Image(systemName: viewModel.state == .idle ? "microphone.circle" : "stop.circle.fill")
+            Image(systemName: viewModel.state == .idle ? "mic.circle" : "stop.circle.fill")
                 .contentTransition(.symbolEffect(.replace))
                 .foregroundStyle(.primary)
                 .font(.system(size: size))
