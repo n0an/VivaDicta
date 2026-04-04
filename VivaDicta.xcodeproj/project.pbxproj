@@ -257,6 +257,13 @@
 			);
 			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
 		};
+		18BA452C2F81907E00C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch AppTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"VivaDictaWatch Watch App.xctestplan",
+			);
+			target = 18BA23FE2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */;
+		};
 		18E1B4A62E8C6FF400BE8A11 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDictaKeyboard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -374,6 +381,9 @@
 		};
 		18BA23F42F7ED0D500C4F68B /* VivaDictaWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				18BA452C2F81907E00C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch AppTests" target */,
+			);
 			path = "VivaDictaWatch Watch App";
 			sourceTree = "<group>";
 		};

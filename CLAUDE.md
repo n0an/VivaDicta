@@ -10,7 +10,7 @@ All skills live in `.claude/skills/`. Use `/create-skill` to create new ones whe
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
 - When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
-- When opening a PR, immediately post a comment with "@claude please review this PR" to request a review — do this by default. Skip only if the user explicitly says not to request a review. After requesting the review, start polling PR comments every 2 minutes (using `/loop 2m`) to fetch Claude's review. Stop polling once the full review is received and show it to the user.
+- When opening a PR, use the `/pr` skill which handles review requests, polling, and feedback triage.
 
 ## App Store Connect
 
@@ -144,9 +144,7 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 
 ## Debugging & Logs
 
-- **Simulator logs**: `/start-logs` + `/stop-logs`
-- **Device logs (main app only, real-time)**: `/start-logs-device` + `/stop-logs-device` — launches app via `devicectl` with `ENABLE_PRINT_LOGS=1`
-- **Device logs (all processes, post-hoc)**: `/start-logs-device-structured` + `/stop-logs-device-structured` — uses `sudo log collect` to capture OSLog from main app AND extensions (keyboard, widget, share). Use this when debugging interaction between main app and extensions.
+- Use `/start-logs` + `/stop-logs` (simulator), `/start-logs-device` + `/stop-logs-device` (device real-time), or `/start-logs-device-structured` + `/stop-logs-device-structured` (device with extensions).
 - All logging uses `Logger` from `os` framework via `LoggerExtension.swift`. Use `logger.logInfo()`, `logger.logError()` etc. — never raw `print()`.
 
 ## Swift Instructions
