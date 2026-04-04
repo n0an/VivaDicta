@@ -16,7 +16,7 @@ struct ToggleSessionIntent: LiveActivityIntent {
     @Parameter(title: "Session Active")
     var isSessionActive: Bool
     
-    static var isDiscoverable: Bool = false
+    static let isDiscoverable: Bool = false
 
     init() {
         self.isSessionActive = true
@@ -26,6 +26,7 @@ struct ToggleSessionIntent: LiveActivityIntent {
         self.isSessionActive = isSessionActive
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult {
         // When toggling off, send termination notification via AppGroupCoordinator
         if !isSessionActive {
