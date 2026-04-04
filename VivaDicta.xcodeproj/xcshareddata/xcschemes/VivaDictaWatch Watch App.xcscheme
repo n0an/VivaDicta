@@ -35,6 +35,20 @@
                ReferencedContainer = "container:VivaDicta.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "NO"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "18BA24082F7ED0D700C4F68B"
+               BuildableName = "VivaDictaWatch Watch AppUITests.xctest"
+               BlueprintName = "VivaDictaWatch Watch AppUITests"
+               ReferencedContainer = "container:VivaDicta.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -57,17 +71,6 @@
                BlueprintIdentifier = "18BA23FE2F7ED0D700C4F68B"
                BuildableName = "VivaDictaWatch Watch AppTests.xctest"
                BlueprintName = "VivaDictaWatch Watch AppTests"
-               ReferencedContainer = "container:VivaDicta.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "18BA24082F7ED0D700C4F68B"
-               BuildableName = "VivaDictaWatch Watch AppUITests.xctest"
-               BlueprintName = "VivaDictaWatch Watch AppUITests"
                ReferencedContainer = "container:VivaDicta.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -100,8 +103,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
-      debugDocumentVersioning = "YES"
-      notificationPayloadFile = "Example/watchOSSample/SampleWatchAppWatchKitExtension/PushNotificationPayload.apns">
+      debugDocumentVersioning = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference
