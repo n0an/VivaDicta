@@ -45,6 +45,10 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
   <img src="assets/readme/transcription-models.png" width="350" alt="Transcription Models">
 </p>
 
+<p align="center">
+  <img src="assets/readme/watch.png" width="500" alt="Apple Watch App">
+</p>
+
 ## Features
 
 **Transcription**
