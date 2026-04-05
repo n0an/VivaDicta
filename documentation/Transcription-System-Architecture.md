@@ -71,6 +71,21 @@ TranscriptionService (protocol)
         └── CustomTranscriptionService    (user-configured endpoint)
 ```
 
+## Audio Format and MIME Types
+
+Cloud transcription services use dynamic MIME types derived from the audio file extension via `URL.audioMIMEType` (`Extensions/URL+AudioMIMEType.swift`):
+
+| Extension | MIME Type |
+|-----------|-----------|
+| `.wav` | `audio/wav` (default) |
+| `.m4a` | `audio/mp4` |
+| `.mp3` | `audio/mpeg` |
+| `.flac` | `audio/flac` |
+| `.ogg` | `audio/ogg` |
+| `.webm` | `audio/webm` |
+
+The iOS app records WAV (16kHz mono PCM). The Watch app records M4A (16kHz mono AAC). On-device providers (WhisperKit, Parakeet) use AVFoundation to load audio files and handle format detection automatically - no MIME type needed.
+
 ## Model Availability Checking
 
 ```

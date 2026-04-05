@@ -134,7 +134,7 @@ If the 30-second background time expires for the main app path, the transcriptio
 On every app launch, `AppState.init()` runs recovery sequentially in a single Task (order matters to prevent duplicates):
 
 1. **Queued items first** - `BackgroundTaskService.processQueue()` drains items with full metadata (modeId, timestamp). Uses peek-then-remove: items stay in queue until processing succeeds. Checks for existing Transcription records to prevent duplicates.
-2. **Orphaned files second** - `WatchAudioProcessor.processOrphanedFiles()` scans `Documents/Audio/` for `watch-*.wav` files without matching Transcription records. This is the catch-all fallback for files that weren't in the queue.
+2. **Orphaned files second** - `WatchAudioProcessor.processOrphanedFiles()` scans `Documents/Audio/` for `watch-*.wav` and `watch-*.m4a` files without matching Transcription records. This is the catch-all fallback for files that weren't in the queue.
 
 ## Registration
 

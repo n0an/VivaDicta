@@ -41,7 +41,9 @@ VivaDictaWatchApp
   |
   +-- WatchAudioRecorder
   |     +-- AVAudioRecorder wrapper
-  |     +-- 16kHz mono PCM WAV format
+  |     +-- 16kHz mono M4A (AAC) format (~10x smaller than WAV)
+  |     +-- Audio session: .playAndRecord (supports background recording)
+  |     +-- Background Audio mode enabled (recording continues when wrist is lowered)
   |     +-- Records to temp directory
   |
   +-- WatchAppCoordinator
@@ -63,7 +65,7 @@ PhoneWatchConnectivityService
         +-- Standalone transcription processor (no UI dependencies)
         +-- Temporarily switches to requested Viva Mode
         +-- Creates Transcription + TranscriptionVariation records
-        +-- Orphan recovery on startup (scans for watch-*.wav files)
+        +-- Orphan recovery on startup (scans for watch-*.wav and watch-*.m4a files)
 ```
 
 ## File Transfer Flow
@@ -71,7 +73,7 @@ PhoneWatchConnectivityService
 ```
 Watch                              iPhone
   |                                  |
-  | Record audio (16kHz PCM WAV)     |
+  | Record audio (16kHz mono M4A)    |
   | transferFile(url, metadata)      |
   | -------------------------------->|
   |   metadata:                      |
@@ -83,7 +85,7 @@ Watch                              iPhone
   | -------------------------------->|  Wakes app from suspended/terminated
   |                                  |
   |                                  |  didReceive(file:)
-  |                                  |  Move to Documents/Audio/watch-*.wav
+  |                                  |  Move to Documents/Audio/watch-*.<ext>
   |                                  |  WatchAudioProcessor.processAudioFile()
   |                                  |    - Switch to requested mode
   |                                  |    - Transcribe (Groq ~0.7s)
@@ -150,7 +152,7 @@ Each received file is protected by a two-layer background task system (see [Back
 
 Startup recovery runs in order: queued items first (with full metadata), then orphan scan as catch-all.
 
-Orphan recovery: on app startup, `WatchAudioProcessor.processOrphanedFiles()` scans `Documents/Audio/` for `watch-*.wav` files without matching Transcription records.
+Orphan recovery: on app startup, `WatchAudioProcessor.processOrphanedFiles()` scans `Documents/Audio/` for `watch-*.wav` and `watch-*.m4a` files without matching Transcription records.
 
 ## Key Files
 
