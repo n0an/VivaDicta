@@ -132,10 +132,14 @@ struct WatchRecordView: View {
                 .accessibilityIdentifier("WatchRecordView.modeRow.\(mode.id)")
             }
             .navigationTitle("Mode")
+            .onAppear {
+                WKInterfaceDevice.current().play(.click)
+            }
         } label: {
             Image(systemName: "list.bullet")
                 .font(.system(size: 16, weight: .semibold))
         }
+        .sensoryFeedback(.selection, trigger: viewModel.selectedModeId)
         .accessibilityIdentifier("WatchRecordView.modePicker")
     }
 
