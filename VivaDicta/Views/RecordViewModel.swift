@@ -262,7 +262,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                                 self?.audioPower = power
                                 AppGroupCoordinator.shared.updateAudioLevel(power)
                             }
-
                         }
                     })
 
