@@ -163,7 +163,8 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
 
         do {
             try FileManager.default.createDirectory(at: audioDir, withIntermediateDirectories: true)
-            let destURL = audioDir.appending(path: "watch-\(UUID().uuidString).wav")
+            let ext = sourceURL.pathExtension.isEmpty ? "m4a" : sourceURL.pathExtension
+            let destURL = audioDir.appending(path: "watch-\(UUID().uuidString).\(ext)")
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 

@@ -77,7 +77,7 @@ class ElevenLabsTranscriptionService {
     private func createRequestBody(audioURL: URL, modelName: String, boundary: String) throws -> Data {
         var body = Data()
         
-        body.append(formField: "file", fileName: audioURL.lastPathComponent, fileData: try Data(contentsOf: audioURL), mimeType: "audio/wav", boundary: boundary)
+        body.append(formField: "file", fileName: audioURL.lastPathComponent, fileData: try Data(contentsOf: audioURL), mimeType: audioURL.audioMIMEType, boundary: boundary)
         body.append(formField: "model_id", value: modelName, boundary: boundary)
         body.append(formField: "temperature", value: "0.0", boundary: boundary)
         body.append(formField: "tag_audio_events", value: "false", boundary: boundary)

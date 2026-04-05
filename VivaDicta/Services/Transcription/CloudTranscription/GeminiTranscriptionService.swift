@@ -43,7 +43,7 @@ class GeminiTranscriptionService {
                         .text(GeminiTextPart(text: "Please transcribe this audio file. Provide only the transcribed text.")),
                         .audio(GeminiAudioPart(
                             inlineData: GeminiInlineData(
-                                mimeType: "audio/wav",
+                                mimeType: audioURL.audioMIMEType,
                                 data: base64AudioData
                             )
                         ))

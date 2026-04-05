@@ -93,7 +93,7 @@ final class AudioPrewarmManager {
             options: [.mixWithOthers, .allowBluetoothHFP, .defaultToSpeaker]
         )
         try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        try audioSession.setActive(true)
         #endif
 
         // Start continuous dummy recorder and wait for it to complete

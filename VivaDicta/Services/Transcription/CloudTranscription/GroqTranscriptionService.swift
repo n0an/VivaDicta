@@ -74,7 +74,7 @@ struct GroqTranscriptionService {
 
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
-        body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
+        body.append("Content-Type: \(audioURL.audioMIMEType)\(crlf)\(crlf)".data(using: .utf8)!)
         body.append(audioData)
         body.append(crlf.data(using: .utf8)!)
 

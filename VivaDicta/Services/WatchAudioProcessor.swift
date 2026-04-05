@@ -151,7 +151,7 @@ final class WatchAudioProcessor {
         guard fm.fileExists(atPath: audioDir.path) else { return }
 
         guard let files = try? fm.contentsOfDirectory(at: audioDir, includingPropertiesForKeys: nil)
-            .filter({ $0.lastPathComponent.hasPrefix("watch-") && $0.pathExtension == "wav" }) else { return }
+            .filter({ $0.lastPathComponent.hasPrefix("watch-") && ["wav", "m4a"].contains($0.pathExtension) }) else { return }
 
         guard !files.isEmpty else { return }
 

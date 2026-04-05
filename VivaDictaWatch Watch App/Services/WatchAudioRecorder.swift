@@ -32,19 +32,17 @@ final class WatchAudioRecorder: NSObject, WatchAudioRecorderProtocol {
 
     func startRecording() throws -> URL {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record)
+        try session.setCategory(.playAndRecord)
         try session.setActive(true)
 
         let fileURL = FileManager.default.temporaryDirectory
-            .appending(path: "\(UUID().uuidString).wav")
+            .appending(path: "\(UUID().uuidString).m4a")
 
         let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
             AVSampleRateKey: 16_000.0,
             AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsFloatKey: false
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
 
         let recorder = try AVAudioRecorder(url: fileURL, settings: settings)
@@ -67,7 +65,7 @@ final class WatchAudioRecorder: NSObject, WatchAudioRecorderProtocol {
         currentFileURL = nil
 
         do {
-            try AVAudioSession.sharedInstance().setActive(false)
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         } catch {
             logger.warning("Failed to deactivate audio session: \(error.localizedDescription)")
         }

@@ -23,7 +23,7 @@ class DeepgramTranscriptionService {
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.setValue("Token \(config.apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("audio/wav", forHTTPHeaderField: "Content-Type")
+        request.setValue(audioURL.audioMIMEType, forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
         guard let audioData = try? Data(contentsOf: audioURL) else {
