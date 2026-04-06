@@ -234,7 +234,7 @@ struct CLIServerConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             VStack(spacing: 8) {
-                cliRow(name: "Anthropic CLI", provider: "Anthropic", available: healthResponse?.claudeAvailable ?? false)
+                cliRow(name: "Claude Code CLI", provider: "Anthropic", available: healthResponse?.claudeAvailable ?? false)
                 cliRow(name: "Codex CLI", provider: "OpenAI", available: healthResponse?.codexAvailable ?? false)
                 cliRow(name: "Gemini CLI", provider: "Google", available: healthResponse?.geminiAvailable ?? false)
             }
