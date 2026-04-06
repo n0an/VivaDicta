@@ -46,10 +46,10 @@ class AIService {
     /// List of AI providers that have valid API keys or are otherwise available.
     public var connectedProviders: [AIProvider] = []
 
-    // MARK: - ChatGPT OAuth
-    public var isChatGPTSignedIn: Bool = false
-    public var chatGPTEmail: String?
-    public var isChatGPTSigningIn: Bool = false
+    // MARK: - OpenAI OAuth
+    public var isOpenAISignedIn: Bool = false
+    public var openAIEmail: String?
+    public var isOpenAISigningIn: Bool = false
 
     // MARK: - Gemini OAuth
     public var isGeminiSignedIn: Bool = false
@@ -173,7 +173,7 @@ class AIService {
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task { @MainActor in
-            refreshChatGPTOAuthState()
+            refreshOpenAIOAuthState()
             refreshGeminiOAuthState()
             refreshCopilotOAuthState()
             refreshConnectedProviders()
@@ -626,7 +626,7 @@ class AIService {
         } else if aiProvider == .anthropic && connectedProviders.contains(.anthropic) {
             // Anthropic is connected (via API key or CLI Server)
         } else if aiProvider == .openAI && connectedProviders.contains(.openAI) {
-            // OpenAI is connected (via ChatGPT OAuth or API key)
+            // OpenAI is connected (via OpenAI OAuth or API key)
         } else if aiProvider == .gemini && connectedProviders.contains(.gemini) {
             // Gemini is connected (via Gemini OAuth or API key)
         } else if aiProvider == .copilot && isCopilotSignedIn {
@@ -826,13 +826,13 @@ class AIService {
         // Cloud providers - compute system message only when needed
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
 
-        // Claude CLI Server: route Anthropic requests through remote server when enabled
-        if aiProvider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive,
+        // Anthropic CLI Server: route Anthropic requests through remote server when enabled
+        if aiProvider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive,
            let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
             let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
-            logger.logDebug("AI Processing - Using Claude CLI Server at \(serverURL)")
+            logger.logDebug("AI Processing - Using Anthropic CLI Server at \(serverURL)")
             do {
                 let result = try await VivAgentsClient.enhance(
                     text: formattedText,
@@ -844,7 +844,7 @@ class AIService {
             } catch {
                 // Fall back to API key if server fails and key exists
                 if self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Claude CLI Server failed, falling back to API key: \(error.localizedDescription)")
+                    logger.logWarning("Anthropic CLI Server failed, falling back to API key: \(error.localizedDescription)")
                 } else {
                     throw EnhancementError.customError(error.localizedDescription)
                 }
@@ -854,15 +854,15 @@ class AIService {
         // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
-        // ChatGPT OAuth: route OpenAI requests through ChatGPT backend API when signed in
-        if aiProvider == .openAI && isChatGPTSignedIn {
+        // OpenAI OAuth: route OpenAI requests through OpenAI backend API when signed in
+        if aiProvider == .openAI && isOpenAISignedIn {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             do {
-                let provider = OpenAIChatGPTOAuthProvider()
+                let provider = OpenAIOAuthProvider()
                 let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
-                let model = selectedMode.aiModel.isEmpty ? ChatGPTAPIClient.defaultModel : selectedMode.aiModel
-                let result = try await ChatGPTAPIClient.enhance(
+                let model = selectedMode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : selectedMode.aiModel
+                let result = try await OpenAIOAuthClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: model,
@@ -873,9 +873,9 @@ class AIService {
             } catch let error as OAuthError {
                 // If OAuth fails, fall through to CLI or API key
                 if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("ChatGPT OAuth failed, falling back: \(error.localizedDescription)")
+                    logger.logWarning("OpenAI OAuth failed, falling back: \(error.localizedDescription)")
                 } else {
-                    throw EnhancementError.customError(error.errorDescription ?? "ChatGPT OAuth error")
+                    throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
                 }
             }
         }
@@ -1672,17 +1672,17 @@ class AIService {
         // Add cloud providers that have API keys configured or OAuth signed in
         providers += AIProvider.allCases.filter { provider in
             if provider == .anthropic {
-                // Anthropic is connected if it has an API key OR Claude CLI is available
+                // Anthropic is connected if it has an API key OR Anthropic CLI is available
                 let cliAvailable = VivAgentsClient.isEnabled
                     && VivAgentsClient.isVerified
-                    && VivAgentsClient.isClaudeCliAvailable
+                    && VivAgentsClient.isAnthropicCliAvailable
                 return cliAvailable || provider.apiKey != nil
             }
             if provider == .openAI {
                 let cliAvailable = VivAgentsClient.isEnabled
                     && VivAgentsClient.isVerified
                     && VivAgentsClient.isCodexCliActive
-                return cliAvailable || isChatGPTSignedIn || provider.apiKey != nil
+                return cliAvailable || isOpenAISignedIn || provider.apiKey != nil
             }
             if provider == .gemini {
                 let cliAvailable = VivAgentsClient.isEnabled
@@ -2096,9 +2096,9 @@ class AIService {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
         }
-        // OpenAI: show OAuth model list when connected via ChatGPT or Codex CLI agent
-        if provider == .openAI && (isChatGPTSignedIn || VivAgentsClient.isCodexCliActive) {
-            return ChatGPTAPIClient.supportedModels
+        // OpenAI: show OAuth model list when connected via OpenAI or Codex CLI agent
+        if provider == .openAI && (isOpenAISignedIn || VivAgentsClient.isCodexCliActive) {
+            return OpenAIOAuthClient.supportedModels
         }
         // Gemini: show OAuth model list when connected via Google or Gemini CLI agent
         if provider == .gemini && (isGeminiSignedIn || VivAgentsClient.isGeminiCliActive) {
@@ -2309,37 +2309,37 @@ enum EnhancementError: LocalizedError {
     }
 }
 
-// MARK: - ChatGPT OAuth
+// MARK: - OpenAI OAuth
 
 extension AIService {
-    /// Refreshes the ChatGPT OAuth state from stored credentials.
+    /// Refreshes the OpenAI OAuth state from stored credentials.
     @MainActor
-    func refreshChatGPTOAuthState() {
-        let provider = OpenAIChatGPTOAuthProvider()
-        isChatGPTSignedIn = OAuthManager.shared.isSignedIn(provider: provider)
-        chatGPTEmail = OAuthManager.shared.accountEmail(for: provider)
+    func refreshOpenAIOAuthState() {
+        let provider = OpenAIOAuthProvider()
+        isOpenAISignedIn = OAuthManager.shared.isSignedIn(provider: provider)
+        openAIEmail = OAuthManager.shared.accountEmail(for: provider)
     }
 
-    /// Signs in to ChatGPT via OAuth.
+    /// Signs in to OpenAI via OAuth.
     @MainActor
-    func signInWithChatGPT() async throws {
-        isChatGPTSigningIn = true
-        defer { isChatGPTSigningIn = false }
+    func signInWithOpenAI() async throws {
+        isOpenAISigningIn = true
+        defer { isOpenAISigningIn = false }
 
-        let provider = OpenAIChatGPTOAuthProvider()
+        let provider = OpenAIOAuthProvider()
         let credential = try await OAuthManager.shared.signIn(provider: provider)
-        isChatGPTSignedIn = true
-        chatGPTEmail = credential.accountEmail
+        isOpenAISignedIn = true
+        openAIEmail = credential.accountEmail
         refreshConnectedProviders()
     }
 
-    /// Signs out from ChatGPT OAuth.
+    /// Signs out from OpenAI OAuth.
     @MainActor
-    func signOutFromChatGPT() {
-        let provider = OpenAIChatGPTOAuthProvider()
+    func signOutFromOpenAI() {
+        let provider = OpenAIOAuthProvider()
         OAuthManager.shared.signOut(provider: provider)
-        isChatGPTSignedIn = false
-        chatGPTEmail = nil
+        isOpenAISignedIn = false
+        openAIEmail = nil
         refreshConnectedProviders()
     }
 }

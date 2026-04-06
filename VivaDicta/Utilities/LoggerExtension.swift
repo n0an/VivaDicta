@@ -55,7 +55,7 @@ public enum LogCategory: String {
     case presetSync = "PresetSync"
     case keychainService = "KeychainService"
     case oauthManager = "OAuthManager"
-    case chatGPTAPI = "ChatGPTAPIClient"
+    case openAIOAuthAPI = "OpenAIOAuthClient"
     case geminiOAuthAPI = "GeminiAPIClient"
     case copilotOAuth = "CopilotOAuth"
     case copilotAPI = "CopilotAPIClient"

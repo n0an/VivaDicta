@@ -17,7 +17,7 @@ struct AnthropicConfigurationView: View {
     @State private var verificationError: String?
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
-    @State private var isClaudeCliEnabled = VivAgentsClient.isClaudeCliEnabled
+    @State private var isAnthropicCliEnabled = VivAgentsClient.isAnthropicCliEnabled
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -37,7 +37,7 @@ struct AnthropicConfigurationView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                            Text(VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive ? "VivAgents Server Connected" : "API Key Configured")
+                            Text(VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive ? "VivAgents Server Connected" : "API Key Configured")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -100,14 +100,14 @@ struct AnthropicConfigurationView: View {
             Text("Anthropic CLI Agent")
                 .font(.headline)
 
-            if VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliAvailable {
-                Toggle("Use Anthropic CLI Agent", isOn: $isClaudeCliEnabled)
-                    .onChange(of: isClaudeCliEnabled) { _, newValue in
+            if VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliAvailable {
+                Toggle("Use Anthropic CLI Agent", isOn: $isAnthropicCliEnabled)
+                    .onChange(of: isAnthropicCliEnabled) { _, newValue in
                         UserDefaults.standard.set(newValue, forKey: VivAgentsClient.claudeCliEnabledKey)
                         aiService.refreshConnectedProviders()
                     }
 
-                if isClaudeCliEnabled {
+                if isAnthropicCliEnabled {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)

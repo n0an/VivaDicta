@@ -265,7 +265,7 @@ final class OAuthManager: Sendable {
             let info = await fetchUserInfo(url: userinfoURL, accessToken: accessToken, provider: provider)
             accountId = info.id
             email = info.email
-        } else if let claims = OpenAIChatGPTOAuthProvider.decodeJWTPayload(accessToken) {
+        } else if let claims = OpenAIOAuthProvider.decodeJWTPayload(accessToken) {
             // Extract from JWT claims (OpenAI)
             let info = provider.extractAccountInfo(from: claims)
             accountId = info.id

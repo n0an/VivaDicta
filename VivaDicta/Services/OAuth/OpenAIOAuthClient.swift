@@ -3,17 +3,17 @@
 import Foundation
 import os
 
-/// Client for ChatGPT's backend API using OAuth tokens.
-enum ChatGPTAPIClient {
-    private static let logger = Logger(category: .chatGPTAPI)
+/// Client for OpenAI's backend API using OAuth tokens.
+enum OpenAIOAuthClient {
+    private static let logger = Logger(category: .openAIOAuthAPI)
 
     /// Originator header required by the Codex endpoint.
     private static let originator = "codex_cli_rs"
 
-    /// Default model for ChatGPT OAuth requests.
+    /// Default model for OpenAI OAuth requests.
     static let defaultModel = "gpt-5.4-mini"
 
-    /// Models supported by the Codex endpoint (ChatGPT OAuth).
+    /// Models supported by the Codex endpoint (OpenAI OAuth).
     static let supportedModels: [String] = [
         "gpt-5.4",
         "gpt-5.4-mini",
@@ -33,7 +33,7 @@ enum ChatGPTAPIClient {
         return defaultModel
     }
 
-    /// Sends an AI enhancement request via ChatGPT's backend API.
+    /// Sends an AI enhancement request via OpenAI's backend API.
     static func enhance(
         text: String,
         systemPrompt: String,
@@ -41,7 +41,7 @@ enum ChatGPTAPIClient {
         accessToken: String,
         accountId: String?
     ) async throws -> String {
-        guard let url = URL(string: OpenAIChatGPTOAuthProvider.completionsEndpoint) else {
+        guard let url = URL(string: OpenAIOAuthProvider.completionsEndpoint) else {
             throw OAuthError.invalidResponse
         }
 
@@ -57,7 +57,7 @@ enum ChatGPTAPIClient {
         }
 
         let effectiveModel = resolveModel(model)
-        logger.logInfo("ChatGPT OAuth: using model '\(effectiveModel)' (requested: '\(model)')")
+        logger.logInfo("OpenAI OAuth: using model '\(effectiveModel)' (requested: '\(model)')")
 
         let requestBody: [String: Any] = [
             "model": effectiveModel,
@@ -83,7 +83,7 @@ enum ChatGPTAPIClient {
             var errorData = Data()
             for try await byte in bytes { errorData.append(byte) }
             let errorBody = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-            logger.logError("ChatGPT API error: HTTP \(httpResponse.statusCode) — \(errorBody)")
+            logger.logError("OpenAI API error: HTTP \(httpResponse.statusCode) — \(errorBody)")
             throw OAuthError.tokenExchangeFailed("HTTP \(httpResponse.statusCode): \(errorBody)")
         }
 
@@ -105,16 +105,16 @@ enum ChatGPTAPIClient {
         }
 
         guard !result.isEmpty else {
-            logger.logError("No output text received from ChatGPT stream")
+            logger.logError("No output text received from OpenAI stream")
             throw OAuthError.invalidResponse
         }
 
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Fetches available models from ChatGPT's backend.
+    /// Fetches available models from OpenAI's backend.
     static func fetchModels(accessToken: String) async throws -> [String] {
-        guard let url = URL(string: OpenAIChatGPTOAuthProvider.modelsEndpoint) else {
+        guard let url = URL(string: OpenAIOAuthProvider.modelsEndpoint) else {
             return [defaultModel]
         }
 

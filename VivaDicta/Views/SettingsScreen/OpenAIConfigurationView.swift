@@ -47,8 +47,8 @@ struct OpenAIConfigurationView: View {
                 // Model availability note
                 modelAvailabilityNote
 
-                // ChatGPT OAuth section
-                chatGPTSection
+                // OpenAI OAuth section
+                openAIOAuthSection
 
                 // CLI Server section
                 cliServerSection
@@ -97,9 +97,9 @@ struct OpenAIConfigurationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - ChatGPT OAuth Section
+    // MARK: - OpenAI OAuth Section
 
-    private var chatGPTSection: some View {
+    private var openAIOAuthSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("OpenAI OAuth")
                 .font(.headline)
@@ -108,14 +108,14 @@ struct OpenAIConfigurationView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            if aiService.isChatGPTSignedIn {
+            if aiService.isOpenAISignedIn {
                 HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Signed in")
                             .font(.callout)
-                        if let email = aiService.chatGPTEmail {
+                        if let email = aiService.openAIEmail {
                             Text(email)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -123,17 +123,17 @@ struct OpenAIConfigurationView: View {
                     }
                     Spacer()
                     Button("Sign Out", role: .destructive) {
-                        aiService.signOutFromChatGPT()
+                        aiService.signOutFromOpenAI()
                     }
                     .controlSize(.small)
                 }
             } else {
                 if #available(iOS 26.0, *) {
                     Button {
-                        signInWithChatGPT()
+                        signInWithOpenAI()
                     } label: {
                         HStack(spacing: 6) {
-                            if aiService.isChatGPTSigningIn {
+                            if aiService.isOpenAISigningIn {
                                 ProgressView()
                                     .controlSize(.small)
                             }
@@ -141,17 +141,17 @@ struct OpenAIConfigurationView: View {
                                 .font(.headline.weight(.medium))
                         }
                     }
-                    .disabled(aiService.isChatGPTSigningIn)
+                    .disabled(aiService.isOpenAISigningIn)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
                     .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
                     .buttonStyle(.plain)
                 } else {
                     Button {
-                        signInWithChatGPT()
+                        signInWithOpenAI()
                     } label: {
                         HStack(spacing: 6) {
-                            if aiService.isChatGPTSigningIn {
+                            if aiService.isOpenAISigningIn {
                                 ProgressView()
                                     .controlSize(.small)
                             }
@@ -166,7 +166,7 @@ struct OpenAIConfigurationView: View {
                                 .stroke(.blue, lineWidth: 2)
                         }
                     }
-                    .disabled(aiService.isChatGPTSigningIn)
+                    .disabled(aiService.isOpenAISigningIn)
                     .buttonStyle(.plain)
                 }
             }
@@ -345,7 +345,7 @@ struct OpenAIConfigurationView: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(aiService.isChatGPTSignedIn ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
+                    .background(aiService.isOpenAISignedIn ? Color.green.opacity(0.15) : Color.secondary.opacity(0.1))
                     .clipShape(.capsule)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
@@ -383,7 +383,7 @@ struct OpenAIConfigurationView: View {
     // MARK: - CLI Server Section
 
     private var openAIConnectionLabel: String {
-        if aiService.isChatGPTSignedIn {
+        if aiService.isOpenAISignedIn {
             return "OpenAI Connected"
         } else if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive {
             return "VivAgents Server Connected"
@@ -435,10 +435,10 @@ struct OpenAIConfigurationView: View {
 
     // MARK: - Actions
 
-    private func signInWithChatGPT() {
+    private func signInWithOpenAI() {
         Task {
             do {
-                try await aiService.signInWithChatGPT()
+                try await aiService.signInWithOpenAI()
             } catch {
                 oauthErrorMessage = error.localizedDescription
                 showOAuthError = true

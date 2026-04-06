@@ -2,10 +2,10 @@
 
 import Foundation
 
-/// OpenAI ChatGPT OAuth provider configuration.
+/// OpenAI OAuth provider configuration.
 /// Uses the same client ID as the Codex CLI for OAuth PKCE flow.
-struct OpenAIChatGPTOAuthProvider: OAuthProvider {
-    let providerName = "ChatGPT"
+struct OpenAIOAuthProvider: OAuthProvider {
+    let providerName = "OpenAI"
     let clientId = "app_EMoamEEZ73f0CkXaXp7hrann"
     let authorizeURL = "https://auth.openai.com/oauth/authorize"
     let tokenURL = "https://auth.openai.com/oauth/token"
@@ -18,10 +18,10 @@ struct OpenAIChatGPTOAuthProvider: OAuthProvider {
         "id_token_add_organizations": "true"
     ]
 
-    /// ChatGPT backend API endpoint for AI completions.
+    /// OpenAI backend API endpoint for AI completions.
     static let completionsEndpoint = "https://chatgpt.com/backend-api/codex/responses"
 
-    /// ChatGPT backend API endpoint for listing available models.
+    /// OpenAI backend API endpoint for listing available models.
     static let modelsEndpoint = "https://chatgpt.com/backend-api/codex/models"
 
     func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {

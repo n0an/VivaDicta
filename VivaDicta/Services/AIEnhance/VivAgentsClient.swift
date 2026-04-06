@@ -60,13 +60,13 @@ enum VivAgentsClient {
 
     // MARK: - Per-CLI Availability Keys
 
-    static let claudeCliAvailableKey = "cliServer_claudeAvailable"
+    static let anthropicCliAvailableKey = "cliServer_claudeAvailable"
     static let codexCliAvailableKey = "cliServer_codexAvailable"
     static let geminiCliAvailableKey = "cliServer_geminiAvailable"
 
     // MARK: - Per-Provider Enable Keys (user preference on iOS)
 
-    static let claudeCliEnabledKey = "cliServer_claudeEnabled"
+    static let anthropicCliEnabledKey = "cliServer_claudeEnabled"
     static let codexCliEnabledKey = "cliServer_codexEnabled"
     static let geminiCliEnabledKey = "cliServer_geminiEnabled"
 
@@ -92,8 +92,8 @@ enum VivAgentsClient {
         UserDefaults.standard.bool(forKey: isVerifiedKey)
     }
 
-    static var isClaudeCliAvailable: Bool {
-        UserDefaults.standard.bool(forKey: claudeCliAvailableKey)
+    static var isAnthropicCliAvailable: Bool {
+        UserDefaults.standard.bool(forKey: anthropicCliAvailableKey)
     }
 
     static var isCodexCliAvailable: Bool {
@@ -105,8 +105,8 @@ enum VivAgentsClient {
     }
 
     // Per-provider user preference (defaults to true)
-    static var isClaudeCliEnabled: Bool {
-        UserDefaults.standard.object(forKey: claudeCliEnabledKey) == nil || UserDefaults.standard.bool(forKey: claudeCliEnabledKey)
+    static var isAnthropicCliEnabled: Bool {
+        UserDefaults.standard.object(forKey: anthropicCliEnabledKey) == nil || UserDefaults.standard.bool(forKey: anthropicCliEnabledKey)
     }
 
     static var isCodexCliEnabled: Bool {
@@ -118,18 +118,18 @@ enum VivAgentsClient {
     }
 
     /// Whether a specific CLI agent is both available on server AND enabled by user
-    static var isClaudeCliActive: Bool { isClaudeCliAvailable && isClaudeCliEnabled }
+    static var isAnthropicCliActive: Bool { isAnthropicCliAvailable && isAnthropicCliEnabled }
     static var isCodexCliActive: Bool { isCodexCliAvailable && isCodexCliEnabled }
     static var isGeminiCliActive: Bool { isGeminiCliAvailable && isGeminiCliEnabled }
 
     static func saveAvailability(from health: HealthResponse) {
-        UserDefaults.standard.set(health.claudeAvailable, forKey: claudeCliAvailableKey)
+        UserDefaults.standard.set(health.claudeAvailable, forKey: anthropicCliAvailableKey)
         UserDefaults.standard.set(health.codexAvailable ?? false, forKey: codexCliAvailableKey)
         UserDefaults.standard.set(health.geminiAvailable ?? false, forKey: geminiCliAvailableKey)
     }
 
     static func clearAvailability() {
-        UserDefaults.standard.set(false, forKey: claudeCliAvailableKey)
+        UserDefaults.standard.set(false, forKey: anthropicCliAvailableKey)
         UserDefaults.standard.set(false, forKey: codexCliAvailableKey)
         UserDefaults.standard.set(false, forKey: geminiCliAvailableKey)
     }
@@ -140,7 +140,7 @@ enum VivAgentsClient {
         text: String,
         systemPrompt: String,
         model: String,
-        provider: String = "claude"
+        provider: String = "anthropic"
     ) async throws -> String {
         guard let baseURL = serverURL, !baseURL.isEmpty else {
             throw VivAgentsClientError.invalidURL
@@ -247,7 +247,7 @@ enum VivAgentsClient {
         }
     }
 
-    static func testConnection(provider: String = "claude") async -> Bool {
+    static func testConnection(provider: String = "anthropic") async -> Bool {
         guard let baseURL = serverURL, !baseURL.isEmpty else { return false }
 
         let urlString = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/health"
@@ -268,7 +268,7 @@ enum VivAgentsClient {
             switch provider {
             case "codex": return health.codexAvailable ?? false
             case "gemini": return health.geminiAvailable ?? false
-            case "claude": return health.claudeAvailable
+            case "anthropic": return health.claudeAvailable
             default:
                 // No specific provider — succeed if any CLI is available
                 return health.claudeAvailable

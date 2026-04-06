@@ -104,7 +104,7 @@ struct AIProviders: View {
                                             .foregroundStyle(.secondary)
                                     }
                                 }
-                            } else if provider == .openAI && appState.aiService.isChatGPTSignedIn {
+                            } else if provider == .openAI && appState.aiService.isOpenAISignedIn {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
@@ -120,7 +120,7 @@ struct AIProviders: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
-                            } else if provider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliActive {
+                            } else if provider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)

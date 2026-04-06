@@ -4,7 +4,7 @@ import Foundation
 
 /// Protocol for OAuth provider configurations.
 protocol OAuthProvider: Sendable {
-    /// Human-readable provider name (e.g., "ChatGPT").
+    /// Human-readable provider name (e.g., "OpenAI").
     var providerName: String { get }
 
     /// OAuth client ID.
