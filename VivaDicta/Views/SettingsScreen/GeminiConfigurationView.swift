@@ -341,7 +341,7 @@ struct GeminiConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("Google")
+                Text("OAuth")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -413,7 +413,7 @@ struct GeminiConfigurationView: View {
                     }
                 }
             } else {
-                Text("Use your Gemini CLI subscription via the VivAgents Server. No API key needed.")
+                Text("Use your Gemini CLI account via the VivAgents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

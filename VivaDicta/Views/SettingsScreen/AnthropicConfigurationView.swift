@@ -46,7 +46,7 @@ struct AnthropicConfigurationView: View {
                 .padding(.top, 8)
 
                 // Model availability note
-                modelAvailabilityNote
+//                modelAvailabilityNote
 
                 // VivAgents Server section
                 cliServerStatusSection
@@ -84,7 +84,7 @@ struct AnthropicConfigurationView: View {
 
     private var modelAvailabilityNote: some View {
         Label {
-            Text("OAuth and CLI agent connections support a limited set of models. Use an API key for full model access.")
+            Text("CLI agent supports a limited set of models. Use an API key for full model access.")
         } icon: {
             Image(systemName: "info.circle")
         }
@@ -97,11 +97,11 @@ struct AnthropicConfigurationView: View {
 
     private var cliServerStatusSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Claude CLI Agent")
+            Text("Anthropic CLI Agent")
                 .font(.headline)
 
             if VivAgentsClient.isEnabled && VivAgentsClient.isClaudeCliAvailable {
-                Toggle("Use Claude CLI Agent", isOn: $isClaudeCliEnabled)
+                Toggle("Use Anthropic CLI Agent", isOn: $isClaudeCliEnabled)
                     .onChange(of: isClaudeCliEnabled) { _, newValue in
                         UserDefaults.standard.set(newValue, forKey: VivAgentsClient.claudeCliEnabledKey)
                         aiService.refreshConnectedProviders()
@@ -111,12 +111,12 @@ struct AnthropicConfigurationView: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
-                        Text("Claude CLI active")
+                        Text("Anthropic CLI active")
                             .font(.callout)
                     }
                 }
             } else {
-                Text("Use your Claude subscription via the VivAgents Server. No API key needed.")
+                Text("Use VivAgents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

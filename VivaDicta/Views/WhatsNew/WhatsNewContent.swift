@@ -91,8 +91,8 @@ enum WhatsNewCatalog {
             WhatsNewFeature(
                 icon: "person.badge.key",
                 iconColors: [.blue, .indigo],
-                title: "AI Subscriptions",
-                description: "Use your Claude, ChatGPT, Gemini, or Copilot subscriptions — no API keys needed."
+                title: "AI Accounts",
+                description: "Use your OpenAI, Gemini, or Copilot accounts — no API keys needed."
             ),
             WhatsNewFeature(
                 icon: "waveform.badge.plus",

@@ -101,10 +101,10 @@ struct OpenAIConfigurationView: View {
 
     private var chatGPTSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("ChatGPT Account")
+            Text("OpenAI OAuth")
                 .font(.headline)
 
-            Text("Use your ChatGPT Plus/Pro subscription — no API key needed. May have rate limits.")
+            Text("Use your OpenAI Plus/Pro account — no API key needed. May have rate limits.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -137,7 +137,7 @@ struct OpenAIConfigurationView: View {
                                 ProgressView()
                                     .controlSize(.small)
                             }
-                            Text("Sign in with ChatGPT")
+                            Text("Sign in with OpenAI")
                                 .font(.headline.weight(.medium))
                         }
                     }
@@ -155,7 +155,7 @@ struct OpenAIConfigurationView: View {
                                 ProgressView()
                                     .controlSize(.small)
                             }
-                            Text("Sign in with ChatGPT")
+                            Text("Sign in with OpenAI")
                                 .font(.headline.weight(.medium))
                                 .foregroundStyle(.primary)
                         }
@@ -341,7 +341,7 @@ struct OpenAIConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-                Text("ChatGPT")
+                Text("OAuth")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -384,7 +384,7 @@ struct OpenAIConfigurationView: View {
 
     private var openAIConnectionLabel: String {
         if aiService.isChatGPTSignedIn {
-            return "ChatGPT Connected"
+            return "OpenAI Connected"
         } else if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive {
             return "VivAgents Server Connected"
         } else {
@@ -413,7 +413,7 @@ struct OpenAIConfigurationView: View {
                     }
                 }
             } else {
-                Text("Use your OpenAI Codex CLI subscription via the VivAgents Server. No API key needed.")
+                Text("Use your OpenAI Codex CLI account via the VivAgents Server. No API key needed.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

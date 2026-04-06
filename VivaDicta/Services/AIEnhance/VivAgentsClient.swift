@@ -199,7 +199,7 @@ enum VivAgentsClient {
             let providerName = switch provider {
             case "codex": "Codex"
             case "gemini": "Gemini"
-            default: "Claude"
+            default: "Anthropic"
             }
             return "\(providerName) CLI rate limit reached. Please wait a moment and try again."
         }
@@ -214,7 +214,7 @@ enum VivAgentsClient {
             let providerName = switch provider {
             case "codex": "Codex"
             case "gemini": "Gemini"
-            default: "Claude"
+            default: "Anthropic"
             }
             return "\(providerName) CLI returned an invalid response. This may be a temporary issue — please try again."
         }

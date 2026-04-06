@@ -106,7 +106,7 @@ struct CLIServerConfigurationView: View {
                 hasUnsavedChanges = true
             }
         } message: {
-            Text("CLI agents (Claude, Codex, Gemini) are designed for software development use. Using them for general text processing may fall outside the intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk.")
+            Text("CLI agents (Anthropic, Codex, Gemini) are designed for software development use. Using them for general text processing may fall outside the intended use and could lead to account restrictions.\n\nBy enabling this feature you proceed at your own risk.")
         }
     }
 
@@ -117,7 +117,7 @@ struct CLIServerConfigurationView: View {
             Text("Connection")
                 .font(.headline)
 
-            Text("Connect to a server running CLI agents (Claude, Codex, Gemini) for AI processing. Can be your Mac with VivaDicta or a remote server.")
+            Text("Connect to a server running CLI agents (Anthropic, Codex, Gemini) for AI processing. Can be your Mac with VivaDicta or a remote server.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -234,7 +234,7 @@ struct CLIServerConfigurationView: View {
                 .foregroundStyle(.secondary)
 
             VStack(spacing: 8) {
-                cliRow(name: "Claude CLI", provider: "Anthropic", available: healthResponse?.claudeAvailable ?? false)
+                cliRow(name: "Anthropic CLI", provider: "Anthropic", available: healthResponse?.claudeAvailable ?? false)
                 cliRow(name: "Codex CLI", provider: "OpenAI", available: healthResponse?.codexAvailable ?? false)
                 cliRow(name: "Gemini CLI", provider: "Google", available: healthResponse?.geminiAvailable ?? false)
             }
@@ -279,7 +279,7 @@ struct CLIServerConfigurationView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.secondary)
 
-            Text("The VivAgents Server hosts CLI agents (Claude, Codex, Gemini) and exposes them over the network. Your iPhone or iPad connects to it and routes AI requests through the agents — using your existing subscriptions with no API keys needed.")
+            Text("The VivAgents Server hosts CLI agents (Anthropic, Codex, Gemini) and exposes them over the network. Your iPhone or iPad connects to it and routes AI requests through the agents — using your existing accounts with no API keys needed.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 

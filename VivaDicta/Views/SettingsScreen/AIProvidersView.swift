@@ -37,7 +37,7 @@ struct AIProviders: View {
                 } header: {
                     Text("On-Device")
                 } footer: {
-                    Text("Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or subscription required — it's completely free.")
+                    Text("Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or account required — it's completely free.")
                 }
             }
 
@@ -108,7 +108,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("ChatGPT")
+                                    Text("OpenAI")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -223,7 +223,7 @@ struct AIProviders: View {
             } header: {
                 Text("Server")
             } footer: {
-                Text("Route AI processing through CLI agents (Claude, Codex, Gemini) running on your Mac or remote server. Uses your existing subscriptions — no API keys needed.")
+                Text("Route AI processing through CLI agents (Anthropic, Codex, Gemini) running on your Mac or remote server. Uses your existing accounts — no API keys needed.")
             }
         }
         .id(refreshID)

@@ -62,7 +62,7 @@ struct CopilotConfigurationView: View {
             Text("GitHub Account")
                 .font(.headline)
 
-            Text("Access Claude, GPT, Gemini models via your Copilot subscription.")
+            Text("Access Anthropic, GPT, Gemini models via your Copilot account.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
