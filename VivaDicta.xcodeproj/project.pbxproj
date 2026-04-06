@@ -257,19 +257,19 @@
 			);
 			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
 		};
+		18BA452B2F81907E00C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
+		};
 		18BA452C2F81907E00C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch AppTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"VivaDictaWatch Watch App.xctestplan",
 			);
 			target = 18BA23FE2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */;
-		};
-		18BA4BF82F8250C000C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch App" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"VivaDictaWatch-Watch-App-Info.plist",
-			);
-			target = 18BA23F22F7ED0D500C4F68B /* VivaDictaWatch Watch App */;
 		};
 		18E1B4A62E8C6FF400BE8A11 /* Exceptions for "VivaDictaKeyboard" folder in "VivaDictaKeyboard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -389,7 +389,7 @@
 		18BA23F42F7ED0D500C4F68B /* VivaDictaWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				18BA4BF82F8250C000C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch App" target */,
+				18BA452B2F81907E00C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch App" target */,
 				18BA452C2F81907E00C4F68B /* Exceptions for "VivaDictaWatch Watch App" folder in "VivaDictaWatch Watch AppTests" target */,
 			);
 			path = "VivaDictaWatch Watch App";
@@ -1772,7 +1772,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "VivaDictaWatch-Watch-App-Info.plist";
+				INFOPLIST_FILE = "VivaDictaWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1808,7 +1808,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "VivaDictaWatch-Watch-App-Info.plist";
+				INFOPLIST_FILE = "VivaDictaWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1843,7 +1843,7 @@
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "VivaDictaWatch-Watch-App-Info.plist";
+				INFOPLIST_FILE = "VivaDictaWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = VivaDicta;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "VivaDicta records audio on your Apple Watch and sends it to your iPhone for transcription.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
