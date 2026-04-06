@@ -37,7 +37,7 @@ Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` ac
 - ShareExtension
 - ActionExtension
 
-Convention: version `X.Y.Z` uses build number `XY0Z` (e.g., 2.1.0 → 2101, 2.2.0 → 2201).
+Convention: build number is `XYZN` where `XYZ` are the three version digits and `N` is the submission attempt (1-9). First submission attempt always uses `1`. Increment `N` if a build is rejected and resubmitted (e.g., 2.2.1 → 2211, rejected → 2212). Examples: 2.1.0 → 2101, 2.2.0 → 2201, 2.2.1 → 2211.
 
 ### Step 3 — Code sweep
 
