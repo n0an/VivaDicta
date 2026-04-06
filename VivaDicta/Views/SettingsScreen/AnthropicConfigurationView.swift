@@ -103,7 +103,7 @@ struct AnthropicConfigurationView: View {
             if VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliAvailable {
                 Toggle("Use Anthropic CLI Agent", isOn: $isAnthropicCliEnabled)
                     .onChange(of: isAnthropicCliEnabled) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: VivAgentsClient.claudeCliEnabledKey)
+                        UserDefaults.standard.set(newValue, forKey: VivAgentsClient.anthropicCliEnabledKey)
                         aiService.refreshConnectedProviders()
                     }
 
