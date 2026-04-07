@@ -504,6 +504,7 @@ struct SettingsView: View {
 
         }
         .animation(.default, value: isAutoAudioCleanupEnabled)
+        .animation(.default, value: isAutoNoteCleanupEnabled)
         .onAppear {
             if appState.shouldNavigateToModels {
                 appState.shouldNavigateToModels = false

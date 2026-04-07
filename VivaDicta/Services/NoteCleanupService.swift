@@ -106,7 +106,7 @@ final class NoteCleanupService {
             for transcription in transcriptions {
                 // Delete audio file if exists
                 if let audioFileName = transcription.audioFileName {
-                    let audioURL = audioDirectory.appendingPathComponent(audioFileName)
+                    let audioURL = audioDirectory.appending(path: audioFileName)
                     if fileManager.fileExists(atPath: audioURL.path) {
                         do {
                             try fileManager.removeItem(at: audioURL)
