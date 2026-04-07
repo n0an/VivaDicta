@@ -5,12 +5,12 @@ If you don't know answer - it's ok to say that you don't know. It's not necessar
 
 ## Skills
 
-Canonical custom skills live in `.agents/skills/` as directories containing `SKILL.md`. `.claude/skills/` mirrors them for compatibility and should contain only symlinks to `.agents/skills/`. Use `/create-skill` to create new ones when you see repeated patterns.
+Canonical custom skills live in `.agents/skills/` as directories containing `SKILL.md`. `.claude/skills/` mirrors them for compatibility and should contain only symlinks to `.agents/skills/`. Use `$create-skill` to create new ones when you see repeated patterns.
 
 ## Git Commit & PR Guidelines
 - NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
 - When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
-- When opening a PR, use the `/pr` skill which handles review requests, polling, and feedback triage.
+- When opening a PR, use the `$pr` skill which handles review requests, polling, and feedback triage.
 
 ## App Store Connect
 
@@ -118,7 +118,7 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 - Never use `@Attribute(.unique)`
 - Model properties must have default values or be optional
 - All relationships must be optional
-- **Schema deployment**: When SwiftData models change (new models, fields, or relationships), the CloudKit schema must be deployed from Development to Production via the CloudKit Dashboard **before** submitting the app update. Otherwise iCloud sync silently fails for App Store users. See `/release-prepare` skill Step 8.
+- **Schema deployment**: When SwiftData models change (new models, fields, or relationships), the CloudKit schema must be deployed from Development to Production via the CloudKit Dashboard **before** submitting the app update. Otherwise iCloud sync silently fails for App Store users. See `$release-prepare` skill Step 8.
 
 ## Xcode Target Management
 
@@ -143,7 +143,7 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 
 ## Debugging & Logs
 
-- Use `/start-logs` + `/stop-logs` (simulator), `/start-logs-device` + `/stop-logs-device` (device real-time), or `/start-logs-device-structured` + `/stop-logs-device-structured` (device with extensions).
+- Use `$start-logs` + `$stop-logs` (simulator), `$start-logs-device` + `$stop-logs-device` (device real-time), or `$start-logs-device-structured` + `$stop-logs-device-structured` (device with extensions).
 - All logging uses `Logger` from `os` framework via `LoggerExtension.swift`. Use `logger.logInfo()`, `logger.logError()` etc. — never raw `print()`.
 
 ## Swift Instructions
@@ -151,12 +151,12 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 - Assume strict Swift concurrency rules are being applied.
 - Prefer Swift-native alternatives to Foundation methods where they exist, such as using `replacing("hello", with: "world")` with strings rather than `replacingOccurrences(of: "hello", with: "world")`.
 - Prefer modern Foundation API, for example `URL.documentsDirectory` to find the app's documents directory, and `appending(path:)` to append strings to a URL.
-- Never use C-style number formatting such as `Text(String(format: "%.2f", abs(myNumber)))`; always use `Text(abs(change), format: .number.precision(.fractionLength(2)))` instead.
+- Never use C-style number formatting such as `Text(String(format: "%.2f", abs(myNumber)))`; always use `Text(abs(change), format: .number.precision(.fractionLength(2)))` instead. Use skill swift-format-style to use proper number and date format.
 - Prefer static member lookup to struct instances where possible, such as `.circle` rather than `Circle()`, and `.borderedProminent` rather than `BorderedProminentButtonStyle()`.
 - Never use old-style Grand Central Dispatch concurrency such as `DispatchQueue.main.async()`. If behavior like this is needed, always use modern Swift concurrency.
 - Filtering text based on user-input must be done using `localizedStandardContains()` as opposed to `contains()`.
 - Avoid force unwraps and force `try` unless it is unrecoverable.
-- Never use legacy `Formatter` subclasses (`DateFormatter`, `NumberFormatter`); always use `FormatStyle` API instead.
+- Never use legacy `Formatter` subclasses (`DateFormatter`, `NumberFormatter`); always use `FormatStyle` API instead. Use skill swift-format-style to use proper number and date format.
 
 ## SwiftUI Instructions
 
