@@ -44,6 +44,8 @@ enum UserDefaultsStorage {
         static let isSpellingCorrectionsEnabled = "isSpellingCorrectionsEnabled"
         static let isAutoAudioCleanupEnabled = "isAutoAudioCleanupEnabled"
         static let audioRetentionDays = "audioRetentionDays"
+        static let isAutoNoteCleanupEnabled = "isAutoNoteCleanupEnabled"
+        static let noteRetentionDays = "noteRetentionDays"
         static let openRouterModels = "openRouterModels"
         static let vercelAIGatewayModels = "vercelAIGatewayModels"
         static let huggingFaceModels = "huggingFaceModels"

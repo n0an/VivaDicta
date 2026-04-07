@@ -100,6 +100,7 @@ struct MainView: View {
         }
         .onAppear { handleOnAppear() }
         .task {
+            await NoteCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
             await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
         }
         .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
