@@ -86,11 +86,10 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 ## Code Style
 
 - Use `private` for functions/properties called only within the same type. Use `public` for cross-type access.
-- Use "AI Processing" terminology (not "AI Enhancement") in UI-facing text and status labels
 
 ## Key Technologies
 
-- **Swift 6.0** with strict concurrency
+- **Swift 6.2** with strict concurrency
 - **SwiftUI** + **SwiftData** with CloudKit
 - **iOS 18+ deployment target**
 - **AVFoundation** for audio recording/playback
