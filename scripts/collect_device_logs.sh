@@ -11,7 +11,7 @@ cd "${PROJECT_ROOT}"
 # Read timestamp and UDID from temp files
 if [ ! -f "llmtemp/.device-log-start-time" ] || [ ! -f "llmtemp/.device-log-udid" ]; then
   echo "Error: Start timestamp or UDID not found."
-  echo "Please run /start-logs-device-structured first."
+  echo "Please run the start-logs-device-structured skill first."
   exit 1
 fi
 

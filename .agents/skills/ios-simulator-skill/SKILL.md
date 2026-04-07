@@ -237,4 +237,4 @@ Screenshots cost 1,600–6,300 tokens depending on size. The accessibility tree 
 
 ---
 
-Use these scripts directly or let Claude Code invoke them automatically when your request matches the skill description.
+Use these scripts directly or let your agent invoke them automatically when your request matches the skill description.

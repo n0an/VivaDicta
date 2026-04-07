@@ -1,13 +1,13 @@
 ---
-name: ios-simulator-screenshot
+name: screenshot
 description: Capture screenshots from iOS Simulator using native xcrun simctl command for documentation, debugging, and visual verification. Optionally analyze the screenshot.
 disable-model-invocation: true
 ---
 
-# iOS Simulator Screenshot
+# screenshot
 
 You are given the following context:
-ARGUMENTS: {{ARGS}}
+$ARGUMENTS
 
 ## Task
 
@@ -27,8 +27,8 @@ Capture a screenshot of the iOS Simulator using `xcrun simctl` and optionally an
    ```
 
 3. **Handle the optional argument**:
-   - **If ARGS is empty or not provided**: Capture and save, then report the saved path
-   - **If ARGS is provided**: After saving, read the screenshot with the Read tool and follow ARGS instructions
+   - **If `$ARGUMENTS` is empty or not provided**: Capture and save, then report the saved path
+   - **If `$ARGUMENTS` is provided**: After saving, read the screenshot and follow the requested instruction
 
    Common argument patterns:
    - "take a look" / "analyze" / "what's on screen" - Read and describe what's visible
@@ -42,10 +42,10 @@ Capture a screenshot of the iOS Simulator using `xcrun simctl` and optionally an
 ## Example Usage
 
 ```bash
-/screenshot                              # Simple capture
-/screenshot take a look                  # Capture and analyze
-/screenshot is there a login button?     # Check for specific element
-/screenshot extract all visible text     # Extract text
+screenshot                              # Simple capture
+screenshot take a look                  # Capture and analyze
+screenshot is there a login button?     # Check for specific element
+screenshot extract all visible text     # Extract text
 ```
 
 ## Advanced Options

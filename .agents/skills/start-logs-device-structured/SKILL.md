@@ -8,62 +8,36 @@ disable-model-invocation: true
 
 ## Task
 
-Prepare for device log capture by recording the current timestamp. When ready to collect logs, you'll use `/stop-logs-device-structured` which will collect all logs since this timestamp from your physical iOS device.
+Prepare for structured device log capture by recording the current timestamp and target device UDID.
 
 ## Instructions
 
-1. **Get the device UDID**:
+1. Find a connected physical iPhone:
    ```bash
    xcrun xctrace list devices | grep iPhone | grep -v Simulator | head -1
    ```
-   Extract the UDID from the output (format: `00008130-001250203C92001C`).
-
-2. **Ensure llmtemp directory exists**:
+2. Ensure the temp directory exists:
    ```bash
    mkdir -p llmtemp
    ```
-
-3. **Record the start timestamp**:
+3. Record the current timestamp:
    ```bash
    date '+%Y-%m-%d %H:%M:%S' > llmtemp/.device-log-start-time
    ```
-
-4. **Save the device UDID**:
+4. Save the selected device UDID to:
    ```bash
    echo "<UDID>" > llmtemp/.device-log-udid
    ```
+5. Report the start time and device UDID to the user.
+6. Tell the user to reproduce the issue, then use the `stop-logs-device-structured` skill.
 
-5. **Report to the user**:
-   - Confirm that log capture session has been initialized
-   - Display the device name and UDID
-   - Display the start timestamp prominently
-   - Instruct the user: "Start timestamp recorded. Interact with your app on the device, then use `/stop-logs-device-structured` to collect all logs since this time."
-   - Note: `/stop-logs-device-structured` will prompt for your sudo password to collect the logs
-   - The app should already be running on the device
+## Notes
 
-## Important Notes
+- This skill does not start a background process. It only records state for later collection.
+- The app should already be installed and runnable on the target device.
+- The follow-up collection step uses `sudo log collect`, so the user will need interactive sudo access.
 
-- **No background process** - this just records a timestamp
-- The actual log collection happens when you run `/stop-logs-device-structured`
-- **Requires sudo** - `log collect` needs elevated privileges to access device logs
-- The device must be connected via USB or network
-- The device must be trusted and paired with the Mac
-- Works with iOS 12+ devices
+## Related
 
-## How It Works
-
-1. `start-logs-device-structured` - Records current timestamp
-2. *You interact with your app*
-3. `stop-logs-device-structured` - Collects all logs from the device since the recorded timestamp using `sudo log collect`
-
-## Technical Details
-
-- Uses native `log collect` command (most reliable method)
-- Filters logs by subsystem: `com.antonnovoselov.VivaDicta`
-- Creates a `.logarchive` file that can be analyzed with `log show`
-- Supports timestamp-based log collection
-
-## Additional Resources
-
-- [iOS Log Capture Skill](../ios-log-capture/SKILL.md) - Complete log capture reference
-- Apple Developer: `man log` - log command documentation
+- [`stop-logs-device-structured`](../stop-logs-device-structured/SKILL.md)
+- [`ios-log-capture`](../ios-log-capture/SKILL.md)

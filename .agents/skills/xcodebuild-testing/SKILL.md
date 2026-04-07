@@ -191,12 +191,7 @@ xcodebuild -scheme VivaDicta \
 
 ### 2D. Start Log Capture Session
 
-Start log capture using the `/start-logs` command:
-
-```bash
-# Start log capture (see the ios-log-capture skill for details)
-/start-logs
-```
+Start log capture using the `start-logs` skill. See [`ios-log-capture`](../ios-log-capture/SKILL.md) for the full logging workflow.
 
 This will:
 - Automatically detect the booted simulator
@@ -217,16 +212,16 @@ xcodebuild -scheme VivaDicta \
 
 ### 4D. Stop Log Capture and Analyze
 
+Stop capture with the `stop-logs` skill.
+
+Useful follow-up filters:
+- `stop-logs errors`
+- `stop-logs warnings`
+
+Manual analysis remains the same:
+
 ```bash
-# Stop capture and view summary
-/stop-logs
-
-# Or search for specific patterns
-/stop-logs errors          # Show only errors
-/stop-logs warnings        # Show only warnings
-
-# Analyze logs manually
-grep -i "error\|fail\|crash" logs/sim-*.log
+grep -i "error\\|fail\\|crash" logs/sim-*.log
 grep "test" logs/sim-*.log
 ```
 

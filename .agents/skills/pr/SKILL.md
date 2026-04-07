@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Create a GitHub Pull Request with proper title, description, and branch management
+description: Create a GitHub Pull Request in Claude Code with Claude review request and built-in polling workflow
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,9 @@ disable-model-invocation: true
 You are given the following context:
 $ARGUMENTS
 
-## Task: Create a GitHub Pull Request
+## Task: Create a GitHub Pull Request in Claude Code
+
+This skill is the Claude Code-specific PR workflow. In Codex, use `$prcdx` instead.
 
 Based on the provided context, create a pull request following these steps:
 
