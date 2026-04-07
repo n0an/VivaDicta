@@ -37,6 +37,11 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.audioRetentionDays)
     private var audioRetentionDays = 7
 
+    @AppStorage(UserDefaultsStorage.Keys.isAutoNoteCleanupEnabled)
+    private var isAutoNoteCleanupEnabled = false
+    @AppStorage(UserDefaultsStorage.Keys.noteRetentionDays)
+    private var noteRetentionDays = 7
+
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
     @State private var showRestartAlert = false
@@ -292,21 +297,24 @@ struct SettingsView: View {
 
                 Section("Storage") {
 
-                    Toggle(isOn: $isAutoAudioCleanupEnabled) {
+                    Toggle(isOn: $isAutoNoteCleanupEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Automatic Audio Cleanup")
+                            Text("Auto-delete Notes")
                                 .font(.body)
-                            Text("Automatically delete old audio files to save space")
+                            Text("Automatically delete old notes and their audio files")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .onChange(of: isAutoAudioCleanupEnabled) { _, _ in
+                    .onChange(of: isAutoNoteCleanupEnabled) { _, newValue in
                         HapticManager.selectionChanged()
+                        if newValue {
+                            isAutoAudioCleanupEnabled = false
+                        }
                     }
 
-                    if isAutoAudioCleanupEnabled {
-                        Picker("Keep Audio Files For", selection: $audioRetentionDays) {
+                    if isAutoNoteCleanupEnabled {
+                        Picker("Keep Notes For", selection: $noteRetentionDays) {
                             Text("1 day").tag(1)
                             Text("3 days").tag(3)
                             Text("7 days").tag(7)
@@ -316,8 +324,39 @@ struct SettingsView: View {
                         .pickerStyle(.menu)
                         .padding(.leading)
                         .tint(.primary)
-                        .onChange(of: audioRetentionDays) { _, _ in
+                        .onChange(of: noteRetentionDays) { _, _ in
                             HapticManager.selectionChanged()
+                        }
+                    }
+
+                    if !isAutoNoteCleanupEnabled {
+                        Toggle(isOn: $isAutoAudioCleanupEnabled) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Automatic Audio Cleanup")
+                                    .font(.body)
+                                Text("Automatically delete old audio files to save space")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .onChange(of: isAutoAudioCleanupEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+
+                        if isAutoAudioCleanupEnabled {
+                            Picker("Keep Audio Files For", selection: $audioRetentionDays) {
+                                Text("1 day").tag(1)
+                                Text("3 days").tag(3)
+                                Text("7 days").tag(7)
+                                Text("14 days").tag(14)
+                                Text("30 days").tag(30)
+                            }
+                            .pickerStyle(.menu)
+                            .padding(.leading)
+                            .tint(.primary)
+                            .onChange(of: audioRetentionDays) { _, _ in
+                                HapticManager.selectionChanged()
+                            }
                         }
                     }
                 }
