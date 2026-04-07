@@ -1748,6 +1748,8 @@ class AIService {
             return await verifySonioxAPIKey(key)
         case .cohere:
             return await verifyCohereAPIKey(key)
+        case .cerebras:
+            return await verifyCerebrasAPIKey(key)
         case .vercelAIGateway:
             return await verifyVercelAIGatewayAPIKey(key)
         case .huggingFace:
@@ -1802,6 +1804,40 @@ class AIService {
         }
     }
     
+    private func verifyCerebrasAPIKey(_ key: String) async -> Bool {
+        let url = URL(string: "https://api.cerebras.ai/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        logger.logNotice("🔑 Verifying API key for cerebras provider at \(url.absoluteString)")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                logger.logNotice("🔑 API key verification failed for cerebras: Invalid response")
+                return false
+            }
+
+            let isValid = httpResponse.statusCode == 200
+
+            if !isValid {
+                if let exactAPIError = String(data: data, encoding: .utf8) {
+                    logger.logNotice("🔑 API key verification failed for cerebras - Status: \(httpResponse.statusCode) - \(exactAPIError)")
+                } else {
+                    logger.logNotice("🔑 API key verification failed for cerebras - Status: \(httpResponse.statusCode)")
+                }
+            }
+
+            return isValid
+
+        } catch {
+            logger.logNotice("🔑 API key verification failed for cerebras: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     private func verifyAnthropicAPIKey(_ key: String) async -> Bool {
         let url = URL(string: AIProvider.anthropic.baseURL)!
         var request = URLRequest(url: url)

@@ -252,7 +252,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .apple:
             return "foundation-model"
         case .cerebras:
-            return "gpt-oss-120b"
+            return "llama3.1-8b"
         case .groq:
             return "openai/gpt-oss-120b"
         case .gemini:
