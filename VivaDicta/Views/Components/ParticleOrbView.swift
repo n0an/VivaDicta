@@ -95,22 +95,26 @@ struct ParticleOrbView: View {
     // MARK: - Color Mapping
 
     private static func particleColor(for power: Double, seed: Double) -> Color {
-        // Blend between color tiers based on power
-        let shift = (seed - 0.5) * 0.15 // slight per-particle variation
-        let p = min(1, max(0, power + shift))
+        // Apply curve to make colors reach "hot" faster
+        let boosted = min(1, pow(power, 0.55))
+        let shift = (seed - 0.5) * 0.12
+        let p = min(1, max(0, boosted + shift))
 
-        if p < 0.25 {
-            let t = p / 0.25
+        if p < 0.2 {
+            let t = p / 0.2
             return blend(.blue, .cyan, t: t)
-        } else if p < 0.5 {
-            let t = (p - 0.25) / 0.25
+        } else if p < 0.4 {
+            let t = (p - 0.2) / 0.2
             return blend(.cyan, .green, t: t)
-        } else if p < 0.75 {
-            let t = (p - 0.5) / 0.25
+        } else if p < 0.6 {
+            let t = (p - 0.4) / 0.2
             return blend(.green, .yellow, t: t)
-        } else {
-            let t = (p - 0.75) / 0.25
+        } else if p < 0.8 {
+            let t = (p - 0.6) / 0.2
             return blend(.yellow, .orange, t: t)
+        } else {
+            let t = (p - 0.8) / 0.2
+            return blend(.orange, .red, t: t)
         }
     }
 
