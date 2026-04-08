@@ -95,10 +95,11 @@ struct ParticleOrbView: View {
     // MARK: - Color Mapping
 
     private static func particleColor(for power: Double, seed: Double) -> Color {
-        // pow(0.3) makes the curve very aggressive — pink at ~0.35 raw power
+        // Each particle picks a color from 0...power range based on its seed
+        // At low power, all particles cluster in cool colors
+        // At high power, the range opens up — some stay cool, others reach pink
         let boosted = min(1, pow(power, 0.3))
-        let shift = (seed - 0.5) * 0.1
-        let p = min(1, max(0, boosted + shift))
+        let p = min(1, max(0, seed * boosted))
 
         if p < 0.25 {
             let t = p / 0.25
@@ -111,7 +112,7 @@ struct ParticleOrbView: View {
             return blend(.yellow, .orange, t: t)
         } else {
             let t = (p - 0.7) / 0.3
-            return blend(.orange, .pink, t: t)
+            return blend(.orange, .red, t: t)
         }
     }
 
