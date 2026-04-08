@@ -8,7 +8,8 @@ If you don't know answer - it's ok to say that you don't know. It's not necessar
 Canonical custom skills live in `.agents/skills/` as directories containing `SKILL.md`. `.claude/skills/` mirrors only Claude-compatible skills for compatibility and should contain only symlinks to `.agents/skills/`. Codex-only skills do not need a `.claude` mirror.
 
 ## Git Commit & PR Guidelines
-- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands
+- NEVER commit and push without asking the user first - always ask "do we need to commit and push at the moment?" before executing git commit or git push commands, unless the user explicitly invokes `$pr` or `$prcdx`
+- Treat `$pr` and `$prcdx` as explicit approval to create a branch if needed, commit, push, and open the PR without separate confirmation
 - When user asks to commit/push, ALWAYS run `git status` first instead of relying on chat context — files may have been modified externally
 - When opening a PR, use `$prcdx` in Codex. In Claude Code, use `/pr`.
 
