@@ -167,13 +167,22 @@ struct AIServiceConfigurationTests {
         #expect(service.currentModeSupportsResponseStreaming == true)
     }
 
-    @Test func currentModeSupportsResponseStreaming_geminiOAuth_returnsFalse() {
+    @Test func currentModeSupportsResponseStreaming_geminiOAuth_returnsTrue() {
         let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-3-flash-preview")
         let service = makeService(withModes: [mode])
         service.selectedModeName = mode.name
         service.isGeminiSignedIn = true
 
-        #expect(service.currentModeSupportsResponseStreaming == false)
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_copilotOAuth_returnsTrue() {
+        let mode = makeMode(aiProvider: .copilot, aiModel: "gpt-4o")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+        service.isCopilotSignedIn = true
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
     }
 
     @Test func openAICompatibleStreamingDelta_extractsContentDelta() {
@@ -190,6 +199,35 @@ struct AIServiceConfigurationTests {
         let delta = AIService.openAICompatibleStreamingDelta(from: line)
 
         #expect(delta == nil)
+    }
+
+    @Test func copilotStreamingDelta_extractsContentDelta() {
+        let line = #"data: {"choices":[{"delta":{"content":"Hello"}}]}"#
+
+        let delta = CopilotAPIClient.streamingDelta(from: line)
+
+        #expect(delta == "Hello")
+    }
+
+    @Test func geminiStreamingText_extractsCandidateText() {
+        let event: [String: Any] = [
+            "response": [
+                "candidates": [
+                    [
+                        "content": [
+                            "parts": [
+                                ["text": "Hello"],
+                                ["text": " world"]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+        let text = GeminiAPIClient.streamingText(from: event)
+
+        #expect(text == "Hello world")
     }
 
     @Test func currentModeSupportsResponseStreaming_anthropicReturnsTrue() {

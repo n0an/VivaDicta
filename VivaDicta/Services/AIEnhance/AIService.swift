@@ -46,6 +46,8 @@ class AIService {
     private enum StreamingRoute {
         case apple
         case anthropic
+        case copilot
+        case geminiOAuth
         case openAIOAuth
         case openAICompatibleCloud
         case ollama
@@ -847,7 +849,7 @@ class AIService {
             return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
         case .gemini:
             if isGeminiSignedIn {
-                return nil
+                return .geminiOAuth
             }
             if VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
                let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
@@ -860,6 +862,8 @@ class AIService {
                 return nil
             }
             return .anthropic
+        case .copilot:
+            return isCopilotSignedIn ? .copilot : nil
         case .ollama:
             return .ollama
         case .customOpenAI:
@@ -867,6 +871,18 @@ class AIService {
         default:
             return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
         }
+    }
+
+    private func finalizeStreamingResult(
+        _ text: String,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async -> String {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filteredText = AIEnhancementOutputFilter.filter(trimmedText)
+        if filteredText != text {
+            await onPartialResponse(filteredText)
+        }
+        return filteredText
     }
 
     private func buildOpenAICompatibleRequestBody(
@@ -976,12 +992,7 @@ class AIService {
             throw EnhancementError.enhancementFailed
         }
 
-        let filteredText = AIEnhancementOutputFilter.filter(aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines))
-        if filteredText != aggregatedText {
-            await onPartialResponse(filteredText)
-        }
-
-        return filteredText
+        return await finalizeStreamingResult(aggregatedText, onPartialResponse: onPartialResponse)
     }
 
     static func openAICompatibleStreamingDelta(from line: String) -> String? {
@@ -1105,12 +1116,7 @@ class AIService {
             throw EnhancementError.enhancementFailed
         }
 
-        let filteredText = AIEnhancementOutputFilter.filter(aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines))
-        if filteredText != aggregatedText {
-            await onPartialResponse(filteredText)
-        }
-
-        return filteredText
+        return await finalizeStreamingResult(aggregatedText, onPartialResponse: onPartialResponse)
     }
 
     private func makeStreamingRequest(
@@ -1161,6 +1167,30 @@ class AIService {
                 apiKey: apiKey,
                 onPartialResponse: onPartialResponse
             )
+        case .copilot:
+            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            let model = selectedMode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : selectedMode.aiModel
+            let result = try await CopilotAPIClient.enhanceStreaming(
+                text: userMsg,
+                systemPrompt: sysMsg,
+                model: model,
+                copilotToken: token,
+                onPartialResult: onPartialResponse
+            )
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+        case .geminiOAuth:
+            let provider = GeminiOAuthProvider()
+            let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+            let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
+            let result = try await GeminiAPIClient.enhanceStreaming(
+                text: userMsg,
+                systemPrompt: sysMsg,
+                model: model,
+                accessToken: token,
+                projectId: projectId,
+                onPartialResult: onPartialResponse
+            )
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .openAIOAuth:
             let provider = OpenAIOAuthProvider()
             let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
@@ -1173,7 +1203,7 @@ class AIService {
                 accountId: accountId,
                 onPartialResult: onPartialResponse
             )
-            return AIEnhancementOutputFilter.filter(result)
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .openAICompatibleCloud:
             guard let apiKey = self.getAPIKey(for: aiProvider) else {
                 throw EnhancementError.notConfigured

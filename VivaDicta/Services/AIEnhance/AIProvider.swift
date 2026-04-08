@@ -133,6 +133,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .apple,
              .anthropic,
              .cerebras,
+             .copilot,
              .groq,
              .gemini,
              .openAI,
