@@ -107,6 +107,10 @@ struct TranscriptionDetailView: View {
         processingState == .transcribing || (processingState == .enhancing && activeStreamingText == nil)
     }
 
+    private var shouldShowStreamingCancelButton: Bool {
+        processingState == .enhancing && streamingVariationPresetId != nil
+    }
+
     private var temporaryGeneratingPreset: Preset? {
         guard let generatingPresetId,
               sortedVariations.contains(where: { $0.presetId == generatingPresetId }) == false else {
@@ -291,6 +295,15 @@ struct TranscriptionDetailView: View {
                         cancelProcessing()
                     }
                 )
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if shouldShowStreamingCancelButton {
+                StreamingCancelButton {
+                    cancelProcessing()
+                }
+                .padding(.bottom, 104)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.default, value: processingState)
@@ -801,6 +814,28 @@ struct TranscriptionDetailView: View {
 }
 
 // MARK: - Configure AI Sheet
+
+private struct StreamingCancelButton: View {
+    let onCancel: () -> Void
+
+    var body: some View {
+        Button("Cancel", systemImage: "xmark.circle.fill") {
+            HapticManager.lightImpact()
+            onCancel()
+        }
+        .font(.subheadline.weight(.medium))
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.thinMaterial)
+        .clipShape(.capsule)
+        .overlay {
+            Capsule()
+                .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+    }
+}
 
 private struct ConfigureAISheet: View {
     let onOpenSettings: () -> Void

@@ -1179,31 +1179,51 @@ class AIService {
             )
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .geminiOAuth:
-            let provider = GeminiOAuthProvider()
-            let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
-            let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
-            let result = try await GeminiAPIClient.enhanceStreaming(
-                text: userMsg,
-                systemPrompt: sysMsg,
-                model: model,
-                accessToken: token,
-                projectId: projectId,
-                onPartialResult: onPartialResponse
-            )
-            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            do {
+                let provider = GeminiOAuthProvider()
+                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
+                let result = try await GeminiAPIClient.enhanceStreaming(
+                    text: userMsg,
+                    systemPrompt: sysMsg,
+                    model: model,
+                    accessToken: token,
+                    projectId: projectId,
+                    onPartialResult: onPartialResponse
+                )
+                return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            } catch let error as EnhancementError {
+                throw error
+            } catch let error as OAuthError {
+                if (VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Gemini OAuth streaming failed, falling back: \(error.localizedDescription)")
+                    break
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
+                }
+            }
         case .openAIOAuth:
-            let provider = OpenAIOAuthProvider()
-            let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
-            let model = selectedMode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : selectedMode.aiModel
-            let result = try await OpenAIOAuthClient.enhance(
-                text: userMsg,
-                systemPrompt: sysMsg,
-                model: model,
-                accessToken: token,
-                accountId: accountId,
-                onPartialResult: onPartialResponse
-            )
-            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            do {
+                let provider = OpenAIOAuthProvider()
+                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let model = selectedMode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : selectedMode.aiModel
+                let result = try await OpenAIOAuthClient.enhance(
+                    text: userMsg,
+                    systemPrompt: sysMsg,
+                    model: model,
+                    accessToken: token,
+                    accountId: accountId,
+                    onPartialResult: onPartialResponse
+                )
+                return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            } catch let error as OAuthError {
+                if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("OpenAI OAuth streaming failed, falling back: \(error.localizedDescription)")
+                    break
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
+                }
+            }
         case .openAICompatibleCloud:
             guard let apiKey = self.getAPIKey(for: aiProvider) else {
                 throw EnhancementError.notConfigured
