@@ -43,6 +43,17 @@ import os
 class AIService {
     private let logger = Logger(category: .aiService)
 
+    private enum StreamingRoute {
+        case apple
+        case anthropic
+        case copilot
+        case geminiOAuth
+        case openAIOAuth
+        case openAICompatibleCloud
+        case ollama
+        case customOpenAI
+    }
+
     /// List of AI providers that have valid API keys or are otherwise available.
     public var connectedProviders: [AIProvider] = []
 
@@ -679,6 +690,17 @@ class AIService {
         lastCapturedClipboard = nil
     }
 
+    /// Returns true when the current mode can produce incremental text updates.
+    public var currentModeSupportsResponseStreaming: Bool {
+        guard selectedMode.aiEnhanceEnabled,
+              let aiProvider = selectedMode.aiProvider,
+              !selectedMode.aiModel.isEmpty else {
+            return false
+        }
+
+        return resolvedStreamingRoute(for: aiProvider) != nil
+    }
+
     // MARK: - Enhance methods
 
     /// Enhances transcribed text using the configured AI provider.
@@ -727,36 +749,35 @@ class AIService {
     ///   - text: The original transcription text to process.
     ///   - preset: The preset containing the prompt instructions.
     /// - Returns: A tuple of the generated text and processing duration.
-    public func generateVariation(text: String, preset: Preset) async throws -> (String, TimeInterval) {
+    public func generateVariation(
+        text: String,
+        preset: Preset,
+        onPartialResult: (@MainActor (String) -> Void)? = nil
+    ) async throws -> (String, TimeInterval) {
         let startTime = Date()
 
-        // Build system message respecting useSystemTemplate (same logic as enhance flow)
-        var customVocabularySection = ""
-        let customVocabularyWords = CustomVocabulary.getTerms()
-        if !customVocabularyWords.isEmpty {
-            let vocabularyString = customVocabularyWords.joined(separator: ", ")
-            customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
-        }
-
-        let systemMessage: String
-        if preset.useSystemTemplate {
-            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
-        } else {
-            systemMessage = preset.promptInstructions + customVocabularySection
-        }
-
-        // Format user text respecting the variation preset's wrapInTranscriptTags
-        let formattedText: String
-        if preset.wrapInTranscriptTags {
-            formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
-        } else {
-            formattedText = text
-        }
+        let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset)
 
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
 
-        var result = try await makeRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: formattedText)
+        let requestResult: String
+        if let onPartialResult, currentModeSupportsResponseStreaming {
+            requestResult = try await makeStreamingRequest(
+                text: text,
+                systemMessage: systemMessage,
+                preFormattedUserMessage: formattedText,
+                onPartialResponse: onPartialResult
+            )
+        } else {
+            requestResult = try await makeRequest(
+                text: text,
+                systemMessage: systemMessage,
+                preFormattedUserMessage: formattedText
+            )
+        }
+
+        var result = requestResult
         if preset.id == "assistant", selectedMode.isAutoTextFormattingEnabled {
             result = TextFormatter.format(result)
         }
@@ -786,6 +807,508 @@ class AIService {
         } else {
             return text
         }
+    }
+
+    private func buildVariationMessages(text: String, preset: Preset) -> (systemMessage: String, userMessage: String) {
+        var customVocabularySection = ""
+        let customVocabularyWords = CustomVocabulary.getTerms()
+        if !customVocabularyWords.isEmpty {
+            let vocabularyString = customVocabularyWords.joined(separator: ", ")
+            customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
+        }
+
+        let systemMessage: String
+        if preset.useSystemTemplate {
+            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
+        } else {
+            systemMessage = preset.promptInstructions + customVocabularySection
+        }
+
+        let userMessage: String
+        if preset.wrapInTranscriptTags {
+            userMessage = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        } else {
+            userMessage = text
+        }
+
+        return (systemMessage, userMessage)
+    }
+
+    private func resolvedStreamingRoute(for aiProvider: AIProvider) -> StreamingRoute? {
+        switch aiProvider {
+        case .apple:
+            return .apple
+        case .openAI:
+            if isOpenAISignedIn {
+                return .openAIOAuth
+            }
+            if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive,
+               let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+                return nil
+            }
+            return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
+        case .gemini:
+            if isGeminiSignedIn {
+                return .geminiOAuth
+            }
+            if VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
+               let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+                return nil
+            }
+            return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
+        case .anthropic:
+            if VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive,
+               let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+                return nil
+            }
+            return .anthropic
+        case .copilot:
+            return isCopilotSignedIn ? .copilot : nil
+        case .ollama:
+            return .ollama
+        case .customOpenAI:
+            return .customOpenAI
+        default:
+            return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
+        }
+    }
+
+    private func finalizeStreamingResult(
+        _ text: String,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async -> String {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filteredText = AIEnhancementOutputFilter.filter(trimmedText)
+        if filteredText != text {
+            await onPartialResponse(filteredText)
+        }
+        return filteredText
+    }
+
+    private func buildOpenAICompatibleRequestBody(
+        modelName: String,
+        systemMessage: String,
+        userMessage: String,
+        stream: Bool
+    ) -> [String: Any] {
+        let messages: [[String: Any]] = [
+            ["role": "system", "content": systemMessage],
+            ["role": "user", "content": userMessage]
+        ]
+
+        var requestBody: [String: Any] = [
+            "model": modelName,
+            "messages": messages,
+            "stream": stream
+        ]
+
+        if modelName.lowercased().hasPrefix("gpt-5") == false {
+            requestBody["temperature"] = 0.3
+        }
+
+        if let reasoningEffort = ReasoningConfig.getReasoningParameter(for: modelName) {
+            requestBody["reasoning_effort"] = reasoningEffort
+        }
+
+        if let extraBody = ReasoningConfig.getExtraBodyParameters(for: modelName) {
+            for (key, value) in extraBody {
+                requestBody[key] = value
+            }
+        }
+
+        return requestBody
+    }
+
+    private func makeOpenAICompatibleStreamingRequest(
+        url: URL,
+        modelName: String,
+        systemMessage: String,
+        userMessage: String,
+        headers: [String: String],
+        timeout: TimeInterval,
+        errorPrefix: String,
+        notFoundMessage: String? = nil,
+        unauthorizedMessage: String? = nil,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = timeout
+
+        for (key, value) in headers {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+
+        let requestBody = buildOpenAICompatibleRequestBody(
+            modelName: modelName,
+            systemMessage: systemMessage,
+            userMessage: userMessage,
+            stream: true
+        )
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        try Task.checkCancellation()
+
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw EnhancementError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+            let errorString = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+
+            switch httpResponse.statusCode {
+            case 401 where unauthorizedMessage != nil:
+                throw EnhancementError.customError(unauthorizedMessage ?? errorString)
+            case 404 where notFoundMessage != nil:
+                throw EnhancementError.customError(notFoundMessage ?? errorString)
+            case 429:
+                throw EnhancementError.rateLimitExceeded
+            case 500...599:
+                throw EnhancementError.serverError
+            default:
+                throw EnhancementError.customError("\(errorPrefix) (HTTP \(httpResponse.statusCode)): \(errorString)")
+            }
+        }
+
+        var aggregatedText = ""
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+
+            if let delta = Self.openAICompatibleStreamingDelta(from: line) {
+                aggregatedText += delta
+                await onPartialResponse(aggregatedText)
+            }
+        }
+
+        guard !aggregatedText.isEmpty else {
+            throw EnhancementError.enhancementFailed
+        }
+
+        return await finalizeStreamingResult(aggregatedText, onPartialResponse: onPartialResponse)
+    }
+
+    static func openAICompatibleStreamingDelta(from line: String) -> String? {
+        guard line.hasPrefix("data:") else {
+            return nil
+        }
+
+        let payload = String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+        guard payload.isEmpty == false, payload != "[DONE]",
+              let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let firstChoice = choices.first else {
+            return nil
+        }
+
+        if let delta = firstChoice["delta"] as? [String: Any] {
+            if let content = delta["content"] as? String, content.isEmpty == false {
+                return content
+            }
+
+            if let contentItems = delta["content"] as? [[String: Any]] {
+                let text = contentItems.compactMap { $0["text"] as? String }.joined()
+                return text.isEmpty ? nil : text
+            }
+        }
+
+        if let text = firstChoice["text"] as? String, text.isEmpty == false {
+            return text
+        }
+
+        return nil
+    }
+
+    private func makeAnthropicStreamingRequest(
+        systemMessage: String,
+        userMessage: String,
+        apiKey: String,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        var request = URLRequest(url: URL(string: AIProvider.anthropic.baseURL)!)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = baseTimeout
+
+        let requestBody: [String: Any] = [
+            "model": selectedMode.aiModel,
+            "max_tokens": 8192,
+            "system": systemMessage,
+            "messages": [
+                ["role": "user", "content": userMessage]
+            ],
+            "stream": true
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        try Task.checkCancellation()
+
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw EnhancementError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+            let errorString = String(data: errorData, encoding: .utf8) ?? "Could not decode error response."
+
+            if httpResponse.statusCode == 429 {
+                throw EnhancementError.rateLimitExceeded
+            } else if (500...599).contains(httpResponse.statusCode) {
+                throw EnhancementError.serverError
+            } else {
+                throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
+            }
+        }
+
+        var aggregatedText = ""
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+
+            guard line.hasPrefix("data: ") else { continue }
+            let payload = String(line.dropFirst(6))
+            guard payload.isEmpty == false,
+                  let data = payload.data(using: .utf8),
+                  let event = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let type = event["type"] as? String else {
+                continue
+            }
+
+            if type == "content_block_delta",
+               let delta = event["delta"] as? [String: Any],
+               let deltaType = delta["type"] as? String,
+               deltaType == "text_delta",
+               let text = delta["text"] as? String,
+               text.isEmpty == false {
+                aggregatedText += text
+                await onPartialResponse(aggregatedText)
+                continue
+            }
+
+            if type == "error",
+               let error = event["error"] as? [String: Any] {
+                let message = (error["message"] as? String) ?? "Anthropic streaming error"
+                let errorType = error["type"] as? String
+                if errorType == "overloaded_error" {
+                    throw EnhancementError.serverError
+                }
+                throw EnhancementError.customError(message)
+            }
+        }
+
+        guard !aggregatedText.isEmpty else {
+            throw EnhancementError.enhancementFailed
+        }
+
+        return await finalizeStreamingResult(aggregatedText, onPartialResponse: onPartialResponse)
+    }
+
+    private func makeStreamingRequest(
+        text: String,
+        systemMessage: String? = nil,
+        preFormattedUserMessage: String? = nil,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        guard let aiProvider = self.selectedMode.aiProvider else {
+            throw EnhancementError.notConfigured
+        }
+
+        guard !text.isEmpty else {
+            await onPartialResponse("")
+            return ""
+        }
+
+        let sysMsg = systemMessage ?? getSystemMessage()
+        let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+        lastSystemMessageSent = sysMsg
+        lastUserMessageSent = userMsg
+
+        switch resolvedStreamingRoute(for: aiProvider) {
+        case .apple:
+            if #available(iOS 26, *) {
+                logger.logDebug("AI Processing - Using Apple Foundation Model streaming")
+                logger.logDebug("AI Processing - System Message: \(sysMsg)")
+                logger.logDebug("AI Processing - User Message: \(userMsg)")
+                return try await appleFoundationModelService.enhanceStreaming(
+                    systemMessage: sysMsg,
+                    userMessage: userMsg,
+                    onPartialResponse: onPartialResponse
+                )
+            } else {
+                throw EnhancementError.notConfigured
+            }
+        case .anthropic:
+            guard let apiKey = self.getAPIKey(for: aiProvider) else {
+                throw EnhancementError.notConfigured
+            }
+
+            logger.logDebug("AI Processing - Using Anthropic streaming")
+            logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+
+            return try await makeAnthropicStreamingRequest(
+                systemMessage: sysMsg,
+                userMessage: userMsg,
+                apiKey: apiKey,
+                onPartialResponse: onPartialResponse
+            )
+        case .copilot:
+            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            let model = selectedMode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : selectedMode.aiModel
+            let result = try await CopilotAPIClient.enhanceStreaming(
+                text: userMsg,
+                systemPrompt: sysMsg,
+                model: model,
+                copilotToken: token,
+                onPartialResult: onPartialResponse
+            )
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+        case .geminiOAuth:
+            do {
+                let provider = GeminiOAuthProvider()
+                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
+                let result = try await GeminiAPIClient.enhanceStreaming(
+                    text: userMsg,
+                    systemPrompt: sysMsg,
+                    model: model,
+                    accessToken: token,
+                    projectId: projectId,
+                    onPartialResult: onPartialResponse
+                )
+                return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            } catch let error as EnhancementError {
+                throw error
+            } catch let error as OAuthError {
+                if (VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Gemini OAuth streaming failed, falling back: \(error.localizedDescription)")
+                    break
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
+                }
+            }
+        case .openAIOAuth:
+            do {
+                let provider = OpenAIOAuthProvider()
+                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let model = selectedMode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : selectedMode.aiModel
+                let result = try await OpenAIOAuthClient.enhance(
+                    text: userMsg,
+                    systemPrompt: sysMsg,
+                    model: model,
+                    accessToken: token,
+                    accountId: accountId,
+                    onPartialResult: onPartialResponse
+                )
+                return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            } catch let error as OAuthError {
+                if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("OpenAI OAuth streaming failed, falling back: \(error.localizedDescription)")
+                    break
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
+                }
+            }
+        case .openAICompatibleCloud:
+            guard let apiKey = self.getAPIKey(for: aiProvider) else {
+                throw EnhancementError.notConfigured
+            }
+
+            logger.logDebug("AI Processing - Using \(aiProvider.displayName) streaming")
+            logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+
+            return try await makeOpenAICompatibleStreamingRequest(
+                url: URL(string: aiProvider.baseURL)!,
+                modelName: selectedMode.aiModel,
+                systemMessage: sysMsg,
+                userMessage: userMsg,
+                headers: ["Authorization": "Bearer \(apiKey)"],
+                timeout: baseTimeout,
+                errorPrefix: "\(aiProvider.displayName) error",
+                onPartialResponse: onPartialResponse
+            )
+        case .ollama:
+            let serverURL = ollamaServerURL
+            guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
+                throw EnhancementError.customError("Invalid Ollama server URL: \(serverURL)")
+            }
+
+            logger.logDebug("AI Processing - Using Ollama streaming at \(serverURL)")
+            logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+
+            return try await makeOpenAICompatibleStreamingRequest(
+                url: url,
+                modelName: selectedMode.aiModel,
+                systemMessage: sysMsg,
+                userMessage: userMsg,
+                headers: [:],
+                timeout: 120,
+                errorPrefix: "Ollama error",
+                notFoundMessage: "Model '\(self.selectedMode.aiModel)' not found. Run 'ollama pull \(self.selectedMode.aiModel)' on your Mac/server to download it.",
+                onPartialResponse: onPartialResponse
+            )
+        case .customOpenAI:
+            let endpointURL = customOpenAIEndpointURL
+            let modelName = customOpenAIModelName
+
+            guard !endpointURL.isEmpty else {
+                throw EnhancementError.customError("Custom AI endpoint URL is not configured")
+            }
+
+            guard !modelName.isEmpty else {
+                throw EnhancementError.customError("Custom AI model name is not configured")
+            }
+
+            guard let url = URL(string: endpointURL) else {
+                throw EnhancementError.customError("Invalid Custom AI endpoint URL: \(endpointURL)")
+            }
+
+            var headers: [String: String] = [:]
+            if let apiKey = getAPIKey(for: .customOpenAI), !apiKey.isEmpty {
+                headers["Authorization"] = "Bearer \(apiKey)"
+            }
+
+            logger.logDebug("AI Processing - Using Custom OpenAI streaming at \(endpointURL)")
+            logger.logDebug("AI Processing - Model: \(modelName)")
+
+            return try await makeOpenAICompatibleStreamingRequest(
+                url: url,
+                modelName: modelName,
+                systemMessage: sysMsg,
+                userMessage: userMsg,
+                headers: headers,
+                timeout: 120,
+                errorPrefix: "Custom AI provider error",
+                notFoundMessage: "Model '\(modelName)' not found on the server.",
+                unauthorizedMessage: "Authentication failed. Check your API key.",
+                onPartialResponse: onPartialResponse
+            )
+        case nil:
+            break
+        }
+
+        let result = try await makeRequest(
+            text: text,
+            systemMessage: systemMessage,
+            preFormattedUserMessage: preFormattedUserMessage
+        )
+        await onPartialResponse(result)
+        return result
     }
 
     private func makeRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
@@ -1060,29 +1583,12 @@ class AIService {
             request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
             request.timeoutInterval = baseTimeout
 
-            let messages: [[String: Any]] = [
-                ["role": "system", "content": resolvedSystemMessage],
-                ["role": "user", "content": formattedText]
-            ]
-
-            var requestBody: [String: Any] = [
-                "model": selectedMode.aiModel,
-                "messages": messages,
-                "temperature": selectedMode.aiModel.lowercased().hasPrefix("gpt-5") ? 1.0 : 0.3,
-                "stream": false
-            ]
-            
-            // Add reasoning_effort parameter if the model supports it
-            if let reasoningEffort = ReasoningConfig.getReasoningParameter(for: selectedMode.aiModel) {
-                requestBody["reasoning_effort"] = reasoningEffort
-            }
-
-            // Add extra body parameters for models that need custom config
-            if let extraBody = ReasoningConfig.getExtraBodyParameters(for: selectedMode.aiModel) {
-                for (key, value) in extraBody {
-                    requestBody[key] = value
-                }
-            }
+            let requestBody = buildOpenAICompatibleRequestBody(
+                modelName: selectedMode.aiModel,
+                systemMessage: resolvedSystemMessage,
+                userMessage: formattedText,
+                stream: false
+            )
 
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
@@ -1195,17 +1701,14 @@ class AIService {
         // No Authorization header needed for Ollama
         request.timeoutInterval = 120 // Longer timeout for local inference
 
-        let requestBody: [String: Any] = [
-            "model": selectedMode.aiModel,
-            "messages": [
-                ["role": "system", "content": systemMessage],
-                ["role": "user", "content": formattedText]
-            ],
-            "temperature": 0.3,
-            "stream": false
-        ]
+        let finalRequestBody = buildOpenAICompatibleRequestBody(
+            modelName: selectedMode.aiModel,
+            systemMessage: systemMessage,
+            userMessage: formattedText,
+            stream: false
+        )
 
-        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+        request.httpBody = try? JSONSerialization.data(withJSONObject: finalRequestBody)
 
         do {
             try Task.checkCancellation()
@@ -1427,15 +1930,12 @@ class AIService {
 
         request.timeoutInterval = 120 // Longer timeout for potentially slow endpoints
 
-        let requestBody: [String: Any] = [
-            "model": modelName,
-            "messages": [
-                ["role": "system", "content": systemMessage],
-                ["role": "user", "content": formattedText]
-            ],
-            "temperature": 0.3,
-            "stream": false
-        ]
+        let requestBody = buildOpenAICompatibleRequestBody(
+            modelName: modelName,
+            systemMessage: systemMessage,
+            userMessage: formattedText,
+            stream: false
+        )
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 

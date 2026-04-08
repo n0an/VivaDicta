@@ -27,6 +27,10 @@ enum HapticManager {
 
     // MARK: - Settings
 
+    /// Throttle interval for incremental streaming pulses.
+    private static let streamingPulseMinimumInterval: TimeInterval = 0.1
+    private static var lastStreamingPulseAt: TimeInterval = 0
+
     /// Check if haptics are enabled in app settings (defaults to true if not set)
     private static var isEnabled: Bool {
         // Use object(forKey:) to distinguish between "not set" and "set to false"
@@ -184,6 +188,26 @@ enum HapticManager {
         impactHeavy.impactOccurred()
     }
 
+    /// Stronger pulse when streaming visibly begins.
+    static func streamingStart() {
+        guard isEnabled else { return }
+        lastStreamingPulseAt = CACurrentMediaTime()
+        impactMedium.impactOccurred(intensity: 0.75)
+        impactLight.prepare()
+    }
+
+    /// Chatty pulse - for incremental streaming text updates.
+    static func streamingPulse() {
+        guard isEnabled else { return }
+
+        let now = CACurrentMediaTime()
+        guard now - lastStreamingPulseAt >= streamingPulseMinimumInterval else { return }
+
+        lastStreamingPulseAt = now
+        impactLight.impactOccurred(intensity: 0.65)
+        impactLight.prepare()
+    }
+
     // MARK: - Selection Feedback
 
     /// Selection changed - for pickers, toggles, select all/deselect all, item selection
@@ -217,5 +241,12 @@ enum HapticManager {
         impactMedium.prepare()
         notification.prepare()
         ensureEngineRunning()
+    }
+
+    /// Prepare the softer generator used for streaming updates.
+    static func prepareStreaming() {
+        guard isEnabled else { return }
+        impactMedium.prepare()
+        impactLight.prepare()
     }
 }

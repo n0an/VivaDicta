@@ -140,6 +140,104 @@ struct AIServiceConfigurationTests {
         #expect(service.isProperlyConfigured() == false)
     }
 
+    // MARK: - Streaming Capability Tests
+
+    @Test func currentModeSupportsResponseStreaming_appleMode_returnsTrue() {
+        let mode = makeMode(aiProvider: .apple, aiModel: "foundation-model")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_openAIAPIKeyMode_returnsTrue() {
+        let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5-mini")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_openAIOAuth_returnsTrue() {
+        let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5.4-mini")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+        service.isOpenAISignedIn = true
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_geminiOAuth_returnsTrue() {
+        let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-3-flash-preview")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+        service.isGeminiSignedIn = true
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_copilotOAuth_returnsTrue() {
+        let mode = makeMode(aiProvider: .copilot, aiModel: "gpt-4o")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+        service.isCopilotSignedIn = true
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func openAICompatibleStreamingDelta_extractsContentDelta() {
+        let line = #"data: {"choices":[{"delta":{"content":"Hello"}}]}"#
+
+        let delta = AIService.openAICompatibleStreamingDelta(from: line)
+
+        #expect(delta == "Hello")
+    }
+
+    @Test func openAICompatibleStreamingDelta_ignoresDoneSentinel() {
+        let line = "data: [DONE]"
+
+        let delta = AIService.openAICompatibleStreamingDelta(from: line)
+
+        #expect(delta == nil)
+    }
+
+    @Test func copilotStreamingDelta_extractsContentDelta() {
+        let line = #"data: {"choices":[{"delta":{"content":"Hello"}}]}"#
+
+        let delta = CopilotAPIClient.streamingDelta(from: line)
+
+        #expect(delta == "Hello")
+    }
+
+    @Test func geminiStreamingText_extractsCandidateText() {
+        let event: [String: Any] = [
+            "response": [
+                "candidates": [
+                    [
+                        "content": [
+                            "parts": [
+                                ["text": "Hello"],
+                                ["text": " world"]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+        let text = GeminiAPIClient.streamingText(from: event)
+
+        #expect(text == "Hello world")
+    }
+
+    @Test func currentModeSupportsResponseStreaming_anthropicReturnsTrue() {
+        let mode = makeMode(aiProvider: .anthropic, aiModel: "claude-sonnet-4-6")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
     // MARK: - Disable Modes by Provider Tests
 
     @Test func disableAIForModesUsingProvider_onlyAffectsMatchingModes() {

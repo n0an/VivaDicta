@@ -39,6 +39,34 @@ enum CopilotAPIClient {
         }
     }
 
+    static func enhanceStreaming(
+        text: String,
+        systemPrompt: String,
+        model: String,
+        copilotToken: String,
+        onPartialResult: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        let effectiveModel = model.isEmpty ? defaultModel : model
+
+        if isClaudeModel(effectiveModel) {
+            return try await enhanceWithAnthropicStreaming(
+                text: text,
+                systemPrompt: systemPrompt,
+                model: effectiveModel,
+                token: copilotToken,
+                onPartialResult: onPartialResult
+            )
+        } else {
+            return try await enhanceWithOpenAIStreaming(
+                text: text,
+                systemPrompt: systemPrompt,
+                model: effectiveModel,
+                token: copilotToken,
+                onPartialResult: onPartialResult
+            )
+        }
+    }
+
     private static func isClaudeModel(_ model: String) -> Bool {
         model.hasPrefix("claude-")
     }
@@ -80,6 +108,44 @@ enum CopilotAPIClient {
         return try await executeRequest(request)
     }
 
+    private static func enhanceWithAnthropicStreaming(
+        text: String,
+        systemPrompt: String,
+        model: String,
+        token: String,
+        onPartialResult: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        guard let url = URL(string: "\(baseURL)/chat/completions") else {
+            throw CopilotOAuthError.tokenExchangeFailed("Invalid URL")
+        }
+
+        logger.logInfo("Copilot streaming: using Claude model '\(model)'")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 60
+
+        for (key, value) in staticHeaders {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+
+        let requestBody: [String: Any] = [
+            "model": model,
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": text]
+            ],
+            "max_tokens": 8192,
+            "stream": true
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        return try await executeStreamingRequest(request, onPartialResult: onPartialResult)
+    }
+
     // MARK: - OpenAI API (for GPT, Gemini, Grok models)
 
     private static func enhanceWithOpenAI(
@@ -116,6 +182,43 @@ enum CopilotAPIClient {
         return try await executeRequest(request)
     }
 
+    private static func enhanceWithOpenAIStreaming(
+        text: String,
+        systemPrompt: String,
+        model: String,
+        token: String,
+        onPartialResult: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        guard let url = URL(string: "\(baseURL)/chat/completions") else {
+            throw CopilotOAuthError.tokenExchangeFailed("Invalid URL")
+        }
+
+        logger.logInfo("Copilot streaming: using model '\(model)'")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 60
+
+        for (key, value) in staticHeaders {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+
+        let requestBody: [String: Any] = [
+            "model": model,
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": text]
+            ],
+            "stream": true
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        return try await executeStreamingRequest(request, onPartialResult: onPartialResult)
+    }
+
     // MARK: - Shared Response Handling
 
     private static func executeRequest(_ request: URLRequest) async throws -> String {
@@ -144,6 +247,84 @@ enum CopilotAPIClient {
         }
 
         return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func executeStreamingRequest(
+        _ request: URLRequest,
+        onPartialResult: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        try Task.checkCancellation()
+
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+
+            let errorBody = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            logger.logError("Copilot streaming error: HTTP \(httpResponse.statusCode) - \(errorBody)")
+            if httpResponse.statusCode == 429 {
+                throw EnhancementError.customError("Copilot rate limit reached. Please wait and try again.")
+            }
+            throw CopilotOAuthError.tokenExchangeFailed("HTTP \(httpResponse.statusCode): \(errorBody)")
+        }
+
+        var aggregatedText = ""
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+
+            if let delta = streamingDelta(from: line) {
+                aggregatedText += delta
+                await onPartialResult(aggregatedText)
+            }
+        }
+
+        guard !aggregatedText.isEmpty else {
+            throw CopilotOAuthError.tokenExchangeFailed("Invalid response format")
+        }
+
+        let finalResult = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        await onPartialResult(finalResult)
+        return finalResult
+    }
+
+    static func streamingDelta(from line: String) -> String? {
+        guard line.hasPrefix("data:") else {
+            return nil
+        }
+
+        let payload = String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+        guard payload.isEmpty == false,
+              payload != "[DONE]",
+              let data = payload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let firstChoice = choices.first else {
+            return nil
+        }
+
+        if let delta = firstChoice["delta"] as? [String: Any] {
+            if let content = delta["content"] as? String, content.isEmpty == false {
+                return content
+            }
+
+            if let contentItems = delta["content"] as? [[String: Any]] {
+                let text = contentItems.compactMap { $0["text"] as? String }.joined()
+                return text.isEmpty ? nil : text
+            }
+        }
+
+        if let text = firstChoice["text"] as? String, text.isEmpty == false {
+            return text
+        }
+
+        return nil
     }
 
     // MARK: - Fetch Available Models
