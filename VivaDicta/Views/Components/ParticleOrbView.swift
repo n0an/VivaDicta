@@ -95,26 +95,23 @@ struct ParticleOrbView: View {
     // MARK: - Color Mapping
 
     private static func particleColor(for power: Double, seed: Double) -> Color {
-        // Apply curve to make colors reach "hot" faster
-        let boosted = min(1, pow(power, 0.55))
-        let shift = (seed - 0.5) * 0.12
+        // pow(0.3) makes the curve very aggressive — pink at ~0.35 raw power
+        let boosted = min(1, pow(power, 0.3))
+        let shift = (seed - 0.5) * 0.1
         let p = min(1, max(0, boosted + shift))
 
-        if p < 0.2 {
-            let t = p / 0.2
-            return blend(.blue, .cyan, t: t)
-        } else if p < 0.4 {
-            let t = (p - 0.2) / 0.2
+        if p < 0.25 {
+            let t = p / 0.25
             return blend(.cyan, .green, t: t)
-        } else if p < 0.6 {
-            let t = (p - 0.4) / 0.2
+        } else if p < 0.5 {
+            let t = (p - 0.25) / 0.25
             return blend(.green, .yellow, t: t)
-        } else if p < 0.8 {
-            let t = (p - 0.6) / 0.2
+        } else if p < 0.7 {
+            let t = (p - 0.5) / 0.2
             return blend(.yellow, .orange, t: t)
         } else {
-            let t = (p - 0.8) / 0.2
-            return blend(.orange, .red, t: t)
+            let t = (p - 0.7) / 0.3
+            return blend(.orange, .pink, t: t)
         }
     }
 
@@ -158,18 +155,18 @@ private struct Firefly {
     func position(at elapsed: Double, power: Double, center: CGPoint) -> CGPoint {
         let t = elapsed + phaseOffset
 
-        // Orbit — base speed only, power doesn't multiply time to avoid jumps
+        // Orbit — constant speed, no power scaling on time
         let currentAngle = baseAngle + angularSpeed * t
 
         // Base radius expands with power
         let radius = baseRadius * (0.6 + power * 0.8)
 
-        // Radial wander — particles drift further out with power
-        let wanderScale = 1.0 + power * 2.5
+        // Radial wander — amplitude grows with power so particles scatter further
+        let wanderScale = 1.0 + power * 3.0
         let radialOffset = wanderAmplitude * wanderScale * sin(wanderFrequency * t + wanderPhase)
 
-        // Tangential wander for organic feel
-        let tangOffset = tangentialWander * (0.5 + power * 1.0) * sin(wanderFrequency * 0.7 * t + tangentialPhase)
+        // Tangential wander — amplitude grows with power for more lateral drift
+        let tangOffset = tangentialWander * (0.5 + power * 2.0) * sin(wanderFrequency * 0.7 * t + tangentialPhase)
 
         let finalRadius = radius + radialOffset
         let finalAngle = currentAngle + tangOffset / max(finalRadius, 1)
