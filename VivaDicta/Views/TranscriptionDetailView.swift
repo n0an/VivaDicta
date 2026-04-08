@@ -699,6 +699,9 @@ struct TranscriptionDetailView: View {
         streamingVariationPresetId = shouldStreamResponse ? preset.id : nil
         streamingVariationText = ""
         HapticManager.lightImpact()
+        if shouldStreamResponse {
+            HapticManager.prepareStreaming()
+        }
 
         withAnimation(.easeInOut(duration: 0.15)) {
             selectedChipId = preset.id
@@ -714,6 +717,9 @@ struct TranscriptionDetailView: View {
                         text: transcription.text,
                         preset: preset,
                         onPartialResult: { partialText in
+                            if partialText.count > streamingVariationText.count {
+                                HapticManager.streamingPulse()
+                            }
                             streamingVariationText = partialText
                         }
                     )
