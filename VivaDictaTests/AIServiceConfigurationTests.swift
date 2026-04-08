@@ -140,6 +140,24 @@ struct AIServiceConfigurationTests {
         #expect(service.isProperlyConfigured() == false)
     }
 
+    // MARK: - Streaming Capability Tests
+
+    @Test func currentModeSupportsResponseStreaming_appleMode_returnsTrue() {
+        let mode = makeMode(aiProvider: .apple, aiModel: "foundation-model")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_cloudMode_returnsFalse() {
+        let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5-mini")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+
+        #expect(service.currentModeSupportsResponseStreaming == false)
+    }
+
     // MARK: - Disable Modes by Provider Tests
 
     @Test func disableAIForModesUsingProvider_onlyAffectsMatchingModes() {

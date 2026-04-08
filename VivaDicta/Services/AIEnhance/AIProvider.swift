@@ -127,6 +127,16 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         self == .apple || self == .customOpenAI
     }
 
+    /// Returns true when the selected model can stream text responses incrementally.
+    func supportsResponseStreaming(model: String) -> Bool {
+        switch self {
+        case .apple:
+            true
+        default:
+            false
+        }
+    }
+
     /// URL to obtain an API key for this provider.
     var apiKeyURL: URL? {
         switch self {

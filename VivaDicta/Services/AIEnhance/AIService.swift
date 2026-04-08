@@ -679,6 +679,17 @@ class AIService {
         lastCapturedClipboard = nil
     }
 
+    /// Returns true when the current mode can produce incremental text updates.
+    public var currentModeSupportsResponseStreaming: Bool {
+        guard selectedMode.aiEnhanceEnabled,
+              let aiProvider = selectedMode.aiProvider,
+              !selectedMode.aiModel.isEmpty else {
+            return false
+        }
+
+        return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel)
+    }
+
     // MARK: - Enhance methods
 
     /// Enhances transcribed text using the configured AI provider.
@@ -727,36 +738,35 @@ class AIService {
     ///   - text: The original transcription text to process.
     ///   - preset: The preset containing the prompt instructions.
     /// - Returns: A tuple of the generated text and processing duration.
-    public func generateVariation(text: String, preset: Preset) async throws -> (String, TimeInterval) {
+    public func generateVariation(
+        text: String,
+        preset: Preset,
+        onPartialResult: (@MainActor (String) -> Void)? = nil
+    ) async throws -> (String, TimeInterval) {
         let startTime = Date()
 
-        // Build system message respecting useSystemTemplate (same logic as enhance flow)
-        var customVocabularySection = ""
-        let customVocabularyWords = CustomVocabulary.getTerms()
-        if !customVocabularyWords.isEmpty {
-            let vocabularyString = customVocabularyWords.joined(separator: ", ")
-            customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
-        }
-
-        let systemMessage: String
-        if preset.useSystemTemplate {
-            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
-        } else {
-            systemMessage = preset.promptInstructions + customVocabularySection
-        }
-
-        // Format user text respecting the variation preset's wrapInTranscriptTags
-        let formattedText: String
-        if preset.wrapInTranscriptTags {
-            formattedText = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
-        } else {
-            formattedText = text
-        }
+        let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset)
 
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
 
-        var result = try await makeRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: formattedText)
+        let requestResult: String
+        if let onPartialResult, currentModeSupportsResponseStreaming {
+            requestResult = try await makeStreamingRequest(
+                text: text,
+                systemMessage: systemMessage,
+                preFormattedUserMessage: formattedText,
+                onPartialResponse: onPartialResult
+            )
+        } else {
+            requestResult = try await makeRequest(
+                text: text,
+                systemMessage: systemMessage,
+                preFormattedUserMessage: formattedText
+            )
+        }
+
+        var result = requestResult
         if preset.id == "assistant", selectedMode.isAutoTextFormattingEnabled {
             result = TextFormatter.format(result)
         }
@@ -786,6 +796,74 @@ class AIService {
         } else {
             return text
         }
+    }
+
+    private func buildVariationMessages(text: String, preset: Preset) -> (systemMessage: String, userMessage: String) {
+        var customVocabularySection = ""
+        let customVocabularyWords = CustomVocabulary.getTerms()
+        if !customVocabularyWords.isEmpty {
+            let vocabularyString = customVocabularyWords.joined(separator: ", ")
+            customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
+        }
+
+        let systemMessage: String
+        if preset.useSystemTemplate {
+            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
+        } else {
+            systemMessage = preset.promptInstructions + customVocabularySection
+        }
+
+        let userMessage: String
+        if preset.wrapInTranscriptTags {
+            userMessage = "\n<TRANSCRIPT>\n\(text)\n</TRANSCRIPT>"
+        } else {
+            userMessage = text
+        }
+
+        return (systemMessage, userMessage)
+    }
+
+    private func makeStreamingRequest(
+        text: String,
+        systemMessage: String? = nil,
+        preFormattedUserMessage: String? = nil,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        guard let aiProvider = self.selectedMode.aiProvider else {
+            throw EnhancementError.notConfigured
+        }
+
+        guard !text.isEmpty else {
+            await onPartialResponse("")
+            return ""
+        }
+
+        if aiProvider == .apple {
+            if #available(iOS 26, *) {
+                let sysMsg = systemMessage ?? getSystemMessage()
+                let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+                logger.logDebug("AI Processing - Using Apple Foundation Model streaming")
+                logger.logDebug("AI Processing - System Message: \(sysMsg)")
+                logger.logDebug("AI Processing - User Message: \(userMsg)")
+                lastSystemMessageSent = sysMsg
+                lastUserMessageSent = userMsg
+                return try await appleFoundationModelService.enhanceStreaming(
+                    systemMessage: sysMsg,
+                    userMessage: userMsg,
+                    onPartialResponse: onPartialResponse
+                )
+            } else {
+                throw EnhancementError.notConfigured
+            }
+        }
+
+        let result = try await makeRequest(
+            text: text,
+            systemMessage: systemMessage,
+            preFormattedUserMessage: preFormattedUserMessage
+        )
+        await onPartialResponse(result)
+        return result
     }
 
     private func makeRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {

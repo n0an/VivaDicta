@@ -80,6 +80,77 @@ final class AppleFoundationModelService {
         }
     }
 
+    /// Enhance text using Apple's on-device Foundation Model while streaming partial updates.
+    /// - Parameters:
+    ///   - systemMessage: The system message (same as cloud providers)
+    ///   - userMessage: The formatted user message (transcript, optionally wrapped in tags)
+    ///   - onPartialResponse: Called with the latest partial response snapshot.
+    /// - Returns: The final enhanced text
+    func enhanceStreaming(
+        systemMessage: String,
+        userMessage: String,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        guard AppleFoundationModelAvailability.isAvailable else {
+            throw AppleFoundationModelError.notAvailable
+        }
+
+        guard !userMessage.isEmpty else {
+            onPartialResponse("")
+            return ""
+        }
+
+        logger.logNotice("Apple Foundation Model - Starting streaming enhancement")
+
+        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+        let session = LanguageModelSession(model: model, instructions: systemMessage)
+        let prompt = Prompt { userMessage }
+
+        do {
+            let options = GenerationOptions(sampling: .greedy)
+            let stream = session.streamResponse(to: prompt, options: options)
+
+            for try await partialResponse in stream {
+                onPartialResponse(partialResponse.content)
+            }
+
+            let response = try await stream.collect()
+            let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
+            onPartialResponse(filteredText)
+            logger.logNotice("Apple Foundation Model - Streaming enhancement completed")
+
+            #if DEBUG
+            logTranscript(session)
+            #endif
+
+            return filteredText
+        } catch is CancellationError {
+            logger.logInfo("Apple Foundation Model - Streaming enhancement cancelled")
+            throw CancellationError()
+        } catch let error as LanguageModelSession.GenerationError {
+            logger.logError("Apple Foundation Model streaming generation error: \(error.localizedDescription)")
+
+            #if DEBUG
+            logTranscript(session)
+            #endif
+
+            switch error {
+            case .guardrailViolation(let context):
+                logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
+                throw AppleFoundationModelError.guardrailViolation
+            case .exceededContextWindowSize:
+                logger.logWarning("Context window size exceeded")
+                throw AppleFoundationModelError.generationFailed("Context window size exceeded")
+            default:
+                throw AppleFoundationModelError.generationFailed(error.localizedDescription)
+            }
+        } catch {
+            logger.logError("Apple Foundation Model streaming unexpected error: \(error.localizedDescription)")
+            throw AppleFoundationModelError.generationFailed(error.localizedDescription)
+        }
+    }
+
     // MARK: - Debug
 
     #if DEBUG

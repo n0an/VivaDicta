@@ -29,6 +29,8 @@ struct TranscriptionDetailView: View {
     @State private var showMetaInfo: Bool = false
     @State private var showConfigureAI: Bool = false
     @State private var generatingPresetId: String?
+    @State private var streamingVariationPresetId: String?
+    @State private var streamingVariationText: String = ""
     @State private var showTextEditor: Bool = false
     @State private var showTagPicker: Bool = false
 
@@ -42,6 +44,10 @@ struct TranscriptionDetailView: View {
 
     private var hasVariations: Bool {
         !(transcription.variations ?? []).isEmpty
+    }
+
+    private var showsVariationChipBar: Bool {
+        hasVariations || temporaryGeneratingPreset != nil
     }
 
     private var displayedText: String {
@@ -60,6 +66,10 @@ struct TranscriptionDetailView: View {
 
     private var selectedLabel: String {
         if selectedChipId == "original" { return "Original" }
+        if generatingPresetId == selectedChipId,
+           let preset = appState.presetManager.preset(for: selectedChipId) {
+            return preset.name
+        }
         if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
             return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
         }
@@ -78,6 +88,28 @@ struct TranscriptionDetailView: View {
 
     private var canRetranscribe: Bool {
         audioURL != nil && processingState == .idle
+    }
+
+    private var activeStreamingText: String? {
+        guard processingState == .enhancing,
+              streamingVariationPresetId == selectedChipId else {
+            return nil
+        }
+
+        return streamingVariationText
+    }
+
+    private var shouldShowProcessingHUD: Bool {
+        processingState == .transcribing || (processingState == .enhancing && activeStreamingText == nil)
+    }
+
+    private var temporaryGeneratingPreset: Preset? {
+        guard let generatingPresetId,
+              sortedVariations.contains(where: { $0.presetId == generatingPresetId }) == false else {
+            return nil
+        }
+
+        return appState.presetManager.preset(for: generatingPresetId)
     }
 
     var body: some View {
@@ -105,7 +137,7 @@ struct TranscriptionDetailView: View {
                 }
 
                 // Chip bar for text variations
-                if hasVariations {
+                if showsVariationChipBar {
                     variationChipBar
                         .padding(.top, 4)
                         .padding(.bottom, 12)
@@ -220,13 +252,13 @@ struct TranscriptionDetailView: View {
         .animation(.easeInOut, value: processingState)
         .allowsHitTesting(processingState == .idle)
         .overlay {
-            if processingState == .transcribing || processingState == .enhancing {
+            if shouldShowProcessingHUD {
                 GeometryReader { geometry in
                     AnimatedMeshGradient()
                         .onAppear {
                             rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
                                 Task { @MainActor in
-                                    if processingState == .transcribing || processingState == .enhancing {
+                                    if shouldShowProcessingHUD {
                                         rippleEffectTrigger.toggle()
                                     }
                                 }
@@ -248,7 +280,7 @@ struct TranscriptionDetailView: View {
             }
         }
         .overlay {
-            if processingState == .transcribing || processingState == .enhancing {
+            if shouldShowProcessingHUD {
                 HudView(
                     state: processingState,
                     onCancel: {
@@ -278,7 +310,21 @@ struct TranscriptionDetailView: View {
 
     private var textContentView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if processingState != .idle {
+            if let activeStreamingText {
+                if activeStreamingText.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ProgressView()
+                        Text("Generating variation...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text(activeStreamingText)
+                        .font(.system(size: 16, weight: .regular, design: .default))
+                        .lineSpacing(2)
+                        .textSelection(.enabled)
+                }
+            } else if processingState != .idle {
                 // Lightweight placeholder to avoid expensive CoreText layout on large text
                 Text("The art of writing is the art of discovering what you believe. Every word you speak is a seed, and every thought refined becomes a garden of clarity and understanding.")
                     .font(.system(size: 16, weight: .regular, design: .default))
@@ -476,6 +522,7 @@ struct TranscriptionDetailView: View {
     private func cancelProcessing() {
         processingTask?.cancel()
         processingTask = nil
+        resetStreamingState()
         processingState = .idle
     }
 
@@ -552,6 +599,15 @@ struct TranscriptionDetailView: View {
                         label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
                         icon: PresetCatalog.icon(for: variation.presetId),
                         isLoading: generatingPresetId == variation.presetId
+                    )
+                }
+
+                if let temporaryGeneratingPreset {
+                    variationChip(
+                        id: temporaryGeneratingPreset.id,
+                        label: temporaryGeneratingPreset.name,
+                        icon: PresetCatalog.icon(for: temporaryGeneratingPreset.id),
+                        isLoading: true
                     )
                 }
 
@@ -634,7 +690,10 @@ struct TranscriptionDetailView: View {
     }
 
     private func generateVariation(preset: Preset) {
+        let shouldStreamResponse = appState.aiService.currentModeSupportsResponseStreaming
         generatingPresetId = preset.id
+        streamingVariationPresetId = shouldStreamResponse ? preset.id : nil
+        streamingVariationText = ""
         HapticManager.lightImpact()
 
         withAnimation(.easeInOut(duration: 0.15)) {
@@ -645,10 +704,21 @@ struct TranscriptionDetailView: View {
             processingState = .enhancing
 
             do {
-                let (resultText, duration) = try await appState.aiService.generateVariation(
-                    text: transcription.text,
-                    preset: preset
-                )
+                let (resultText, duration): (String, TimeInterval)
+                if shouldStreamResponse {
+                    (resultText, duration) = try await appState.aiService.generateVariation(
+                        text: transcription.text,
+                        preset: preset,
+                        onPartialResult: { partialText in
+                            streamingVariationText = partialText
+                        }
+                    )
+                } else {
+                    (resultText, duration) = try await appState.aiService.generateVariation(
+                        text: transcription.text,
+                        preset: preset
+                    )
+                }
 
                 // Check if a variation with this presetId already exists (regeneration)
                 if let existing = sortedVariations.first(where: { $0.presetId == preset.id }) {
@@ -682,6 +752,7 @@ struct TranscriptionDetailView: View {
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
 
+                resetStreamingState()
                 generatingPresetId = nil
 
                 withAnimation(.easeInOut(duration: 0.15)) {
@@ -691,8 +762,15 @@ struct TranscriptionDetailView: View {
                 HapticManager.heartbeat()
                 RateAppManager.requestReviewIfAppropriate()
             } catch is CancellationError {
+                resetStreamingState()
                 generatingPresetId = nil
+            } catch AppleFoundationModelError.guardrailViolation {
+                resetStreamingState()
+                generatingPresetId = nil
+                showGuardrailAlert = true
+                HapticManager.error()
             } catch {
+                resetStreamingState()
                 generatingPresetId = nil
                 enhancementErrorMessage = error.localizedDescription
                 showEnhancementErrorAlert = true
@@ -701,6 +779,11 @@ struct TranscriptionDetailView: View {
 
             processingState = .idle
         }
+    }
+
+    private func resetStreamingState() {
+        streamingVariationPresetId = nil
+        streamingVariationText = ""
     }
 }
 
