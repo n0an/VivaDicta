@@ -150,12 +150,54 @@ struct AIServiceConfigurationTests {
         #expect(service.currentModeSupportsResponseStreaming == true)
     }
 
-    @Test func currentModeSupportsResponseStreaming_cloudMode_returnsFalse() {
+    @Test func currentModeSupportsResponseStreaming_openAIAPIKeyMode_returnsTrue() {
         let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5-mini")
         let service = makeService(withModes: [mode])
         service.selectedModeName = mode.name
 
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_openAIOAuth_returnsTrue() {
+        let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5.4-mini")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+        service.isOpenAISignedIn = true
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_geminiOAuth_returnsFalse() {
+        let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-3-flash-preview")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+        service.isGeminiSignedIn = true
+
         #expect(service.currentModeSupportsResponseStreaming == false)
+    }
+
+    @Test func openAICompatibleStreamingDelta_extractsContentDelta() {
+        let line = #"data: {"choices":[{"delta":{"content":"Hello"}}]}"#
+
+        let delta = AIService.openAICompatibleStreamingDelta(from: line)
+
+        #expect(delta == "Hello")
+    }
+
+    @Test func openAICompatibleStreamingDelta_ignoresDoneSentinel() {
+        let line = "data: [DONE]"
+
+        let delta = AIService.openAICompatibleStreamingDelta(from: line)
+
+        #expect(delta == nil)
+    }
+
+    @Test func currentModeSupportsResponseStreaming_anthropicReturnsTrue() {
+        let mode = makeMode(aiProvider: .anthropic, aiModel: "claude-sonnet-4-6")
+        let service = makeService(withModes: [mode])
+        service.selectedModeName = mode.name
+
+        #expect(service.currentModeSupportsResponseStreaming == true)
     }
 
     // MARK: - Disable Modes by Provider Tests

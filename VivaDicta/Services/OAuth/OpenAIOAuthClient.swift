@@ -39,7 +39,8 @@ enum OpenAIOAuthClient {
         systemPrompt: String,
         model: String,
         accessToken: String,
-        accountId: String?
+        accountId: String?,
+        onPartialResult: (@MainActor (String) -> Void)? = nil
     ) async throws -> String {
         guard let url = URL(string: OpenAIOAuthProvider.completionsEndpoint) else {
             throw OAuthError.invalidResponse
@@ -101,6 +102,9 @@ enum OpenAIOAuthClient {
             if type == "response.output_text.delta",
                let delta = event["delta"] as? String {
                 result += delta
+                if let onPartialResult {
+                    await onPartialResult(result)
+                }
             }
         }
 
@@ -109,7 +113,12 @@ enum OpenAIOAuthClient {
             throw OAuthError.invalidResponse
         }
 
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalResult = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let onPartialResult {
+            await onPartialResult(finalResult)
+        }
+
+        return finalResult
     }
 
     /// Fetches available models from OpenAI's backend.

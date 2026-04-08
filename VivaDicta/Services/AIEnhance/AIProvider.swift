@@ -130,7 +130,21 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     /// Returns true when the selected model can stream text responses incrementally.
     func supportsResponseStreaming(model: String) -> Bool {
         switch self {
-        case .apple:
+        case .apple,
+             .anthropic,
+             .cerebras,
+             .groq,
+             .gemini,
+             .openAI,
+             .openRouter,
+             .grok,
+             .mistral,
+             .zai,
+             .kimi,
+             .vercelAIGateway,
+             .huggingFace,
+             .ollama,
+             .customOpenAI:
             true
         default:
             false
