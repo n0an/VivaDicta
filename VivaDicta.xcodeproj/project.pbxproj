@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 181D0D002E42355600D357A6 /* SiriWaveView */; };
-		186E2F922EA690DF00B19EDF /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 186E2F912EA690DF00B19EDF /* SiriWaveView */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
@@ -443,7 +441,6 @@
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
-				181D0D012E42355600D357A6 /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -507,7 +504,6 @@
 			files = (
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
 				18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */,
-				186E2F922EA690DF00B19EDF /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -598,7 +594,6 @@
 			);
 			name = VivaDicta;
 			packageProductDependencies = (
-				181D0D002E42355600D357A6 /* SiriWaveView */,
 				18E328F62E894C3D0026327D /* WhisperKit */,
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
 				18EBD6B22ED1FBFB00C0041E /* FluidAudio */,
@@ -788,7 +783,6 @@
 			name = VivaDictaKeyboard;
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
-				186E2F912EA690DF00B19EDF /* SiriWaveView */,
 				18EBD7982ED1FCC600C0041E /* FluidAudio */,
 			);
 			productName = VivaDictaKeyboard;
@@ -872,7 +866,6 @@
 			mainGroup = 181D04CE2E3E55E400D357A6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */,
 				18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
@@ -2353,14 +2346,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/alfianlosari/SiriWaveView";
-			requirement = {
-				kind = exactVersion;
-				version = 1.1.0;
-			};
-		};
 		18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -2396,16 +2381,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		181D0D002E42355600D357A6 /* SiriWaveView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */;
-			productName = SiriWaveView;
-		};
-		186E2F912EA690DF00B19EDF /* SiriWaveView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 181D0CFF2E42355600D357A6 /* XCRemoteSwiftPackageReference "SiriWaveView" */;
-			productName = SiriWaveView;
-		};
 		189C7AA62F0D4A6E004BAFBF /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
