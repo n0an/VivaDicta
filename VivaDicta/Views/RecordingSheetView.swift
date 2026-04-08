@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import SiriWaveView
 
 struct RecordingSheetView: View {
     @Environment(\.dismiss) private var dismiss
@@ -23,11 +22,15 @@ struct RecordingSheetView: View {
     var body: some View {
         @Bindable var appState = appState
 
-        ZStack(alignment: .top) {
+        ZStack(alignment: .center) {
+            
+            ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)
+            
             Text(recordingStartDate, style: .timer)
                 .font(.system(size: 32, weight: .medium, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
+                .frame(maxHeight: .infinity, alignment: .top)
                 .padding(.top, 70)
             
             VStack(spacing: 12) {
@@ -59,10 +62,6 @@ struct RecordingSheetView: View {
                 }
                 
                 Spacer()
-                SiriWaveView(power: $appState.recordViewModel.audioPower)
-                    .frame(height: 80)
-                    .padding(.horizontal, 20)
-                Spacer()
                 
                 Button {
                     stopRecordingAndDismiss()
@@ -77,7 +76,7 @@ struct RecordingSheetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationDetents([.height(300)])
+        .presentationDetents([.height(340)])
         .presentationDragIndicator(.hidden)
         .onAppear { recordingStartDate = Date() }
         .interactiveDismissDisabled(vm.recordingState == .recording)
