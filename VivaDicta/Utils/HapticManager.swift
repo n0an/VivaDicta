@@ -17,7 +17,6 @@ enum HapticManager {
     private static let impactLight = UIImpactFeedbackGenerator(style: .light)
     private static let impactMedium = UIImpactFeedbackGenerator(style: .medium)
     private static let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
-    private static let impactSoft = UIImpactFeedbackGenerator(style: .soft)
     private static let selection = UISelectionFeedbackGenerator()
     private static let notification = UINotificationFeedbackGenerator()
 
@@ -29,7 +28,7 @@ enum HapticManager {
     // MARK: - Settings
 
     /// Throttle interval for incremental streaming pulses.
-    private static let streamingPulseMinimumInterval: TimeInterval = 0.14
+    private static let streamingPulseMinimumInterval: TimeInterval = 0.1
     private static var lastStreamingPulseAt: TimeInterval = 0
 
     /// Check if haptics are enabled in app settings (defaults to true if not set)
@@ -189,7 +188,15 @@ enum HapticManager {
         impactHeavy.impactOccurred()
     }
 
-    /// Soft pulse - for incremental streaming text updates.
+    /// Stronger pulse when streaming visibly begins.
+    static func streamingStart() {
+        guard isEnabled else { return }
+        lastStreamingPulseAt = CACurrentMediaTime()
+        impactMedium.impactOccurred(intensity: 0.75)
+        impactLight.prepare()
+    }
+
+    /// Chatty pulse - for incremental streaming text updates.
     static func streamingPulse() {
         guard isEnabled else { return }
 
@@ -197,8 +204,8 @@ enum HapticManager {
         guard now - lastStreamingPulseAt >= streamingPulseMinimumInterval else { return }
 
         lastStreamingPulseAt = now
-        impactSoft.impactOccurred(intensity: 0.45)
-        impactSoft.prepare()
+        impactLight.impactOccurred(intensity: 0.65)
+        impactLight.prepare()
     }
 
     // MARK: - Selection Feedback
@@ -239,6 +246,7 @@ enum HapticManager {
     /// Prepare the softer generator used for streaming updates.
     static func prepareStreaming() {
         guard isEnabled else { return }
-        impactSoft.prepare()
+        impactMedium.prepare()
+        impactLight.prepare()
     }
 }

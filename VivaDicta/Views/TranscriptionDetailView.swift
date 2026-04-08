@@ -717,7 +717,10 @@ struct TranscriptionDetailView: View {
                         text: transcription.text,
                         preset: preset,
                         onPartialResult: { partialText in
-                            if partialText.count > streamingVariationText.count {
+                            let previousText = streamingVariationText
+                            if previousText.isEmpty, partialText.isEmpty == false {
+                                HapticManager.streamingStart()
+                            } else if partialText.count > previousText.count {
                                 HapticManager.streamingPulse()
                             }
                             streamingVariationText = partialText
