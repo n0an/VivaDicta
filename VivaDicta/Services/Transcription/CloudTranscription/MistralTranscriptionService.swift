@@ -24,7 +24,7 @@ struct MistralTranscriptionService {
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.setValue(config.apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
         let body = try createRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)

@@ -79,7 +79,7 @@ struct OpenAITranscriptionService {
 
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append("gpt-4o-transcribe".data(using: .utf8)!)
+        body.append(modelName.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
