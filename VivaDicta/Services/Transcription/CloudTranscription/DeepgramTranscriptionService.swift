@@ -63,31 +63,28 @@ class DeepgramTranscriptionService {
             throw CloudTranscriptionError.missingAPIKey
         }
         
-        // Build the URL with query parameters
+        // Build the URL with query parameters while preserving the selected model.
         var components = URLComponents(string: "https://api.deepgram.com/v1/listen")!
         var queryItems: [URLQueryItem] = []
-        
-        // Add language parameter if not auto-detect
+
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        
-        // Choose model based on language
-        let modelName = selectedLanguage == "en" ? "nova-3" : "nova-2"
+
+        let modelName = cloudModel.name
         queryItems.append(URLQueryItem(name: "model", value: modelName))
-        
+
         queryItems.append(contentsOf: [
             URLQueryItem(name: "smart_format", value: "true"),
             URLQueryItem(name: "punctuate", value: "true"),
             URLQueryItem(name: "paragraphs", value: "true")
         ])
-        
+
         if selectedLanguage != "auto" && !selectedLanguage.isEmpty {
             queryItems.append(URLQueryItem(name: "language", value: selectedLanguage))
         }
 
-        // Add custom vocabulary keywords
+        // Nova-3 models use keyterm prompting, while earlier Nova models use keywords.
         let vocabularyTerms = CustomVocabulary.getTerms(maxTerms: 100)
         if !vocabularyTerms.isEmpty {
-            // Nova-3 (including nova-3-multilingual) uses keyterm, Nova-2 uses keywords
             let paramName = modelName.hasPrefix("nova-3") ? "keyterm" : "keywords"
             for term in vocabularyTerms {
                 queryItems.append(URLQueryItem(name: paramName, value: term))
