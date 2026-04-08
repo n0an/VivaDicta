@@ -36,30 +36,28 @@ struct ParticleOrbView: View {
                     let alpha = particle.opacity * blink
                     let size = particle.size * (0.8 + power * 0.6) * (0.5 + blink * 0.5)
 
-                    let rect = CGRect(
-                        x: pos.x - size / 2,
-                        y: pos.y - size / 2,
-                        width: size,
-                        height: size
-                    )
+                    // Single soft circle via radial gradient
+                    let radius = size * 1.5
+                    let gradientCenter = pos
+                    let peakOpacity = alpha * (0.5 + power * 0.5)
 
-                    // Outer glow
-                    let glowSize = size * 3
-                    let particleGlowRect = CGRect(
-                        x: pos.x - glowSize / 2,
-                        y: pos.y - glowSize / 2,
-                        width: glowSize,
-                        height: glowSize
-                    )
                     context.fill(
-                        Path(ellipseIn: particleGlowRect),
-                        with: .color(color.opacity(alpha * 0.15))
-                    )
-
-                    // Core
-                    context.fill(
-                        Path(ellipseIn: rect),
-                        with: .color(color.opacity(alpha * (0.5 + power * 0.5)))
+                        Path(ellipseIn: CGRect(
+                            x: pos.x - radius,
+                            y: pos.y - radius,
+                            width: radius * 2,
+                            height: radius * 2
+                        )),
+                        with: .radialGradient(
+                            Gradient(colors: [
+                                color.opacity(peakOpacity),
+                                color.opacity(peakOpacity * 0.3),
+                                color.opacity(0)
+                            ]),
+                            center: gradientCenter,
+                            startRadius: 0,
+                            endRadius: radius
+                        )
                     )
                 }
             }
