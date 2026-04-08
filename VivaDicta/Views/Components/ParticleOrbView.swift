@@ -31,8 +31,10 @@ struct ParticleOrbView: View {
 
                 for particle in particles {
                     let pos = particle.position(at: elapsed, power: power, center: center)
+                    let blink = particle.blinkIntensity(at: elapsed)
                     let color = Self.particleColor(for: power, seed: particle.colorSeed)
-                    let size = particle.size * (0.8 + power * 0.6)
+                    let alpha = particle.opacity * blink
+                    let size = particle.size * (0.8 + power * 0.6) * (0.5 + blink * 0.5)
 
                     let rect = CGRect(
                         x: pos.x - size / 2,
@@ -51,13 +53,13 @@ struct ParticleOrbView: View {
                     )
                     context.fill(
                         Path(ellipseIn: particleGlowRect),
-                        with: .color(color.opacity(particle.opacity * 0.15))
+                        with: .color(color.opacity(alpha * 0.15))
                     )
 
                     // Core
                     context.fill(
                         Path(ellipseIn: rect),
-                        with: .color(color.opacity(particle.opacity * (0.5 + power * 0.5)))
+                        with: .color(color.opacity(alpha * (0.5 + power * 0.5)))
                     )
                 }
             }
@@ -144,6 +146,16 @@ private struct Firefly {
     let opacity: Double
     let colorSeed: Double
     let phaseOffset: Double      // time offset for organic feel
+    let blinkFrequency: Double   // how fast it blinks (cycles/sec)
+    let blinkPhase: Double       // phase offset so they don't blink in sync
+
+    /// Returns 0...1 blink intensity — smoothly fades in and out
+    func blinkIntensity(at elapsed: Double) -> Double {
+        let t = elapsed + blinkPhase
+        // sin produces -1...1, remap to 0...1 with a bias toward visible
+        let raw = sin(t * blinkFrequency * 2 * .pi)
+        return 0.5 + 0.5 * raw // range: 0...1
+    }
 
     func position(at elapsed: Double, power: Double, center: CGPoint) -> CGPoint {
         let t = elapsed + phaseOffset
@@ -183,7 +195,9 @@ private struct Firefly {
             size: .random(in: 2...6),
             opacity: .random(in: 0.4...1.0),
             colorSeed: .random(in: 0...1),
-            phaseOffset: .random(in: 0...100)
+            phaseOffset: .random(in: 0...100),
+            blinkFrequency: .random(in: 0.3...0.8),
+            blinkPhase: .random(in: 0...(2 * .pi))
         )
     }
 }
