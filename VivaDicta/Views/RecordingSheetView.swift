@@ -25,6 +25,7 @@ struct RecordingSheetView: View {
         ZStack(alignment: .center) {
             
             ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)
+                .accessibilityHidden(true)
             
             Text(recordingStartDate, style: .timer)
                 .font(.system(size: 32, weight: .medium, design: .rounded))

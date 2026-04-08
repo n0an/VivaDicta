@@ -12,9 +12,9 @@ struct ParticleOrbView: View {
 
     private let particleCount = 80
     @State private var particles: [Firefly] = []
-    @State private var displayPower: Double = 0
-    @State private var lastFrameTime: TimeInterval = 0
     @State private var startTime: TimeInterval = 0
+    /// Non-observable smoothing state — avoids triggering extra SwiftUI renders
+    @State private var smoothing = SmoothingState()
 
     /// Smoothing factor per second — lower = smoother/laggier, higher = snappier
     private let smoothingSpeed: Double = 1.0
@@ -34,10 +34,10 @@ struct ParticleOrbView: View {
                     let blink = particle.blinkIntensity(at: elapsed)
                     let color = Self.particleColor(for: power, seed: particle.colorSeed)
                     let alpha = particle.opacity * blink
-                    let size = particle.size * (0.8 + power * 0.6) * (0.5 + blink * 0.5)
+                    let particleDrawSize = particle.size * (0.8 + power * 0.6) * (0.5 + blink * 0.5)
 
                     // Single soft circle via radial gradient
-                    let radius = size * 1.5
+                    let radius = particleDrawSize * 1.5
                     let gradientCenter = pos
                     let peakOpacity = alpha * (0.5 + power * 0.5)
 
@@ -65,31 +65,27 @@ struct ParticleOrbView: View {
         .onAppear {
             startTime = Date.timeIntervalSinceReferenceDate
             particles = (0..<particleCount).map { _ in Firefly.random() }
-            displayPower = audioPower
+            smoothing.power = audioPower
         }
         .drawingGroup()
     }
 
-    /// Exponential lerp toward audioPower each frame for smooth, continuous transitions
+    /// Exponential lerp toward audioPower each frame for smooth, continuous transitions.
+    /// Mutates `smoothing` in place — this is intentionally non-observable so it doesn't
+    /// trigger extra SwiftUI renders; TimelineView already drives the render cadence.
     private func interpolatedPower(at now: TimeInterval) -> Double {
         let dt: Double
-        if lastFrameTime == 0 {
+        if smoothing.lastFrameTime == 0 {
             dt = 1.0 / 60.0
         } else {
-            dt = min(now - lastFrameTime, 0.1) // cap to avoid jumps after backgrounding
+            dt = min(now - smoothing.lastFrameTime, 0.1)
         }
 
-        // Exponential smoothing: displayPower moves toward audioPower
         let factor = 1.0 - exp(-smoothingSpeed * dt)
-        let newPower = displayPower + (audioPower - displayPower) * factor
+        smoothing.power += (audioPower - smoothing.power) * factor
+        smoothing.lastFrameTime = now
 
-        // Mutate state on next run loop tick to avoid "modifying state during view update"
-        DispatchQueue.main.async {
-            displayPower = newPower
-            lastFrameTime = now
-        }
-
-        return newPower
+        return smoothing.power
     }
 
     // MARK: - Color Mapping
@@ -125,6 +121,15 @@ struct ParticleOrbView: View {
             blue: Double(resolved1.blue) + Double(resolved2.blue - resolved1.blue) * t
         )
     }
+}
+
+// MARK: - Smoothing State
+
+/// Reference type for frame-timing — mutations persist across renders without
+/// triggering SwiftUI invalidation (not @Observable).
+private final class SmoothingState {
+    var power: Double = 0
+    var lastFrameTime: TimeInterval = 0
 }
 
 // MARK: - Firefly Particle
