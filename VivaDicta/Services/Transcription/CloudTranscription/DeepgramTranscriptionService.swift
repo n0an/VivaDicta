@@ -69,7 +69,22 @@ class DeepgramTranscriptionService {
 
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
 
-        let modelName = cloudModel.name
+        // The app exposes a friendly multilingual alias, but Deepgram expects
+        // multilingual Nova-3 as model=nova-3 with language=multi.
+        let modelName: String
+        let requestLanguage: String?
+        if cloudModel.name == "nova-3-multilingual" {
+            modelName = "nova-3"
+            requestLanguage = "multi"
+        } else {
+            modelName = cloudModel.name
+            if selectedLanguage != "auto" && !selectedLanguage.isEmpty {
+                requestLanguage = selectedLanguage
+            } else {
+                requestLanguage = nil
+            }
+        }
+
         queryItems.append(URLQueryItem(name: "model", value: modelName))
 
         queryItems.append(contentsOf: [
@@ -78,8 +93,8 @@ class DeepgramTranscriptionService {
             URLQueryItem(name: "paragraphs", value: "true")
         ])
 
-        if selectedLanguage != "auto" && !selectedLanguage.isEmpty {
-            queryItems.append(URLQueryItem(name: "language", value: selectedLanguage))
+        if let requestLanguage {
+            queryItems.append(URLQueryItem(name: "language", value: requestLanguage))
         }
 
         // Nova-3 models use keyterm prompting, while earlier Nova models use keywords.
