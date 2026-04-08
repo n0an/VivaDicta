@@ -99,6 +99,10 @@ struct TranscriptionDetailView: View {
         return streamingVariationText
     }
 
+    private var shouldShowProcessingGlowOverlay: Bool {
+        processingState == .transcribing || processingState == .enhancing
+    }
+
     private var shouldShowProcessingHUD: Bool {
         processingState == .transcribing || (processingState == .enhancing && activeStreamingText == nil)
     }
@@ -252,13 +256,13 @@ struct TranscriptionDetailView: View {
         .animation(.easeInOut, value: processingState)
         .allowsHitTesting(processingState == .idle)
         .overlay {
-            if shouldShowProcessingHUD {
+            if shouldShowProcessingGlowOverlay {
                 GeometryReader { geometry in
                     AnimatedMeshGradient()
                         .onAppear {
                             rippleEffectTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { _ in
                                 Task { @MainActor in
-                                    if shouldShowProcessingHUD {
+                                    if shouldShowProcessingGlowOverlay {
                                         rippleEffectTrigger.toggle()
                                     }
                                 }
