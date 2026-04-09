@@ -268,9 +268,16 @@ final class ChatViewModel {
             return
         }
 
-        // Build a summary from the compacted messages for the UI card
-        let summaryText = ChatContextManager.formatForCompaction(split.toCompact)
-        let truncatedSummary = String(summaryText.prefix(500))
+        // Generate an AI summary for the UI card using a fresh Apple FM session
+        let conversationText = ChatContextManager.formatForCompaction(split.toCompact)
+        let summarizer = LanguageModelSession(
+            instructions: ChatContextManager.compactionPrompt
+        )
+        let summaryResponse = try await summarizer.respond(
+            to: conversationText,
+            options: GenerationOptions(sampling: .greedy)
+        )
+        let summaryText = summaryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Delete old messages and existing summaries
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
@@ -281,11 +288,11 @@ final class ChatViewModel {
         // Insert summary message for UI display
         let summaryMessage = ChatMessage(
             role: "summary",
-            content: truncatedSummary,
+            content: summaryText,
             aiProviderName: provider.rawValue,
             aiModelName: model,
             isSummary: true,
-            estimatedTokenCount: ChatContextManager.estimateTokens(truncatedSummary)
+            estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
         summaryMessage.transcription = transcription
         modelContext.insert(summaryMessage)
