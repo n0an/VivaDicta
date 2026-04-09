@@ -270,7 +270,8 @@ final class ChatViewModel {
         print("DEBUG COMPACT: Session transcript entries: \(session.transcript.count)")
         print("DEBUG COMPACT: SwiftData messages count: \(messages.count)")
 
-        let contextBudget = SystemLanguageModel.default.contextSize / 2
+        let instructionsTokens = ChatContextManager.estimateTokens(buildAppleFMInstructions())
+        let contextBudget = instructionsTokens + 300
         let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0, targetContextTokens: contextBudget)
         if compacted !== session {
             appleFMSession = compacted
@@ -402,7 +403,8 @@ final class ChatViewModel {
         )
 
         do {
-            let contextBudget = SystemLanguageModel.default.contextSize / 2
+            let instructionsTokens = ChatContextManager.estimateTokens(buildAppleFMInstructions())
+            let contextBudget = instructionsTokens + 300
             let compactedSession = try await session.preemptivelySummarizedIfNeeded(targetContextTokens: contextBudget)
             if compactedSession !== session {
                 logger.logInfo("Chat - Apple FM preemptive summarization triggered")
