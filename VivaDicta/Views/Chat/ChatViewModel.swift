@@ -250,7 +250,7 @@ final class ChatViewModel {
     @available(iOS 26, *)
     private func compactAppleFMSessionImpl() async throws {
         guard let provider = selectedProvider, let model = selectedModel else { return }
-        guard var session = appleFMSession else { return }
+        guard let session = appleFMSession else { return }
 
         // Compact the session transcript (this does the AI summarization internally)
         let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0)
