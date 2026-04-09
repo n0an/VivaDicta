@@ -278,6 +278,12 @@ final class ChatViewModel {
 
         print("DEBUG COMPACT: Compacting \(split.toCompact.count) messages, keeping \(split.toKeep.count)")
 
+        // Log what the internal session summary looks like
+        if let compactedSession = appleFMSession {
+            let transcriptDescription = String(describing: compactedSession.transcript)
+            print("DEBUG COMPACT: Session internal transcript after compaction:\n\(transcriptDescription.prefix(500))")
+        }
+
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
 
         // Delete old messages and existing summaries
