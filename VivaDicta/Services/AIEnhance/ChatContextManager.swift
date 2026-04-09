@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationModels
 
 /// Manages context window for "Chat with Note" conversations.
 ///
@@ -67,6 +68,9 @@ struct ChatContextManager {
 
         switch provider {
         case .apple:
+            if #available(iOS 26, *) {
+                return SystemLanguageModel.default.contextSize
+            }
             return 4_096
 
         case .anthropic:
