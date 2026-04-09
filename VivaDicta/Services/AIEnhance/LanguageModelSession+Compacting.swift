@@ -194,10 +194,12 @@ extension LanguageModelSession {
         }
 
         let instructions = """
-        Start:
         \(firstText)
-        Summary:
+
+        <PREVIOUS_CONVERSATION_SUMMARY>
+        The following is a summary of earlier messages in this chat (NOT part of the note):
         \(summary)
+        </PREVIOUS_CONVERSATION_SUMMARY>
         """
 
         // Hard upper bound safety ceiling
