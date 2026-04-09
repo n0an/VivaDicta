@@ -167,28 +167,26 @@ extension LanguageModelSession {
 
         print("DEBUG SUMMARIZE: Messages count: \(messages.count), allMessagesText length: \(allMessagesText.count), suffixBudget: \(suffixBudget), summarySource length: \(summarySource.count)")
 
-        // Calculate summary budget
-        let frame = "Instructions: \(firstText)"
-        let summaryCharacterLimit = max(0, targetContextTokens * 3 - frame.count)
-
-        print("DEBUG SUMMARIZE: frame length: \(frame.count), targetContextTokens*3=\(targetContextTokens * 3), summaryCharacterLimit=\(summaryCharacterLimit)")
-
         let summary: String
 
         if summarySource.isEmpty {
             print("DEBUG SUMMARIZE: summarySource is EMPTY - skipping summarization")
             summary = ""
-        } else if summaryCharacterLimit == 0 {
-            print("DEBUG SUMMARIZE: summaryCharacterLimit is 0 - frame too large, skipping summarization")
-            summary = ""
         } else {
-            print("DEBUG SUMMARIZE: Calling Apple FM summarizer with \(summarySource.count) chars, limit \(summaryCharacterLimit)...")
+            let maxTokens = 300
+            print("DEBUG SUMMARIZE: Calling Apple FM summarizer with \(summarySource.count) chars, maxTokens=\(maxTokens)...")
             let summarizer = LanguageModelSession(
-                instructions: "Summarize the entire input from beginning to end, covering the whole document (not just the end), preserving key facts. Be concise. Hard maximum: \(summaryCharacterLimit) characters."
+                instructions: "Summarize the entire input from beginning to end, covering the whole document (not just the end), preserving key facts. Be concise."
             )
-            let response = try await summarizer.respond(to: "Summarize this text: \(summarySource)")
-            summary = String(response.content.prefix(summaryCharacterLimit))
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let options = GenerationOptions(
+                sampling: .greedy,
+                maximumResponseTokens: maxTokens
+            )
+            let response = try await summarizer.respond(
+                to: "Summarize this text: \(summarySource)",
+                options: options
+            )
+            summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
             print("DEBUG SUMMARIZE: Generated summary (\(summary.count) chars): \(summary)")
         }
