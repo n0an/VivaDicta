@@ -111,7 +111,11 @@ final class ChatViewModel {
         loadMessages()
 
         if selectedProvider == .apple {
-            initializeAppleFMSession()
+            if noteExceedsAppleFMContext {
+                errorMessage = "This note is too long for Apple Foundation Models. Switch to a cloud provider with a larger context window."
+            } else {
+                initializeAppleFMSession()
+            }
         }
     }
 
@@ -336,8 +340,15 @@ final class ChatViewModel {
         persistProviderSelection()
 
         if provider == .apple {
-            initializeAppleFMSession()
+            if noteExceedsAppleFMContext {
+                errorMessage = "This note is too long for Apple Foundation Models. Switch to a cloud provider with a larger context window."
+                _appleFMSession = nil
+            } else {
+                errorMessage = nil
+                initializeAppleFMSession()
+            }
         } else {
+            errorMessage = nil
             _appleFMSession = nil
         }
     }
