@@ -23,10 +23,7 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ChatProviderPickerView(
-                    viewModel: viewModel,
-                    aiService: appState.aiService
-                )
+                chatHeaderBar
 
                 messagesList
 
@@ -143,6 +140,36 @@ struct ChatView: View {
             Spacer(minLength: 60)
         }
         .padding(.horizontal)
+    }
+
+    private var chatHeaderBar: some View {
+        VStack(spacing: 0) {
+            HStack {
+                if let provider = viewModel.selectedProvider {
+                    Text(provider.displayName)
+                        .font(.subheadline)
+                }
+                if let model = viewModel.selectedModel {
+                    Text(model)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+
+                let ratio = viewModel.contextFillRatio
+                let percentage = Int(ratio * 100)
+                Text("\(percentage)%")
+                    .font(.caption2)
+                    .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background((ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1))
+                    .clipShape(.capsule)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            Divider()
+        }
     }
 
     private var compactingIndicator: some View {

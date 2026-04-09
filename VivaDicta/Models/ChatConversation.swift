@@ -19,12 +19,6 @@ final class ChatConversation {
     /// When this conversation was created.
     var createdAt: Date = Date()
 
-    /// Persisted AI provider name for this conversation.
-    var aiProviderName: String?
-
-    /// Persisted AI model name for this conversation.
-    var aiModelName: String?
-
     /// Encoded Apple FM `Transcript` data for session restoration without replay.
     var appleFMTranscriptData: Data?
 

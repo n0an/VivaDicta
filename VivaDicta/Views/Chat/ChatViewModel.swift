@@ -33,10 +33,10 @@ final class ChatViewModel {
     var errorMessage: String?
     var isCompacting: Bool = false
 
-    // MARK: - Provider/Model
+    // MARK: - Provider/Model (from current VivaMode)
 
-    var selectedProvider: AIProvider?
-    var selectedModel: String?
+    var selectedProvider: AIProvider? { aiService.selectedMode.aiProvider }
+    var selectedModel: String? { aiService.selectedMode.aiModel.isEmpty ? nil : aiService.selectedMode.aiModel }
 
     // MARK: - Apple FM Session (type-erased for iOS version compatibility)
 
@@ -69,7 +69,6 @@ final class ChatViewModel {
     }
 
     /// Whether the note text alone would trigger auto-compaction, leaving no room for chat.
-    /// Threshold matches the 70% preemptive compaction trigger to avoid endless compaction cycles.
     var noteExceedsAppleFMContext: Bool {
         let noteTokens = ChatContextManager.estimateTokens(assembledNoteText)
         let systemTokens = ChatContextManager.estimateTokens(ChatContextManager.chatSystemPrompt)
@@ -98,21 +97,11 @@ final class ChatViewModel {
         self.aiService = aiService
         self.modelContext = modelContext
 
-        // Restore persisted provider/model or default to current mode
-        if let providerName = conversation.aiProviderName,
-           let provider = AIProvider(rawValue: providerName) {
-            self.selectedProvider = provider
-            self.selectedModel = conversation.aiModelName ?? provider.defaultModel
-        } else if let modeProvider = aiService.selectedMode.aiProvider {
-            self.selectedProvider = modeProvider
-            self.selectedModel = aiService.selectedMode.aiModel
-        }
-
         loadMessages()
 
         if selectedProvider == .apple {
             if noteExceedsAppleFMContext {
-                errorMessage = "This note is too long for Apple Foundation Models. Switch to a cloud provider with a larger context window."
+                errorMessage = "This note is too long for Apple Foundation Models. Select a different mode with a cloud provider."
             } else {
                 initializeAppleFMSession()
             }
@@ -332,31 +321,7 @@ final class ChatViewModel {
         }
     }
 
-    // MARK: - Provider/Model Update
-
-    func updateProvider(_ provider: AIProvider) {
-        selectedProvider = provider
-        selectedModel = provider.defaultModel
-        persistProviderSelection()
-
-        if provider == .apple {
-            if noteExceedsAppleFMContext {
-                errorMessage = "This note is too long for Apple Foundation Models. Switch to a cloud provider with a larger context window."
-                _appleFMSession = nil
-            } else {
-                errorMessage = nil
-                initializeAppleFMSession()
-            }
-        } else {
-            errorMessage = nil
-            _appleFMSession = nil
-        }
-    }
-
-    func updateModel(_ model: String) {
-        selectedModel = model
-        persistProviderSelection()
-    }
+    // MARK: - Provider/Model (derived from VivaMode, no local state)
 
     // MARK: - Apple FM Session Management
 
@@ -578,12 +543,6 @@ final class ChatViewModel {
         msg.conversation = conversation
         modelContext.insert(msg)
         messages.append(msg)
-        trySave()
-    }
-
-    private func persistProviderSelection() {
-        conversation.aiProviderName = selectedProvider?.rawValue
-        conversation.aiModelName = selectedModel
         trySave()
     }
 
