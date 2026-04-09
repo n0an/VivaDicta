@@ -151,10 +151,12 @@ extension LanguageModelSession {
         let firstText = String(describing: first)
 
         // Build summary source from conversation messages (recency-biased)
+        // Use max of triggerTokens and targetContextTokens to avoid empty suffix when fillAmount is 0
+        let suffixBudget = max(triggerTokens, targetContextTokens) * 3
         let summarySource = transcript.getMessages()
             .map(String.init)
             .joined(separator: "\n\n")
-            .suffix(triggerTokens * 3)
+            .suffix(suffixBudget)
 
         // Calculate summary budget
         let frame = "Instructions: \(firstText)"
