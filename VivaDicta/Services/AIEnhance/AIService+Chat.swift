@@ -264,7 +264,7 @@ extension AIService {
         ]
 
         if !model.lowercased().hasPrefix("gpt-5") {
-            body["temperature"] = 0.3
+            body["temperature"] = 0.7
         }
 
         if let reasoningEffort = ReasoningConfig.getReasoningParameter(for: model) {
@@ -548,7 +548,7 @@ extension AIService {
         let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
         let session = LanguageModelSession(model: model, instructions: systemMessage)
         let prompt = Prompt { conversationText }
-        let options = GenerationOptions(sampling: .greedy)
+        let options = GenerationOptions(sampling: .random(probabilityThreshold: 0.9))
 
         if streaming, let onPartialResponse {
             let stream = session.streamResponse(to: prompt, options: options)
