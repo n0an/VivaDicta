@@ -30,6 +30,14 @@ struct ChatView: View {
 
                 messagesList
 
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .padding(.horizontal)
+                        .padding(.vertical, 6)
+                }
+
                 ChatInputBar(
                     text: $viewModel.inputText,
                     isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
