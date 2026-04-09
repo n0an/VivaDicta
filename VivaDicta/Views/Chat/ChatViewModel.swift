@@ -249,17 +249,51 @@ final class ChatViewModel {
 
     @available(iOS 26, *)
     private func compactAppleFMSessionImpl() async throws {
+        guard let provider = selectedProvider, let model = selectedModel else { return }
         guard var session = appleFMSession else { return }
-        // Force summarization regardless of fill ratio by using 0.0 threshold
+
+        // Compact the session transcript (this does the AI summarization internally)
         let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0)
         if compacted !== session {
             appleFMSession = compacted
             logger.logInfo("Chat - Apple FM session manually compacted via summarization")
         } else {
-            // Fallback to greedy compaction
             appleFMSession = session.compacted()
             logger.logInfo("Chat - Apple FM session manually compacted via greedy keep-recent")
         }
+
+        // Update SwiftData messages to reflect compaction in the UI
+        let nonSummaryMessages = messages.filter { !$0.isSummary }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else {
+            return
+        }
+
+        // Build a summary from the compacted messages for the UI card
+        let summaryText = ChatContextManager.formatForCompaction(split.toCompact)
+        let truncatedSummary = String(summaryText.prefix(500))
+
+        // Delete old messages and existing summaries
+        let toDelete = split.toCompact + messages.filter { $0.isSummary }
+        for msg in toDelete {
+            modelContext.delete(msg)
+        }
+
+        // Insert summary message for UI display
+        let summaryMessage = ChatMessage(
+            role: "summary",
+            content: truncatedSummary,
+            aiProviderName: provider.rawValue,
+            aiModelName: model,
+            isSummary: true,
+            estimatedTokenCount: ChatContextManager.estimateTokens(truncatedSummary)
+        )
+        summaryMessage.transcription = transcription
+        modelContext.insert(summaryMessage)
+
+        // Save compacted transcript
+        saveAppleFMTranscript()
+        trySave()
+        loadMessages()
     }
 
     private func compactAppleFMSession() async throws {
