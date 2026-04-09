@@ -13,7 +13,8 @@ import os
 /// View model for the "Chat with Note" feature.
 ///
 /// Manages message history, AI communication, provider/model selection,
-/// and context window compaction for a single transcription's chat.
+/// and context window compaction. Supports single-note and (future) multi-note
+/// conversations via the ``ChatConversation`` model.
 ///
 /// For Apple Foundation Models, maintains a persistent `LanguageModelSession`
 /// that accumulates context across turns. For cloud providers, assembles
@@ -39,17 +40,14 @@ final class ChatViewModel {
 
     // MARK: - Apple FM Session (type-erased for iOS version compatibility)
 
-    /// Persistent Apple FM session, stored as `Any?` to avoid iOS 26 availability on stored property.
     private var _appleFMSession: Any?
 
-    /// Typed accessor for the Apple FM session.
     @available(iOS 26, *)
     private var appleFMSession: LanguageModelSession? {
         get { _appleFMSession as? LanguageModelSession }
         set { _appleFMSession = newValue }
     }
 
-    /// Whether Apple FM session is currently generating a response.
     var isAppleFMResponding: Bool {
         guard selectedProvider == .apple else { return false }
         if #available(iOS 26, *) {
@@ -60,11 +58,10 @@ final class ChatViewModel {
 
     // MARK: - Context
 
-    /// Approximate context fill ratio (0.0-1.0).
     var contextFillRatio: Double {
         guard let provider = selectedProvider, let model = selectedModel else { return 0 }
         return ChatContextManager.fillRatio(
-            noteText: transcription.text,
+            noteText: assembledNoteText,
             messages: messages,
             provider: provider,
             model: model
@@ -73,23 +70,30 @@ final class ChatViewModel {
 
     // MARK: - Dependencies
 
-    let transcription: Transcription
+    let conversation: ChatConversation
+    let sourceTranscriptions: [Transcription]
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
 
+    /// Combined note text from all source transcriptions.
+    var assembledNoteText: String {
+        sourceTranscriptions.map(\.text).joined(separator: "\n\n---\n\n")
+    }
+
     // MARK: - Init
 
-    init(transcription: Transcription, aiService: AIService, modelContext: ModelContext) {
-        self.transcription = transcription
+    init(conversation: ChatConversation, sourceTranscriptions: [Transcription], aiService: AIService, modelContext: ModelContext) {
+        self.conversation = conversation
+        self.sourceTranscriptions = sourceTranscriptions
         self.aiService = aiService
         self.modelContext = modelContext
 
         // Restore persisted provider/model or default to current mode
-        if let providerName = transcription.chatAIProviderName,
+        if let providerName = conversation.aiProviderName,
            let provider = AIProvider(rawValue: providerName) {
             self.selectedProvider = provider
-            self.selectedModel = transcription.chatAIModelName ?? provider.defaultModel
+            self.selectedModel = conversation.aiModelName ?? provider.defaultModel
         } else if let modeProvider = aiService.selectedMode.aiProvider {
             self.selectedProvider = modeProvider
             self.selectedModel = aiService.selectedMode.aiModel
@@ -97,7 +101,6 @@ final class ChatViewModel {
 
         loadMessages()
 
-        // Initialize Apple FM session if needed
         if selectedProvider == .apple {
             initializeAppleFMSession()
         }
@@ -106,7 +109,7 @@ final class ChatViewModel {
     // MARK: - Message Loading
 
     func loadMessages() {
-        let sorted = (transcription.chatMessages ?? []).sorted { $0.createdAt < $1.createdAt }
+        let sorted = (conversation.messages ?? []).sorted { $0.createdAt < $1.createdAt }
         messages = sorted
     }
 
@@ -124,7 +127,6 @@ final class ChatViewModel {
             return
         }
 
-        // Guard against Apple FM responding
         if isAppleFMResponding {
             return
         }
@@ -132,17 +134,15 @@ final class ChatViewModel {
         inputText = ""
         errorMessage = nil
 
-        // Create and persist user message
         let userMessage = ChatMessage(
             role: "user",
             content: text,
             estimatedTokenCount: ChatContextManager.estimateTokens(text)
         )
-        userMessage.transcription = transcription
+        userMessage.conversation = conversation
         modelContext.insert(userMessage)
         messages.append(userMessage)
 
-        // Start streaming task
         isStreaming = true
         streamingText = ""
         HapticManager.prepareStreaming()
@@ -157,7 +157,6 @@ final class ChatViewModel {
                     result = try await sendCloudMessage(text, provider: provider, model: model)
                 }
 
-                // Create assistant message
                 let assistantMessage = ChatMessage(
                     role: "assistant",
                     content: result,
@@ -165,7 +164,7 @@ final class ChatViewModel {
                     aiModelName: model,
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
-                assistantMessage.transcription = transcription
+                assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
 
@@ -185,7 +184,7 @@ final class ChatViewModel {
                     isError: true,
                     estimatedTokenCount: ChatContextManager.estimateTokens(errorContent)
                 )
-                errorMsg.transcription = transcription
+                errorMsg.conversation = conversation
                 modelContext.insert(errorMsg)
                 messages.append(errorMsg)
 
@@ -214,8 +213,7 @@ final class ChatViewModel {
         }
         messages.removeAll()
 
-        // Clear saved transcript and reinitialize
-        transcription.chatAppleFMTranscriptData = nil
+        conversation.appleFMTranscriptData = nil
         trySave()
 
         if selectedProvider == .apple {
@@ -258,8 +256,6 @@ final class ChatViewModel {
         print("DEBUG COMPACT: Session transcript entries: \(session.transcript.count)")
         print("DEBUG COMPACT: SwiftData messages count: \(messages.count)")
 
-        // Compact the session transcript (this does the AI summarization internally)
-        // targetContextTokens must be large enough to fit instructions + note + summary
         let contextBudget = SystemLanguageModel.default.contextSize / 2
         let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0, targetContextTokens: contextBudget)
         if compacted !== session {
@@ -271,7 +267,6 @@ final class ChatViewModel {
             print("DEBUG COMPACT: Session compacted via greedy, new transcript entries: \(greedy.transcript.count)")
         }
 
-        // Update SwiftData messages to reflect compaction in the UI
         let nonSummaryMessages = messages.filter { !$0.isSummary }
         guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else {
             print("DEBUG COMPACT: Not enough messages to compact (need >4 non-summary)")
@@ -288,14 +283,12 @@ final class ChatViewModel {
 
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
 
-        // Delete old messages and existing summaries
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
         print("DEBUG COMPACT: Deleting \(toDelete.count) messages from SwiftData")
         for msg in toDelete {
             modelContext.delete(msg)
         }
 
-        // Insert summary message for UI display
         let summaryMessage = ChatMessage(
             role: "summary",
             content: summaryText,
@@ -304,10 +297,9 @@ final class ChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
-        summaryMessage.transcription = transcription
+        summaryMessage.conversation = conversation
         modelContext.insert(summaryMessage)
 
-        // Save compacted transcript
         saveAppleFMTranscript()
         trySave()
         loadMessages()
@@ -328,7 +320,6 @@ final class ChatViewModel {
         selectedModel = provider.defaultModel
         persistProviderSelection()
 
-        // Initialize or clear Apple FM session
         if provider == .apple {
             initializeAppleFMSession()
         } else {
@@ -347,15 +338,13 @@ final class ChatViewModel {
         guard #available(iOS 26, *) else { return }
         guard AppleFoundationModelAvailability.isAvailable else { return }
 
-        // Try restoring from saved transcript first
-        if let data = transcription.chatAppleFMTranscriptData,
+        if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
             appleFMSession = LanguageModelSession(transcript: transcript)
             logger.logInfo("Chat - Apple FM session restored from saved transcript")
             return
         }
 
-        // Fresh session with instructions + note context
         let instructions = buildAppleFMInstructions()
         let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
         appleFMSession = LanguageModelSession(model: model, instructions: instructions)
@@ -365,9 +354,8 @@ final class ChatViewModel {
     @available(iOS 26, *)
     private func buildAppleFMInstructions() -> String {
         var instructions = ChatContextManager.chatSystemPrompt
-        instructions += "\n\n<NOTE>\n\(transcription.text)\n</NOTE>"
+        instructions += "\n\n<NOTE>\n\(assembledNoteText)\n</NOTE>"
 
-        // Include summary from prior compaction if exists
         if let summary = messages.first(where: { $0.isSummary }) {
             instructions += "\n\nPrevious conversation summary:\n\(summary.content)"
         }
@@ -375,13 +363,12 @@ final class ChatViewModel {
         return instructions
     }
 
-    /// Saves the Apple FM session transcript for later restoration.
     @available(iOS 26, *)
     private func saveAppleFMTranscript() {
         guard let session = appleFMSession else { return }
         do {
             let data = try JSONEncoder().encode(session.transcript)
-            transcription.chatAppleFMTranscriptData = data
+            conversation.appleFMTranscriptData = data
         } catch {
             logger.logWarning("Chat - Failed to save Apple FM transcript: \(error.localizedDescription)")
         }
@@ -400,7 +387,6 @@ final class ChatViewModel {
             temperature: 0.7
         )
 
-        // Preemptive summarization: compact before hitting the wall
         do {
             let contextBudget = SystemLanguageModel.default.contextSize / 2
             let compactedSession = try await session.preemptivelySummarizedIfNeeded(targetContextTokens: contextBudget)
@@ -413,13 +399,11 @@ final class ChatViewModel {
             logger.logWarning("Chat - Preemptive summarization failed: \(error.localizedDescription)")
         }
 
-        // Stream response with reactive fallback
         do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
-            // Reactive compaction: greedy keep-recent
             logger.logWarning("Chat - Apple FM context exceeded, reactive compaction")
             session = session.compacted()
             appleFMSession = session
@@ -441,7 +425,6 @@ final class ChatViewModel {
         }
     }
 
-    /// Streams an Apple FM response with haptic feedback.
     @available(iOS 26, *)
     private func streamAppleFMResponse(
         session: LanguageModelSession,
@@ -475,9 +458,8 @@ final class ChatViewModel {
     }
 
     private func sendCloudMessage(_ text: String, provider: AIProvider, model: String) async throws -> String {
-        // Auto-compact if needed
         if ChatContextManager.shouldAutoCompact(
-            noteText: transcription.text,
+            noteText: assembledNoteText,
             messages: messages,
             provider: provider,
             model: model
@@ -486,15 +468,13 @@ final class ChatViewModel {
             try await performCompaction()
         }
 
-        // Assemble messages for API
         let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
-            noteText: transcription.text,
+            noteText: assembledNoteText,
             chatMessages: messages,
             provider: provider,
             model: model
         )
 
-        // Make streaming request
         return try await aiService.makeChatStreamingRequest(
             provider: provider,
             model: model,
@@ -525,7 +505,6 @@ final class ChatViewModel {
 
         let transcript = ChatContextManager.formatForCompaction(split.toCompact)
 
-        // Use the same AI to summarize
         let summaryPrompt = ChatContextManager.compactionPrompt
         let summaryMessages: [[String: String]] = [
             ["role": "user", "content": "Summarize this conversation:\n\n\(transcript)"]
@@ -538,13 +517,11 @@ final class ChatViewModel {
             messages: summaryMessages
         )
 
-        // Delete old messages, remove existing summaries
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
         for msg in toDelete {
             modelContext.delete(msg)
         }
 
-        // Insert summary message
         let summaryMessage = ChatMessage(
             role: "summary",
             content: summary,
@@ -553,7 +530,7 @@ final class ChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summary)
         )
-        summaryMessage.transcription = transcription
+        summaryMessage.conversation = conversation
         modelContext.insert(summaryMessage)
 
         trySave()
@@ -571,15 +548,15 @@ final class ChatViewModel {
             aiModelName: model,
             estimatedTokenCount: ChatContextManager.estimateTokens(partial)
         )
-        msg.transcription = transcription
+        msg.conversation = conversation
         modelContext.insert(msg)
         messages.append(msg)
         trySave()
     }
 
     private func persistProviderSelection() {
-        transcription.chatAIProviderName = selectedProvider?.rawValue
-        transcription.chatAIModelName = selectedModel
+        conversation.aiProviderName = selectedProvider?.rawValue
+        conversation.aiModelName = selectedModel
         trySave()
     }
 

@@ -41,9 +41,9 @@ final class ChatMessage {
     /// Pre-computed token estimate for context window management.
     var estimatedTokenCount: Int = 0
 
-    /// The parent transcription this chat message belongs to.
-    @Relationship(inverse: \Transcription.chatMessages)
-    var transcription: Transcription?
+    /// The conversation this chat message belongs to.
+    @Relationship(inverse: \ChatConversation.messages)
+    var conversation: ChatConversation?
 
     init(role: String = "user",
          content: String = "",

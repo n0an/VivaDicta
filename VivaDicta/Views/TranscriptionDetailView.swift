@@ -221,8 +221,10 @@ struct TranscriptionDetailView: View {
         }
         .onChange(of: showChat) { _, isShowing in
             if isShowing, chatViewModel == nil {
+                let conversation = findOrCreateConversation(for: transcription)
                 chatViewModel = ChatViewModel(
-                    transcription: transcription,
+                    conversation: conversation,
+                    sourceTranscriptions: [transcription],
                     aiService: appState.aiService,
                     modelContext: modelContext
                 )
@@ -493,8 +495,10 @@ struct TranscriptionDetailView: View {
                 // Button: Chat with Note
                 Button {
                     if chatViewModel == nil {
+                        let conversation = findOrCreateConversation(for: transcription)
                         chatViewModel = ChatViewModel(
-                            transcription: transcription,
+                            conversation: conversation,
+                            sourceTranscriptions: [transcription],
                             aiService: appState.aiService,
                             modelContext: modelContext
                         )
@@ -524,6 +528,16 @@ struct TranscriptionDetailView: View {
             .padding(.vertical, 4)
         }
         .background(.bar)
+    }
+
+    private func findOrCreateConversation(for transcription: Transcription) -> ChatConversation {
+        if let existing = transcription.chatConversations?.first {
+            return existing
+        }
+        let conversation = ChatConversation()
+        conversation.sourceTranscriptions = [transcription]
+        modelContext.insert(conversation)
+        return conversation
     }
 
     private func triggerCopyAnimation() {
