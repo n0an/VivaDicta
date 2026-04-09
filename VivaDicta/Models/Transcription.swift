@@ -103,6 +103,16 @@ class Transcription {
     @Relationship(deleteRule: .cascade)
     var tagAssignments: [TranscriptionTagAssignment]? = []
 
+    /// Chat messages for the "Chat with Note" conversation.
+    @Relationship(deleteRule: .cascade)
+    var chatMessages: [ChatMessage]? = []
+
+    /// Persisted AI provider name for this note's chat (independent from current mode).
+    var chatAIProviderName: String?
+
+    /// Persisted AI model name for this note's chat (independent from current mode).
+    var chatAIModelName: String?
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:

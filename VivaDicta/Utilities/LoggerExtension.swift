@@ -60,6 +60,7 @@ public enum LogCategory: String {
     case copilotOAuth = "CopilotOAuth"
     case copilotAPI = "CopilotAPIClient"
     case vivAgentsClient = "VivAgentsClient"
+    case chatViewModel = "ChatViewModel"
 
     // MARK: - Watch Connectivity
     case watchConnectivity = "WatchConnectivity"

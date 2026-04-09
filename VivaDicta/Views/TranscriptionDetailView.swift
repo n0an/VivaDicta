@@ -33,6 +33,7 @@ struct TranscriptionDetailView: View {
     @State private var streamingVariationText: String = ""
     @State private var showTextEditor: Bool = false
     @State private var showTagPicker: Bool = false
+    @State private var showChat: Bool = false
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -210,6 +211,16 @@ struct TranscriptionDetailView: View {
                 appState.shouldNavigateToModeSettings = true
             }
             .presentationDetents([.height(240)])
+        }
+        .sheet(isPresented: $showChat) {
+            ChatView(
+                viewModel: ChatViewModel(
+                    transcription: transcription,
+                    aiService: appState.aiService,
+                    modelContext: modelContext
+                )
+            )
+            .presentationDetents([.large])
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -470,6 +481,18 @@ struct TranscriptionDetailView: View {
                         .font(.system(size: 20))
                         .frame(width: 44, height: 44)
                 }
+
+                Spacer()
+
+                // Button: Chat with Note
+                Button {
+                    showChat = true
+                } label: {
+                    Image(systemName: "bubble.left.and.text.bubble.right")
+                        .font(.system(size: 20))
+                        .frame(width: 44, height: 44)
+                }
+                .disabled(appState.aiService.connectedProviders.isEmpty)
 
                 Spacer()
 
