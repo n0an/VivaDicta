@@ -68,13 +68,13 @@ final class ChatViewModel {
         )
     }
 
-    /// Whether the note text alone exceeds Apple FM's context window (leaving no room for chat).
+    /// Whether the note text alone would trigger auto-compaction, leaving no room for chat.
+    /// Threshold matches the 70% preemptive compaction trigger to avoid endless compaction cycles.
     var noteExceedsAppleFMContext: Bool {
         let noteTokens = ChatContextManager.estimateTokens(assembledNoteText)
         let systemTokens = ChatContextManager.estimateTokens(ChatContextManager.chatSystemPrompt)
         let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
-        // Note + system prompt should leave at least 25% for conversation
-        return (noteTokens + systemTokens) > (limit * 3 / 4)
+        return (noteTokens + systemTokens) > Int(Double(limit) * 0.6)
     }
 
     // MARK: - Dependencies
