@@ -34,6 +34,7 @@ struct TranscriptionDetailView: View {
     @State private var showTextEditor: Bool = false
     @State private var showTagPicker: Bool = false
     @State private var showChat: Bool = false
+    @State private var chatViewModel: ChatViewModel?
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -213,14 +214,10 @@ struct TranscriptionDetailView: View {
             .presentationDetents([.height(240)])
         }
         .sheet(isPresented: $showChat) {
-            ChatView(
-                viewModel: ChatViewModel(
-                    transcription: transcription,
-                    aiService: appState.aiService,
-                    modelContext: modelContext
-                )
-            )
-            .presentationDetents([.large])
+            if let chatViewModel {
+                ChatView(viewModel: chatViewModel)
+                    .presentationDetents([.large])
+            }
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -486,6 +483,13 @@ struct TranscriptionDetailView: View {
 
                 // Button: Chat with Note
                 Button {
+                    if chatViewModel == nil {
+                        chatViewModel = ChatViewModel(
+                            transcription: transcription,
+                            aiService: appState.aiService,
+                            modelContext: modelContext
+                        )
+                    }
                     showChat = true
                 } label: {
                     Image(systemName: "bubble.left.and.text.bubble.right")

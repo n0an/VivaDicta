@@ -278,17 +278,7 @@ final class ChatViewModel {
 
         print("DEBUG COMPACT: Compacting \(split.toCompact.count) messages, keeping \(split.toKeep.count)")
 
-        // Generate an AI summary for the UI card using a fresh Apple FM session
-        let conversationText = ChatContextManager.formatForCompaction(split.toCompact)
-        let summarizer = LanguageModelSession(
-            instructions: ChatContextManager.compactionPrompt
-        )
-        let summaryResponse = try await summarizer.respond(
-            to: conversationText,
-            options: GenerationOptions(sampling: .greedy)
-        )
-        let summaryText = summaryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        print("DEBUG COMPACT: Generated summary (\(summaryText.count) chars): \(summaryText.prefix(100))...")
+        let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
 
         // Delete old messages and existing summaries
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
