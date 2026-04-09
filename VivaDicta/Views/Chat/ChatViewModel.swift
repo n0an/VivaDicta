@@ -229,11 +229,12 @@ final class ChatViewModel {
 
         isCompacting = true
         do {
-            try await performCompaction()
-
-            // Rebuild Apple FM session after compaction (transcript changed)
             if provider == .apple {
-                initializeAppleFMSession()
+                // For Apple FM: use native preemptive summarization on the session
+                try await compactAppleFMSession()
+            } else {
+                // For cloud: message-level compaction
+                try await performCompaction()
             }
 
             HapticManager.success()
@@ -242,6 +243,27 @@ final class ChatViewModel {
             errorMessage = "Compaction failed: \(error.localizedDescription)"
         }
         isCompacting = false
+    }
+
+    @available(iOS 26, *)
+    private func compactAppleFMSessionImpl() async throws {
+        guard var session = appleFMSession else { return }
+        // Force summarization regardless of fill ratio by using 0.0 threshold
+        let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0)
+        if compacted !== session {
+            appleFMSession = compacted
+            logger.logInfo("Chat - Apple FM session manually compacted via summarization")
+        } else {
+            // Fallback to greedy compaction
+            appleFMSession = session.compacted()
+            logger.logInfo("Chat - Apple FM session manually compacted via greedy keep-recent")
+        }
+    }
+
+    private func compactAppleFMSession() async throws {
+        if #available(iOS 26, *) {
+            try await compactAppleFMSessionImpl()
+        }
     }
 
     // MARK: - Provider/Model Update
@@ -332,7 +354,7 @@ final class ChatViewModel {
 
     @available(iOS 26, *)
     private func sendAppleFMMessageImpl(_ text: String) async throws -> String {
-        guard let session = appleFMSession else {
+        guard var session = appleFMSession else {
             throw EnhancementError.notConfigured
         }
 
@@ -346,49 +368,65 @@ final class ChatViewModel {
 
         let options = GenerationOptions(sampling: .random(probabilityThreshold: 0.9))
 
+        // Preemptive summarization: compact before hitting the wall
         do {
-            let stream = session.streamResponse(to: text, options: options)
-            for try await partial in stream {
-                let content = partial.content
-                let previous = streamingText
-                if previous.isEmpty, !content.isEmpty {
-                    HapticManager.streamingStart()
-                } else if content.count > previous.count {
-                    HapticManager.streamingPulse()
-                }
-                streamingText = content
+            let compactedSession = try await session.preemptivelySummarizedIfNeeded()
+            if compactedSession !== session {
+                logger.logInfo("Chat - Apple FM preemptive summarization triggered")
+                session = compactedSession
+                appleFMSession = session
             }
-            let response = try await stream.collect()
-            let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            let filtered = AIEnhancementOutputFilter.filter(result)
-            streamingText = filtered
-            return filtered
+        } catch {
+            logger.logWarning("Chat - Preemptive summarization failed: \(error.localizedDescription)")
+        }
 
+        // Stream response with reactive fallback
+        do {
+            return try await streamAppleFMResponse(session: session, text: text, options: options)
+        } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
+            // Reactive compaction: greedy keep-recent
+            logger.logWarning("Chat - Apple FM context exceeded, reactive compaction")
+            session = session.compacted()
+            appleFMSession = session
+
+            do {
+                return try await streamAppleFMResponse(session: session, text: text, options: options)
+            } catch {
+                throw EnhancementError.customError("Failed after compaction: \(error.localizedDescription)")
+            }
         } catch let error as LanguageModelSession.GenerationError {
             switch error {
-            case .exceededContextWindowSize:
-                logger.logWarning("Chat - Apple FM context exceeded, compacting session")
-                // Reactive compaction: rebuild session with summary
-                try await performCompaction()
-                initializeAppleFMSession()
-                // Retry with fresh session
-                guard let newSession = appleFMSession else {
-                    throw EnhancementError.customError("Failed to rebuild Apple FM session")
-                }
-                let retryResponse = try await newSession.respond(
-                    to: text,
-                    options: options
-                )
-                let retryResult = retryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                return AIEnhancementOutputFilter.filter(retryResult)
-
             case .guardrailViolation:
                 throw EnhancementError.customError("Content was blocked by safety guidelines")
-
             default:
                 throw EnhancementError.customError(error.localizedDescription)
             }
         }
+    }
+
+    /// Streams an Apple FM response with haptic feedback.
+    @available(iOS 26, *)
+    private func streamAppleFMResponse(
+        session: LanguageModelSession,
+        text: String,
+        options: GenerationOptions
+    ) async throws -> String {
+        let stream = session.streamResponse(to: text, options: options)
+        for try await partial in stream {
+            let content = partial.content
+            let previous = streamingText
+            if previous.isEmpty, !content.isEmpty {
+                HapticManager.streamingStart()
+            } else if content.count > previous.count {
+                HapticManager.streamingPulse()
+            }
+            streamingText = content
+        }
+        let response = try await stream.collect()
+        let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filtered = AIEnhancementOutputFilter.filter(result)
+        streamingText = filtered
+        return filtered
     }
 
     private func sendAppleFMMessage(_ text: String) async throws -> String {
