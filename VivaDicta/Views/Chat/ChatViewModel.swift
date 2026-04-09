@@ -229,18 +229,20 @@ final class ChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard aiService.isChatProviderReady(provider) else { return }
 
+        print("DEBUG COMPACT: compactChat() called, provider: \(provider.displayName), fill ratio before: \(contextFillRatio)")
+
         isCompacting = true
         do {
             if provider == .apple {
-                // For Apple FM: use native preemptive summarization on the session
                 try await compactAppleFMSession()
             } else {
-                // For cloud: message-level compaction
                 try await performCompaction()
             }
 
+            print("DEBUG COMPACT: compactChat() succeeded, fill ratio after: \(contextFillRatio)")
             HapticManager.success()
         } catch {
+            print("DEBUG COMPACT: compactChat() failed: \(error)")
             logger.logError("Chat compaction failed: \(error.localizedDescription)")
             errorMessage = "Compaction failed: \(error.localizedDescription)"
         }
@@ -252,21 +254,29 @@ final class ChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard let session = appleFMSession else { return }
 
+        print("DEBUG COMPACT: Starting Apple FM compaction")
+        print("DEBUG COMPACT: Session transcript entries: \(session.transcript.count)")
+        print("DEBUG COMPACT: SwiftData messages count: \(messages.count)")
+
         // Compact the session transcript (this does the AI summarization internally)
         let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0)
         if compacted !== session {
             appleFMSession = compacted
-            logger.logInfo("Chat - Apple FM session manually compacted via summarization")
+            print("DEBUG COMPACT: Session compacted via summarization, new transcript entries: \(compacted.transcript.count)")
         } else {
-            appleFMSession = session.compacted()
-            logger.logInfo("Chat - Apple FM session manually compacted via greedy keep-recent")
+            let greedy = session.compacted()
+            appleFMSession = greedy
+            print("DEBUG COMPACT: Session compacted via greedy, new transcript entries: \(greedy.transcript.count)")
         }
 
         // Update SwiftData messages to reflect compaction in the UI
         let nonSummaryMessages = messages.filter { !$0.isSummary }
         guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else {
+            print("DEBUG COMPACT: Not enough messages to compact (need >4 non-summary)")
             return
         }
+
+        print("DEBUG COMPACT: Compacting \(split.toCompact.count) messages, keeping \(split.toKeep.count)")
 
         // Generate an AI summary for the UI card using a fresh Apple FM session
         let conversationText = ChatContextManager.formatForCompaction(split.toCompact)
@@ -278,9 +288,11 @@ final class ChatViewModel {
             options: GenerationOptions(sampling: .greedy)
         )
         let summaryText = summaryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        print("DEBUG COMPACT: Generated summary (\(summaryText.count) chars): \(summaryText.prefix(100))...")
 
         // Delete old messages and existing summaries
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
+        print("DEBUG COMPACT: Deleting \(toDelete.count) messages from SwiftData")
         for msg in toDelete {
             modelContext.delete(msg)
         }
@@ -301,6 +313,8 @@ final class ChatViewModel {
         saveAppleFMTranscript()
         trySave()
         loadMessages()
+
+        print("DEBUG COMPACT: Done. Messages after: \(messages.count), fill ratio: \(contextFillRatio)")
     }
 
     private func compactAppleFMSession() async throws {
