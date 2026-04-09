@@ -24,22 +24,11 @@ struct ChatBubbleView: View {
     // MARK: - Summary Card
 
     private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Previous conversation summarized", systemImage: "arrow.trianglehead.2.clockwise")
-                .font(.caption)
-                .bold()
-                .foregroundStyle(.secondary)
-
-            Text(message.content)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(4)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGray6))
-        .clipShape(.rect(cornerRadius: 12))
-        .padding(.horizontal)
+        Label("Previous conversation compacted", systemImage: "arrow.trianglehead.2.clockwise")
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
     }
 
     // MARK: - Message Bubble
