@@ -214,10 +214,14 @@ struct TranscriptionDetailView: View {
             .presentationDetents([.height(240)])
         }
         .sheet(isPresented: $showChat) {
-            if let chatViewModel {
-                ChatView(viewModel: chatViewModel)
-                    .presentationDetents([.large])
-            }
+            ChatView(
+                viewModel: chatViewModel ?? ChatViewModel(
+                    transcription: transcription,
+                    aiService: appState.aiService,
+                    modelContext: modelContext
+                )
+            )
+            .presentationDetents([.large])
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
