@@ -52,13 +52,19 @@ struct ChatBubbleView: View {
             if isUser { Spacer(minLength: 60) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                Text(displayText)
-                    .textSelection(.enabled)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(bubbleBackground(isUser: isUser, isError: isError))
-                    .foregroundStyle(isUser ? .white : (isError ? .red : .primary))
-                    .clipShape(.rect(cornerRadius: 18))
+                Group {
+                    if isUser {
+                        Text(displayText)
+                    } else {
+                        Text(.init(displayText))
+                    }
+                }
+                .textSelection(.enabled)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(bubbleBackground(isUser: isUser, isError: isError))
+                .foregroundStyle(isUser ? .white : (isError ? .red : .primary))
+                .clipShape(.rect(cornerRadius: 18))
 
                 if !isUser, let modelName = message.aiModelName {
                     Text(modelName)

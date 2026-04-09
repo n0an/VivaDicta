@@ -213,9 +213,11 @@ final class ChatViewModel {
             modelContext.delete(message)
         }
         messages.removeAll()
+
+        // Clear saved transcript and reinitialize
+        transcription.chatAppleFMTranscriptData = nil
         trySave()
 
-        // Reset Apple FM session
         if selectedProvider == .apple {
             initializeAppleFMSession()
         }
@@ -292,13 +294,19 @@ final class ChatViewModel {
         guard #available(iOS 26, *) else { return }
         guard AppleFoundationModelAvailability.isAvailable else { return }
 
-        // Build instructions with note context
-        let instructions = buildAppleFMInstructions()
+        // Try restoring from saved transcript first
+        if let data = transcription.chatAppleFMTranscriptData,
+           let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
+            appleFMSession = LanguageModelSession(transcript: transcript)
+            logger.logInfo("Chat - Apple FM session restored from saved transcript")
+            return
+        }
 
+        // Fresh session with instructions + note context
+        let instructions = buildAppleFMInstructions()
         let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
         appleFMSession = LanguageModelSession(model: model, instructions: instructions)
-
-        logger.logInfo("Chat - Apple FM session initialized")
+        logger.logInfo("Chat - Apple FM session initialized fresh")
     }
 
     @available(iOS 26, *)
@@ -314,39 +322,15 @@ final class ChatViewModel {
         return instructions
     }
 
+    /// Saves the Apple FM session transcript for later restoration.
     @available(iOS 26, *)
-    private func replayHistoryIntoSession() async {
+    private func saveAppleFMTranscript() {
         guard let session = appleFMSession else { return }
-
-        // Replay non-summary messages that weren't part of the current session
-        let historyMessages = messages.filter { !$0.isSummary && !$0.isError }
-
-        // Only replay if there are previous messages (reopening existing chat)
-        guard !historyMessages.isEmpty else { return }
-
-        // Skip the last user message (it's the one we're about to send)
-        let previousPairs = historyMessages.dropLast()
-
-        // Replay user/assistant pairs to rebuild session context
-        var i = 0
-        let pairsArray = Array(previousPairs)
-        while i < pairsArray.count {
-            let msg = pairsArray[i]
-            if msg.role == "user", i + 1 < pairsArray.count, pairsArray[i + 1].role == "assistant" {
-                // Replay this pair silently to rebuild context
-                do {
-                    let _ = try await session.respond(
-                        to: msg.content,
-                        options: GenerationOptions(sampling: .greedy) // Fast, deterministic for replay
-                    )
-                } catch {
-                    logger.logWarning("Chat - Failed to replay message during session rebuild: \(error.localizedDescription)")
-                    break
-                }
-                i += 2
-            } else {
-                i += 1
-            }
+        do {
+            let data = try JSONEncoder().encode(session.transcript)
+            transcription.chatAppleFMTranscriptData = data
+        } catch {
+            logger.logWarning("Chat - Failed to save Apple FM transcript: \(error.localizedDescription)")
         }
     }
 
@@ -358,15 +342,10 @@ final class ChatViewModel {
             throw EnhancementError.notConfigured
         }
 
-        // If session has no transcript beyond instructions, replay history for reopened chats
-        let hasOnlyInstructions = session.transcript.count <= 1
-        let hasHistoryToReplay = messages.filter({ !$0.isSummary && !$0.isError }).count > 1
-        if hasOnlyInstructions && hasHistoryToReplay {
-            logger.logInfo("Chat - Replaying history into Apple FM session")
-            await replayHistoryIntoSession()
-        }
-
-        let options = GenerationOptions(sampling: .random(probabilityThreshold: 0.9))
+        let options = GenerationOptions(
+            sampling: .random(probabilityThreshold: 0.9),
+            temperature: 0.7
+        )
 
         // Preemptive summarization: compact before hitting the wall
         do {
@@ -382,7 +361,9 @@ final class ChatViewModel {
 
         // Stream response with reactive fallback
         do {
-            return try await streamAppleFMResponse(session: session, text: text, options: options)
+            let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+            saveAppleFMTranscript()
+            return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             // Reactive compaction: greedy keep-recent
             logger.logWarning("Chat - Apple FM context exceeded, reactive compaction")
@@ -390,7 +371,9 @@ final class ChatViewModel {
             appleFMSession = session
 
             do {
-                return try await streamAppleFMResponse(session: session, text: text, options: options)
+                let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+                saveAppleFMTranscript()
+                return result
             } catch {
                 throw EnhancementError.customError("Failed after compaction: \(error.localizedDescription)")
             }

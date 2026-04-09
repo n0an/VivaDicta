@@ -119,7 +119,7 @@ struct ChatView: View {
     private var streamingBubble: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(viewModel.streamingText)
+                Text(.init(viewModel.streamingText))
                     .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)

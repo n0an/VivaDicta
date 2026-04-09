@@ -113,6 +113,9 @@ class Transcription {
     /// Persisted AI model name for this note's chat (independent from current mode).
     var chatAIModelName: String?
 
+    /// Encoded Apple FM `Transcript` data for session restoration without replay.
+    var chatAppleFMTranscriptData: Data?
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:
