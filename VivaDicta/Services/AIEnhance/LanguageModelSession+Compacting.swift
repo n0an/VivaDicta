@@ -120,10 +120,14 @@ extension LanguageModelSession {
         let fill = min(max(fillAmount, 0), 1)
 
         #if swift(>=6.3)
-        let triggerTokens = Int(Double(SystemLanguageModel.default.contextSize) * fill)
+        let contextSize = SystemLanguageModel.default.contextSize
+        let triggerTokens = Int(Double(contextSize) * fill)
         #else
+        let contextSize = 4096
         let triggerTokens = Int(Double(4096) * fill)
         #endif
+
+        print("DEBUG SUMMARIZE: fillAmount=\(fillAmount), fill=\(fill), contextSize=\(contextSize), triggerTokens=\(triggerTokens), targetContextTokens=\(targetContextTokens)")
 
         let usedTokens: Int
 
@@ -137,35 +141,48 @@ extension LanguageModelSession {
         usedTokens = String(describing: transcript).count / 2
         #endif
 
-        // Below threshold — no compaction needed
-        guard usedTokens > triggerTokens else { return self }
+        print("DEBUG SUMMARIZE: usedTokens=\(usedTokens), threshold=\(triggerTokens), should trigger: \(usedTokens > triggerTokens)")
 
-        #if DEBUG
-        print("DEBUG: Preemptive compaction triggered (\(usedTokens)/\(triggerTokens) tokens)")
-        #endif
+        // Below threshold - no compaction needed
+        guard usedTokens > triggerTokens else {
+            print("DEBUG SUMMARIZE: Below threshold, returning self")
+            return self
+        }
+
+        print("DEBUG SUMMARIZE: Compaction triggered!")
 
         guard let first = transcript.getInstructions() else {
+            print("DEBUG SUMMARIZE: No instructions found in transcript, returning self")
             return self
         }
 
         let firstText = String(describing: first)
+        print("DEBUG SUMMARIZE: Instructions length: \(firstText.count) chars")
 
         // Build summary source from conversation messages (recency-biased)
-        // Use max of triggerTokens and targetContextTokens to avoid empty suffix when fillAmount is 0
+        let messages = transcript.getMessages()
+        let allMessagesText = messages.map(String.init).joined(separator: "\n\n")
         let suffixBudget = max(triggerTokens, targetContextTokens) * 3
-        let summarySource = transcript.getMessages()
-            .map(String.init)
-            .joined(separator: "\n\n")
-            .suffix(suffixBudget)
+        let summarySource = allMessagesText.suffix(suffixBudget)
+
+        print("DEBUG SUMMARIZE: Messages count: \(messages.count), allMessagesText length: \(allMessagesText.count), suffixBudget: \(suffixBudget), summarySource length: \(summarySource.count)")
 
         // Calculate summary budget
         let frame = "Instructions: \(firstText)"
         let summaryCharacterLimit = max(0, targetContextTokens * 3 - frame.count)
+
+        print("DEBUG SUMMARIZE: frame length: \(frame.count), targetContextTokens*3=\(targetContextTokens * 3), summaryCharacterLimit=\(summaryCharacterLimit)")
+
         let summary: String
 
-        if summarySource.isEmpty || summaryCharacterLimit == 0 {
+        if summarySource.isEmpty {
+            print("DEBUG SUMMARIZE: summarySource is EMPTY - skipping summarization")
+            summary = ""
+        } else if summaryCharacterLimit == 0 {
+            print("DEBUG SUMMARIZE: summaryCharacterLimit is 0 - frame too large, skipping summarization")
             summary = ""
         } else {
+            print("DEBUG SUMMARIZE: Calling Apple FM summarizer with \(summarySource.count) chars, limit \(summaryCharacterLimit)...")
             let summarizer = LanguageModelSession(
                 instructions: "Summarize the entire input from beginning to end, covering the whole document (not just the end), preserving key facts. Be concise. Hard maximum: \(summaryCharacterLimit) characters."
             )
@@ -173,9 +190,7 @@ extension LanguageModelSession {
             summary = String(response.content.prefix(summaryCharacterLimit))
                 .trimmingCharacters(in: .whitespacesAndNewlines)
 
-            #if DEBUG
-            print("DEBUG: Preemptive summary: \(summary)")
-            #endif
+            print("DEBUG SUMMARIZE: Generated summary (\(summary.count) chars): \(summary)")
         }
 
         let instructions = """
@@ -188,6 +203,8 @@ extension LanguageModelSession {
         // Hard upper bound safety ceiling
         let hardLimitCharacters = Int(Double(targetContextTokens * 3) * 1.5)
         let clippedInstructions = String(instructions.prefix(hardLimitCharacters))
+
+        print("DEBUG SUMMARIZE: Rebuilt instructions: \(clippedInstructions.count) chars (hard limit: \(hardLimitCharacters))")
 
         return LanguageModelSession(tools: tools, instructions: clippedInstructions)
     }
