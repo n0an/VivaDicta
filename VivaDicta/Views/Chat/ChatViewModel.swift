@@ -109,6 +109,7 @@ final class ChatViewModel {
         // Start streaming task
         isStreaming = true
         streamingText = ""
+        HapticManager.prepareStreaming()
 
         streamingTask = Task {
             do {
@@ -138,7 +139,14 @@ final class ChatViewModel {
                     systemMessage: systemMessage,
                     messages: apiMessages,
                     onPartialResponse: { [weak self] partial in
-                        self?.streamingText = partial
+                        guard let self else { return }
+                        let previous = self.streamingText
+                        if previous.isEmpty, !partial.isEmpty {
+                            HapticManager.streamingStart()
+                        } else if partial.count > previous.count {
+                            HapticManager.streamingPulse()
+                        }
+                        self.streamingText = partial
                     }
                 )
 
@@ -154,7 +162,7 @@ final class ChatViewModel {
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
 
-                HapticManager.success()
+                HapticManager.heartbeat()
 
             } catch is CancellationError {
                 // Save partial response if any
