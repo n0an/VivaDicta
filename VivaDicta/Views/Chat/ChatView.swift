@@ -32,7 +32,7 @@ struct ChatView: View {
 
                 ChatInputBar(
                     text: $viewModel.inputText,
-                    isStreaming: viewModel.isStreaming,
+                    isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                     onSend: { viewModel.sendMessage() },
                     onStop: { viewModel.cancelStreaming() }
                 )
@@ -100,6 +100,7 @@ struct ChatView: View {
             .padding(.vertical, 12)
         }
         .defaultScrollAnchor(.bottom)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private var emptyState: some View {

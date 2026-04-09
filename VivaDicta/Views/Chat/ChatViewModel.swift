@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FoundationModels
 import SwiftData
 import os
 
@@ -13,6 +14,10 @@ import os
 ///
 /// Manages message history, AI communication, provider/model selection,
 /// and context window compaction for a single transcription's chat.
+///
+/// For Apple Foundation Models, maintains a persistent `LanguageModelSession`
+/// that accumulates context across turns. For cloud providers, assembles
+/// the full message array on each request.
 @Observable
 @MainActor
 final class ChatViewModel {
@@ -31,6 +36,27 @@ final class ChatViewModel {
 
     var selectedProvider: AIProvider?
     var selectedModel: String?
+
+    // MARK: - Apple FM Session (type-erased for iOS version compatibility)
+
+    /// Persistent Apple FM session, stored as `Any?` to avoid iOS 26 availability on stored property.
+    private var _appleFMSession: Any?
+
+    /// Typed accessor for the Apple FM session.
+    @available(iOS 26, *)
+    private var appleFMSession: LanguageModelSession? {
+        get { _appleFMSession as? LanguageModelSession }
+        set { _appleFMSession = newValue }
+    }
+
+    /// Whether Apple FM session is currently generating a response.
+    var isAppleFMResponding: Bool {
+        guard selectedProvider == .apple else { return false }
+        if #available(iOS 26, *) {
+            return appleFMSession?.isResponding ?? false
+        }
+        return false
+    }
 
     // MARK: - Context
 
@@ -70,6 +96,11 @@ final class ChatViewModel {
         }
 
         loadMessages()
+
+        // Initialize Apple FM session if needed
+        if selectedProvider == .apple {
+            initializeAppleFMSession()
+        }
     }
 
     // MARK: - Message Loading
@@ -93,6 +124,11 @@ final class ChatViewModel {
             return
         }
 
+        // Guard against Apple FM responding
+        if isAppleFMResponding {
+            return
+        }
+
         inputText = ""
         errorMessage = nil
 
@@ -113,42 +149,13 @@ final class ChatViewModel {
 
         streamingTask = Task {
             do {
-                // Auto-compact if needed
-                if ChatContextManager.shouldAutoCompact(
-                    noteText: transcription.text,
-                    messages: messages,
-                    provider: provider,
-                    model: model
-                ) {
-                    logger.logInfo("Chat - Auto-compacting context")
-                    try await performCompaction()
+                let result: String
+
+                if provider == .apple {
+                    result = try await sendAppleFMMessage(text)
+                } else {
+                    result = try await sendCloudMessage(text, provider: provider, model: model)
                 }
-
-                // Assemble messages for API
-                let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
-                    noteText: transcription.text,
-                    chatMessages: messages,
-                    provider: provider,
-                    model: model
-                )
-
-                // Make streaming request
-                let result = try await aiService.makeChatStreamingRequest(
-                    provider: provider,
-                    model: model,
-                    systemMessage: systemMessage,
-                    messages: apiMessages,
-                    onPartialResponse: { [weak self] partial in
-                        guard let self else { return }
-                        let previous = self.streamingText
-                        if previous.isEmpty, !partial.isEmpty {
-                            HapticManager.streamingStart()
-                        } else if partial.count > previous.count {
-                            HapticManager.streamingPulse()
-                        }
-                        self.streamingText = partial
-                    }
-                )
 
                 // Create assistant message
                 let assistantMessage = ChatMessage(
@@ -165,7 +172,6 @@ final class ChatViewModel {
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
-                // Save partial response if any
                 savePartialResponse(provider: provider, model: model)
             } catch {
                 logger.logError("Chat error: \(error.localizedDescription)")
@@ -208,6 +214,11 @@ final class ChatViewModel {
         }
         messages.removeAll()
         trySave()
+
+        // Reset Apple FM session
+        if selectedProvider == .apple {
+            initializeAppleFMSession()
+        }
     }
 
     // MARK: - Compact Chat
@@ -219,6 +230,12 @@ final class ChatViewModel {
         isCompacting = true
         do {
             try await performCompaction()
+
+            // Rebuild Apple FM session after compaction (transcript changed)
+            if provider == .apple {
+                initializeAppleFMSession()
+            }
+
             HapticManager.success()
         } catch {
             logger.logError("Chat compaction failed: \(error.localizedDescription)")
@@ -233,11 +250,192 @@ final class ChatViewModel {
         selectedProvider = provider
         selectedModel = provider.defaultModel
         persistProviderSelection()
+
+        // Initialize or clear Apple FM session
+        if provider == .apple {
+            initializeAppleFMSession()
+        } else {
+            _appleFMSession = nil
+        }
     }
 
     func updateModel(_ model: String) {
         selectedModel = model
         persistProviderSelection()
+    }
+
+    // MARK: - Apple FM Session Management
+
+    private func initializeAppleFMSession() {
+        guard #available(iOS 26, *) else { return }
+        guard AppleFoundationModelAvailability.isAvailable else { return }
+
+        // Build instructions with note context
+        let instructions = buildAppleFMInstructions()
+
+        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+        appleFMSession = LanguageModelSession(model: model, instructions: instructions)
+
+        logger.logInfo("Chat - Apple FM session initialized")
+    }
+
+    @available(iOS 26, *)
+    private func buildAppleFMInstructions() -> String {
+        var instructions = ChatContextManager.chatSystemPrompt
+        instructions += "\n\n<NOTE>\n\(transcription.text)\n</NOTE>"
+
+        // Include summary from prior compaction if exists
+        if let summary = messages.first(where: { $0.isSummary }) {
+            instructions += "\n\nPrevious conversation summary:\n\(summary.content)"
+        }
+
+        return instructions
+    }
+
+    @available(iOS 26, *)
+    private func replayHistoryIntoSession() async {
+        guard let session = appleFMSession else { return }
+
+        // Replay non-summary messages that weren't part of the current session
+        let historyMessages = messages.filter { !$0.isSummary && !$0.isError }
+
+        // Only replay if there are previous messages (reopening existing chat)
+        guard !historyMessages.isEmpty else { return }
+
+        // Skip the last user message (it's the one we're about to send)
+        let previousPairs = historyMessages.dropLast()
+
+        // Replay user/assistant pairs to rebuild session context
+        var i = 0
+        let pairsArray = Array(previousPairs)
+        while i < pairsArray.count {
+            let msg = pairsArray[i]
+            if msg.role == "user", i + 1 < pairsArray.count, pairsArray[i + 1].role == "assistant" {
+                // Replay this pair silently to rebuild context
+                do {
+                    let _ = try await session.respond(
+                        to: msg.content,
+                        options: GenerationOptions(sampling: .greedy) // Fast, deterministic for replay
+                    )
+                } catch {
+                    logger.logWarning("Chat - Failed to replay message during session rebuild: \(error.localizedDescription)")
+                    break
+                }
+                i += 2
+            } else {
+                i += 1
+            }
+        }
+    }
+
+    // MARK: - Send Helpers
+
+    @available(iOS 26, *)
+    private func sendAppleFMMessageImpl(_ text: String) async throws -> String {
+        guard let session = appleFMSession else {
+            throw EnhancementError.notConfigured
+        }
+
+        // If session has no transcript beyond instructions, replay history for reopened chats
+        let hasOnlyInstructions = session.transcript.count <= 1
+        let hasHistoryToReplay = messages.filter({ !$0.isSummary && !$0.isError }).count > 1
+        if hasOnlyInstructions && hasHistoryToReplay {
+            logger.logInfo("Chat - Replaying history into Apple FM session")
+            await replayHistoryIntoSession()
+        }
+
+        let options = GenerationOptions(sampling: .random(probabilityThreshold: 0.9))
+
+        do {
+            let stream = session.streamResponse(to: text, options: options)
+            for try await partial in stream {
+                let content = partial.content
+                let previous = streamingText
+                if previous.isEmpty, !content.isEmpty {
+                    HapticManager.streamingStart()
+                } else if content.count > previous.count {
+                    HapticManager.streamingPulse()
+                }
+                streamingText = content
+            }
+            let response = try await stream.collect()
+            let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let filtered = AIEnhancementOutputFilter.filter(result)
+            streamingText = filtered
+            return filtered
+
+        } catch let error as LanguageModelSession.GenerationError {
+            switch error {
+            case .exceededContextWindowSize:
+                logger.logWarning("Chat - Apple FM context exceeded, compacting session")
+                // Reactive compaction: rebuild session with summary
+                try await performCompaction()
+                initializeAppleFMSession()
+                // Retry with fresh session
+                guard let newSession = appleFMSession else {
+                    throw EnhancementError.customError("Failed to rebuild Apple FM session")
+                }
+                let retryResponse = try await newSession.respond(
+                    to: text,
+                    options: options
+                )
+                let retryResult = retryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                return AIEnhancementOutputFilter.filter(retryResult)
+
+            case .guardrailViolation:
+                throw EnhancementError.customError("Content was blocked by safety guidelines")
+
+            default:
+                throw EnhancementError.customError(error.localizedDescription)
+            }
+        }
+    }
+
+    private func sendAppleFMMessage(_ text: String) async throws -> String {
+        if #available(iOS 26, *) {
+            return try await sendAppleFMMessageImpl(text)
+        } else {
+            throw EnhancementError.notConfigured
+        }
+    }
+
+    private func sendCloudMessage(_ text: String, provider: AIProvider, model: String) async throws -> String {
+        // Auto-compact if needed
+        if ChatContextManager.shouldAutoCompact(
+            noteText: transcription.text,
+            messages: messages,
+            provider: provider,
+            model: model
+        ) {
+            logger.logInfo("Chat - Auto-compacting context")
+            try await performCompaction()
+        }
+
+        // Assemble messages for API
+        let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
+            noteText: transcription.text,
+            chatMessages: messages,
+            provider: provider,
+            model: model
+        )
+
+        // Make streaming request
+        return try await aiService.makeChatStreamingRequest(
+            provider: provider,
+            model: model,
+            systemMessage: systemMessage,
+            messages: apiMessages,
+            onPartialResponse: { [weak self] partial in
+                guard let self else { return }
+                let previous = self.streamingText
+                if previous.isEmpty, !partial.isEmpty {
+                    HapticManager.streamingStart()
+                } else if partial.count > previous.count {
+                    HapticManager.streamingPulse()
+                }
+                self.streamingText = partial
+            }
+        )
     }
 
     // MARK: - Private Helpers
