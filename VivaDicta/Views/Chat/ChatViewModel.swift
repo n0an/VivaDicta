@@ -68,6 +68,15 @@ final class ChatViewModel {
         )
     }
 
+    /// Whether the note text alone exceeds Apple FM's context window (leaving no room for chat).
+    var noteExceedsAppleFMContext: Bool {
+        let noteTokens = ChatContextManager.estimateTokens(assembledNoteText)
+        let systemTokens = ChatContextManager.estimateTokens(ChatContextManager.chatSystemPrompt)
+        let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
+        // Note + system prompt should leave at least 25% for conversation
+        return (noteTokens + systemTokens) > (limit * 3 / 4)
+    }
+
     // MARK: - Dependencies
 
     let conversation: ChatConversation
@@ -124,6 +133,11 @@ final class ChatViewModel {
         }
         guard aiService.isChatProviderReady(provider) else {
             errorMessage = "\(provider.displayName) is not configured"
+            return
+        }
+
+        if provider == .apple, noteExceedsAppleFMContext {
+            errorMessage = "This note is too long for Apple Foundation Models. Try a cloud provider with a larger context window."
             return
         }
 
