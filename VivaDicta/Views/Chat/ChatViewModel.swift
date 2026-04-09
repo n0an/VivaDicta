@@ -281,7 +281,7 @@ final class ChatViewModel {
         // Log what the internal session summary looks like
         if let compactedSession = appleFMSession {
             let transcriptDescription = String(describing: compactedSession.transcript)
-            print("DEBUG COMPACT: Session internal transcript after compaction:\n\(transcriptDescription.prefix(500))")
+            print("DEBUG COMPACT: Session internal transcript after compaction (full):\n\(transcriptDescription)")
         }
 
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
