@@ -127,6 +127,9 @@ struct MultiNoteChatView: View {
             .onChange(of: isThinking) {
                 scrollToBottom(proxy: proxy)
             }
+            .onChange(of: viewModel.isCompacting) {
+                scrollToBottom(proxy: proxy)
+            }
         }
     }
 
