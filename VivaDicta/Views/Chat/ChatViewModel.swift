@@ -107,13 +107,10 @@ final class ChatViewModel {
         )
     }
 
-    /// Whether the note text alone would trigger auto-compaction, leaving no room for chat.
-    var noteExceedsAppleFMContext: Bool {
-        let noteTokens = ChatContextManager.estimateTokens(assembledNoteText)
-        let systemTokens = ChatContextManager.estimateTokens(ChatContextManager.chatSystemPrompt)
-        let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
-        return (noteTokens + systemTokens) > Int(Double(limit) * 0.6)
-    }
+    /// Whether the note text alone would exceed the Apple FM context window,
+    /// leaving no room for chat. Computed synchronously on init (character estimate),
+    /// then refined with real token count on iOS 26.4+.
+    var noteExceedsAppleFMContext: Bool = false
 
     // MARK: - Dependencies
 
@@ -138,10 +135,15 @@ final class ChatViewModel {
         self.modelContext = modelContext
 
         loadMessages()
+        noteExceedsAppleFMContext = Self.estimateNoteExceedsAppleFM(
+            noteText: assembledNoteText,
+            systemPrompt: ChatContextManager.chatSystemPrompt
+        )
 
         if selectedProvider == .apple {
             if noteExceedsAppleFMContext {
                 errorMessage = "This note is too long for Apple Foundation Models. Select a different mode with a cloud provider."
+                Task { await refineNoteExceedsCheck() }
             } else {
                 initializeAppleFMSession()
             }
@@ -347,7 +349,7 @@ final class ChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        appleFMSession = LanguageModelSession(model: appleFMModel, transcript: transcript)
+        appleFMSession = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
 
         // Update SwiftData messages
         let nonSummaryMessages = messages.filter { !$0.isSummary }
@@ -381,7 +383,49 @@ final class ChatViewModel {
         }
     }
 
-    // MARK: - Provider/Model (derived from VivaMode, no local state)
+    // MARK: - Note Exceeds Check
+
+    /// Synchronous character-based estimate with 0.80 threshold (used at init before async is available).
+    private static func estimateNoteExceedsAppleFM(noteText: String, systemPrompt: String) -> Bool {
+        let noteTokens = ChatContextManager.estimateTokens(noteText)
+        let systemTokens = ChatContextManager.estimateTokens(systemPrompt)
+        let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
+        return (noteTokens + systemTokens) > Int(Double(limit) * 0.80)
+    }
+
+    /// Refines `noteExceedsAppleFMContext` with real token count on iOS 26.4+.
+    /// If the sync estimate was too conservative, clears the error and initializes the session.
+    private func refineNoteExceedsCheck() async {
+        guard #available(iOS 26.4, *) else { return }
+
+        let entries: [Transcript.Entry] = [
+            .instructions(.init(
+                segments: [.text(.init(content: ChatContextManager.chatSystemPrompt))],
+                toolDefinitions: []
+            )),
+            .prompt(.init(segments: [.text(.init(content: assembledNoteText))]))
+        ]
+
+        do {
+            let usedTokens = try await SystemLanguageModel.default.tokenCount(for: entries)
+            let contextSize = SystemLanguageModel.default.contextSize
+            let exceeds = contextSize > 0 ? Double(usedTokens) / Double(contextSize) > 0.80 : true
+
+            if noteExceedsAppleFMContext && !exceeds {
+                logger.logInfo("Chat - Real token count shows note fits (\(usedTokens)/\(contextSize)), clearing error")
+                noteExceedsAppleFMContext = false
+                errorMessage = nil
+                initializeAppleFMSession()
+                updateContextFillRatio()
+            } else if !noteExceedsAppleFMContext && exceeds {
+                logger.logInfo("Chat - Real token count shows note too large (\(usedTokens)/\(contextSize))")
+                noteExceedsAppleFMContext = true
+                errorMessage = "This note is too long for Apple Foundation Models. Select a different mode with a cloud provider."
+            }
+        } catch {
+            logger.logWarning("Chat - Failed to refine note size check: \(error.localizedDescription)")
+        }
+    }
 
     // MARK: - Apple FM Session Management
 
@@ -390,13 +434,19 @@ final class ChatViewModel {
         SystemLanguageModel(guardrails: .permissiveContentTransformations)
     }
 
+    @available(iOS 26, *)
+    private var appleFMTools: [any Tool] {
+        guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
+        return [ExaWebSearchTool(apiKey: key)]
+    }
+
     private func initializeAppleFMSession() {
         guard #available(iOS 26, *) else { return }
         guard AppleFoundationModelAvailability.isAvailable else { return }
 
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-            let session = LanguageModelSession(model: appleFMModel, transcript: transcript)
+            let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
             session.prewarm()
             appleFMSession = session
             logger.logInfo("Chat - Apple FM session restored and prewarmed")
@@ -411,7 +461,7 @@ final class ChatViewModel {
             summary: summary
         )
 
-        let session = LanguageModelSession(model: appleFMModel, transcript: transcript)
+        let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
         session.prewarm()
         appleFMSession = session
         logger.logInfo("Chat - Apple FM session initialized and prewarmed")
@@ -516,7 +566,7 @@ final class ChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        return LanguageModelSession(model: appleFMModel, transcript: transcript)
+        return LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
     }
 
     @available(iOS 26, *)

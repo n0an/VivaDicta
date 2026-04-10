@@ -195,6 +195,17 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsDestination.presetsSettings) {
                         Text("AI Presets")
                     }
+                    NavigationLink(value: SettingsDestination.chatTools) {
+                        HStack {
+                            Text("Chat Tools")
+                            Spacer()
+                            if ExaAPIKeyManager.isConfigured {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .font(.caption)
+                            }
+                        }
+                    }
                 }
 
                 Section("Keyboard") {
@@ -503,6 +514,8 @@ struct SettingsView: View {
                     AIProviders()
                 case .tags:
                     TagManagementView()
+                case .chatTools:
+                    ChatToolsSettingsView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in
