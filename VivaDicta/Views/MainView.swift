@@ -27,6 +27,7 @@ struct MainView: View {
     @State private var displayedTranscriptionIDs: Set<UUID> = []
     @State private var showDeleteConfirmation = false
     @State private var showBulkTagPicker = false
+    @State private var showMultiNoteChats = false
 
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
@@ -132,6 +133,9 @@ struct MainView: View {
             SettingsView()
                 .interactiveDismissDisabled(true)
                 .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
+        }
+        .sheet(isPresented: $showMultiNoteChats) {
+            MultiNoteChatsListView()
         }
         .onChange(of: appState.shouldNavigateToModeSettings) { _, newValue in
             if newValue { showingSettings = true }
@@ -419,6 +423,16 @@ struct MainView: View {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
                 ToolbarItem(placement: .bottomBar) {
                     Button {
+                        showMultiNoteChats = true
+                    } label: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 20))
+                    }
+                    .accessibilityLabel("Multi-Note Chats")
+                }
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
                         startRecording()
                     } label: {
                         Image(systemName: "microphone.circle")
@@ -431,6 +445,15 @@ struct MainView: View {
                 }
                 .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
             } else {
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        showMultiNoteChats = true
+                    } label: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 20))
+                    }
+                    .accessibilityLabel("Multi-Note Chats")
+                }
                 ToolbarItem(placement: .bottomBar) {
                     Button("") {
                         startRecording()

@@ -1,8 +1,8 @@
 //
-//  ChatViewModel.swift
+//  MultiNoteChatViewModel.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2026.04.09
+//  Created by Anton Novoselov on 2026.04.10
 //
 
 import Foundation
@@ -10,19 +10,15 @@ import FoundationModels
 import SwiftData
 import os
 
-/// View model for the "Chat with Note" feature.
+/// View model for multi-note chat conversations.
 ///
-/// Manages message history, AI communication, provider/model selection,
-/// and context window compaction. Supports single-note and (future) multi-note
-/// conversations via the ``ChatConversation`` model.
-///
-/// For Apple Foundation Models, maintains a persistent `LanguageModelSession`
-/// that accumulates context across turns. For cloud providers, assembles
-/// the full message array on each request.
+/// Structurally parallel to ``ChatViewModel`` but works with
+/// ``MultiNoteConversation`` and multiple source transcriptions.
+/// Uses ``MultiNoteContextManager`` for context assembly.
 @Observable
 @MainActor
-final class ChatViewModel {
-    private let logger = Logger(category: .chatViewModel)
+final class MultiNoteChatViewModel {
+    private let logger = Logger(category: .multiNoteChat)
 
     // MARK: - State
 
@@ -38,7 +34,7 @@ final class ChatViewModel {
     var selectedProvider: AIProvider? { aiService.selectedMode.aiProvider }
     var selectedModel: String? { aiService.selectedMode.aiModel.isEmpty ? nil : aiService.selectedMode.aiModel }
 
-    // MARK: - Apple FM Session (type-erased for iOS version compatibility)
+    // MARK: - Apple FM Session (type-erased)
 
     private var _appleFMSession: Any?
 
@@ -60,7 +56,7 @@ final class ChatViewModel {
 
     var contextFillRatio: Double {
         guard let provider = selectedProvider, let model = selectedModel else { return 0 }
-        return ChatContextManager.fillRatio(
+        return MultiNoteContextManager.fillRatio(
             noteText: assembledNoteText,
             messages: messages,
             provider: provider,
@@ -68,32 +64,46 @@ final class ChatViewModel {
         )
     }
 
-    /// Whether the note text alone would trigger auto-compaction, leaving no room for chat.
     var noteExceedsAppleFMContext: Bool {
-        let noteTokens = ChatContextManager.estimateTokens(assembledNoteText)
-        let systemTokens = ChatContextManager.estimateTokens(ChatContextManager.chatSystemPrompt)
+        let sources = conversation.sources ?? []
+        let noteTokens = MultiNoteContextManager.noteTokenCount(from: sources)
+        let systemTokens = ChatContextManager.estimateTokens(MultiNoteContextManager.systemPrompt)
         let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
         return (noteTokens + systemTokens) > Int(Double(limit) * 0.6)
     }
 
+    // MARK: - Note Info
+
+    var noteCount: Int {
+        (conversation.sources ?? []).filter { $0.transcription != nil }.count
+    }
+
+    var deletedNoteCount: Int {
+        (conversation.sources ?? []).filter { $0.transcription == nil }.count
+    }
+
     // MARK: - Dependencies
 
-    let conversation: ChatConversation
-    let transcription: Transcription
+    let conversation: MultiNoteConversation
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
 
-    /// The note text for this conversation.
     var assembledNoteText: String {
-        transcription.text
+        guard let provider = selectedProvider, let model = selectedModel else {
+            return MultiNoteContextManager.assembleNoteText(from: conversation.sources ?? [])
+        }
+        return MultiNoteContextManager.truncateNotesIfNeeded(
+            sources: conversation.sources ?? [],
+            provider: provider,
+            model: model
+        )
     }
 
     // MARK: - Init
 
-    init(conversation: ChatConversation, transcription: Transcription, aiService: AIService, modelContext: ModelContext) {
+    init(conversation: MultiNoteConversation, aiService: AIService, modelContext: ModelContext) {
         self.conversation = conversation
-        self.transcription = transcription
         self.aiService = aiService
         self.modelContext = modelContext
 
@@ -101,7 +111,7 @@ final class ChatViewModel {
 
         if selectedProvider == .apple {
             if noteExceedsAppleFMContext {
-                errorMessage = "This note is too long for Apple Foundation Models. Select a different mode with a cloud provider."
+                errorMessage = "These notes are too long for Apple Foundation Models. Select a different mode with a cloud provider."
             } else {
                 initializeAppleFMSession()
             }
@@ -130,13 +140,11 @@ final class ChatViewModel {
         }
 
         if provider == .apple, noteExceedsAppleFMContext {
-            errorMessage = "This note is too long for Apple Foundation Models. Try a cloud provider with a larger context window."
+            errorMessage = "These notes are too long for Apple Foundation Models. Try a cloud provider with a larger context window."
             return
         }
 
-        if isAppleFMResponding {
-            return
-        }
+        if isAppleFMResponding { return }
 
         inputText = ""
         errorMessage = nil
@@ -146,7 +154,7 @@ final class ChatViewModel {
             content: text,
             estimatedTokenCount: ChatContextManager.estimateTokens(text)
         )
-        userMessage.conversation = conversation
+        userMessage.multiNoteConversation = conversation
         modelContext.insert(userMessage)
         messages.append(userMessage)
 
@@ -171,7 +179,7 @@ final class ChatViewModel {
                     aiModelName: model,
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
-                assistantMessage.conversation = conversation
+                assistantMessage.multiNoteConversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
 
@@ -180,7 +188,7 @@ final class ChatViewModel {
             } catch is CancellationError {
                 savePartialResponse(provider: provider, model: model)
             } catch {
-                logger.logError("Chat error: \(error.localizedDescription)")
+                logger.logError("Multi-note chat error: \(error.localizedDescription)")
 
                 let errorContent = error.localizedDescription
                 let errorMsg = ChatMessage(
@@ -191,7 +199,7 @@ final class ChatViewModel {
                     isError: true,
                     estimatedTokenCount: ChatContextManager.estimateTokens(errorContent)
                 )
-                errorMsg.conversation = conversation
+                errorMsg.multiNoteConversation = conversation
                 modelContext.insert(errorMsg)
                 messages.append(errorMsg)
 
@@ -234,8 +242,6 @@ final class ChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard aiService.isChatProviderReady(provider) else { return }
 
-        print("DEBUG COMPACT: compactChat() called, provider: \(provider.displayName), fill ratio before: \(contextFillRatio)")
-
         isCompacting = true
         do {
             if provider == .apple {
@@ -243,12 +249,9 @@ final class ChatViewModel {
             } else {
                 try await performCompaction()
             }
-
-            print("DEBUG COMPACT: compactChat() succeeded, fill ratio after: \(contextFillRatio)")
             HapticManager.success()
         } catch {
-            print("DEBUG COMPACT: compactChat() failed: \(error)")
-            logger.logError("Chat compaction failed: \(error.localizedDescription)")
+            logger.logError("Multi-note chat compaction failed: \(error.localizedDescription)")
             errorMessage = "Compaction failed: \(error.localizedDescription)"
         }
         isCompacting = false
@@ -259,40 +262,21 @@ final class ChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard let session = appleFMSession else { return }
 
-        print("DEBUG COMPACT: Starting Apple FM compaction")
-        print("DEBUG COMPACT: Session transcript entries: \(session.transcript.count)")
-        print("DEBUG COMPACT: SwiftData messages count: \(messages.count)")
-
         let instructionsTokens = ChatContextManager.estimateTokens(buildAppleFMInstructions())
         let contextBudget = instructionsTokens + 300
         let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0, targetContextTokens: contextBudget)
         if compacted !== session {
             appleFMSession = compacted
-            print("DEBUG COMPACT: Session compacted via summarization, new transcript entries: \(compacted.transcript.count)")
         } else {
-            let greedy = session.compacted()
-            appleFMSession = greedy
-            print("DEBUG COMPACT: Session compacted via greedy, new transcript entries: \(greedy.transcript.count)")
+            appleFMSession = session.compacted()
         }
 
         let nonSummaryMessages = messages.filter { !$0.isSummary }
-        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else {
-            print("DEBUG COMPACT: Not enough messages to compact (need >4 non-summary)")
-            return
-        }
-
-        print("DEBUG COMPACT: Compacting \(split.toCompact.count) messages, keeping \(split.toKeep.count)")
-
-        // Log what the internal session summary looks like
-        if let compactedSession = appleFMSession {
-            let transcriptDescription = String(describing: compactedSession.transcript)
-            print("DEBUG COMPACT: Session internal transcript after compaction (full):\n\(transcriptDescription)")
-        }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
 
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
 
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
-        print("DEBUG COMPACT: Deleting \(toDelete.count) messages from SwiftData")
         for msg in toDelete {
             modelContext.delete(msg)
         }
@@ -305,14 +289,12 @@ final class ChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
-        summaryMessage.conversation = conversation
+        summaryMessage.multiNoteConversation = conversation
         modelContext.insert(summaryMessage)
 
         saveAppleFMTranscript()
         trySave()
         loadMessages()
-
-        print("DEBUG COMPACT: Done. Messages after: \(messages.count), fill ratio: \(contextFillRatio)")
     }
 
     private func compactAppleFMSession() async throws {
@@ -320,8 +302,6 @@ final class ChatViewModel {
             try await compactAppleFMSessionImpl()
         }
     }
-
-    // MARK: - Provider/Model (derived from VivaMode, no local state)
 
     // MARK: - Apple FM Session Management
 
@@ -332,23 +312,24 @@ final class ChatViewModel {
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
             appleFMSession = LanguageModelSession(transcript: transcript)
-            logger.logInfo("Chat - Apple FM session restored from saved transcript")
+            logger.logInfo("Multi-note chat - Apple FM session restored from saved transcript")
             return
         }
 
         let instructions = buildAppleFMInstructions()
         #if DEBUG
-        print("DEBUG APPLE FM [single-note] INSTRUCTIONS (\(instructions.count) chars):\n\(instructions)")
+        print("DEBUG APPLE FM [multi-note] INSTRUCTIONS (\(instructions.count) chars):\n\(instructions)")
         #endif
         let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
         appleFMSession = LanguageModelSession(model: model, instructions: instructions)
-        logger.logInfo("Chat - Apple FM session initialized fresh")
+        logger.logInfo("Multi-note chat - Apple FM session initialized fresh")
     }
 
     @available(iOS 26, *)
     private func buildAppleFMInstructions() -> String {
-        var instructions = ChatContextManager.chatSystemPrompt
-        instructions += "\n\n<NOTE>\n\(assembledNoteText)\n</NOTE>"
+        var instructions = MultiNoteContextManager.systemPrompt
+        let noteText = MultiNoteContextManager.assembleNoteText(from: conversation.sources ?? [])
+        instructions += "\n\n\(noteText)"
 
         if let summary = messages.first(where: { $0.isSummary }) {
             instructions += "\n\nPrevious conversation summary:\n\(summary.content)"
@@ -364,7 +345,7 @@ final class ChatViewModel {
             let data = try JSONEncoder().encode(session.transcript)
             conversation.appleFMTranscriptData = data
         } catch {
-            logger.logWarning("Chat - Failed to save Apple FM transcript: \(error.localizedDescription)")
+            logger.logWarning("Multi-note chat - Failed to save Apple FM transcript: \(error.localizedDescription)")
         }
     }
 
@@ -377,8 +358,8 @@ final class ChatViewModel {
         }
 
         #if DEBUG
-        print("DEBUG APPLE FM [single-note] PROMPT: \(text)")
-        print("DEBUG APPLE FM [single-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
+        print("DEBUG APPLE FM [multi-note] PROMPT: \(text)")
+        print("DEBUG APPLE FM [multi-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
         #endif
 
         let options = GenerationOptions(
@@ -391,12 +372,12 @@ final class ChatViewModel {
             let contextBudget = instructionsTokens + 300
             let compactedSession = try await session.preemptivelySummarizedIfNeeded(targetContextTokens: contextBudget)
             if compactedSession !== session {
-                logger.logInfo("Chat - Apple FM preemptive summarization triggered")
+                logger.logInfo("Multi-note chat - Apple FM preemptive summarization triggered")
                 session = compactedSession
                 appleFMSession = session
             }
         } catch {
-            logger.logWarning("Chat - Preemptive summarization failed: \(error.localizedDescription)")
+            logger.logWarning("Multi-note chat - Preemptive summarization failed: \(error.localizedDescription)")
         }
 
         do {
@@ -404,7 +385,7 @@ final class ChatViewModel {
             saveAppleFMTranscript()
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
-            logger.logWarning("Chat - Apple FM context exceeded, reactive compaction")
+            logger.logWarning("Multi-note chat - Apple FM context exceeded, reactive compaction")
             session = session.compacted()
             appleFMSession = session
 
@@ -446,8 +427,8 @@ final class ChatViewModel {
         let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
         #if DEBUG
-        print("DEBUG APPLE FM [single-note] RESPONSE (\(filtered.count) chars): \(filtered.prefix(500))")
-        session.logTranscript(label: "single-note chat")
+        print("DEBUG APPLE FM [multi-note] RESPONSE (\(filtered.count) chars): \(filtered.prefix(500))")
+        session.logTranscript(label: "multi-note chat")
         #endif
         streamingText = filtered
         return filtered
@@ -462,17 +443,17 @@ final class ChatViewModel {
     }
 
     private func sendCloudMessage(_ text: String, provider: AIProvider, model: String) async throws -> String {
-        if ChatContextManager.shouldAutoCompact(
+        if MultiNoteContextManager.shouldAutoCompact(
             noteText: assembledNoteText,
             messages: messages,
             provider: provider,
             model: model
         ) {
-            logger.logInfo("Chat - Auto-compacting context")
+            logger.logInfo("Multi-note chat - Auto-compacting context")
             try await performCompaction()
         }
 
-        let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
+        let (systemMessage, apiMessages) = MultiNoteContextManager.assembleMessages(
             noteText: assembledNoteText,
             chatMessages: messages,
             provider: provider,
@@ -503,9 +484,7 @@ final class ChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
 
         let nonSummaryMessages = messages.filter { !$0.isSummary }
-        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else {
-            return
-        }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
 
         let transcript = ChatContextManager.formatForCompaction(split.toCompact)
 
@@ -534,7 +513,7 @@ final class ChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summary)
         )
-        summaryMessage.conversation = conversation
+        summaryMessage.multiNoteConversation = conversation
         modelContext.insert(summaryMessage)
 
         trySave()
@@ -552,7 +531,7 @@ final class ChatViewModel {
             aiModelName: model,
             estimatedTokenCount: ChatContextManager.estimateTokens(partial)
         )
-        msg.conversation = conversation
+        msg.multiNoteConversation = conversation
         modelContext.insert(msg)
         messages.append(msg)
         trySave()
@@ -562,7 +541,7 @@ final class ChatViewModel {
         do {
             try modelContext.save()
         } catch {
-            logger.logError("Chat - Failed to save context: \(error.localizedDescription)")
+            logger.logError("Multi-note chat - Failed to save context: \(error.localizedDescription)")
         }
     }
 }

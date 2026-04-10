@@ -11,6 +11,7 @@ import SwiftUI
 struct ChatInputBar: View {
     @Binding var text: String
     var isStreaming: Bool
+    var placeholder: String = "Ask about this note..."
     var onSend: () -> Void
     var onStop: () -> Void
 
@@ -20,7 +21,7 @@ struct ChatInputBar: View {
         VStack(spacing: 0) {
             Divider()
             HStack(alignment: .bottom, spacing: 8) {
-                TextField("Ask about this note...", text: $text, axis: .vertical)
+                TextField(placeholder, text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .textFieldStyle(.plain)
                     .focused($isFocused)

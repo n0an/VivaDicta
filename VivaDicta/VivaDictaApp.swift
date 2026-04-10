@@ -58,14 +58,14 @@ struct VivaDictaApp: App {
                     : .none
             )
             modelContainer = try ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, MultiNoteSource.self,
                 configurations: config
             )
         } catch {
             print("Error loading ModelContainer; switching to in-memory storage. \(error)")
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             modelContainer = try! ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, MultiNoteSource.self,
                 configurations: config
             )
         }

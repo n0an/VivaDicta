@@ -107,6 +107,10 @@ class Transcription {
     @Relationship(deleteRule: .cascade, inverse: \ChatConversation.transcription)
     var chatConversations: [ChatConversation]? = []
 
+    /// Multi-note chat junction records referencing this transcription.
+    @Relationship(deleteRule: .nullify, inverse: \MultiNoteSource.transcription)
+    var multiNoteSources: [MultiNoteSource]? = []
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:

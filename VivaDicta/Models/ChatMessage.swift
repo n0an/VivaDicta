@@ -41,9 +41,13 @@ final class ChatMessage {
     /// Pre-computed token estimate for context window management.
     var estimatedTokenCount: Int = 0
 
-    /// The conversation this chat message belongs to.
+    /// The single-note conversation this message belongs to (nil for multi-note messages).
     @Relationship(inverse: \ChatConversation.messages)
     var conversation: ChatConversation?
+
+    /// The multi-note conversation this message belongs to (nil for single-note messages).
+    @Relationship(inverse: \MultiNoteConversation.messages)
+    var multiNoteConversation: MultiNoteConversation?
 
     init(role: String = "user",
          content: String = "",

@@ -58,18 +58,6 @@ extension AIService {
         let route = chatStreamingRoute(for: provider, model: model)
 
         switch route {
-        case .apple:
-            if #available(iOS 26, *) {
-                return try await makeAppleFMChatRequest(
-                    systemMessage: systemMessage,
-                    messages: messages,
-                    streaming: true,
-                    onPartialResponse: onPartialResponse
-                )
-            } else {
-                throw EnhancementError.notConfigured
-            }
-
         case .anthropic:
             guard let apiKey = provider.apiKey else {
                 throw EnhancementError.notConfigured
@@ -150,18 +138,6 @@ extension AIService {
         messages: [[String: String]]
     ) async throws -> String {
         switch provider {
-        case .apple:
-            if #available(iOS 26, *) {
-                return try await makeAppleFMChatRequest(
-                    systemMessage: systemMessage,
-                    messages: messages,
-                    streaming: false,
-                    onPartialResponse: nil
-                )
-            } else {
-                throw EnhancementError.notConfigured
-            }
-
         case .anthropic:
             guard let apiKey = provider.apiKey else {
                 throw EnhancementError.notConfigured
@@ -189,13 +165,11 @@ extension AIService {
     // MARK: - Private Helpers
 
     private enum ChatStreamingRoute {
-        case apple, anthropic, openAICompatibleCloud, ollama, customOpenAI
+        case anthropic, openAICompatibleCloud, ollama, customOpenAI
     }
 
     private func chatStreamingRoute(for provider: AIProvider, model: String) -> ChatStreamingRoute? {
         switch provider {
-        case .apple:
-            return .apple
         case .anthropic:
             return provider.apiKey != nil ? .anthropic : nil
         case .ollama:
@@ -521,51 +495,6 @@ extension AIService {
         }
 
         return AIEnhancementOutputFilter.filter(text.trimmingCharacters(in: .whitespacesAndNewlines))
-    }
-
-    // MARK: - Apple Foundation Models Chat
-
-    @available(iOS 26, *)
-    private func makeAppleFMChatRequest(
-        systemMessage: String,
-        messages: [[String: String]],
-        streaming: Bool,
-        onPartialResponse: (@MainActor (String) -> Void)?
-    ) async throws -> String {
-        guard AppleFoundationModelAvailability.isAvailable else {
-            throw EnhancementError.customError("Apple Foundation Models not available on this device")
-        }
-
-        // Flatten conversation into a single prompt with role markers
-        var conversationText = ""
-        for msg in messages {
-            let role = msg["role"] == "assistant" ? "Assistant" : "User"
-            let content = msg["content"] ?? ""
-            conversationText += "\(role): \(content)\n\n"
-        }
-        conversationText += "Assistant:"
-
-        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
-        let session = LanguageModelSession(model: model, instructions: systemMessage)
-        let prompt = Prompt { conversationText }
-        let options = GenerationOptions(sampling: .random(probabilityThreshold: 0.9))
-
-        if streaming, let onPartialResponse {
-            let stream = session.streamResponse(to: prompt, options: options)
-            for try await partial in stream {
-                await onPartialResponse(partial.content)
-            }
-            let response = try await stream.collect()
-            let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            let filtered = AIEnhancementOutputFilter.filter(result)
-            await onPartialResponse(filtered)
-            return filtered
-        } else {
-            let response = try await session.respond(to: prompt, options: options)
-            return AIEnhancementOutputFilter.filter(
-                response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
-        }
     }
 
     // MARK: - Error Helpers

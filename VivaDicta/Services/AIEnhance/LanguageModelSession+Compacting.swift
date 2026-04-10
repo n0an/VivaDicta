@@ -4,13 +4,13 @@
 //
 //  Created by Anton Novoselov on 2026.04.09
 //
-//  Adapted from Apple's AIPlaybook sample project.
 //  Provides reactive compaction and preemptive summarization
 //  for LanguageModelSession context window management.
 //
 
 import Foundation
 import FoundationModels
+import os
 
 // MARK: - Transcript Helpers
 
@@ -208,4 +208,40 @@ extension LanguageModelSession {
 
         return LanguageModelSession(tools: tools, instructions: clippedInstructions)
     }
+
+    // MARK: - Debug Logging
+
+    #if DEBUG
+    /// Logs the full session transcript (instructions, prompts, responses) for debugging.
+    func logTranscript(label: String = "SESSION", logger: Logger? = nil) {
+        let log: (String) -> Void = { message in
+            if let logger {
+                logger.logDebug(message)
+            } else {
+                print(message)
+            }
+        }
+
+        log("=== FOUNDATION MODEL TRANSCRIPT [\(label)] ===")
+
+        for entry in transcript {
+            switch entry {
+            case .instructions(let instructions):
+                log("INSTRUCTIONS: \(instructions.segments.map { "\($0)" }.joined(separator: " "))")
+            case .prompt(let prompt):
+                log("PROMPT: \(prompt.segments.map { "\($0)" }.joined(separator: " "))")
+            case .response(let response):
+                log("RESPONSE: \(response.segments.map { "\($0)" }.joined(separator: " "))")
+            case .toolCalls(let toolCalls):
+                log("TOOL CALLS: \(toolCalls)")
+            case .toolOutput(let toolOutput):
+                log("TOOL OUTPUT: \(toolOutput)")
+            @unknown default:
+                log("UNKNOWN ENTRY: \(entry)")
+            }
+        }
+
+        log("=== END TRANSCRIPT [\(label)] ===")
+    }
+    #endif
 }

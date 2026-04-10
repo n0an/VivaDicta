@@ -1,0 +1,148 @@
+//
+//  MultiNoteChatsListView.swift
+//  VivaDicta
+//
+//  Created by Anton Novoselov on 2026.04.10
+//
+
+import SwiftUI
+import SwiftData
+
+/// List of multi-note chat conversations.
+struct MultiNoteChatsListView: View {
+    @Environment(AppState.self) var appState
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var viewModel: MultiNoteChatsListViewModel?
+    @State private var showCreation = false
+    @State private var selectedConversation: MultiNoteConversation?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let viewModel, !viewModel.conversations.isEmpty {
+                    conversationsList(viewModel.conversations)
+                } else {
+                    ContentUnavailableView(
+                        "No Multi-Note Chats",
+                        systemImage: "bubble.left.and.bubble.right",
+                        description: Text("Create a chat to discuss multiple notes with AI")
+                    )
+                }
+            }
+            .navigationTitle("Multi-Note Chats")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button("New Chat", systemImage: "plus") {
+                        showCreation = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreation) {
+                MultiNoteCreationView { conversation in
+                    viewModel?.loadConversations()
+                    selectedConversation = conversation
+                }
+            }
+            .sheet(item: $selectedConversation) { conversation in
+                MultiNoteChatView(
+                    viewModel: MultiNoteChatViewModel(
+                        conversation: conversation,
+                        aiService: appState.aiService,
+                        modelContext: modelContext
+                    )
+                )
+            }
+            .onAppear {
+                if viewModel == nil {
+                    viewModel = MultiNoteChatsListViewModel(modelContext: modelContext)
+                }
+            }
+        }
+    }
+
+    private func conversationsList(_ conversations: [MultiNoteConversation]) -> some View {
+        List {
+            ForEach(conversations, id: \.id) { conversation in
+                Button {
+                    selectedConversation = conversation
+                } label: {
+                    conversationRow(conversation)
+                }
+                .buttonStyle(.plain)
+            }
+            .onDelete { indexSet in
+                for index in indexSet {
+                    viewModel?.deleteConversation(conversations[index])
+                }
+            }
+        }
+    }
+
+    private struct ConversationRowContent: View {
+        let title: String
+        let noteCount: Int
+        let deletedCount: Int
+        let lastMessage: String?
+        let date: Date
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text(date, format: .relative(presentation: .named))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                HStack(spacing: 4) {
+                    Label("^[\(noteCount) note](inflect: true)", systemImage: "doc.text")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if deletedCount > 0 {
+                        Text("(\(deletedCount) deleted)")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+
+                if let lastMessage {
+                    Text(lastMessage)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func conversationRow(_ conversation: MultiNoteConversation) -> some View {
+        let sources = conversation.sources ?? []
+        let noteCount = sources.filter { $0.transcription != nil }.count
+        let deletedCount = sources.filter { $0.transcription == nil }.count
+        let lastMessage = (conversation.messages ?? [])
+            .sorted { $0.createdAt < $1.createdAt }
+            .last
+            .map { $0.role == "user" ? "You: \($0.content)" : $0.content }
+
+        return ConversationRowContent(
+            title: conversation.title.isEmpty ? "Untitled Chat" : conversation.title,
+            noteCount: noteCount,
+            deletedCount: deletedCount,
+            lastMessage: lastMessage,
+            date: conversation.createdAt
+        )
+    }
+}

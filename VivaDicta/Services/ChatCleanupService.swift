@@ -63,9 +63,10 @@ final class ChatCleanupService {
             return
         }
 
-        let success = deleteOldChats(olderThan: cutoffDate, modelContext: modelContext)
+        let singleSuccess = deleteOldChats(olderThan: cutoffDate, modelContext: modelContext)
+        let multiSuccess = deleteOldMultiNoteChats(olderThan: cutoffDate, modelContext: modelContext)
 
-        if success {
+        if singleSuccess && multiSuccess {
             userDefaults.set(Date(), forKey: Self.lastCleanupKey)
         }
     }
@@ -96,6 +97,36 @@ final class ChatCleanupService {
 
         } catch {
             logger.logError("Chat cleanup: Failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func deleteOldMultiNoteChats(olderThan cutoffDate: Date, modelContext: ModelContext) -> Bool {
+        do {
+            let predicate = #Predicate<MultiNoteConversation> { conversation in
+                conversation.createdAt < cutoffDate
+            }
+            let descriptor = FetchDescriptor<MultiNoteConversation>(predicate: predicate)
+            let conversations = try modelContext.fetch(descriptor)
+
+            guard !conversations.isEmpty else {
+                logger.logInfo("Multi-note chat cleanup: No old chats to clean up")
+                return true
+            }
+
+            logger.logInfo("Multi-note chat cleanup: Found \(conversations.count) old chats to delete")
+
+            for conversation in conversations {
+                modelContext.delete(conversation)
+            }
+
+            try modelContext.save()
+
+            logger.logInfo("Multi-note chat cleanup: Deleted \(conversations.count) conversations")
+            return true
+
+        } catch {
+            logger.logError("Multi-note chat cleanup: Failed: \(error.localizedDescription)")
             return false
         }
     }
