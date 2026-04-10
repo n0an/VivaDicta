@@ -429,7 +429,7 @@ struct MainView: View {
                 Button {
                     startMultiNoteChatWithSelected()
                 } label: {
-                    Label("Chat", systemImage: "bubble.left.and.bubble.right")
+                    Label("Create Chat", systemImage: "plus.bubble")
                 }
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
@@ -456,17 +456,20 @@ struct MainView: View {
         } else {
             if #available(iOS 26.0, *) {
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                
                 ToolbarSpacer(.flexible, placement: .bottomBar)
+                
                 ToolbarItem(placement: .bottomBar) {
                     Button {
                         showMultiNoteChats = true
                     } label: {
                         Image(systemName: "bubble.left.and.bubble.right")
-                            .font(.system(size: 20))
                     }
                     .accessibilityLabel("Multi-Note Chats")
                 }
-                ToolbarSpacer(.flexible, placement: .bottomBar)
+                
+                ToolbarSpacer(.fixed, placement: .bottomBar)
+                
                 ToolbarItem(placement: .bottomBar) {
                     Button {
                         startRecording()
@@ -486,7 +489,6 @@ struct MainView: View {
                         showMultiNoteChats = true
                     } label: {
                         Image(systemName: "bubble.left.and.bubble.right")
-                            .font(.system(size: 20))
                     }
                     .accessibilityLabel("Multi-Note Chats")
                 }
