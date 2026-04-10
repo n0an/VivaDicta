@@ -65,6 +65,12 @@ struct MultiNoteCreationView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            Text("Select notes to start a conversation")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+                .padding(.bottom, 2)
+
             // Tag filter bar
             if !availableSourceTags.isEmpty || !allTags.isEmpty {
                 TagFilterBar(
@@ -110,8 +116,19 @@ struct MultiNoteCreationView: View {
 
     // MARK: - Selectable Row
 
+    private var assignedTagsLookup: [UUID: [TranscriptionTag]] {
+        var result: [UUID: [TranscriptionTag]] = [:]
+        for transcription in displayedTranscriptions {
+            let assignedIds = Set((transcription.tagAssignments ?? []).map(\.tagId))
+            result[transcription.id] = allTags.filter { assignedIds.contains($0.id) }
+        }
+        return result
+    }
+
     private func selectableNoteRow(_ transcription: Transcription) -> some View {
         let isSelected = selectedNoteIds.contains(transcription.id)
+        let tags = assignedTagsLookup[transcription.id] ?? []
+
         return Button {
             if isSelected {
                 selectedNoteIds.remove(transcription.id)
@@ -119,18 +136,58 @@ struct MultiNoteCreationView: View {
                 selectedNoteIds.insert(transcription.id)
             }
         } label: {
-            HStack {
+            HStack(alignment: .top) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .font(.title3)
+                    .padding(.top, 2)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().hour().minute())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(transcription.text)
-                        .font(.subheadline)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+
+                        if let tag = transcription.sourceTag {
+                            Image(systemName: SourceTag.icon(for: tag))
+                                .font(.caption2)
+                                .foregroundStyle(SourceTag.color(for: tag))
+                        }
+                    }
+
+                    Text(transcription.enhancedText ?? transcription.text)
+                        .font(.body)
                         .lineLimit(2)
+                        .lineSpacing(2)
+
+                    if !tags.isEmpty {
+                        HStack(spacing: 6) {
+                            ForEach(tags.prefix(5)) { tag in
+                                Image(systemName: tag.icon)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
+                                    .frame(width: 22, height: 22)
+                                    .background((Color(hex: tag.colorHex) ?? .blue).opacity(0.15))
+                                    .clipShape(.circle)
+                            }
+                            if tags.count > 5 {
+                                Text("+\(tags.count - 5)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                 }
+
+                Spacer()
+
+                Text(transcription.getDurationFormatted(transcription.audioDuration))
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.blue.opacity(0.1))
+                    .foregroundStyle(.blue)
+                    .clipShape(.rect(cornerRadius: 6))
             }
         }
         .buttonStyle(.plain)
