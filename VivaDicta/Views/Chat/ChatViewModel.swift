@@ -141,13 +141,13 @@ final class ChatViewModel {
         inputText = ""
         errorMessage = nil
 
+        // Create user message for immediate UI display but defer SwiftData
+        // insertion to avoid @Model mutation triggering layout disruption.
         let userMessage = ChatMessage(
             role: "user",
             content: text,
             estimatedTokenCount: ChatContextManager.estimateTokens(text)
         )
-        userMessage.conversation = conversation
-        modelContext.insert(userMessage)
         messages.append(userMessage)
 
         isStreaming = true
@@ -164,6 +164,9 @@ final class ChatViewModel {
                     result = try await sendCloudMessage(text, provider: provider, model: model)
                 }
 
+                userMessage.conversation = conversation
+                modelContext.insert(userMessage)
+
                 let assistantMessage = ChatMessage(
                     role: "assistant",
                     content: result,
@@ -178,9 +181,14 @@ final class ChatViewModel {
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
+                userMessage.conversation = conversation
+                modelContext.insert(userMessage)
                 savePartialResponse(provider: provider, model: model)
             } catch {
                 logger.logError("Chat error: \(error.localizedDescription)")
+
+                userMessage.conversation = conversation
+                modelContext.insert(userMessage)
 
                 let errorContent = error.localizedDescription
                 let errorMsg = ChatMessage(

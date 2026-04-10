@@ -28,6 +28,7 @@ struct MainView: View {
     @State private var showDeleteConfirmation = false
     @State private var showBulkTagPicker = false
     @State private var showMultiNoteChats = false
+    @State private var selectionChatViewModel: MultiNoteChatViewModel?
 
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
@@ -136,6 +137,14 @@ struct MainView: View {
         }
         .fullScreenCover(isPresented: $showMultiNoteChats) {
             MultiNoteChatsListView()
+        }
+        .sheet(isPresented: Binding(
+            get: { selectionChatViewModel != nil },
+            set: { if !$0 { selectionChatViewModel = nil } }
+        )) {
+            if let selectionChatViewModel {
+                MultiNoteChatView(viewModel: selectionChatViewModel)
+            }
         }
         .onChange(of: appState.shouldNavigateToModeSettings) { _, newValue in
             if newValue { showingSettings = true }
@@ -405,6 +414,14 @@ struct MainView: View {
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
             ToolbarItem(placement: .bottomBar) {
+                Button {
+                    startMultiNoteChatWithSelected()
+                } label: {
+                    Label("Chat", systemImage: "bubble.left.and.bubble.right")
+                }
+                .disabled(selectedTranscriptionIDs.isEmpty)
+            }
+            ToolbarItem(placement: .bottomBar) {
                 Spacer()
             }
             ToolbarItem(placement: .bottomBar) {
@@ -515,6 +532,34 @@ struct MainView: View {
         } catch {
             logger.logError("Failed to save after bulk deletion: \(error.localizedDescription)")
         }
+
+        exitSelectionMode()
+    }
+
+    // MARK: - Multi-Note Chat from Selection
+
+    private func startMultiNoteChatWithSelected() {
+        let selected = transcriptions.filter { selectedTranscriptionIDs.contains($0.id) }
+        guard !selected.isEmpty else { return }
+
+        let conversation = MultiNoteConversation()
+        conversation.title = "\(selected.count) selected notes"
+        conversation.selectionMode = "manual"
+        modelContext.insert(conversation)
+
+        for transcription in selected {
+            let source = MultiNoteSource(transcription: transcription)
+            source.conversation = conversation
+            modelContext.insert(source)
+        }
+
+        try? modelContext.save()
+
+        selectionChatViewModel = MultiNoteChatViewModel(
+            conversation: conversation,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
 
         exitSelectionMode()
     }

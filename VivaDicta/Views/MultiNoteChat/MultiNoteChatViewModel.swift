@@ -149,13 +149,13 @@ final class MultiNoteChatViewModel {
         inputText = ""
         errorMessage = nil
 
+        // Create user message for immediate UI display but defer SwiftData
+        // insertion to avoid @Model mutation triggering layout disruption.
         let userMessage = ChatMessage(
             role: "user",
             content: text,
             estimatedTokenCount: ChatContextManager.estimateTokens(text)
         )
-        userMessage.multiNoteConversation = conversation
-        modelContext.insert(userMessage)
         messages.append(userMessage)
 
         isStreaming = true
@@ -172,6 +172,10 @@ final class MultiNoteChatViewModel {
                     result = try await sendCloudMessage(text, provider: provider, model: model)
                 }
 
+                // Persist user message now that streaming is done
+                userMessage.multiNoteConversation = conversation
+                modelContext.insert(userMessage)
+
                 let assistantMessage = ChatMessage(
                     role: "assistant",
                     content: result,
@@ -186,9 +190,16 @@ final class MultiNoteChatViewModel {
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
+                // Persist the user message even on cancel
+                userMessage.multiNoteConversation = conversation
+                modelContext.insert(userMessage)
                 savePartialResponse(provider: provider, model: model)
             } catch {
                 logger.logError("Multi-note chat error: \(error.localizedDescription)")
+
+                // Persist the user message even on error
+                userMessage.multiNoteConversation = conversation
+                modelContext.insert(userMessage)
 
                 let errorContent = error.localizedDescription
                 let errorMsg = ChatMessage(

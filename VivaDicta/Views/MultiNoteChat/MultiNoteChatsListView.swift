@@ -16,7 +16,7 @@ struct MultiNoteChatsListView: View {
 
     @State private var viewModel: MultiNoteChatsListViewModel?
     @State private var showCreation = false
-    @State private var selectedConversation: MultiNoteConversation?
+    @State private var showChat = false
     @State private var chatViewModel: MultiNoteChatViewModel?
 
     var body: some View {
@@ -47,25 +47,15 @@ struct MultiNoteChatsListView: View {
             .sheet(isPresented: $showCreation) {
                 MultiNoteCreationView { conversation in
                     viewModel?.loadConversations()
-                    selectedConversation = conversation
+                    openChat(for: conversation)
                 }
             }
-            .sheet(item: $selectedConversation, onDismiss: {
+            .sheet(isPresented: $showChat, onDismiss: {
                 viewModel?.loadConversations()
-            }) { _ in
+                chatViewModel = nil
+            }) {
                 if let chatViewModel {
                     MultiNoteChatView(viewModel: chatViewModel)
-                }
-            }
-            .onChange(of: selectedConversation) { _, newValue in
-                if let conversation = newValue {
-                    chatViewModel = MultiNoteChatViewModel(
-                        conversation: conversation,
-                        aiService: appState.aiService,
-                        modelContext: modelContext
-                    )
-                } else {
-                    chatViewModel = nil
                 }
             }
             .onAppear {
@@ -80,7 +70,7 @@ struct MultiNoteChatsListView: View {
         List {
             ForEach(conversations, id: \.id) { conversation in
                 Button {
-                    selectedConversation = conversation
+                    openChat(for: conversation)
                 } label: {
                     conversationRow(conversation)
                 }
@@ -136,6 +126,15 @@ struct MultiNoteChatsListView: View {
             }
             .padding(.vertical, 4)
         }
+    }
+
+    private func openChat(for conversation: MultiNoteConversation) {
+        chatViewModel = MultiNoteChatViewModel(
+            conversation: conversation,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
+        showChat = true
     }
 
     private func conversationRow(_ conversation: MultiNoteConversation) -> some View {

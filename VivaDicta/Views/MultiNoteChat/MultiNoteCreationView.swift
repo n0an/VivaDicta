@@ -10,10 +10,8 @@ import SwiftData
 
 /// Sheet for creating a new multi-note chat conversation.
 ///
-/// Supports three note selection modes:
-/// - All Notes: includes every transcription
-/// - By Tags: filter by one or more user tags
-/// - Pick Notes: manual selection from a searchable list
+/// Shows a selectable notes list with tag filter chips above,
+/// mirroring the main screen's selection mode UX.
 struct MultiNoteCreationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -26,57 +24,85 @@ struct MultiNoteCreationView: View {
 
     var onCreate: (MultiNoteConversation) -> Void
 
-    @State private var selectionMode: NoteSelectionMode = .allNotes
-    @State private var selectedTagIds: Set<UUID> = []
+    @State private var selectedSourceTags: Set<String> = []
+    @State private var selectedUserTagIds: Set<UUID> = []
     @State private var selectedNoteIds: Set<UUID> = []
-    @State private var searchText = ""
 
-    enum NoteSelectionMode: String, CaseIterable {
-        case allNotes = "All Notes"
-        case byTags = "By Tags"
-        case pickNotes = "Pick Notes"
+    // MARK: - Computed
+
+    private var availableSourceTags: [String] {
+        var seen = Set<String>()
+        return allTranscriptions.compactMap(\.sourceTag).filter { seen.insert($0).inserted }
     }
 
-    private var matchingTranscriptions: [Transcription] {
-        switch selectionMode {
-        case .allNotes:
-            return allTranscriptions
-        case .byTags:
-            guard !selectedTagIds.isEmpty else { return [] }
-            return allTranscriptions.filter { transcription in
-                guard let assignments = transcription.tagAssignments else { return false }
-                return assignments.contains { selectedTagIds.contains($0.tagId) }
-            }
-        case .pickNotes:
-            return allTranscriptions.filter { selectedNoteIds.contains($0.id) }
+    private var hasActiveTagFilter: Bool {
+        !selectedSourceTags.isEmpty || !selectedUserTagIds.isEmpty
+    }
+
+    private var displayedTranscriptions: [Transcription] {
+        guard hasActiveTagFilter else { return allTranscriptions }
+        return allTranscriptions.filter { transcription in
+            let matchesSource = selectedSourceTags.isEmpty ||
+                (transcription.sourceTag.map { selectedSourceTags.contains($0) } ?? false)
+            let matchesUserTag = selectedUserTagIds.isEmpty ||
+                (transcription.tagAssignments ?? []).contains { selectedUserTagIds.contains($0.tagId) }
+            return matchesSource && matchesUserTag
         }
     }
 
-    private var canCreate: Bool {
-        !matchingTranscriptions.isEmpty
+    private var displayedIds: Set<UUID> {
+        Set(displayedTranscriptions.map(\.id))
     }
+
+    private var allDisplayedSelected: Bool {
+        !displayedIds.isEmpty && displayedIds.isSubset(of: selectedNoteIds)
+    }
+
+    private var selectedTranscriptions: [Transcription] {
+        allTranscriptions.filter { selectedNoteIds.contains($0.id) }
+    }
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Selection Mode", selection: $selectionMode) {
-                    ForEach(NoteSelectionMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+                // Tag filter bar
+                if !availableSourceTags.isEmpty || !allTags.isEmpty {
+                    TagFilterBar(
+                        sourceTags: availableSourceTags,
+                        userTags: allTags,
+                        selectedSourceTags: $selectedSourceTags,
+                        selectedUserTagIds: $selectedUserTagIds
+                    )
+                    .padding(.vertical, 8)
+                }
+
+                // Selection header
+                HStack {
+                    Button {
+                        toggleSelectAll()
+                    } label: {
+                        Text(allDisplayedSelected ? "Deselect All" : "Select All")
+                            .font(.subheadline)
+                    }
+
+                    Spacer()
+
+                    Text("^[\(selectedNoteIds.count) note](inflect: true) selected")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+
+                // Notes list
+                List {
+                    ForEach(displayedTranscriptions, id: \.id) { transcription in
+                        selectableNoteRow(transcription)
                     }
                 }
-                .pickerStyle(.segmented)
-                .padding()
-
-                switch selectionMode {
-                case .allNotes:
-                    allNotesSection
-                case .byTags:
-                    tagSelectionSection
-                case .pickNotes:
-                    noteSelectionSection
-                }
-
-                Spacer()
+                .listStyle(.plain)
 
                 createButton
             }
@@ -90,116 +116,7 @@ struct MultiNoteCreationView: View {
         }
     }
 
-    // MARK: - All Notes
-
-    private var allNotesSection: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "doc.text.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
-            Text("^[\(allTranscriptions.count) note](inflect: true) will be included")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 40)
-    }
-
-    // MARK: - Tag Selection
-
-    private var tagSelectionSection: some View {
-        VStack(spacing: 0) {
-            if allTags.isEmpty {
-                ContentUnavailableView(
-                    "No Tags",
-                    systemImage: "tag",
-                    description: Text("Create tags in Settings to filter notes")
-                )
-            } else {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 8) {
-                        ForEach(allTags, id: \.id) { tag in
-                            tagChip(tag)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                }
-                .scrollIndicators(.hidden)
-
-                if !selectedTagIds.isEmpty {
-                    let count = matchingTranscriptions.count
-                    Text("^[\(count) matching note](inflect: true)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, 8)
-                }
-
-                if !matchingTranscriptions.isEmpty {
-                    notePreviewList(matchingTranscriptions)
-                }
-            }
-        }
-    }
-
-    private func tagChip(_ tag: TranscriptionTag) -> some View {
-        let isSelected = selectedTagIds.contains(tag.id)
-        return Button {
-            if isSelected {
-                selectedTagIds.remove(tag.id)
-            } else {
-                selectedTagIds.insert(tag.id)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: tag.icon)
-                    .font(.caption2)
-                Text(tag.name)
-                    .font(.subheadline)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(isSelected ? Color.accentColor.opacity(0.15) : Color(.systemGray6))
-            .foregroundStyle(isSelected ? Color.accentColor : .primary)
-            .clipShape(.capsule)
-        }
-    }
-
-    // MARK: - Manual Note Selection
-
-    private var noteSelectionSection: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search notes", text: $searchText)
-                    .textFieldStyle(.plain)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(.systemGray6))
-            .clipShape(.rect(cornerRadius: 10))
-            .padding(.horizontal)
-
-            let filtered = searchText.isEmpty
-                ? allTranscriptions
-                : allTranscriptions.filter { $0.text.localizedStandardContains(searchText) }
-
-            if !selectedNoteIds.isEmpty {
-                Text("^[\(selectedNoteIds.count) note](inflect: true) selected")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 8)
-            }
-
-            List {
-                ForEach(filtered, id: \.id) { transcription in
-                    selectableNoteRow(transcription)
-                }
-            }
-            .listStyle(.plain)
-        }
-    }
+    // MARK: - Selectable Row
 
     private func selectableNoteRow(_ transcription: Transcription) -> some View {
         let isSelected = selectedNoteIds.contains(transcription.id)
@@ -227,22 +144,14 @@ struct MultiNoteCreationView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Note Preview List
+    // MARK: - Select All
 
-    private func notePreviewList(_ transcriptions: [Transcription]) -> some View {
-        List {
-            ForEach(transcriptions, id: \.id) { transcription in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().hour().minute())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(transcription.text)
-                        .font(.subheadline)
-                        .lineLimit(2)
-                }
-            }
+    private func toggleSelectAll() {
+        if allDisplayedSelected {
+            selectedNoteIds.subtract(displayedIds)
+        } else {
+            selectedNoteIds.formUnion(displayedIds)
         }
-        .listStyle(.plain)
     }
 
     // MARK: - Create Button
@@ -259,38 +168,22 @@ struct MultiNoteCreationView: View {
                     .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(!canCreate)
+            .disabled(selectedNoteIds.isEmpty)
             .padding()
         }
         .background(.bar)
     }
 
     private func createConversation() {
+        let selected = selectedTranscriptions
+        guard !selected.isEmpty else { return }
+
         let conversation = MultiNoteConversation()
-        conversation.selectionMode = selectionMode.rawValue
-
-        // Generate title
-        switch selectionMode {
-        case .allNotes:
-            conversation.title = "All Notes (\(matchingTranscriptions.count))"
-        case .byTags:
-            let tagNames = allTags
-                .filter { selectedTagIds.contains($0.id) }
-                .map(\.name)
-                .joined(separator: ", ")
-            conversation.title = "\(tagNames) (\(matchingTranscriptions.count) notes)"
-
-            if let data = try? JSONEncoder().encode(Array(selectedTagIds)) {
-                conversation.tagFilterData = data
-            }
-        case .pickNotes:
-            conversation.title = "\(matchingTranscriptions.count) selected notes"
-        }
-
+        conversation.selectionMode = selected.count == allTranscriptions.count ? "all" : "manual"
+        conversation.title = "\(selected.count) selected notes"
         modelContext.insert(conversation)
 
-        // Create junction records
-        for transcription in matchingTranscriptions {
+        for transcription in selected {
             let source = MultiNoteSource(transcription: transcription)
             source.conversation = conversation
             modelContext.insert(source)
