@@ -134,7 +134,7 @@ struct MainView: View {
                 .interactiveDismissDisabled(true)
                 .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
         }
-        .sheet(isPresented: $showMultiNoteChats) {
+        .fullScreenCover(isPresented: $showMultiNoteChats) {
             MultiNoteChatsListView()
         }
         .onChange(of: appState.shouldNavigateToModeSettings) { _, newValue in

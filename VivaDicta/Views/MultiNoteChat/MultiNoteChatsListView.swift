@@ -17,6 +17,7 @@ struct MultiNoteChatsListView: View {
     @State private var viewModel: MultiNoteChatsListViewModel?
     @State private var showCreation = false
     @State private var selectedConversation: MultiNoteConversation?
+    @State private var chatViewModel: MultiNoteChatViewModel?
 
     var body: some View {
         NavigationStack {
@@ -49,14 +50,23 @@ struct MultiNoteChatsListView: View {
                     selectedConversation = conversation
                 }
             }
-            .sheet(item: $selectedConversation) { conversation in
-                MultiNoteChatView(
-                    viewModel: MultiNoteChatViewModel(
+            .sheet(item: $selectedConversation, onDismiss: {
+                viewModel?.loadConversations()
+            }) { _ in
+                if let chatViewModel {
+                    MultiNoteChatView(viewModel: chatViewModel)
+                }
+            }
+            .onChange(of: selectedConversation) { _, newValue in
+                if let conversation = newValue {
+                    chatViewModel = MultiNoteChatViewModel(
                         conversation: conversation,
                         aiService: appState.aiService,
                         modelContext: modelContext
                     )
-                )
+                } else {
+                    chatViewModel = nil
+                }
             }
             .onAppear {
                 if viewModel == nil {
