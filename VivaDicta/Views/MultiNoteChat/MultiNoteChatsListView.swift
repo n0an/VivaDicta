@@ -238,9 +238,13 @@ private struct ChatRowContent: View {
             if let subtitle {
                 HStack(spacing: 4) {
                     if let icon = subtitleIcon {
-                        Label(subtitle, systemImage: icon)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Label {
+                            Text(.init(subtitle))
+                        } icon: {
+                            Image(systemName: icon)
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     } else {
                         Text(subtitle)
                             .font(.caption)
