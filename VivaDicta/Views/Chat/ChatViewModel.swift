@@ -58,12 +58,51 @@ final class ChatViewModel {
 
     // MARK: - Context
 
-    var contextFillRatio: Double {
-        guard let provider = selectedProvider, let model = selectedModel else { return 0 }
-        return ChatContextManager.fillRatio(
+    var contextFillRatio: Double = 0
+
+    /// Updates the context fill ratio. Uses real token count for Apple FM on iOS 26.4+,
+    /// falls back to character-based estimation for cloud providers and older iOS.
+    func updateContextFillRatio() {
+        guard let provider = selectedProvider, let model = selectedModel else {
+            contextFillRatio = 0
+            return
+        }
+
+        if provider == .apple {
+            Task { await updateAppleFMFillRatio() }
+        } else {
+            contextFillRatio = ChatContextManager.fillRatio(
+                noteText: assembledNoteText,
+                messages: messages,
+                provider: provider,
+                model: model
+            )
+        }
+    }
+
+    private func updateAppleFMFillRatio() async {
+        if #available(iOS 26.4, *) {
+            guard let session = appleFMSession else {
+                contextFillRatio = 0
+                return
+            }
+            do {
+                let entries = Array(session.transcript)
+                let usedTokens = try await SystemLanguageModel.default.tokenCount(for: entries)
+                let contextSize = SystemLanguageModel.default.contextSize
+                contextFillRatio = contextSize > 0 ? min(Double(usedTokens) / Double(contextSize), 1.0) : 0
+                return
+            } catch {
+                logger.logWarning("Chat - Failed to get token count: \(error.localizedDescription)")
+            }
+        }
+
+        // Fallback to character-based estimation for iOS 26.0-26.3
+        guard let model = selectedModel else { return }
+        contextFillRatio = ChatContextManager.fillRatio(
             noteText: assembledNoteText,
             messages: messages,
-            provider: provider,
+            provider: .apple,
             model: model
         )
     }
@@ -107,6 +146,8 @@ final class ChatViewModel {
                 initializeAppleFMSession()
             }
         }
+
+        updateContextFillRatio()
     }
 
     // MARK: - Message Loading
@@ -217,6 +258,7 @@ final class ChatViewModel {
             isStreaming = false
             streamingText = ""
             trySave()
+            updateContextFillRatio()
         }
     }
 
@@ -242,6 +284,8 @@ final class ChatViewModel {
         if selectedProvider == .apple {
             initializeAppleFMSession()
         }
+
+        updateContextFillRatio()
     }
 
     // MARK: - Compact Chat
@@ -260,6 +304,7 @@ final class ChatViewModel {
                 try await performCompaction()
             }
 
+            updateContextFillRatio()
             print("DEBUG COMPACT: compactChat() succeeded, fill ratio after: \(contextFillRatio)")
             HapticManager.success()
         } catch {
