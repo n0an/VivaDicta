@@ -88,21 +88,41 @@ struct TranscriptionDetailView: View {
 
     @ViewBuilder
     private var chatButtonLabel: some View {
-        let content = HStack(spacing: 4) {
-            
-            Text("Chat")
-        }
-        
-        
         if #available(iOS 26.0, *) {
             
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isChatAvailable ? .primary : .secondary)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .glassEffect(.regular.tint(.blue.opacity(0.35)).interactive())
+                .foregroundStyle(isChatAvailable ? Color.white : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background {
+                    if isChatAvailable {
+                        
+                        if colorScheme == .dark {
+                            AnimatedMeshGradient2()
+                                .mask {
+                                    Capsule()
+                                        .strokeBorder(lineWidth: 3)
+                                        .blur(radius: 1)
+                                }
+                                .glassEffect(.regular.tint(.blue.opacity(0.35)).interactive())
 
+                        } else {
+                            AnimatedMeshGradient()
+                                .mask {
+                                    Capsule()
+                                        .strokeBorder(lineWidth: 3)
+                                        .blur(radius: 1)
+                                }
+                                .glassEffect(.regular.tint(.blue.opacity(0.75)).interactive())
+                        }
+                        
+                    } else {
+                        Capsule()
+                            .fill(Color(.systemGray5))
+                    }
+                }
+            
         } else {
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
