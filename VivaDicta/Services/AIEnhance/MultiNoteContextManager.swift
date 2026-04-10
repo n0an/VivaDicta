@@ -10,9 +10,9 @@ import FoundationModels
 
 /// Manages context window for multi-note chat conversations.
 ///
-/// Parallel to ``ChatContextManager`` but specialized for multiple source notes.
-/// Wraps each note in XML `<NOTE>` tags for AI disambiguation and handles
-/// proportional truncation when combined notes exceed context limits.
+/// Parallel to ``ChatContextManager`` but with a multi-note system prompt.
+/// Note text is assembled once at conversation creation time and stored
+/// in ``MultiNoteConversation.noteContext``.
 struct MultiNoteContextManager {
 
     // MARK: - System Prompt
@@ -30,62 +30,18 @@ struct MultiNoteContextManager {
     - Do not use long em-dashes; use normal hyphens instead
     """
 
-    // MARK: - Helpers
+    // MARK: - Note Assembly (used at creation time)
 
-    private static func noteTag(index: Int, transcription: Transcription, body: String) -> String {
-        let firstLine = body.prefix(60).components(separatedBy: .newlines).first ?? "Note \(index + 1)"
-        let date = transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
-        return "<NOTE id=\"\(index + 1)\" title=\"\(firstLine)\" date=\"\(date)\">\n\(body)\n</NOTE>"
-    }
-
-    // MARK: - Note Assembly
-
-    /// Wraps multiple notes in XML tags for AI disambiguation.
-    static func assembleNoteText(from sources: [MultiNoteSource]) -> String {
+    /// Wraps multiple transcriptions in XML tags for AI disambiguation.
+    /// Called once when creating a conversation; the result is stored in `noteContext`.
+    static func assembleNoteText(from transcriptions: [Transcription]) -> String {
         var parts: [String] = []
 
-        for (index, source) in sources.enumerated() {
-            guard let transcription = source.transcription else { continue }
+        for (index, transcription) in transcriptions.enumerated() {
             let noteText = transcription.text
-            parts.append(noteTag(index: index, transcription: transcription, body: noteText))
-        }
-
-        return parts.joined(separator: "\n\n")
-    }
-
-    /// Estimated token count for assembled note text.
-    static func noteTokenCount(from sources: [MultiNoteSource]) -> Int {
-        ChatContextManager.estimateTokens(assembleNoteText(from: sources))
-    }
-
-    // MARK: - Truncation
-
-    /// Proportionally truncates notes when they exceed context budget.
-    static func truncateNotesIfNeeded(
-        sources: [MultiNoteSource],
-        provider: AIProvider,
-        model: String
-    ) -> String {
-        let limit = ChatContextManager.contextLimit(for: provider, model: model)
-        let systemTokens = ChatContextManager.estimateTokens(systemPrompt)
-        let responseReserve = min(4_096, limit / 4)
-        let maxNoteTokens = limit - systemTokens - responseReserve
-
-        let fullText = assembleNoteText(from: sources)
-        let fullTokens = ChatContextManager.estimateTokens(fullText)
-
-        guard fullTokens > maxNoteTokens else { return fullText }
-
-        let activeSources = sources.filter { $0.transcription != nil }
-        let perNoteChars = (maxNoteTokens * 4) / max(activeSources.count, 1)
-
-        var parts: [String] = []
-        for (index, source) in activeSources.enumerated() {
-            guard let transcription = source.transcription else { continue }
-            let noteText = transcription.text
-            let truncated = String(noteText.prefix(perNoteChars))
-            let suffix = truncated.count < noteText.count ? "\n[... truncated ...]" : ""
-            parts.append(noteTag(index: index, transcription: transcription, body: truncated + suffix))
+            let firstLine = noteText.prefix(60).components(separatedBy: .newlines).first ?? "Note \(index + 1)"
+            let date = transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
+            parts.append("<NOTE id=\"\(index + 1)\" title=\"\(firstLine)\" date=\"\(date)\">\n\(noteText)\n</NOTE>")
         }
 
         return parts.joined(separator: "\n\n")

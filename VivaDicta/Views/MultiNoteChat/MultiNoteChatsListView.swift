@@ -87,7 +87,6 @@ struct MultiNoteChatsListView: View {
     private struct ConversationRowContent: View {
         let title: String
         let noteCount: Int
-        let deletedCount: Int
         let lastMessage: String?
         let date: Date
 
@@ -109,12 +108,6 @@ struct MultiNoteChatsListView: View {
                     Label("^[\(noteCount) note](inflect: true)", systemImage: "doc.text")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-
-                    if deletedCount > 0 {
-                        Text("(\(deletedCount) deleted)")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
                 }
 
                 if let lastMessage {
@@ -138,9 +131,7 @@ struct MultiNoteChatsListView: View {
     }
 
     private func conversationRow(_ conversation: MultiNoteConversation) -> some View {
-        let sources = conversation.sources ?? []
-        let noteCount = sources.filter { $0.transcription != nil }.count
-        let deletedCount = sources.filter { $0.transcription == nil }.count
+        let noteCount = conversation.sourceNoteCount
         let lastMessage = (conversation.messages ?? [])
             .sorted { $0.createdAt < $1.createdAt }
             .last
@@ -149,7 +140,6 @@ struct MultiNoteChatsListView: View {
         return ConversationRowContent(
             title: conversation.title.isEmpty ? "Untitled Chat" : conversation.title,
             noteCount: noteCount,
-            deletedCount: deletedCount,
             lastMessage: lastMessage,
             date: conversation.createdAt
         )

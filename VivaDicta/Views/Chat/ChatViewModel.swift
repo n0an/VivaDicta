@@ -338,8 +338,10 @@ final class ChatViewModel {
 
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-            appleFMSession = LanguageModelSession(transcript: transcript)
-            logger.logInfo("Chat - Apple FM session restored from saved transcript")
+            let session = LanguageModelSession(transcript: transcript)
+            session.prewarm()
+            appleFMSession = session
+            logger.logInfo("Chat - Apple FM session restored and prewarmed")
             return
         }
 
@@ -351,12 +353,10 @@ final class ChatViewModel {
             summary: summary
         )
 
-        #if DEBUG
-        print("DEBUG APPLE FM [single-note] FRESH SESSION with \(transcript.count) entries")
-        #endif
-
-        appleFMSession = LanguageModelSession(transcript: transcript)
-        logger.logInfo("Chat - Apple FM session initialized fresh")
+        let session = LanguageModelSession(transcript: transcript)
+        session.prewarm()
+        appleFMSession = session
+        logger.logInfo("Chat - Apple FM session initialized and prewarmed")
     }
 
     /// Note text wrapped for Apple FM context.

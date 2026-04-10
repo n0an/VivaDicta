@@ -179,15 +179,10 @@ struct MultiNoteCreationView: View {
         guard !selected.isEmpty else { return }
 
         let conversation = MultiNoteConversation()
-        conversation.selectionMode = selected.count == allTranscriptions.count ? "all" : "manual"
         conversation.title = "\(selected.count) selected notes"
+        conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
+        conversation.sourceNoteCount = selected.count
         modelContext.insert(conversation)
-
-        for transcription in selected {
-            let source = MultiNoteSource(transcription: transcription)
-            source.conversation = conversation
-            modelContext.insert(source)
-        }
 
         try? modelContext.save()
 

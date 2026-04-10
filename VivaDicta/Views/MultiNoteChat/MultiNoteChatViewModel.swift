@@ -65,21 +65,10 @@ final class MultiNoteChatViewModel {
     }
 
     var noteExceedsAppleFMContext: Bool {
-        let sources = conversation.sources ?? []
-        let noteTokens = MultiNoteContextManager.noteTokenCount(from: sources)
+        let noteTokens = ChatContextManager.estimateTokens(conversation.noteContext)
         let systemTokens = ChatContextManager.estimateTokens(MultiNoteContextManager.systemPrompt)
         let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
         return (noteTokens + systemTokens) > Int(Double(limit) * 0.6)
-    }
-
-    // MARK: - Note Info
-
-    var noteCount: Int {
-        (conversation.sources ?? []).filter { $0.transcription != nil }.count
-    }
-
-    var deletedNoteCount: Int {
-        (conversation.sources ?? []).filter { $0.transcription == nil }.count
     }
 
     // MARK: - Dependencies
@@ -90,14 +79,7 @@ final class MultiNoteChatViewModel {
     private var streamingTask: Task<Void, Never>?
 
     var assembledNoteText: String {
-        guard let provider = selectedProvider, let model = selectedModel else {
-            return MultiNoteContextManager.assembleNoteText(from: conversation.sources ?? [])
-        }
-        return MultiNoteContextManager.truncateNotesIfNeeded(
-            sources: conversation.sources ?? [],
-            provider: provider,
-            model: model
-        )
+        conversation.noteContext
     }
 
     // MARK: - Init
@@ -341,8 +323,10 @@ final class MultiNoteChatViewModel {
 
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-            appleFMSession = LanguageModelSession(transcript: transcript)
-            logger.logInfo("Multi-note chat - Apple FM session restored from saved transcript")
+            let session = LanguageModelSession(transcript: transcript)
+            session.prewarm()
+            appleFMSession = session
+            logger.logInfo("Multi-note chat - Apple FM session restored and prewarmed")
             return
         }
 
@@ -350,22 +334,20 @@ final class MultiNoteChatViewModel {
         let transcript = Transcript.buildFresh(
             instructions: MultiNoteContextManager.systemPrompt,
             notePrompt: appleFMNotePrompt,
-            noteAcknowledgment: "I've read your \(noteCount) notes. Ask me anything about them.",
+            noteAcknowledgment: "I've read your \(conversation.sourceNoteCount) notes. Ask me anything about them.",
             summary: summary
         )
 
-        #if DEBUG
-        print("DEBUG APPLE FM [multi-note] FRESH SESSION with \(transcript.count) entries")
-        #endif
-
-        appleFMSession = LanguageModelSession(transcript: transcript)
-        logger.logInfo("Multi-note chat - Apple FM session initialized fresh")
+        let session = LanguageModelSession(transcript: transcript)
+        session.prewarm()
+        appleFMSession = session
+        logger.logInfo("Multi-note chat - Apple FM session initialized and prewarmed")
     }
 
-    /// Assembled note text wrapped for Apple FM context.
+    /// Note context for Apple FM prompt.
     @available(iOS 26, *)
     private var appleFMNotePrompt: String {
-        MultiNoteContextManager.assembleNoteText(from: conversation.sources ?? [])
+        conversation.noteContext
     }
 
     @available(iOS 26, *)

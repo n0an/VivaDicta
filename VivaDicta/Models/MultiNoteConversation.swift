@@ -11,8 +11,8 @@ import SwiftData
 /// A SwiftData model representing a chat conversation about multiple transcription notes.
 ///
 /// Unlike ``ChatConversation`` (1:1 with a single note, cascade-deleted),
-/// this model survives individual source note deletion (nullify semantics).
-/// Source notes are linked via ``MultiNoteSource`` junction records.
+/// this model is standalone. The assembled note text is captured at creation
+/// time and stored directly, with no live references to source transcriptions.
 @Model
 final class MultiNoteConversation {
     var id: UUID = UUID()
@@ -22,19 +22,15 @@ final class MultiNoteConversation {
     /// Encoded Apple FM `Transcript` data for session restoration.
     var appleFMTranscriptData: Data?
 
-    /// How notes were selected: "all", "tags", or "manual".
-    var selectionMode: String = "manual"
+    /// The assembled note context captured at creation time (XML NOTE tags).
+    var noteContext: String = ""
 
-    /// JSON-encoded tag IDs when selectionMode is "tags".
-    var tagFilterData: Data?
+    /// Number of source notes included at creation time.
+    var sourceNoteCount: Int = 0
 
     /// Chat messages in this conversation.
     @Relationship(deleteRule: .cascade)
     var messages: [ChatMessage]? = []
-
-    /// Junction records linking source transcriptions.
-    @Relationship(deleteRule: .cascade)
-    var sources: [MultiNoteSource]? = []
 
     init() {}
 }

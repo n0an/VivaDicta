@@ -151,15 +151,9 @@ struct MultiNoteChatView: View {
                 }
                 Spacer()
 
-                Label("^[\(viewModel.noteCount) note](inflect: true)", systemImage: "doc.text")
+                Label("^[\(viewModel.conversation.sourceNoteCount) note](inflect: true)", systemImage: "doc.text")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-
-                if viewModel.deletedNoteCount > 0 {
-                    Text("\(viewModel.deletedNoteCount) deleted")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                }
 
                 let ratio = viewModel.contextFillRatio
                 let percentage = Int(ratio * 100)
