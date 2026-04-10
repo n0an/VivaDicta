@@ -273,20 +273,39 @@ final class MultiNoteChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard let session = appleFMSession else { return }
 
-        let instructionsTokens = ChatContextManager.estimateTokens(buildAppleFMInstructions())
-        let contextBudget = instructionsTokens + 300
-        let compacted = try await session.preemptivelySummarizedIfNeeded(over: 0.0, targetContextTokens: contextBudget)
-        if compacted !== session {
-            appleFMSession = compacted
-        } else {
-            appleFMSession = session.compacted()
-        }
+        // Extract and summarize conversation from transcript
+        let conversationText = session.transcript.getMessages().map { entry -> String in
+            switch entry {
+            case .prompt(let p): return "User: \(p.segments.map { "\($0)" }.joined())"
+            case .response(let r): return "Assistant: \(r.segments.map { "\($0)" }.joined())"
+            default: return ""
+            }
+        }.joined(separator: "\n\n")
 
+        guard !conversationText.isEmpty else { return }
+
+        let summarySession = LanguageModelSession(
+            instructions: ChatContextManager.compactionPrompt
+        )
+        let summaryResponse = try await summarySession.respond(
+            to: "Summarize this conversation:\n\n\(conversationText)",
+            options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 300)
+        )
+        let summary = summaryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Rebuild session with clean transcript
+        let transcript = Transcript.buildCompacted(
+            instructions: MultiNoteContextManager.systemPrompt,
+            notePrompt: appleFMNotePrompt,
+            summary: summary
+        )
+        appleFMSession = LanguageModelSession(transcript: transcript)
+
+        // Update SwiftData messages
         let nonSummaryMessages = messages.filter { !$0.isSummary }
         guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
 
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
-
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
         for msg in toDelete {
             modelContext.delete(msg)
@@ -327,26 +346,26 @@ final class MultiNoteChatViewModel {
             return
         }
 
-        let instructions = buildAppleFMInstructions()
+        let summary = messages.first(where: { $0.isSummary })?.content
+        let transcript = Transcript.buildFresh(
+            instructions: MultiNoteContextManager.systemPrompt,
+            notePrompt: appleFMNotePrompt,
+            noteAcknowledgment: "I've read your \(noteCount) notes. Ask me anything about them.",
+            summary: summary
+        )
+
         #if DEBUG
-        print("DEBUG APPLE FM [multi-note] INSTRUCTIONS (\(instructions.count) chars):\n\(instructions)")
+        print("DEBUG APPLE FM [multi-note] FRESH SESSION with \(transcript.count) entries")
         #endif
-        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
-        appleFMSession = LanguageModelSession(model: model, instructions: instructions)
+
+        appleFMSession = LanguageModelSession(transcript: transcript)
         logger.logInfo("Multi-note chat - Apple FM session initialized fresh")
     }
 
+    /// Assembled note text wrapped for Apple FM context.
     @available(iOS 26, *)
-    private func buildAppleFMInstructions() -> String {
-        var instructions = MultiNoteContextManager.systemPrompt
-        let noteText = MultiNoteContextManager.assembleNoteText(from: conversation.sources ?? [])
-        instructions += "\n\n\(noteText)"
-
-        if let summary = messages.first(where: { $0.isSummary }) {
-            instructions += "\n\nPrevious conversation summary:\n\(summary.content)"
-        }
-
-        return instructions
+    private var appleFMNotePrompt: String {
+        MultiNoteContextManager.assembleNoteText(from: conversation.sources ?? [])
     }
 
     @available(iOS 26, *)
@@ -379,34 +398,18 @@ final class MultiNoteChatViewModel {
         )
 
         do {
-            let instructionsTokens = ChatContextManager.estimateTokens(buildAppleFMInstructions())
-            let contextBudget = instructionsTokens + 300
-            let compactedSession = try await session.preemptivelySummarizedIfNeeded(targetContextTokens: contextBudget)
-            if compactedSession !== session {
-                logger.logInfo("Multi-note chat - Apple FM preemptive summarization triggered")
-                session = compactedSession
-                appleFMSession = session
-            }
-        } catch {
-            logger.logWarning("Multi-note chat - Preemptive summarization failed: \(error.localizedDescription)")
-        }
-
-        do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
-            logger.logWarning("Multi-note chat - Apple FM context exceeded, reactive compaction")
-            session = session.compacted()
+            logger.logWarning("Multi-note chat - Apple FM context exceeded, summarizing and retrying")
+
+            session = try await summarizeAndRebuildSession(session, label: "multi-note")
             appleFMSession = session
 
-            do {
-                let result = try await streamAppleFMResponse(session: session, text: text, options: options)
-                saveAppleFMTranscript()
-                return result
-            } catch {
-                throw EnhancementError.customError("Failed after compaction: \(error.localizedDescription)")
-            }
+            let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+            saveAppleFMTranscript()
+            return result
         } catch let error as LanguageModelSession.GenerationError {
             switch error {
             case .guardrailViolation:
@@ -415,6 +418,43 @@ final class MultiNoteChatViewModel {
                 throw EnhancementError.customError(error.localizedDescription)
             }
         }
+    }
+
+    /// Extracts conversation from transcript, summarizes it, rebuilds a clean session.
+    @available(iOS 26, *)
+    private func summarizeAndRebuildSession(_ session: LanguageModelSession, label: String) async throws -> LanguageModelSession {
+        let conversationText = session.transcript.getMessages().map { entry -> String in
+            switch entry {
+            case .prompt(let p): return "User: \(p.segments.map { "\($0)" }.joined())"
+            case .response(let r): return "Assistant: \(r.segments.map { "\($0)" }.joined())"
+            default: return ""
+            }
+        }.joined(separator: "\n\n")
+
+        let summary: String
+        if conversationText.isEmpty {
+            summary = "Previous conversation context was cleared."
+        } else {
+            let summarySession = LanguageModelSession(
+                instructions: ChatContextManager.compactionPrompt
+            )
+            let response = try await summarySession.respond(
+                to: "Summarize this conversation:\n\n\(conversationText)",
+                options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 300)
+            )
+            summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        #if DEBUG
+        print("DEBUG APPLE FM [\(label)] REBUILT SESSION with summary: \(summary.prefix(200))")
+        #endif
+
+        let transcript = Transcript.buildCompacted(
+            instructions: MultiNoteContextManager.systemPrompt,
+            notePrompt: appleFMNotePrompt,
+            summary: summary
+        )
+        return LanguageModelSession(transcript: transcript)
     }
 
     @available(iOS 26, *)
