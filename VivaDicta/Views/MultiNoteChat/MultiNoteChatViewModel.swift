@@ -374,6 +374,13 @@ final class MultiNoteChatViewModel {
         print("DEBUG APPLE FM [multi-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
         #endif
 
+        // Preemptive compaction at 70% fill
+        if contextFillRatio > 0.7 {
+            logger.logInfo("Multi-note chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
+            session = try await summarizeAndRebuildSession(session, label: "multi-note-preemptive")
+            appleFMSession = session
+        }
+
         let options = GenerationOptions(
             sampling: .random(probabilityThreshold: 0.9),
             temperature: 0.7

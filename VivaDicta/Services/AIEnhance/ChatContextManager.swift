@@ -29,8 +29,9 @@ struct ChatContextManager {
     """
 
     static let compactionPrompt = """
-    Summarize the following conversation preserving key facts, decisions, and context. \
-    Be concise. Cover the entire conversation from beginning to end, not just the end.
+    You are summarizing a conversation you had with a user. Write in first person as the \
+    assistant recalling what was discussed. Use "we discussed", "you asked", "I suggested" etc. \
+    Preserve key facts, decisions, and context. Be concise. Cover the entire conversation.
     """
 
     // MARK: - Token Estimation

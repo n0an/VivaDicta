@@ -389,6 +389,13 @@ final class ChatViewModel {
         print("DEBUG APPLE FM [single-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
         #endif
 
+        // Preemptive compaction at 70% fill
+        if contextFillRatio > 0.7 {
+            logger.logInfo("Chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
+            session = try await summarizeAndRebuildSession(session, label: "single-note-preemptive")
+            appleFMSession = session
+        }
+
         let options = GenerationOptions(
             sampling: .random(probabilityThreshold: 0.9),
             temperature: 0.7
@@ -401,7 +408,6 @@ final class ChatViewModel {
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Chat - Apple FM context exceeded, summarizing and retrying")
 
-            // Summarize conversation, rebuild with clean transcript, retry
             session = try await summarizeAndRebuildSession(session, label: "single-note")
             appleFMSession = session
 
