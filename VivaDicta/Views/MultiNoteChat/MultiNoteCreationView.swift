@@ -68,8 +68,7 @@ struct MultiNoteCreationView: View {
             Text("Select notes to start a conversation")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .padding(.top, 4)
-                .padding(.bottom, 2)
+                .padding(.bottom, 8)
 
             // Tag filter bar
             if !availableSourceTags.isEmpty || !allTags.isEmpty {
