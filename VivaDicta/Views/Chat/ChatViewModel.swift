@@ -302,11 +302,11 @@ final class ChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        appleFMSession = LanguageModelSession(transcript: transcript)
+        appleFMSession = LanguageModelSession(model: appleFMModel, transcript: transcript)
 
         // Update SwiftData messages
         let nonSummaryMessages = messages.filter { !$0.isSummary }
-        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages, keepCount: 2) else { return }
 
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
@@ -340,13 +340,18 @@ final class ChatViewModel {
 
     // MARK: - Apple FM Session Management
 
+    @available(iOS 26, *)
+    private var appleFMModel: SystemLanguageModel {
+        SystemLanguageModel(guardrails: .permissiveContentTransformations)
+    }
+
     private func initializeAppleFMSession() {
         guard #available(iOS 26, *) else { return }
         guard AppleFoundationModelAvailability.isAvailable else { return }
 
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-            let session = LanguageModelSession(transcript: transcript)
+            let session = LanguageModelSession(model: appleFMModel, transcript: transcript)
             session.prewarm()
             appleFMSession = session
             logger.logInfo("Chat - Apple FM session restored and prewarmed")
@@ -361,7 +366,7 @@ final class ChatViewModel {
             summary: summary
         )
 
-        let session = LanguageModelSession(transcript: transcript)
+        let session = LanguageModelSession(model: appleFMModel, transcript: transcript)
         session.prewarm()
         appleFMSession = session
         logger.logInfo("Chat - Apple FM session initialized and prewarmed")
@@ -466,7 +471,7 @@ final class ChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        return LanguageModelSession(transcript: transcript)
+        return LanguageModelSession(model: appleFMModel, transcript: transcript)
     }
 
     @available(iOS 26, *)

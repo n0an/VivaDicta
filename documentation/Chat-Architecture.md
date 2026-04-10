@@ -81,36 +81,15 @@ final class MultiNoteConversation {
     var title: String                         // "5 selected notes", "All Notes (11)"
     var createdAt: Date
     var appleFMTranscriptData: Data?
-    var selectionMode: String                 // "all", "tags", "manual"
-    var tagFilterData: Data?                  // JSON-encoded tag IDs
+    var noteContext: String                    // Assembled note text (stored at creation)
+    var sourceNoteCount: Int                   // Number of notes at creation time
 
     @Relationship(deleteRule: .cascade)
     var messages: [ChatMessage]?
-
-    @Relationship(deleteRule: .cascade)
-    var sources: [MultiNoteSource]?           // Junction records
 }
 ```
 
-**Delete behavior:** Deleting a source Transcription nullifies the `MultiNoteSource.transcription` reference but the conversation and its messages survive. The UI shows a "N deleted" warning.
-
-### MultiNoteSource (Junction)
-
-```swift
-@Model
-final class MultiNoteSource {
-    var id: UUID
-    var addedAt: Date
-
-    @Relationship(inverse: \MultiNoteConversation.sources)
-    var conversation: MultiNoteConversation?
-
-    @Relationship                              // nullify on Transcription delete
-    var transcription: Transcription?
-}
-```
-
-Follows the same CloudKit-safe junction pattern as `TranscriptionTagAssignment`.
+**Simplified design:** Note text is captured at creation time into `noteContext` (XML `<NOTE>` tags with id, title, date). No junction model or back-references to source transcriptions. This avoids complexity around note deletion cascading and makes the conversation fully self-contained.
 
 ### ChatMessage (Shared)
 
@@ -167,24 +146,27 @@ A message belongs to either a single-note or multi-note conversation (never both
 - **Apple FM:** If note text + system prompt exceeds 60% of context, an error is shown upfront ("too long for Apple Foundation Models").
 - **Cloud providers:** Notes are proportionally truncated if they exceed context budget. Each note gets `(budget * 4) / noteCount` characters, with `[... truncated ...]` appended.
 
-### Auto-Compaction (70% Threshold)
+### Auto-Compaction (Cloud Providers - 70% Threshold)
 
-When context fill exceeds 70%, compaction triggers automatically before the next message:
+When context fill exceeds 70%, compaction triggers automatically before the next message. Older messages are summarized via a separate AI call using `ChatContextManager.compactionPrompt`. The most recent messages are kept; older ones are replaced by a single summary message.
 
-**Cloud providers:** Older messages are summarized via a separate AI call using `ChatContextManager.compactionPrompt`. The 4 most recent messages are kept; older ones are replaced by a single summary message.
+Apple FM does NOT use preemptive compaction - see below.
 
-**Apple FM:** Uses `preemptivelySummarizedIfNeeded()` which:
-1. Checks token usage against fill threshold
-2. Summarizes conversation via a separate LanguageModelSession
-3. Rebuilds the session with original instructions + `<PREVIOUS_CONVERSATION_SUMMARY>` block
+### Reactive Compaction (Apple FM Only)
 
-### Reactive Compaction
+Apple FM's ~4K context window is too small for accurate character-based fill estimation. Instead, compaction is purely reactive:
 
-If Apple FM throws `exceededContextWindowSize`, the session is compacted via `session.compacted()` (greedy keep-recent algorithm) and the request is retried.
+1. Send message to `session.streamResponse()`
+2. If `exceededContextWindowSize` is thrown, summarize conversation via a separate `LanguageModelSession`
+3. Rebuild session with `Transcript.buildCompacted()` (instructions + note + summary)
+4. Compact SwiftData messages (keep 2 most recent)
+5. Retry the original message
+
+See `documentation/Apple-FM-Chat-Integration.md` for full details on the synthesized transcript architecture.
 
 ### Manual Compaction
 
-Users can trigger compaction via the overflow menu ("Compact Chat"). This follows the same path as auto-compaction but with `over: 0.0` to force compaction regardless of fill level.
+Users can trigger compaction via the overflow menu ("Compact Chat"). Uses the same summarization logic as auto/reactive compaction. Both Apple FM and cloud providers keep 2 most recent messages after manual compaction.
 
 ## Multi-Note Context Assembly
 
@@ -204,44 +186,9 @@ The system prompt instructs the AI to reference notes by title or number when re
 
 ## Apple FM Session Management
 
-### Persistent Sessions
+Apple FM uses a stateful `LanguageModelSession` with synthesized `Transcript` entries for clean separation of instructions, note context, and conversation history. Sessions are persisted via JSON-encoded `Transcript` data stored on the conversation model.
 
-Apple FM uses a persistent `LanguageModelSession` that accumulates context across turns (unlike cloud providers which rebuild the full message array each request). The session is stored type-erased as `Any?` for iOS version compatibility.
-
-### Session Lifecycle
-
-1. **Init:** Restore from `conversation.appleFMTranscriptData` (JSON-encoded Transcript) or create fresh with instructions
-2. **Each message:** Pre-emptive summarization check, then stream response
-3. **After response:** Encode and save transcript to conversation model
-4. **On clear:** Delete transcript data, reinitialize fresh session
-
-### Instructions Structure
-
-**Single-note:**
-```
-[system prompt]
-
-<NOTE>
-[note text]
-</NOTE>
-
-[optional: Previous conversation summary: ...]
-```
-
-**Multi-note:**
-```
-[system prompt]
-
-<NOTE id="1" title="..." date="...">
-[note text]
-</NOTE>
-
-<NOTE id="2" title="..." date="...">
-[note text]
-</NOTE>
-
-[optional: Previous conversation summary: ...]
-```
+For full details on session lifecycle, synthesized transcript architecture, prewarming, dual storage, and deferred persistence, see `documentation/Apple-FM-Chat-Integration.md`.
 
 ## Deferred Persistence Pattern
 
@@ -302,12 +249,12 @@ Additionally, single-note conversations are cascade-deleted when their source Tr
 |------|---------|
 | `Models/ChatConversation.swift` | Single-note conversation model |
 | `Models/ChatMessage.swift` | Shared message model (dual relationship) |
-| `Models/MultiNoteConversation.swift` | Multi-note conversation model |
-| `Models/MultiNoteSource.swift` | Junction linking conversations to notes |
+| `Models/MultiNoteConversation.swift` | Multi-note conversation model (self-contained, no junction) |
 | `Services/AIEnhance/ChatContextManager.swift` | Single-note context assembly and limits |
 | `Services/AIEnhance/MultiNoteContextManager.swift` | Multi-note context assembly with XML tags |
 | `Services/AIEnhance/AIService+Chat.swift` | Provider routing for chat requests |
-| `Services/AIEnhance/LanguageModelSession+Compacting.swift` | Apple FM compaction and transcript logging |
+| `Services/AIEnhance/LanguageModelSession+Compacting.swift` | Apple FM transcript builders and compaction |
+| `documentation/Apple-FM-Chat-Integration.md` | Detailed Apple FM chat integration docs |
 | `Services/ChatCleanupService.swift` | Auto-delete old conversations |
 | `Views/Chat/ChatViewModel.swift` | Single-note chat view model |
 | `Views/Chat/ChatView.swift` | Single-note chat UI |
