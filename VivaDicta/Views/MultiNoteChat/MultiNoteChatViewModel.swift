@@ -379,6 +379,8 @@ final class MultiNoteChatViewModel {
             logger.logInfo("Multi-note chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
             session = try await summarizeAndRebuildSession(session, label: "multi-note-preemptive")
             appleFMSession = session
+            compactSwiftDataMessages()
+            saveAppleFMTranscript()
         }
 
         let options = GenerationOptions(
@@ -395,6 +397,7 @@ final class MultiNoteChatViewModel {
 
             session = try await summarizeAndRebuildSession(session, label: "multi-note")
             appleFMSession = session
+            compactSwiftDataMessages()
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
@@ -552,6 +555,33 @@ final class MultiNoteChatViewModel {
             aiModelName: model,
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summary)
+        )
+        summaryMessage.multiNoteConversation = conversation
+        modelContext.insert(summaryMessage)
+
+        trySave()
+        loadMessages()
+    }
+
+    /// Compacts SwiftData messages to match the Apple FM session state after compaction.
+    /// Deletes old messages, inserts a summary card, and reloads the messages array.
+    private func compactSwiftDataMessages() {
+        guard let provider = selectedProvider, let model = selectedModel else { return }
+
+        let nonSummaryMessages = messages.filter { !$0.isSummary }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
+
+        let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
+        let toDelete = split.toCompact + messages.filter { $0.isSummary }
+        for msg in toDelete {
+            modelContext.delete(msg)
+        }
+
+        let summaryMessage = ChatMessage(
+            role: "summary",
+            content: summaryText,
+            isSummary: true,
+            estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
         summaryMessage.multiNoteConversation = conversation
         modelContext.insert(summaryMessage)

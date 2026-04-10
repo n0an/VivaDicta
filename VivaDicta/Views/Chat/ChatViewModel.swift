@@ -394,6 +394,8 @@ final class ChatViewModel {
             logger.logInfo("Chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
             session = try await summarizeAndRebuildSession(session, label: "single-note-preemptive")
             appleFMSession = session
+            compactSwiftDataMessages()
+            saveAppleFMTranscript()
         }
 
         let options = GenerationOptions(
@@ -410,6 +412,7 @@ final class ChatViewModel {
 
             session = try await summarizeAndRebuildSession(session, label: "single-note")
             appleFMSession = session
+            compactSwiftDataMessages()
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
@@ -569,6 +572,30 @@ final class ChatViewModel {
             aiModelName: model,
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summary)
+        )
+        summaryMessage.conversation = conversation
+        modelContext.insert(summaryMessage)
+
+        trySave()
+        loadMessages()
+    }
+
+    /// Compacts SwiftData messages to match the Apple FM session state after compaction.
+    private func compactSwiftDataMessages() {
+        let nonSummaryMessages = messages.filter { !$0.isSummary }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
+
+        let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
+        let toDelete = split.toCompact + messages.filter { $0.isSummary }
+        for msg in toDelete {
+            modelContext.delete(msg)
+        }
+
+        let summaryMessage = ChatMessage(
+            role: "summary",
+            content: summaryText,
+            isSummary: true,
+            estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
         summaryMessage.conversation = conversation
         modelContext.insert(summaryMessage)
