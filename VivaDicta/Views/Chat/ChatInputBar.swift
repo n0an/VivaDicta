@@ -19,35 +19,40 @@ struct ChatInputBar: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack(alignment: .bottom, spacing: 8) {
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .lineLimit(1...6)
-                    .textFieldStyle(.plain)
-                    .focused($isFocused)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .clipShape(.rect(cornerRadius: 20))
+        HStack(alignment: .bottom, spacing: 8) {
+            TextField(placeholder, text: $text, axis: .vertical)
+                .lineLimit(1...6)
+                .textFieldStyle(.plain)
+                .focused($isFocused)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.systemGray6))
+                .clipShape(.rect(cornerRadius: 20))
 
-                Button {
-                    if isStreaming {
-                        onStop()
-                    } else {
-                        onSend()
-                    }
-                } label: {
-                    Image(systemName: isStreaming ? "stop.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(canSend || isStreaming ? Color.accentColor : Color(.systemGray4))
+            Button {
+                if isStreaming {
+                    onStop()
+                } else {
+                    onSend()
                 }
-                .disabled(!canSend && !isStreaming)
+            } label: {
+                Image(systemName: isStreaming ? "stop.circle" : "arrow.up.circle")
+                    .font(.system(size: 30))
+                    .foregroundStyle(canSend || isStreaming ? .primary : .tertiary)
+                    .glassEffectColor(isInteractive: true, color: canSend || isStreaming ? Color.accentColor : .secondary, opacity: 0.8)
+
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .buttonStyle(.plain)
+            .disabled(!canSend && !isStreaming)
         }
-        .background(.bar)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.bar)
+                .ignoresSafeArea(edges: .bottom)
+                .shadow(color: .black.opacity(0.18), radius: 8, y: -3)
+        }
     }
 
     private var canSend: Bool {
