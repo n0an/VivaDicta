@@ -136,11 +136,10 @@ struct MultiNoteCreationView: View {
                 selectedNoteIds.insert(transcription.id)
             }
         } label: {
-            HStack(alignment: .top) {
+            HStack(alignment: .center) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                     .font(.title3)
-                    .padding(.top, 2)
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
