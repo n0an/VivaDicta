@@ -102,6 +102,7 @@ struct MainView: View {
         .task {
             await NoteCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
             await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
+            await ChatCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
         }
         .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
             SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue

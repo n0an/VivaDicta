@@ -79,21 +79,21 @@ final class ChatViewModel {
     // MARK: - Dependencies
 
     let conversation: ChatConversation
-    let sourceTranscriptions: [Transcription]
+    let transcription: Transcription
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
 
-    /// Combined note text from all source transcriptions.
+    /// The note text for this conversation.
     var assembledNoteText: String {
-        sourceTranscriptions.map(\.text).joined(separator: "\n\n---\n\n")
+        transcription.text
     }
 
     // MARK: - Init
 
-    init(conversation: ChatConversation, sourceTranscriptions: [Transcription], aiService: AIService, modelContext: ModelContext) {
+    init(conversation: ChatConversation, transcription: Transcription, aiService: AIService, modelContext: ModelContext) {
         self.conversation = conversation
-        self.sourceTranscriptions = sourceTranscriptions
+        self.transcription = transcription
         self.aiService = aiService
         self.modelContext = modelContext
 

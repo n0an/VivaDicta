@@ -104,7 +104,7 @@ class Transcription {
     var tagAssignments: [TranscriptionTagAssignment]? = []
 
     /// Chat conversations that reference this transcription as a source note.
-    @Relationship(inverse: \ChatConversation.sourceTranscriptions)
+    @Relationship(deleteRule: .cascade, inverse: \ChatConversation.transcription)
     var chatConversations: [ChatConversation]? = []
 
     /// Creates a new transcription with the specified properties.

@@ -224,7 +224,7 @@ struct TranscriptionDetailView: View {
                 let conversation = findOrCreateConversation(for: transcription)
                 chatViewModel = ChatViewModel(
                     conversation: conversation,
-                    sourceTranscriptions: [transcription],
+                    transcription: transcription,
                     aiService: appState.aiService,
                     modelContext: modelContext
                 )
@@ -498,7 +498,7 @@ struct TranscriptionDetailView: View {
                         let conversation = findOrCreateConversation(for: transcription)
                         chatViewModel = ChatViewModel(
                             conversation: conversation,
-                            sourceTranscriptions: [transcription],
+                            transcription: transcription,
                             aiService: appState.aiService,
                             modelContext: modelContext
                         )
@@ -535,7 +535,7 @@ struct TranscriptionDetailView: View {
             return existing
         }
         let conversation = ChatConversation()
-        conversation.sourceTranscriptions = [transcription]
+        conversation.transcription = transcription
         modelContext.insert(conversation)
         return conversation
     }

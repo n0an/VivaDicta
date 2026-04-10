@@ -26,9 +26,9 @@ final class ChatConversation {
     @Relationship(deleteRule: .cascade)
     var messages: [ChatMessage]? = []
 
-    /// Source transcription notes this conversation is about.
+    /// The transcription note this conversation is about.
     @Relationship
-    var sourceTranscriptions: [Transcription]? = []
+    var transcription: Transcription?
 
     init() {}
 }

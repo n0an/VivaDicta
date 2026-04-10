@@ -42,6 +42,11 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.noteRetentionDays)
     private var noteRetentionDays = 7
 
+    @AppStorage(UserDefaultsStorage.Keys.isAutoChatCleanupEnabled)
+    private var isAutoChatCleanupEnabled = false
+    @AppStorage(UserDefaultsStorage.Keys.chatRetentionDays)
+    private var chatRetentionDays = 7
+
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
     @State private var showRestartAlert = false
@@ -357,6 +362,35 @@ struct SettingsView: View {
                             .onChange(of: audioRetentionDays) { _, _ in
                                 HapticManager.selectionChanged()
                             }
+                        }
+                    }
+
+                    Toggle(isOn: $isAutoChatCleanupEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Auto-delete Chats")
+                                .font(.body)
+                            Text("Automatically delete old chat conversations")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isAutoChatCleanupEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    if isAutoChatCleanupEnabled {
+                        Picker("Keep Chats For", selection: $chatRetentionDays) {
+                            Text("1 day").tag(1)
+                            Text("3 days").tag(3)
+                            Text("7 days").tag(7)
+                            Text("14 days").tag(14)
+                            Text("30 days").tag(30)
+                        }
+                        .pickerStyle(.menu)
+                        .padding(.leading)
+                        .tint(.primary)
+                        .onChange(of: chatRetentionDays) { _, _ in
+                            HapticManager.selectionChanged()
                         }
                     }
                 }
