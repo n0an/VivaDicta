@@ -30,6 +30,14 @@ struct MultiNoteContextManager {
     - Do not use long em-dashes; use normal hyphens instead
     """
 
+    // MARK: - Helpers
+
+    private static func noteTag(index: Int, transcription: Transcription, body: String) -> String {
+        let firstLine = body.prefix(60).components(separatedBy: .newlines).first ?? "Note \(index + 1)"
+        let date = transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
+        return "<NOTE id=\"\(index + 1)\" title=\"\(firstLine)\" date=\"\(date)\">\n\(body)\n</NOTE>"
+    }
+
     // MARK: - Note Assembly
 
     /// Wraps multiple notes in XML tags for AI disambiguation.
@@ -38,9 +46,8 @@ struct MultiNoteContextManager {
 
         for (index, source) in sources.enumerated() {
             guard let transcription = source.transcription else { continue }
-            let noteText = transcription.enhancedText ?? transcription.text
-            let firstLine = noteText.prefix(60).components(separatedBy: .newlines).first ?? "Note \(index + 1)"
-            parts.append("<NOTE id=\"\(index + 1)\" title=\"\(firstLine)\">\n\(noteText)\n</NOTE>")
+            let noteText = transcription.text
+            parts.append(noteTag(index: index, transcription: transcription, body: noteText))
         }
 
         return parts.joined(separator: "\n\n")
@@ -75,11 +82,10 @@ struct MultiNoteContextManager {
         var parts: [String] = []
         for (index, source) in activeSources.enumerated() {
             guard let transcription = source.transcription else { continue }
-            let noteText = transcription.enhancedText ?? transcription.text
-            let firstLine = noteText.prefix(60).components(separatedBy: .newlines).first ?? "Note \(index + 1)"
+            let noteText = transcription.text
             let truncated = String(noteText.prefix(perNoteChars))
             let suffix = truncated.count < noteText.count ? "\n[... truncated ...]" : ""
-            parts.append("<NOTE id=\"\(index + 1)\" title=\"\(firstLine)\">\n\(truncated)\(suffix)\n</NOTE>")
+            parts.append(noteTag(index: index, transcription: transcription, body: truncated + suffix))
         }
 
         return parts.joined(separator: "\n\n")
