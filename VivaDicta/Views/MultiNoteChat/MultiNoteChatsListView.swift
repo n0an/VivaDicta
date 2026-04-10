@@ -8,39 +8,54 @@
 import SwiftUI
 import SwiftData
 
-/// List of multi-note chat conversations.
-///
-/// Root of a NavigationStack: tap "+" pushes creation, tap a chat pushes the chat view.
+/// List of chat conversations with a segmented control to switch
+/// between multi-note and single-note chats.
 struct MultiNoteChatsListView: View {
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @State private var viewModel: MultiNoteChatsListViewModel?
+    @State private var viewModel: ChatsListViewModel?
     @State private var navigationPath = NavigationPath()
+    @State private var selectedTab: ChatTab = .multiNote
+
+    enum ChatTab: String, CaseIterable {
+        case multiNote = "Multi-Note"
+        case singleNote = "Single-Note"
+    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            Group {
-                if let viewModel, !viewModel.conversations.isEmpty {
-                    conversationsList(viewModel.conversations)
-                } else {
-                    ContentUnavailableView(
-                        "No Multi-Note Chats",
-                        systemImage: "bubble.left.and.bubble.right",
-                        description: Text("Create a chat to discuss multiple notes with AI")
-                    )
+            VStack(spacing: 0) {
+                Picker("Chat Type", selection: $selectedTab) {
+                    ForEach(ChatTab.allCases, id: \.self) { tab in
+                        Text(tab.rawValue).tag(tab)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                Group {
+                    switch selectedTab {
+                    case .multiNote:
+                        multiNoteContent
+                    case .singleNote:
+                        singleNoteContent
+                    }
                 }
             }
-            .navigationTitle("Multi-Note Chats")
+            .navigationTitle("Chats")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    Button("New Chat", systemImage: "plus") {
-                        navigationPath.append(NavigationTarget.creation)
+                if selectedTab == .multiNote {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("New Chat", systemImage: "plus") {
+                            navigationPath.append(NavigationTarget.creation)
+                        }
                     }
                 }
             }
@@ -48,13 +63,12 @@ struct MultiNoteChatsListView: View {
                 switch target {
                 case .creation:
                     MultiNoteCreationView { conversation in
-                        viewModel?.loadConversations()
-                        // Pop creation, then push chat
+                        viewModel?.loadMultiNote()
                         navigationPath.removeLast()
-                        navigationPath.append(NavigationTarget.chat(conversation.id))
+                        navigationPath.append(NavigationTarget.multiNoteChat(conversation.id))
                     }
-                case .chat(let conversationId):
-                    if let conversation = viewModel?.conversations.first(where: { $0.id == conversationId }) {
+                case .multiNoteChat(let conversationId):
+                    if let conversation = viewModel?.multiNoteConversations.first(where: { $0.id == conversationId }) {
                         MultiNoteChatView(
                             viewModel: MultiNoteChatViewModel(
                                 conversation: conversation,
@@ -63,17 +77,29 @@ struct MultiNoteChatsListView: View {
                             )
                         )
                     }
+                case .singleNoteChat(let conversationId):
+                    if let conversation = viewModel?.singleNoteConversations.first(where: { $0.id == conversationId }),
+                       let transcription = conversation.transcription {
+                        ChatView(
+                            viewModel: ChatViewModel(
+                                conversation: conversation,
+                                transcription: transcription,
+                                aiService: appState.aiService,
+                                modelContext: modelContext
+                            ),
+                            embedded: true
+                        )
+                    }
                 }
             }
             .onAppear {
                 if viewModel == nil {
-                    viewModel = MultiNoteChatsListViewModel(modelContext: modelContext)
+                    viewModel = ChatsListViewModel(modelContext: modelContext)
                 }
             }
             .onChange(of: navigationPath.count) {
-                // Refresh list when returning from chat or creation
                 if navigationPath.isEmpty {
-                    viewModel?.loadConversations()
+                    viewModel?.loadAll()
                 }
             }
         }
@@ -83,78 +109,153 @@ struct MultiNoteChatsListView: View {
 
     private enum NavigationTarget: Hashable {
         case creation
-        case chat(UUID)
+        case multiNoteChat(UUID)
+        case singleNoteChat(UUID)
     }
 
-    // MARK: - List
+    // MARK: - Multi-Note Content
 
-    private func conversationsList(_ conversations: [MultiNoteConversation]) -> some View {
-        List {
-            ForEach(conversations, id: \.id) { conversation in
-                Button {
-                    navigationPath.append(NavigationTarget.chat(conversation.id))
-                } label: {
-                    conversationRow(conversation)
+    private var multiNoteContent: some View {
+        Group {
+            if let viewModel, !viewModel.multiNoteConversations.isEmpty {
+                List {
+                    ForEach(viewModel.multiNoteConversations, id: \.id) { conversation in
+                        Button {
+                            navigationPath.append(NavigationTarget.multiNoteChat(conversation.id))
+                        } label: {
+                            multiNoteRow(conversation)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            viewModel.deleteMultiNoteConversation(viewModel.multiNoteConversations[index])
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
-            }
-            .onDelete { indexSet in
-                for index in indexSet {
-                    viewModel?.deleteConversation(conversations[index])
-                }
+            } else {
+                ContentUnavailableView(
+                    "No Multi-Note Chats",
+                    systemImage: "bubble.left.and.bubble.right",
+                    description: Text("Create a chat to discuss multiple notes with AI")
+                )
             }
         }
     }
 
-    private struct ConversationRowContent: View {
-        let title: String
-        let noteCount: Int
-        let lastMessage: String?
-        let date: Date
+    // MARK: - Single-Note Content
 
-        var body: some View {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    Text(date, format: .relative(presentation: .named))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+    private var singleNoteContent: some View {
+        Group {
+            if let viewModel, !viewModel.singleNoteConversations.isEmpty {
+                List {
+                    ForEach(viewModel.singleNoteConversations, id: \.id) { conversation in
+                        Button {
+                            navigationPath.append(NavigationTarget.singleNoteChat(conversation.id))
+                        } label: {
+                            singleNoteRow(conversation)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            viewModel.deleteSingleNoteConversation(viewModel.singleNoteConversations[index])
+                        }
+                    }
                 }
-
-                HStack(spacing: 4) {
-                    Label("^[\(noteCount) note](inflect: true)", systemImage: "doc.text")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let lastMessage {
-                    Text(lastMessage)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
+            } else {
+                ContentUnavailableView(
+                    "No Single-Note Chats",
+                    systemImage: "bubble.left.and.text.bubble.right",
+                    description: Text("Start a chat from any note's detail view")
+                )
             }
-            .padding(.vertical, 4)
         }
     }
 
-    private func conversationRow(_ conversation: MultiNoteConversation) -> some View {
+    // MARK: - Row Views
+
+    private func multiNoteRow(_ conversation: MultiNoteConversation) -> some View {
         let noteCount = conversation.sourceNoteCount
         let lastMessage = (conversation.messages ?? [])
             .sorted { $0.createdAt < $1.createdAt }
             .last
             .map { $0.role == "user" ? "You: \($0.content)" : $0.content }
 
-        return ConversationRowContent(
+        return ChatRowContent(
             title: conversation.title.isEmpty ? "Untitled Chat" : conversation.title,
-            noteCount: noteCount,
+            subtitle: "^[\(noteCount) note](inflect: true)",
+            subtitleIcon: "doc.text",
             lastMessage: lastMessage,
             date: conversation.createdAt
         )
+    }
+
+    private func singleNoteRow(_ conversation: ChatConversation) -> some View {
+        let noteTitle = conversation.transcription.map { transcription in
+            let text = transcription.text
+            return String(text.prefix(60)) + (text.count > 60 ? "..." : "")
+        } ?? "Deleted Note"
+
+        let lastMessage = (conversation.messages ?? [])
+            .sorted { $0.createdAt < $1.createdAt }
+            .last
+            .map { $0.role == "user" ? "You: \($0.content)" : $0.content }
+
+        return ChatRowContent(
+            title: noteTitle,
+            subtitle: nil,
+            subtitleIcon: nil,
+            lastMessage: lastMessage,
+            date: conversation.createdAt
+        )
+    }
+}
+
+// MARK: - Shared Row
+
+private struct ChatRowContent: View {
+    let title: String
+    let subtitle: String?
+    let subtitleIcon: String?
+    let lastMessage: String?
+    let date: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                Spacer()
+
+                Text(date, format: .relative(presentation: .named))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            if let subtitle {
+                HStack(spacing: 4) {
+                    if let icon = subtitleIcon {
+                        Label(subtitle, systemImage: icon)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            if let lastMessage {
+                Text(lastMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }

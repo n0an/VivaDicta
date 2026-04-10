@@ -15,68 +15,80 @@ import SwiftData
 /// selection, and context compaction.
 struct ChatView: View {
     @State var viewModel: ChatViewModel
+    /// When true, skips the NavigationStack wrapper (used when pushed from a parent NavigationStack).
+    var embedded: Bool = false
     @Environment(AppState.self) var appState
     @Environment(\.dismiss) private var dismiss
 
     @State private var showClearConfirmation = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                chatHeaderBar
-
-                messagesList
-
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal)
-                        .padding(.vertical, 6)
-                }
-
-                ChatInputBar(
-                    text: $viewModel.inputText,
-                    isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
-                    isBusy: viewModel.isCompacting,
-                    onSend: { viewModel.sendMessage() },
-                    onStop: { viewModel.cancelStreaming() }
-                )
-            }
-            .navigationTitle("Chat")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            Task { await viewModel.compactChat() }
-                        } label: {
-                            Label("Compact Chat", systemImage: "arrow.trianglehead.2.clockwise")
+        if embedded {
+            chatContent
+        } else {
+            NavigationStack {
+                chatContent
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { dismiss() }
                         }
-                        .disabled(viewModel.messages.count < 6 || viewModel.isStreaming || viewModel.isCompacting)
-
-                        Button(role: .destructive) {
-                            showClearConfirmation = true
-                        } label: {
-                            Label("Clear Chat", systemImage: "trash")
-                        }
-                        .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
                     }
+            }
+        }
+    }
+
+    private var chatContent: some View {
+        VStack(spacing: 0) {
+            chatHeaderBar
+
+            messagesList
+
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+            }
+
+            ChatInputBar(
+                text: $viewModel.inputText,
+                isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
+                isBusy: viewModel.isCompacting,
+                onSend: { viewModel.sendMessage() },
+                onStop: { viewModel.cancelStreaming() }
+            )
+        }
+        .navigationTitle("Chat")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        Task { await viewModel.compactChat() }
+                    } label: {
+                        Label("Compact Chat", systemImage: "arrow.trianglehead.2.clockwise")
+                    }
+                    .disabled(viewModel.messages.count < 6 || viewModel.isStreaming || viewModel.isCompacting)
+
+                    Button(role: .destructive) {
+                        showClearConfirmation = true
+                    } label: {
+                        Label("Clear Chat", systemImage: "trash")
+                    }
+                    .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
-            .alert("Clear Chat?", isPresented: $showClearConfirmation) {
-                Button("Clear", role: .destructive) {
-                    viewModel.clearChat()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This will delete all chat messages for this note. This cannot be undone.")
+        }
+        .alert("Clear Chat?", isPresented: $showClearConfirmation) {
+            Button("Clear", role: .destructive) {
+                viewModel.clearChat()
             }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will delete all chat messages for this note. This cannot be undone.")
         }
     }
 
