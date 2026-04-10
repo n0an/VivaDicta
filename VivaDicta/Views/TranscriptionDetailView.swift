@@ -213,10 +213,9 @@ struct TranscriptionDetailView: View {
             }
             .presentationDetents([.height(240)])
         }
-        .sheet(isPresented: $showChat) {
+        .fullScreenCover(isPresented: $showChat) {
             if let vm = chatViewModel {
                 ChatView(viewModel: vm)
-                    .presentationDetents([.large])
             }
         }
         .onChange(of: showChat) { _, isShowing in

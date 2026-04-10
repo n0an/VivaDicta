@@ -14,7 +14,6 @@ import SwiftData
 /// mirroring the main screen's selection mode UX.
 struct MultiNoteCreationView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
 
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
@@ -65,55 +64,48 @@ struct MultiNoteCreationView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Tag filter bar
-                if !availableSourceTags.isEmpty || !allTags.isEmpty {
-                    TagFilterBar(
-                        sourceTags: availableSourceTags,
-                        userTags: allTags,
-                        selectedSourceTags: $selectedSourceTags,
-                        selectedUserTagIds: $selectedUserTagIds
-                    )
-                    .padding(.vertical, 8)
-                }
-
-                // Selection header
-                HStack {
-                    Button {
-                        toggleSelectAll()
-                    } label: {
-                        Text(allDisplayedSelected ? "Deselect All" : "Select All")
-                            .font(.subheadline)
-                    }
-
-                    Spacer()
-
-                    Text("^[\(selectedNoteIds.count) note](inflect: true) selected")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 6)
-
-                // Notes list
-                List {
-                    ForEach(displayedTranscriptions, id: \.id) { transcription in
-                        selectableNoteRow(transcription)
-                    }
-                }
-                .listStyle(.plain)
-
-                createButton
+        VStack(spacing: 0) {
+            // Tag filter bar
+            if !availableSourceTags.isEmpty || !allTags.isEmpty {
+                TagFilterBar(
+                    sourceTags: availableSourceTags,
+                    userTags: allTags,
+                    selectedSourceTags: $selectedSourceTags,
+                    selectedUserTagIds: $selectedUserTagIds
+                )
+                .padding(.vertical, 8)
             }
-            .navigationTitle("New Multi-Note Chat")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+
+            // Selection header
+            HStack {
+                Button {
+                    toggleSelectAll()
+                } label: {
+                    Text(allDisplayedSelected ? "Deselect All" : "Select All")
+                        .font(.subheadline)
+                }
+
+                Spacer()
+
+                Text("^[\(selectedNoteIds.count) note](inflect: true) selected")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+
+            // Notes list
+            List {
+                ForEach(displayedTranscriptions, id: \.id) { transcription in
+                    selectableNoteRow(transcription)
                 }
             }
+            .listStyle(.plain)
+
+            createButton
         }
+        .navigationTitle("New Multi-Note Chat")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Selectable Row
@@ -186,7 +178,6 @@ struct MultiNoteCreationView: View {
 
         try? modelContext.save()
 
-        dismiss()
         onCreate(conversation)
     }
 }

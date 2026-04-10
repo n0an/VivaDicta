@@ -138,12 +138,19 @@ struct MainView: View {
         .fullScreenCover(isPresented: $showMultiNoteChats) {
             MultiNoteChatsListView()
         }
-        .sheet(isPresented: Binding(
+        .fullScreenCover(isPresented: Binding(
             get: { selectionChatViewModel != nil },
             set: { if !$0 { selectionChatViewModel = nil } }
         )) {
             if let selectionChatViewModel {
-                MultiNoteChatView(viewModel: selectionChatViewModel)
+                NavigationStack {
+                    MultiNoteChatView(viewModel: selectionChatViewModel)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { self.selectionChatViewModel = nil }
+                            }
+                        }
+                }
             }
         }
         .onChange(of: appState.shouldNavigateToModeSettings) { _, newValue in

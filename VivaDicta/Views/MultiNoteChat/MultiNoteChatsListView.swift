@@ -9,18 +9,18 @@ import SwiftUI
 import SwiftData
 
 /// List of multi-note chat conversations.
+///
+/// Root of a NavigationStack: tap "+" pushes creation, tap a chat pushes the chat view.
 struct MultiNoteChatsListView: View {
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: MultiNoteChatsListViewModel?
-    @State private var showCreation = false
-    @State private var showChat = false
-    @State private var chatViewModel: MultiNoteChatViewModel?
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if let viewModel, !viewModel.conversations.isEmpty {
                     conversationsList(viewModel.conversations)
@@ -40,22 +40,29 @@ struct MultiNoteChatsListView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Chat", systemImage: "plus") {
-                        showCreation = true
+                        navigationPath.append(NavigationTarget.creation)
                     }
                 }
             }
-            .sheet(isPresented: $showCreation) {
-                MultiNoteCreationView { conversation in
-                    viewModel?.loadConversations()
-                    openChat(for: conversation)
-                }
-            }
-            .sheet(isPresented: $showChat, onDismiss: {
-                viewModel?.loadConversations()
-                chatViewModel = nil
-            }) {
-                if let chatViewModel {
-                    MultiNoteChatView(viewModel: chatViewModel)
+            .navigationDestination(for: NavigationTarget.self) { target in
+                switch target {
+                case .creation:
+                    MultiNoteCreationView { conversation in
+                        viewModel?.loadConversations()
+                        // Pop creation, then push chat
+                        navigationPath.removeLast()
+                        navigationPath.append(NavigationTarget.chat(conversation.id))
+                    }
+                case .chat(let conversationId):
+                    if let conversation = viewModel?.conversations.first(where: { $0.id == conversationId }) {
+                        MultiNoteChatView(
+                            viewModel: MultiNoteChatViewModel(
+                                conversation: conversation,
+                                aiService: appState.aiService,
+                                modelContext: modelContext
+                            )
+                        )
+                    }
                 }
             }
             .onAppear {
@@ -63,14 +70,29 @@ struct MultiNoteChatsListView: View {
                     viewModel = MultiNoteChatsListViewModel(modelContext: modelContext)
                 }
             }
+            .onChange(of: navigationPath.count) {
+                // Refresh list when returning from chat or creation
+                if navigationPath.isEmpty {
+                    viewModel?.loadConversations()
+                }
+            }
         }
     }
+
+    // MARK: - Navigation
+
+    private enum NavigationTarget: Hashable {
+        case creation
+        case chat(UUID)
+    }
+
+    // MARK: - List
 
     private func conversationsList(_ conversations: [MultiNoteConversation]) -> some View {
         List {
             ForEach(conversations, id: \.id) { conversation in
                 Button {
-                    openChat(for: conversation)
+                    navigationPath.append(NavigationTarget.chat(conversation.id))
                 } label: {
                     conversationRow(conversation)
                 }
@@ -119,15 +141,6 @@ struct MultiNoteChatsListView: View {
             }
             .padding(.vertical, 4)
         }
-    }
-
-    private func openChat(for conversation: MultiNoteConversation) {
-        chatViewModel = MultiNoteChatViewModel(
-            conversation: conversation,
-            aiService: appState.aiService,
-            modelContext: modelContext
-        )
-        showChat = true
     }
 
     private func conversationRow(_ conversation: MultiNoteConversation) -> some View {

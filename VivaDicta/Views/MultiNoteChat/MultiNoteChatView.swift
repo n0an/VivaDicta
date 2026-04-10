@@ -12,68 +12,62 @@ import SwiftUI
 /// Mirrors ``ChatView`` structure, reusing ``ChatBubbleView`` and ``ChatInputBar``.
 struct MultiNoteChatView: View {
     @State var viewModel: MultiNoteChatViewModel
-    @Environment(\.dismiss) private var dismiss
 
     @State private var showClearConfirmation = false
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                chatHeaderBar
+        VStack(spacing: 0) {
+            chatHeaderBar
 
-                messagesList
+            messagesList
 
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal)
-                        .padding(.vertical, 6)
-                }
-
-                ChatInputBar(
-                    text: $viewModel.inputText,
-                    isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
-                    isBusy: viewModel.isCompacting,
-                    placeholder: "Ask about these notes...",
-                    onSend: { viewModel.sendMessage() },
-                    onStop: { viewModel.cancelStreaming() }
-                )
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
             }
-            .navigationTitle("Multi-Note Chat")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            Task { await viewModel.compactChat() }
-                        } label: {
-                            Label("Compact Chat", systemImage: "arrow.trianglehead.2.clockwise")
-                        }
-                        .disabled(viewModel.messages.count < 6 || viewModel.isStreaming || viewModel.isCompacting)
 
-                        Button(role: .destructive) {
-                            showClearConfirmation = true
-                        } label: {
-                            Label("Clear Chat", systemImage: "trash")
-                        }
-                        .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
+            ChatInputBar(
+                text: $viewModel.inputText,
+                isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
+                isBusy: viewModel.isCompacting,
+                placeholder: "Ask about these notes...",
+                onSend: { viewModel.sendMessage() },
+                onStop: { viewModel.cancelStreaming() }
+            )
+        }
+        .navigationTitle("Multi-Note Chat")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        Task { await viewModel.compactChat() }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Label("Compact Chat", systemImage: "arrow.trianglehead.2.clockwise")
                     }
+                    .disabled(viewModel.messages.count < 6 || viewModel.isStreaming || viewModel.isCompacting)
+
+                    Button(role: .destructive) {
+                        showClearConfirmation = true
+                    } label: {
+                        Label("Clear Chat", systemImage: "trash")
+                    }
+                    .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
-            .alert("Clear Chat?", isPresented: $showClearConfirmation) {
-                Button("Clear", role: .destructive) {
-                    viewModel.clearChat()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This will delete all chat messages. This cannot be undone.")
+        }
+        .alert("Clear Chat?", isPresented: $showClearConfirmation) {
+            Button("Clear", role: .destructive) {
+                viewModel.clearChat()
             }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will delete all chat messages. This cannot be undone.")
         }
     }
 
