@@ -292,7 +292,7 @@ final class ChatViewModel {
         )
         let summaryResponse = try await summarySession.respond(
             to: "Summarize this conversation:\n\n\(conversationText)",
-            options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 300)
+            options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 100)
         )
         let summary = summaryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -397,17 +397,9 @@ final class ChatViewModel {
         print("DEBUG APPLE FM [single-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
         #endif
 
-        // Preemptive compaction at 70% fill, but only if there are enough messages to compact
-        let nonSummary = messages.filter { !$0.isSummary }
-        if contextFillRatio > 0.7, ChatContextManager.messagesToCompact(from: nonSummary) != nil {
-            logger.logInfo("Chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
-            isCompacting = true
-            session = try await summarizeAndRebuildSession(session, label: "single-note-preemptive")
-            appleFMSession = session
-            compactSwiftDataMessages()
-            saveAppleFMTranscript()
-            isCompacting = false
-        }
+        // No preemptive compaction for Apple FM - let the runtime decide via
+        // exceededContextWindowSize. Our character-based fill estimate is too
+        // inaccurate for Apple FM's small 4K context window.
 
         let options = GenerationOptions(
             sampling: .random(probabilityThreshold: 0.9),
@@ -460,7 +452,7 @@ final class ChatViewModel {
             )
             let response = try await summarySession.respond(
                 to: "Summarize this conversation:\n\n\(conversationText)",
-                options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 300)
+                options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 100)
             )
             summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -594,9 +586,10 @@ final class ChatViewModel {
     }
 
     /// Compacts SwiftData messages to match the Apple FM session state after compaction.
+    /// Keeps only the 2 most recent messages for Apple FM's tight context window.
     private func compactSwiftDataMessages() {
         let nonSummaryMessages = messages.filter { !$0.isSummary }
-        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages) else { return }
+        guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages, keepCount: 2) else { return }
 
         let summaryText = "\(split.toCompact.count) earlier messages compacted into context."
         let toDelete = split.toCompact + messages.filter { $0.isSummary }
