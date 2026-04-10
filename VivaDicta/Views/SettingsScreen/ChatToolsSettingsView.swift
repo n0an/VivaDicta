@@ -15,45 +15,41 @@ struct ChatToolsSettingsView: View {
     @State private var showDeleteConfirmation = false
     @State private var isVerifying = false
     @State private var verificationError: String?
+    @State private var clearButtonVisible = false
 
     var body: some View {
-        Form {
-            Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("When chatting with Apple Foundation Models, tools give the AI the ability to search the web for current information.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        VStack(spacing: 10) {
+            Text("Web Search (Exa)")
+                .font(.title2)
+
+            Text("Give Apple FM the ability to search the web for current information during chat.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            TextField("Exa API Key", text: $exaAPIKey)
+                .privacySensitive()
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding()
+                .background {
+                    Capsule()
+                        .stroke(verificationError != nil ? .red : .gray, lineWidth: verificationError != nil ? 1.5 : 0.5)
                 }
+                .onChange(of: exaAPIKey) { _, _ in
+                    verificationError = nil
+                    clearButtonVisible = !exaAPIKey.isEmpty
+                }
+
+            if let error = verificationError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
             }
 
-            Section {
-                TextField("Exa API Key", text: $exaAPIKey)
-                    .privacySensitive()
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onChange(of: exaAPIKey) { _, _ in
-                        verificationError = nil
-                    }
-
-                if let error = verificationError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                Button {
-                    saveKey()
-                } label: {
-                    HStack {
-                        if isVerifying {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        }
-                        Text(isVerifying ? "Verifying..." : "Save")
-                    }
-                }
-                .disabled(exaAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isVerifying)
-
+            if #available(iOS 26.0, *) {
                 Button {
                     if let clipboardString = UIPasteboard.general.string {
                         let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -63,32 +59,146 @@ struct ChatToolsSettingsView: View {
                         }
                     }
                 } label: {
-                    Label("Paste from Clipboard", systemImage: "doc.on.clipboard")
+                    Text("Paste from clipboard")
+                        .font(.headline.weight(.medium))
                 }
-
-                Link(destination: URL(string: "https://dashboard.exa.ai/api-keys")!) {
-                    Label("Get Exa API Key", systemImage: "key")
-                }
-
-                if hasExistingKey {
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Label("Delete API Key", systemImage: "trash")
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                .buttonStyle(.plain)
+            } else {
+                Button {
+                    if let clipboardString = UIPasteboard.general.string {
+                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            exaAPIKey = trimmed
+                            saveKey()
+                        }
                     }
+                } label: {
+                    Text("Paste from clipboard")
+                        .font(.headline.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background {
+                            Capsule()
+                                .stroke(.blue, lineWidth: 2)
+                        }
                 }
-            } header: {
-                Text("Web Search (Exa)")
-            } footer: {
-                Text("Exa provides web search results to Apple FM during chat. Only used with Apple Foundation Models provider.")
+                .buttonStyle(.plain)
             }
+
+            Button {
+                UIApplication.shared.open(URL(string: "https://dashboard.exa.ai/api-keys")!)
+            } label: {
+                Label("Get Exa API Key", systemImage: "key")
+                    .font(.headline.weight(.medium))
+                    .foregroundStyle(.blue)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+
+            if clearButtonVisible {
+                if #available(iOS 26.0, *) {
+                    Button {
+                        exaAPIKey = ""
+                        HapticManager.lightImpact()
+                    } label: {
+                        Text("Clear")
+                            .font(.headline.weight(.medium))
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.gray.opacity(0.3)).interactive())
+                    .buttonStyle(.plain)
+                } else {
+                    Button {
+                        exaAPIKey = ""
+                        HapticManager.lightImpact()
+                    } label: {
+                        Text("Clear")
+                            .font(.headline.weight(.medium))
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.gray, lineWidth: 2)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if hasExistingKey {
+                if #available(iOS 26.0, *) {
+                    Button {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .glassEffect(.regular.tint(.red.opacity(0.2)).interactive())
+                    .padding(.top, 8)
+                } else {
+                    Button {
+                        showDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Text("Delete API Key")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.red)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .overlay {
+                        Capsule()
+                            .stroke(Color.red, lineWidth: 1.5)
+                    }
+                    .padding(.top, 8)
+                }
+            }
+
+            Spacer()
+        }
+        .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
+        .padding()
+        .contentShape(.rect)
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         .navigationTitle("Chat Tools")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                if isVerifying {
+                    ProgressView()
+                } else {
+                    if #available(iOS 26, *) {
+                        Button(role: .confirm) {
+                            saveKey()
+                        }
+                        .disabled(exaAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .tint(.blue)
+                    } else {
+                        Button("Save") {
+                            saveKey()
+                        }
+                        .disabled(exaAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+        }
         .onAppear {
             let existing = ExaAPIKeyManager.apiKey
             exaAPIKey = existing ?? ""
             hasExistingKey = existing != nil
+            clearButtonVisible = !exaAPIKey.isEmpty
         }
         .alert("Delete API Key", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
@@ -96,6 +206,7 @@ struct ChatToolsSettingsView: View {
                 ExaAPIKeyManager.delete()
                 exaAPIKey = ""
                 hasExistingKey = false
+                clearButtonVisible = false
                 HapticManager.heavyImpact()
             }
         } message: {
@@ -111,6 +222,8 @@ struct ChatToolsSettingsView: View {
         verificationError = nil
 
         Task {
+            HapticManager.mediumImpact()
+
             let isValid = await verifyExaKey(trimmed)
 
             isVerifying = false
