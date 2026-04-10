@@ -82,6 +82,41 @@ struct TranscriptionDetailView: View {
         appState.aiService.isProperlyConfigured()
     }
 
+    private var isChatAvailable: Bool {
+        !appState.aiService.connectedProviders.isEmpty
+    }
+
+    @ViewBuilder
+    private var chatButtonLabel: some View {
+        let content = HStack(spacing: 4) {
+            
+            Text("Chat")
+        }
+        
+        
+        if #available(iOS 26.0, *) {
+            
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(isChatAvailable ? .primary : .secondary)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .glassEffect(.regular.tint(.blue.opacity(0.35)).interactive())
+
+        } else {
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(isChatAvailable ? .primary : .secondary)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background {
+                    Capsule()
+                        .fill(isChatAvailable ? .blue : Color(.systemGray5))
+                }
+        }
+        
+    }
+
     private var audioURL: URL? {
         guard let audioFileName = transcription.audioFileName, !audioFileName.isEmpty else { return nil }
         let url = FileManager.appDirectory(for: .audio).appendingPathComponent(audioFileName)
@@ -479,19 +514,8 @@ struct TranscriptionDetailView: View {
                 .disabled(generatingPresetId != nil)
 
                 Spacer()
-
-                // Button 3: Edit
-                Button {
-                    showTextEditor = true
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 20))
-                        .frame(width: 44, height: 44)
-                }
-
-                Spacer()
-
-                // Button: Chat with Note
+                
+                // Button 3: Chat with Note
                 Button {
                     if chatViewModel == nil {
                         let conversation = findOrCreateConversation(for: transcription)
@@ -504,11 +528,21 @@ struct TranscriptionDetailView: View {
                     }
                     showChat = true
                 } label: {
-                    Image(systemName: "bubble.left.and.text.bubble.right")
+                    chatButtonLabel
+                }
+                .buttonStyle(.plain)
+                .disabled(!isChatAvailable)
+                
+                Spacer()
+
+                // Button 4: Edit
+                Button {
+                    showTextEditor = true
+                } label: {
+                    Image(systemName: "pencil")
                         .font(.system(size: 20))
                         .frame(width: 44, height: 44)
                 }
-                .disabled(appState.aiService.connectedProviders.isEmpty)
 
                 Spacer()
 
