@@ -38,6 +38,7 @@ struct ChatView: View {
                 ChatInputBar(
                     text: $viewModel.inputText,
                     isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
+                    isBusy: viewModel.isCompacting,
                     onSend: { viewModel.sendMessage() },
                     onStop: { viewModel.cancelStreaming() }
                 )

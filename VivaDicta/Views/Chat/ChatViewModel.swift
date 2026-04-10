@@ -83,6 +83,7 @@ final class ChatViewModel {
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
+    private var pendingUserMessage: ChatMessage?
 
     /// The note text for this conversation.
     var assembledNoteText: String {
@@ -113,6 +114,9 @@ final class ChatViewModel {
     func loadMessages() {
         let sorted = (conversation.messages ?? []).sorted { $0.createdAt < $1.createdAt }
         messages = sorted
+        if let pending = pendingUserMessage {
+            messages.append(pending)
+        }
     }
 
     // MARK: - Send Message
@@ -148,6 +152,7 @@ final class ChatViewModel {
             content: text,
             estimatedTokenCount: ChatContextManager.estimateTokens(text)
         )
+        pendingUserMessage = userMessage
         messages.append(userMessage)
 
         isStreaming = true
@@ -164,6 +169,7 @@ final class ChatViewModel {
                     result = try await sendCloudMessage(text, provider: provider, model: model)
                 }
 
+                pendingUserMessage = nil
                 userMessage.conversation = conversation
                 modelContext.insert(userMessage)
 
@@ -181,12 +187,14 @@ final class ChatViewModel {
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
+                pendingUserMessage = nil
                 userMessage.conversation = conversation
                 modelContext.insert(userMessage)
                 savePartialResponse(provider: provider, model: model)
             } catch {
                 logger.logError("Chat error: \(error.localizedDescription)")
 
+                pendingUserMessage = nil
                 userMessage.conversation = conversation
                 modelContext.insert(userMessage)
 
@@ -389,13 +397,16 @@ final class ChatViewModel {
         print("DEBUG APPLE FM [single-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
         #endif
 
-        // Preemptive compaction at 70% fill
-        if contextFillRatio > 0.7 {
+        // Preemptive compaction at 70% fill, but only if there are enough messages to compact
+        let nonSummary = messages.filter { !$0.isSummary }
+        if contextFillRatio > 0.7, ChatContextManager.messagesToCompact(from: nonSummary) != nil {
             logger.logInfo("Chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
+            isCompacting = true
             session = try await summarizeAndRebuildSession(session, label: "single-note-preemptive")
             appleFMSession = session
             compactSwiftDataMessages()
             saveAppleFMTranscript()
+            isCompacting = false
         }
 
         let options = GenerationOptions(
@@ -410,9 +421,11 @@ final class ChatViewModel {
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Chat - Apple FM context exceeded, summarizing and retrying")
 
+            isCompacting = true
             session = try await summarizeAndRebuildSession(session, label: "single-note")
             appleFMSession = session
             compactSwiftDataMessages()
+            isCompacting = false
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()

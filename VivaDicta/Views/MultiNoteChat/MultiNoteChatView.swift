@@ -34,6 +34,7 @@ struct MultiNoteChatView: View {
                 ChatInputBar(
                     text: $viewModel.inputText,
                     isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
+                    isBusy: viewModel.isCompacting,
                     placeholder: "Ask about these notes...",
                     onSend: { viewModel.sendMessage() },
                     onStop: { viewModel.cancelStreaming() }

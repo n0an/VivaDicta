@@ -77,6 +77,8 @@ final class MultiNoteChatViewModel {
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
+    /// User message not yet persisted to SwiftData. Re-appended after loadMessages() during send flow.
+    private var pendingUserMessage: ChatMessage?
 
     var assembledNoteText: String {
         conversation.noteContext
@@ -105,6 +107,9 @@ final class MultiNoteChatViewModel {
     func loadMessages() {
         let sorted = (conversation.messages ?? []).sorted { $0.createdAt < $1.createdAt }
         messages = sorted
+        if let pending = pendingUserMessage {
+            messages.append(pending)
+        }
     }
 
     // MARK: - Send Message
@@ -138,6 +143,7 @@ final class MultiNoteChatViewModel {
             content: text,
             estimatedTokenCount: ChatContextManager.estimateTokens(text)
         )
+        pendingUserMessage = userMessage
         messages.append(userMessage)
 
         isStreaming = true
@@ -155,6 +161,7 @@ final class MultiNoteChatViewModel {
                 }
 
                 // Persist user message now that streaming is done
+                pendingUserMessage = nil
                 userMessage.multiNoteConversation = conversation
                 modelContext.insert(userMessage)
 
@@ -172,14 +179,14 @@ final class MultiNoteChatViewModel {
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
-                // Persist the user message even on cancel
+                pendingUserMessage = nil
                 userMessage.multiNoteConversation = conversation
                 modelContext.insert(userMessage)
                 savePartialResponse(provider: provider, model: model)
             } catch {
                 logger.logError("Multi-note chat error: \(error.localizedDescription)")
 
-                // Persist the user message even on error
+                pendingUserMessage = nil
                 userMessage.multiNoteConversation = conversation
                 modelContext.insert(userMessage)
 
@@ -374,13 +381,16 @@ final class MultiNoteChatViewModel {
         print("DEBUG APPLE FM [multi-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
         #endif
 
-        // Preemptive compaction at 70% fill
-        if contextFillRatio > 0.7 {
+        // Preemptive compaction at 70% fill, but only if there are enough messages to compact
+        let nonSummary = messages.filter { !$0.isSummary }
+        if contextFillRatio > 0.7, ChatContextManager.messagesToCompact(from: nonSummary) != nil {
             logger.logInfo("Multi-note chat - Apple FM preemptive compaction at \(Int(contextFillRatio * 100))%")
+            isCompacting = true
             session = try await summarizeAndRebuildSession(session, label: "multi-note-preemptive")
             appleFMSession = session
             compactSwiftDataMessages()
             saveAppleFMTranscript()
+            isCompacting = false
         }
 
         let options = GenerationOptions(
@@ -395,9 +405,11 @@ final class MultiNoteChatViewModel {
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Multi-note chat - Apple FM context exceeded, summarizing and retrying")
 
+            isCompacting = true
             session = try await summarizeAndRebuildSession(session, label: "multi-note")
             appleFMSession = session
             compactSwiftDataMessages()
+            isCompacting = false
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()

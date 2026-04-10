@@ -11,6 +11,7 @@ import SwiftUI
 struct ChatInputBar: View {
     @Binding var text: String
     var isStreaming: Bool
+    var isBusy: Bool = false
     var placeholder: String = "Ask about this note..."
     var onSend: () -> Void
     var onStop: () -> Void
@@ -50,6 +51,6 @@ struct ChatInputBar: View {
     }
 
     private var canSend: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isStreaming
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isStreaming && !isBusy
     }
 }
