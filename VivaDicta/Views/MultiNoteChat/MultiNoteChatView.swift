@@ -79,29 +79,69 @@ struct MultiNoteChatView: View {
 
     // MARK: - Messages List
 
+    /// Whether the model is thinking (waiting for first token or Apple FM responding).
+    private var isThinking: Bool {
+        (viewModel.isStreaming || viewModel.isAppleFMResponding) && viewModel.streamingText.isEmpty
+    }
+
     private var messagesList: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                if viewModel.messages.isEmpty && !viewModel.isStreaming {
-                    emptyState
-                }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    if viewModel.messages.isEmpty && !viewModel.isStreaming && !viewModel.isAppleFMResponding {
+                        emptyState
+                    }
 
-                ForEach(viewModel.messages, id: \.id) { message in
-                    ChatBubbleView(message: message)
-                }
+                    ForEach(viewModel.messages, id: \.id) { message in
+                        ChatBubbleView(message: message)
+                            .id(message.id)
+                    }
 
-                if viewModel.isStreaming, !viewModel.streamingText.isEmpty {
-                    streamingBubble
-                }
+                    // Typing indicator while model is thinking
+                    if isThinking {
+                        TypingIndicator()
+                            .id("typing")
+                    }
 
-                if viewModel.isCompacting {
-                    compactingIndicator
+                    // Streaming bubble once text starts arriving
+                    if viewModel.isStreaming, !viewModel.streamingText.isEmpty {
+                        streamingBubble
+                            .id("streaming")
+                    }
+
+                    // Compacting indicator
+                    if viewModel.isCompacting {
+                        compactingIndicator
+                            .id("compacting")
+                    }
                 }
+                .padding(.vertical, 12)
             }
-            .padding(.vertical, 12)
+            .scrollIndicators(.hidden)
+            .onChange(of: viewModel.messages.count) {
+                scrollToBottom(proxy: proxy)
+            }
+            .onChange(of: viewModel.streamingText) {
+                scrollToBottom(proxy: proxy)
+            }
+            .onChange(of: isThinking) {
+                scrollToBottom(proxy: proxy)
+            }
         }
-        .defaultScrollAnchor(.bottom)
-        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy) {
+        withAnimation {
+            if viewModel.isStreaming, !viewModel.streamingText.isEmpty {
+                proxy.scrollTo("streaming", anchor: .bottom)
+            } else if isThinking {
+                proxy.scrollTo("typing", anchor: .bottom)
+            } else if viewModel.isCompacting {
+                proxy.scrollTo("compacting", anchor: .bottom)
+            } else if let lastMessage = viewModel.messages.last {
+                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+            }
+        }
     }
 
     private var emptyState: some View {
