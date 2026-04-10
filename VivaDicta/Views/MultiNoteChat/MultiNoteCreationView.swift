@@ -214,7 +214,8 @@ struct MultiNoteCreationView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
+            .prominentButton(color: .accentColor)
+//            .buttonStyle(.borderedProminent)
             .disabled(selectedNoteIds.isEmpty)
             .padding()
         }
