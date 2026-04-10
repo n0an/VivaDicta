@@ -420,6 +420,11 @@ struct MainView: View {
                 }
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
+            
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .bottomBar)
+            }
+            
             ToolbarItem(placement: .bottomBar) {
                 Button {
                     startMultiNoteChatWithSelected()
@@ -428,9 +433,16 @@ struct MainView: View {
                 }
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
-            ToolbarItem(placement: .bottomBar) {
-                Spacer()
+            
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+            } else {
+                ToolbarItem(placement: .bottomBar) {
+                    Spacer()
+                }
             }
+            
+            
             ToolbarItem(placement: .bottomBar) {
                 Button(role: .destructive) {
                     HapticManager.warning()
