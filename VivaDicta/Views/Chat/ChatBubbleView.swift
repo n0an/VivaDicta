@@ -101,7 +101,7 @@ private struct BubbleBackgroundModifier: ViewModifier {
 }
 
 extension View {
-    fileprivate func bubbleBackground(isUser: Bool, isError: Bool) -> some View {
+    func bubbleBackground(isUser: Bool, isError: Bool) -> some View {
         modifier(BubbleBackgroundModifier(isUser: isUser, isError: isError))
     }
 }

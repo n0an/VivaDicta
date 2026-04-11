@@ -181,8 +181,7 @@ struct MultiNoteChatView: View {
                     .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color(.systemGray5))
-                    .clipShape(.rect(cornerRadius: 18))
+                    .bubbleBackground(isUser: false, isError: false)
 
                 if let model = viewModel.selectedModel {
                     Text(model)
