@@ -28,6 +28,7 @@ struct TranscriptionDetailView: View {
     @State private var showPresetPicker: Bool = false
     @State private var showMetaInfo: Bool = false
     @State private var showConfigureAI: Bool = false
+    @State private var showConfigureChat: Bool = false
     @State private var generatingPresetId: String?
     @State private var streamingVariationPresetId: String?
     @State private var streamingVariationText: String = ""
@@ -260,6 +261,13 @@ struct TranscriptionDetailView: View {
         .sheet(isPresented: $showConfigureAI) {
             ConfigureAISheet {
                 showConfigureAI = false
+                appState.shouldNavigateToModeSettings = true
+            }
+            .presentationDetents([.height(240)])
+        }
+        .sheet(isPresented: $showConfigureChat) {
+            ConfigureChatSheet {
+                showConfigureChat = false
                 appState.shouldNavigateToModeSettings = true
             }
             .presentationDetents([.height(240)])
@@ -537,21 +545,24 @@ struct TranscriptionDetailView: View {
                 // Button 3: Chat with Note
                 Button {
                     HapticManager.lightImpact()
-                    if chatViewModel == nil {
-                        let conversation = findOrCreateConversation(for: transcription)
-                        chatViewModel = ChatViewModel(
-                            conversation: conversation,
-                            transcription: transcription,
-                            aiService: appState.aiService,
-                            modelContext: modelContext
-                        )
+                    if isAIConfigured {
+                        if chatViewModel == nil {
+                            let conversation = findOrCreateConversation(for: transcription)
+                            chatViewModel = ChatViewModel(
+                                conversation: conversation,
+                                transcription: transcription,
+                                aiService: appState.aiService,
+                                modelContext: modelContext
+                            )
+                        }
+                        showChat = true
+                    } else {
+                        showConfigureChat = true
                     }
-                    showChat = true
                 } label: {
                     chatButtonLabel
                 }
                 .buttonStyle(.plain)
-                .disabled(!isAIConfigured)
                 
                 Spacer()
 
@@ -961,6 +972,38 @@ private struct ConfigureAISheet: View {
                 .font(.title3.bold())
 
             Text("Set up an AI provider in your mode settings to use AI text processing.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Button {
+                onOpenSettings()
+            } label: {
+                Text("Open Mode Settings")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 40)
+        }
+    }
+}
+
+private struct ConfigureChatSheet: View {
+    let onOpenSettings: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+
+            Text("Chat Not Available")
+                .font(.title3.bold())
+
+            Text("Set up an AI provider in your mode settings to chat with your notes.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
