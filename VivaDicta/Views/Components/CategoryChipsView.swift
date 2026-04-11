@@ -43,6 +43,8 @@ struct CategoryChipsView: View {
 }
 
 private struct CategoryChip: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let title: String
     var icon: String?
     let isSelected: Bool
@@ -65,9 +67,37 @@ private struct CategoryChip: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
             .foregroundStyle(isSelected ? .white : .primary)
-            .background(isSelected ? Color.accentColor : Color(.systemGray5))
-            .clipShape(.capsule)
+            .chipBackground(isSelected: isSelected, color: Color.accentColor.opacity(colorScheme == .dark ? 0.6 : 1.0))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Chip Background Modifier
+
+private struct ChipBackgroundModifier: ViewModifier {
+    let isSelected: Bool
+    let color: Color
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(
+                    isSelected
+                        ? .regular.tint(color).interactive()
+                        : .regular.interactive(),
+                    in: .capsule
+                )
+        } else {
+            content
+                .background(isSelected ? color.opacity(0.2) : Color(.systemGray5))
+                .clipShape(.capsule)
+        }
+    }
+}
+
+extension View {
+    fileprivate func chipBackground(isSelected: Bool, color: Color) -> some View {
+        modifier(ChipBackgroundModifier(isSelected: isSelected, color: color))
     }
 }
