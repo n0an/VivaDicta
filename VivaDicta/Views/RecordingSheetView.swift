@@ -120,7 +120,7 @@ private struct RecordingSheetButtonBackgroundModifier: ViewModifier {
                     )
             } else {
                 content
-                    .glassEffect(.clear.interactive(), in: .circle)
+                    .glassEffect(.regular.interactive(), in: .circle)
             }
         } else {
             if let color {
