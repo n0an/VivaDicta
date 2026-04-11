@@ -507,6 +507,8 @@ final class MultiNoteChatViewModel {
             switch error {
             case .guardrailViolation:
                 throw EnhancementError.customError("Content was blocked by safety guidelines")
+            case .refusal:
+                throw EnhancementError.customError("The AI declined to respond to this request. Try rephrasing.")
             default:
                 throw EnhancementError.customError(error.localizedDescription)
             }
@@ -713,4 +715,5 @@ final class MultiNoteChatViewModel {
             logger.logError("Multi-note chat - Failed to save context: \(error.localizedDescription)")
         }
     }
+
 }

@@ -21,6 +21,7 @@ enum RecordError: LocalizedError, Equatable {
     case recordError
     case transcribe
     case aiGuardrail
+    case aiRefusal(String)
     case aiEnhancement(String)
     case other
     case debugError
@@ -37,6 +38,8 @@ enum RecordError: LocalizedError, Equatable {
             "Transcription failed"
         case .aiGuardrail:
             "AI Safety Guardrail Triggered"
+        case .aiRefusal:
+            "AI Declined to Respond"
         case .aiEnhancement:
             "AI Processing Failed"
         case .other:
@@ -58,6 +61,8 @@ enum RecordError: LocalizedError, Equatable {
             return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
         case .aiGuardrail:
             return "Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content."
+        case .aiRefusal(let reason):
+            return "Apple's on-device AI declined to process this content: \(reason). Your transcription was saved without AI processing."
         case .aiEnhancement(let message):
             return "AI processing failed: \(message). Your transcription was saved without enhancement."
         case .other:

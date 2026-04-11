@@ -898,6 +898,12 @@ struct TranscriptionDetailView: View {
                 generatingPresetId = nil
                 showGuardrailAlert = true
                 HapticManager.error()
+            } catch AppleFoundationModelError.refusal(let reason) {
+                resetStreamingState()
+                generatingPresetId = nil
+                enhancementErrorMessage = "The AI declined to respond: \(reason)"
+                showEnhancementErrorAlert = true
+                HapticManager.error()
             } catch {
                 resetStreamingState()
                 generatingPresetId = nil

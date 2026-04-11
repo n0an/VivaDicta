@@ -68,6 +68,9 @@ final class AppleFoundationModelService {
             case .guardrailViolation(let context):
                 logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
                 throw AppleFoundationModelError.guardrailViolation
+            case .refusal:
+                logger.logWarning("Model refused to respond")
+                throw AppleFoundationModelError.refusal("The model declined to process this content")
             case .exceededContextWindowSize:
                 logger.logWarning("Context window size exceeded")
                 throw AppleFoundationModelError.generationFailed("Context window size exceeded")
@@ -139,6 +142,9 @@ final class AppleFoundationModelService {
             case .guardrailViolation(let context):
                 logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
                 throw AppleFoundationModelError.guardrailViolation
+            case .refusal:
+                logger.logWarning("Model refused to respond")
+                throw AppleFoundationModelError.refusal("The model declined to process this content")
             case .exceededContextWindowSize:
                 logger.logWarning("Context window size exceeded")
                 throw AppleFoundationModelError.generationFailed("Context window size exceeded")
@@ -152,6 +158,10 @@ final class AppleFoundationModelService {
     }
 
 }
+
+// Note: LanguageModelSession.GenerationError.Refusal has an `explanation` async property
+// that could provide the reason, but Response<String> is not Sendable, making it
+// impossible to safely access from @MainActor context in strict concurrency.
 
 // MARK: - Availability Status
 
