@@ -189,7 +189,7 @@ struct ModeCycleSelector: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
-        .background(.quaternary, in: .capsule)
+        .glassCapsule(fallback: .quaternary)
         .gesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in

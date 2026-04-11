@@ -219,10 +219,7 @@ struct RewriteModesView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 7)
-            .background(
-                colorScheme == .dark ? Color(.quaternarySystemFill).opacity(0.5) : Color.white,
-                in: .rect(cornerRadius: 8)
-            )
+            .presetCardBackground(colorScheme: colorScheme)
         }
         .buttonStyle(.plain)
     }
@@ -383,5 +380,30 @@ private struct KeyboardCategoryChipsView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+// MARK: - Preset Card Background
+
+private struct PresetCardBackgroundModifier: ViewModifier {
+    let colorScheme: ColorScheme
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 8))
+        } else {
+            content
+                .background(
+                    colorScheme == .dark ? Color(.quaternarySystemFill).opacity(0.5) : Color.white,
+                    in: .rect(cornerRadius: 8)
+                )
+        }
+    }
+}
+
+extension View {
+    fileprivate func presetCardBackground(colorScheme: ColorScheme) -> some View {
+        modifier(PresetCardBackgroundModifier(colorScheme: colorScheme))
     }
 }

@@ -11,6 +11,7 @@ import SwiftUI
 
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) var colorScheme
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
@@ -129,7 +130,7 @@ struct TranscriptionsContentView: View {
                     .overlay(alignment: .bottom) {
                         if showGoToTopButton {
                             
-                            ScrollToTopButton(backgroundColor: .indigo) {
+                            ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
                                 withAnimation {
                                     proxy.scrollTo(topAnchorID, anchor: .top)
                                 }
