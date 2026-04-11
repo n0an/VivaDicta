@@ -22,7 +22,7 @@ struct ChatToolsSettingsView: View {
             Text("Web Search (Exa)")
                 .font(.title2)
 
-            Text("Give Apple FM the ability to search the web for current information during chat.")
+            Text("Give Apple Foundation Model the ability to search the web for current information during chat.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
