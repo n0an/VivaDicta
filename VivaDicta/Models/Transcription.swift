@@ -103,6 +103,14 @@ class Transcription {
     @Relationship(deleteRule: .cascade)
     var tagAssignments: [TranscriptionTagAssignment]? = []
 
+    /// Chat conversations that reference this transcription as a source note.
+    @Relationship(deleteRule: .cascade, inverse: \ChatConversation.transcription)
+    var chatConversations: [ChatConversation]? = []
+
+    /// Multi-note conversations that include this transcription.
+    @Relationship(deleteRule: .nullify, inverse: \MultiNoteConversation.transcriptions)
+    var multiNoteConversations: [MultiNoteConversation]? = []
+
     /// Creates a new transcription with the specified properties.
     ///
     /// - Parameters:

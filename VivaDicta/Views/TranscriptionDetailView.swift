@@ -33,6 +33,8 @@ struct TranscriptionDetailView: View {
     @State private var streamingVariationText: String = ""
     @State private var showTextEditor: Bool = false
     @State private var showTagPicker: Bool = false
+    @State private var showChat: Bool = false
+    @State private var chatViewModel: ChatViewModel?
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -78,6 +80,61 @@ struct TranscriptionDetailView: View {
 
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
+    }
+
+    private var isChatAvailable: Bool {
+        !appState.aiService.connectedProviders.isEmpty
+    }
+
+    @ViewBuilder
+    private var chatButtonLabel: some View {
+        if #available(iOS 26.0, *) {
+            
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(isChatAvailable ? Color.white : .secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background {
+                    if isChatAvailable {
+                        
+                        if colorScheme == .dark {
+                            AnimatedMeshGradient2()
+                                .mask {
+                                    Capsule()
+                                        .strokeBorder(lineWidth: 3)
+                                        .blur(radius: 1)
+                                }
+                                .glassEffect(.regular.tint(.blue.opacity(0.35)).interactive())
+
+                        } else {
+                            AnimatedMeshGradient()
+                                .mask {
+                                    Capsule()
+                                        .strokeBorder(lineWidth: 3)
+                                        .blur(radius: 1)
+                                }
+                                .glassEffect(.regular.tint(.blue.opacity(0.75)).interactive())
+                        }
+                        
+                    } else {
+                        Capsule()
+                            .fill(Color(.systemGray5))
+                    }
+                }
+            
+        } else {
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(isChatAvailable ? .primary : .secondary)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background {
+                    Capsule()
+                        .fill(isChatAvailable ? .blue : Color(.systemGray5))
+                }
+        }
+        
     }
 
     private var audioURL: URL? {
@@ -210,6 +267,22 @@ struct TranscriptionDetailView: View {
                 appState.shouldNavigateToModeSettings = true
             }
             .presentationDetents([.height(240)])
+        }
+        .fullScreenCover(isPresented: $showChat) {
+            if let vm = chatViewModel {
+                ChatView(viewModel: vm)
+            }
+        }
+        .onChange(of: showChat) { _, isShowing in
+            if isShowing, chatViewModel == nil {
+                let conversation = findOrCreateConversation(for: transcription)
+                chatViewModel = ChatViewModel(
+                    conversation: conversation,
+                    transcription: transcription,
+                    aiService: appState.aiService,
+                    modelContext: modelContext
+                )
+            }
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -366,6 +439,7 @@ struct TranscriptionDetailView: View {
             HStack {
                 // Button 1: Retranscribe (Original) / Regenerate (Variation)
                 Button {
+                    HapticManager.lightImpact()
                     if selectedIsVariation {
                         regenerateSelectedVariation()
                     } else {
@@ -386,6 +460,7 @@ struct TranscriptionDetailView: View {
 
                 // Button: Tag picker
                 Button {
+                    HapticManager.lightImpact()
                     showTagPicker = true
                 } label: {
                     Image(systemName: "tag")
@@ -397,6 +472,7 @@ struct TranscriptionDetailView: View {
 
                 // Button 2: AI Presets picker
                 Button {
+                    HapticManager.lightImpact()
                     if isAIConfigured {
                         showPresetPicker = true
                     } else {
@@ -461,9 +537,31 @@ struct TranscriptionDetailView: View {
                 .disabled(generatingPresetId != nil)
 
                 Spacer()
-
-                // Button 3: Edit
+                
+                // Button 3: Chat with Note
                 Button {
+                    HapticManager.lightImpact()
+                    if chatViewModel == nil {
+                        let conversation = findOrCreateConversation(for: transcription)
+                        chatViewModel = ChatViewModel(
+                            conversation: conversation,
+                            transcription: transcription,
+                            aiService: appState.aiService,
+                            modelContext: modelContext
+                        )
+                    }
+                    showChat = true
+                } label: {
+                    chatButtonLabel
+                }
+                .buttonStyle(.plain)
+                .disabled(!isChatAvailable)
+                
+                Spacer()
+
+                // Button 4: Edit
+                Button {
+                    HapticManager.lightImpact()
                     showTextEditor = true
                 } label: {
                     Image(systemName: "pencil")
@@ -488,6 +586,16 @@ struct TranscriptionDetailView: View {
             .padding(.vertical, 4)
         }
         .background(.bar)
+    }
+
+    private func findOrCreateConversation(for transcription: Transcription) -> ChatConversation {
+        if let existing = transcription.chatConversations?.first {
+            return existing
+        }
+        let conversation = ChatConversation()
+        conversation.transcription = transcription
+        modelContext.insert(conversation)
+        return conversation
     }
 
     private func triggerCopyAnimation() {
@@ -794,6 +902,12 @@ struct TranscriptionDetailView: View {
                 resetStreamingState()
                 generatingPresetId = nil
                 showGuardrailAlert = true
+                HapticManager.error()
+            } catch AppleFoundationModelError.refusal(let reason) {
+                resetStreamingState()
+                generatingPresetId = nil
+                enhancementErrorMessage = "The AI declined to respond: \(reason)"
+                showEnhancementErrorAlert = true
                 HapticManager.error()
             } catch {
                 resetStreamingState()

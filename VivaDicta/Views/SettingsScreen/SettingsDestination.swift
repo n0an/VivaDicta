@@ -13,6 +13,7 @@ enum SettingsDestination: Hashable {
     case promptsTemplates
     case presetsSettings
     case transcriptionModels
+    case chatTools
 
     // Dictionary
     case correctSpelling

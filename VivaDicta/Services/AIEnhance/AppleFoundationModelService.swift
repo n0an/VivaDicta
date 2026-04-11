@@ -50,7 +50,7 @@ final class AppleFoundationModelService {
             logger.logNotice("Apple Foundation Model - Enhancement completed")
 
             #if DEBUG
-            logTranscript(session)
+            session.logTranscript(label: "enhance", logger: logger)
             #endif
 
             return filteredText
@@ -61,13 +61,16 @@ final class AppleFoundationModelService {
             logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
 
             #if DEBUG
-            logTranscript(session)
+            session.logTranscript(label: "enhance", logger: logger)
             #endif
 
             switch error {
             case .guardrailViolation(let context):
                 logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
                 throw AppleFoundationModelError.guardrailViolation
+            case .refusal:
+                logger.logWarning("Model refused to respond")
+                throw AppleFoundationModelError.refusal("The model declined to process this content")
             case .exceededContextWindowSize:
                 logger.logWarning("Context window size exceeded")
                 throw AppleFoundationModelError.generationFailed("Context window size exceeded")
@@ -121,7 +124,7 @@ final class AppleFoundationModelService {
             logger.logNotice("Apple Foundation Model - Streaming enhancement completed")
 
             #if DEBUG
-            logTranscript(session)
+            session.logTranscript(label: "enhance", logger: logger)
             #endif
 
             return filteredText
@@ -132,13 +135,16 @@ final class AppleFoundationModelService {
             logger.logError("Apple Foundation Model streaming generation error: \(error.localizedDescription)")
 
             #if DEBUG
-            logTranscript(session)
+            session.logTranscript(label: "enhance", logger: logger)
             #endif
 
             switch error {
             case .guardrailViolation(let context):
                 logger.logWarning("Safety guardrail triggered: \(context.debugDescription)")
                 throw AppleFoundationModelError.guardrailViolation
+            case .refusal:
+                logger.logWarning("Model refused to respond")
+                throw AppleFoundationModelError.refusal("The model declined to process this content")
             case .exceededContextWindowSize:
                 logger.logWarning("Context window size exceeded")
                 throw AppleFoundationModelError.generationFailed("Context window size exceeded")
@@ -151,33 +157,11 @@ final class AppleFoundationModelService {
         }
     }
 
-    // MARK: - Debug
-
-    #if DEBUG
-    private func logTranscript(_ session: LanguageModelSession) {
-        logger.logDebug("=== FOUNDATION MODEL SESSION TRANSCRIPT ===")
-
-        for entry in session.transcript {
-            switch entry {
-            case .instructions(let instructions):
-                logger.logDebug("INSTRUCTIONS: \(instructions.segments.map { "\($0)" }.joined(separator: " "))")
-            case .prompt(let prompt):
-                logger.logDebug("PROMPT: \(prompt.segments.map { "\($0)" }.joined(separator: " "))")
-            case .response(let response):
-                logger.logDebug("RESPONSE: \(response.segments.map { "\($0)" }.joined(separator: " "))")
-            case .toolCalls(let toolCalls):
-                logger.logDebug("TOOL CALLS: \(toolCalls)")
-            case .toolOutput(let toolOutput):
-                logger.logDebug("TOOL OUTPUT: \(toolOutput)")
-            @unknown default:
-                logger.logDebug("UNKNOWN ENTRY: \(entry)")
-            }
-        }
-
-        logger.logDebug("=== END TRANSCRIPT ===")
-    }
-    #endif
 }
+
+// Note: LanguageModelSession.GenerationError.Refusal has an `explanation` async property
+// that could provide the reason, but Response<String> is not Sendable, making it
+// impossible to safely access from @MainActor context in strict concurrency.
 
 // MARK: - Availability Status
 

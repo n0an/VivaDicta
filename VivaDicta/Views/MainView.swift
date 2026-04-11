@@ -27,6 +27,8 @@ struct MainView: View {
     @State private var displayedTranscriptionIDs: Set<UUID> = []
     @State private var showDeleteConfirmation = false
     @State private var showBulkTagPicker = false
+    @State private var showMultiNoteChats = false
+    @State private var selectionChatViewModel: MultiNoteChatViewModel?
 
     @State var rippleEffectTimer: Timer?
     @State var rippleEffectTrigger = false
@@ -102,6 +104,7 @@ struct MainView: View {
         .task {
             await NoteCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
             await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
+            await ChatCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
         }
         .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
             SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue
@@ -131,6 +134,24 @@ struct MainView: View {
             SettingsView()
                 .interactiveDismissDisabled(true)
                 .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
+        }
+        .fullScreenCover(isPresented: $showMultiNoteChats) {
+            MultiNoteChatsListView()
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { selectionChatViewModel != nil },
+            set: { if !$0 { selectionChatViewModel = nil } }
+        )) {
+            if let selectionChatViewModel {
+                NavigationStack {
+                    MultiNoteChatView(viewModel: selectionChatViewModel)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") { self.selectionChatViewModel = nil }
+                            }
+                        }
+                }
+            }
         }
         .onChange(of: appState.shouldNavigateToModeSettings) { _, newValue in
             if newValue { showingSettings = true }
@@ -399,9 +420,29 @@ struct MainView: View {
                 }
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
-            ToolbarItem(placement: .bottomBar) {
-                Spacer()
+            
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .bottomBar)
             }
+            
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    startMultiNoteChatWithSelected()
+                } label: {
+                    Label("Create Chat", systemImage: "plus.bubble")
+                }
+                .disabled(selectedTranscriptionIDs.isEmpty)
+            }
+            
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+            } else {
+                ToolbarItem(placement: .bottomBar) {
+                    Spacer()
+                }
+            }
+            
+            
             ToolbarItem(placement: .bottomBar) {
                 Button(role: .destructive) {
                     HapticManager.warning()
@@ -415,7 +456,20 @@ struct MainView: View {
         } else {
             if #available(iOS 26.0, *) {
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                
                 ToolbarSpacer(.flexible, placement: .bottomBar)
+                
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        showMultiNoteChats = true
+                    } label: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                    }
+                    .accessibilityLabel("Multi-Note Chats")
+                }
+                
+                ToolbarSpacer(.fixed, placement: .bottomBar)
+                
                 ToolbarItem(placement: .bottomBar) {
                     Button {
                         startRecording()
@@ -430,6 +484,14 @@ struct MainView: View {
                 }
                 .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
             } else {
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        showMultiNoteChats = true
+                    } label: {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                    }
+                    .accessibilityLabel("Multi-Note Chats")
+                }
                 ToolbarItem(placement: .bottomBar) {
                     Button("") {
                         startRecording()
@@ -491,6 +553,30 @@ struct MainView: View {
         } catch {
             logger.logError("Failed to save after bulk deletion: \(error.localizedDescription)")
         }
+
+        exitSelectionMode()
+    }
+
+    // MARK: - Multi-Note Chat from Selection
+
+    private func startMultiNoteChatWithSelected() {
+        let selected = transcriptions.filter { selectedTranscriptionIDs.contains($0.id) }
+        guard !selected.isEmpty else { return }
+
+        let conversation = MultiNoteConversation()
+        conversation.title = "\(selected.count) selected notes"
+        conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
+        conversation.sourceNoteCount = selected.count
+        conversation.transcriptions = selected
+        modelContext.insert(conversation)
+
+        try? modelContext.save()
+
+        selectionChatViewModel = MultiNoteChatViewModel(
+            conversation: conversation,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
 
         exitSelectionMode()
     }

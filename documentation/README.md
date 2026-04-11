@@ -12,6 +12,8 @@
 | [Preset System](Preset-System-Architecture.md) | Built-in and custom presets, preset catalog, sync with CloudKit |
 | [Data Persistence & CloudKit Sync](Data-Persistence-CloudKit-Architecture.md) | SwiftData models, CloudKit container, cross-device sync |
 | [Tags System](Tags-System-Architecture.md) | Source tags, user tags, filtering logic, tag management |
+| [Chat Architecture](Chat-Architecture.md) | Single-note and multi-note chat, context management, compaction |
+| [Apple FM Chat Integration](Apple-FM-Chat-Integration.md) | Apple Foundation Models session lifecycle, synthesized transcripts, reactive compaction |
 
 ## Extensions & Integrations
 

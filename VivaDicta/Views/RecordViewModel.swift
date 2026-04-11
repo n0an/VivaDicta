@@ -497,10 +497,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         // Apple Foundation Model specific error
                         self.pendingTranscription = nil
 
-                        // Show alert for guardrail violations so user knows why enhancement failed
-                        if case .guardrailViolation = error {
+                        // Show alert for guardrail violations and refusals so user knows why enhancement failed
+                        switch error {
+                        case .guardrailViolation:
                             self.recordError = .aiGuardrail
                             self.isShowingAlert = true
+                        case .refusal(let reason):
+                            self.recordError = .aiRefusal(reason)
+                            self.isShowingAlert = true
+                        default:
+                            break
                         }
                     } catch is CancellationError {
                         // Enhancement was cancelled - don't save, just let the outer handler deal with it
