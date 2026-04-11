@@ -15,7 +15,7 @@ import FoundationModels
 @available(iOS 26, *)
 struct ExaWebSearchTool: Tool {
     let name = "searchWeb"
-    let description = "Search the web for current information. Use this when the user asks about recent events, facts you're unsure about, or anything that requires up-to-date knowledge beyond the provided notes."
+    let description = "Search the web ONLY when the user explicitly asks to look something up online, or asks about current events, news, or real-time facts. Do NOT use this tool to answer questions about the user's notes - those are already in the conversation."
 
     private let apiKey: String
 
