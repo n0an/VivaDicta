@@ -53,8 +53,8 @@ struct RecordingSheetView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(Color.secondary)
                             .frame(width: 44, height: 44)
-                            .background(.gray.opacity(0.1), in: .circle)
-                            .contentShape(.rect)
+                            .recordingSheetButtonBackground(color: nil)
+                            .contentShape(.circle)
                     }
                     .accessibilityLabel("Cancel Recording")
                     .padding(.vertical, 16)
@@ -67,9 +67,11 @@ struct RecordingSheetView: View {
                 Button {
                     stopRecordingAndDismiss()
                 } label: {
-                    Image(systemName: "stop.circle.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(.red)
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .recordingSheetButtonBackground(color: .red)
                 }
                 .accessibilityLabel("Stop Recording")
                 .disabled(vm.recordingState != .recording)
@@ -100,6 +102,41 @@ struct RecordingSheetView: View {
         vm.stopCaptureAudio(modelContext: modelContext)
         // Sheet will automatically dismiss when recordingState changes from .recording
         // This happens via the onChange modifier in MainView
+    }
+}
+
+// MARK: - Recording Sheet Button Background
+
+private struct RecordingSheetButtonBackgroundModifier: ViewModifier {
+    let color: Color?
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            if let color {
+                content
+                    .glassEffect(
+                        .regular.tint(color).interactive(),
+                        in: .circle
+                    )
+            } else {
+                content
+                    .glassEffect(.clear.interactive(), in: .circle)
+            }
+        } else {
+            if let color {
+                content
+                    .background(color, in: .circle)
+            } else {
+                content
+                    .background(.gray.opacity(0.1), in: .circle)
+            }
+        }
+    }
+}
+
+extension View {
+    fileprivate func recordingSheetButtonBackground(color: Color?) -> some View {
+        modifier(RecordingSheetButtonBackgroundModifier(color: color))
     }
 }
 
