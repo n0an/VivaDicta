@@ -24,7 +24,7 @@ struct FullAccessPromptView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                         .frame(width: 36, height: 36)
-                        .background(.quinary, in: .circle)
+                        .glassDismissCircle(fallback: .quinary)
                 }
                 .buttonStyle(.plain)
 

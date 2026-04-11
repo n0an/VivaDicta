@@ -237,6 +237,81 @@ extension View {
     }
 }
 
+// MARK: - Glass Dismiss Circle
+/// Dismiss/cancel button background: clear interactive glass on iOS 26+, gray circle on older.
+struct GlassDismissCircleModifier: ViewModifier {
+    var fallback: AnyShapeStyle
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.clear.interactive(), in: .circle)
+        } else {
+            content
+                .background(fallback, in: .circle)
+        }
+    }
+}
+
+extension View {
+    func glassDismissCircle(fallback: some ShapeStyle = Color.gray.opacity(0.1)) -> some View {
+        modifier(GlassDismissCircleModifier(fallback: AnyShapeStyle(fallback)))
+    }
+}
+
+// MARK: - Glass Capsule
+/// Capsule background: interactive glass with optional tint on iOS 26+, solid fallback on older.
+struct GlassCapsuleModifier: ViewModifier {
+    var tint: Color?
+    var fallback: AnyShapeStyle
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            if let tint {
+                content
+                    .glassEffect(.regular.tint(tint).interactive(), in: .capsule)
+            } else {
+                content
+                    .glassEffect(.regular.interactive(), in: .capsule)
+            }
+        } else {
+            content
+                .background(fallback, in: .capsule)
+        }
+    }
+}
+
+extension View {
+    func glassCapsule(tint: Color? = nil, fallback: some ShapeStyle = Color(.systemGray5)) -> some View {
+        modifier(GlassCapsuleModifier(tint: tint, fallback: AnyShapeStyle(fallback)))
+    }
+}
+
+// MARK: - Model Card Background
+struct ModelCardBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
+        } else {
+            content
+                .background(.background.secondary)
+                .clipShape(.rect(cornerRadius: 20, style: .continuous))
+                .shadow(color: .primary.opacity(0.5), radius: 2, x: 2, y: 2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(.primary.opacity(0.3), lineWidth: 0.5)
+                }
+        }
+    }
+}
+
+extension View {
+    func modelCardBackground() -> some View {
+        modifier(ModelCardBackgroundModifier())
+    }
+}
+
 // MARK: - ButtonStyle
 // MARK: prominentButton
 struct ProminentButton: ViewModifier {

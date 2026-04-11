@@ -124,6 +124,8 @@ struct MultiNoteChatView: View {
                 .padding(.vertical, 12)
             }
             .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .defaultScrollAnchor(.bottom)
             .onAppear {
                 scrollToBottom(proxy: proxy)
             }
@@ -137,6 +139,9 @@ struct MultiNoteChatView: View {
                 scrollToBottom(proxy: proxy)
             }
             .onChange(of: viewModel.isCompacting) {
+                scrollToBottom(proxy: proxy)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
                 scrollToBottom(proxy: proxy)
             }
         }
@@ -176,8 +181,7 @@ struct MultiNoteChatView: View {
                     .textSelection(.enabled)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color(.systemGray5))
-                    .clipShape(.rect(cornerRadius: 18))
+                    .bubbleBackground(isUser: false, isError: false)
 
                 if let model = viewModel.selectedModel {
                     Text(model)

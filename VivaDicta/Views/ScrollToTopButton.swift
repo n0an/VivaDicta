@@ -18,13 +18,40 @@ struct ScrollToTopButton: View {
         } label: {
             Image(systemName: "arrow.up")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color(.systemBackground))
+                .foregroundStyle(.white)
                 .frame(width: 44, height: 44)
-                .background(backgroundColor)
+                .contentShape(.circle)
+                .scrollToTopBackground(color: backgroundColor)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Background Modifier
+
+private struct ScrollToTopBackgroundModifier: ViewModifier {
+    let color: Color
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(
+                    .regular.tint(color).interactive(true),
+                    in: .circle
+                )
+                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+        } else {
+            content
+                .background(color)
                 .clipShape(.circle)
                 .shadow(color: .black.opacity(1), radius: 10, x: 0, y: 5)
         }
-        .buttonStyle(.plain)
+    }
+}
+
+extension View {
+    fileprivate func scrollToTopBackground(color: Color) -> some View {
+        modifier(ScrollToTopBackgroundModifier(color: color))
     }
 }
 

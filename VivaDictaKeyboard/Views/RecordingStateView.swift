@@ -41,8 +41,8 @@ struct RecordingStateView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Color.secondary)
                         .frame(width: 44, height: 44)
-                        .background(.gray.opacity(0.1), in: .circle)
-                        .contentShape(.rect)
+                        .glassDismissCircle()
+                        .contentShape(.circle)
                 }
                 .padding(.trailing, 16)
             }
@@ -68,7 +68,7 @@ struct RecordingStateView: View {
                 }
                 .padding(.horizontal, 40)
                 .padding(.vertical, 12)
-                .background(.red, in: .capsule)
+                .glassCapsule(tint: .red, fallback: Color.red)
             }
         }
         .onAppear {

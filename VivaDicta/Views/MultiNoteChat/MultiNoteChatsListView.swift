@@ -26,9 +26,27 @@ struct MultiNoteChatsListView: View {
         case singleNote = "Single-Note"
     }
 
+    private var isAIConfigured: Bool {
+        appState.aiService.isProperlyConfigured()
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 0) {
+                if !isAIConfigured {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Set up an AI provider in mode settings to start new chats.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6))
+                }
+
                 Picker("Chat Type", selection: $selectedTab) {
                     ForEach(ChatTab.allCases, id: \.self) { tab in
                         Text(tab.rawValue).tag(tab)
@@ -58,6 +76,7 @@ struct MultiNoteChatsListView: View {
                         Button("New Chat", systemImage: "plus") {
                             navigationPath.append(NavigationTarget.creation)
                         }
+                        .disabled(!isAIConfigured)
                     }
                 }
             }

@@ -88,10 +88,9 @@ struct ChatInputBar: View {
                     onSend()
                 }
             } label: {
-                Image(systemName: isStreaming ? "stop.circle" : "arrow.up.circle")
+                Image(systemName: isStreaming ? "stop.circle.fill" : "arrow.up.circle.fill")
                     .font(.system(size: 30))
-                    .foregroundStyle(canSend || isStreaming ? .white : Color.gray)
-                    .glassEffectColor(isInteractive: true, color: canSend || isStreaming ? Color.accentColor : .secondary, opacity: 0.8)
+                    .foregroundStyle(canSend || isStreaming ? Color.accentColor : .secondary)
             }
             .buttonStyle(.plain)
             .disabled(!canSend && !isStreaming)

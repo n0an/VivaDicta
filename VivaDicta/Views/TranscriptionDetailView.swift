@@ -28,6 +28,7 @@ struct TranscriptionDetailView: View {
     @State private var showPresetPicker: Bool = false
     @State private var showMetaInfo: Bool = false
     @State private var showConfigureAI: Bool = false
+    @State private var showConfigureChat: Bool = false
     @State private var generatingPresetId: String?
     @State private var streamingVariationPresetId: String?
     @State private var streamingVariationText: String = ""
@@ -81,9 +82,125 @@ struct TranscriptionDetailView: View {
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
     }
+    
+    
+    @ViewBuilder
+    private var aiRewriteButtonLabel: some View {
+        if #available(iOS 26.0, *) {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                Text("AI")
+            }
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(isAIConfigured ? .white : .secondary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background {
+                if isAIConfigured {
+                    if colorScheme == .dark {
+                        // Dark mode: edge-glow HUD style
+                        AnimatedMeshGradient()
+                            .mask(
+                                Capsule()
+                                    .stroke(lineWidth: 14)
+                                    .blur(radius: 6)
+                            )
+                            .blendMode(.lighten)
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 2)
+                                    .fill(Color.white)
+                                    .blur(radius: 1.5)
+                                    .blendMode(.overlay)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 0.5)
+                                    .fill(Color.white)
+                                    .blur(radius: 0.5)
+                                    .blendMode(.overlay)
+                            )
+                            .background(.black)
+                            .clipShape(.capsule)
+                            .glassEffect(.clear.interactive(), in: .capsule)
+                    } else {
+                        // Light mode: full gradient fill
+                        AnimatedMeshGradient2()
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 1)
+                                    .fill(Color.white)
+                                    .blur(radius: 1)
+                                    .blendMode(.overlay)
+                            )
+                            .clipShape(.capsule)
+                            .glassEffect(.clear.interactive(), in: .capsule)
+                            .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    }
+                } else {
+                    Color(.systemGray5)
+                        .glassEffect(.clear, in: .capsule)
+//                    Capsule()
+//                        .fill(Color(.systemGray5))
+                }
+            }
 
-    private var isChatAvailable: Bool {
-        !appState.aiService.connectedProviders.isEmpty
+        } else {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                Text("AI")
+            }
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(isAIConfigured ? .white : .secondary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background {
+                if isAIConfigured {
+                    if colorScheme == .dark {
+                        // Dark mode: edge-glow HUD style
+                        AnimatedMeshGradient()
+                            .mask(
+                                Capsule()
+                                    .stroke(lineWidth: 14)
+                                    .blur(radius: 6)
+                            )
+                            .blendMode(.lighten)
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 2)
+                                    .fill(Color.white)
+                                    .blur(radius: 1.5)
+                                    .blendMode(.overlay)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 0.5)
+                                    .fill(Color.white)
+                                    .blur(radius: 0.5)
+                                    .blendMode(.overlay)
+                            )
+                            .background(.black)
+                            .clipShape(.capsule)
+                    } else {
+                        // Light mode: full gradient fill
+                        AnimatedMeshGradient2()
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 1)
+                                    .fill(Color.white)
+                                    .blur(radius: 1)
+                                    .blendMode(.overlay)
+                            )
+                            .clipShape(.capsule)
+                            .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    }
+                } else {
+                    Capsule()
+                        .fill(Color(.systemGray5))
+                }
+            }
+
+        }
     }
 
     @ViewBuilder
@@ -92,11 +209,11 @@ struct TranscriptionDetailView: View {
             
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isChatAvailable ? Color.white : .secondary)
+                .foregroundStyle(isAIConfigured ? Color.white : .secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background {
-                    if isChatAvailable {
+                    if isAIConfigured {
                         
                         if colorScheme == .dark {
                             AnimatedMeshGradient2()
@@ -112,9 +229,9 @@ struct TranscriptionDetailView: View {
                                 .mask {
                                     Capsule()
                                         .strokeBorder(lineWidth: 3)
-                                        .blur(radius: 1)
                                 }
                                 .glassEffect(.regular.tint(.blue.opacity(0.75)).interactive())
+                                .blur(radius: 1)
                         }
                         
                     } else {
@@ -126,12 +243,12 @@ struct TranscriptionDetailView: View {
         } else {
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isChatAvailable ? .primary : .secondary)
+                .foregroundStyle(isAIConfigured ? .primary : .secondary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 .background {
                     Capsule()
-                        .fill(isChatAvailable ? .blue : Color(.systemGray5))
+                        .fill(isAIConfigured ? .blue : Color(.systemGray5))
                 }
         }
         
@@ -264,6 +381,13 @@ struct TranscriptionDetailView: View {
         .sheet(isPresented: $showConfigureAI) {
             ConfigureAISheet {
                 showConfigureAI = false
+                appState.shouldNavigateToModeSettings = true
+            }
+            .presentationDetents([.height(240)])
+        }
+        .sheet(isPresented: $showConfigureChat) {
+            ConfigureChatSheet {
+                showConfigureChat = false
                 appState.shouldNavigateToModeSettings = true
             }
             .presentationDetents([.height(240)])
@@ -479,59 +603,7 @@ struct TranscriptionDetailView: View {
                         showConfigureAI = true
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "sparkles")
-                        Text("AI")
-                    }
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(isAIConfigured ? .white : .secondary)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background {
-                        if isAIConfigured {
-                            if colorScheme == .dark {
-                                // Dark mode: edge-glow HUD style
-                                AnimatedMeshGradient()
-                                    .mask(
-                                        Capsule()
-                                            .stroke(lineWidth: 14)
-                                            .blur(radius: 6)
-                                    )
-                                    .blendMode(.lighten)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(lineWidth: 2)
-                                            .fill(Color.white)
-                                            .blur(radius: 1.5)
-                                            .blendMode(.overlay)
-                                    )
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(lineWidth: 0.5)
-                                            .fill(Color.white)
-                                            .blur(radius: 0.5)
-                                            .blendMode(.overlay)
-                                    )
-                                    .background(.black)
-                                    .clipShape(.capsule)
-                            } else {
-                                // Light mode: full gradient fill
-                                AnimatedMeshGradient2()
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(lineWidth: 1)
-                                            .fill(Color.white)
-                                            .blur(radius: 1)
-                                            .blendMode(.overlay)
-                                    )
-                                    .clipShape(.capsule)
-                                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
-                            }
-                        } else {
-                            Capsule()
-                                .fill(Color(.systemGray5))
-                        }
-                    }
+                    aiRewriteButtonLabel
                 }
                 .buttonStyle(.plain)
                 .disabled(generatingPresetId != nil)
@@ -541,21 +613,24 @@ struct TranscriptionDetailView: View {
                 // Button 3: Chat with Note
                 Button {
                     HapticManager.lightImpact()
-                    if chatViewModel == nil {
-                        let conversation = findOrCreateConversation(for: transcription)
-                        chatViewModel = ChatViewModel(
-                            conversation: conversation,
-                            transcription: transcription,
-                            aiService: appState.aiService,
-                            modelContext: modelContext
-                        )
+                    if isAIConfigured {
+                        if chatViewModel == nil {
+                            let conversation = findOrCreateConversation(for: transcription)
+                            chatViewModel = ChatViewModel(
+                                conversation: conversation,
+                                transcription: transcription,
+                                aiService: appState.aiService,
+                                modelContext: modelContext
+                            )
+                        }
+                        showChat = true
+                    } else {
+                        showConfigureChat = true
                     }
-                    showChat = true
                 } label: {
                     chatButtonLabel
                 }
                 .buttonStyle(.plain)
-                .disabled(!isChatAvailable)
                 
                 Spacer()
 
@@ -965,6 +1040,38 @@ private struct ConfigureAISheet: View {
                 .font(.title3.bold())
 
             Text("Set up an AI provider in your mode settings to use AI text processing.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Button {
+                onOpenSettings()
+            } label: {
+                Text("Open Mode Settings")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 40)
+        }
+    }
+}
+
+private struct ConfigureChatSheet: View {
+    let onOpenSettings: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "bubble.left.and.text.bubble.right")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+
+            Text("Chat Not Available")
+                .font(.title3.bold())
+
+            Text("Set up an AI provider in your mode settings to chat with your notes.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
