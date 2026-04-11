@@ -2,7 +2,7 @@
 
 ## Overview
 
-Apple Foundation Models (Apple FM) is the on-device AI provider available on iOS 26+. Unlike cloud providers that send a stateless message array per request, Apple FM uses a stateful `LanguageModelSession` that accumulates context in a `Transcript`. This document covers how the chat feature manages Apple FM sessions, constructs transcripts, handles persistence, and performs compaction.
+Apple Foundation Models (Apple FM) is the on-device AI provider available on iOS 26+. Unlike cloud providers that send a stateless message array per request, Apple FM uses a stateful `LanguageModelSession` that accumulates context in a `Transcript`. This document covers how the chat feature manages Apple FM sessions, constructs transcripts, handles persistence, performs compaction, and integrates tool calling.
 
 ## Key Differences from Cloud Providers
 
@@ -13,6 +13,88 @@ Apple Foundation Models (Apple FM) is the on-device AI provider available on iOS
 | Compaction trigger | Preemptive at 70% fill ratio | Reactive only (catch `exceededContextWindowSize`) |
 | Session persistence | Not needed (rebuilt each request) | JSON-encoded `Transcript` stored in SwiftData |
 | Message assembly | `ChatContextManager.assembleMessages()` builds `[[String: String]]` | Synthesized `Transcript` entries |
+| Tool calling | Not supported | `ExaWebSearchTool` via `Tool` protocol |
+| Guardrails | N/A (provider-side moderation) | `permissiveContentTransformations` |
+
+## Model Configuration
+
+### Guardrails
+
+All chat sessions use `permissiveContentTransformations` guardrails, which allows less restrictive content transformation - important for a transcription app where users dictate real-world content (medical terms, legal language, etc.):
+
+```swift
+private var appleFMModel: SystemLanguageModel {
+    SystemLanguageModel(guardrails: .permissiveContentTransformations)
+}
+```
+
+### Generation Options (Sampling Parameters)
+
+Chat responses use nucleus sampling (top-p) with temperature:
+
+```swift
+let options = GenerationOptions(
+    sampling: .random(probabilityThreshold: 0.9),  // top-p: consider tokens until 90% cumulative probability
+    temperature: 0.7                                // moderate creativity, balanced coherence
+)
+```
+
+| Parameter | Value | Effect |
+|-----------|-------|--------|
+| `probabilityThreshold` (top-p) | 0.9 | Nucleus sampling - considers the smallest set of tokens whose cumulative probability reaches 90%. Filters out low-probability tokens while keeping variety. |
+| `temperature` | 0.7 | Scales the probability distribution before sampling. 0.0 = deterministic, 1.0 = maximum randomness. 0.7 balances creativity with coherence. |
+
+**Compaction summarization** uses different options for consistent, focused summaries:
+
+```swift
+GenerationOptions(sampling: .greedy, maximumResponseTokens: 100)
+```
+
+- `.greedy` = always pick the highest-probability token (deterministic, no randomness)
+- `maximumResponseTokens: 100` = hard stop at 100 tokens to keep summaries concise
+
+## Tool Calling
+
+### Exa Web Search Tool
+
+When configured with an Exa API key (Settings > Chat Tools), the model can autonomously search the web during chat. This is implemented via Apple FM's `Tool` protocol.
+
+```swift
+struct ExaWebSearchTool: Tool {
+    let name = "searchWeb"
+    let description = "Search the web for current information..."
+
+    @Generable
+    struct Arguments: Sendable {
+        @Guide(description: "The search query to look up on the web")
+        var query: String
+    }
+
+    func call(arguments: Arguments) async throws -> some PromptRepresentable { ... }
+}
+```
+
+**How it works:**
+1. The model reads the user's question and decides if web search would help
+2. It generates a `searchWeb` tool call with a search query
+3. `ExaWebSearchTool.call()` sends a POST to `https://api.exa.ai/search`
+4. Results (up to 5, with 500-char text snippets) are returned as `GeneratedContent`
+5. The model incorporates the search results into its response
+
+**Wiring:** Tools are passed to every `LanguageModelSession` creation:
+
+```swift
+private var appleFMTools: [any Tool] {
+    guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
+    return [ExaWebSearchTool(apiKey: key)]
+}
+
+let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+```
+
+If no Exa API key is configured, `appleFMTools` returns an empty array and no tools are available.
+
+**API key storage:** Exa API key is stored in Keychain via `ExaAPIKeyManager` (iCloud Keychain synced). Configured in Settings > AI Processing > Chat Tools.
 
 ## Synthesized Transcript Architecture
 
@@ -100,7 +182,7 @@ Called during view model setup. Two paths:
 ```swift
 if let data = conversation.appleFMTranscriptData,
    let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-    let session = LanguageModelSession(transcript: transcript)
+    let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
     session.prewarm()
     appleFMSession = session
 }
@@ -114,7 +196,7 @@ let transcript = Transcript.buildFresh(
     noteAcknowledgment: "I've read your note...",
     summary: existingSummaryFromSwiftData
 )
-let session = LanguageModelSession(transcript: transcript)
+let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
 session.prewarm()
 appleFMSession = session
 ```
@@ -139,6 +221,8 @@ No preemptive compaction check. The runtime decides when context is exceeded.
 
 Iterates `session.streamResponse()` async sequence, updating `streamingText` for live UI. Triggers haptic feedback on stream start and each content increment. After streaming, applies `AIEnhancementOutputFilter.filter()` to clean output.
 
+Apple FM uses **snapshot-based streaming** (not token deltas) - each iteration yields the complete response text so far, so `streamingText = content` assigns directly without accumulation.
+
 ### 5. Saving Transcript (`saveAppleFMTranscript`)
 
 After each successful response, the transcript is JSON-encoded and stored:
@@ -157,6 +241,30 @@ On "Clear Chat", the transcript data is wiped and a fresh session is created:
 conversation.appleFMTranscriptData = nil
 initializeAppleFMSession()
 ```
+
+## Context Overflow Protection
+
+### Note Size Check
+
+Before opening an Apple FM chat, the note size is checked against the context window. Uses a two-tier approach:
+
+1. **Synchronous estimate (init):** Character-based heuristic with 0.80 threshold (note + system prompt must be under 80% of context)
+2. **Async refinement (iOS 26.4+):** Real `tokenCount(for:)` API with 0.80 threshold. If the sync estimate was too conservative and the note actually fits, the error is cleared and the session is initialized.
+
+```swift
+private static func estimateNoteExceedsAppleFM(noteText: String, systemPrompt: String) -> Bool {
+    let noteTokens = ChatContextManager.estimateTokens(noteText)
+    let systemTokens = ChatContextManager.estimateTokens(systemPrompt)
+    let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
+    return (noteTokens + systemTokens) > Int(Double(limit) * 0.80)
+}
+```
+
+### Context Fill Ratio
+
+The context usage indicator in the chat header uses:
+- **iOS 26.4+:** Real `SystemLanguageModel.default.tokenCount(for:)` against `SystemLanguageModel.default.contextSize`
+- **iOS 26.0-26.3:** Character-based estimation via `ChatContextManager.fillRatio()`
 
 ## Compaction
 
@@ -252,6 +360,15 @@ To prevent SwiftUI layout disruption during Apple FM streaming:
 
 This is critical because `modelContext.insert()` mutates the conversation's `messages` relationship, which can trigger SwiftUI layout recalculation and cause the scroll view to blank out mid-stream.
 
+## Error Handling
+
+| Error | Handling |
+|-------|----------|
+| `exceededContextWindowSize` | Reactive compaction: summarize, rebuild, retry |
+| `guardrailViolation` | Show "Content was blocked by safety guidelines" |
+| `CancellationError` | Save partial response if any streaming text received |
+| Other `GenerationError` | Show localized error description |
+
 ## Availability Guards
 
 Apple FM requires iOS 26+. The session is stored as `Any?` to avoid `@available` on the property:
@@ -261,14 +378,15 @@ Apple FM requires iOS 26+. The session is stored as `Any?` to avoid `@available`
 private var appleFMSession: Any?
 ```
 
-All Apple FM code paths use `@available(iOS 26, *)` guards and `if #available(iOS 26, *)` checks.
+All Apple FM code paths use `@available(iOS 26, *)` guards and `if #available(iOS 26, *)` checks. Real token counting requires iOS 26.4+ (`if #available(iOS 26.4, *)`).
 
 ## File References
 
 | File | Apple FM Relevance |
 |------|--------------------|
 | `LanguageModelSession+Compacting.swift` | `Transcript.buildFresh()`, `buildCompacted()`, `getMessages()`, `logTranscript()` |
-| `ChatViewModel.swift` | Single-note: session init, send, stream, compact, save |
+| `ChatViewModel.swift` | Single-note: session init, send, stream, compact, save, tools |
 | `MultiNoteChatViewModel.swift` | Multi-note: same patterns, different system prompt and note assembly |
 | `ChatContextManager.swift` | `chatSystemPrompt`, `compactionPrompt`, `estimateTokens()`, `contextLimit()` |
 | `MultiNoteContextManager.swift` | `systemPrompt`, `assembleNoteText()` for multi-note XML |
+| `ExaWebSearchTool.swift` | Exa web search `Tool` implementation + `ExaAPIKeyManager` |

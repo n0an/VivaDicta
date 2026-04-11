@@ -143,7 +143,7 @@ A message belongs to either a single-note or multi-note conversation (never both
 
 ### Context Overflow Protection
 
-- **Apple FM:** If note text + system prompt exceeds 60% of context, an error is shown upfront ("too long for Apple Foundation Models").
+- **Apple FM:** If note text + system prompt exceeds 80% of context, an error is shown upfront ("too long for Apple Foundation Models"). On iOS 26.4+, this check is refined with real `tokenCount(for:)` - if the character estimate was too conservative and the note actually fits, the error is cleared automatically.
 - **Cloud providers:** Notes are proportionally truncated if they exceed context budget. Each note gets `(budget * 4) / noteCount` characters, with `[... truncated ...]` appended.
 
 ### Auto-Compaction (Cloud Providers - 70% Threshold)
@@ -188,7 +188,17 @@ The system prompt instructs the AI to reference notes by title or number when re
 
 Apple FM uses a stateful `LanguageModelSession` with synthesized `Transcript` entries for clean separation of instructions, note context, and conversation history. Sessions are persisted via JSON-encoded `Transcript` data stored on the conversation model.
 
-For full details on session lifecycle, synthesized transcript architecture, prewarming, dual storage, and deferred persistence, see `documentation/Apple-FM-Chat-Integration.md`.
+All sessions use `SystemLanguageModel(guardrails: .permissiveContentTransformations)` for less restrictive content transformation, and pass `appleFMTools` (Exa web search, when configured) to every session creation.
+
+**Sampling parameters:** Chat responses use `probabilityThreshold: 0.9` (top-p nucleus sampling) with `temperature: 0.7`. Compaction summaries use `.greedy` sampling with `maximumResponseTokens: 100`.
+
+For full details on session lifecycle, synthesized transcript architecture, prewarming, tool calling, dual storage, and deferred persistence, see `documentation/Apple-FM-Chat-Integration.md`.
+
+## Tool Calling (Apple FM)
+
+When an Exa API key is configured (Settings > AI Processing > Chat Tools), Apple FM sessions include an `ExaWebSearchTool` that the model can invoke autonomously during chat. The tool searches the web via the Exa API and returns results as `GeneratedContent` for the model to incorporate.
+
+This is only available for Apple FM - cloud providers handle tool calling server-side.
 
 ## Deferred Persistence Pattern
 
@@ -205,22 +215,24 @@ This avoids mutating the `@Model` conversation's relationships during streaming,
 
 ## Entry Points
 
-### Single-Note Chat
+### Single-Note Chat (from Note Detail)
 
-- **Location:** Note detail screen, bottom action bar (bubble icon)
-- **Flow:** `findOrCreateConversation(for:)` finds existing or creates new `ChatConversation`, then presents `ChatView` as sheet
+- **Location:** Note detail screen, bottom action bar (glass-effect Chat button)
+- **Flow:** `findOrCreateConversation(for:)` finds existing or creates new `ChatConversation`, then presents `ChatView` as full screen cover
 - **Persistence:** Conversation reused on subsequent opens
 
-### Multi-Note Chat (Chats List)
+### Chats List
 
 - **Location:** Main screen bottom toolbar (bubble icon, non-selection mode)
-- **Flow:** Opens `MultiNoteChatsListView` as full screen cover. User can create new conversations or open existing ones.
-- **Creation:** `MultiNoteCreationView` shows tag filter chips + selectable notes list with Select All toggle
+- **Flow:** Opens `MultiNoteChatsListView` as sheet with segmented control (Multi-Note | Single-Note tabs)
+- **Multi-Note tab:** Lists `MultiNoteConversation` records. "+" button pushes `MultiNoteCreationView` for note selection with tag filters.
+- **Single-Note tab:** Lists `ChatConversation` records that have messages (chats started from note details). Tapping pushes `ChatView` in embedded mode (no nested NavigationStack).
+- **Both tabs:** Swipe to delete. Entire row tappable via `contentShape(.rect)`.
 
 ### Multi-Note Chat (Selection Mode)
 
 - **Location:** Main screen bottom toolbar (bubble icon, selection mode)
-- **Flow:** Creates `MultiNoteConversation` with selected notes, exits selection mode, opens chat directly as sheet
+- **Flow:** Creates `MultiNoteConversation` with selected notes, exits selection mode, opens chat directly as full screen cover
 
 ## Cleanup
 
@@ -234,14 +246,18 @@ Additionally, single-note conversations are cascade-deleted when their source Tr
 |-----------|--------|---------|
 | `ChatBubbleView` | Yes | Both chat types |
 | `ChatInputBar` | Yes | Both (configurable placeholder) |
-| `ChatView` | No | Single-note only |
+| `TypingIndicator` | Yes | Both (shown while waiting for first token) |
+| `ScrollToTopButton` | Yes | Both (rotated 180 for scroll-to-bottom) |
+| `ChatView` | No | Single-note only (supports `embedded` mode for push navigation) |
 | `MultiNoteChatView` | No | Multi-note only |
-| `MultiNoteChatsListView` | No | Multi-note list |
-| `MultiNoteCreationView` | No | Multi-note creation |
+| `MultiNoteChatsListView` | No | Unified chats list with segmented control |
+| `MultiNoteCreationView` | No | Multi-note creation with tag filters |
 
 `ChatBubbleView` renders user messages (right-aligned, accent), assistant messages (left-aligned, gray, Markdown via `Text(.init())`), summary cards (centered, minimal), and error messages (red tint).
 
-`ChatInputBar` accepts a configurable `placeholder` parameter (defaults to "Ask about this note..."; multi-note uses "Ask about these notes...").
+`ChatInputBar` accepts a configurable `placeholder` parameter (defaults to "Ask about this note..."; multi-note uses "Ask about these notes..."). Styled with rounded corners, shadow, and glass-effect send button.
+
+Both chat views include a scroll-to-bottom button (appears after scrolling 1+ screen from bottom) and auto-scroll to bottom on appear when reopening chats with existing history.
 
 ## File Inventory
 
@@ -254,14 +270,17 @@ Additionally, single-note conversations are cascade-deleted when their source Tr
 | `Services/AIEnhance/MultiNoteContextManager.swift` | Multi-note context assembly with XML tags |
 | `Services/AIEnhance/AIService+Chat.swift` | Provider routing for chat requests |
 | `Services/AIEnhance/LanguageModelSession+Compacting.swift` | Apple FM transcript builders and compaction |
+| `Services/AIEnhance/ExaWebSearchTool.swift` | Exa web search Tool + ExaAPIKeyManager |
 | `documentation/Apple-FM-Chat-Integration.md` | Detailed Apple FM chat integration docs |
 | `Services/ChatCleanupService.swift` | Auto-delete old conversations |
 | `Views/Chat/ChatViewModel.swift` | Single-note chat view model |
-| `Views/Chat/ChatView.swift` | Single-note chat UI |
+| `Views/Chat/ChatView.swift` | Single-note chat UI (supports embedded mode) |
 | `Views/Chat/ChatBubbleView.swift` | Message bubble (shared) |
 | `Views/Chat/ChatInputBar.swift` | Text input bar (shared) |
+| `Views/Chat/TypingIndicator.swift` | Animated typing dots (shared) |
 | `Views/MultiNoteChat/MultiNoteChatViewModel.swift` | Multi-note chat view model |
 | `Views/MultiNoteChat/MultiNoteChatView.swift` | Multi-note chat UI |
-| `Views/MultiNoteChat/MultiNoteChatsListView.swift` | Multi-note conversations list |
-| `Views/MultiNoteChat/MultiNoteChatsListViewModel.swift` | List view model |
-| `Views/MultiNoteChat/MultiNoteCreationView.swift` | Note selection for new conversation |
+| `Views/MultiNoteChat/MultiNoteChatsListView.swift` | Unified chats list (segmented: multi/single) |
+| `Views/MultiNoteChat/MultiNoteChatsListViewModel.swift` | ChatsListViewModel (fetches both types) |
+| `Views/MultiNoteChat/MultiNoteCreationView.swift` | Note selection with tag filters |
+| `Views/SettingsScreen/ChatToolsSettingsView.swift` | Exa API key configuration |
