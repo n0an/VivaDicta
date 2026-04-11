@@ -82,6 +82,126 @@ struct TranscriptionDetailView: View {
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
     }
+    
+    
+    @ViewBuilder
+    private var aiRewriteButtonLabel: some View {
+        if #available(iOS 26.0, *) {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                Text("AI")
+            }
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(isAIConfigured ? .white : .secondary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background {
+                if isAIConfigured {
+                    if colorScheme == .dark {
+                        // Dark mode: edge-glow HUD style
+                        AnimatedMeshGradient()
+                            .mask(
+                                Capsule()
+                                    .stroke(lineWidth: 14)
+                                    .blur(radius: 6)
+                            )
+                            .blendMode(.lighten)
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 2)
+                                    .fill(Color.white)
+                                    .blur(radius: 1.5)
+                                    .blendMode(.overlay)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 0.5)
+                                    .fill(Color.white)
+                                    .blur(radius: 0.5)
+                                    .blendMode(.overlay)
+                            )
+                            .background(.black)
+                            .clipShape(.capsule)
+                            .glassEffect(.clear.interactive(), in: .capsule)
+                    } else {
+                        // Light mode: full gradient fill
+                        AnimatedMeshGradient2()
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 1)
+                                    .fill(Color.white)
+                                    .blur(radius: 1)
+                                    .blendMode(.overlay)
+                            )
+                            .clipShape(.capsule)
+                            .glassEffect(.clear.interactive(), in: .capsule)
+                            .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    }
+                } else {
+                    Color(.systemGray5)
+                        .glassEffect(.clear, in: .capsule)
+//                    Capsule()
+//                        .fill(Color(.systemGray5))
+                }
+            }
+
+        } else {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                Text("AI")
+            }
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(isAIConfigured ? .white : .secondary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+            .background {
+                if isAIConfigured {
+                    if colorScheme == .dark {
+                        // Dark mode: edge-glow HUD style
+                        AnimatedMeshGradient()
+                            .mask(
+                                Capsule()
+                                    .stroke(lineWidth: 14)
+                                    .blur(radius: 6)
+                            )
+                            .blendMode(.lighten)
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 2)
+                                    .fill(Color.white)
+                                    .blur(radius: 1.5)
+                                    .blendMode(.overlay)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 0.5)
+                                    .fill(Color.white)
+                                    .blur(radius: 0.5)
+                                    .blendMode(.overlay)
+                            )
+                            .background(.black)
+                            .clipShape(.capsule)
+                    } else {
+                        // Light mode: full gradient fill
+                        AnimatedMeshGradient2()
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 1)
+                                    .fill(Color.white)
+                                    .blur(radius: 1)
+                                    .blendMode(.overlay)
+                            )
+                            .clipShape(.capsule)
+                            .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    }
+                } else {
+                    Capsule()
+                        .fill(Color(.systemGray5))
+                }
+            }
+
+        }
+    }
 
     @ViewBuilder
     private var chatButtonLabel: some View {
@@ -483,59 +603,7 @@ struct TranscriptionDetailView: View {
                         showConfigureAI = true
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "sparkles")
-                        Text("AI")
-                    }
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(isAIConfigured ? .white : .secondary)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background {
-                        if isAIConfigured {
-                            if colorScheme == .dark {
-                                // Dark mode: edge-glow HUD style
-                                AnimatedMeshGradient()
-                                    .mask(
-                                        Capsule()
-                                            .stroke(lineWidth: 14)
-                                            .blur(radius: 6)
-                                    )
-                                    .blendMode(.lighten)
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(lineWidth: 2)
-                                            .fill(Color.white)
-                                            .blur(radius: 1.5)
-                                            .blendMode(.overlay)
-                                    )
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(lineWidth: 0.5)
-                                            .fill(Color.white)
-                                            .blur(radius: 0.5)
-                                            .blendMode(.overlay)
-                                    )
-                                    .background(.black)
-                                    .clipShape(.capsule)
-                            } else {
-                                // Light mode: full gradient fill
-                                AnimatedMeshGradient2()
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(lineWidth: 1)
-                                            .fill(Color.white)
-                                            .blur(radius: 1)
-                                            .blendMode(.overlay)
-                                    )
-                                    .clipShape(.capsule)
-                                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
-                            }
-                        } else {
-                            Capsule()
-                                .fill(Color(.systemGray5))
-                        }
-                    }
+                    aiRewriteButtonLabel
                 }
                 .buttonStyle(.plain)
                 .disabled(generatingPresetId != nil)
