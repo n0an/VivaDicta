@@ -108,7 +108,7 @@ struct AIProviders: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
-                                    Text("OpenAI")
+                                    Text("OAuth")
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }

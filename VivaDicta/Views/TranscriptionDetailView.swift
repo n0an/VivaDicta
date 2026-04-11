@@ -439,6 +439,7 @@ struct TranscriptionDetailView: View {
             HStack {
                 // Button 1: Retranscribe (Original) / Regenerate (Variation)
                 Button {
+                    HapticManager.lightImpact()
                     if selectedIsVariation {
                         regenerateSelectedVariation()
                     } else {
@@ -459,6 +460,7 @@ struct TranscriptionDetailView: View {
 
                 // Button: Tag picker
                 Button {
+                    HapticManager.lightImpact()
                     showTagPicker = true
                 } label: {
                     Image(systemName: "tag")
@@ -470,6 +472,7 @@ struct TranscriptionDetailView: View {
 
                 // Button 2: AI Presets picker
                 Button {
+                    HapticManager.lightImpact()
                     if isAIConfigured {
                         showPresetPicker = true
                     } else {
@@ -537,6 +540,7 @@ struct TranscriptionDetailView: View {
                 
                 // Button 3: Chat with Note
                 Button {
+                    HapticManager.lightImpact()
                     if chatViewModel == nil {
                         let conversation = findOrCreateConversation(for: transcription)
                         chatViewModel = ChatViewModel(
@@ -557,6 +561,7 @@ struct TranscriptionDetailView: View {
 
                 // Button 4: Edit
                 Button {
+                    HapticManager.lightImpact()
                     showTextEditor = true
                 } label: {
                     Image(systemName: "pencil")

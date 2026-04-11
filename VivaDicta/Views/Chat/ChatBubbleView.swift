@@ -10,8 +10,6 @@ import SwiftUI
 /// A single message bubble in the chat conversation.
 struct ChatBubbleView: View {
     let message: ChatMessage
-    var isStreamingThis: Bool = false
-    var streamingText: String = ""
 
     var body: some View {
         if message.isSummary {
@@ -43,9 +41,9 @@ struct ChatBubbleView: View {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 Group {
                     if isUser {
-                        Text(displayText)
+                        Text(message.content)
                     } else {
-                        Text(.init(displayText))
+                        Text(.init(message.content))
                     }
                 }
                 .textSelection(.enabled)
@@ -65,13 +63,6 @@ struct ChatBubbleView: View {
             if !isUser { Spacer(minLength: 60) }
         }
         .padding(.horizontal)
-    }
-
-    private var displayText: String {
-        if isStreamingThis, !streamingText.isEmpty {
-            return streamingText
-        }
-        return message.content
     }
 
     private func bubbleBackground(isUser: Bool, isError: Bool) -> some ShapeStyle {

@@ -296,8 +296,6 @@ final class ChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard aiService.isChatProviderReady(provider) else { return }
 
-        print("DEBUG COMPACT: compactChat() called, provider: \(provider.displayName), fill ratio before: \(contextFillRatio)")
-
         isCompacting = true
         do {
             if provider == .apple {
@@ -307,10 +305,8 @@ final class ChatViewModel {
             }
 
             updateContextFillRatio()
-            print("DEBUG COMPACT: compactChat() succeeded, fill ratio after: \(contextFillRatio)")
             HapticManager.success()
         } catch {
-            print("DEBUG COMPACT: compactChat() failed: \(error)")
             logger.logError("Chat compaction failed: \(error.localizedDescription)")
             errorMessage = "Compaction failed: \(error.localizedDescription)"
         }

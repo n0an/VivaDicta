@@ -80,9 +80,6 @@ struct ChatContextManager {
             return 200_000
 
         case .openAI:
-            if modelLower.hasPrefix("gpt-5") || modelLower.hasPrefix("gpt-4o") || modelLower.hasPrefix("o4") || modelLower.hasPrefix("o3") {
-                return 128_000
-            }
             return 128_000
 
         case .gemini:

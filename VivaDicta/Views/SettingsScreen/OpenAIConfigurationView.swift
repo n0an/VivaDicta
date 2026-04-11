@@ -384,7 +384,7 @@ struct OpenAIConfigurationView: View {
 
     private var openAIConnectionLabel: String {
         if aiService.isOpenAISignedIn {
-            return "OpenAI Connected"
+            return "OAuth Connected"
         } else if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive {
             return "VivAgents Server Connected"
         } else {

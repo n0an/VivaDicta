@@ -265,7 +265,12 @@ extension AIService {
             "stream": stream
         ]
 
-        if !model.lowercased().hasPrefix("gpt-5") {
+        let modelLower = model.lowercased()
+        let isReasoningModel = modelLower.hasPrefix("gpt-5")
+            || modelLower.hasPrefix("o1")
+            || modelLower.hasPrefix("o3")
+            || modelLower.hasPrefix("o4")
+        if !isReasoningModel {
             body["temperature"] = 0.7
         }
 
