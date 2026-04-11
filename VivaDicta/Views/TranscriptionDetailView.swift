@@ -82,21 +82,17 @@ struct TranscriptionDetailView: View {
         appState.aiService.isProperlyConfigured()
     }
 
-    private var isChatAvailable: Bool {
-        !appState.aiService.connectedProviders.isEmpty
-    }
-
     @ViewBuilder
     private var chatButtonLabel: some View {
         if #available(iOS 26.0, *) {
             
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isChatAvailable ? Color.white : .secondary)
+                .foregroundStyle(isAIConfigured ? Color.white : .secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background {
-                    if isChatAvailable {
+                    if isAIConfigured {
                         
                         if colorScheme == .dark {
                             AnimatedMeshGradient2()
@@ -126,12 +122,12 @@ struct TranscriptionDetailView: View {
         } else {
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isChatAvailable ? .primary : .secondary)
+                .foregroundStyle(isAIConfigured ? .primary : .secondary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 .background {
                     Capsule()
-                        .fill(isChatAvailable ? .blue : Color(.systemGray5))
+                        .fill(isAIConfigured ? .blue : Color(.systemGray5))
                 }
         }
         
@@ -555,7 +551,7 @@ struct TranscriptionDetailView: View {
                     chatButtonLabel
                 }
                 .buttonStyle(.plain)
-                .disabled(!isChatAvailable)
+                .disabled(!isAIConfigured)
                 
                 Spacer()
 

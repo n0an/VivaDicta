@@ -49,9 +49,8 @@ struct ChatBubbleView: View {
                 .textSelection(.enabled)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(bubbleBackground(isUser: isUser, isError: isError))
                 .foregroundStyle(isUser ? .white : (isError ? .red : .primary))
-                .clipShape(.rect(cornerRadius: 18))
+                .bubbleBackground(isUser: isUser, isError: isError)
 
                 if !isUser, let modelName = message.aiModelName {
                     Text(modelName)
@@ -65,13 +64,44 @@ struct ChatBubbleView: View {
         .padding(.horizontal)
     }
 
-    private func bubbleBackground(isUser: Bool, isError: Bool) -> some ShapeStyle {
-        if isError {
-            return AnyShapeStyle(Color.red.opacity(0.15))
+}
+
+// MARK: - Bubble Background Modifier
+
+private struct BubbleBackgroundModifier: ViewModifier {
+    let isUser: Bool
+    let isError: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(
+                    .regular.tint(glassTint).interactive(),
+                    in: .rect(cornerRadius: 18)
+                )
+        } else {
+            content
+                .background(legacyBackground)
+                .clipShape(.rect(cornerRadius: 18))
         }
-        if isUser {
-            return AnyShapeStyle(Color.accentColor)
-        }
+    }
+
+    @available(iOS 26, *)
+    private var glassTint: Color {
+        if isError { return .red.opacity(0.3) }
+        if isUser { return .accentColor }
+        return .gray.opacity(0.3)
+    }
+
+    private var legacyBackground: AnyShapeStyle {
+        if isError { return AnyShapeStyle(Color.red.opacity(0.15)) }
+        if isUser { return AnyShapeStyle(Color.accentColor) }
         return AnyShapeStyle(Color(.systemGray5))
+    }
+}
+
+extension View {
+    fileprivate func bubbleBackground(isUser: Bool, isError: Bool) -> some View {
+        modifier(BubbleBackgroundModifier(isUser: isUser, isError: isError))
     }
 }
