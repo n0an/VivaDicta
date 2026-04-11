@@ -39,12 +39,32 @@ struct VivaModePicker: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.tertiary, in: .capsule)
+            .modePickerBackground()
         }
         .tint(.primary)
         .accessibilityLabel("Mode selector")
         .accessibilityValue(selectedModeName)
         .accessibilityHint("Double tap to choose a different mode")
+    }
+}
+
+// MARK: - Mode Picker Background
+
+private struct ModePickerBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            content
+                .background(.tertiary, in: .capsule)
+        }
+    }
+}
+
+extension View {
+    fileprivate func modePickerBackground() -> some View {
+        modifier(ModePickerBackgroundModifier())
     }
 }
 
