@@ -78,7 +78,6 @@ struct MultiNoteCreationView: View {
                     selectedSourceTags: $selectedSourceTags,
                     selectedUserTagIds: $selectedUserTagIds
                 )
-                .padding(.vertical, 8)
             }
 
             // Selection header

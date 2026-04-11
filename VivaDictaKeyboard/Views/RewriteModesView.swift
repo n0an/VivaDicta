@@ -361,7 +361,7 @@ private struct KeyboardCategoryChipsView: View {
             .buttonStyle(.plain)
             .glassEffect(
                 isSelected
-                ? .regular.tint(Color.pink.opacity(0.6))
+                ? .regular.tint(Color.pink.opacity(0.6)).interactive()
                 : .regular.interactive()
             )
         } else {

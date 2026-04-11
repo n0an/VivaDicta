@@ -109,9 +109,9 @@ struct TranscriptionDetailView: View {
                                 .mask {
                                     Capsule()
                                         .strokeBorder(lineWidth: 3)
-                                        .blur(radius: 1)
                                 }
                                 .glassEffect(.regular.tint(.blue.opacity(0.75)).interactive())
+                                .blur(radius: 1)
                         }
                         
                     } else {

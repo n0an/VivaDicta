@@ -48,7 +48,7 @@ struct TranscriptionsContentView: View {
                     selectedSourceTags: $selectedSourceTags,
                     selectedUserTagIds: $selectedUserTagIds
                 )
-                .padding(.vertical, 8)
+//                .padding(.vertical, 8)
             }
 
             if allTranscriptions.isEmpty {

@@ -124,6 +124,8 @@ struct MultiNoteChatView: View {
                 .padding(.vertical, 12)
             }
             .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
+            .defaultScrollAnchor(.bottom)
             .onAppear {
                 scrollToBottom(proxy: proxy)
             }
@@ -137,6 +139,9 @@ struct MultiNoteChatView: View {
                 scrollToBottom(proxy: proxy)
             }
             .onChange(of: viewModel.isCompacting) {
+                scrollToBottom(proxy: proxy)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
                 scrollToBottom(proxy: proxy)
             }
         }
