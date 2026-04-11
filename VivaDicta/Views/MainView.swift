@@ -567,6 +567,7 @@ struct MainView: View {
         conversation.title = "\(selected.count) selected notes"
         conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
         conversation.sourceNoteCount = selected.count
+        conversation.transcriptions = selected
         modelContext.insert(conversation)
 
         try? modelContext.save()

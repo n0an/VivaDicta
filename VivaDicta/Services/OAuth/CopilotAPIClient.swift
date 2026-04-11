@@ -23,6 +23,13 @@ enum CopilotAPIClient {
         "Openai-Intent": "conversation-edits"
     ]
 
+    /// Returns headers for chat requests including the Copilot token.
+    static func chatHeaders(copilotToken: String) -> [String: String] {
+        var headers = staticHeaders
+        headers["Authorization"] = "Bearer \(copilotToken)"
+        return headers
+    }
+
     /// Sends an AI enhancement request via Copilot's API.
     static func enhance(
         text: String,

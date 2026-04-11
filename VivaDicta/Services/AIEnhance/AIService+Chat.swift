@@ -83,6 +83,20 @@ extension AIService {
                 onPartialResponse: onPartialResponse
             )
 
+        case .copilot:
+            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            guard let url = URL(string: "\(CopilotAPIClient.baseURL)/chat/completions") else {
+                throw EnhancementError.customError("Invalid Copilot URL")
+            }
+            return try await makeOpenAIChatStreamingRequest(
+                url: url,
+                model: model,
+                systemMessage: systemMessage,
+                messages: messages,
+                headers: CopilotAPIClient.chatHeaders(copilotToken: token),
+                onPartialResponse: onPartialResponse
+            )
+
         case .ollama:
             let serverURL = ollamaServerURL
             guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
@@ -116,6 +130,13 @@ extension AIService {
             )
 
         case nil:
+            // Check if this is an OAuth-only provider without chat support
+            if provider == .openAI && isOpenAISignedIn && provider.apiKey == nil {
+                throw EnhancementError.customError("Chat is not yet supported with OpenAI OAuth. Please add an OpenAI API key to use chat.")
+            }
+            if provider == .gemini && isGeminiSignedIn && provider.apiKey == nil {
+                throw EnhancementError.customError("Chat is not yet supported with Gemini OAuth. Please add a Gemini API key to use chat.")
+            }
             // Fallback to non-streaming
             let result = try await makeChatRequest(
                 provider: provider,
@@ -151,7 +172,7 @@ extension AIService {
 
         default:
             // OpenAI-compatible for all other providers
-            let (url, headers) = try chatRequestConfig(for: provider, model: model)
+            let (url, headers) = try await chatRequestConfig(for: provider, model: model)
             return try await makeOpenAIChatNonStreamingRequest(
                 url: url,
                 model: model,
@@ -165,7 +186,7 @@ extension AIService {
     // MARK: - Private Helpers
 
     private enum ChatStreamingRoute {
-        case anthropic, openAICompatibleCloud, ollama, customOpenAI
+        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI
     }
 
     private func chatStreamingRoute(for provider: AIProvider, model: String) -> ChatStreamingRoute? {
@@ -177,7 +198,7 @@ extension AIService {
         case .customOpenAI:
             return .customOpenAI
         case .copilot:
-            return isCopilotSignedIn ? .openAICompatibleCloud : nil
+            return isCopilotSignedIn ? .copilot : nil
         default:
             return provider.supportsResponseStreaming(model: model) && provider.apiKey != nil
                 ? .openAICompatibleCloud
@@ -185,8 +206,15 @@ extension AIService {
         }
     }
 
-    private func chatRequestConfig(for provider: AIProvider, model: String) throws -> (URL, [String: String]) {
+    private func chatRequestConfig(for provider: AIProvider, model: String) async throws -> (URL, [String: String]) {
         switch provider {
+        case .copilot:
+            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            guard let url = URL(string: "\(CopilotAPIClient.baseURL)/chat/completions") else {
+                throw EnhancementError.customError("Invalid Copilot URL")
+            }
+            return (url, CopilotAPIClient.chatHeaders(copilotToken: token))
+
         case .ollama:
             let serverURL = ollamaServerURL
             guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
