@@ -19,6 +19,52 @@ struct ChatInputBar: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
+        if #available(iOS 26, *) {
+            glassInputBar
+        } else {
+            legacyInputBar
+        }
+    }
+
+    @available(iOS 26, *)
+    private var glassInputBar: some View {
+        GlassEffectContainer(spacing: 12) {
+            HStack(alignment: .bottom, spacing: 12) {
+                TextField(placeholder, text: $text, axis: .vertical)
+                    .lineLimit(1...6)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
+
+                Button {
+                    if isStreaming {
+                        onStop()
+                    } else {
+                        onSend()
+                    }
+                } label: {
+                    Image(systemName: isStreaming ? "stop.fill" : "arrow.up")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .disabled(!canSend && !isStreaming)
+                .padding(8)
+                .glassEffect(
+                    .regular
+                        .tint(canSend || isStreaming ? Color.accentColor : .secondary)
+                        .interactive(true),
+                    in: .circle
+                )
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    private var legacyInputBar: some View {
         HStack(alignment: .bottom, spacing: 8) {
             TextField(placeholder, text: $text, axis: .vertical)
                 .lineLimit(1...6)
@@ -40,7 +86,6 @@ struct ChatInputBar: View {
                     .font(.system(size: 30))
                     .foregroundStyle(canSend || isStreaming ? .white : Color.gray)
                     .glassEffectColor(isInteractive: true, color: canSend || isStreaming ? Color.accentColor : .secondary, opacity: 0.8)
-
             }
             .buttonStyle(.plain)
             .disabled(!canSend && !isStreaming)
