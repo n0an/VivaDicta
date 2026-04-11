@@ -230,6 +230,7 @@ struct MultiNoteCreationView: View {
         conversation.title = "\(selected.count) selected \(selected.count == 1 ? "note" : "notes")"
         conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
         conversation.sourceNoteCount = selected.count
+        conversation.transcriptions = selected
         modelContext.insert(conversation)
 
         try? modelContext.save()

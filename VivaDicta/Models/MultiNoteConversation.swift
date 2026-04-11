@@ -11,8 +11,8 @@ import SwiftData
 /// A SwiftData model representing a chat conversation about multiple transcription notes.
 ///
 /// Unlike ``ChatConversation`` (1:1 with a single note, cascade-deleted),
-/// this model is standalone. The assembled note text is captured at creation
-/// time and stored directly, with no live references to source transcriptions.
+/// this model keeps both a live relationship to its source transcriptions
+/// (for navigation) and a frozen ``noteContext`` snapshot (for AI context integrity).
 @Model
 final class MultiNoteConversation {
     var id: UUID = UUID()
@@ -31,6 +31,11 @@ final class MultiNoteConversation {
     /// Chat messages in this conversation.
     @Relationship(deleteRule: .cascade)
     var messages: [ChatMessage]? = []
+
+    /// Source transcriptions this conversation is about.
+    /// Kept for navigation/UI; the AI uses the frozen ``noteContext`` snapshot.
+    @Relationship
+    var transcriptions: [Transcription]? = []
 
     init() {}
 }

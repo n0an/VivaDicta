@@ -21,6 +21,7 @@ struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showClearConfirmation = false
+    @State private var showNotesList = false
 
     var body: some View {
         if embedded {
@@ -89,6 +90,12 @@ struct ChatView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will delete all chat messages for this note. This cannot be undone.")
+        }
+        .sheet(isPresented: $showNotesList) {
+            ChatNotesListView(
+                transcriptions: [viewModel.transcription],
+                originalCount: 1
+            )
         }
     }
 
@@ -217,6 +224,18 @@ struct ChatView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+
+                Button {
+                    showNotesList = true
+                } label: {
+                    Label("1 note", systemImage: "doc.text")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.1))
+                        .clipShape(.capsule)
+                }
 
                 let ratio = viewModel.contextFillRatio
                 let percentage = Int(ratio * 100)

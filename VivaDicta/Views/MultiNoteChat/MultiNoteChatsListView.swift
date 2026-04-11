@@ -18,6 +18,8 @@ struct MultiNoteChatsListView: View {
     @State private var viewModel: ChatsListViewModel?
     @State private var navigationPath = NavigationPath()
     @State private var selectedTab: ChatTab = .multiNote
+    @State private var cachedMultiNoteVMs: [UUID: MultiNoteChatViewModel] = [:]
+    @State private var cachedSingleNoteVMs: [UUID: ChatViewModel] = [:]
 
     enum ChatTab: String, CaseIterable {
         case multiNote = "Multi-Note"
@@ -70,23 +72,14 @@ struct MultiNoteChatsListView: View {
                 case .multiNoteChat(let conversationId):
                     if let conversation = viewModel?.multiNoteConversations.first(where: { $0.id == conversationId }) {
                         MultiNoteChatView(
-                            viewModel: MultiNoteChatViewModel(
-                                conversation: conversation,
-                                aiService: appState.aiService,
-                                modelContext: modelContext
-                            )
+                            viewModel: multiNoteChatVM(for: conversation)
                         )
                     }
                 case .singleNoteChat(let conversationId):
                     if let conversation = viewModel?.singleNoteConversations.first(where: { $0.id == conversationId }),
                        let transcription = conversation.transcription {
                         ChatView(
-                            viewModel: ChatViewModel(
-                                conversation: conversation,
-                                transcription: transcription,
-                                aiService: appState.aiService,
-                                modelContext: modelContext
-                            ),
+                            viewModel: singleNoteChatVM(for: conversation, transcription: transcription),
                             embedded: true
                         )
                     }
@@ -113,6 +106,33 @@ struct MultiNoteChatsListView: View {
         case singleNoteChat(UUID)
     }
 
+    // MARK: - ViewModel Caching
+
+    /// Returns a cached (or newly created) ViewModel for the given multi-note conversation.
+    /// Prevents repeated Apple FM session initialization on SwiftUI re-renders.
+    private func multiNoteChatVM(for conversation: MultiNoteConversation) -> MultiNoteChatViewModel {
+        if let cached = cachedMultiNoteVMs[conversation.id] { return cached }
+        let vm = MultiNoteChatViewModel(
+            conversation: conversation,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
+        cachedMultiNoteVMs[conversation.id] = vm
+        return vm
+    }
+
+    private func singleNoteChatVM(for conversation: ChatConversation, transcription: Transcription) -> ChatViewModel {
+        if let cached = cachedSingleNoteVMs[conversation.id] { return cached }
+        let vm = ChatViewModel(
+            conversation: conversation,
+            transcription: transcription,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
+        cachedSingleNoteVMs[conversation.id] = vm
+        return vm
+    }
+
     // MARK: - Multi-Note Content
 
     private var multiNoteContent: some View {
@@ -129,7 +149,9 @@ struct MultiNoteChatsListView: View {
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
-                            viewModel.deleteMultiNoteConversation(viewModel.multiNoteConversations[index])
+                            let conversation = viewModel.multiNoteConversations[index]
+                            cachedMultiNoteVMs.removeValue(forKey: conversation.id)
+                            viewModel.deleteMultiNoteConversation(conversation)
                         }
                     }
                 }
@@ -159,7 +181,9 @@ struct MultiNoteChatsListView: View {
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
-                            viewModel.deleteSingleNoteConversation(viewModel.singleNoteConversations[index])
+                            let conversation = viewModel.singleNoteConversations[index]
+                            cachedSingleNoteVMs.removeValue(forKey: conversation.id)
+                            viewModel.deleteSingleNoteConversation(conversation)
                         }
                     }
                 }

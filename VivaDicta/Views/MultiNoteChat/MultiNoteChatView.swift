@@ -14,6 +14,7 @@ struct MultiNoteChatView: View {
     @State var viewModel: MultiNoteChatViewModel
 
     @State private var showClearConfirmation = false
+    @State private var showNotesList = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -68,6 +69,12 @@ struct MultiNoteChatView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will delete all chat messages. This cannot be undone.")
+        }
+        .sheet(isPresented: $showNotesList) {
+            ChatNotesListView(
+                transcriptions: viewModel.conversation.transcriptions ?? [],
+                originalCount: viewModel.conversation.sourceNoteCount
+            )
         }
     }
 
@@ -197,9 +204,17 @@ struct MultiNoteChatView: View {
                 }
                 Spacer()
 
-                Label("^[\(viewModel.conversation.sourceNoteCount) note](inflect: true)", systemImage: "doc.text")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Button {
+                    showNotesList = true
+                } label: {
+                    Label("^[\(viewModel.conversation.sourceNoteCount) note](inflect: true)", systemImage: "doc.text")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.1))
+                        .clipShape(.capsule)
+                }
 
                 let ratio = viewModel.contextFillRatio
                 let percentage = Int(ratio * 100)

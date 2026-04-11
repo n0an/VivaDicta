@@ -107,6 +107,9 @@ class Transcription {
     @Relationship(deleteRule: .cascade, inverse: \ChatConversation.transcription)
     var chatConversations: [ChatConversation]? = []
 
+    /// Multi-note conversations that include this transcription.
+    @Relationship(deleteRule: .nullify, inverse: \MultiNoteConversation.transcriptions)
+    var multiNoteConversations: [MultiNoteConversation]? = []
 
     /// Creates a new transcription with the specified properties.
     ///

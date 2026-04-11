@@ -38,7 +38,7 @@ struct ChatInputBar: View {
             } label: {
                 Image(systemName: isStreaming ? "stop.circle" : "arrow.up.circle")
                     .font(.system(size: 30))
-                    .foregroundStyle(canSend || isStreaming ? .primary : .tertiary)
+                    .foregroundStyle(canSend || isStreaming ? .white : Color.gray)
                     .glassEffectColor(isInteractive: true, color: canSend || isStreaming ? Color.accentColor : .secondary, opacity: 0.8)
 
             }
