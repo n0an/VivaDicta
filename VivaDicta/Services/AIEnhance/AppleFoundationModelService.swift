@@ -217,6 +217,7 @@ enum AppleFoundationModelAvailability {
         }
         return .unavailable
     }
+
 }
 
 // MARK: - Errors

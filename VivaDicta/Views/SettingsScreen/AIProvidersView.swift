@@ -39,6 +39,8 @@ struct AIProviders: View {
                 } footer: {
                     Text("Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or account required — it's completely free.")
                 }
+            } else {
+                AppleIntelligenceSetupSection()
             }
 
             // Cloud Section
@@ -253,6 +255,112 @@ struct AIProviders: View {
                     onSave: { _ in }
                 )
             }
+        }
+    }
+}
+
+// MARK: - Apple Intelligence Setup
+
+private struct AppleIntelligenceSetupSection: View {
+    private var status: AppleFoundationModelAvailability {
+        AppleFoundationModelAvailability.currentStatus
+    }
+
+    private var shouldShow: Bool {
+        switch status {
+        case .appleIntelligenceNotEnabled, .modelNotReady:
+            return true
+        case .available, .deviceNotEligible, .unavailable:
+            return false
+        }
+    }
+
+    private var isAIEnabled: Bool {
+        status == .modelNotReady
+    }
+
+    private var footerText: String {
+        if status == .modelNotReady {
+            return "Apple Intelligence is enabled but the Foundation Model is still downloading. It will be available shortly."
+        } else {
+            return "Go to Settings > Apple Intelligence & Siri to enable Apple Intelligence and use the free, private on-device Foundation Model."
+        }
+    }
+
+    var body: some View {
+        if shouldShow {
+            Section {
+                HStack(spacing: 12) {
+                    Image(systemName: "apple.logo")
+                        .font(.title2)
+                        .foregroundStyle(.primary)
+                        .frame(width: 28, height: 28)
+
+                    Text(AIProvider.apple.displayName)
+
+                    Spacer()
+
+                    if status == .modelNotReady {
+                        HStack(spacing: 4) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Downloading...")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text("Setup Required")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                AppleIntelligenceRequirementRow(
+                    icon: "iphone",
+                    text: "Compatible Apple device",
+                    isMet: true
+                )
+
+                AppleIntelligenceRequirementRow(
+                    icon: "gearshape",
+                    text: "iOS 26 or later",
+                    isMet: true
+                )
+
+                AppleIntelligenceRequirementRow(
+                    icon: "sparkles",
+                    text: "Apple Intelligence enabled in Settings",
+                    isMet: isAIEnabled
+                )
+            } header: {
+                Text("On-Device")
+            } footer: {
+                Text(footerText)
+            }
+        }
+    }
+}
+
+private struct AppleIntelligenceRequirementRow: View {
+    let icon: String
+    let text: String
+    let isMet: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(isMet ? .green : .secondary)
+                .frame(width: 24)
+            Text(text)
+                .font(.subheadline)
+            Spacer()
+            Image(systemName: isMet ? "checkmark" : "xmark")
+                .font(.subheadline.bold())
+                .foregroundStyle(isMet ? .green : .red)
         }
     }
 }
