@@ -237,6 +237,31 @@ extension View {
     }
 }
 
+// MARK: - Model Card Background
+struct ModelCardBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
+        } else {
+            content
+                .background(.background.secondary)
+                .clipShape(.rect(cornerRadius: 20, style: .continuous))
+                .shadow(color: .primary.opacity(0.5), radius: 2, x: 2, y: 2)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(.primary.opacity(0.3), lineWidth: 0.5)
+                }
+        }
+    }
+}
+
+extension View {
+    func modelCardBackground() -> some View {
+        modifier(ModelCardBackgroundModifier())
+    }
+}
+
 // MARK: - ButtonStyle
 // MARK: prominentButton
 struct ProminentButton: ViewModifier {

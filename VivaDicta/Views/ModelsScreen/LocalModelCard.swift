@@ -204,13 +204,7 @@ struct LocalModelCard: View {
                 .foregroundStyle(.secondary)
         }
         .padding(20)
-        .background(.background.secondary)
-        .clipShape(.rect(cornerRadius: 20, style: .continuous))
-        .shadow(color: .primary.opacity(0.5), radius: 2, x: 2, y: 2)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.primary.opacity(0.3), lineWidth: 0.5)
-        }
+        .modelCardBackground()
         .contextMenu {
             if isDownloaded {
                 Button(role: .destructive) {
