@@ -21,6 +21,7 @@ struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showClearConfirmation = false
+    @State private var showScrollToBottom = false
 
     var body: some View {
         if embedded {
@@ -99,6 +100,8 @@ struct ChatView: View {
         (viewModel.isStreaming || viewModel.isAppleFMResponding) && viewModel.streamingText.isEmpty
     }
 
+    private let bottomAnchorID = "bottomAnchor"
+
     private var messagesList: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -129,10 +132,36 @@ struct ChatView: View {
                         compactingIndicator
                             .id("compacting")
                     }
+
+                    Color.clear.frame(height: 1)
+                        .id(bottomAnchorID)
                 }
                 .padding(.vertical, 12)
             }
             .scrollIndicators(.hidden)
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                let distanceFromBottom = geo.contentSize.height - (geo.contentOffset.y + geo.containerSize.height)
+                return distanceFromBottom > geo.containerSize.height && geo.contentSize.height > geo.containerSize.height
+            } action: { _, isScrolledUp in
+                withAnimation {
+                    showScrollToBottom = isScrolledUp
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showScrollToBottom {
+                    ScrollToTopButton(backgroundColor: .blue) {
+                        withAnimation {
+                            scrollToBottom(proxy: proxy)
+                        }
+                    }
+                    .rotationEffect(.degrees(180))
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .onAppear {
+                scrollToBottom(proxy: proxy)
+            }
             .onChange(of: viewModel.messages.count) {
                 scrollToBottom(proxy: proxy)
             }

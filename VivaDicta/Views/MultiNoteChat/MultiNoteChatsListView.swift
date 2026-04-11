@@ -184,8 +184,7 @@ struct MultiNoteChatsListView: View {
 
         return ChatRowContent(
             title: conversation.title.isEmpty ? "Untitled Chat" : conversation.title,
-            subtitle: "^[\(noteCount) note](inflect: true)",
-            subtitleIcon: "doc.text",
+            noteCount: noteCount,
             lastMessage: lastMessage,
             date: conversation.createdAt
         )
@@ -204,8 +203,7 @@ struct MultiNoteChatsListView: View {
 
         return ChatRowContent(
             title: noteTitle,
-            subtitle: nil,
-            subtitleIcon: nil,
+            noteCount: nil,
             lastMessage: lastMessage,
             date: conversation.createdAt
         )
@@ -216,8 +214,7 @@ struct MultiNoteChatsListView: View {
 
 private struct ChatRowContent: View {
     let title: String
-    let subtitle: String?
-    let subtitleIcon: String?
+    let noteCount: Int?
     let lastMessage: String?
     let date: Date
 
@@ -235,22 +232,10 @@ private struct ChatRowContent: View {
                     .foregroundStyle(.tertiary)
             }
 
-            if let subtitle {
-                HStack(spacing: 4) {
-                    if let icon = subtitleIcon {
-                        Label {
-                            Text(.init(subtitle))
-                        } icon: {
-                            Image(systemName: icon)
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    } else {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+            if let noteCount {
+                Label("^[\(noteCount) note](inflect: true)", systemImage: "doc.text")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if let lastMessage {
@@ -261,5 +246,6 @@ private struct ChatRowContent: View {
             }
         }
         .padding(.vertical, 4)
+        .contentShape(.rect)
     }
 }

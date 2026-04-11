@@ -227,7 +227,7 @@ struct MultiNoteCreationView: View {
         guard !selected.isEmpty else { return }
 
         let conversation = MultiNoteConversation()
-        conversation.title = "\(selected.count) selected notes"
+        conversation.title = "\(selected.count) selected \(selected.count == 1 ? "note" : "notes")"
         conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
         conversation.sourceNoteCount = selected.count
         modelContext.insert(conversation)
