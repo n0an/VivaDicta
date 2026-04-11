@@ -62,6 +62,12 @@ struct ChatInputBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.bar)
+                .ignoresSafeArea(edges: .bottom)
+                .shadow(color: .black.opacity(0.18), radius: 8, y: -3)
+        }
     }
 
     private var legacyInputBar: some View {
