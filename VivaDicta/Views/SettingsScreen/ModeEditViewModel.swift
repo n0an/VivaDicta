@@ -99,7 +99,7 @@ class ModeEditViewModel {
         }
         if !isProviderReady(provider) {
             if provider == .apple {
-                return "Apple Intelligence is not available on this device\(Self.disableHint)"
+                return "\(appleFoundationModelStatusMessage)\(Self.disableHint)"
             }
             if provider == .ollama {
                 return "Configure Ollama server in AI Providers settings\(Self.disableHint)"
@@ -531,10 +531,16 @@ class ModeEditViewModel {
         return aiService.connectedProviders.contains(provider)
     }
 
-    /// Check if Apple Foundation Model is available on this device
+    /// Whether Apple FM should appear in the provider picker.
+    /// Shows when available or when the user can take action (enable AI, wait for download).
     @MainActor
     var isAppleFoundationModelAvailable: Bool {
-        AppleFoundationModelAvailability.isAvailable
+        switch AppleFoundationModelAvailability.currentStatus {
+        case .available, .appleIntelligenceNotEnabled, .modelNotReady:
+            return true
+        case .deviceNotEligible, .unavailable:
+            return false
+        }
     }
 
     /// Get availability status message for Apple Foundation Model
