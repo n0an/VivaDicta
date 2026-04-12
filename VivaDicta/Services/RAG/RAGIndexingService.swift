@@ -29,7 +29,7 @@ final class RAGIndexingService {
     static let shared = RAGIndexingService()
     private static let previewCharacterLimit = 180
     private static let maxLoggedChunksPerNote = 3
-    nonisolated(unsafe) private static let indexVersion = "v12_potion_base_32m"
+    nonisolated(unsafe) private static let indexVersion = "v14_potion_base_32m"
     nonisolated(unsafe) private static let vectorStoreName = "vivadicta-rag-\(indexVersion)"
 
     private let logger = Logger(category: .ragIndexing)
