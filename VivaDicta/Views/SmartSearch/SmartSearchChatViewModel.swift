@@ -171,12 +171,14 @@ final class SmartSearchChatViewModel {
                     "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
                 )
 
-                // RAG retrieval
-                isSearching = true
                 let requestedTopK = provider == .apple ? 3 : 5
+                isSearching = true
                 let semanticResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
-                let searchResults = Array(semanticResults.prefix(requestedTopK))
-                logger.logInfo("Smart Search grounding disabled for model comparison; using raw semantic hits")
+                let searchResults = groundedSearchResults(
+                    query: text,
+                    searchResults: semanticResults,
+                    limit: requestedTopK
+                )
                 let transcriptions = resolveTranscriptions(for: searchResults)
                 isSearching = false
 
@@ -867,14 +869,17 @@ final class SmartSearchChatViewModel {
         "a", "about", "all", "am", "an", "and", "anything", "are", "as", "at",
         "be", "but", "by", "can", "did", "do", "for", "from", "hello", "hey",
         "how", "i", "if", "in", "is", "it", "its", "just", "maybe", "me",
-        "mention", "my", "no", "not", "of", "on", "or", "our", "please", "something",
-        "tell", "that", "the", "their", "there", "these", "they", "this", "to",
+        "mention", "mentioned", "mentions", "my", "no", "not", "of", "on", "or", "our", "please", "said", "say",
+        "saying", "something", "talk", "talked", "talking", "tell", "telling", "that", "the", "their", "there", "these", "they", "this", "to",
+        "told",
         "us", "was", "we", "what", "when", "where", "which", "who", "why", "with",
         "yes", "you",
         "а", "без", "был", "бы", "в", "во", "вот", "все", "где", "да", "для",
         "его", "ее", "если", "есть", "еще", "и", "из", "или", "их", "как", "ко",
         "ли", "мне", "мы", "на", "не", "нет", "но", "ну", "о", "об", "он", "она",
         "они", "оно", "от", "по", "под", "про", "с", "со", "так", "там", "то",
-        "тут", "ты", "у", "уже", "что", "это", "я"
+        "тут", "ты", "у", "уже", "упоминал", "упоминала", "упоминали", "что", "это", "я",
+        "говорил", "говорила", "говорили", "говорить", "сказал", "сказала", "сказали"
     ]
+
 }
