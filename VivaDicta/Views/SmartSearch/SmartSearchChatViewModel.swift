@@ -178,7 +178,7 @@ final class SmartSearchChatViewModel {
                     transcriptions: transcriptions
                 )
 
-                let sourceIds = searchResults.map(\.transcriptionId)
+                let sourceIds = uniqueSourceIDs(from: searchResults)
 
                 let result: String
                 if provider == .apple {
@@ -241,6 +241,20 @@ final class SmartSearchChatViewModel {
             trySave()
             updateContextFillRatio()
         }
+    }
+
+    private func uniqueSourceIDs(from searchResults: [RAGSearchResult]) -> [UUID] {
+        var seen: Set<UUID> = []
+        var ids: [UUID] = []
+        ids.reserveCapacity(searchResults.count)
+
+        for result in searchResults {
+            if seen.insert(result.transcriptionId).inserted {
+                ids.append(result.transcriptionId)
+            }
+        }
+
+        return ids
     }
 
     // MARK: - Cancel

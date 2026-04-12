@@ -404,11 +404,13 @@ final class RAGIndexingService {
 
     // MARK: - Helpers
 
-    /// Returns the best available text content for indexing.
-    /// Prefers `enhancedText` (AI-processed) over raw `text`.
+    /// Returns the original transcription text for indexing.
+    ///
+    /// Smart Search intentionally indexes the raw note content instead of
+    /// `enhancedText` so retrieval is not biased toward shortened summaries
+    /// or stylistic rewrites.
     private func indexableContent(for transcription: Transcription) -> String {
-        let text = transcription.enhancedText ?? transcription.text
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        transcription.text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Deterministic SHA-256 hash used for change detection. Unlike `String.hashValue`,
