@@ -427,7 +427,7 @@ final class RAGIndexingService {
         let queryTerms = SmartSearchLexicalSupport.queryTerms(from: query)
 
         searchLogger.logInfo(
-            "RAG search start query='\(queryPreview)' topK=\(topK) requested=\(requestedResults) threshold=\(Double(threshold).formatted(.number.precision(.fractionLength(2)))) mappedNotes=\(mapping.count)"
+            "RAG search start query='\(queryPreview)' topK=\(topK) requested=\(requestedResults) threshold=\(Double(threshold).formatted(.number.precision(.fractionLength(2)))) mappedNotes=\(mapping.count) lexicalRerankingEnabled=\(SmartSearchLexicalSupport.isLexicalRerankingEnabled)"
         )
         if !queryTerms.isEmpty {
             searchLogger.logInfo("RAG lexical query terms: \(queryTerms.sorted().joined(separator: ", "))")
@@ -468,7 +468,12 @@ final class RAGIndexingService {
                 "RAG map raw[\(index + 1)] chunkId=\(chunkIdString) -> transcriptionId=\(transcriptionIdString) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3))))"
             )
 
-            let overlapTerms = queryTerms.intersection(SmartSearchLexicalSupport.tokenSet(from: result.text))
+            let overlapTerms: Set<String>
+            if queryTerms.isEmpty {
+                overlapTerms = []
+            } else {
+                overlapTerms = queryTerms.intersection(SmartSearchLexicalSupport.tokenSet(from: result.text))
+            }
             let candidate = RankedChunkCandidate(
                 transcriptionId: transcriptionId,
                 chunkText: result.text,
@@ -508,7 +513,12 @@ final class RAGIndexingService {
         )
 
         for (index, result) in finalResults.enumerated() {
-            let overlapTerms = queryTerms.intersection(SmartSearchLexicalSupport.tokenSet(from: result.chunkText))
+            let overlapTerms: Set<String>
+            if queryTerms.isEmpty {
+                overlapTerms = []
+            } else {
+                overlapTerms = queryTerms.intersection(SmartSearchLexicalSupport.tokenSet(from: result.chunkText))
+            }
             searchLogger.logInfo(
                 "RAG final[\(index + 1)] transcriptionId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) overlapCount=\(overlapTerms.count) overlap=\(overlapTerms.sorted().joined(separator: ", ")) excerpt='\(Self.preview(result.chunkText))'"
             )

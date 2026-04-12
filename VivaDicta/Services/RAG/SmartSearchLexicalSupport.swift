@@ -8,8 +8,18 @@
 import Foundation
 
 enum SmartSearchLexicalSupport {
+    // Shared experiment switch for lexical reranking.
+    // Keep this disabled unless Vectura's built-in hybrid search starts missing
+    // obvious exact-term matches in real usage and we have concrete eval cases
+    // showing that an extra app-side overlap signal improves ranking.
+    // When disabled, Smart Search uses Vectura's native ranking only.
+    static let isLexicalRerankingEnabled = false
+
     static func queryTerms(from query: String) -> Set<String> {
-        tokenSet(from: query).subtracting(stopWords)
+        guard isLexicalRerankingEnabled else {
+            return []
+        }
+        return tokenSet(from: query)
     }
 
     static func tokenSet(from text: String) -> Set<String> {
@@ -37,21 +47,4 @@ enum SmartSearchLexicalSupport {
 
         return tokens
     }
-
-    static let stopWords: Set<String> = [
-        "a", "about", "all", "am", "an", "and", "anything", "are", "as", "at",
-        "be", "but", "by", "can", "did", "do", "for", "from",
-        "how", "i", "if", "in", "is", "it", "its", "just", "maybe", "me",
-        "mention", "mentioned", "mentions", "my", "no", "not", "of", "on", "or", "our", "please", "said", "say",
-        "saying", "something", "talk", "talked", "talking", "tell", "telling", "that", "the", "their", "there", "these", "they", "this", "to",
-        "told",
-        "us", "was", "we", "what", "when", "where", "which", "who", "why", "with",
-        "yes", "you",
-        "а", "без", "был", "бы", "в", "во", "вот", "все", "где", "да", "для",
-        "его", "ее", "если", "есть", "еще", "и", "из", "или", "их", "как", "ко",
-        "ли", "мне", "мы", "на", "не", "нет", "но", "ну", "о", "об", "он", "она",
-        "они", "оно", "от", "по", "под", "про", "с", "со", "так", "там", "то",
-        "тут", "ты", "у", "уже", "упоминал", "упоминала", "упоминали", "что", "это", "я",
-        "говорил", "говорила", "говорили", "говорить", "может", "могу", "можем", "можешь", "быть", "сказал", "сказала", "сказали"
-    ]
 }

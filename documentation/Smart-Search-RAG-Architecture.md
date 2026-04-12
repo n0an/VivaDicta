@@ -359,7 +359,7 @@ Smart Search contains one deterministic shortcut that bypasses normal model gene
 
 If:
 
-- the query has substantive terms after stop-word removal
+- the query is not empty after trimming
 - retrieval ran
 - retrieval returned no note hits
 
@@ -377,22 +377,27 @@ Purpose:
 
 ## Shared Lexical Normalization
 
-`SmartSearchLexicalSupport` provides the shared lexical normalization used by the RAG reranker.
+`SmartSearchLexicalSupport` provides the optional shared lexical normalization used by the app-side reranker.
 
-### Stop-word list
+### What it does
 
-The lexical support layer removes a curated set of common non-substantive words before comparing lexical overlap.
+When enabled, the lexical support layer:
 
-This list contains:
-
-- English filler and meta-query terms
-- Russian filler and meta-query terms
-- note-search filler words that should not influence reranking
+- lowercases tokens
+- strips punctuation into alphanumeric tokens
+- applies diacritic-insensitive folding
+- adds a simple singular form for some English plural tokens ending in `s`
 
 Purpose:
 
-- avoid over-weighting verbs like `mentioned` or `говорил`
-- focus lexical reranking on substantive subject terms rather than query scaffolding
+- provide a lightweight overlap signal on top of Vectura's built-in hybrid retrieval
+- help exact-term ranking only if real retrieval evals show Vectura's native ranking is not enough
+
+This behavior is behind a shared code-level flag:
+
+- `SmartSearchLexicalSupport.isStopWordFilteringEnabled`
+
+When the flag is `false`, Smart Search uses Vectura's native hybrid ranking only.
 
 ## Why Smart Search Does Not Use a Router
 
@@ -466,7 +471,7 @@ Those experiments informed the current choice. The current implementation uses t
 - search threshold is still relatively permissive at `0.3`
 - deduplication keeps only one best chunk per note
 - there is no local context window around the matched chunk
-- the stop-word list is still a hand-maintained heuristic
+- the optional app-side lexical reranker is currently disabled, so all ranking relies on Vectura's native hybrid search
 
 ## Likely Next Improvements
 
