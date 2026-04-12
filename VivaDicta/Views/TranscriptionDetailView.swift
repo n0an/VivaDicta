@@ -743,6 +743,9 @@ struct TranscriptionDetailView: View {
             await appState.updateTranscriptionEntityInSpotlight(entity)
         }
 
+        // Re-index for RAG Smart Search
+        Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+
         HapticManager.success()
     }
 
@@ -768,6 +771,9 @@ struct TranscriptionDetailView: View {
                 Task.detached {
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
+
+                // Re-index for RAG Smart Search
+                Task { await RAGIndexingService.shared.indexTranscription(transcription) }
 
                 HapticManager.heartbeat()
 

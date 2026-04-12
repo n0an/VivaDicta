@@ -20,10 +20,12 @@ struct MultiNoteChatsListView: View {
     @State private var selectedTab: ChatTab = .multiNote
     @State private var cachedMultiNoteVMs: [UUID: MultiNoteChatViewModel] = [:]
     @State private var cachedSingleNoteVMs: [UUID: ChatViewModel] = [:]
+    @State private var cachedSmartSearchVM: SmartSearchChatViewModel?
 
     enum ChatTab: String, CaseIterable {
         case multiNote = "Multi-Note"
         case singleNote = "Single-Note"
+        case smartSearch = "Smart Search"
     }
 
     private var isAIConfigured: Bool {
@@ -62,6 +64,8 @@ struct MultiNoteChatsListView: View {
                         multiNoteContent
                     case .singleNote:
                         singleNoteContent
+                    case .smartSearch:
+                        smartSearchContent
                     }
                 }
             }
@@ -77,6 +81,21 @@ struct MultiNoteChatsListView: View {
                             navigationPath.append(NavigationTarget.creation)
                         }
                         .disabled(!isAIConfigured)
+                    }
+                }
+                if selectedTab == .smartSearch {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            Button(role: .destructive) {
+                                viewModel?.deleteSmartSearchConversation()
+                                cachedSmartSearchVM = nil
+                            } label: {
+                                Label("Delete Conversation", systemImage: "trash")
+                            }
+                            .disabled(viewModel?.smartSearchConversation == nil)
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
                     }
                 }
             }
@@ -214,6 +233,46 @@ struct MultiNoteChatsListView: View {
                 )
             }
         }
+    }
+
+    // MARK: - Smart Search Content
+
+    private var smartSearchContent: some View {
+        Group {
+            if let conversation = viewModel?.smartSearchConversation {
+                SmartSearchChatView(viewModel: smartSearchChatVM(for: conversation))
+            } else {
+                VStack(spacing: 16) {
+                    ContentUnavailableView {
+                        Label("Smart Search", systemImage: "sparkle.magnifyingglass")
+                    } description: {
+                        Text("Ask questions about all your notes. Relevant notes are found automatically using AI.")
+                    }
+
+                    Button {
+                        if let conversation = viewModel?.createSmartSearchConversation() {
+                            cachedSmartSearchVM = nil
+                            _ = smartSearchChatVM(for: conversation)
+                        }
+                    } label: {
+                        Label("Start Smart Search", systemImage: "sparkle.magnifyingglass")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!isAIConfigured)
+                }
+            }
+        }
+    }
+
+    private func smartSearchChatVM(for conversation: SmartSearchConversation) -> SmartSearchChatViewModel {
+        if let cached = cachedSmartSearchVM, cached.conversation.id == conversation.id { return cached }
+        let vm = SmartSearchChatViewModel(
+            conversation: conversation,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
+        cachedSmartSearchVM = vm
+        return vm
     }
 
     // MARK: - Row Views

@@ -310,6 +310,9 @@ struct TranscriptionsContentView: View {
             Task {
                 await appState.removeTranscriptionFromSpotlight(transcriptionID)
             }
+
+            // Remove from RAG index
+            Task { await RAGIndexingService.shared.removeTranscription(id: transcriptionID) }
         }
 
         do {

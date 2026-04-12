@@ -208,6 +208,18 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Smart Search") {
+                    NavigationLink(value: SettingsDestination.smartSearch) {
+                        HStack {
+                            Text("Smart Search")
+                            Spacer()
+                            Text("^[\(RAGIndexingService.shared.indexedTranscriptionCount) note](inflect: true)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("Keyboard") {
                     Toggle(isOn: $isKeepInClipboardEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -516,6 +528,8 @@ struct SettingsView: View {
                     TagManagementView()
                 case .chatTools:
                     ChatToolsSettingsView()
+                case .smartSearch:
+                    SmartSearchSettingsView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in

@@ -49,6 +49,29 @@ final class ChatMessage {
     @Relationship(inverse: \MultiNoteConversation.messages)
     var multiNoteConversation: MultiNoteConversation?
 
+    /// The smart search conversation this message belongs to (nil for other chat types).
+    @Relationship(inverse: \SmartSearchConversation.messages)
+    var smartSearchConversation: SmartSearchConversation?
+
+    /// JSON-encoded array of transcription UUID strings that were used as RAG sources
+    /// for this assistant message. Nil for user messages and non-RAG responses.
+    var sourceTranscriptionIdsData: Data?
+
+    /// Convenience accessor for source transcription IDs.
+    var sourceTranscriptionIds: [UUID] {
+        get {
+            guard let data = sourceTranscriptionIdsData,
+                  let strings = try? JSONDecoder().decode([String].self, from: data) else {
+                return []
+            }
+            return strings.compactMap { UUID(uuidString: $0) }
+        }
+        set {
+            let strings = newValue.map(\.uuidString)
+            sourceTranscriptionIdsData = try? JSONEncoder().encode(strings)
+        }
+    }
+
     init(role: String = "user",
          content: String = "",
          aiProviderName: String? = nil,

@@ -563,6 +563,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
                 }
 
+                // Index for RAG Smart Search
+                Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+
                 // Create and donate user activity for Siri predictions
                 if let appState = self.appState {
                     let activity = appState.userActivity(for: transcription)
@@ -723,6 +726,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     Task.detached {
                         await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
                     }
+
+                    // Index for RAG Smart Search
+                    Task { await RAGIndexingService.shared.indexTranscription(transcription) }
 
                     // Share with keyboard
                     AppGroupCoordinator.shared.shareTranscribedText(pending.text)

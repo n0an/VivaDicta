@@ -21,4 +21,7 @@ enum SettingsDestination: Hashable {
 
     // Organization
     case tags
+
+    // Smart Search
+    case smartSearch
 }

@@ -58,14 +58,14 @@ struct VivaDictaApp: App {
                     : .none
             )
             modelContainer = try ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,
                 configurations: config
             )
         } catch {
             print("Error loading ModelContainer; switching to in-memory storage. \(error)")
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             modelContainer = try! ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,
                 configurations: config
             )
         }
@@ -161,6 +161,11 @@ struct VivaDictaApp: App {
 
                         // Migrate enhanced text to variations (one-time)
                         VariationMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
+
+                        // Index all transcriptions for RAG Smart Search
+                        Task {
+                            await RAGIndexingService.shared.indexAllIfNeeded(modelContext: modelContainer.mainContext)
+                        }
 
                         // Set up handler for session termination from Live Activity
                         AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
