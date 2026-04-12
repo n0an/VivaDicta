@@ -18,8 +18,6 @@ import os
 @MainActor
 final class SmartSearchChatViewModel {
     private static let previewCharacterLimit = 220
-    private static let minimumLexicalScoreForCitation: Float = 0.45
-    private static let minimumHighConfidenceSingleHitScore: Float = 0.85
     private let logger = Logger(category: .smartSearchChat)
 
     private struct DeterministicSmartSearchResponse {
@@ -186,30 +184,9 @@ final class SmartSearchChatViewModel {
                     "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
                 )
 
-                if let deterministicResponse = sourceFollowUpResponse(for: text) {
-                    logger.logInfo(
-                        "Smart Search answered source follow-up deterministically sourceCount=\(deterministicResponse.sourceIds.count)"
-                    )
-                    persistSuccessfulTurn(
-                        userMessage: userMessage,
-                        provider: provider,
-                        model: model,
-                        responseText: deterministicResponse.content,
-                        sourceIds: deterministicResponse.sourceIds,
-                        sourceCitations: deterministicResponse.sourceCitations
-                    )
-                    HapticManager.heartbeat()
-                    return
-                }
-
                 let requestedTopK = provider == .apple ? 3 : 5
                 isSearching = true
-                let semanticResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
-                let searchResults = groundedSearchResults(
-                    query: text,
-                    searchResults: semanticResults,
-                    limit: requestedTopK
-                )
+                let searchResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
                 let transcriptions = resolveTranscriptions(for: searchResults)
                 isSearching = false
 
@@ -713,51 +690,6 @@ final class SmartSearchChatViewModel {
         return transcriptions
     }
 
-    private func sourceFollowUpResponse(for query: String) -> DeterministicSmartSearchResponse? {
-        guard isSourceFollowUpQuery(query) else { return nil }
-
-        guard let previousAssistant = messages.reversed().first(where: { $0.role == "assistant" }) else {
-            return noPriorSourceResponse(for: query)
-        }
-
-        let sourceIds = previousAssistant.sourceTranscriptionIds
-        let sourceCitations = previousAssistant.sourceCitations
-
-        guard !sourceIds.isEmpty || !sourceCitations.isEmpty else {
-            return noPriorSourceResponse(for: query)
-        }
-
-        let citationsToReuse: [SmartSearchSourceCitation]
-        let idsToReuse: [UUID]
-
-        if !sourceCitations.isEmpty {
-            citationsToReuse = sourceCitations
-            idsToReuse = uniqueSourceIDs(from: sourceCitations.map {
-                RAGSearchResult(
-                    transcriptionId: $0.transcriptionId,
-                    chunkText: $0.excerpt,
-                    relevanceScore: $0.relevanceScore
-                )
-            })
-        } else {
-            citationsToReuse = []
-            idsToReuse = sourceIds
-        }
-
-        let transcriptions = resolveTranscriptions(ids: idsToReuse)
-        let response = sourceListResponse(
-            for: query,
-            sourceIds: idsToReuse,
-            transcriptions: transcriptions
-        )
-
-        return DeterministicSmartSearchResponse(
-            content: response,
-            sourceIds: idsToReuse,
-            sourceCitations: citationsToReuse
-        )
-    }
-
     private func noEvidenceResponse(for query: String) -> DeterministicSmartSearchResponse {
         let response: String
         if isLikelyRussian(query) {
@@ -771,59 +703,6 @@ final class SmartSearchChatViewModel {
             sourceIds: [],
             sourceCitations: []
         )
-    }
-
-    private func noPriorSourceResponse(for query: String) -> DeterministicSmartSearchResponse {
-        let response: String
-        if isLikelyRussian(query) {
-            response = "У меня нет надежной ссылки на заметку для предыдущего ответа, поэтому я не должен придумывать источник."
-        } else {
-            response = "I do not have a reliable cited note for my previous answer, so I should not invent a source."
-        }
-
-        return DeterministicSmartSearchResponse(
-            content: response,
-            sourceIds: [],
-            sourceCitations: []
-        )
-    }
-
-    private func sourceListResponse(
-        for query: String,
-        sourceIds: [UUID],
-        transcriptions: [Transcription]
-    ) -> String {
-        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
-        let resolved = sourceIds.compactMap { id -> String? in
-            guard let transcription = transcriptionMap[id] else { return nil }
-            let date = transcription.timestamp.formatted(date: .abbreviated, time: .omitted)
-            let title = noteTitle(for: transcription)
-            return "\(date) - \"\(title)\""
-        }
-
-        if isLikelyRussian(query) {
-            if resolved.isEmpty {
-                return "Я не смог надежно определить заметку-источник для предыдущего ответа."
-            }
-            if resolved.count == 1, let first = resolved.first {
-                return "Предыдущий ответ опирался на заметку \(first)."
-            }
-            return """
-            Предыдущий ответ опирался на эти заметки:
-            \(resolved.map { "- \($0)" }.joined(separator: "\n"))
-            """
-        }
-
-        if resolved.isEmpty {
-            return "I could not reliably identify a source note for my previous answer."
-        }
-        if resolved.count == 1, let first = resolved.first {
-            return "My previous answer was based on the note \(first)."
-        }
-        return """
-        My previous answer was based on these notes:
-        \(resolved.map { "- \($0)" }.joined(separator: "\n"))
-        """
     }
 
     // MARK: - Private Helpers
@@ -916,78 +795,6 @@ final class SmartSearchChatViewModel {
         }
     }
 
-    private func groundedSearchResults(
-        query: String,
-        searchResults: [RAGSearchResult],
-        limit: Int
-    ) -> [RAGSearchResult] {
-        guard !searchResults.isEmpty else { return [] }
-
-        let queryTerms = groundedQueryTerms(from: query)
-        guard !queryTerms.isEmpty else {
-            logger.logInfo(
-                "Smart Search grounding skipped all retrieval because query has no substantive terms: '\(Self.preview(query, limit: 80))'"
-            )
-            return []
-        }
-
-        let requiredMatches = min(max(1, queryTerms.count), 2)
-        logger.logInfo(
-            "Smart Search grounding queryTerms=\(queryTerms.sorted().joined(separator: ", ")) requiredMatches=\(requiredMatches)"
-        )
-
-        let grounded = searchResults.filter { result in
-            let excerptTerms = SmartSearchLexicalSupport.tokenSet(from: result.chunkText)
-            let overlap = queryTerms.intersection(excerptTerms)
-            let passesLexicalCheck = overlap.count >= requiredMatches
-            let passesLowBarSingleMatch = overlap.count == 1 && queryTerms.count == 1 && result.relevanceScore >= Self.minimumLexicalScoreForCitation
-
-            if passesLexicalCheck || passesLowBarSingleMatch {
-                logger.logInfo(
-                    "Smart Search grounding accepted noteId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) overlap=\(overlap.sorted().joined(separator: ", "))"
-                )
-                return true
-            }
-
-            logger.logInfo(
-                "Smart Search grounding rejected noteId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) overlap=\(overlap.sorted().joined(separator: ", "))"
-            )
-            return false
-        }
-
-        if grounded.isEmpty {
-            if let fallback = highConfidenceSingleHitFallback(from: searchResults, query: query) {
-                return [fallback]
-            }
-            logger.logInfo("Smart Search grounding removed all semantic hits for query='\(Self.preview(query, limit: 80))'")
-            return []
-        }
-
-        if grounded.count < searchResults.count {
-            logger.logInfo("Smart Search grounding reduced hits from \(searchResults.count) to \(grounded.count)")
-        }
-
-        return Array(grounded.prefix(limit))
-    }
-
-    private func highConfidenceSingleHitFallback(
-        from searchResults: [RAGSearchResult],
-        query: String
-    ) -> RAGSearchResult? {
-        guard searchResults.count == 1, let candidate = searchResults.first else {
-            return nil
-        }
-
-        guard candidate.relevanceScore >= Self.minimumHighConfidenceSingleHitScore else {
-            return nil
-        }
-
-        logger.logInfo(
-            "Smart Search grounding accepted high-confidence semantic fallback noteId=\(candidate.transcriptionId.uuidString) score=\(Double(candidate.relevanceScore).formatted(.number.precision(.fractionLength(3)))) query='\(Self.preview(query, limit: 80))'"
-        )
-        return candidate
-    }
-
     private func logSearchResults(_ searchResults: [RAGSearchResult], transcriptions: [Transcription]) {
         let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
 
@@ -1027,14 +834,6 @@ final class SmartSearchChatViewModel {
         SmartSearchLexicalSupport.queryTerms(from: query)
     }
 
-    private func isSourceFollowUpQuery(_ query: String) -> Bool {
-        let normalized = query
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            .lowercased()
-
-        return Self.sourceFollowUpPhrases.contains { normalized.contains($0) }
-    }
-
     private func isLikelyRussian(_ text: String) -> Bool {
         text.range(of: "\\p{Cyrillic}", options: .regularExpression) != nil
     }
@@ -1049,23 +848,5 @@ final class SmartSearchChatViewModel {
         guard flattened.count > limit else { return flattened }
         return String(flattened.prefix(limit)) + "..."
     }
-
-    private static let sourceFollowUpPhrases: [String] = [
-        "which note",
-        "what note",
-        "which notes",
-        "where did i say",
-        "where did i mention",
-        "where in my notes",
-        "in what note",
-        "what note was that",
-        "which note was that",
-        "в какой заметке",
-        "в какой записи",
-        "где я это говорил",
-        "где я это упоминал",
-        "в какой заметке я это говорил",
-        "в какой заметке я это упоминал"
-    ]
 
 }

@@ -6,13 +6,11 @@ Smart Search is VivaDicta's retrieval-augmented chat mode for searching across t
 
 Unlike single-note chat and multi-note chat, Smart Search does not start with a fixed note set. For every user turn, it:
 
-1. Checks whether the message is an explicit source-follow-up question.
-2. Otherwise semantically searches the local note index.
-3. Maps chunk hits back to source notes.
-4. Applies a grounding filter to reject weak or unsubstantiated hits.
-5. Uses a deterministic no-evidence response when retrieval does not produce trustworthy support.
-6. Injects the surviving chunk excerpts into the prompt when evidence exists.
-7. Persists note-level and excerpt-level citations on the assistant message.
+1. Semantically searches the local note index.
+2. Maps chunk hits back to source notes.
+3. Uses a deterministic no-evidence response only when retrieval returns no note hits for a substantive query.
+4. Injects the retrieved chunk excerpts into the prompt when evidence exists.
+5. Persists note-level and excerpt-level citations on the assistant message.
 
 The current setup is:
 
@@ -21,7 +19,7 @@ The current setup is:
 - Embeddings via `SwiftEmbedder`
 - Current embedding model: `minishlab/potion-base-32M`
 - Current chunking: semantic, `chunkSize = 500`, `overlap = 15%`
-- Current retrieval: always search, then ground/filter, except for explicit source-follow-up questions
+- Current retrieval: always search, then inject the ranked chunk hits
 - Current prompt injection: chunk excerpts, not full notes
 
 Smart Search intentionally does not use a pre-retrieval router. The local corpus is small enough that always searching is acceptable, and the reliability work happens after retrieval, not before it.
@@ -41,8 +39,7 @@ This leads to several deliberate design choices:
 - Retrieve chunks, not entire notes
 - Inject chunk excerpts into the LLM prompt
 - Keep note-level references in the UI
-- Apply lexical grounding after semantic retrieval
-- Use deterministic responses for no-evidence and source-follow-up cases
+- Use a deterministic no-evidence response only when retrieval returns no note hits
 
 ## High-Level Architecture
 
@@ -64,14 +61,12 @@ This leads to several deliberate design choices:
 │                                                                            │
 │  sendMessage()                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │ 1. source-follow-up shortcut check                                  │  │
-│  │ 2. semantic search via RAGIndexingService                           │  │
-│  │ 3. grounding filter                                                 │  │
-│  │ 4. deterministic no-evidence fallback when needed                   │  │
-│  │ 5. resolve source Transcription models                              │  │
-│  │ 6. assemble augmented prompt with chunk excerpts                    │  │
-│  │ 7. send to provider via AIService / Apple FM                        │  │
-│  │ 8. persist assistant message + citations                            │  │
+│  │ 1. semantic search via RAGIndexingService                           │  │
+│  │ 2. optional deterministic no-evidence fallback when retrieval empty │  │
+│  │ 3. resolve source Transcription models                              │  │
+│  │ 4. assemble augmented prompt with chunk excerpts                    │  │
+│  │ 5. send to provider via AIService / Apple FM                        │  │
+│  │ 6. persist assistant message + citations                            │  │
 │  └──────────────────────────────┬───────────────────────────────────────┘  │
 └─────────────────────────────────│──────────────────────────────────────────┘
                                   │
@@ -119,10 +114,8 @@ File: [VivaDicta/Views/SmartSearch/SmartSearchChatViewModel.swift](/Users/antonn
 
 Responsibilities:
 
-- handle explicit source-follow-up questions deterministically
 - execute retrieval for each user message
-- apply the grounding filter
-- apply deterministic no-evidence fallbacks when appropriate
+- apply deterministic no-evidence fallback only when retrieval returns no note hits
 - resolve note models for retrieved hits
 - assemble source citations
 - build the augmented prompt
@@ -272,7 +265,7 @@ This avoids using Swift's non-stable `hashValue`, and makes incremental indexing
 
 ## Retrieval Flow
 
-Smart Search currently performs retrieval for every normal message, then applies grounding afterward. The one exception is an explicit source-follow-up question such as `which note was that?`, which is answered from stored citations instead of launching a fresh note search.
+Smart Search currently performs retrieval for every message and uses the ranked results directly.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -281,45 +274,31 @@ Smart Search currently performs retrieval for every normal message, then applies
                                ▼
                 SmartSearchChatViewModel.sendMessage()
                                │
-                ┌──────────────┴──────────────┐
-                │ explicit source-follow-up?  │
-                └──────────────┬──────────────┘
-                               │
-                    yes        │        no
+                               ▼
+               semantic search in RAGIndexingService
                                │
                                ▼
-        deterministic source answer from previous assistant citations
+                     raw chunk hits from vector DB
                                │
-                               └──────────────────────────────┐
-                                                              │
-                                                              ▼
-                               semantic search in RAGIndexingService
-                                                              │
-                                                              ▼
-                             raw chunk hits from vector DB
-                                                              │
-                                                              ▼
-                        map chunk IDs back to transcription IDs
-                                                              │
-                                                              ▼
-                         keep best-scoring chunk per note
-                                                              │
-                                                              ▼
-                                grounding filter runs afterward
-                                                              │
-                              ┌───────────────────────────────┴───────────────────────────────┐
-                              │                                                               │
-                              ▼                                                               ▼
-                     no grounded evidence                                            grounded evidence exists
-                              │                                                               │
-                              ▼                                                               ▼
-               deterministic no-evidence response                             prompt includes <NOTE> excerpts
-                                                                                      │
-                                                                                      ▼
-                                                                             provider generates answer
-                                                                                      │
-                                                                                      ▼
-                                                                           store citations on assistant message
+                               ▼
+                 map chunk IDs back to transcription IDs
+                               │
+                               ▼
+                  keep best-scoring chunk per note
+                               │
+             ┌─────────────────┴──────────────────┐
+             │                                    │
+             ▼                                    ▼
+        no note hits                      note hits exist
+             │                                    │
+             ▼                                    ▼
+  deterministic no-evidence response    prompt includes <NOTE> excerpts
+                                                  │
+                                                  ▼
+                                         provider generates answer
+                                                  │
+                                                  ▼
+                                   store citations on assistant message
 ```
 
 ### Search details
@@ -329,13 +308,15 @@ Smart Search currently performs retrieval for every normal message, then applies
 - uses threshold `0.3`
 - over-fetches `topK * 2` chunk hits
 - maps raw chunk hits back to notes using persisted chunk mapping
-- deduplicates by note, keeping the highest-scoring chunk per note
-- sorts final results by score
+- computes shared lexical query terms using `SmartSearchLexicalSupport`
+- ranks chunks inside each note by lexical overlap first, then semantic score
+- deduplicates by note, keeping the best-ranked chunk per note
+- sorts final note results by lexical overlap first, then semantic score
 
 This means Smart Search is currently a:
 
 - chunk-level retrieval system
-- note-level deduplication system
+- note-level hybrid reranking system
 - excerpt-level prompt injection system
 
 ## Chunk Injection
@@ -362,7 +343,7 @@ Benefits:
 
 - less prompt noise
 - lower token usage
-- more faithful grounding to the retrieved evidence
+- tighter prompt focus around the retrieved evidence
 - clearer citation UX
 
 Current limitation:
@@ -370,61 +351,9 @@ Current limitation:
 - there is no `-1 / hit / +1` chunk window yet
 - only the single best chunk per note is injected
 
-## The Grounding Filter
-
-The grounding filter is a second-stage app-side check after semantic retrieval.
-
-It lives in `SmartSearchChatViewModel.groundedSearchResults(...)`.
-
-### Why it exists
-
-Semantic retrieval alone is sometimes too fuzzy.
-
-Examples observed during testing:
-
-- vague queries like `board games` can retrieve unrelated conversational notes
-- a correct note can be present in the hit set, but a wrong note may rank higher
-
-The grounding filter keeps semantic retrieval honest by requiring lexical evidence inside the retrieved excerpt.
-
-### How it works
-
-1. Normalize the user query into tokens.
-2. Remove stop words and meta-query words.
-3. Normalize each retrieved chunk excerpt into tokens.
-4. Compute lexical overlap between query terms and excerpt terms.
-5. Accept excerpts with enough overlap.
-6. If grounding rejected everything, optionally allow a very strong single semantic hit back in.
-
-Current logic:
-
-- `requiredMatches = min(max(1, queryTerms.count), 2)`
-- if query has one substantive term, a single overlap can pass
-- single-term matches also need `relevanceScore >= 0.45` for the low-bar citation path
-- if there is exactly one deduplicated semantic hit and its score is at least `0.85`, Smart Search allows it as a high-confidence fallback even when lexical overlap is weak
-
-Examples of words removed before grounding:
-
-- English: `did`, `maybe`, `something`, `mention`, `mentioned`, `say`, `said`, `talk`, `talked`, `tell`, `told`
-- Russian: `говорил`, `говорила`, `говорили`, `упоминал`, `упоминала`, `упоминали`, `сказал`, `сказала`, `сказали`, `может`, `быть`, plus greeting terms such as `привет`, `здравствуй`, `здравствуйте`
-
-### Why this matters
-
-Without grounding:
-
-- Smart Search can attach unrelated citations
-- the LLM may over-interpret semantically loose hits
-
-With grounding:
-
-- weak hits are discarded before prompt injection
-- vague-query junk citations are suppressed
-- correct lower-ranked hits can survive when the top semantic hit is lexically unsupported
-- strong single-hit semantic results can still pass when the score is extremely high and lexical overlap is weak because of morphology or phrasing
-
 ## Deterministic Safeguards
 
-Smart Search contains two deterministic shortcuts that bypass normal model generation in narrow cases.
+Smart Search contains one deterministic shortcut that bypasses normal model generation in a narrow case.
 
 ### 1. No-evidence response
 
@@ -432,7 +361,7 @@ If:
 
 - the query has substantive terms after stop-word removal
 - retrieval ran
-- grounding removed all candidates
+- retrieval returned no note hits
 
 then Smart Search returns a fixed response instead of sending the raw query to the model.
 
@@ -446,61 +375,24 @@ Purpose:
 - prevent the model from answering from world knowledge when there is no trustworthy note evidence
 - prevent follow-up hallucinations caused by an unsupported earlier answer
 
-### 2. Source-follow-up response
+## Shared Lexical Normalization
 
-If the user asks where a previous answer came from, Smart Search can answer from the previous assistant message's stored citations instead of asking the model to guess.
-
-This path looks at the previous assistant message and reuses:
-
-- `sourceTranscriptionIds`
-- `sourceCitations`
-
-Then it builds a deterministic response such as:
-
-- `My previous answer was based on the note Apr 10, 2026 - "..."`.
-
-Purpose:
-
-- avoid invented note titles or fabricated source attribution
-
-## Small Phrase-List Heuristics
-
-There are two small "magic string" style heuristic sets in the current implementation.
+`SmartSearchLexicalSupport` provides the shared lexical normalization used by the RAG reranker.
 
 ### Stop-word list
 
-The grounding filter removes a curated set of common non-substantive words before comparing lexical overlap.
+The lexical support layer removes a curated set of common non-substantive words before comparing lexical overlap.
 
 This list contains:
 
 - English filler and meta-query terms
 - Russian filler and meta-query terms
-- obvious greeting terms that should not count as note-search evidence
+- note-search filler words that should not influence reranking
 
 Purpose:
 
-- treat `Hello` and `Привет` like greetings, not note-search terms
-- avoid forcing overlap on verbs like `mentioned` or `говорил`
-
-### Source-follow-up phrase list
-
-Smart Search detects explicit source-seeking follow-up questions with a small phrase list, for example:
-
-- `which note`
-- `what note was that`
-- `where did i mention`
-- `в какой заметке`
-- `где я это говорил`
-
-Purpose:
-
-- route clear source-follow-up questions into the deterministic citation-based answer path
-
-Tradeoff:
-
-- this heuristic is simple and deterministic
-- it is language-limited and intentionally narrow
-- it is not meant to be a general intent-routing system
+- avoid over-weighting verbs like `mentioned` or `говорил`
+- focus lexical reranking on substantive subject terms rather than query scaffolding
 
 ## Why Smart Search Does Not Use a Router
 
@@ -509,8 +401,8 @@ Smart Search does not use a general pre-retrieval router.
 The strategy is:
 
 - always retrieve
-- ground/filter before injection
-- use deterministic shortcuts only for very narrow no-evidence and source-follow-up cases
+- use the ranked RAG hits directly
+- use a deterministic shortcut only when retrieval returns no note hits
 
 ## Citation and Source UX
 
@@ -566,7 +458,7 @@ Those experiments informed the current choice. The current implementation uses t
 - excerpt injection instead of full-note stuffing
 - deterministic incremental indexing
 - note-aware citations with excerpt previews
-- grounding filter catches many fuzzy semantic misses
+- shared lexical reranking improves note and chunk ordering
 
 ## Current Limitations
 
@@ -574,8 +466,7 @@ Those experiments informed the current choice. The current implementation uses t
 - search threshold is still relatively permissive at `0.3`
 - deduplication keeps only one best chunk per note
 - there is no local context window around the matched chunk
-- grounding is lexical, not semantic, so it is a pragmatic guardrail rather than a full relevance model
-- stop-word and source-follow-up phrase lists are hand-maintained heuristics
+- the stop-word list is still a hand-maintained heuristic
 
 ## Likely Next Improvements
 
