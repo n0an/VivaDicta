@@ -10,6 +10,8 @@ import Foundation
 import SwiftData
 import os
 @preconcurrency import LumoKit
+@preconcurrency import MLXEmbedders
+@preconcurrency import VecturaMLXKit
 @preconcurrency import VecturaKit
 
 /// Result of a RAG semantic search, mapping chunks back to source transcriptions.
@@ -33,9 +35,9 @@ final class RAGIndexingService {
 
     // MARK: - UserDefaults Keys
 
-    private let indexingCompletedKey = "ragIndexingCompleted_v1"
-    private let chunkMappingKey = "ragChunkMapping_v1"
-    private let transcriptionHashesKey = "ragTranscriptionHashes_v1"
+    private let indexingCompletedKey = "ragIndexingCompleted_v2_mlx_e5"
+    private let chunkMappingKey = "ragChunkMapping_v2_mlx_e5"
+    private let transcriptionHashesKey = "ragTranscriptionHashes_v2_mlx_e5"
 
     // MARK: - LumoKit Instance
 
@@ -91,7 +93,7 @@ final class RAGIndexingService {
         isInitializing = true
         defer { isInitializing = false }
 
-        logger.logInfo("Initializing LumoKit with VecturaKit...")
+        logger.logInfo("Initializing LumoKit with MLX multilingual E5 embedder...")
 
         let storageDir = RAGIndexingService.storageDirectoryURL
         try await initializeLumoKit(storageDirectory: storageDir)
@@ -112,7 +114,7 @@ final class RAGIndexingService {
             minThreshold: 0.3
         )
         let config = try VecturaConfig(
-            name: "vivadicta-rag",
+            name: "vivadicta-rag-mlx-multilingual-e5",
             directoryURL: storageDirectory,
             searchOptions: searchOptions
         )
@@ -122,7 +124,12 @@ final class RAGIndexingService {
             strategy: .semantic,
             contentType: .prose
         )
-        let kit = try await LumoKit(config: config, chunkingConfig: chunkingConfig)
+        let embedder = try await MLXEmbedder(configuration: .multilingual_e5_small)
+        let kit = try await LumoKit(
+            config: config,
+            chunkingConfig: chunkingConfig,
+            embedder: embedder
+        )
         lumoKit = kit
     }
 
