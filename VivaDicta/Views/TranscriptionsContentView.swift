@@ -15,6 +15,13 @@ private enum TranscriptionSearchMode: String {
     case smart
 }
 
+private struct SemanticSearchMatch: Identifiable {
+    let transcriptionId: UUID
+    let relevanceScore: Float
+
+    var id: UUID { transcriptionId }
+}
+
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var colorScheme
@@ -27,6 +34,7 @@ struct TranscriptionsContentView: View {
     @Binding var displayedTranscriptionIDs: Set<UUID>
 
     @State private var filteredTranscriptions: [Transcription] = []
+    @State private var smartSearchMatches: [SemanticSearchMatch] = []
     @State private var semanticScoresByID: [UUID: Float] = [:]
     @State private var searchTask: Task<Void, Never>?
     @State private var newlyInsertedIDs: Set<UUID> = []
@@ -83,6 +91,7 @@ struct TranscriptionsContentView: View {
         }
         .onAppear {
             filteredTranscriptions = allTranscriptions
+            smartSearchMatches = []
             semanticScoresByID = [:]
             previousTranscriptionCount = allTranscriptions.count
             syncDisplayedIDs()
@@ -113,6 +122,7 @@ struct TranscriptionsContentView: View {
             // Update filtered results
             if searchText.isEmpty {
                 filteredTranscriptions = allTranscriptions
+                smartSearchMatches = []
                 semanticScoresByID = [:]
             } else {
                 performDebouncedSearch(with: searchText)
@@ -185,70 +195,42 @@ struct TranscriptionsContentView: View {
                 guard !searchTerm.isEmpty else {
                     await MainActor.run {
                         filteredTranscriptions = allTranscriptions
+                        smartSearchMatches = []
                         semanticScoresByID = [:]
                     }
                     return
                 }
 
+                let keywordResults = keywordSearchResults(for: searchTerm)
+                let smartMatches = await semanticSearchMatches(for: searchTerm)
+
                 switch searchMode {
-                case .all, .keyword:
-                    // Step 1: Search transcription text + enhancedText
-                    var descriptor = FetchDescriptor<Transcription>(
-                        sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
-                    )
-                    descriptor.predicate = #Predicate<Transcription> { transcription in
-                        transcription.text.localizedStandardContains(searchTerm) ||
-                            (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
-                    }
-
-                    let transcriptionMatches = try modelContext.fetch(descriptor)
-
-                    // Step 2: Search variation text
-                    let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
-                        predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
-                    )
-                    let variationMatches = try modelContext.fetch(variationDescriptor)
-
-                    // Step 3: Merge results
-                    let transcriptionIds = Set(transcriptionMatches.map(\.id))
-                    let variationTranscriptionIds = Set(variationMatches.compactMap { $0.transcription?.id })
-                    let additionalIds = variationTranscriptionIds.subtracting(transcriptionIds)
-
-                    let mergedResults: [Transcription]
-                    if additionalIds.isEmpty {
-                        mergedResults = transcriptionMatches
-                    } else {
-                        // Fetch additional transcriptions matched only via variations
-                        let additionalTranscriptions = allTranscriptions.filter { additionalIds.contains($0.id) }
-                        mergedResults = (transcriptionMatches + additionalTranscriptions)
-                            .sorted { $0.timestamp > $1.timestamp }
-                    }
-
+                case .all:
                     await MainActor.run {
-                        filteredTranscriptions = mergedResults
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = smartMatches
+                        semanticScoresByID = Dictionary(
+                            uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                        )
+                    }
+
+                case .keyword:
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = []
                         semanticScoresByID = [:]
                     }
 
                 case .smart:
-                    do {
-                        let results = try await RAGIndexingService.shared.search(query: searchTerm, topK: 20)
-                        // Preserve relevance ordering from RAG
-                        let orderedResults = results.compactMap { result in
-                            allTranscriptions.first(where: { $0.id == result.transcriptionId })
-                        }
-                        let scoresByID = Dictionary(
-                            uniqueKeysWithValues: results.map { ($0.transcriptionId, $0.relevanceScore) }
+                    let orderedResults = smartMatches.compactMap { match in
+                        allTranscriptions.first(where: { $0.id == match.transcriptionId })
+                    }
+                    await MainActor.run {
+                        filteredTranscriptions = orderedResults
+                        smartSearchMatches = smartMatches
+                        semanticScoresByID = Dictionary(
+                            uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
                         )
-                        await MainActor.run {
-                            filteredTranscriptions = orderedResults
-                            semanticScoresByID = scoresByID
-                        }
-                    } catch {
-                        logger.logError("Semantic search failed: \(error.localizedDescription)")
-                        await MainActor.run {
-                            filteredTranscriptions = []
-                            semanticScoresByID = [:]
-                        }
                     }
                 }
             } catch {
@@ -269,6 +251,51 @@ struct TranscriptionsContentView: View {
     private func currentSemanticScore(for transcriptionID: UUID) -> Float? {
         guard searchMode == .smart else { return nil }
         return semanticScoresByID[transcriptionID]
+    }
+
+    private func keywordSearchResults(for searchTerm: String) -> [Transcription] {
+        var descriptor = FetchDescriptor<Transcription>(
+            sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+        )
+        descriptor.predicate = #Predicate<Transcription> { transcription in
+            transcription.text.localizedStandardContains(searchTerm) ||
+                (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
+        }
+
+        let transcriptionMatches = try? modelContext.fetch(descriptor)
+
+        let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
+            predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
+        )
+        let variationMatches = try? modelContext.fetch(variationDescriptor)
+
+        let matchedTranscriptions = transcriptionMatches ?? []
+        let matchedVariationIDs = Set((variationMatches ?? []).compactMap { $0.transcription?.id })
+        let directMatchIDs = Set(matchedTranscriptions.map(\.id))
+        let additionalIDs = matchedVariationIDs.subtracting(directMatchIDs)
+
+        guard !additionalIDs.isEmpty else {
+            return matchedTranscriptions
+        }
+
+        let additionalTranscriptions = allTranscriptions.filter { additionalIDs.contains($0.id) }
+        return (matchedTranscriptions + additionalTranscriptions)
+            .sorted { $0.timestamp > $1.timestamp }
+    }
+
+    private func semanticSearchMatches(for searchTerm: String) async -> [SemanticSearchMatch] {
+        do {
+            let results = try await RAGIndexingService.shared.search(query: searchTerm, topK: 20)
+            return results.map { result in
+                SemanticSearchMatch(
+                    transcriptionId: result.transcriptionId,
+                    relevanceScore: result.relevanceScore
+                )
+            }
+        } catch {
+            logger.logError("Semantic search failed: \(error.localizedDescription)")
+            return []
+        }
     }
 
     private func deleteTranscription(at offsets: IndexSet) {
