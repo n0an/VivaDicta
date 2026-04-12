@@ -12,6 +12,7 @@ struct TranscriptionRowView: View {
     let transcription: Transcription
     let isNewlyInserted: Bool
     let allTags: [TranscriptionTag]
+    let semanticScore: Float?
 
     @Environment(\.colorScheme) var colorScheme
     @State private var showGradient = false
@@ -24,6 +25,24 @@ struct TranscriptionRowView: View {
     private var assignedTags: [TranscriptionTag] {
         let assignedIds = Set((transcription.tagAssignments ?? []).map(\.tagId))
         return allTags.filter { assignedIds.contains($0.id) }
+    }
+
+    private var semanticScoreText: String? {
+        guard let semanticScore else { return nil }
+        let percentage = max(0, min(Int((semanticScore * 100).rounded()), 100))
+        return "\(percentage)%"
+    }
+
+    init(
+        transcription: Transcription,
+        isNewlyInserted: Bool,
+        allTags: [TranscriptionTag],
+        semanticScore: Float? = nil
+    ) {
+        self.transcription = transcription
+        self.isNewlyInserted = isNewlyInserted
+        self.allTags = allTags
+        self.semanticScore = semanticScore
     }
 
     var body: some View {
@@ -68,6 +87,16 @@ struct TranscriptionRowView: View {
             Spacer()
 
             VStack(spacing: 6) {
+                if let semanticScoreText {
+                    Text(semanticScoreText)
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.orange.opacity(0.12))
+                        .foregroundStyle(.orange)
+                        .clipShape(.rect(cornerRadius: 6))
+                }
+
                 Text(transcription.getDurationFormatted(transcription.audioDuration))
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 8)

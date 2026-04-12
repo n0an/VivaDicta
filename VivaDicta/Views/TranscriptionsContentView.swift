@@ -27,6 +27,7 @@ struct TranscriptionsContentView: View {
     @Binding var displayedTranscriptionIDs: Set<UUID>
 
     @State private var filteredTranscriptions: [Transcription] = []
+    @State private var semanticScoresByID: [UUID: Float] = [:]
     @State private var searchTask: Task<Void, Never>?
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
@@ -89,7 +90,8 @@ struct TranscriptionsContentView: View {
                                     transcription: transcription,
                                     isSelected: selectedTranscriptionIDs.contains(transcription.id),
                                     isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
-                                    allTags: allTags
+                                    allTags: allTags,
+                                    semanticScore: currentSemanticScore(for: transcription.id)
                                 ) {
                                     toggleSelection(for: transcription)
                                 }
@@ -102,7 +104,8 @@ struct TranscriptionsContentView: View {
                                     TranscriptionRowView(
                                         transcription: transcription,
                                         isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
-                                        allTags: allTags
+                                        allTags: allTags,
+                                        semanticScore: currentSemanticScore(for: transcription.id)
                                     )
                                 }
                                 .contextMenu {
@@ -165,6 +168,7 @@ struct TranscriptionsContentView: View {
         }
         .onAppear {
             filteredTranscriptions = allTranscriptions
+            semanticScoresByID = [:]
             previousTranscriptionCount = allTranscriptions.count
             syncDisplayedIDs()
         }
@@ -194,6 +198,7 @@ struct TranscriptionsContentView: View {
             // Update filtered results
             if searchText.isEmpty {
                 filteredTranscriptions = allTranscriptions
+                semanticScoresByID = [:]
             } else {
                 performDebouncedSearch(with: searchText)
             }
@@ -265,6 +270,7 @@ struct TranscriptionsContentView: View {
                 guard !searchTerm.isEmpty else {
                     await MainActor.run {
                         filteredTranscriptions = allTranscriptions
+                        semanticScoresByID = [:]
                     }
                     return
                 }
@@ -305,6 +311,7 @@ struct TranscriptionsContentView: View {
 
                     await MainActor.run {
                         filteredTranscriptions = mergedResults
+                        semanticScoresByID = [:]
                     }
 
                 case .smart:
@@ -314,13 +321,18 @@ struct TranscriptionsContentView: View {
                         let orderedResults = results.compactMap { result in
                             allTranscriptions.first(where: { $0.id == result.transcriptionId })
                         }
+                        let scoresByID = Dictionary(
+                            uniqueKeysWithValues: results.map { ($0.transcriptionId, $0.relevanceScore) }
+                        )
                         await MainActor.run {
                             filteredTranscriptions = orderedResults
+                            semanticScoresByID = scoresByID
                         }
                     } catch {
                         logger.logError("Semantic search failed: \(error.localizedDescription)")
                         await MainActor.run {
                             filteredTranscriptions = []
+                            semanticScoresByID = [:]
                         }
                     }
                 }
@@ -337,6 +349,11 @@ struct TranscriptionsContentView: View {
         } else {
             selectedTranscriptionIDs.insert(transcription.id)
         }
+    }
+
+    private func currentSemanticScore(for transcriptionID: UUID) -> Float? {
+        guard searchMode == .smart else { return nil }
+        return semanticScoresByID[transcriptionID]
     }
 
     private func deleteTranscription(at offsets: IndexSet) {
@@ -398,7 +415,24 @@ private struct SelectableTranscriptionRow: View {
     let isSelected: Bool
     let isNewlyInserted: Bool
     let allTags: [TranscriptionTag]
+    let semanticScore: Float?
     let onTap: () -> Void
+
+    init(
+        transcription: Transcription,
+        isSelected: Bool,
+        isNewlyInserted: Bool,
+        allTags: [TranscriptionTag],
+        semanticScore: Float? = nil,
+        onTap: @escaping () -> Void
+    ) {
+        self.transcription = transcription
+        self.isSelected = isSelected
+        self.isNewlyInserted = isNewlyInserted
+        self.allTags = allTags
+        self.semanticScore = semanticScore
+        self.onTap = onTap
+    }
 
     var body: some View {
         Button(action: onTap) {
@@ -411,7 +445,8 @@ private struct SelectableTranscriptionRow: View {
                 TranscriptionRowView(
                     transcription: transcription,
                     isNewlyInserted: isNewlyInserted,
-                    allTags: allTags
+                    allTags: allTags,
+                    semanticScore: semanticScore
                 )
             }
             .contentShape(Rectangle())
