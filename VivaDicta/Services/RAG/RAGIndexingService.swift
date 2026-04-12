@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.04.11
 //
 
+import CryptoKit
 import Foundation
 import SwiftData
 import os
@@ -111,7 +112,7 @@ final class RAGIndexingService {
             minThreshold: 0.3
         )
         let config = try VecturaConfig(
-            name: "vivedicta-rag",
+            name: "vivadicta-rag",
             directoryURL: storageDirectory,
             searchOptions: searchOptions
         )
@@ -198,7 +199,7 @@ final class RAGIndexingService {
                     continue
                 }
 
-                let contentHash = content.hashValue.description
+                let contentHash = stableHash(content)
                 let idString = transcription.id.uuidString
 
                 // Skip if content hasn't changed since last index
@@ -294,7 +295,7 @@ final class RAGIndexingService {
 
             let chunkIds = try await _addDocuments(texts: chunks.map(\.text))
             mapping[idString] = chunkIds.map(\.uuidString)
-            hashes[idString] = content.hashValue.description
+            hashes[idString] = stableHash(content)
 
             chunkMapping = mapping
             transcriptionHashes = hashes
@@ -408,6 +409,13 @@ final class RAGIndexingService {
     private func indexableContent(for transcription: Transcription) -> String {
         let text = transcription.enhancedText ?? transcription.text
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Deterministic SHA-256 hash used for change detection. Unlike `String.hashValue`,
+    /// this is stable across launches and devices.
+    private func stableHash(_ content: String) -> String {
+        let digest = SHA256.hash(data: Data(content.utf8))
+        return Data(digest).base64EncodedString()
     }
 }
 

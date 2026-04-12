@@ -9,6 +9,11 @@ import os
 import SwiftData
 import SwiftUI
 
+private enum TranscriptionSearchMode: String {
+    case keyword
+    case smart
+}
+
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var colorScheme
@@ -27,6 +32,7 @@ struct TranscriptionsContentView: View {
     @State private var showGoToTopButton = false
     @State private var selectedSourceTags: Set<String> = []
     @State private var selectedUserTagIds: Set<UUID> = []
+    @State private var searchMode: TranscriptionSearchMode = .keyword
 
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
@@ -50,6 +56,18 @@ struct TranscriptionsContentView: View {
                     selectedUserTagIds: $selectedUserTagIds
                 )
 //                .padding(.vertical, 8)
+            }
+
+            if !searchText.isEmpty {
+                Picker("Search Mode", selection: $searchMode) {
+                    Label("Keyword", systemImage: "text.magnifyingglass")
+                        .tag(TranscriptionSearchMode.keyword)
+                    Label("Smart", systemImage: "sparkle.magnifyingglass")
+                        .tag(TranscriptionSearchMode.smart)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
             }
 
             if allTranscriptions.isEmpty {
@@ -187,6 +205,11 @@ struct TranscriptionsContentView: View {
         .onChange(of: selectedUserTagIds) {
             syncDisplayedIDs()
         }
+        .onChange(of: searchMode) {
+            if !searchText.isEmpty {
+                performDebouncedSearch(with: searchText)
+            }
+        }
     }
 
     private var hasActiveTagFilter: Bool {
@@ -243,40 +266,60 @@ struct TranscriptionsContentView: View {
                     return
                 }
 
-                // Step 1: Search transcription text + enhancedText
-                var descriptor = FetchDescriptor<Transcription>(
-                    sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
-                )
-                descriptor.predicate = #Predicate<Transcription> { transcription in
-                    transcription.text.localizedStandardContains(searchTerm) ||
-                        (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
-                }
+                switch searchMode {
+                case .keyword:
+                    // Step 1: Search transcription text + enhancedText
+                    var descriptor = FetchDescriptor<Transcription>(
+                        sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+                    )
+                    descriptor.predicate = #Predicate<Transcription> { transcription in
+                        transcription.text.localizedStandardContains(searchTerm) ||
+                            (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
+                    }
 
-                let transcriptionMatches = try modelContext.fetch(descriptor)
+                    let transcriptionMatches = try modelContext.fetch(descriptor)
 
-                // Step 2: Search variation text
-                let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
-                    predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
-                )
-                let variationMatches = try modelContext.fetch(variationDescriptor)
+                    // Step 2: Search variation text
+                    let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
+                        predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
+                    )
+                    let variationMatches = try modelContext.fetch(variationDescriptor)
 
-                // Step 3: Merge results
-                let transcriptionIds = Set(transcriptionMatches.map(\.id))
-                let variationTranscriptionIds = Set(variationMatches.compactMap { $0.transcription?.id })
-                let additionalIds = variationTranscriptionIds.subtracting(transcriptionIds)
+                    // Step 3: Merge results
+                    let transcriptionIds = Set(transcriptionMatches.map(\.id))
+                    let variationTranscriptionIds = Set(variationMatches.compactMap { $0.transcription?.id })
+                    let additionalIds = variationTranscriptionIds.subtracting(transcriptionIds)
 
-                let mergedResults: [Transcription]
-                if additionalIds.isEmpty {
-                    mergedResults = transcriptionMatches
-                } else {
-                    // Fetch additional transcriptions matched only via variations
-                    let additionalTranscriptions = allTranscriptions.filter { additionalIds.contains($0.id) }
-                    mergedResults = (transcriptionMatches + additionalTranscriptions)
-                        .sorted { $0.timestamp > $1.timestamp }
-                }
+                    let mergedResults: [Transcription]
+                    if additionalIds.isEmpty {
+                        mergedResults = transcriptionMatches
+                    } else {
+                        // Fetch additional transcriptions matched only via variations
+                        let additionalTranscriptions = allTranscriptions.filter { additionalIds.contains($0.id) }
+                        mergedResults = (transcriptionMatches + additionalTranscriptions)
+                            .sorted { $0.timestamp > $1.timestamp }
+                    }
 
-                await MainActor.run {
-                    filteredTranscriptions = mergedResults
+                    await MainActor.run {
+                        filteredTranscriptions = mergedResults
+                    }
+
+                case .smart:
+                    do {
+                        let results = try await RAGIndexingService.shared.search(query: searchTerm, topK: 20)
+                        // Preserve relevance ordering from RAG
+                        let orderedResults = results.compactMap { result in
+                            allTranscriptions.first(where: { $0.id == result.transcriptionId })
+                        }
+                        await MainActor.run {
+                            filteredTranscriptions = orderedResults
+                        }
+                    } catch {
+                        logger.logError("Semantic search failed: \(error.localizedDescription)")
+                        await MainActor.run {
+                            filteredTranscriptions = []
+                        }
+                    }
                 }
             } catch {
                 logger.logError("Search was cancelled or failed: \(error.localizedDescription)")
