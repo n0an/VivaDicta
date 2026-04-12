@@ -19,7 +19,14 @@ import os
 final class SmartSearchChatViewModel {
     private static let previewCharacterLimit = 220
     private static let minimumLexicalScoreForCitation: Float = 0.45
+    private static let minimumHighConfidenceSingleHitScore: Float = 0.85
     private let logger = Logger(category: .smartSearchChat)
+
+    private struct DeterministicSmartSearchResponse {
+        let content: String
+        let sourceIds: [UUID]
+        let sourceCitations: [SmartSearchSourceCitation]
+    }
 
     // MARK: - State
 
@@ -166,10 +173,34 @@ final class SmartSearchChatViewModel {
         HapticManager.prepareStreaming()
 
         streamingTask = Task {
+            defer {
+                isSearching = false
+                isStreaming = false
+                streamingText = ""
+                trySave()
+                updateContextFillRatio()
+            }
+
             do {
                 logger.logInfo(
                     "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
                 )
+
+                if let deterministicResponse = sourceFollowUpResponse(for: text) {
+                    logger.logInfo(
+                        "Smart Search answered source follow-up deterministically sourceCount=\(deterministicResponse.sourceIds.count)"
+                    )
+                    persistSuccessfulTurn(
+                        userMessage: userMessage,
+                        provider: provider,
+                        model: model,
+                        responseText: deterministicResponse.content,
+                        sourceIds: deterministicResponse.sourceIds,
+                        sourceCitations: deterministicResponse.sourceCitations
+                    )
+                    HapticManager.heartbeat()
+                    return
+                }
 
                 let requestedTopK = provider == .apple ? 3 : 5
                 isSearching = true
@@ -186,6 +217,24 @@ final class SmartSearchChatViewModel {
                     logger.logInfo("Smart Search retrieval returned no note context for query='\(Self.preview(text, limit: 80))'")
                 } else {
                     logSearchResults(searchResults, transcriptions: transcriptions)
+                }
+
+                let substantiveQueryTerms = groundedQueryTerms(from: text)
+                if searchResults.isEmpty, !substantiveQueryTerms.isEmpty {
+                    let deterministicResponse = noEvidenceResponse(for: text)
+                    logger.logInfo(
+                        "Smart Search returned deterministic no-evidence response queryTerms=\(substantiveQueryTerms.sorted().joined(separator: ", "))"
+                    )
+                    persistSuccessfulTurn(
+                        userMessage: userMessage,
+                        provider: provider,
+                        model: model,
+                        responseText: deterministicResponse.content,
+                        sourceIds: deterministicResponse.sourceIds,
+                        sourceCitations: deterministicResponse.sourceCitations
+                    )
+                    HapticManager.heartbeat()
+                    return
                 }
 
                 let augmentedPrompt = SmartSearchContextManager.assembleAugmentedPrompt(
@@ -212,23 +261,14 @@ final class SmartSearchChatViewModel {
                     "Smart Search response chars=\(result.count) preview='\(Self.preview(result))'"
                 )
 
-                // Persist user message (stores original text, not augmented)
-                pendingUserMessage = nil
-                userMessage.smartSearchConversation = conversation
-                modelContext.insert(userMessage)
-
-                let assistantMessage = ChatMessage(
-                    role: "assistant",
-                    content: result,
-                    aiProviderName: provider.rawValue,
-                    aiModelName: model,
-                    estimatedTokenCount: ChatContextManager.estimateTokens(result)
+                persistSuccessfulTurn(
+                    userMessage: userMessage,
+                    provider: provider,
+                    model: model,
+                    responseText: result,
+                    sourceIds: sourceIds,
+                    sourceCitations: sourceCitations
                 )
-                assistantMessage.sourceTranscriptionIds = sourceIds
-                assistantMessage.sourceCitations = sourceCitations
-                assistantMessage.smartSearchConversation = conversation
-                modelContext.insert(assistantMessage)
-                messages.append(assistantMessage)
 
                 HapticManager.heartbeat()
 
@@ -261,11 +301,6 @@ final class SmartSearchChatViewModel {
 
                 HapticManager.error()
             }
-
-            isStreaming = false
-            streamingText = ""
-            trySave()
-            updateContextFillRatio()
         }
     }
 
@@ -291,6 +326,32 @@ final class SmartSearchChatViewModel {
                 relevanceScore: result.relevanceScore
             )
         }
+    }
+
+    private func persistSuccessfulTurn(
+        userMessage: ChatMessage,
+        provider: AIProvider,
+        model: String,
+        responseText: String,
+        sourceIds: [UUID],
+        sourceCitations: [SmartSearchSourceCitation]
+    ) {
+        pendingUserMessage = nil
+        userMessage.smartSearchConversation = conversation
+        modelContext.insert(userMessage)
+
+        let assistantMessage = ChatMessage(
+            role: "assistant",
+            content: responseText,
+            aiProviderName: provider.rawValue,
+            aiModelName: model,
+            estimatedTokenCount: ChatContextManager.estimateTokens(responseText)
+        )
+        assistantMessage.sourceTranscriptionIds = sourceIds
+        assistantMessage.sourceCitations = sourceCitations
+        assistantMessage.smartSearchConversation = conversation
+        modelContext.insert(assistantMessage)
+        messages.append(assistantMessage)
     }
 
     // MARK: - Cancel
@@ -631,6 +692,10 @@ final class SmartSearchChatViewModel {
     /// Resolves Transcription objects from RAG search results via the model context.
     private func resolveTranscriptions(for results: [RAGSearchResult]) -> [Transcription] {
         let ids = results.map(\.transcriptionId)
+        return resolveTranscriptions(ids: ids)
+    }
+
+    private func resolveTranscriptions(ids: [UUID]) -> [Transcription] {
         guard !ids.isEmpty else { return [] }
 
         var transcriptions: [Transcription] = []
@@ -646,6 +711,119 @@ final class SmartSearchChatViewModel {
         }
         logger.logInfo("Smart Search resolved \(transcriptions.count)/\(ids.count) transcriptions for current retrieval")
         return transcriptions
+    }
+
+    private func sourceFollowUpResponse(for query: String) -> DeterministicSmartSearchResponse? {
+        guard isSourceFollowUpQuery(query) else { return nil }
+
+        guard let previousAssistant = messages.reversed().first(where: { $0.role == "assistant" }) else {
+            return noPriorSourceResponse(for: query)
+        }
+
+        let sourceIds = previousAssistant.sourceTranscriptionIds
+        let sourceCitations = previousAssistant.sourceCitations
+
+        guard !sourceIds.isEmpty || !sourceCitations.isEmpty else {
+            return noPriorSourceResponse(for: query)
+        }
+
+        let citationsToReuse: [SmartSearchSourceCitation]
+        let idsToReuse: [UUID]
+
+        if !sourceCitations.isEmpty {
+            citationsToReuse = sourceCitations
+            idsToReuse = uniqueSourceIDs(from: sourceCitations.map {
+                RAGSearchResult(
+                    transcriptionId: $0.transcriptionId,
+                    chunkText: $0.excerpt,
+                    relevanceScore: $0.relevanceScore
+                )
+            })
+        } else {
+            citationsToReuse = []
+            idsToReuse = sourceIds
+        }
+
+        let transcriptions = resolveTranscriptions(ids: idsToReuse)
+        let response = sourceListResponse(
+            for: query,
+            sourceIds: idsToReuse,
+            transcriptions: transcriptions
+        )
+
+        return DeterministicSmartSearchResponse(
+            content: response,
+            sourceIds: idsToReuse,
+            sourceCitations: citationsToReuse
+        )
+    }
+
+    private func noEvidenceResponse(for query: String) -> DeterministicSmartSearchResponse {
+        let response: String
+        if isLikelyRussian(query) {
+            response = "Я не нашел надежного упоминания этого в ваших заметках."
+        } else {
+            response = "I could not find a reliable mention of that in your notes."
+        }
+
+        return DeterministicSmartSearchResponse(
+            content: response,
+            sourceIds: [],
+            sourceCitations: []
+        )
+    }
+
+    private func noPriorSourceResponse(for query: String) -> DeterministicSmartSearchResponse {
+        let response: String
+        if isLikelyRussian(query) {
+            response = "У меня нет надежной ссылки на заметку для предыдущего ответа, поэтому я не должен придумывать источник."
+        } else {
+            response = "I do not have a reliable cited note for my previous answer, so I should not invent a source."
+        }
+
+        return DeterministicSmartSearchResponse(
+            content: response,
+            sourceIds: [],
+            sourceCitations: []
+        )
+    }
+
+    private func sourceListResponse(
+        for query: String,
+        sourceIds: [UUID],
+        transcriptions: [Transcription]
+    ) -> String {
+        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
+        let resolved = sourceIds.compactMap { id -> String? in
+            guard let transcription = transcriptionMap[id] else { return nil }
+            let date = transcription.timestamp.formatted(date: .abbreviated, time: .omitted)
+            let title = noteTitle(for: transcription)
+            return "\(date) - \"\(title)\""
+        }
+
+        if isLikelyRussian(query) {
+            if resolved.isEmpty {
+                return "Я не смог надежно определить заметку-источник для предыдущего ответа."
+            }
+            if resolved.count == 1, let first = resolved.first {
+                return "Предыдущий ответ опирался на заметку \(first)."
+            }
+            return """
+            Предыдущий ответ опирался на эти заметки:
+            \(resolved.map { "- \($0)" }.joined(separator: "\n"))
+            """
+        }
+
+        if resolved.isEmpty {
+            return "I could not reliably identify a source note for my previous answer."
+        }
+        if resolved.count == 1, let first = resolved.first {
+            return "My previous answer was based on the note \(first)."
+        }
+        return """
+        My previous answer was based on these notes:
+        \(resolved.map { "- \($0)" }.joined(separator: "\n"))
+        """
     }
 
     // MARK: - Private Helpers
@@ -759,7 +937,7 @@ final class SmartSearchChatViewModel {
         )
 
         let grounded = searchResults.filter { result in
-            let excerptTerms = tokenSet(from: result.chunkText)
+            let excerptTerms = SmartSearchLexicalSupport.tokenSet(from: result.chunkText)
             let overlap = queryTerms.intersection(excerptTerms)
             let passesLexicalCheck = overlap.count >= requiredMatches
             let passesLowBarSingleMatch = overlap.count == 1 && queryTerms.count == 1 && result.relevanceScore >= Self.minimumLexicalScoreForCitation
@@ -778,6 +956,9 @@ final class SmartSearchChatViewModel {
         }
 
         if grounded.isEmpty {
+            if let fallback = highConfidenceSingleHitFallback(from: searchResults, query: query) {
+                return [fallback]
+            }
             logger.logInfo("Smart Search grounding removed all semantic hits for query='\(Self.preview(query, limit: 80))'")
             return []
         }
@@ -787,6 +968,24 @@ final class SmartSearchChatViewModel {
         }
 
         return Array(grounded.prefix(limit))
+    }
+
+    private func highConfidenceSingleHitFallback(
+        from searchResults: [RAGSearchResult],
+        query: String
+    ) -> RAGSearchResult? {
+        guard searchResults.count == 1, let candidate = searchResults.first else {
+            return nil
+        }
+
+        guard candidate.relevanceScore >= Self.minimumHighConfidenceSingleHitScore else {
+            return nil
+        }
+
+        logger.logInfo(
+            "Smart Search grounding accepted high-confidence semantic fallback noteId=\(candidate.transcriptionId.uuidString) score=\(Double(candidate.relevanceScore).formatted(.number.precision(.fractionLength(3)))) query='\(Self.preview(query, limit: 80))'"
+        )
+        return candidate
     }
 
     private func logSearchResults(_ searchResults: [RAGSearchResult], transcriptions: [Transcription]) {
@@ -825,33 +1024,19 @@ final class SmartSearchChatViewModel {
     }
 
     private func groundedQueryTerms(from query: String) -> Set<String> {
-        tokenSet(from: query).subtracting(Self.stopWords)
+        SmartSearchLexicalSupport.queryTerms(from: query)
     }
 
-    private func tokenSet(from text: String) -> Set<String> {
-        let normalized = text
+    private func isSourceFollowUpQuery(_ query: String) -> Bool {
+        let normalized = query
             .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            .unicodeScalars
-            .map { CharacterSet.alphanumerics.contains($0) ? Character($0) : " " }
+            .lowercased()
 
-        let rawTokens = String(normalized)
-            .split(separator: " ")
-            .map(String.init)
-            .filter { $0.count >= 2 }
+        return Self.sourceFollowUpPhrases.contains { normalized.contains($0) }
+    }
 
-        var tokens: Set<String> = []
-        tokens.reserveCapacity(rawTokens.count * 2)
-
-        for token in rawTokens {
-            let lowered = token.lowercased()
-            tokens.insert(lowered)
-
-            if lowered.count > 4, lowered.hasSuffix("s"), !lowered.hasSuffix("ss") {
-                tokens.insert(String(lowered.dropLast()))
-            }
-        }
-
-        return tokens
+    private func isLikelyRussian(_ text: String) -> Bool {
+        text.range(of: "\\p{Cyrillic}", options: .regularExpression) != nil
     }
 
     private static func preview(_ text: String, limit: Int = previewCharacterLimit) -> String {
@@ -865,21 +1050,22 @@ final class SmartSearchChatViewModel {
         return String(flattened.prefix(limit)) + "..."
     }
 
-    private static let stopWords: Set<String> = [
-        "a", "about", "all", "am", "an", "and", "anything", "are", "as", "at",
-        "be", "but", "by", "can", "did", "do", "for", "from", "hello", "hey",
-        "how", "i", "if", "in", "is", "it", "its", "just", "maybe", "me",
-        "mention", "mentioned", "mentions", "my", "no", "not", "of", "on", "or", "our", "please", "said", "say",
-        "saying", "something", "talk", "talked", "talking", "tell", "telling", "that", "the", "their", "there", "these", "they", "this", "to",
-        "told",
-        "us", "was", "we", "what", "when", "where", "which", "who", "why", "with",
-        "yes", "you",
-        "а", "без", "был", "бы", "в", "во", "вот", "все", "где", "да", "для",
-        "его", "ее", "если", "есть", "еще", "и", "из", "или", "их", "как", "ко",
-        "ли", "мне", "мы", "на", "не", "нет", "но", "ну", "о", "об", "он", "она",
-        "они", "оно", "от", "по", "под", "про", "с", "со", "так", "там", "то",
-        "тут", "ты", "у", "уже", "упоминал", "упоминала", "упоминали", "что", "это", "я",
-        "говорил", "говорила", "говорили", "говорить", "сказал", "сказала", "сказали"
+    private static let sourceFollowUpPhrases: [String] = [
+        "which note",
+        "what note",
+        "which notes",
+        "where did i say",
+        "where did i mention",
+        "where in my notes",
+        "in what note",
+        "what note was that",
+        "which note was that",
+        "в какой заметке",
+        "в какой записи",
+        "где я это говорил",
+        "где я это упоминал",
+        "в какой заметке я это говорил",
+        "в какой заметке я это упоминал"
     ]
 
 }

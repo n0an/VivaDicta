@@ -19,6 +19,14 @@ struct RAGSearchResult: Sendable {
     let relevanceScore: Float
 }
 
+private struct RankedChunkCandidate {
+    let transcriptionId: UUID
+    let chunkText: String
+    let semanticScore: Float
+    let lexicalOverlapCount: Int
+    let lexicalOverlapTerms: Set<String>
+}
+
 /// Manages the vector index for RAG-based Smart Search.
 ///
 /// Indexes transcription notes into a local vector database using LumoKit/VecturaKit.
@@ -416,10 +424,14 @@ final class RAGIndexingService {
         let requestedResults = topK * 2
         let queryPreview = Self.preview(query, limit: 80)
         let mapping = chunkMapping
+        let queryTerms = SmartSearchLexicalSupport.queryTerms(from: query)
 
         searchLogger.logInfo(
             "RAG search start query='\(queryPreview)' topK=\(topK) requested=\(requestedResults) threshold=\(Double(threshold).formatted(.number.precision(.fractionLength(2)))) mappedNotes=\(mapping.count)"
         )
+        if !queryTerms.isEmpty {
+            searchLogger.logInfo("RAG lexical query terms: \(queryTerms.sorted().joined(separator: ", "))")
+        }
 
         let results = try await _semanticSearch(
             query: query,
@@ -439,8 +451,8 @@ final class RAGIndexingService {
             )
         }
 
-        // Map chunk IDs back to transcription IDs
-        var transcriptionResults: [UUID: RAGSearchResult] = [:]
+        // Map chunk IDs back to transcription IDs and re-rank chunks inside each note.
+        var transcriptionResults: [UUID: RankedChunkCandidate] = [:]
 
         for (index, result) in results.enumerated() {
             let chunkIdString = result.id.uuidString
@@ -456,35 +468,61 @@ final class RAGIndexingService {
                 "RAG map raw[\(index + 1)] chunkId=\(chunkIdString) -> transcriptionId=\(transcriptionIdString) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3))))"
             )
 
-            // Keep highest-scoring chunk per transcription
-            if let existing = transcriptionResults[transcriptionId], existing.relevanceScore >= result.score {
+            let overlapTerms = queryTerms.intersection(SmartSearchLexicalSupport.tokenSet(from: result.text))
+            let candidate = RankedChunkCandidate(
+                transcriptionId: transcriptionId,
+                chunkText: result.text,
+                semanticScore: result.score,
+                lexicalOverlapCount: overlapTerms.count,
+                lexicalOverlapTerms: overlapTerms
+            )
+
+            if !queryTerms.isEmpty {
+                searchLogger.logInfo(
+                    "RAG candidate raw[\(index + 1)] transcriptionId=\(transcriptionIdString) overlapCount=\(candidate.lexicalOverlapCount) overlap=\(candidate.lexicalOverlapTerms.sorted().joined(separator: ", "))"
+                )
+            }
+
+            // Keep the best chunk per transcription using hybrid lexical + semantic ordering.
+            if let existing = transcriptionResults[transcriptionId], !isPreferred(candidate, over: existing) {
                 searchLogger.logDebug(
-                    "RAG dedupe kept existing chunk for transcriptionId=\(transcriptionIdString) existingScore=\(Double(existing.relevanceScore).formatted(.number.precision(.fractionLength(3)))) newScore=\(Double(result.score).formatted(.number.precision(.fractionLength(3))))"
+                    "RAG dedupe kept existing chunk for transcriptionId=\(transcriptionIdString) existingOverlap=\(existing.lexicalOverlapCount) existingScore=\(Double(existing.semanticScore).formatted(.number.precision(.fractionLength(3)))) newOverlap=\(candidate.lexicalOverlapCount) newScore=\(Double(candidate.semanticScore).formatted(.number.precision(.fractionLength(3))))"
                 )
                 continue
             }
 
-            transcriptionResults[transcriptionId] = RAGSearchResult(
-                transcriptionId: transcriptionId,
-                chunkText: result.text,
-                relevanceScore: result.score
-            )
+            transcriptionResults[transcriptionId] = candidate
         }
 
         let finalResults = Array(
             transcriptionResults.values
-            .sorted { $0.relevanceScore > $1.relevanceScore }
+            .sorted(by: isPreferred(_:over:))
             .prefix(topK)
+            .map {
+                RAGSearchResult(
+                    transcriptionId: $0.transcriptionId,
+                    chunkText: $0.chunkText,
+                    relevanceScore: $0.semanticScore
+                )
+            }
         )
 
         for (index, result) in finalResults.enumerated() {
+            let overlapTerms = queryTerms.intersection(SmartSearchLexicalSupport.tokenSet(from: result.chunkText))
             searchLogger.logInfo(
-                "RAG final[\(index + 1)] transcriptionId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
+                "RAG final[\(index + 1)] transcriptionId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) overlapCount=\(overlapTerms.count) overlap=\(overlapTerms.sorted().joined(separator: ", ")) excerpt='\(Self.preview(result.chunkText))'"
             )
         }
 
         searchLogger.logInfo("Search '\(query.prefix(50))': \(finalResults.count) transcriptions matched")
         return finalResults
+    }
+
+    private func isPreferred(_ lhs: RankedChunkCandidate, over rhs: RankedChunkCandidate) -> Bool {
+        if lhs.lexicalOverlapCount != rhs.lexicalOverlapCount {
+            return lhs.lexicalOverlapCount > rhs.lexicalOverlapCount
+        }
+        return lhs.semanticScore > rhs.semanticScore
     }
 
     // MARK: - Helpers
