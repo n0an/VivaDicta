@@ -7,8 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1879FAB42F8BC70F00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FAB32F8BC70F00952CF9 /* LumoKit */; };
-		1879FAB72F8BD91500952CF9 /* VecturaMLXKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FAB62F8BD91500952CF9 /* VecturaMLXKit */; };
+		1879FABA2F8C037400952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FAB92F8C037400952CF9 /* LumoKit */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
@@ -438,13 +437,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1879FAB42F8BC70F00952CF9 /* LumoKit in Frameworks */,
+				1879FABA2F8C037400952CF9 /* LumoKit in Frameworks */,
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
-				1879FAB72F8BD91500952CF9 /* VecturaMLXKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -603,8 +601,7 @@
 				18EBD6B22ED1FBFB00C0041E /* FluidAudio */,
 				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
 				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
-				1879FAB32F8BC70F00952CF9 /* LumoKit */,
-				1879FAB62F8BD91500952CF9 /* VecturaMLXKit */,
+				1879FAB92F8C037400952CF9 /* LumoKit */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -876,8 +873,7 @@
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-				1879FAB22F8BC70F00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
-				1879FAB52F8BD91500952CF9 /* XCRemoteSwiftPackageReference "VecturaMLXKit" */,
+				1879FAB82F8C037400952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -2360,17 +2356,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		1879FAB22F8BC70F00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */ = {
+		1879FAB82F8C037400952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/n0an/LumoKit.git";
-			requirement = {
-				branch = "feat/custom-embedder-injection";
-				kind = branch;
-			};
-		};
-		1879FAB52F8BD91500952CF9 /* XCRemoteSwiftPackageReference "VecturaMLXKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/rryam/VecturaMLXKit.git";
+			repositoryURL = "https://github.com/rryam/LumoKit.git";
 			requirement = {
 				branch = main;
 				kind = branch;
@@ -2411,15 +2399,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		1879FAB32F8BC70F00952CF9 /* LumoKit */ = {
+		1879FAB92F8C037400952CF9 /* LumoKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 1879FAB22F8BC70F00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
+			package = 1879FAB82F8C037400952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
 			productName = LumoKit;
-		};
-		1879FAB62F8BD91500952CF9 /* VecturaMLXKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1879FAB52F8BD91500952CF9 /* XCRemoteSwiftPackageReference "VecturaMLXKit" */;
-			productName = VecturaMLXKit;
 		};
 		189C7AA62F0D4A6E004BAFBF /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;

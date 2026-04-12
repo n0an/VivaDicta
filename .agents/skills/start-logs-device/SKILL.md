@@ -28,6 +28,7 @@ Launch VivaDicta on a connected physical device with print logging enabled and k
 
 - `./scripts/launch_device.sh` uses `xcrun devicectl device process launch --console`.
 - The current script targets device UDID `00008130-001250203C92001C`.
+- The current script launches bundle id `com.antonnovoselov.VivaDicta-beta`.
 - `ENABLE_PRINT_LOGS=1` is set so mirrored print output is visible in the console stream.
 - The script terminates any existing app instance before launching a fresh one.
 - Works only on supported physical-device setups where `devicectl` is available.

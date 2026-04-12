@@ -8,6 +8,12 @@
 import Foundation
 import SwiftData
 
+struct SmartSearchSourceCitation: Codable, Hashable, Sendable {
+    var transcriptionId: UUID
+    var excerpt: String
+    var relevanceScore: Float
+}
+
 /// A SwiftData model representing a single message in a "Chat with Note" conversation.
 ///
 /// Each chat message belongs to a ``Transcription`` via a one-to-many relationship.
@@ -57,6 +63,10 @@ final class ChatMessage {
     /// for this assistant message. Nil for user messages and non-RAG responses.
     var sourceTranscriptionIdsData: Data?
 
+    /// JSON-encoded Smart Search citation metadata for this assistant message.
+    /// Stores the matched excerpt and score so the UI can show evidence, not only note titles.
+    var sourceCitationsData: Data?
+
     /// Convenience accessor for source transcription IDs.
     var sourceTranscriptionIds: [UUID] {
         get {
@@ -69,6 +79,19 @@ final class ChatMessage {
         set {
             let strings = newValue.map(\.uuidString)
             sourceTranscriptionIdsData = try? JSONEncoder().encode(strings)
+        }
+    }
+
+    var sourceCitations: [SmartSearchSourceCitation] {
+        get {
+            guard let data = sourceCitationsData,
+                  let citations = try? JSONDecoder().decode([SmartSearchSourceCitation].self, from: data) else {
+                return []
+            }
+            return citations
+        }
+        set {
+            sourceCitationsData = try? JSONEncoder().encode(newValue)
         }
     }
 

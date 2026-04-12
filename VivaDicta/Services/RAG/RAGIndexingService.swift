@@ -10,8 +10,6 @@ import Foundation
 import SwiftData
 import os
 @preconcurrency import LumoKit
-@preconcurrency import MLXEmbedders
-@preconcurrency import VecturaMLXKit
 @preconcurrency import VecturaKit
 
 /// Result of a RAG semantic search, mapping chunks back to source transcriptions.
@@ -29,15 +27,19 @@ struct RAGSearchResult: Sendable {
 @MainActor
 final class RAGIndexingService {
     static let shared = RAGIndexingService()
+    private static let previewCharacterLimit = 180
+    private static let maxLoggedChunksPerNote = 3
+    nonisolated(unsafe) private static let indexVersion = "v12_potion_base_32m"
+    nonisolated(unsafe) private static let vectorStoreName = "vivadicta-rag-\(indexVersion)"
 
     private let logger = Logger(category: .ragIndexing)
     private let searchLogger = Logger(category: .ragSearch)
 
     // MARK: - UserDefaults Keys
 
-    private let indexingCompletedKey = "ragIndexingCompleted_v2_mlx_e5"
-    private let chunkMappingKey = "ragChunkMapping_v2_mlx_e5"
-    private let transcriptionHashesKey = "ragTranscriptionHashes_v2_mlx_e5"
+    private let indexingCompletedKey = "ragIndexingCompleted_\(RAGIndexingService.indexVersion)"
+    private let chunkMappingKey = "ragChunkMapping_\(RAGIndexingService.indexVersion)"
+    private let transcriptionHashesKey = "ragTranscriptionHashes_\(RAGIndexingService.indexVersion)"
 
     // MARK: - LumoKit Instance
 
@@ -93,7 +95,7 @@ final class RAGIndexingService {
         isInitializing = true
         defer { isInitializing = false }
 
-        logger.logInfo("Initializing LumoKit with MLX multilingual E5 embedder...")
+        logger.logInfo("Initializing LumoKit with SwiftEmbedder potion-base-32M...")
 
         let storageDir = RAGIndexingService.storageDirectoryURL
         try await initializeLumoKit(storageDirectory: storageDir)
@@ -109,12 +111,13 @@ final class RAGIndexingService {
     // access is fine because LumoKit internally serializes via VecturaKit.
 
     nonisolated private func initializeLumoKit(storageDirectory: URL) async throws {
+        let logger = Logger(category: .ragIndexing)
         let searchOptions = VecturaConfig.SearchOptions(
             defaultNumResults: 5,
             minThreshold: 0.3
         )
         let config = try VecturaConfig(
-            name: "vivadicta-rag-mlx-multilingual-e5",
+            name: Self.vectorStoreName,
             directoryURL: storageDirectory,
             searchOptions: searchOptions
         )
@@ -124,11 +127,23 @@ final class RAGIndexingService {
             strategy: .semantic,
             contentType: .prose
         )
-        let embedder = try await MLXEmbedder(configuration: .multilingual_e5_small)
+        logger.logInfo(
+            """
+            RAG init config:
+            db=\(config.name)
+            storage=\(storageDirectory.path)
+            results=\(searchOptions.defaultNumResults)
+            threshold=\(Double(searchOptions.minThreshold ?? 0).formatted(.number.precision(.fractionLength(2))))
+            chunkSize=\(chunkingConfig.chunkSize)
+            overlap=\(Double(chunkingConfig.overlapPercentage).formatted(.percent.precision(.fractionLength(0))))
+            strategy=\(String(describing: chunkingConfig.strategy))
+            """
+        )
+        logger.logInfo("RAG init embedder=SwiftEmbedder model=minishlab/potion-base-32M")
         let kit = try await LumoKit(
             config: config,
             chunkingConfig: chunkingConfig,
-            embedder: embedder
+            modelSource: .id("minishlab/potion-base-32M")
         )
         lumoKit = kit
     }
@@ -186,6 +201,9 @@ final class RAGIndexingService {
                 sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
             )
             let transcriptions = try modelContext.fetch(descriptor)
+            logger.logInfo(
+                "RAG bulk indexing started: transcriptions=\(transcriptions.count) indexedMappings=\(chunkMapping.count)"
+            )
 
             if transcriptions.isEmpty {
                 logger.logInfo("No transcriptions to index")
@@ -201,7 +219,9 @@ final class RAGIndexingService {
 
             for transcription in transcriptions {
                 let content = indexableContent(for: transcription)
+                let noteTitle = Self.noteTitle(from: content, fallback: transcription.id.uuidString)
                 guard !content.isEmpty else {
+                    logger.logInfo("RAG skipping empty note id=\(transcription.id.uuidString) title='\(noteTitle)'")
                     skipped += 1
                     continue
                 }
@@ -211,14 +231,22 @@ final class RAGIndexingService {
 
                 // Skip if content hasn't changed since last index
                 if !isFirstRun, hashes[idString] == contentHash {
+                    logger.logDebug(
+                        "RAG unchanged note id=\(idString) title='\(noteTitle)' hash=\(contentHash.prefix(12))"
+                    )
                     skipped += 1
                     continue
                 }
+
+                logger.logInfo(
+                    "RAG indexing note id=\(idString) title='\(noteTitle)' chars=\(content.count) hash=\(contentHash.prefix(12))"
+                )
 
                 // Remove old chunks if re-indexing
                 if let oldChunkIds = mapping[idString] {
                     let uuids = oldChunkIds.compactMap { UUID(uuidString: $0) }
                     if !uuids.isEmpty {
+                        logger.logInfo("RAG removing \(uuids.count) existing chunks for note id=\(idString)")
                         try await _deleteChunks(ids: uuids)
                     }
                 }
@@ -231,14 +259,25 @@ final class RAGIndexingService {
                     contentType: .prose
                 ))
                 guard !chunks.isEmpty else {
+                    logger.logWarning("RAG produced 0 chunks for note id=\(idString) title='\(noteTitle)'")
                     skipped += 1
                     continue
+                }
+
+                logger.logInfo("RAG note id=\(idString) title='\(noteTitle)' chunked into \(chunks.count) chunks")
+                for chunk in chunks.prefix(Self.maxLoggedChunksPerNote) {
+                    logger.logDebug(
+                        "RAG chunk note=\(idString) index=\(chunk.metadata.index) chars=\(chunk.text.count) preview='\(Self.preview(chunk.text))'"
+                    )
                 }
 
                 let chunkIds = try await _addDocuments(texts: chunks.map(\.text))
                 mapping[idString] = chunkIds.map(\.uuidString)
                 hashes[idString] = contentHash
                 indexed += 1
+                logger.logInfo(
+                    "RAG stored \(chunkIds.count) chunks for note id=\(idString) firstChunkIDs=\(Self.joinedIDs(from: chunkIds))"
+                )
             }
 
             // Clean up mappings for deleted transcriptions
@@ -274,6 +313,7 @@ final class RAGIndexingService {
             try await ensureLumoKit()
             let content = indexableContent(for: transcription)
             let idString = transcription.id.uuidString
+            let noteTitle = Self.noteTitle(from: content, fallback: idString)
 
             guard !content.isEmpty else {
                 logger.logWarning("Empty content for transcription \(idString), skipping")
@@ -287,6 +327,7 @@ final class RAGIndexingService {
             if let oldChunkIds = mapping[idString] {
                 let uuids = oldChunkIds.compactMap { UUID(uuidString: $0) }
                 if !uuids.isEmpty {
+                    logger.logInfo("RAG reindex removing \(uuids.count) chunks for note id=\(idString) title='\(noteTitle)'")
                     try await _deleteChunks(ids: uuids)
                 }
             }
@@ -299,6 +340,13 @@ final class RAGIndexingService {
                 contentType: .prose
             ))
             guard !chunks.isEmpty else { return }
+
+            logger.logInfo("RAG single-note chunking id=\(idString) title='\(noteTitle)' chunks=\(chunks.count)")
+            for chunk in chunks.prefix(Self.maxLoggedChunksPerNote) {
+                logger.logDebug(
+                    "RAG single-note chunk note=\(idString) index=\(chunk.metadata.index) chars=\(chunk.text.count) preview='\(Self.preview(chunk.text))'"
+                )
+            }
 
             let chunkIds = try await _addDocuments(texts: chunks.map(\.text))
             mapping[idString] = chunkIds.map(\.uuidString)
@@ -364,11 +412,19 @@ final class RAGIndexingService {
     /// by transcription (keeps highest-scoring chunk per note).
     func search(query: String, topK: Int = 5) async throws -> [RAGSearchResult] {
         try await ensureLumoKit()
+        let threshold: Float = 0.3
+        let requestedResults = topK * 2
+        let queryPreview = Self.preview(query, limit: 80)
+        let mapping = chunkMapping
+
+        searchLogger.logInfo(
+            "RAG search start query='\(queryPreview)' topK=\(topK) requested=\(requestedResults) threshold=\(Double(threshold).formatted(.number.precision(.fractionLength(2)))) mappedNotes=\(mapping.count)"
+        )
 
         let results = try await _semanticSearch(
             query: query,
-            numResults: topK * 2, // Over-fetch to allow deduplication
-            threshold: 0.3
+            numResults: requestedResults, // Over-fetch to allow deduplication
+            threshold: threshold
         )
 
         guard !results.isEmpty else {
@@ -376,21 +432,35 @@ final class RAGIndexingService {
             return []
         }
 
+        searchLogger.logInfo("RAG raw search returned \(results.count) chunk hits for query='\(queryPreview)'")
+        for (index, result) in results.enumerated() {
+            searchLogger.logInfo(
+                "RAG raw[\(index + 1)] chunkId=\(result.id.uuidString) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3)))) preview='\(Self.preview(result.text))'"
+            )
+        }
+
         // Map chunk IDs back to transcription IDs
-        let mapping = chunkMapping
         var transcriptionResults: [UUID: RAGSearchResult] = [:]
 
-        for result in results {
+        for (index, result) in results.enumerated() {
             let chunkIdString = result.id.uuidString
 
             // Find which transcription owns this chunk
             guard let (transcriptionIdString, _) = mapping.first(where: { $0.value.contains(chunkIdString) }),
                   let transcriptionId = UUID(uuidString: transcriptionIdString) else {
+                searchLogger.logWarning("RAG raw[\(index + 1)] chunkId=\(chunkIdString) could not be mapped to a transcription")
                 continue
             }
 
+            searchLogger.logInfo(
+                "RAG map raw[\(index + 1)] chunkId=\(chunkIdString) -> transcriptionId=\(transcriptionIdString) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3))))"
+            )
+
             // Keep highest-scoring chunk per transcription
             if let existing = transcriptionResults[transcriptionId], existing.relevanceScore >= result.score {
+                searchLogger.logDebug(
+                    "RAG dedupe kept existing chunk for transcriptionId=\(transcriptionIdString) existingScore=\(Double(existing.relevanceScore).formatted(.number.precision(.fractionLength(3)))) newScore=\(Double(result.score).formatted(.number.precision(.fractionLength(3))))"
+                )
                 continue
             }
 
@@ -401,12 +471,20 @@ final class RAGIndexingService {
             )
         }
 
-        let sorted = transcriptionResults.values
+        let finalResults = Array(
+            transcriptionResults.values
             .sorted { $0.relevanceScore > $1.relevanceScore }
             .prefix(topK)
+        )
 
-        searchLogger.logInfo("Search '\(query.prefix(50))': \(sorted.count) transcriptions matched")
-        return Array(sorted)
+        for (index, result) in finalResults.enumerated() {
+            searchLogger.logInfo(
+                "RAG final[\(index + 1)] transcriptionId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
+            )
+        }
+
+        searchLogger.logInfo("Search '\(query.prefix(50))': \(finalResults.count) transcriptions matched")
+        return finalResults
     }
 
     // MARK: - Helpers
@@ -425,6 +503,31 @@ final class RAGIndexingService {
     private func stableHash(_ content: String) -> String {
         let digest = SHA256.hash(data: Data(content.utf8))
         return Data(digest).base64EncodedString()
+    }
+
+    nonisolated private static func preview(_ text: String, limit: Int = 180) -> String {
+        let flattened = text
+            .replacing("\n", with: " ")
+            .replacing("\t", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        guard flattened.count > limit else { return flattened }
+        return String(flattened.prefix(limit)) + "..."
+    }
+
+    nonisolated private static func noteTitle(from text: String, fallback: String) -> String {
+        let firstLine = text
+            .components(separatedBy: .newlines)
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let title = firstLine.map { String($0.prefix(60)) } ?? fallback
+        return title.isEmpty ? fallback : title
+    }
+
+    nonisolated private static func joinedIDs(from ids: [UUID], maxCount: Int = 3) -> String {
+        ids.prefix(maxCount).map(\.uuidString).joined(separator: ", ")
     }
 }
 

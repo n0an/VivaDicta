@@ -7,6 +7,7 @@
 
 import Foundation
 import FoundationModels
+import os
 
 /// Manages context assembly for RAG-powered Smart Search conversations.
 ///
@@ -14,6 +15,8 @@ import FoundationModels
 /// Smart Search retrieves relevant notes dynamically per message via vector search.
 /// Each user message gets its own set of retrieved note chunks as context.
 struct SmartSearchContextManager {
+    private static let logger = Logger(category: .smartSearchChat)
+    private static let previewCharacterLimit = 220
 
     // MARK: - System Prompt
 
@@ -51,8 +54,13 @@ struct SmartSearchContextManager {
         transcriptions: [Transcription]
     ) -> String {
         guard !searchResults.isEmpty else {
+            logger.logInfo("Smart Search prompt assembly skipped because retrieval returned 0 results")
             return query
         }
+
+        logger.logInfo(
+            "Smart Search prompt assembly started query='\(preview(query, limit: 80))' searchResults=\(searchResults.count) transcriptions=\(transcriptions.count)"
+        )
 
         let transcriptionMap = Dictionary(
             uniqueKeysWithValues: transcriptions.map { ($0.id, $0) }
@@ -75,16 +83,22 @@ struct SmartSearchContextManager {
                 transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
             )
 
+            logger.logInfo(
+                "Smart Search prompt note[\(index + 1)] noteId=\(result.transcriptionId.uuidString) title='\(title)' date='\(date)' excerpt='\(preview(excerpt))'"
+            )
+
             noteParts.append(
                 "<NOTE id=\"\(index + 1)\" title=\"\(title)\" date=\"\(date)\">\n\(excerpt)\n</NOTE>"
             )
         }
 
         if noteParts.isEmpty {
+            logger.logWarning("Smart Search prompt assembly produced 0 usable note blocks")
             return query
         }
 
         let context = noteParts.joined(separator: "\n\n")
+        logger.logInfo("Smart Search prompt assembly complete noteBlocks=\(noteParts.count) contextChars=\(context.count)")
         return """
         Here are relevant excerpts from the user's notes:
 
@@ -110,6 +124,17 @@ struct SmartSearchContextManager {
             .replacing("\"", with: "&quot;")
             .replacing("<", with: "&lt;")
             .replacing(">", with: "&gt;")
+    }
+
+    private static func preview(_ text: String, limit: Int = previewCharacterLimit) -> String {
+        let flattened = text
+            .replacing("\n", with: " ")
+            .replacing("\t", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        guard flattened.count > limit else { return flattened }
+        return String(flattened.prefix(limit)) + "..."
     }
 
     // MARK: - Context Fill Ratio

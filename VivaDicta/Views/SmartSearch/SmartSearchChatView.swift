@@ -8,6 +8,13 @@
 import SwiftUI
 import SwiftData
 
+private struct SmartSearchCitationDisplay: Identifiable {
+    let transcription: Transcription
+    let citation: SmartSearchSourceCitation?
+
+    var id: UUID { transcription.id }
+}
+
 /// Chat view for RAG-powered Smart Search conversations.
 ///
 /// Mirrors ``MultiNoteChatView`` structure but adds source citation pills
@@ -192,48 +199,84 @@ struct SmartSearchChatView: View {
 
     @ViewBuilder
     private func sourceCitationPills(for message: ChatMessage) -> some View {
-        let sourceIds = message.sourceTranscriptionIds
-        if !sourceIds.isEmpty {
-            let sources = resolveSourceTranscriptions(ids: sourceIds)
-            if !sources.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 6) {
-                        ForEach(sources) { transcription in
-                            Button {
-                                selectedTranscription = transcription
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "doc.text")
-                                    Text(sourceLabel(for: transcription))
-                                }
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color.secondary.opacity(0.1))
-                                .clipShape(.capsule)
+        let sources = resolveCitationDisplays(for: message)
+        if !sources.isEmpty {
+            ScrollView(.horizontal) {
+                HStack(spacing: 6) {
+                    ForEach(sources) { source in
+                        Button {
+                            selectedTranscription = source.transcription
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "doc.text")
+                                Text(sourceLabel(for: source))
                             }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.secondary.opacity(0.1))
+                            .clipShape(.capsule)
                         }
                     }
-                    .padding(.leading)
                 }
-                .scrollIndicators(.hidden)
+                .padding(.leading)
             }
+            .scrollIndicators(.hidden)
         }
     }
 
-    private func sourceLabel(for transcription: Transcription) -> String {
-        let date = transcription.timestamp.formatted(date: .abbreviated, time: .omitted)
-        let title = transcription.text
+    private func sourceLabel(for source: SmartSearchCitationDisplay) -> String {
+        let date = source.transcription.timestamp.formatted(date: .abbreviated, time: .omitted)
+
+        if let citation = source.citation {
+            return "\(date) - \(excerptPreview(citation.excerpt))"
+        }
+
+        let title = source.transcription.text
             .prefix(30)
             .components(separatedBy: .newlines)
             .first ?? "Note"
         return "\(date) - \(title)"
     }
 
+    private func excerptPreview(_ excerpt: String) -> String {
+        let flattened = excerpt
+            .replacing("\n", with: " ")
+            .replacing("\t", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        guard flattened.count > 44 else { return flattened }
+        return String(flattened.prefix(44)) + "..."
+    }
+
     private func resolveSourceTranscriptions(ids: [UUID]) -> [Transcription] {
         let idSet = Set(ids)
         return allTranscriptions.filter { idSet.contains($0.id) }
+    }
+
+    private func resolveCitationDisplays(for message: ChatMessage) -> [SmartSearchCitationDisplay] {
+        let citations = message.sourceCitations
+        if !citations.isEmpty {
+            let transcriptionMap = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+            return citations.compactMap { citation in
+                guard let transcription = transcriptionMap[citation.transcriptionId] else {
+                    return nil
+                }
+                return SmartSearchCitationDisplay(
+                    transcription: transcription,
+                    citation: citation
+                )
+            }
+        }
+
+        return resolveSourceTranscriptions(ids: message.sourceTranscriptionIds).map { transcription in
+            SmartSearchCitationDisplay(
+                transcription: transcription,
+                citation: nil
+            )
+        }
     }
 
     // MARK: - Streaming & Indicators

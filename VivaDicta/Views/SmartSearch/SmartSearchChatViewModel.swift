@@ -17,6 +17,8 @@ import os
 @Observable
 @MainActor
 final class SmartSearchChatViewModel {
+    private static let previewCharacterLimit = 220
+    private static let minimumLexicalScoreForCitation: Float = 0.45
     private let logger = Logger(category: .smartSearchChat)
 
     // MARK: - State
@@ -165,20 +167,37 @@ final class SmartSearchChatViewModel {
 
         streamingTask = Task {
             do {
+                logger.logInfo(
+                    "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
+                )
+
                 // RAG retrieval
                 isSearching = true
-                let topK = provider == .apple ? 3 : 5
-                let searchResults = try await RAGIndexingService.shared.search(query: text, topK: topK)
+                let requestedTopK = provider == .apple ? 3 : 5
+                let semanticResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
+                let searchResults = Array(semanticResults.prefix(requestedTopK))
+                logger.logInfo("Smart Search grounding disabled for model comparison; using raw semantic hits")
                 let transcriptions = resolveTranscriptions(for: searchResults)
                 isSearching = false
+
+                if searchResults.isEmpty {
+                    logger.logInfo("Smart Search retrieval returned no note context for query='\(Self.preview(text, limit: 80))'")
+                } else {
+                    logSearchResults(searchResults, transcriptions: transcriptions)
+                }
 
                 let augmentedPrompt = SmartSearchContextManager.assembleAugmentedPrompt(
                     query: text,
                     searchResults: searchResults,
                     transcriptions: transcriptions
                 )
+                logger.logInfo(
+                    "Smart Search augmented prompt chars=\(augmentedPrompt.count) preview='\(Self.preview(augmentedPrompt))'"
+                )
 
                 let sourceIds = uniqueSourceIDs(from: searchResults)
+                let sourceCitations = buildSourceCitations(from: searchResults)
+                logger.logInfo("Smart Search assigned source IDs: \(describeSourceIDs(sourceIds, transcriptions: transcriptions))")
 
                 let result: String
                 if provider == .apple {
@@ -186,6 +205,10 @@ final class SmartSearchChatViewModel {
                 } else {
                     result = try await sendCloudMessage(augmentedPrompt, provider: provider, model: model)
                 }
+
+                logger.logInfo(
+                    "Smart Search response chars=\(result.count) preview='\(Self.preview(result))'"
+                )
 
                 // Persist user message (stores original text, not augmented)
                 pendingUserMessage = nil
@@ -200,6 +223,7 @@ final class SmartSearchChatViewModel {
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
                 assistantMessage.sourceTranscriptionIds = sourceIds
+                assistantMessage.sourceCitations = sourceCitations
                 assistantMessage.smartSearchConversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -255,6 +279,16 @@ final class SmartSearchChatViewModel {
         }
 
         return ids
+    }
+
+    private func buildSourceCitations(from searchResults: [RAGSearchResult]) -> [SmartSearchSourceCitation] {
+        searchResults.map { result in
+            SmartSearchSourceCitation(
+                transcriptionId: result.transcriptionId,
+                excerpt: result.chunkText,
+                relevanceScore: result.relevanceScore
+            )
+        }
     }
 
     // MARK: - Cancel
@@ -426,6 +460,10 @@ final class SmartSearchChatViewModel {
             throw EnhancementError.notConfigured
         }
 
+        logger.logInfo(
+            "Smart Search Apple FM request chars=\(augmentedPrompt.count) preview='\(Self.preview(augmentedPrompt))'"
+        )
+
         #if DEBUG
         print("DEBUG APPLE FM [smart-search] PROMPT: \(augmentedPrompt.prefix(500))")
         print("DEBUG APPLE FM [smart-search] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
@@ -563,6 +601,11 @@ final class SmartSearchChatViewModel {
             model: model
         )
 
+        logger.logInfo(
+            "Smart Search cloud request provider=\(provider.rawValue) model=\(model) messages=\(apiMessages.count) systemChars=\(systemMessage.count) promptChars=\(augmentedPrompt.count)"
+        )
+        logger.logDebug("Smart Search cloud prompt preview='\(Self.preview(augmentedPrompt))'")
+
         return try await aiService.makeChatStreamingRequest(
             provider: provider,
             model: model,
@@ -595,8 +638,11 @@ final class SmartSearchChatViewModel {
             )
             if let transcription = try? modelContext.fetch(descriptor).first {
                 transcriptions.append(transcription)
+            } else {
+                logger.logWarning("Smart Search could not resolve transcription id=\(id.uuidString)")
             }
         }
+        logger.logInfo("Smart Search resolved \(transcriptions.count)/\(ids.count) transcriptions for current retrieval")
         return transcriptions
     }
 
@@ -689,4 +735,146 @@ final class SmartSearchChatViewModel {
             logger.logError("Smart Search - Failed to save context: \(error.localizedDescription)")
         }
     }
+
+    private func groundedSearchResults(
+        query: String,
+        searchResults: [RAGSearchResult],
+        limit: Int
+    ) -> [RAGSearchResult] {
+        guard !searchResults.isEmpty else { return [] }
+
+        let queryTerms = groundedQueryTerms(from: query)
+        guard !queryTerms.isEmpty else {
+            logger.logInfo(
+                "Smart Search grounding skipped all retrieval because query has no substantive terms: '\(Self.preview(query, limit: 80))'"
+            )
+            return []
+        }
+
+        let requiredMatches = min(max(1, queryTerms.count), 2)
+        logger.logInfo(
+            "Smart Search grounding queryTerms=\(queryTerms.sorted().joined(separator: ", ")) requiredMatches=\(requiredMatches)"
+        )
+
+        let grounded = searchResults.filter { result in
+            let excerptTerms = tokenSet(from: result.chunkText)
+            let overlap = queryTerms.intersection(excerptTerms)
+            let passesLexicalCheck = overlap.count >= requiredMatches
+            let passesLowBarSingleMatch = overlap.count == 1 && queryTerms.count == 1 && result.relevanceScore >= Self.minimumLexicalScoreForCitation
+
+            if passesLexicalCheck || passesLowBarSingleMatch {
+                logger.logInfo(
+                    "Smart Search grounding accepted noteId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) overlap=\(overlap.sorted().joined(separator: ", "))"
+                )
+                return true
+            }
+
+            logger.logInfo(
+                "Smart Search grounding rejected noteId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) overlap=\(overlap.sorted().joined(separator: ", "))"
+            )
+            return false
+        }
+
+        if grounded.isEmpty {
+            logger.logInfo("Smart Search grounding removed all semantic hits for query='\(Self.preview(query, limit: 80))'")
+            return []
+        }
+
+        if grounded.count < searchResults.count {
+            logger.logInfo("Smart Search grounding reduced hits from \(searchResults.count) to \(grounded.count)")
+        }
+
+        return Array(grounded.prefix(limit))
+    }
+
+    private func logSearchResults(_ searchResults: [RAGSearchResult], transcriptions: [Transcription]) {
+        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
+
+        logger.logInfo(
+            "Smart Search retrieval yielded \(searchResults.count) deduped hits across \(transcriptions.count) resolved notes"
+        )
+
+        for (index, result) in searchResults.enumerated() {
+            let title = transcriptionMap[result.transcriptionId]
+                .map { noteTitle(for: $0) } ?? "Missing note"
+            logger.logInfo(
+                "Smart Search hit[\(index + 1)] noteId=\(result.transcriptionId.uuidString) title='\(title)' score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
+            )
+        }
+    }
+
+    private func describeSourceIDs(_ sourceIds: [UUID], transcriptions: [Transcription]) -> String {
+        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
+        let summaries = sourceIds.map { id in
+            let title = transcriptionMap[id].map { noteTitle(for: $0) } ?? "Missing note"
+            return "\(id.uuidString):\(title)"
+        }
+        return summaries.isEmpty ? "none" : summaries.joined(separator: " | ")
+    }
+
+    private func noteTitle(for transcription: Transcription) -> String {
+        let firstLine = transcription.text
+            .components(separatedBy: .newlines)
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let title = firstLine.map { String($0.prefix(60)) } ?? "Untitled"
+        return title.isEmpty ? "Untitled" : title
+    }
+
+    private func groundedQueryTerms(from query: String) -> Set<String> {
+        tokenSet(from: query).subtracting(Self.stopWords)
+    }
+
+    private func tokenSet(from text: String) -> Set<String> {
+        let normalized = text
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .unicodeScalars
+            .map { CharacterSet.alphanumerics.contains($0) ? Character($0) : " " }
+
+        let rawTokens = String(normalized)
+            .split(separator: " ")
+            .map(String.init)
+            .filter { $0.count >= 2 }
+
+        var tokens: Set<String> = []
+        tokens.reserveCapacity(rawTokens.count * 2)
+
+        for token in rawTokens {
+            let lowered = token.lowercased()
+            tokens.insert(lowered)
+
+            if lowered.count > 4, lowered.hasSuffix("s"), !lowered.hasSuffix("ss") {
+                tokens.insert(String(lowered.dropLast()))
+            }
+        }
+
+        return tokens
+    }
+
+    private static func preview(_ text: String, limit: Int = previewCharacterLimit) -> String {
+        let flattened = text
+            .replacing("\n", with: " ")
+            .replacing("\t", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        guard flattened.count > limit else { return flattened }
+        return String(flattened.prefix(limit)) + "..."
+    }
+
+    private static let stopWords: Set<String> = [
+        "a", "about", "all", "am", "an", "and", "anything", "are", "as", "at",
+        "be", "but", "by", "can", "did", "do", "for", "from", "hello", "hey",
+        "how", "i", "if", "in", "is", "it", "its", "just", "maybe", "me",
+        "mention", "my", "no", "not", "of", "on", "or", "our", "please", "something",
+        "tell", "that", "the", "their", "there", "these", "they", "this", "to",
+        "us", "was", "we", "what", "when", "where", "which", "who", "why", "with",
+        "yes", "you",
+        "а", "без", "был", "бы", "в", "во", "вот", "все", "где", "да", "для",
+        "его", "ее", "если", "есть", "еще", "и", "из", "или", "их", "как", "ко",
+        "ли", "мне", "мы", "на", "не", "нет", "но", "ну", "о", "об", "он", "она",
+        "они", "оно", "от", "по", "под", "про", "с", "со", "так", "там", "то",
+        "тут", "ты", "у", "уже", "что", "это", "я"
+    ]
 }
