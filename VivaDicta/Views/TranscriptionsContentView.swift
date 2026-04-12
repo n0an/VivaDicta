@@ -50,120 +50,35 @@ struct TranscriptionsContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !allTranscriptions.isEmpty && (!availableSourceTags.isEmpty || !allTags.isEmpty) {
-                TagFilterBar(
-                    sourceTags: availableSourceTags,
-                    userTags: allTags,
-                    selectedSourceTags: $selectedSourceTags,
-                    selectedUserTagIds: $selectedUserTagIds
-                )
-//                .padding(.vertical, 8)
-            }
-
-            if !searchText.isEmpty {
-                Picker("Search Mode", selection: $searchMode) {
-                    Text("All")
-                        .tag(TranscriptionSearchMode.all)
-                    Label("Keyword", systemImage: "text.magnifyingglass")
-                        .tag(TranscriptionSearchMode.keyword)
-                    Label("Smart", systemImage: "sparkle.magnifyingglass")
-                        .tag(TranscriptionSearchMode.smart)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-            }
+            TranscriptionSearchControlsView(
+                hasTranscriptions: !allTranscriptions.isEmpty,
+                availableSourceTags: availableSourceTags,
+                allTags: allTags,
+                searchText: searchText,
+                selectedSourceTags: $selectedSourceTags,
+                selectedUserTagIds: $selectedUserTagIds,
+                searchMode: $searchMode
+            )
 
             if allTranscriptions.isEmpty {
                 emptyAllStateView
             } else if displayedTranscriptions.isEmpty {
                 emptyFilteredStateView
             } else {
-                ScrollViewReader { proxy in
-                    List {
-                        EmptyView()
-                            .id(topAnchorID)
-
-                        if isSelectionMode {
-                            ForEach(displayedTranscriptions) { transcription in
-                                SelectableTranscriptionRow(
-                                    transcription: transcription,
-                                    isSelected: selectedTranscriptionIDs.contains(transcription.id),
-                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
-                                    allTags: allTags,
-                                    semanticScore: currentSemanticScore(for: transcription.id)
-                                ) {
-                                    toggleSelection(for: transcription)
-                                }
-                            }
-                        } else {
-                            ForEach(displayedTranscriptions) { transcription in
-                                NavigationLink {
-                                    TranscriptionDetailView(transcription: transcription)
-                                } label: {
-                                    TranscriptionRowView(
-                                        transcription: transcription,
-                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
-                                        allTags: allTags,
-                                        semanticScore: currentSemanticScore(for: transcription.id)
-                                    )
-                                }
-                                .contextMenu {
-                                    Section("Share") {
-                                        if let latestVariation = transcription.variations?
-                                            .sorted(by: { $0.createdAt < $1.createdAt }).last {
-                                            ShareLink(item: latestVariation.text) {
-                                                Label {
-                                                    Text(PresetCatalog.displayName(for: latestVariation.presetId, fallback: latestVariation.presetDisplayName))
-                                                } icon: {
-                                                    PresetIconView(icon: PresetCatalog.icon(for: latestVariation.presetId))
-                                                }
-                                            }
-                                        }
-
-                                        ShareLink(item: transcription.text) {
-                                            Label("Original Text", systemImage: "text.alignleft")
-                                        }
-
-                                        if let audioURL = audioURL(for: transcription) {
-                                            ShareLink(
-                                                item: audioURL,
-                                                preview: SharePreview(
-                                                    "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
-                                                    image: Image(systemName: "waveform")
-                                                )
-                                            ) {
-                                                Label("Audio Recording", systemImage: "waveform")
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .onDelete(perform: deleteTranscription)
-                        }
-                    }
-                    .listStyle(.plain)
-                    .onScrollGeometryChange(for: Bool.self) { geo in
-                        let topPadding: CGFloat = 300
-                        return geo.contentOffset.y >= topPadding
-                    } action: { _, isBeyondThreshold in
-                        withAnimation {
-                            showGoToTopButton = isBeyondThreshold
-                        }
-                    }
-                    .overlay(alignment: .bottom) {
-                        if showGoToTopButton {
-                            
-                            ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
-                                withAnimation {
-                                    proxy.scrollTo(topAnchorID, anchor: .top)
-                                }
-                            }
-                            .padding(.bottom, 8)
-                            .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
-                        }
-                    }
-                }
+                TranscriptionsListView(
+                    displayedTranscriptions: displayedTranscriptions,
+                    isSelectionMode: isSelectionMode,
+                    selectedTranscriptionIDs: selectedTranscriptionIDs,
+                    newlyInsertedIDs: newlyInsertedIDs,
+                    allTags: allTags,
+                    topAnchorID: topAnchorID,
+                    colorScheme: colorScheme,
+                    showGoToTopButton: $showGoToTopButton,
+                    semanticScoreProvider: currentSemanticScore(for:),
+                    audioURLProvider: audioURL(for:),
+                    onToggleSelection: toggleSelection(for:),
+                    onDelete: deleteTranscription(at:)
+                )
             }
         }
         .onAppear {
@@ -410,6 +325,110 @@ struct TranscriptionsContentView: View {
 
 // MARK: - Selectable Row for Selection Mode
 
+private struct TranscriptionSearchControlsView: View {
+    let hasTranscriptions: Bool
+    let availableSourceTags: [String]
+    let allTags: [TranscriptionTag]
+    let searchText: String
+    @Binding var selectedSourceTags: Set<String>
+    @Binding var selectedUserTagIds: Set<UUID>
+    @Binding var searchMode: TranscriptionSearchMode
+
+    var body: some View {
+        if hasTranscriptions && (!availableSourceTags.isEmpty || !allTags.isEmpty) {
+            TagFilterBar(
+                sourceTags: availableSourceTags,
+                userTags: allTags,
+                selectedSourceTags: $selectedSourceTags,
+                selectedUserTagIds: $selectedUserTagIds
+            )
+        }
+
+        if !searchText.isEmpty {
+            Picker("Search Mode", selection: $searchMode) {
+                Text("All")
+                    .tag(TranscriptionSearchMode.all)
+                Label("Keyword", systemImage: "text.magnifyingglass")
+                    .tag(TranscriptionSearchMode.keyword)
+                Label("Smart", systemImage: "sparkle.magnifyingglass")
+                    .tag(TranscriptionSearchMode.smart)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+private struct TranscriptionsListView: View {
+    let displayedTranscriptions: [Transcription]
+    let isSelectionMode: Bool
+    let selectedTranscriptionIDs: Set<UUID>
+    let newlyInsertedIDs: Set<UUID>
+    let allTags: [TranscriptionTag]
+    let topAnchorID: String
+    let colorScheme: ColorScheme
+    @Binding var showGoToTopButton: Bool
+    let semanticScoreProvider: (UUID) -> Float?
+    let audioURLProvider: (Transcription) -> URL?
+    let onToggleSelection: (Transcription) -> Void
+    let onDelete: (IndexSet) -> Void
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            List {
+                EmptyView()
+                    .id(topAnchorID)
+
+                if isSelectionMode {
+                    ForEach(displayedTranscriptions) { transcription in
+                        SelectableTranscriptionRow(
+                            transcription: transcription,
+                            isSelected: selectedTranscriptionIDs.contains(transcription.id),
+                            isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                            allTags: allTags,
+                            semanticScore: semanticScoreProvider(transcription.id)
+                        ) {
+                            onToggleSelection(transcription)
+                        }
+                    }
+                } else {
+                    ForEach(displayedTranscriptions) { transcription in
+                        TranscriptionNavigationRow(
+                            transcription: transcription,
+                            isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                            allTags: allTags,
+                            semanticScore: semanticScoreProvider(transcription.id),
+                            audioURL: audioURLProvider(transcription)
+                        )
+                    }
+                    .onDelete(perform: onDelete)
+                }
+            }
+            .listStyle(.plain)
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                let topPadding: CGFloat = 300
+                return geo.contentOffset.y >= topPadding
+            } action: { _, isBeyondThreshold in
+                withAnimation {
+                    showGoToTopButton = isBeyondThreshold
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showGoToTopButton {
+                    ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
+                        withAnimation {
+                            proxy.scrollTo(topAnchorID, anchor: .top)
+                        }
+                    }
+                    .padding(.bottom, 8)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
+                }
+            }
+        }
+    }
+}
+
 private struct SelectableTranscriptionRow: View {
     let transcription: Transcription
     let isSelected: Bool
@@ -452,6 +471,62 @@ private struct SelectableTranscriptionRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct TranscriptionNavigationRow: View {
+    let transcription: Transcription
+    let isNewlyInserted: Bool
+    let allTags: [TranscriptionTag]
+    let semanticScore: Float?
+    let audioURL: URL?
+
+    var body: some View {
+        NavigationLink {
+            TranscriptionDetailView(transcription: transcription)
+        } label: {
+            TranscriptionRowView(
+                transcription: transcription,
+                isNewlyInserted: isNewlyInserted,
+                allTags: allTags,
+                semanticScore: semanticScore
+            )
+        }
+        .contextMenu {
+            Section("Share") {
+                if let latestVariation = transcription.variations?
+                    .sorted(by: { $0.createdAt < $1.createdAt }).last {
+                    let presetTitle = PresetCatalog.displayName(
+                        for: latestVariation.presetId,
+                        fallback: latestVariation.presetDisplayName
+                    )
+
+                    ShareLink(item: latestVariation.text) {
+                        Label {
+                            Text(presetTitle)
+                        } icon: {
+                            PresetIconView(icon: PresetCatalog.icon(for: latestVariation.presetId))
+                        }
+                    }
+                }
+
+                ShareLink(item: transcription.text) {
+                    Label("Original Text", systemImage: "text.alignleft")
+                }
+
+                if let audioURL {
+                    ShareLink(
+                        item: audioURL,
+                        preview: SharePreview(
+                            "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
+                            image: Image(systemName: "waveform")
+                        )
+                    ) {
+                        Label("Audio Recording", systemImage: "waveform")
+                    }
+                }
+            }
+        }
     }
 }
 
