@@ -10,6 +10,7 @@ import SwiftData
 import SwiftUI
 
 private enum TranscriptionSearchMode: String {
+    case all
     case keyword
     case smart
 }
@@ -32,7 +33,7 @@ struct TranscriptionsContentView: View {
     @State private var showGoToTopButton = false
     @State private var selectedSourceTags: Set<String> = []
     @State private var selectedUserTagIds: Set<UUID> = []
-    @State private var searchMode: TranscriptionSearchMode = .keyword
+    @State private var searchMode: TranscriptionSearchMode = .all
 
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
@@ -60,6 +61,8 @@ struct TranscriptionsContentView: View {
 
             if !searchText.isEmpty {
                 Picker("Search Mode", selection: $searchMode) {
+                    Text("All")
+                        .tag(TranscriptionSearchMode.all)
                     Label("Keyword", systemImage: "text.magnifyingglass")
                         .tag(TranscriptionSearchMode.keyword)
                     Label("Smart", systemImage: "sparkle.magnifyingglass")
@@ -267,7 +270,7 @@ struct TranscriptionsContentView: View {
                 }
 
                 switch searchMode {
-                case .keyword:
+                case .all, .keyword:
                     // Step 1: Search transcription text + enhancedText
                     var descriptor = FetchDescriptor<Transcription>(
                         sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
