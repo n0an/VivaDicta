@@ -4,7 +4,7 @@
 
 | Document | Description |
 |----------|-------------|
-| [Smart Search RAG](Smart-Search-RAG-Architecture.md) | Chunk-based local retrieval for Smart Search, grounding filter, prompt injection, citations, current embedder setup |
+| [Smart Search RAG](Smart-Search-RAG-Architecture.md) | Chunk-based local retrieval for Smart Search, prompt injection, citations, retrieval behavior, current embedder setup |
 | [Recording & Audio Pipeline](Recording-Audio-Pipeline-Architecture.md) | AVAudioRecorder setup, audio session management, file handling |
 | [Transcription System](Transcription-System-Architecture.md) | On-device (WhisperKit/Parakeet) and cloud transcription routing |
 | [AI Processing](AI-Processing-Architecture.md) | Multi-provider AI text processing, prompt building, mode/preset routing |

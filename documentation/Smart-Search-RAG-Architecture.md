@@ -8,8 +8,8 @@ Unlike single-note chat and multi-note chat, Smart Search does not start with a 
 
 1. Semantically searches the local note index.
 2. Maps chunk hits back to source notes.
-3. Uses a deterministic no-evidence response only when retrieval returns no note hits for a substantive query.
-4. Injects the retrieved chunk excerpts into the prompt when evidence exists.
+3. Injects the retrieved chunk excerpts into the prompt when evidence exists.
+4. Falls back to sending the raw user question when retrieval returns no note hits.
 5. Persists note-level and excerpt-level citations on the assistant message.
 
 The current setup is:
@@ -19,7 +19,8 @@ The current setup is:
 - Embeddings via `SwiftEmbedder`
 - Current embedding model: `minishlab/potion-base-32M`
 - Current chunking: semantic, `chunkSize = 500`, `overlap = 15%`
-- Current retrieval: always search, then inject the ranked chunk hits
+- Current retrieval: always search, then inject the ranked chunk hits when available
+- Current empty-retrieval behavior: send the raw question to the model
 - Current prompt injection: chunk excerpts, not full notes
 
 Smart Search intentionally does not use a pre-retrieval router. The local corpus is small enough that always searching is acceptable, and the reliability work happens after retrieval, not before it.
@@ -39,7 +40,7 @@ This leads to several deliberate design choices:
 - Retrieve chunks, not entire notes
 - Inject chunk excerpts into the LLM prompt
 - Keep note-level references in the UI
-- Use a deterministic no-evidence response only when retrieval returns no note hits
+- Keep the retrieval path simple and always-on
 
 ## High-Level Architecture
 
@@ -62,7 +63,7 @@ This leads to several deliberate design choices:
 │  sendMessage()                                                             │
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
 │  │ 1. semantic search via RAGIndexingService                           │  │
-│  │ 2. optional deterministic no-evidence fallback when retrieval empty │  │
+│  │ 2. pass raw user query through when retrieval is empty              │  │
 │  │ 3. resolve source Transcription models                              │  │
 │  │ 4. assemble augmented prompt with chunk excerpts                    │  │
 │  │ 5. send to provider via AIService / Apple FM                        │  │
@@ -115,7 +116,7 @@ File: [VivaDicta/Views/SmartSearch/SmartSearchChatViewModel.swift](/Users/antonn
 Responsibilities:
 
 - execute retrieval for each user message
-- apply deterministic no-evidence fallback only when retrieval returns no note hits
+- pass the raw user message through when retrieval returns no note hits
 - resolve note models for retrieved hits
 - assemble source citations
 - build the augmented prompt
@@ -164,7 +165,7 @@ Current vector DB configuration:
 
 - vector store name: derived from `indexVersion`
 - current namespace: `v14_potion_base_32m`
-- search threshold: `0.3`
+- search threshold: `0.4`
 - default results: `5`
 
 Current chunking configuration:
@@ -292,7 +293,7 @@ Smart Search currently performs retrieval for every message and uses the ranked 
         no note hits                      note hits exist
              │                                    │
              ▼                                    ▼
-  deterministic no-evidence response    prompt includes <NOTE> excerpts
+      raw query sent to model           prompt includes <NOTE> excerpts
                                                   │
                                                   ▼
                                          provider generates answer
@@ -305,25 +306,25 @@ Smart Search currently performs retrieval for every message and uses the ranked 
 
 `RAGIndexingService.search(...)` currently does the following:
 
-- uses threshold `0.3`
+- uses threshold `0.4`
 - over-fetches `topK * 2` chunk hits
 - maps raw chunk hits back to notes using persisted chunk mapping
-- computes shared lexical query terms using `SmartSearchLexicalSupport`
-- ranks chunks inside each note by lexical overlap first, then semantic score
+- optionally computes shared lexical query terms using `SmartSearchLexicalSupport`
 - deduplicates by note, keeping the best-ranked chunk per note
-- sorts final note results by lexical overlap first, then semantic score
+- with lexical reranking disabled, keeps the best note chunk by returned semantic score only
+- with lexical reranking enabled, prefers lexical overlap first, then semantic score
 
 This means Smart Search is currently a:
 
 - chunk-level retrieval system
-- note-level hybrid reranking system
+- note-level deduplication system
 - excerpt-level prompt injection system
 
 ## Chunk Injection
 
 Today Smart Search injects:
 
-- only the matched chunk excerpt for each grounded hit
+- only the matched chunk excerpt for each retrieved hit
 
 It does **not** inject:
 
@@ -353,17 +354,21 @@ Current limitation:
 
 ## Deterministic Safeguards
 
-Smart Search contains one deterministic shortcut that bypasses normal model generation in a narrow case.
+Smart Search contains one deterministic shortcut in code, but it is currently inactive in normal use.
 
 ### 1. No-evidence response
 
-If:
+The code path returns a fixed response only if:
 
 - the query is not empty after trimming
 - retrieval ran
 - retrieval returned no note hits
+- `groundedQueryTerms(from:)` returned at least one substantive term
 
-then Smart Search returns a fixed response instead of sending the raw query to the model.
+That last condition currently depends on `SmartSearchLexicalSupport.queryTerms(from:)`.
+Because lexical reranking is disabled right now, `queryTerms(from:)` returns an empty set, so the no-evidence shortcut does not currently fire.
+
+In today's behavior, an empty retrieval falls through to normal model generation with the raw user question.
 
 Examples:
 
@@ -377,7 +382,7 @@ Purpose:
 
 ## Shared Lexical Normalization
 
-`SmartSearchLexicalSupport` provides the optional shared lexical normalization used by the app-side reranker.
+`SmartSearchLexicalSupport` provides the optional shared lexical normalization used by the app-side reranker and by the current no-evidence gate.
 
 ### What it does
 
@@ -395,9 +400,13 @@ Purpose:
 
 This behavior is behind a shared code-level flag:
 
-- `SmartSearchLexicalSupport.isStopWordFilteringEnabled`
+- `SmartSearchLexicalSupport.isLexicalRerankingEnabled`
 
-When the flag is `false`, Smart Search uses Vectura's native hybrid ranking only.
+When the flag is `false`, Smart Search:
+
+- uses Vectura's returned score without app-side lexical overlap preferences
+- returns no lexical query terms from `queryTerms(from:)`
+- therefore leaves the current no-evidence shortcut inactive
 
 ## Why Smart Search Does Not Use a Router
 
@@ -407,7 +416,7 @@ The strategy is:
 
 - always retrieve
 - use the ranked RAG hits directly
-- use a deterministic shortcut only when retrieval returns no note hits
+- send the raw query through when retrieval returns no note hits
 
 ## Citation and Source UX
 
@@ -463,15 +472,16 @@ Those experiments informed the current choice. The current implementation uses t
 - excerpt injection instead of full-note stuffing
 - deterministic incremental indexing
 - note-aware citations with excerpt previews
-- shared lexical reranking improves note and chunk ordering
+- simple always-retrieve flow with minimal app-side heuristics
 
 ## Current Limitations
 
 - retrieval still always runs for every user message
-- search threshold is still relatively permissive at `0.3`
+- search threshold is currently `0.4`
 - deduplication keeps only one best chunk per note
 - there is no local context window around the matched chunk
 - the optional app-side lexical reranker is currently disabled, so all ranking relies on Vectura's native hybrid search
+- the current no-evidence shortcut is effectively disabled because substantive-term detection depends on the disabled lexical layer
 
 ## Likely Next Improvements
 
@@ -485,7 +495,10 @@ The most likely next improvements are in retrieval logic, not embedder swaps:
    - previous / current / next chunk
    - only if chunk-only context proves too narrow
 
-3. Tune citation suppression further
+3. Decouple no-evidence fallback from lexical reranking
+   - allow a deterministic "not found in notes" response without re-enabling app-side lexical overlap logic
+
+4. Tune citation suppression further
    - avoid showing weak evidence when the final answer is effectively "not found"
 
 4. Add a repeatable evaluation set
