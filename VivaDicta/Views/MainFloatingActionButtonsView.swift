@@ -33,13 +33,13 @@ struct MainFloatingActionButtonsView: View {
     }
 
     private var recordButton: some View {
-        Button("Record", systemImage: "microphone.circle") {
+        Button("Record", systemImage: "microphone.fill") {
             onStartRecording()
         }
         .labelStyle(.iconOnly)
-        .font(.system(size: 60))
+        .font(.system(size: 40))
         .foregroundStyle(.white)
-        .padding(12)
+        .padding(22)
         .background(recordButtonBackground)
         .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
     }
