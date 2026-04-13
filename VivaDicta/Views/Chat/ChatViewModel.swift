@@ -434,8 +434,13 @@ final class ChatViewModel {
 
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
-        guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
-        return [ExaWebSearchTool(apiKey: key)]
+        var tools: [any Tool] = [
+            NotesSearchTool(excludedTranscriptionIDs: [transcription.id])
+        ]
+        if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
+            tools.append(ExaWebSearchTool(apiKey: key))
+        }
+        return tools
     }
 
     private func initializeAppleFMSession() {
