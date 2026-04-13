@@ -724,6 +724,11 @@ private struct TranscriptionNavigationRow: View {
     var body: some View {
         NavigationLink {
             TranscriptionDetailView(transcription: transcription)
+                .onAppear {
+                    if semanticScore != nil {
+                        RateAppManager.requestReviewIfAppropriate()
+                    }
+                }
         } label: {
             TranscriptionRowView(
                 transcription: transcription,

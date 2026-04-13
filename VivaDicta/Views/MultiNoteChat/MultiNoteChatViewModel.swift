@@ -19,6 +19,7 @@ import os
 @MainActor
 final class MultiNoteChatViewModel {
     private let logger = Logger(category: .multiNoteChat)
+    private let reviewReplyThreshold = 2
 
     // MARK: - State
 
@@ -113,6 +114,8 @@ final class MultiNoteChatViewModel {
     private var streamingTask: Task<Void, Never>?
     /// User message not yet persisted to SwiftData. Re-appended after loadMessages() during send flow.
     private var pendingUserMessage: ChatMessage?
+    private var successfulReplyCount = 0
+    private var hasRequestedReviewForSession = false
 
     var assembledNoteText: String {
         conversation.noteContext
@@ -219,6 +222,9 @@ final class MultiNoteChatViewModel {
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
 
+                successfulReplyCount += 1
+                requestReviewIfNeededForSession()
+
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
@@ -271,6 +277,8 @@ final class MultiNoteChatViewModel {
             modelContext.delete(message)
         }
         messages.removeAll()
+        successfulReplyCount = 0
+        hasRequestedReviewForSession = false
 
         conversation.appleFMTranscriptData = nil
         trySave()
@@ -280,6 +288,12 @@ final class MultiNoteChatViewModel {
         }
 
         updateContextFillRatio()
+    }
+
+    private func requestReviewIfNeededForSession() {
+        guard !hasRequestedReviewForSession, successfulReplyCount >= reviewReplyThreshold else { return }
+        hasRequestedReviewForSession = true
+        RateAppManager.requestReviewIfAppropriate()
     }
 
     // MARK: - Compact Chat
