@@ -13,8 +13,7 @@ struct SmartSearchSettingsView: View {
     @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
 
     @State private var isReindexing = false
-
-    private var service: RAGIndexingService { RAGIndexingService.shared }
+    @State private var service = RAGIndexingService.shared
 
     var body: some View {
         Form {

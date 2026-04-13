@@ -290,6 +290,15 @@ struct TranscriptionsContentView: View {
                     return
                 }
 
+                guard searchMode != .keyword else {
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = []
+                        semanticScoresByID = [:]
+                    }
+                    return
+                }
+
                 let smartMatches = await semanticSearchMatches(for: searchTerm)
 
                 switch searchMode {
@@ -301,14 +310,6 @@ struct TranscriptionsContentView: View {
                             uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
                         )
                     }
-
-                case .keyword:
-                    await MainActor.run {
-                        filteredTranscriptions = keywordResults
-                        smartSearchMatches = []
-                        semanticScoresByID = [:]
-                    }
-
                 case .smart:
                     let orderedResults = smartMatches.compactMap { match in
                         allTranscriptions.first(where: { $0.id == match.transcriptionId })
@@ -320,6 +321,8 @@ struct TranscriptionsContentView: View {
                             uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
                         )
                     }
+                case .keyword:
+                    break
                 }
             } catch {
                 logger.logError("Search was cancelled or failed: \(error.localizedDescription)")

@@ -7,6 +7,7 @@
 
 import CryptoKit
 import Foundation
+import Observation
 import SwiftData
 import os
 @preconcurrency import LumoKit
@@ -32,6 +33,7 @@ private struct RankedChunkCandidate {
 /// Indexes transcription notes into a local vector database using LumoKit/VecturaKit.
 /// Supports bulk indexing on first launch, incremental updates on note changes,
 /// and semantic search for the Smart Search chat feature.
+@Observable
 @MainActor
 final class RAGIndexingService {
     static let shared = RAGIndexingService()
@@ -40,7 +42,9 @@ final class RAGIndexingService {
     nonisolated(unsafe) private static let indexVersion = "v14_potion_base_32m"
     nonisolated(unsafe) private static let vectorStoreName = "vivadicta-rag-\(indexVersion)"
 
+    @ObservationIgnored
     private let logger = Logger(category: .ragIndexing)
+    @ObservationIgnored
     private let searchLogger = Logger(category: .ragSearch)
 
     // MARK: - UserDefaults Keys
@@ -51,7 +55,9 @@ final class RAGIndexingService {
 
     // MARK: - LumoKit Instance
 
+    @ObservationIgnored
     nonisolated(unsafe) private var lumoKit: LumoKit?
+    @ObservationIgnored
     private var initializationTask: Task<Void, Error>?
 
     /// Whether the initial bulk indexing is currently running.
@@ -60,7 +66,9 @@ final class RAGIndexingService {
     /// Number of transcriptions that have been indexed.
     private(set) var indexedTranscriptionCount = 0
 
+    @ObservationIgnored
     private var latestMutationTokenByTranscriptionID: [String: Int] = [:]
+    @ObservationIgnored
     private var nextMutationToken = 0
 
     // MARK: - Chunk Mapping

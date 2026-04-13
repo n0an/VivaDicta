@@ -21,6 +21,7 @@ private struct SmartSearchCitationDisplay: Identifiable {
 /// below assistant messages and shows indexing status instead of note count.
 struct SmartSearchChatView: View {
     @State var viewModel: SmartSearchChatViewModel
+    @State private var ragService = RAGIndexingService.shared
 
     @State private var showClearConfirmation = false
     @State private var selectedTranscription: Transcription?
@@ -372,11 +373,10 @@ struct SmartSearchChatView: View {
     }
 
     private var indexingStatusPill: some View {
-        let service = RAGIndexingService.shared
-        let count = service.indexedTranscriptionCount
+        let count = ragService.indexedTranscriptionCount
 
         return HStack(spacing: 4) {
-            if service.isIndexing {
+            if ragService.isIndexing {
                 ProgressView()
                     .controlSize(.mini)
                 Text("Indexing...")
