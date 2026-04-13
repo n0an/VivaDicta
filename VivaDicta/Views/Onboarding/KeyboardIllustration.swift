@@ -45,4 +45,3 @@ struct KeyboardIllustration: View {
             }
     }
 }
-

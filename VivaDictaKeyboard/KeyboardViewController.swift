@@ -234,25 +234,10 @@ struct VivaDictaKeyboardToolbarView: View {
             Spacer()
 
             // Always show MicButton - it handles notReady state by opening main app
-            if #available(iOS 26.0, *) {
-                MicButton(
-                    fontSize: 34,
-                    padding: 6,
-                    backgroundColor: .orange.opacity(0.5),
-                    borderWidth: 0,
-                    onTapAction: handleMic)
-                    .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
-            } else {
-                MicButton(
-                    fontSize: 36,
-                    padding: 0,
-                    backgroundColor: .orange,
-                    borderWidth: 0.5,
-                    onTapAction: handleMic)
-            }
+            KeyboardMicButton(onTapAction: handleMic)
         }
         .padding(.horizontal, 16)
-        .padding(.top, 16)
+        .padding(.top, 6)
         .padding(.bottom, 8)
     }
 
@@ -320,4 +305,138 @@ struct VivaDictaKeyboardToolbarView: View {
             return Color.orange.opacity(0.15)
         }
     }
+}
+
+private struct KeyboardMicButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let onTapAction: () -> Void
+
+    var body: some View {
+        Button {
+            onTapAction()
+        } label: {
+            icon
+                .padding(16)
+                .background(background)
+        }
+        .accessibilityLabel("Record")
+    }
+
+    private var icon: some View {
+        
+        Image(systemName: "microphone.fill")
+            .font(.system(size: 26))
+            .foregroundStyle(.white)
+        
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if #available(iOS 26, *) {
+            styledBackground
+                .glassEffect(.clear.interactive(), in: .circle)
+        } else {
+            styledBackground
+        }
+    }
+
+    @ViewBuilder
+    private var styledBackground: some View {
+        if colorScheme == .dark {
+            KeyboardAnimatedMeshGradient()
+                .mask(
+                    Circle()
+                        .stroke(lineWidth: 12)
+                        .blur(radius: 5)
+                )
+                .blendMode(.lighten)
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 1.5)
+                        .fill(Color.white)
+                        .blur(radius: 1)
+                        .blendMode(.overlay)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 0.4)
+                        .fill(Color.white)
+                        .blur(radius: 0.3)
+                        .blendMode(.overlay)
+                )
+                .background(.black)
+                .clipShape(.circle)
+        } else {
+            KeyboardAnimatedMeshGradient2()
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 3)
+                        .fill(Color.black.opacity(0.7))
+                        .blur(radius: 2)
+                        .blendMode(.overlay)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 1)
+                        .fill(Color.black.opacity(1.0))
+                        .blur(radius: 1)
+                        .blendMode(.overlay)
+                )
+                .clipShape(.circle)
+                .shadow(color: .black.opacity(0.45), radius: 8, x: 0, y: 4)
+        }
+    }
+}
+
+private struct KeyboardAnimatedMeshGradient: View {
+    @State private var startDate = Date.now
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = Float(timeline.date.timeIntervalSince(startDate)) * 10
+            MeshGradient(width: 3, height: 3, points: [
+                .init(0, 0), .init(0.5, 0), .init(1, 0),
+                [keyboardSinInRange(-0.8...(-0.2), offset: 0.439, timeScale: 0.342, t: t), keyboardSinInRange(0.3...0.7, offset: 3.42, timeScale: 0.984, t: t)],
+                [keyboardSinInRange(0.1...0.8, offset: 0.239, timeScale: 0.084, t: t), keyboardSinInRange(0.2...0.8, offset: 5.21, timeScale: 0.242, t: t)],
+                [keyboardSinInRange(1.0...1.5, offset: 0.939, timeScale: 0.084, t: t), keyboardSinInRange(0.4...0.8, offset: 0.25, timeScale: 0.642, t: t)],
+                [keyboardSinInRange(-0.8...0.0, offset: 1.439, timeScale: 0.442, t: t), keyboardSinInRange(1.4...1.9, offset: 3.42, timeScale: 0.984, t: t)],
+                [keyboardSinInRange(0.3...0.6, offset: 0.339, timeScale: 0.784, t: t), keyboardSinInRange(1.0...1.2, offset: 1.22, timeScale: 0.772, t: t)],
+                [keyboardSinInRange(1.0...1.5, offset: 0.939, timeScale: 0.056, t: t), keyboardSinInRange(1.3...1.7, offset: 0.47, timeScale: 0.342, t: t)]
+            ], colors: [
+                .red, .purple, .indigo,
+                .orange, .white, .blue,
+                .yellow, .black, .mint
+            ])
+        }
+    }
+}
+
+private struct KeyboardAnimatedMeshGradient2: View {
+    @State private var startDate = Date.now
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = Float(timeline.date.timeIntervalSince(startDate)) * 10
+            MeshGradient(width: 3, height: 3, points: [
+                .init(0, 0), .init(0.5, 0), .init(1, 0),
+                [keyboardSinInRange(-0.8...(-0.2), offset: 0.439, timeScale: 0.342, t: t), keyboardSinInRange(0.3...0.7, offset: 3.42, timeScale: 0.984, t: t)],
+                [keyboardSinInRange(0.1...0.8, offset: 0.239, timeScale: 0.084, t: t), keyboardSinInRange(0.2...0.8, offset: 5.21, timeScale: 0.242, t: t)],
+                [keyboardSinInRange(1.0...1.5, offset: 0.939, timeScale: 0.084, t: t), keyboardSinInRange(0.4...0.8, offset: 0.25, timeScale: 0.642, t: t)],
+                [keyboardSinInRange(-0.8...0.0, offset: 1.439, timeScale: 0.442, t: t), keyboardSinInRange(1.4...1.9, offset: 3.42, timeScale: 0.984, t: t)],
+                [keyboardSinInRange(0.3...0.6, offset: 0.339, timeScale: 0.784, t: t), keyboardSinInRange(1.0...1.2, offset: 1.22, timeScale: 0.772, t: t)],
+                [keyboardSinInRange(1.0...1.5, offset: 0.939, timeScale: 0.056, t: t), keyboardSinInRange(1.3...1.7, offset: 0.47, timeScale: 0.342, t: t)]
+            ], colors: [
+                .blue, .red, .orange,
+                .orange, .indigo, .red,
+                .cyan, .purple, .mint
+            ])
+        }
+    }
+}
+
+private func keyboardSinInRange(_ range: ClosedRange<Float>, offset: Float, timeScale: Float, t: Float) -> Float {
+    let amplitude = (range.upperBound - range.lowerBound) / 2
+    let midPoint = (range.upperBound + range.lowerBound) / 2
+    return midPoint + amplitude * sin(timeScale * t + offset)
 }
