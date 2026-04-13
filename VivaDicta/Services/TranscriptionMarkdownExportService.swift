@@ -8,45 +8,96 @@
 import Foundation
 
 enum TranscriptionMarkdownExportService {
-    static func item(for transcription: Transcription) -> MarkdownExportItem {
-        markdownItem(for: transcription, filename: markdownFilename(for: transcription))
+    struct Snapshot: Sendable {
+        let timestamp: Date
+        let text: String
+        let transcriptionModelName: String?
+        let powerModeDisplay: String
+        let durationText: String?
+        let sourceTag: String?
+        let variations: [VariationSnapshot]
     }
 
-    static func items(for transcriptions: [Transcription]) -> [MarkdownExportItem] {
+    struct VariationSnapshot: Sendable {
+        let title: String
+        let sortKey: String
+        let text: String
+        let createdAt: Date
+    }
+
+    @MainActor static func item(for transcription: Transcription) -> MarkdownExportItem {
+        item(forSnapshot: snapshot(for: transcription))
+    }
+
+    @MainActor static func items(for transcriptions: [Transcription]) -> [MarkdownExportItem] {
+        items(forSnapshots: snapshots(for: transcriptions))
+    }
+
+    @MainActor static func snapshots(for transcriptions: [Transcription]) -> [Snapshot] {
+        transcriptions.map(snapshot(for:))
+    }
+
+    nonisolated static func item(forSnapshot snapshot: Snapshot) -> MarkdownExportItem {
+        markdownItem(for: snapshot, filename: markdownFilename(for: snapshot))
+    }
+
+    nonisolated static func items(forSnapshots snapshots: [Snapshot]) -> [MarkdownExportItem] {
         var seenFilenames: [String: Int] = [:]
 
-        return transcriptions
+        return snapshots
             .sorted { $0.timestamp > $1.timestamp }
-            .map { transcription in
+            .map { snapshot in
                 let filename = uniquedFilename(
-                    markdownFilename(for: transcription),
+                    markdownFilename(for: snapshot),
                     seenFilenames: &seenFilenames
                 )
-                return markdownItem(for: transcription, filename: filename)
+                return markdownItem(for: snapshot, filename: filename)
             }
     }
 
-    private static let exportTimestampFormat = Date.FormatStyle()
+    nonisolated private static let exportTimestampFormat = Date.FormatStyle()
         .year()
         .month(.abbreviated)
         .day()
         .hour()
         .minute()
 
-    private static func markdownItem(for transcription: Transcription, filename: String) -> MarkdownExportItem {
-        MarkdownExportItem(
-            filename: filename,
-            text: generateMarkdown(for: transcription)
+    @MainActor private static func snapshot(for transcription: Transcription) -> Snapshot {
+        Snapshot(
+            timestamp: transcription.timestamp,
+            text: transcription.text,
+            transcriptionModelName: transcription.transcriptionModelName,
+            powerModeDisplay: powerModeDisplay(name: transcription.powerModeName, emoji: transcription.powerModeEmoji),
+            durationText: transcription.audioDuration > 0 ? transcription.getDurationFormatted(transcription.audioDuration) : nil,
+            sourceTag: transcription.sourceTag,
+            variations: (transcription.variations ?? []).map {
+                VariationSnapshot(
+                    title: PresetCatalog.displayName(
+                        for: $0.presetId,
+                        fallback: $0.presetDisplayName
+                    ),
+                    sortKey: $0.presetDisplayName,
+                    text: $0.text,
+                    createdAt: $0.createdAt
+                )
+            }
         )
     }
 
-    private static func generateMarkdown(for transcription: Transcription) -> String {
+    nonisolated private static func markdownItem(for snapshot: Snapshot, filename: String) -> MarkdownExportItem {
+        MarkdownExportItem(
+            filename: filename,
+            text: generateMarkdown(for: snapshot)
+        )
+    }
+
+    nonisolated private static func generateMarkdown(for snapshot: Snapshot) -> String {
         var lines: [String] = [
-            "# Transcription - \(transcription.timestamp.formatted(exportTimestampFormat))",
+            "# Transcription - \(snapshot.timestamp.formatted(exportTimestampFormat))",
             ""
         ]
 
-        let metadata = metadataLines(for: transcription)
+        let metadata = metadataLines(for: snapshot)
         if !metadata.isEmpty {
             lines.append(contentsOf: metadata)
             lines.append("")
@@ -54,15 +105,11 @@ enum TranscriptionMarkdownExportService {
 
         lines.append("## Original")
         lines.append("")
-        lines.append(transcription.text.trimmingCharacters(in: .whitespacesAndNewlines))
+        lines.append(snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines))
         lines.append("")
 
-        for variation in sortedVariations(for: transcription) {
-            let title = PresetCatalog.displayName(
-                for: variation.presetId,
-                fallback: variation.presetDisplayName
-            )
-            lines.append("## \(title)")
+        for variation in sortedVariations(for: snapshot) {
+            lines.append("## \(variation.title)")
             lines.append("")
             lines.append(variation.text.trimmingCharacters(in: .whitespacesAndNewlines))
             lines.append("")
@@ -71,10 +118,10 @@ enum TranscriptionMarkdownExportService {
         return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
     }
 
-    private static func markdownFilename(for transcription: Transcription) -> String {
+    nonisolated private static func markdownFilename(for snapshot: Snapshot) -> String {
         let components = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute, .second],
-            from: transcription.timestamp
+            from: snapshot.timestamp
         )
 
         let year = components.year ?? 0
@@ -87,7 +134,7 @@ enum TranscriptionMarkdownExportService {
         return "VivaDicta-\(year)-\(twoDigit(month))-\(twoDigit(day))_\(twoDigit(hour))\(twoDigit(minute))\(twoDigit(second)).md"
     }
 
-    private static func uniquedFilename(_ filename: String, seenFilenames: inout [String: Int]) -> String {
+    nonisolated private static func uniquedFilename(_ filename: String, seenFilenames: inout [String: Int]) -> String {
         let duplicateCount = seenFilenames[filename, default: 0]
         seenFilenames[filename] = duplicateCount + 1
 
@@ -95,7 +142,7 @@ enum TranscriptionMarkdownExportService {
         return filenameByAppendingDuplicateIndex(duplicateCount + 1, to: filename)
     }
 
-    private static func filenameByAppendingDuplicateIndex(_ duplicateIndex: Int, to filename: String) -> String {
+    nonisolated private static func filenameByAppendingDuplicateIndex(_ duplicateIndex: Int, to filename: String) -> String {
         guard let extensionStartIndex = filename.lastIndex(of: ".") else {
             return "\(filename)-\(duplicateIndex)"
         }
@@ -105,20 +152,19 @@ enum TranscriptionMarkdownExportService {
         return "\(basename)-\(duplicateIndex)\(extensionSuffix)"
     }
 
-    private static func metadataLines(for transcription: Transcription) -> [String] {
+    nonisolated private static func metadataLines(for transcription: Snapshot) -> [String] {
         var metadata: [String] = []
 
         if let model = transcription.transcriptionModelName, !model.isEmpty {
             metadata.append("- **Transcription Model:** \(model)")
         }
 
-        let mode = powerModeDisplay(name: transcription.powerModeName, emoji: transcription.powerModeEmoji)
-        if !mode.isEmpty {
-            metadata.append("- **Mode:** \(mode)")
+        if !transcription.powerModeDisplay.isEmpty {
+            metadata.append("- **Mode:** \(transcription.powerModeDisplay)")
         }
 
-        if transcription.audioDuration > 0 {
-            metadata.append("- **Duration:** \(transcription.getDurationFormatted(transcription.audioDuration))")
+        if let durationText = transcription.durationText, !durationText.isEmpty {
+            metadata.append("- **Duration:** \(durationText)")
         }
 
         if let sourceTag = transcription.sourceTag, !sourceTag.isEmpty {
@@ -128,17 +174,17 @@ enum TranscriptionMarkdownExportService {
         return metadata
     }
 
-    private static func sortedVariations(for transcription: Transcription) -> [TranscriptionVariation] {
-        (transcription.variations ?? []).sorted { lhs, rhs in
+    nonisolated private static func sortedVariations(for transcription: Snapshot) -> [VariationSnapshot] {
+        transcription.variations.sorted { lhs, rhs in
             if lhs.createdAt == rhs.createdAt {
-                return lhs.presetDisplayName.localizedStandardCompare(rhs.presetDisplayName) == .orderedAscending
+                return lhs.sortKey.localizedStandardCompare(rhs.sortKey) == .orderedAscending
             }
 
             return lhs.createdAt < rhs.createdAt
         }
     }
 
-    private static func powerModeDisplay(name: String?, emoji: String?) -> String {
+    nonisolated private static func powerModeDisplay(name: String?, emoji: String?) -> String {
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let trimmedEmoji = emoji?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
@@ -147,7 +193,7 @@ enum TranscriptionMarkdownExportService {
         return "\(trimmedEmoji) \(trimmedName)"
     }
 
-    private static func twoDigit(_ value: Int) -> String {
+    nonisolated private static func twoDigit(_ value: Int) -> String {
         if value < 10 {
             return "0\(value)"
         }

@@ -609,21 +609,22 @@ struct MainView: View {
         let selected = transcriptions.filter { selectedTranscriptionIDs.contains($0.id) }
         guard !selected.isEmpty, !isPreparingZipShare else { return }
 
-        let items = TranscriptionMarkdownExportService.items(for: selected)
         isPreparingZipShare = true
+        let exportSnapshots = TranscriptionMarkdownExportService.snapshots(for: selected)
 
         Task {
+            defer { isPreparingZipShare = false }
+
             do {
                 let archiveURL = try await Task.detached(priority: .userInitiated) {
-                    try MarkdownZipExportService.createArchive(from: items)
+                    let items = TranscriptionMarkdownExportService.items(forSnapshots: exportSnapshots)
+                    return try MarkdownZipExportService.createArchive(from: items)
                 }.value
 
                 zipShareFile = ExportedShareFile(url: archiveURL)
             } catch {
                 presentExportErrorIfNeeded(error)
             }
-
-            isPreparingZipShare = false
         }
     }
 
