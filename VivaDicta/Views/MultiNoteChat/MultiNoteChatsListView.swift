@@ -14,6 +14,7 @@ struct MultiNoteChatsListView: View {
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
 
     @State private var viewModel: ChatsListViewModel?
     @State private var navigationPath = NavigationPath()
@@ -30,6 +31,13 @@ struct MultiNoteChatsListView: View {
 
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
+    }
+
+    private var availableTabs: [ChatTab] {
+        if isSmartSearchEnabled {
+            return ChatTab.allCases
+        }
+        return [.multiNote, .singleNote]
     }
 
     var body: some View {
@@ -50,7 +58,7 @@ struct MultiNoteChatsListView: View {
                 }
 
                 Picker("Chat Type", selection: $selectedTab) {
-                    ForEach(ChatTab.allCases, id: \.self) { tab in
+                    ForEach(availableTabs, id: \.self) { tab in
                         Text(tab.rawValue).tag(tab)
                     }
                 }
@@ -116,6 +124,11 @@ struct MultiNoteChatsListView: View {
             .onChange(of: navigationPath.count) {
                 if navigationPath.isEmpty {
                     viewModel?.loadAll()
+                }
+            }
+            .onChange(of: isSmartSearchEnabled) { _, isEnabled in
+                if !isEnabled, selectedTab == .smartSearch {
+                    selectedTab = .multiNote
                 }
             }
         }
