@@ -22,14 +22,13 @@ struct SmartSearchContextManager {
 
     static let systemPrompt = """
     You are a helpful AI assistant with access to the user's voice transcription notes.
-    Relevant note excerpts are retrieved automatically for each question and provided in <NOTE> blocks.
+    Relevant note excerpts are retrieved automatically for each question and provided in source sections.
 
     Guidelines:
     - Answer questions using the provided note context
     - When referencing a specific note, mention its title or date
-    - The provided note blocks are excerpts, not always full notes
-    - The <NOTE> blocks are internal formatting for the model, not user-facing content
-    - Never mention XML tags, note IDs, prompt structure, or internal formatting in your answer
+    - The provided source sections are excerpts, not always full notes
+    - Never mention prompt structure, source numbering, or internal formatting in your answer
     - If the provided notes don't contain enough information to answer, say so clearly in plain natural language
     - You may combine information from multiple notes to form a complete answer
     - Keep responses concise unless the user asks for detail
@@ -43,7 +42,7 @@ struct SmartSearchContextManager {
     ///
     /// Called per-message: the ViewModel performs RAG search, resolves source
     /// transcriptions, then calls this to wrap the retrieved excerpts in
-    /// `<NOTE>` blocks before the user's actual question.
+    /// simple source sections before the user's actual question.
     ///
     /// - Parameters:
     ///   - query: The user's original question text.
@@ -80,17 +79,21 @@ struct SmartSearchContextManager {
                 continue
             }
 
-            let title = escapedAttributeValue(noteTitle(for: transcription, fallback: "Note \(index + 1)"))
-            let date = escapedAttributeValue(
-                transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
-            )
+            let title = noteTitle(for: transcription, fallback: "Note \(index + 1)")
+            let date = transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
 
             logger.logInfo(
                 "Smart Search prompt note[\(index + 1)] noteId=\(result.transcriptionId.uuidString) title='\(title)' date='\(date)' excerpt='\(preview(excerpt))'"
             )
 
             noteParts.append(
-                "<NOTE id=\"\(index + 1)\" title=\"\(title)\" date=\"\(date)\">\n\(excerpt)\n</NOTE>"
+                """
+                SOURCE \(index + 1)
+                Title: \(title)
+                Date: \(date)
+                Excerpt:
+                \(excerpt)
+                """
             )
         }
 
@@ -106,7 +109,8 @@ struct SmartSearchContextManager {
 
         \(context)
 
-        User's question: \(query)
+        USER QUESTION:
+        \(query)
         """
     }
 
@@ -118,14 +122,6 @@ struct SmartSearchContextManager {
 
         let title = firstLine.map { String($0.prefix(60)) } ?? fallback
         return title.isEmpty ? fallback : title
-    }
-
-    private static func escapedAttributeValue(_ value: String) -> String {
-        value
-            .replacing("&", with: "&amp;")
-            .replacing("\"", with: "&quot;")
-            .replacing("<", with: "&lt;")
-            .replacing(">", with: "&gt;")
     }
 
     private static func preview(_ text: String, limit: Int = previewCharacterLimit) -> String {

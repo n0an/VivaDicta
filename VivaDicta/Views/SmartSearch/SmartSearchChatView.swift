@@ -23,6 +23,7 @@ struct SmartSearchChatView: View {
     @State var viewModel: SmartSearchChatViewModel
 
     @State private var showClearConfirmation = false
+    @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
 
     @Query(sort: \Transcription.timestamp, order: .reverse)
@@ -71,8 +72,17 @@ struct SmartSearchChatView: View {
         } message: {
             Text("This will delete all messages in this Smart Search conversation. This cannot be undone.")
         }
-        .navigationDestination(for: Transcription.self) { transcription in
-            TranscriptionDetailView(transcription: transcription)
+        .sheet(item: $selectedTranscription) { transcription in
+            NavigationStack {
+                TranscriptionDetailView(transcription: transcription)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                selectedTranscription = nil
+                            }
+                        }
+                    }
+            }
         }
     }
 
@@ -208,7 +218,9 @@ struct SmartSearchChatView: View {
     private func citationPillRow(for sources: [SmartSearchCitationDisplay]) -> some View {
         HStack(spacing: 6) {
             ForEach(sources) { source in
-                NavigationLink(value: source.transcription) {
+                Button {
+                    selectedTranscription = source.transcription
+                } label: {
                     HStack(spacing: 5) {
                         Image(systemName: "doc.text")
                         Text(sourceLabel(for: source))

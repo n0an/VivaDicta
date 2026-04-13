@@ -122,7 +122,7 @@ final class RAGIndexingService {
         let logger = Logger(category: .ragIndexing)
         let searchOptions = VecturaConfig.SearchOptions(
             defaultNumResults: 5,
-            minThreshold: 0.3
+            minThreshold: 0.35
         )
         let config = try VecturaConfig(
             name: Self.vectorStoreName,
@@ -420,7 +420,7 @@ final class RAGIndexingService {
     /// by transcription (keeps highest-scoring chunk per note).
     func search(query: String, topK: Int = 5) async throws -> [RAGSearchResult] {
         try await ensureLumoKit()
-        let threshold: Float = 0.3
+        let threshold: Float = 0.4
         let requestedResults = topK * 2
         let queryPreview = Self.preview(query, limit: 80)
         let mapping = chunkMapping
