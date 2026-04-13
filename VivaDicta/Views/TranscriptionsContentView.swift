@@ -9,9 +9,23 @@ import os
 import SwiftData
 import SwiftUI
 
+private enum TranscriptionSearchMode: String {
+    case all
+    case keyword
+    case smart
+}
+
+private struct SemanticSearchMatch: Identifiable {
+    let transcriptionId: UUID
+    let relevanceScore: Float
+
+    var id: UUID { transcriptionId }
+}
+
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var colorScheme
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
@@ -21,12 +35,15 @@ struct TranscriptionsContentView: View {
     @Binding var displayedTranscriptionIDs: Set<UUID>
 
     @State private var filteredTranscriptions: [Transcription] = []
+    @State private var smartSearchMatches: [SemanticSearchMatch] = []
+    @State private var semanticScoresByID: [UUID: Float] = [:]
     @State private var searchTask: Task<Void, Never>?
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
     @State private var showGoToTopButton = false
     @State private var selectedSourceTags: Set<String> = []
     @State private var selectedUserTagIds: Set<UUID> = []
+    @State private var searchMode: TranscriptionSearchMode = .all
 
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
@@ -42,112 +59,69 @@ struct TranscriptionsContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !allTranscriptions.isEmpty && (!availableSourceTags.isEmpty || !allTags.isEmpty) {
-                TagFilterBar(
-                    sourceTags: availableSourceTags,
-                    userTags: allTags,
-                    selectedSourceTags: $selectedSourceTags,
-                    selectedUserTagIds: $selectedUserTagIds
-                )
-//                .padding(.vertical, 8)
-            }
+            TranscriptionSearchControlsView(
+                hasTranscriptions: !allTranscriptions.isEmpty,
+                availableSourceTags: availableSourceTags,
+                allTags: allTags,
+                searchText: searchText,
+                selectedSourceTags: $selectedSourceTags,
+                selectedUserTagIds: $selectedUserTagIds,
+                searchMode: $searchMode
+            )
 
             if allTranscriptions.isEmpty {
                 emptyAllStateView
+            } else if showsCombinedResults {
+                if combinedResultsAreEmpty {
+                    emptyFilteredStateView
+                } else {
+                    CombinedSearchResultsView(
+                        keywordTranscriptions: keywordDisplayedTranscriptions,
+                        smartTranscriptions: smartDisplayedTranscriptions,
+                        isSelectionMode: isSelectionMode,
+                        selectedTranscriptionIDs: selectedTranscriptionIDs,
+                        newlyInsertedIDs: newlyInsertedIDs,
+                        allTags: allTags,
+                        topAnchorID: topAnchorID,
+                        colorScheme: colorScheme,
+                        showGoToTopButton: $showGoToTopButton,
+                        semanticScoreProvider: { transcriptionID in semanticScoresByID[transcriptionID] },
+                        audioURLProvider: audioURL(for:),
+                        onToggleSelection: toggleSelection(for:),
+                        onDeleteKeyword: deleteKeywordTranscriptions(at:),
+                        onDeleteSmart: deleteSmartTranscriptions(at:)
+                    )
+                }
             } else if displayedTranscriptions.isEmpty {
                 emptyFilteredStateView
             } else {
-                ScrollViewReader { proxy in
-                    List {
-                        EmptyView()
-                            .id(topAnchorID)
-
-                        if isSelectionMode {
-                            ForEach(displayedTranscriptions) { transcription in
-                                SelectableTranscriptionRow(
-                                    transcription: transcription,
-                                    isSelected: selectedTranscriptionIDs.contains(transcription.id),
-                                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
-                                    allTags: allTags
-                                ) {
-                                    toggleSelection(for: transcription)
-                                }
-                            }
-                        } else {
-                            ForEach(displayedTranscriptions) { transcription in
-                                NavigationLink {
-                                    TranscriptionDetailView(transcription: transcription)
-                                } label: {
-                                    TranscriptionRowView(
-                                        transcription: transcription,
-                                        isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
-                                        allTags: allTags
-                                    )
-                                }
-                                .contextMenu {
-                                    Section("Share") {
-                                        if let latestVariation = transcription.variations?
-                                            .sorted(by: { $0.createdAt < $1.createdAt }).last {
-                                            ShareLink(item: latestVariation.text) {
-                                                Label {
-                                                    Text(PresetCatalog.displayName(for: latestVariation.presetId, fallback: latestVariation.presetDisplayName))
-                                                } icon: {
-                                                    PresetIconView(icon: PresetCatalog.icon(for: latestVariation.presetId))
-                                                }
-                                            }
-                                        }
-
-                                        ShareLink(item: transcription.text) {
-                                            Label("Original Text", systemImage: "text.alignleft")
-                                        }
-
-                                        if let audioURL = audioURL(for: transcription) {
-                                            ShareLink(
-                                                item: audioURL,
-                                                preview: SharePreview(
-                                                    "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
-                                                    image: Image(systemName: "waveform")
-                                                )
-                                            ) {
-                                                Label("Audio Recording", systemImage: "waveform")
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .onDelete(perform: deleteTranscription)
-                        }
-                    }
-                    .listStyle(.plain)
-                    .onScrollGeometryChange(for: Bool.self) { geo in
-                        let topPadding: CGFloat = 300
-                        return geo.contentOffset.y >= topPadding
-                    } action: { _, isBeyondThreshold in
-                        withAnimation {
-                            showGoToTopButton = isBeyondThreshold
-                        }
-                    }
-                    .overlay(alignment: .bottom) {
-                        if showGoToTopButton {
-                            
-                            ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
-                                withAnimation {
-                                    proxy.scrollTo(topAnchorID, anchor: .top)
-                                }
-                            }
-                            .padding(.bottom, 8)
-                            .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
-                        }
-                    }
-                }
+                TranscriptionsListView(
+                    displayedTranscriptions: displayedTranscriptions,
+                    isSelectionMode: isSelectionMode,
+                    selectedTranscriptionIDs: selectedTranscriptionIDs,
+                    newlyInsertedIDs: newlyInsertedIDs,
+                    allTags: allTags,
+                    topAnchorID: topAnchorID,
+                    colorScheme: colorScheme,
+                    showGoToTopButton: $showGoToTopButton,
+                    semanticScoreProvider: currentSemanticScore(for:),
+                    audioURLProvider: audioURL(for:),
+                    onToggleSelection: toggleSelection(for:),
+                    onDelete: deleteTranscription(at:)
+                )
             }
         }
         .onAppear {
             filteredTranscriptions = allTranscriptions
+            smartSearchMatches = []
+            semanticScoresByID = [:]
             previousTranscriptionCount = allTranscriptions.count
             syncDisplayedIDs()
         }
         .onChange(of: searchText) { _, newValue in
+            if newValue.isEmpty {
+                searchMode = isSmartSearchEnabled ? .all : .keyword
+            }
             performDebouncedSearch(with: newValue)
         }
         .onChange(of: allTranscriptions) { oldValue, newValue in
@@ -173,6 +147,8 @@ struct TranscriptionsContentView: View {
             // Update filtered results
             if searchText.isEmpty {
                 filteredTranscriptions = allTranscriptions
+                smartSearchMatches = []
+                semanticScoresByID = [:]
             } else {
                 performDebouncedSearch(with: searchText)
             }
@@ -187,10 +163,36 @@ struct TranscriptionsContentView: View {
         .onChange(of: selectedUserTagIds) {
             syncDisplayedIDs()
         }
+        .onChange(of: searchMode) {
+            if !searchText.isEmpty {
+                performDebouncedSearch(with: searchText)
+            }
+        }
+        .onChange(of: isSmartSearchEnabled) { _, isEnabled in
+            if !isEnabled {
+                searchMode = .keyword
+                smartSearchMatches = []
+                semanticScoresByID = [:]
+            }
+
+            if !searchText.isEmpty {
+                performDebouncedSearch(with: searchText)
+            } else {
+                syncDisplayedIDs()
+            }
+        }
     }
 
     private var hasActiveTagFilter: Bool {
         !selectedSourceTags.isEmpty || !selectedUserTagIds.isEmpty
+    }
+
+    private var showsCombinedResults: Bool {
+        isSmartSearchEnabled && searchMode == .all && !searchText.isEmpty
+    }
+
+    private var combinedResultsAreEmpty: Bool {
+        keywordDisplayedTranscriptions.isEmpty && smartDisplayedTranscriptions.isEmpty
     }
 
     private var availableSourceTags: [String] {
@@ -198,27 +200,63 @@ struct TranscriptionsContentView: View {
         return allTranscriptions.compactMap { $0.sourceTag }.filter { seen.insert($0).inserted }
     }
 
-    private var tagFilteredTranscriptions: [Transcription] {
+    private var keywordDisplayedTranscriptions: [Transcription] {
         let base = searchText.isEmpty ? allTranscriptions : filteredTranscriptions
-        guard hasActiveTagFilter else { return base }
+        return filterTranscriptionsByActiveTags(base)
+    }
 
-        return base.filter { transcription in
-            let matchesSource = selectedSourceTags.isEmpty ||
-                (transcription.sourceTag.map { selectedSourceTags.contains($0) } ?? false)
-
-            let matchesUserTag = selectedUserTagIds.isEmpty ||
-                (transcription.tagAssignments ?? []).contains { selectedUserTagIds.contains($0.tagId) }
-
-            return matchesSource && matchesUserTag
+    private var smartDisplayedTranscriptions: [Transcription] {
+        smartSearchMatches.compactMap { match in
+            guard let transcription = transcription(for: match.transcriptionId) else { return nil }
+            return matchesActiveTags(for: transcription) ? transcription : nil
         }
     }
 
     private var displayedTranscriptions: [Transcription] {
-        tagFilteredTranscriptions
+        guard isSmartSearchEnabled else {
+            return keywordDisplayedTranscriptions
+        }
+
+        return switch searchMode {
+        case .smart:
+            smartDisplayedTranscriptions
+        case .all, .keyword:
+            keywordDisplayedTranscriptions
+        }
     }
 
     private func syncDisplayedIDs() {
-        displayedTranscriptionIDs = Set(displayedTranscriptions.map(\.id))
+        guard isSmartSearchEnabled else {
+            displayedTranscriptionIDs = Set(keywordDisplayedTranscriptions.map(\.id))
+            return
+        }
+
+        switch searchMode {
+        case .all:
+            displayedTranscriptionIDs = Set(keywordDisplayedTranscriptions.map(\.id))
+                .union(smartDisplayedTranscriptions.map(\.id))
+        case .keyword, .smart:
+            displayedTranscriptionIDs = Set(displayedTranscriptions.map(\.id))
+        }
+    }
+
+    private func transcription(for transcriptionID: UUID) -> Transcription? {
+        allTranscriptions.first { $0.id == transcriptionID }
+    }
+
+    private func filterTranscriptionsByActiveTags(_ transcriptions: [Transcription]) -> [Transcription] {
+        guard hasActiveTagFilter else { return transcriptions }
+        return transcriptions.filter(matchesActiveTags(for:))
+    }
+
+    private func matchesActiveTags(for transcription: Transcription) -> Bool {
+        let matchesSource = selectedSourceTags.isEmpty ||
+            (transcription.sourceTag.map { selectedSourceTags.contains($0) } ?? false)
+
+        let matchesUserTag = selectedUserTagIds.isEmpty ||
+            (transcription.tagAssignments ?? []).contains { selectedUserTagIds.contains($0.tagId) }
+
+        return matchesSource && matchesUserTag
     }
 
     private func audioURL(for transcription: Transcription) -> URL? {
@@ -239,44 +277,55 @@ struct TranscriptionsContentView: View {
                 guard !searchTerm.isEmpty else {
                     await MainActor.run {
                         filteredTranscriptions = allTranscriptions
+                        smartSearchMatches = []
+                        semanticScoresByID = [:]
                     }
                     return
                 }
 
-                // Step 1: Search transcription text + enhancedText
-                var descriptor = FetchDescriptor<Transcription>(
-                    sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
-                )
-                descriptor.predicate = #Predicate<Transcription> { transcription in
-                    transcription.text.localizedStandardContains(searchTerm) ||
-                        (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
+                let keywordResults = keywordSearchResults(for: searchTerm)
+                guard isSmartSearchEnabled else {
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = []
+                        semanticScoresByID = [:]
+                    }
+                    return
                 }
 
-                let transcriptionMatches = try modelContext.fetch(descriptor)
-
-                // Step 2: Search variation text
-                let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
-                    predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
-                )
-                let variationMatches = try modelContext.fetch(variationDescriptor)
-
-                // Step 3: Merge results
-                let transcriptionIds = Set(transcriptionMatches.map(\.id))
-                let variationTranscriptionIds = Set(variationMatches.compactMap { $0.transcription?.id })
-                let additionalIds = variationTranscriptionIds.subtracting(transcriptionIds)
-
-                let mergedResults: [Transcription]
-                if additionalIds.isEmpty {
-                    mergedResults = transcriptionMatches
-                } else {
-                    // Fetch additional transcriptions matched only via variations
-                    let additionalTranscriptions = allTranscriptions.filter { additionalIds.contains($0.id) }
-                    mergedResults = (transcriptionMatches + additionalTranscriptions)
-                        .sorted { $0.timestamp > $1.timestamp }
+                guard searchMode != .keyword else {
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = []
+                        semanticScoresByID = [:]
+                    }
+                    return
                 }
 
-                await MainActor.run {
-                    filteredTranscriptions = mergedResults
+                let smartMatches = await semanticSearchMatches(for: searchTerm)
+
+                switch searchMode {
+                case .all:
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = smartMatches
+                        semanticScoresByID = Dictionary(
+                            uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                        )
+                    }
+                case .smart:
+                    let orderedResults = smartMatches.compactMap { match in
+                        allTranscriptions.first(where: { $0.id == match.transcriptionId })
+                    }
+                    await MainActor.run {
+                        filteredTranscriptions = orderedResults
+                        smartSearchMatches = smartMatches
+                        semanticScoresByID = Dictionary(
+                            uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                        )
+                    }
+                case .keyword:
+                    break
                 }
             } catch {
                 logger.logError("Search was cancelled or failed: \(error.localizedDescription)")
@@ -293,10 +342,72 @@ struct TranscriptionsContentView: View {
         }
     }
 
+    private func currentSemanticScore(for transcriptionID: UUID) -> Float? {
+        guard isSmartSearchEnabled, searchMode == .smart else { return nil }
+        return semanticScoresByID[transcriptionID]
+    }
+
+    private func keywordSearchResults(for searchTerm: String) -> [Transcription] {
+        var descriptor = FetchDescriptor<Transcription>(
+            sortBy: [SortDescriptor(\Transcription.timestamp, order: .reverse)]
+        )
+        descriptor.predicate = #Predicate<Transcription> { transcription in
+            transcription.text.localizedStandardContains(searchTerm) ||
+                (transcription.enhancedText?.localizedStandardContains(searchTerm) ?? false)
+        }
+
+        let transcriptionMatches = try? modelContext.fetch(descriptor)
+
+        let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
+            predicate: #Predicate { $0.text.localizedStandardContains(searchTerm) }
+        )
+        let variationMatches = try? modelContext.fetch(variationDescriptor)
+
+        let matchedTranscriptions = transcriptionMatches ?? []
+        let matchedVariationIDs = Set((variationMatches ?? []).compactMap { $0.transcription?.id })
+        let directMatchIDs = Set(matchedTranscriptions.map(\.id))
+        let additionalIDs = matchedVariationIDs.subtracting(directMatchIDs)
+
+        guard !additionalIDs.isEmpty else {
+            return matchedTranscriptions
+        }
+
+        let additionalTranscriptions = allTranscriptions.filter { additionalIDs.contains($0.id) }
+        return (matchedTranscriptions + additionalTranscriptions)
+            .sorted { $0.timestamp > $1.timestamp }
+    }
+
+    private func semanticSearchMatches(for searchTerm: String) async -> [SemanticSearchMatch] {
+        do {
+            let results = try await RAGIndexingService.shared.search(query: searchTerm, topK: 20)
+            return results.map { result in
+                SemanticSearchMatch(
+                    transcriptionId: result.transcriptionId,
+                    relevanceScore: result.relevanceScore
+                )
+            }
+        } catch {
+            logger.logError("Semantic search failed: \(error.localizedDescription)")
+            return []
+        }
+    }
+
     private func deleteTranscription(at offsets: IndexSet) {
+        deleteTranscriptions(in: displayedTranscriptions, at: offsets)
+    }
+
+    private func deleteKeywordTranscriptions(at offsets: IndexSet) {
+        deleteTranscriptions(in: keywordDisplayedTranscriptions, at: offsets)
+    }
+
+    private func deleteSmartTranscriptions(at offsets: IndexSet) {
+        deleteTranscriptions(in: smartDisplayedTranscriptions, at: offsets)
+    }
+
+    private func deleteTranscriptions(in transcriptions: [Transcription], at offsets: IndexSet) {
         HapticManager.heavyImpact()
         for index in offsets {
-            let transcription = displayedTranscriptions[index]
+            let transcription = transcriptions[index]
             let transcriptionID = transcription.id
 
             if let audioFileName = transcription.audioFileName {
@@ -310,6 +421,9 @@ struct TranscriptionsContentView: View {
             Task {
                 await appState.removeTranscriptionFromSpotlight(transcriptionID)
             }
+
+            // Remove from RAG index
+            Task { await RAGIndexingService.shared.removeTranscription(id: transcriptionID) }
         }
 
         do {
@@ -344,12 +458,232 @@ struct TranscriptionsContentView: View {
 
 // MARK: - Selectable Row for Selection Mode
 
+private struct TranscriptionSearchControlsView: View {
+    let hasTranscriptions: Bool
+    let availableSourceTags: [String]
+    let allTags: [TranscriptionTag]
+    let searchText: String
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
+    @Binding var selectedSourceTags: Set<String>
+    @Binding var selectedUserTagIds: Set<UUID>
+    @Binding var searchMode: TranscriptionSearchMode
+
+    var body: some View {
+        if hasTranscriptions && (!availableSourceTags.isEmpty || !allTags.isEmpty) {
+            TagFilterBar(
+                sourceTags: availableSourceTags,
+                userTags: allTags,
+                selectedSourceTags: $selectedSourceTags,
+                selectedUserTagIds: $selectedUserTagIds
+            )
+        }
+
+        if isSmartSearchEnabled, !searchText.isEmpty {
+            Picker("Search Mode", selection: $searchMode) {
+                Text("All")
+                    .tag(TranscriptionSearchMode.all)
+                Label("Keyword", systemImage: "text.magnifyingglass")
+                    .tag(TranscriptionSearchMode.keyword)
+                Label("Smart", systemImage: "sparkle.magnifyingglass")
+                    .tag(TranscriptionSearchMode.smart)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+    }
+}
+
+private struct TranscriptionsListView: View {
+    let displayedTranscriptions: [Transcription]
+    let isSelectionMode: Bool
+    let selectedTranscriptionIDs: Set<UUID>
+    let newlyInsertedIDs: Set<UUID>
+    let allTags: [TranscriptionTag]
+    let topAnchorID: String
+    let colorScheme: ColorScheme
+    @Binding var showGoToTopButton: Bool
+    let semanticScoreProvider: (UUID) -> Float?
+    let audioURLProvider: (Transcription) -> URL?
+    let onToggleSelection: (Transcription) -> Void
+    let onDelete: (IndexSet) -> Void
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            List {
+                EmptyView()
+                    .id(topAnchorID)
+
+                if isSelectionMode {
+                    ForEach(displayedTranscriptions) { transcription in
+                        SelectableTranscriptionRow(
+                            transcription: transcription,
+                            isSelected: selectedTranscriptionIDs.contains(transcription.id),
+                            isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                            allTags: allTags,
+                            semanticScore: semanticScoreProvider(transcription.id)
+                        ) {
+                            onToggleSelection(transcription)
+                        }
+                    }
+                } else {
+                    ForEach(displayedTranscriptions) { transcription in
+                        TranscriptionNavigationRow(
+                            transcription: transcription,
+                            isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                            allTags: allTags,
+                            semanticScore: semanticScoreProvider(transcription.id),
+                            audioURL: audioURLProvider(transcription)
+                        )
+                    }
+                    .onDelete(perform: onDelete)
+                }
+            }
+            .listStyle(.plain)
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                let topPadding: CGFloat = 300
+                return geo.contentOffset.y >= topPadding
+            } action: { _, isBeyondThreshold in
+                withAnimation {
+                    showGoToTopButton = isBeyondThreshold
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showGoToTopButton {
+                    ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
+                        withAnimation {
+                            proxy.scrollTo(topAnchorID, anchor: .top)
+                        }
+                    }
+                    .padding(.bottom, 8)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
+                }
+            }
+        }
+    }
+}
+
+private struct CombinedSearchResultsView: View {
+    let keywordTranscriptions: [Transcription]
+    let smartTranscriptions: [Transcription]
+    let isSelectionMode: Bool
+    let selectedTranscriptionIDs: Set<UUID>
+    let newlyInsertedIDs: Set<UUID>
+    let allTags: [TranscriptionTag]
+    let topAnchorID: String
+    let colorScheme: ColorScheme
+    @Binding var showGoToTopButton: Bool
+    let semanticScoreProvider: (UUID) -> Float?
+    let audioURLProvider: (Transcription) -> URL?
+    let onToggleSelection: (Transcription) -> Void
+    let onDeleteKeyword: (IndexSet) -> Void
+    let onDeleteSmart: (IndexSet) -> Void
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            List {
+                EmptyView()
+                    .id(topAnchorID)
+
+                if !keywordTranscriptions.isEmpty {
+                    Section("Keyword Matches") {
+                        rows(
+                            transcriptions: keywordTranscriptions,
+                            semanticScoreProvider: { _ in nil },
+                            onDelete: onDeleteKeyword
+                        )
+                    }
+                }
+
+                if !smartTranscriptions.isEmpty {
+                    Section("Smart Matches") {
+                        rows(
+                            transcriptions: smartTranscriptions,
+                            semanticScoreProvider: semanticScoreProvider,
+                            onDelete: onDeleteSmart
+                        )
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                let topPadding: CGFloat = 300
+                return geo.contentOffset.y >= topPadding
+            } action: { _, isBeyondThreshold in
+                withAnimation {
+                    showGoToTopButton = isBeyondThreshold
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showGoToTopButton {
+                    ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
+                        withAnimation {
+                            proxy.scrollTo(topAnchorID, anchor: .top)
+                        }
+                    }
+                    .padding(.bottom, 8)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func rows(
+        transcriptions: [Transcription],
+        semanticScoreProvider: @escaping (UUID) -> Float?,
+        onDelete: @escaping (IndexSet) -> Void
+    ) -> some View {
+        if isSelectionMode {
+            ForEach(transcriptions) { transcription in
+                SelectableTranscriptionRow(
+                    transcription: transcription,
+                    isSelected: selectedTranscriptionIDs.contains(transcription.id),
+                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                    allTags: allTags,
+                    semanticScore: semanticScoreProvider(transcription.id)
+                ) {
+                    onToggleSelection(transcription)
+                }
+            }
+        } else {
+            ForEach(transcriptions) { transcription in
+                TranscriptionNavigationRow(
+                    transcription: transcription,
+                    isNewlyInserted: newlyInsertedIDs.contains(transcription.id),
+                    allTags: allTags,
+                    semanticScore: semanticScoreProvider(transcription.id),
+                    audioURL: audioURLProvider(transcription)
+                )
+            }
+            .onDelete(perform: onDelete)
+        }
+    }
+}
+
 private struct SelectableTranscriptionRow: View {
     let transcription: Transcription
     let isSelected: Bool
     let isNewlyInserted: Bool
     let allTags: [TranscriptionTag]
+    let semanticScore: Float?
     let onTap: () -> Void
+
+    init(
+        transcription: Transcription,
+        isSelected: Bool,
+        isNewlyInserted: Bool,
+        allTags: [TranscriptionTag],
+        semanticScore: Float? = nil,
+        onTap: @escaping () -> Void
+    ) {
+        self.transcription = transcription
+        self.isSelected = isSelected
+        self.isNewlyInserted = isNewlyInserted
+        self.allTags = allTags
+        self.semanticScore = semanticScore
+        self.onTap = onTap
+    }
 
     var body: some View {
         Button(action: onTap) {
@@ -362,12 +696,69 @@ private struct SelectableTranscriptionRow: View {
                 TranscriptionRowView(
                     transcription: transcription,
                     isNewlyInserted: isNewlyInserted,
-                    allTags: allTags
+                    allTags: allTags,
+                    semanticScore: semanticScore
                 )
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct TranscriptionNavigationRow: View {
+    let transcription: Transcription
+    let isNewlyInserted: Bool
+    let allTags: [TranscriptionTag]
+    let semanticScore: Float?
+    let audioURL: URL?
+
+    var body: some View {
+        NavigationLink {
+            TranscriptionDetailView(transcription: transcription)
+        } label: {
+            TranscriptionRowView(
+                transcription: transcription,
+                isNewlyInserted: isNewlyInserted,
+                allTags: allTags,
+                semanticScore: semanticScore
+            )
+        }
+        .contextMenu {
+            Section("Share") {
+                if let latestVariation = transcription.variations?
+                    .sorted(by: { $0.createdAt < $1.createdAt }).last {
+                    let presetTitle = PresetCatalog.displayName(
+                        for: latestVariation.presetId,
+                        fallback: latestVariation.presetDisplayName
+                    )
+
+                    ShareLink(item: latestVariation.text) {
+                        Label {
+                            Text(presetTitle)
+                        } icon: {
+                            PresetIconView(icon: PresetCatalog.icon(for: latestVariation.presetId))
+                        }
+                    }
+                }
+
+                ShareLink(item: transcription.text) {
+                    Label("Original Text", systemImage: "text.alignleft")
+                }
+
+                if let audioURL {
+                    ShareLink(
+                        item: audioURL,
+                        preview: SharePreview(
+                            "Recording \(transcription.timestamp.formatted(date: .abbreviated, time: .shortened))",
+                            image: Image(systemName: "waveform")
+                        )
+                    ) {
+                        Label("Audio Recording", systemImage: "waveform")
+                    }
+                }
+            }
+        }
     }
 }
 

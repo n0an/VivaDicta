@@ -1,54 +1,36 @@
 //
-//  ChatView.swift
+//  SmartSearchChatView.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2026.04.09
+//  Created by Anton Novoselov on 2026.04.11
 //
 
 import SwiftUI
 import SwiftData
 
-private struct ChatSourceCitationDisplay: Identifiable {
+private struct SmartSearchCitationDisplay: Identifiable {
     let transcription: Transcription
     let citation: SmartSearchSourceCitation?
 
     var id: UUID { transcription.id }
 }
 
-/// Main "Chat with Note" sheet view.
+/// Chat view for RAG-powered Smart Search conversations.
 ///
-/// Presents a conversation interface where users can chat with AI about
-/// their transcription note. Supports streaming responses, provider/model
-/// selection, and context compaction.
-struct ChatView: View {
-    @State var viewModel: ChatViewModel
-    /// When true, skips the NavigationStack wrapper (used when pushed from a parent NavigationStack).
-    var embedded: Bool = false
-    @Environment(AppState.self) var appState
-    @Environment(\.dismiss) private var dismiss
+/// Mirrors ``MultiNoteChatView`` structure but adds source citation pills
+/// below assistant messages and shows indexing status instead of note count.
+struct SmartSearchChatView: View {
+    @State var viewModel: SmartSearchChatViewModel
+    @State private var ragService = RAGIndexingService.shared
 
     @State private var showClearConfirmation = false
     @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
+
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
 
     var body: some View {
-        if embedded {
-            chatContent
-        } else {
-            NavigationStack {
-                chatContent
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") { dismiss() }
-                        }
-                    }
-            }
-        }
-    }
-
-    private var chatContent: some View {
         VStack(spacing: 0) {
             chatHeaderBar
 
@@ -66,40 +48,30 @@ struct ChatView: View {
                 text: $viewModel.inputText,
                 isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                 isBusy: viewModel.isCompacting,
+                placeholder: "Search your notes...",
                 onSend: { viewModel.sendMessage() },
                 onStop: { viewModel.cancelStreaming() }
             )
         }
-        .navigationTitle("Chat")
+        .navigationTitle("Smart Search")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button {
-                        Task { await viewModel.compactChat() }
-                    } label: {
-                        Label("Compact Chat", systemImage: "arrow.trianglehead.2.clockwise")
-                    }
-                    .disabled(viewModel.messages.count < 6 || viewModel.isStreaming || viewModel.isCompacting)
-
-                    Button(role: .destructive) {
-                        showClearConfirmation = true
-                    } label: {
-                        Label("Clear Chat", systemImage: "trash")
-                    }
-                    .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
+                Button {
+                    showClearConfirmation = true
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "trash")
                 }
+                .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
             }
         }
-        .alert("Clear Chat?", isPresented: $showClearConfirmation) {
-            Button("Clear", role: .destructive) {
+        .alert("Delete Conversation?", isPresented: $showClearConfirmation) {
+            Button("Delete", role: .destructive) {
                 viewModel.clearChat()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will delete all chat messages for this note. This cannot be undone.")
+            Text("This will delete all messages in this Smart Search conversation. This cannot be undone.")
         }
         .sheet(item: $selectedTranscription) { transcription in
             NavigationStack {
@@ -117,7 +89,6 @@ struct ChatView: View {
 
     // MARK: - Messages List
 
-    /// Whether the model is thinking (waiting for first token or Apple FM responding).
     private var isThinking: Bool {
         (viewModel.isStreaming || viewModel.isAppleFMResponding) && viewModel.streamingText.isEmpty
     }
@@ -143,19 +114,21 @@ struct ChatView: View {
                         .id(message.id)
                     }
 
-                    // Typing indicator while model is thinking
-                    if isThinking {
+                    if viewModel.isSearching {
+                        searchingIndicator
+                            .id("searching")
+                    }
+
+                    if isThinking && !viewModel.isSearching {
                         TypingIndicator()
                             .id("typing")
                     }
 
-                    // Streaming bubble once text starts arriving
                     if viewModel.isStreaming, !viewModel.streamingText.isEmpty {
                         streamingBubble
                             .id("streaming")
                     }
 
-                    // Compacting indicator
                     if viewModel.isCompacting {
                         compactingIndicator
                             .id("compacting")
@@ -184,6 +157,9 @@ struct ChatView: View {
             .onChange(of: viewModel.isCompacting) {
                 scrollToBottom(proxy: proxy)
             }
+            .onChange(of: viewModel.isSearching) {
+                scrollToBottom(proxy: proxy)
+            }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
                 scrollToBottom(proxy: proxy)
             }
@@ -194,6 +170,8 @@ struct ChatView: View {
         withAnimation {
             if viewModel.isStreaming, !viewModel.streamingText.isEmpty {
                 proxy.scrollTo("streaming", anchor: .bottom)
+            } else if viewModel.isSearching {
+                proxy.scrollTo("searching", anchor: .bottom)
             } else if isThinking {
                 proxy.scrollTo("typing", anchor: .bottom)
             } else if viewModel.isCompacting {
@@ -204,106 +182,18 @@ struct ChatView: View {
         }
     }
 
+    // MARK: - Empty State
+
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.system(size: 40))
-                .foregroundStyle(.tertiary)
-            Text("Ask anything about this note")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        ContentUnavailableView {
+            Label("Smart Search", systemImage: "sparkle.magnifyingglass")
+        } description: {
+            Text("Ask questions about your notes. Relevant notes are found automatically.")
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 60)
+        .padding(.top, 40)
     }
 
-    private var streamingBubble: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(.init(viewModel.streamingText))
-                    .textSelection(.enabled)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .bubbleBackground(isUser: false, isError: false)
-
-                if let model = viewModel.selectedModel {
-                    Text(model)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-            Spacer(minLength: 60)
-        }
-        .padding(.horizontal)
-    }
-
-    private var chatHeaderBar: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if let provider = viewModel.selectedProvider {
-                    Text(provider.displayName)
-                        .font(.subheadline)
-                }
-                if let model = viewModel.selectedModel {
-                    Text(model)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-
-                Group {
-                    if #available(iOS 26, *) {
-                        GlassEffectContainer(spacing: 6) {
-                            headerPills
-                        }
-                    } else {
-                        headerPills
-                    }
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            Divider()
-        }
-    }
-
-    private var headerPills: some View {
-        let ratio = viewModel.contextFillRatio
-        let percentage = Int(ratio * 100)
-
-        return HStack(spacing: 6) {
-            Button {
-                selectedTranscription = viewModel.transcription
-            } label: {
-                Label("1 note", systemImage: "doc.text")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .glassCapsule(fallback: Color.secondary.opacity(0.1))
-            }
-
-            Text("\(percentage)%")
-                .font(.caption2)
-                .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .glassCapsule(
-                    tint: ratio > 0.7 ? Color.orange.opacity(0.35) : nil,
-                    fallback: (ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1)
-                )
-        }
-    }
-
-    private var compactingIndicator: some View {
-        HStack(spacing: 8) {
-            ProgressView()
-            Text("Compacting conversation...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 8)
-    }
+    // MARK: - Source Citation Pills
 
     @ViewBuilder
     private func sourceCitationPills(for message: ChatMessage) -> some View {
@@ -326,7 +216,7 @@ struct ChatView: View {
     }
 
     @ViewBuilder
-    private func citationPillRow(for sources: [ChatSourceCitationDisplay]) -> some View {
+    private func citationPillRow(for sources: [SmartSearchCitationDisplay]) -> some View {
         HStack(spacing: 6) {
             ForEach(sources) { source in
                 Button {
@@ -351,7 +241,7 @@ struct ChatView: View {
         }
     }
 
-    private func sourceLabel(for source: ChatSourceCitationDisplay) -> String {
+    private func sourceLabel(for source: SmartSearchCitationDisplay) -> String {
         let date = source.transcription.timestamp.formatted(date: .abbreviated, time: .omitted)
 
         if let citation = source.citation {
@@ -381,22 +271,125 @@ struct ChatView: View {
         return allTranscriptions.filter { idSet.contains($0.id) }
     }
 
-    private func resolveCitationDisplays(for message: ChatMessage) -> [ChatSourceCitationDisplay] {
+    private func resolveCitationDisplays(for message: ChatMessage) -> [SmartSearchCitationDisplay] {
         let citations = message.sourceCitations
         if !citations.isEmpty {
             let transcriptionMap = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
             return citations
                 .sorted { $0.relevanceScore > $1.relevanceScore }
                 .compactMap { citation in
-                    guard let transcription = transcriptionMap[citation.transcriptionId] else {
-                        return nil
-                    }
-                    return ChatSourceCitationDisplay(transcription: transcription, citation: citation)
+                guard let transcription = transcriptionMap[citation.transcriptionId] else {
+                    return nil
                 }
+                return SmartSearchCitationDisplay(
+                    transcription: transcription,
+                    citation: citation
+                )
+            }
         }
 
         return resolveSourceTranscriptions(ids: message.sourceTranscriptionIds).map { transcription in
-            ChatSourceCitationDisplay(transcription: transcription, citation: nil)
+            SmartSearchCitationDisplay(
+                transcription: transcription,
+                citation: nil
+            )
         }
+    }
+
+    // MARK: - Streaming & Indicators
+
+    private var streamingBubble: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(.init(viewModel.streamingText))
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .bubbleBackground(isUser: false, isError: false)
+
+                if let model = viewModel.selectedModel {
+                    Text(model)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            Spacer(minLength: 60)
+        }
+        .padding(.horizontal)
+    }
+
+    private var searchingIndicator: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+            Text("Searching notes...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private var compactingIndicator: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+            Text("Compacting conversation...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Header Bar
+
+    private var chatHeaderBar: some View {
+        VStack(spacing: 0) {
+            HStack {
+                if let provider = viewModel.selectedProvider {
+                    Text(provider.displayName)
+                        .font(.subheadline)
+                }
+                if let model = viewModel.selectedModel {
+                    Text(model)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+
+                indexingStatusPill
+
+                let ratio = viewModel.contextFillRatio
+                let percentage = Int(ratio * 100)
+                Text("\(percentage)%")
+                    .font(.caption2)
+                    .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background((ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1))
+                    .clipShape(.capsule)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            Divider()
+        }
+    }
+
+    private var indexingStatusPill: some View {
+        let count = ragService.indexedTranscriptionCount
+
+        return HStack(spacing: 4) {
+            if ragService.isIndexing {
+                ProgressView()
+                    .controlSize(.mini)
+                Text("Indexing...")
+            } else {
+                Image(systemName: "doc.text.magnifyingglass")
+                Text("^[\(count) note](inflect: true)")
+            }
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.secondary.opacity(0.1))
+        .clipShape(.capsule)
     }
 }

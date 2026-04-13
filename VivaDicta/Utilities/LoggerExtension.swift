@@ -62,6 +62,9 @@ public enum LogCategory: String {
     case vivAgentsClient = "VivAgentsClient"
     case chatViewModel = "ChatViewModel"
     case multiNoteChat = "MultiNoteChat"
+    case ragIndexing = "RAGIndexing"
+    case ragSearch = "RAGSearch"
+    case smartSearchChat = "SmartSearchChat"
 
     // MARK: - Watch Connectivity
     case watchConnectivity = "WatchConnectivity"

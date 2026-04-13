@@ -8,6 +8,12 @@
 import Foundation
 import SwiftData
 
+struct SmartSearchSourceCitation: Codable, Hashable, Sendable {
+    var transcriptionId: UUID
+    var excerpt: String
+    var relevanceScore: Float
+}
+
 /// A SwiftData model representing a single message in a "Chat with Note" conversation.
 ///
 /// Each chat message belongs to a ``Transcription`` via a one-to-many relationship.
@@ -48,6 +54,46 @@ final class ChatMessage {
     /// The multi-note conversation this message belongs to (nil for single-note messages).
     @Relationship(inverse: \MultiNoteConversation.messages)
     var multiNoteConversation: MultiNoteConversation?
+
+    /// The smart search conversation this message belongs to (nil for other chat types).
+    @Relationship(inverse: \SmartSearchConversation.messages)
+    var smartSearchConversation: SmartSearchConversation?
+
+    /// JSON-encoded array of transcription UUID strings that were used as RAG sources
+    /// for this assistant message. Nil for user messages and non-RAG responses.
+    var sourceTranscriptionIdsData: Data?
+
+    /// JSON-encoded Smart Search citation metadata for this assistant message.
+    /// Stores the matched excerpt and score so the UI can show evidence, not only note titles.
+    var sourceCitationsData: Data?
+
+    /// Convenience accessor for source transcription IDs.
+    var sourceTranscriptionIds: [UUID] {
+        get {
+            guard let data = sourceTranscriptionIdsData,
+                  let strings = try? JSONDecoder().decode([String].self, from: data) else {
+                return []
+            }
+            return strings.compactMap { UUID(uuidString: $0) }
+        }
+        set {
+            let strings = newValue.map(\.uuidString)
+            sourceTranscriptionIdsData = try? JSONEncoder().encode(strings)
+        }
+    }
+
+    var sourceCitations: [SmartSearchSourceCitation] {
+        get {
+            guard let data = sourceCitationsData,
+                  let citations = try? JSONDecoder().decode([SmartSearchSourceCitation].self, from: data) else {
+                return []
+            }
+            return citations
+        }
+        set {
+            sourceCitationsData = try? JSONEncoder().encode(newValue)
+        }
+    }
 
     init(role: String = "user",
          content: String = "",

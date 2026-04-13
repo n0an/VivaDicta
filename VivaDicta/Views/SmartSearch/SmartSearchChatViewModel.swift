@@ -1,8 +1,8 @@
 //
-//  MultiNoteChatViewModel.swift
+//  SmartSearchChatViewModel.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2026.04.10
+//  Created by Anton Novoselov on 2026.04.11
 //
 
 import Foundation
@@ -10,15 +10,21 @@ import FoundationModels
 import SwiftData
 import os
 
-/// View model for multi-note chat conversations.
+/// View model for RAG-powered Smart Search conversations.
 ///
-/// Structurally parallel to ``ChatViewModel`` but works with
-/// ``MultiNoteConversation`` and multiple source transcriptions.
-/// Uses ``MultiNoteContextManager`` for context assembly.
+/// Structurally parallel to ``MultiNoteChatViewModel`` but retrieves
+/// relevant note context dynamically per message via ``RAGIndexingService``.
 @Observable
 @MainActor
-final class MultiNoteChatViewModel {
-    private let logger = Logger(category: .multiNoteChat)
+final class SmartSearchChatViewModel {
+    private static let previewCharacterLimit = 220
+    private let logger = Logger(category: .smartSearchChat)
+
+    private struct DeterministicSmartSearchResponse {
+        let content: String
+        let sourceIds: [UUID]
+        let sourceCitations: [SmartSearchSourceCitation]
+    }
 
     // MARK: - State
 
@@ -28,6 +34,7 @@ final class MultiNoteChatViewModel {
     var streamingText: String = ""
     var errorMessage: String?
     var isCompacting: Bool = false
+    var isSearching: Bool = false
 
     // MARK: - Provider/Model (from current VivaMode)
 
@@ -65,8 +72,7 @@ final class MultiNoteChatViewModel {
         if provider == .apple {
             Task { await updateAppleFMFillRatio() }
         } else {
-            contextFillRatio = MultiNoteContextManager.fillRatio(
-                noteText: assembledNoteText,
+            contextFillRatio = SmartSearchContextManager.fillRatio(
                 messages: messages,
                 provider: provider,
                 model: model
@@ -87,57 +93,37 @@ final class MultiNoteChatViewModel {
                 contextFillRatio = contextSize > 0 ? min(Double(usedTokens) / Double(contextSize), 1.0) : 0
                 return
             } catch {
-                logger.logWarning("Multi-note chat - Failed to get token count: \(error.localizedDescription)")
+                logger.logWarning("Smart Search - Failed to get token count: \(error.localizedDescription)")
             }
         }
 
-        // Fallback to character-based estimation for iOS 26.0-26.3
         guard let model = selectedModel else { return }
-        contextFillRatio = MultiNoteContextManager.fillRatio(
-            noteText: assembledNoteText,
+        contextFillRatio = SmartSearchContextManager.fillRatio(
             messages: messages,
             provider: .apple,
             model: model
         )
     }
 
-    /// Whether the notes are too large for Apple FM context window.
-    /// Computed synchronously on init, then refined with real token count on iOS 26.4+.
-    var noteExceedsAppleFMContext: Bool = false
-
     // MARK: - Dependencies
 
-    let conversation: MultiNoteConversation
+    let conversation: SmartSearchConversation
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
-    /// User message not yet persisted to SwiftData. Re-appended after loadMessages() during send flow.
     private var pendingUserMessage: ChatMessage?
-
-    var assembledNoteText: String {
-        conversation.noteContext
-    }
 
     // MARK: - Init
 
-    init(conversation: MultiNoteConversation, aiService: AIService, modelContext: ModelContext) {
+    init(conversation: SmartSearchConversation, aiService: AIService, modelContext: ModelContext) {
         self.conversation = conversation
         self.aiService = aiService
         self.modelContext = modelContext
 
         loadMessages()
-        noteExceedsAppleFMContext = Self.estimateNoteExceedsAppleFM(
-            noteText: assembledNoteText,
-            systemPrompt: MultiNoteContextManager.systemPrompt
-        )
 
         if selectedProvider == .apple {
-            if noteExceedsAppleFMContext {
-                errorMessage = "These notes are too long for Apple Foundation Models. Select a different mode with a cloud provider."
-                Task { await refineNoteExceedsCheck() }
-            } else {
-                initializeAppleFMSession()
-            }
+            initializeAppleFMSession()
         }
 
         updateContextFillRatio()
@@ -167,20 +153,11 @@ final class MultiNoteChatViewModel {
             return
         }
 
-        if provider == .apple, noteExceedsAppleFMContext {
-            errorMessage = "These notes are too long for Apple Foundation Models. Try a cloud provider with a larger context window."
-            return
-        }
-
         if isAppleFMResponding { return }
 
         inputText = ""
         errorMessage = nil
-        conversation.lastInteractionAt = Date()
-        trySave()
 
-        // Create user message for immediate UI display but defer SwiftData
-        // insertion to avoid @Model mutation triggering layout disruption.
         let userMessage = ChatMessage(
             role: "user",
             content: text,
@@ -194,43 +171,96 @@ final class MultiNoteChatViewModel {
         HapticManager.prepareStreaming()
 
         streamingTask = Task {
-            do {
-                let result: String
+            defer {
+                isSearching = false
+                isStreaming = false
+                streamingText = ""
+                trySave()
+                updateContextFillRatio()
+            }
 
-                if provider == .apple {
-                    result = try await sendAppleFMMessage(text)
+            do {
+                logger.logInfo(
+                    "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
+                )
+
+                let requestedTopK = provider == .apple ? 3 : 5
+                isSearching = true
+                let searchResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
+                let transcriptions = resolveTranscriptions(for: searchResults)
+                isSearching = false
+
+                if searchResults.isEmpty {
+                    logger.logInfo("Smart Search retrieval returned no note context for query='\(Self.preview(text, limit: 80))'")
                 } else {
-                    result = try await sendCloudMessage(text, provider: provider, model: model)
+                    logSearchResults(searchResults, transcriptions: transcriptions)
                 }
 
-                // Persist user message now that streaming is done
-                pendingUserMessage = nil
-                userMessage.multiNoteConversation = conversation
-                modelContext.insert(userMessage)
+                let substantiveQueryTerms = groundedQueryTerms(from: text)
+                if searchResults.isEmpty, !substantiveQueryTerms.isEmpty {
+                    let deterministicResponse = noEvidenceResponse(for: text)
+                    logger.logInfo(
+                        "Smart Search returned deterministic no-evidence response queryTerms=\(substantiveQueryTerms.sorted().joined(separator: ", "))"
+                    )
+                    persistSuccessfulTurn(
+                        userMessage: userMessage,
+                        provider: provider,
+                        model: model,
+                        responseText: deterministicResponse.content,
+                        sourceIds: deterministicResponse.sourceIds,
+                        sourceCitations: deterministicResponse.sourceCitations
+                    )
+                    HapticManager.heartbeat()
+                    return
+                }
 
-                let assistantMessage = ChatMessage(
-                    role: "assistant",
-                    content: result,
-                    aiProviderName: provider.rawValue,
-                    aiModelName: model,
-                    estimatedTokenCount: ChatContextManager.estimateTokens(result)
+                let augmentedPrompt = SmartSearchContextManager.assembleAugmentedPrompt(
+                    query: text,
+                    searchResults: searchResults,
+                    transcriptions: transcriptions
                 )
-                assistantMessage.multiNoteConversation = conversation
-                modelContext.insert(assistantMessage)
-                messages.append(assistantMessage)
+                logger.logInfo(
+                    "Smart Search augmented prompt chars=\(augmentedPrompt.count) preview='\(Self.preview(augmentedPrompt))'"
+                )
+
+                let sourceIds = uniqueSourceIDs(from: searchResults)
+                let sourceCitations = buildSourceCitations(from: searchResults)
+                logger.logInfo("Smart Search assigned source IDs: \(describeSourceIDs(sourceIds, transcriptions: transcriptions))")
+
+                let result: String
+                if provider == .apple {
+                    result = try await sendAppleFMMessage(augmentedPrompt)
+                } else {
+                    result = try await sendCloudMessage(augmentedPrompt, provider: provider, model: model)
+                }
+
+                logger.logInfo(
+                    "Smart Search response chars=\(result.count) preview='\(Self.preview(result))'"
+                )
+
+                persistSuccessfulTurn(
+                    userMessage: userMessage,
+                    provider: provider,
+                    model: model,
+                    responseText: result,
+                    sourceIds: sourceIds,
+                    sourceCitations: sourceCitations
+                )
 
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
+                isSearching = false
                 pendingUserMessage = nil
-                userMessage.multiNoteConversation = conversation
+                userMessage.smartSearchConversation = conversation
                 modelContext.insert(userMessage)
                 savePartialResponse(provider: provider, model: model)
             } catch {
-                logger.logError("Multi-note chat error: \(error.localizedDescription)")
+                isSearching = false
+                logger.logError("Smart Search error: \(error.localizedDescription)")
 
                 pendingUserMessage = nil
-                userMessage.multiNoteConversation = conversation
+                userMessage.smartSearchConversation = conversation
                 modelContext.insert(userMessage)
 
                 let errorContent = error.localizedDescription
@@ -242,18 +272,63 @@ final class MultiNoteChatViewModel {
                     isError: true,
                     estimatedTokenCount: ChatContextManager.estimateTokens(errorContent)
                 )
-                errorMsg.multiNoteConversation = conversation
+                errorMsg.smartSearchConversation = conversation
                 modelContext.insert(errorMsg)
                 messages.append(errorMsg)
 
                 HapticManager.error()
             }
-
-            isStreaming = false
-            streamingText = ""
-            trySave()
-            updateContextFillRatio()
         }
+    }
+
+    private func uniqueSourceIDs(from searchResults: [RAGSearchResult]) -> [UUID] {
+        var seen: Set<UUID> = []
+        var ids: [UUID] = []
+        ids.reserveCapacity(searchResults.count)
+
+        for result in searchResults {
+            if seen.insert(result.transcriptionId).inserted {
+                ids.append(result.transcriptionId)
+            }
+        }
+
+        return ids
+    }
+
+    private func buildSourceCitations(from searchResults: [RAGSearchResult]) -> [SmartSearchSourceCitation] {
+        searchResults.map { result in
+            SmartSearchSourceCitation(
+                transcriptionId: result.transcriptionId,
+                excerpt: result.chunkText,
+                relevanceScore: result.relevanceScore
+            )
+        }
+    }
+
+    private func persistSuccessfulTurn(
+        userMessage: ChatMessage,
+        provider: AIProvider,
+        model: String,
+        responseText: String,
+        sourceIds: [UUID],
+        sourceCitations: [SmartSearchSourceCitation]
+    ) {
+        pendingUserMessage = nil
+        userMessage.smartSearchConversation = conversation
+        modelContext.insert(userMessage)
+
+        let assistantMessage = ChatMessage(
+            role: "assistant",
+            content: responseText,
+            aiProviderName: provider.rawValue,
+            aiModelName: model,
+            estimatedTokenCount: ChatContextManager.estimateTokens(responseText)
+        )
+        assistantMessage.sourceTranscriptionIds = sourceIds
+        assistantMessage.sourceCitations = sourceCitations
+        assistantMessage.smartSearchConversation = conversation
+        modelContext.insert(assistantMessage)
+        messages.append(assistantMessage)
     }
 
     // MARK: - Cancel
@@ -298,7 +373,7 @@ final class MultiNoteChatViewModel {
             updateContextFillRatio()
             HapticManager.success()
         } catch {
-            logger.logError("Multi-note chat compaction failed: \(error.localizedDescription)")
+            logger.logError("Smart Search compaction failed: \(error.localizedDescription)")
             errorMessage = "Compaction failed: \(error.localizedDescription)"
         }
         isCompacting = false
@@ -309,7 +384,6 @@ final class MultiNoteChatViewModel {
         guard let provider = selectedProvider, let model = selectedModel else { return }
         guard let session = appleFMSession else { return }
 
-        // Extract and summarize conversation from transcript
         let conversationText = session.transcript.getMessages().map { entry -> String in
             switch entry {
             case .prompt(let p): return "User: \(p.segments.map { "\($0)" }.joined())"
@@ -329,12 +403,13 @@ final class MultiNoteChatViewModel {
         )
         let summary = summaryResponse.content.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Rebuild session with clean transcript
-        let transcript = Transcript.buildCompacted(
-            instructions: MultiNoteContextManager.systemPrompt,
-            notePrompt: appleFMNotePrompt,
-            summary: summary
-        )
+        // Rebuild session with just instructions + summary (no fixed note context)
+        let segment = Transcript.Segment.text(Transcript.TextSegment(content: SmartSearchContextManager.systemPrompt))
+        let summarySegment = Transcript.Segment.text(Transcript.TextSegment(content: "Summary of our earlier conversation: \(summary)"))
+        let transcript = Transcript(entries: [
+            .instructions(.init(segments: [segment], toolDefinitions: [])),
+            .response(.init(assetIDs: [], segments: [summarySegment]))
+        ])
         appleFMSession = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
 
         // Update SwiftData messages
@@ -355,7 +430,7 @@ final class MultiNoteChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
-        summaryMessage.multiNoteConversation = conversation
+        summaryMessage.smartSearchConversation = conversation
         modelContext.insert(summaryMessage)
 
         saveAppleFMTranscript()
@@ -369,47 +444,6 @@ final class MultiNoteChatViewModel {
         }
     }
 
-    // MARK: - Note Exceeds Check
-
-    private static func estimateNoteExceedsAppleFM(noteText: String, systemPrompt: String) -> Bool {
-        let noteTokens = ChatContextManager.estimateTokens(noteText)
-        let systemTokens = ChatContextManager.estimateTokens(systemPrompt)
-        let limit = ChatContextManager.contextLimit(for: .apple, model: "foundation-model")
-        return (noteTokens + systemTokens) > Int(Double(limit) * 0.80)
-    }
-
-    private func refineNoteExceedsCheck() async {
-        guard #available(iOS 26.4, *) else { return }
-
-        let entries: [Transcript.Entry] = [
-            .instructions(.init(
-                segments: [.text(.init(content: MultiNoteContextManager.systemPrompt))],
-                toolDefinitions: []
-            )),
-            .prompt(.init(segments: [.text(.init(content: assembledNoteText))]))
-        ]
-
-        do {
-            let usedTokens = try await SystemLanguageModel.default.tokenCount(for: entries)
-            let contextSize = SystemLanguageModel.default.contextSize
-            let exceeds = contextSize > 0 ? Double(usedTokens) / Double(contextSize) > 0.80 : true
-
-            if noteExceedsAppleFMContext && !exceeds {
-                logger.logInfo("Multi-note chat - Real token count shows notes fit (\(usedTokens)/\(contextSize)), clearing error")
-                noteExceedsAppleFMContext = false
-                errorMessage = nil
-                initializeAppleFMSession()
-                updateContextFillRatio()
-            } else if !noteExceedsAppleFMContext && exceeds {
-                logger.logInfo("Multi-note chat - Real token count shows notes too large (\(usedTokens)/\(contextSize))")
-                noteExceedsAppleFMContext = true
-                errorMessage = "These notes are too long for Apple Foundation Models. Select a different mode with a cloud provider."
-            }
-        } catch {
-            logger.logWarning("Multi-note chat - Failed to refine note size check: \(error.localizedDescription)")
-        }
-    }
-
     // MARK: - Apple FM Session Management
 
     @available(iOS 26, *)
@@ -419,11 +453,8 @@ final class MultiNoteChatViewModel {
 
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
-        var tools: [any Tool] = []
-        if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
-            tools.append(ExaWebSearchTool(apiKey: key))
-        }
-        return tools
+        guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
+        return [ExaWebSearchTool(apiKey: key)]
     }
 
     private func initializeAppleFMSession() {
@@ -435,28 +466,19 @@ final class MultiNoteChatViewModel {
             let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
             session.prewarm()
             appleFMSession = session
-            logger.logInfo("Multi-note chat - Apple FM session restored and prewarmed")
+            logger.logInfo("Smart Search - Apple FM session restored and prewarmed")
             return
         }
 
-        let summary = messages.first(where: { $0.isSummary })?.content
-        let transcript = Transcript.buildFresh(
-            instructions: MultiNoteContextManager.systemPrompt,
-            notePrompt: appleFMNotePrompt,
-            noteAcknowledgment: "I've read your \(conversation.sourceNoteCount) notes. Ask me anything about them.",
-            summary: summary
+        // Smart Search has no fixed note context - just instructions
+        let session = LanguageModelSession(
+            model: appleFMModel,
+            tools: appleFMTools,
+            instructions: SmartSearchContextManager.systemPrompt
         )
-
-        let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
         session.prewarm()
         appleFMSession = session
-        logger.logInfo("Multi-note chat - Apple FM session initialized and prewarmed")
-    }
-
-    /// Note context for Apple FM prompt.
-    @available(iOS 26, *)
-    private var appleFMNotePrompt: String {
-        conversation.noteContext
+        logger.logInfo("Smart Search - Apple FM session initialized and prewarmed")
     }
 
     @available(iOS 26, *)
@@ -466,21 +488,17 @@ final class MultiNoteChatViewModel {
             let data = try JSONEncoder().encode(session.transcript)
             conversation.appleFMTranscriptData = data
         } catch {
-            logger.logWarning("Multi-note chat - Failed to save Apple FM transcript: \(error.localizedDescription)")
+            logger.logWarning("Smart Search - Failed to save Apple FM transcript: \(error.localizedDescription)")
         }
     }
 
     // MARK: - Send Helpers
 
     @available(iOS 26, *)
-    private func sendAppleFMMessageImpl(_ text: String) async throws -> String {
+    private func sendAppleFMMessageImpl(_ augmentedPrompt: String) async throws -> String {
         guard var session = appleFMSession else {
             throw EnhancementError.notConfigured
         }
-
-        // No preemptive compaction for Apple FM - let the runtime decide via
-        // exceededContextWindowSize. Our character-based fill estimate is too
-        // inaccurate for Apple FM's small 4K context window.
 
         let options = GenerationOptions(
             sampling: .random(probabilityThreshold: 0.9),
@@ -488,19 +506,19 @@ final class MultiNoteChatViewModel {
         )
 
         do {
-            let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+            let result = try await streamAppleFMResponse(session: session, text: augmentedPrompt, options: options)
             saveAppleFMTranscript()
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
-            logger.logWarning("Multi-note chat - Apple FM context exceeded, summarizing and retrying")
+            logger.logWarning("Smart Search - Apple FM context exceeded, summarizing and retrying")
 
             isCompacting = true
-            session = try await summarizeAndRebuildSession(session, label: "multi-note")
+            session = try await summarizeAndRebuildSession(session)
             appleFMSession = session
             compactSwiftDataMessages()
             isCompacting = false
 
-            let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+            let result = try await streamAppleFMResponse(session: session, text: augmentedPrompt, options: options)
             saveAppleFMTranscript()
             return result
         } catch let error as LanguageModelSession.GenerationError {
@@ -515,9 +533,8 @@ final class MultiNoteChatViewModel {
         }
     }
 
-    /// Extracts conversation from transcript, summarizes it, rebuilds a clean session.
     @available(iOS 26, *)
-    private func summarizeAndRebuildSession(_ session: LanguageModelSession, label: String) async throws -> LanguageModelSession {
+    private func summarizeAndRebuildSession(_ session: LanguageModelSession) async throws -> LanguageModelSession {
         let conversationText = session.transcript.getMessages().map { entry -> String in
             switch entry {
             case .prompt(let p): return "User: \(p.segments.map { "\($0)" }.joined())"
@@ -540,11 +557,12 @@ final class MultiNoteChatViewModel {
             summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        let transcript = Transcript.buildCompacted(
-            instructions: MultiNoteContextManager.systemPrompt,
-            notePrompt: appleFMNotePrompt,
-            summary: summary
-        )
+        let segment = Transcript.Segment.text(Transcript.TextSegment(content: SmartSearchContextManager.systemPrompt))
+        let summarySegment = Transcript.Segment.text(Transcript.TextSegment(content: "Summary of our earlier conversation: \(summary)"))
+        let transcript = Transcript(entries: [
+            .instructions(.init(segments: [segment], toolDefinitions: [])),
+            .response(.init(assetIDs: [], segments: [summarySegment]))
+        ])
         return LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
     }
 
@@ -572,31 +590,44 @@ final class MultiNoteChatViewModel {
         return filtered
     }
 
-    private func sendAppleFMMessage(_ text: String) async throws -> String {
+    private func sendAppleFMMessage(_ augmentedPrompt: String) async throws -> String {
         if #available(iOS 26, *) {
-            return try await sendAppleFMMessageImpl(text)
+            return try await sendAppleFMMessageImpl(augmentedPrompt)
         } else {
             throw EnhancementError.notConfigured
         }
     }
 
-    private func sendCloudMessage(_ text: String, provider: AIProvider, model: String) async throws -> String {
-        if MultiNoteContextManager.shouldAutoCompact(
-            noteText: assembledNoteText,
+    private func sendCloudMessage(_ augmentedPrompt: String, provider: AIProvider, model: String) async throws -> String {
+        if SmartSearchContextManager.shouldAutoCompact(
             messages: messages,
             provider: provider,
             model: model
         ) {
-            logger.logInfo("Multi-note chat - Auto-compacting context")
+            logger.logInfo("Smart Search - Auto-compacting context")
             try await performCompaction()
         }
 
-        let (systemMessage, apiMessages) = MultiNoteContextManager.assembleMessages(
-            noteText: assembledNoteText,
-            chatMessages: messages,
+        // Build messages with augmented prompt as the latest user message
+        var chatMessages = messages.dropLast() // Exclude the pending user message
+        let augmentedUserMessage = ChatMessage(
+            role: "user",
+            content: augmentedPrompt,
+            estimatedTokenCount: ChatContextManager.estimateTokens(augmentedPrompt)
+        )
+        var allChatMessages = Array(chatMessages)
+        allChatMessages.append(augmentedUserMessage)
+
+        let (systemMessage, apiMessages) = SmartSearchContextManager.assembleMessages(
+            chatMessages: allChatMessages,
             provider: provider,
             model: model
         )
+
+        logger.logInfo(
+            "Smart Search cloud request provider=\(provider.rawValue) model=\(model) messages=\(apiMessages.count) systemChars=\(systemMessage.count) promptChars=\(augmentedPrompt.count)"
+        )
+        logger.logDebug("Smart Search cloud prompt preview='\(Self.preview(augmentedPrompt))'")
 
         return try await aiService.makeChatStreamingRequest(
             provider: provider,
@@ -613,6 +644,47 @@ final class MultiNoteChatViewModel {
                 }
                 self.streamingText = partial
             }
+        )
+    }
+
+    // MARK: - RAG Helpers
+
+    /// Resolves Transcription objects from RAG search results via the model context.
+    private func resolveTranscriptions(for results: [RAGSearchResult]) -> [Transcription] {
+        let ids = results.map(\.transcriptionId)
+        return resolveTranscriptions(ids: ids)
+    }
+
+    private func resolveTranscriptions(ids: [UUID]) -> [Transcription] {
+        guard !ids.isEmpty else { return [] }
+
+        var transcriptions: [Transcription] = []
+        for id in ids {
+            let descriptor = FetchDescriptor<Transcription>(
+                predicate: #Predicate { $0.id == id }
+            )
+            if let transcription = try? modelContext.fetch(descriptor).first {
+                transcriptions.append(transcription)
+            } else {
+                logger.logWarning("Smart Search could not resolve transcription id=\(id.uuidString)")
+            }
+        }
+        logger.logInfo("Smart Search resolved \(transcriptions.count)/\(ids.count) transcriptions for current retrieval")
+        return transcriptions
+    }
+
+    private func noEvidenceResponse(for query: String) -> DeterministicSmartSearchResponse {
+        let response: String
+        if isLikelyRussian(query) {
+            response = "Я не нашел надежного упоминания этого в ваших заметках."
+        } else {
+            response = "I could not find a reliable mention of that in your notes."
+        }
+
+        return DeterministicSmartSearchResponse(
+            content: response,
+            sourceIds: [],
+            sourceCitations: []
         )
     }
 
@@ -651,15 +723,13 @@ final class MultiNoteChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summary)
         )
-        summaryMessage.multiNoteConversation = conversation
+        summaryMessage.smartSearchConversation = conversation
         modelContext.insert(summaryMessage)
 
         trySave()
         loadMessages()
     }
 
-    /// Compacts SwiftData messages to match the Apple FM session state after compaction.
-    /// Keeps only the 2 most recent messages for Apple FM's tight context window.
     private func compactSwiftDataMessages() {
         let nonSummaryMessages = messages.filter { !$0.isSummary }
         guard let split = ChatContextManager.messagesToCompact(from: nonSummaryMessages, keepCount: 2) else { return }
@@ -676,7 +746,7 @@ final class MultiNoteChatViewModel {
             isSummary: true,
             estimatedTokenCount: ChatContextManager.estimateTokens(summaryText)
         )
-        summaryMessage.multiNoteConversation = conversation
+        summaryMessage.smartSearchConversation = conversation
         modelContext.insert(summaryMessage)
 
         trySave()
@@ -694,7 +764,7 @@ final class MultiNoteChatViewModel {
             aiModelName: model,
             estimatedTokenCount: ChatContextManager.estimateTokens(partial)
         )
-        msg.multiNoteConversation = conversation
+        msg.smartSearchConversation = conversation
         modelContext.insert(msg)
         messages.append(msg)
         trySave()
@@ -704,8 +774,62 @@ final class MultiNoteChatViewModel {
         do {
             try modelContext.save()
         } catch {
-            logger.logError("Multi-note chat - Failed to save context: \(error.localizedDescription)")
+            logger.logError("Smart Search - Failed to save context: \(error.localizedDescription)")
         }
+    }
+
+    private func logSearchResults(_ searchResults: [RAGSearchResult], transcriptions: [Transcription]) {
+        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
+
+        logger.logInfo(
+            "Smart Search retrieval yielded \(searchResults.count) deduped hits across \(transcriptions.count) resolved notes"
+        )
+
+        for (index, result) in searchResults.enumerated() {
+            let title = transcriptionMap[result.transcriptionId]
+                .map { noteTitle(for: $0) } ?? "Missing note"
+            logger.logInfo(
+                "Smart Search hit[\(index + 1)] noteId=\(result.transcriptionId.uuidString) title='\(title)' score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
+            )
+        }
+    }
+
+    private func describeSourceIDs(_ sourceIds: [UUID], transcriptions: [Transcription]) -> String {
+        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
+        let summaries = sourceIds.map { id in
+            let title = transcriptionMap[id].map { noteTitle(for: $0) } ?? "Missing note"
+            return "\(id.uuidString):\(title)"
+        }
+        return summaries.isEmpty ? "none" : summaries.joined(separator: " | ")
+    }
+
+    private func noteTitle(for transcription: Transcription) -> String {
+        let firstLine = transcription.text
+            .components(separatedBy: .newlines)
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let title = firstLine.map { String($0.prefix(60)) } ?? "Untitled"
+        return title.isEmpty ? "Untitled" : title
+    }
+
+    private func groundedQueryTerms(from query: String) -> Set<String> {
+        SmartSearchLexicalSupport.queryTerms(from: query)
+    }
+
+    private func isLikelyRussian(_ text: String) -> Bool {
+        text.range(of: "\\p{Cyrillic}", options: .regularExpression) != nil
+    }
+
+    private static func preview(_ text: String, limit: Int = previewCharacterLimit) -> String {
+        let flattened = text
+            .replacing("\n", with: " ")
+            .replacing("\t", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        guard flattened.count > limit else { return flattened }
+        return String(flattened.prefix(limit)) + "..."
     }
 
 }

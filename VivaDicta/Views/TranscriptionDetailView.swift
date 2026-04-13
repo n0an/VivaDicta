@@ -743,6 +743,9 @@ struct TranscriptionDetailView: View {
             await appState.updateTranscriptionEntityInSpotlight(entity)
         }
 
+        // Re-index for RAG Smart Search
+        Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+
         HapticManager.success()
     }
 
@@ -769,6 +772,9 @@ struct TranscriptionDetailView: View {
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
 
+                // Re-index for RAG Smart Search
+                Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+
                 HapticManager.heartbeat()
 
                 // Request app rating after successful retranscribe
@@ -788,34 +794,43 @@ struct TranscriptionDetailView: View {
 
     private var variationChipBar: some View {
         ScrollView(.horizontal) {
-            HStack(spacing: 6) {
-                // "Original" chip — always present
-                variationChip(id: "original", label: "Original", icon: nil)
-
-                // One chip per existing variation
-                ForEach(sortedVariations, id: \.id) { variation in
-                    variationChip(
-                        id: variation.presetId,
-                        label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
-                        icon: PresetCatalog.icon(for: variation.presetId),
-                        isLoading: generatingPresetId == variation.presetId
-                    )
+            Group {
+                if #available(iOS 26, *) {
+                    GlassEffectContainer(spacing: 6) {
+                        variationChipRow
+                    }
+                } else {
+                    variationChipRow
                 }
-
-                if let temporaryGeneratingPreset {
-                    variationChip(
-                        id: temporaryGeneratingPreset.id,
-                        label: temporaryGeneratingPreset.name,
-                        icon: PresetCatalog.icon(for: temporaryGeneratingPreset.id),
-                        isLoading: true
-                    )
-                }
-
-                // "+" button to add new variation
-                addVariationButton
             }
         }
         .scrollIndicators(.hidden)
+    }
+
+    private var variationChipRow: some View {
+        HStack(spacing: 6) {
+            variationChip(id: "original", label: "Original", icon: nil)
+
+            ForEach(sortedVariations, id: \.id) { variation in
+                variationChip(
+                    id: variation.presetId,
+                    label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
+                    icon: PresetCatalog.icon(for: variation.presetId),
+                    isLoading: generatingPresetId == variation.presetId
+                )
+            }
+
+            if let temporaryGeneratingPreset {
+                variationChip(
+                    id: temporaryGeneratingPreset.id,
+                    label: temporaryGeneratingPreset.name,
+                    icon: PresetCatalog.icon(for: temporaryGeneratingPreset.id),
+                    isLoading: true
+                )
+            }
+
+            addVariationButton
+        }
     }
 
     private func variationChip(id: String, label: String, icon: String?, isLoading: Bool = false) -> some View {
@@ -839,15 +854,11 @@ struct TranscriptionDetailView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(.systemGray6))
+            .foregroundStyle(isSelected ? .white : .primary)
+            .glassCapsule(
+                tint: isSelected ? Color.accentColor.opacity(colorScheme == .dark ? 0.35 : 0.8) : nil,
+                fallback: isSelected ? Color.accentColor.opacity(0.2) : Color(.systemGray6)
             )
-            .overlay(
-                Capsule()
-                    .strokeBorder(isSelected ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2), lineWidth: 1)
-            )
-            .foregroundStyle(isSelected ? Color.accentColor : .primary)
         }
         .buttonStyle(.plain)
     }
@@ -868,15 +879,8 @@ struct TranscriptionDetailView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(Color(.systemGray6))
-            )
-            .overlay(
-                Capsule()
-                    .strokeBorder(Color.secondary.opacity(0.2), lineWidth: 1)
-            )
             .foregroundStyle(.secondary)
+            .glassCapsule(fallback: Color(.systemGray6))
         }
         .buttonStyle(.plain)
         .disabled(generatingPresetId != nil)

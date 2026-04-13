@@ -49,20 +49,12 @@ final class AppleFoundationModelService {
             let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
             logger.logNotice("Apple Foundation Model - Enhancement completed")
 
-            #if DEBUG
-            session.logTranscript(label: "enhance", logger: logger)
-            #endif
-
             return filteredText
         } catch is CancellationError {
             logger.logInfo("Apple Foundation Model - Enhancement cancelled")
             throw CancellationError()
         } catch let error as LanguageModelSession.GenerationError {
             logger.logError("Apple Foundation Model generation error: \(error.localizedDescription)")
-
-            #if DEBUG
-            session.logTranscript(label: "enhance", logger: logger)
-            #endif
 
             switch error {
             case .guardrailViolation(let context):
@@ -123,20 +115,12 @@ final class AppleFoundationModelService {
             onPartialResponse(filteredText)
             logger.logNotice("Apple Foundation Model - Streaming enhancement completed")
 
-            #if DEBUG
-            session.logTranscript(label: "enhance", logger: logger)
-            #endif
-
             return filteredText
         } catch is CancellationError {
             logger.logInfo("Apple Foundation Model - Streaming enhancement cancelled")
             throw CancellationError()
         } catch let error as LanguageModelSession.GenerationError {
             logger.logError("Apple Foundation Model streaming generation error: \(error.localizedDescription)")
-
-            #if DEBUG
-            session.logTranscript(label: "enhance", logger: logger)
-            #endif
 
             switch error {
             case .guardrailViolation(let context):

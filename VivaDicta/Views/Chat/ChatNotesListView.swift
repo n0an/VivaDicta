@@ -20,7 +20,6 @@ struct ChatNotesListView: View {
     let originalCount: Int
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedTranscription: Transcription?
 
     var body: some View {
         NavigationStack {
@@ -46,9 +45,7 @@ struct ChatNotesListView: View {
 
                     Section {
                         ForEach(transcriptions) { transcription in
-                            Button {
-                                selectedTranscription = transcription
-                            } label: {
+                            NavigationLink(value: transcription) {
                                 NoteRow(transcription: transcription)
                             }
                             .tint(.primary)
@@ -63,8 +60,8 @@ struct ChatNotesListView: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .sheet(item: $selectedTranscription) { transcription in
-                NotePreviewSheet(transcription: transcription)
+            .navigationDestination(for: Transcription.self) { transcription in
+                TranscriptionDetailView(transcription: transcription)
             }
         }
     }
@@ -101,43 +98,5 @@ private struct NoteRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Note Preview Sheet
-
-/// Read-only preview of a transcription note, shown from within the chat.
-private struct NotePreviewSheet: View {
-    let transcription: Transcription
-    @Environment(\.dismiss) private var dismiss
-
-    private var displayText: String {
-        transcription.enhancedText ?? transcription.text
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(transcription.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Text(displayText)
-                        .font(.body)
-                        .lineSpacing(4)
-                        .textSelection(.enabled)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .navigationTitle("Note Preview")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
     }
 }

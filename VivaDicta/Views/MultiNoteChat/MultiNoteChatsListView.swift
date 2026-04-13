@@ -14,20 +14,30 @@ struct MultiNoteChatsListView: View {
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
 
     @State private var viewModel: ChatsListViewModel?
     @State private var navigationPath = NavigationPath()
     @State private var selectedTab: ChatTab = .multiNote
     @State private var cachedMultiNoteVMs: [UUID: MultiNoteChatViewModel] = [:]
     @State private var cachedSingleNoteVMs: [UUID: ChatViewModel] = [:]
+    @State private var cachedSmartSearchVM: SmartSearchChatViewModel?
 
     enum ChatTab: String, CaseIterable {
         case multiNote = "Multi-Note"
         case singleNote = "Single-Note"
+        case smartSearch = "Smart Search"
     }
 
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
+    }
+
+    private var availableTabs: [ChatTab] {
+        if isSmartSearchEnabled {
+            return ChatTab.allCases
+        }
+        return [.multiNote, .singleNote]
     }
 
     var body: some View {
@@ -48,7 +58,7 @@ struct MultiNoteChatsListView: View {
                 }
 
                 Picker("Chat Type", selection: $selectedTab) {
-                    ForEach(ChatTab.allCases, id: \.self) { tab in
+                    ForEach(availableTabs, id: \.self) { tab in
                         Text(tab.rawValue).tag(tab)
                     }
                 }
@@ -62,6 +72,8 @@ struct MultiNoteChatsListView: View {
                         multiNoteContent
                     case .singleNote:
                         singleNoteContent
+                    case .smartSearch:
+                        smartSearchContent
                     }
                 }
             }
@@ -112,6 +124,11 @@ struct MultiNoteChatsListView: View {
             .onChange(of: navigationPath.count) {
                 if navigationPath.isEmpty {
                     viewModel?.loadAll()
+                }
+            }
+            .onChange(of: isSmartSearchEnabled) { _, isEnabled in
+                if !isEnabled, selectedTab == .smartSearch {
+                    selectedTab = .multiNote
                 }
             }
         }
@@ -216,6 +233,46 @@ struct MultiNoteChatsListView: View {
         }
     }
 
+    // MARK: - Smart Search Content
+
+    private var smartSearchContent: some View {
+        Group {
+            if let conversation = viewModel?.smartSearchConversation {
+                SmartSearchChatView(viewModel: smartSearchChatVM(for: conversation))
+            } else {
+                VStack(spacing: 16) {
+                    ContentUnavailableView {
+                        Label("Smart Search", systemImage: "sparkle.magnifyingglass")
+                    } description: {
+                        Text("Ask questions about all your notes. Relevant notes are found automatically using AI.")
+                    }
+
+                    Button {
+                        if let conversation = viewModel?.createSmartSearchConversation() {
+                            cachedSmartSearchVM = nil
+                            _ = smartSearchChatVM(for: conversation)
+                        }
+                    } label: {
+                        Label("Start Smart Search", systemImage: "sparkle.magnifyingglass")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!isAIConfigured)
+                }
+            }
+        }
+    }
+
+    private func smartSearchChatVM(for conversation: SmartSearchConversation) -> SmartSearchChatViewModel {
+        if let cached = cachedSmartSearchVM, cached.conversation.id == conversation.id { return cached }
+        let vm = SmartSearchChatViewModel(
+            conversation: conversation,
+            aiService: appState.aiService,
+            modelContext: modelContext
+        )
+        cachedSmartSearchVM = vm
+        return vm
+    }
+
     // MARK: - Row Views
 
     private func multiNoteRow(_ conversation: MultiNoteConversation) -> some View {
@@ -229,7 +286,7 @@ struct MultiNoteChatsListView: View {
             title: conversation.title.isEmpty ? "Untitled Chat" : conversation.title,
             noteCount: noteCount,
             lastMessage: lastMessage,
-            date: conversation.createdAt
+            date: conversation.lastInteractionAt
         )
     }
 
@@ -248,7 +305,7 @@ struct MultiNoteChatsListView: View {
             title: noteTitle,
             noteCount: nil,
             lastMessage: lastMessage,
-            date: conversation.createdAt
+            date: conversation.lastInteractionAt
         )
     }
 }

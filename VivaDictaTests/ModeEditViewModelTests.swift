@@ -75,7 +75,7 @@ struct ModeEditViewModelTests {
         viewModel.aiProvider = nil
 
         // Should be invalid because AI processing is enabled but no provider
-        #expect(viewModel.aiEnhancementValidationMessage == "Select an AI provider")
+        #expect(viewModel.aiEnhancementValidationMessage == "Select an AI provider, or disable AI Processing")
     }
 
     @Test func testIsValid_aiProcessingEnabled_noModel_returnsFalse() {
@@ -86,7 +86,7 @@ struct ModeEditViewModelTests {
         viewModel.aiProvider = .openAI
         viewModel.aiModel = nil
 
-        #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue")
+        #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue, or disable AI Processing")
     }
 
     @Test func testIsValid_aiProcessingEnabled_emptyModel_returnsFalse() {
@@ -163,7 +163,7 @@ struct ModeEditViewModelTests {
         viewModel.aiEnhanceEnabled = true
         viewModel.aiProvider = nil
 
-        #expect(viewModel.aiEnhancementValidationMessage == "Select an AI provider")
+        #expect(viewModel.aiEnhancementValidationMessage == "Select an AI provider, or disable AI Processing")
     }
 
     @Test func testAIProcessingValidationMessage_noAPIKey() {
@@ -172,7 +172,7 @@ struct ModeEditViewModelTests {
         viewModel.aiProvider = .openAI
         // No API key configured
 
-        #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue")
+        #expect(viewModel.aiEnhancementValidationMessage == "Add API key to continue, or disable AI Processing")
     }
 
     @Test func testAIProcessingValidationMessage_noPreset() {

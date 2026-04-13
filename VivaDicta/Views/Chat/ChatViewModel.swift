@@ -187,6 +187,8 @@ final class ChatViewModel {
 
         inputText = ""
         errorMessage = nil
+        conversation.lastInteractionAt = Date()
+        trySave()
 
         // Create user message for immediate UI display but defer SwiftData
         // insertion to avoid @Model mutation triggering layout disruption.
@@ -432,8 +434,11 @@ final class ChatViewModel {
 
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
-        guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
-        return [ExaWebSearchTool(apiKey: key)]
+        var tools: [any Tool] = []
+        if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
+            tools.append(ExaWebSearchTool(apiKey: key))
+        }
+        return tools
     }
 
     private func initializeAppleFMSession() {
@@ -487,11 +492,6 @@ final class ChatViewModel {
         guard var session = appleFMSession else {
             throw EnhancementError.notConfigured
         }
-
-        #if DEBUG
-        print("DEBUG APPLE FM [single-note] PROMPT: \(text)")
-        print("DEBUG APPLE FM [single-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
-        #endif
 
         // No preemptive compaction for Apple FM - let the runtime decide via
         // exceededContextWindowSize. Our character-based fill estimate is too
@@ -555,10 +555,6 @@ final class ChatViewModel {
             summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        #if DEBUG
-        print("DEBUG APPLE FM [\(label)] REBUILT SESSION with summary: \(summary.prefix(200))")
-        #endif
-
         let transcript = Transcript.buildCompacted(
             instructions: ChatContextManager.chatSystemPrompt,
             notePrompt: appleFMNotePrompt,
@@ -587,10 +583,6 @@ final class ChatViewModel {
         let response = try await stream.collect()
         let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
-        #if DEBUG
-        print("DEBUG APPLE FM [single-note] RESPONSE (\(filtered.count) chars): \(filtered.prefix(500))")
-        session.logTranscript(label: "single-note chat")
-        #endif
         streamingText = filtered
         return filtered
     }

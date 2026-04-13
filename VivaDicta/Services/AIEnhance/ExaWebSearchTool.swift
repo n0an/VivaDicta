@@ -7,6 +7,7 @@
 
 import Foundation
 import FoundationModels
+import os
 
 /// Apple FM tool that searches the web using the Exa API.
 ///
@@ -39,6 +40,8 @@ struct ExaWebSearchTool: Tool {
             let results = try await ExaAPIClient.search(query: query, apiKey: apiKey)
             return ExaAPIClient.formatResults(query: query, results: results)
         } catch {
+            let logger = Logger(category: .chatViewModel)
+            logger.logError("Apple FM ExaWebSearchTool failed query='\(query)': \(error.localizedDescription)")
             return ExaAPIClient.formatError("Web search failed: \(error.localizedDescription)")
         }
     }
@@ -75,7 +78,8 @@ nonisolated enum ExaAPIClient: Sendable {
             throw ExaError.httpStatus(code: httpResponse.statusCode)
         }
 
-        return try JSONDecoder().decode(ExaResponse.self, from: data).results
+        let results = try JSONDecoder().decode(ExaResponse.self, from: data).results
+        return results
     }
 
     nonisolated static func formatResults(query: String, results: [ExaResult]) -> GeneratedContent {

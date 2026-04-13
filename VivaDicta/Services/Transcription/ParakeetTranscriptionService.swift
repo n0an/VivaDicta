@@ -32,7 +32,7 @@ class ParakeetTranscriptionService: TranscriptionService {
             let manager = AsrManager(config: .default)
             // Load from FluidAudio's default cache directory
             let models = try await AsrModels.loadFromCache(configuration: nil, version: model.version)
-            try await manager.initialize(models: models)
+            try await manager.loadModels(models)
 
             self.asrManager = manager
             logger.logNotice("✅ Parakeet ASR model loaded successfully")
@@ -86,7 +86,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         let result = try await asrManager.transcribe(speechAudio)
 
         // Clean up models after transcription to minimize RAM usage
-        asrManager.cleanup()
+        await asrManager.cleanup()
         
         self.asrManager = nil
         self.vadManager = nil

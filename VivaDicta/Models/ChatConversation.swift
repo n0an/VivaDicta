@@ -19,6 +19,9 @@ final class ChatConversation {
     /// When this conversation was created.
     var createdAt: Date = Date()
 
+    /// When this conversation last changed, used for chats list ordering.
+    var lastInteractionAt: Date = Date()
+
     /// Encoded Apple FM `Transcript` data for session restoration without replay.
     var appleFMTranscriptData: Data?
 
