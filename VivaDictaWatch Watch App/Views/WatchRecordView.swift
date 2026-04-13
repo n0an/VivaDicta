@@ -147,10 +147,14 @@ struct WatchRecordView: View {
                     isGlowAnimating = false
                 }
         } else {
-            AngularGradient(
-                colors: [.orange, .red, .pink, .orange],
-                center: .center
-            )
+            Circle()
+                .fill(
+                    AngularGradient(
+                        colors: [.orange, .red, .pink, .orange],
+                        center: .center,
+                        angle: .degrees(isGlowAnimating ? 360 : 0)
+                    )
+                )
             .mask {
                 Circle()
                     .stroke(lineWidth: size * 0.16)
@@ -159,6 +163,14 @@ struct WatchRecordView: View {
             .scaleEffect(1.04)
             .blur(radius: size * 0.09)
             .opacity(0.9)
+            .onAppear {
+                withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                    isGlowAnimating = true
+                }
+            }
+            .onDisappear {
+                isGlowAnimating = false
+            }
         }
     }
 
