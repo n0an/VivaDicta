@@ -120,10 +120,18 @@ struct MainView: View {
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
             selectedTranscriptionIDs: $selectedTranscriptionIDs,
-            displayedTranscriptionIDs: $displayedTranscriptionIDs
+            displayedTranscriptionIDs: $displayedTranscriptionIDs,
+            floatingControls: .init(
+                recordButtonBounceTrigger: recordButtonBounceTrigger,
+                sheetTransitions: sheetTransitions,
+                onShowChats: {
+                    HapticManager.lightImpact()
+                    showMultiNoteChats = true
+                },
+                onStartRecording: startRecording
+            )
         )
-        .searchable(text: $searchText, placement: .toolbar, prompt: "Search notes")
-        .minimizedSearch()
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search notes")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { trailingToolbarContent }
         .toolbar { principalToolbarContent }
@@ -452,53 +460,6 @@ struct MainView: View {
                 }
                 .tint(.red)
                 .disabled(selectedTranscriptionIDs.isEmpty)
-            }
-        } else {
-            if #available(iOS 26.0, *) {
-                DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                
-                ToolbarSpacer(.flexible, placement: .bottomBar)
-                
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        showMultiNoteChats = true
-                    } label: {
-                        Image(systemName: "bubble.left.and.bubble.right")
-                    }
-                    .accessibilityLabel("Multi-Note Chats")
-                }
-                
-                ToolbarSpacer(.fixed, placement: .bottomBar)
-                
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        startRecording()
-                    } label: {
-                        Image(systemName: "microphone.circle")
-                            .font(.system(size: 24))
-                            .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceTrigger)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .tint(.orange)
-                    .accessibilityLabel("Start Recording")
-                }
-                .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
-            } else {
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        showMultiNoteChats = true
-                    } label: {
-                        Image(systemName: "bubble.left.and.bubble.right")
-                    }
-                    .accessibilityLabel("Multi-Note Chats")
-                }
-                ToolbarItem(placement: .bottomBar) {
-                    Button("") {
-                        startRecording()
-                    }
-                    .buttonStyle(RecordButtonButtonStyle(bounceTrigger: recordButtonBounceTrigger))
-                    .accessibilityLabel("Start Recording")
-                }
             }
         }
     }
