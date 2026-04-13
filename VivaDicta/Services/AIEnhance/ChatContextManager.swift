@@ -26,7 +26,8 @@ struct ChatContextManager {
     - If asked about something not in the note, say so clearly
     - Keep responses concise unless the user asks for detail
     - Do not use long em-dashes; use normal hyphens instead
-    - ALWAYS answer from the note text in the conversation first. Only use web search when the user explicitly asks to look something up online or asks about current events, news, or real-time information not covered in the note.
+    - ALWAYS answer from the note text already in the conversation first.
+    - Only use web search when the user explicitly asks to look something up online or asks about current events, news, or real-time information not covered in the note.
     """
 
     static let compactionPrompt = """

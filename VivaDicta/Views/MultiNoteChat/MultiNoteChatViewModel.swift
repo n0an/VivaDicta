@@ -419,10 +419,7 @@ final class MultiNoteChatViewModel {
 
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
-        let excludedIDs = Set((conversation.transcriptions ?? []).map(\.id))
-        var tools: [any Tool] = [
-            NotesSearchTool(excludedTranscriptionIDs: excludedIDs)
-        ]
+        var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key))
         }
@@ -481,6 +478,8 @@ final class MultiNoteChatViewModel {
             throw EnhancementError.notConfigured
         }
 
+        logger.logInfo("Multi-note chat - Apple FM send start transcriptEntries=\(session.transcript.count) query='\(text)'")
+
         #if DEBUG
         print("DEBUG APPLE FM [multi-note] PROMPT: \(text)")
         print("DEBUG APPLE FM [multi-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
@@ -498,6 +497,7 @@ final class MultiNoteChatViewModel {
         do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
+            logger.logInfo("Multi-note chat - Apple FM send success responseChars=\(result.count)")
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Multi-note chat - Apple FM context exceeded, summarizing and retrying")
@@ -510,6 +510,7 @@ final class MultiNoteChatViewModel {
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
+            logger.logInfo("Multi-note chat - Apple FM retry success responseChars=\(result.count)")
             return result
         } catch let error as LanguageModelSession.GenerationError {
             switch error {

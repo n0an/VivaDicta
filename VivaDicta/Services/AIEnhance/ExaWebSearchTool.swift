@@ -7,6 +7,7 @@
 
 import Foundation
 import FoundationModels
+import os
 
 /// Apple FM tool that searches the web using the Exa API.
 ///
@@ -35,10 +36,15 @@ struct ExaWebSearchTool: Tool {
             return ExaAPIClient.formatError("Search query cannot be empty.")
         }
 
+        let logger = Logger(category: .chatViewModel)
+        logger.logInfo("Apple FM ExaWebSearchTool called query='\(query)'")
+
         do {
             let results = try await ExaAPIClient.search(query: query, apiKey: apiKey)
+            logger.logInfo("Apple FM ExaWebSearchTool success query='\(query)' results=\(results.count)")
             return ExaAPIClient.formatResults(query: query, results: results)
         } catch {
+            logger.logError("Apple FM ExaWebSearchTool failed query='\(query)': \(error.localizedDescription)")
             return ExaAPIClient.formatError("Web search failed: \(error.localizedDescription)")
         }
     }
@@ -49,6 +55,7 @@ struct ExaWebSearchTool: Tool {
 @available(iOS 26, *)
 nonisolated enum ExaAPIClient: Sendable {
     nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
+        let logger = Logger(category: .chatViewModel)
         guard let url = URL(string: "https://api.exa.ai/search") else {
             throw ExaError.invalidURL
         }
@@ -65,17 +72,23 @@ nonisolated enum ExaAPIClient: Sendable {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.httpBody = try JSONEncoder().encode(payload)
 
+        logger.logInfo("Apple FM ExaWebSearchTool request start query='\(query)' numResults=5")
+
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ExaError.invalidResponse
         }
 
+        logger.logInfo("Apple FM ExaWebSearchTool response query='\(query)' status=\(httpResponse.statusCode) bytes=\(data.count)")
+
         guard (200...299).contains(httpResponse.statusCode) else {
             throw ExaError.httpStatus(code: httpResponse.statusCode)
         }
 
-        return try JSONDecoder().decode(ExaResponse.self, from: data).results
+        let results = try JSONDecoder().decode(ExaResponse.self, from: data).results
+        logger.logInfo("Apple FM ExaWebSearchTool decoded query='\(query)' results=\(results.count)")
+        return results
     }
 
     nonisolated static func formatResults(query: String, results: [ExaResult]) -> GeneratedContent {

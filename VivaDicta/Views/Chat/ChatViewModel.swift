@@ -434,9 +434,7 @@ final class ChatViewModel {
 
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
-        var tools: [any Tool] = [
-            NotesSearchTool(excludedTranscriptionIDs: [transcription.id])
-        ]
+        var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key))
         }
@@ -495,6 +493,8 @@ final class ChatViewModel {
             throw EnhancementError.notConfigured
         }
 
+        logger.logInfo("Chat - Apple FM send start transcriptEntries=\(session.transcript.count) query='\(text)'")
+
         #if DEBUG
         print("DEBUG APPLE FM [single-note] PROMPT: \(text)")
         print("DEBUG APPLE FM [single-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
@@ -512,6 +512,7 @@ final class ChatViewModel {
         do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
+            logger.logInfo("Chat - Apple FM send success responseChars=\(result.count)")
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Chat - Apple FM context exceeded, summarizing and retrying")
@@ -524,6 +525,7 @@ final class ChatViewModel {
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
+            logger.logInfo("Chat - Apple FM retry success responseChars=\(result.count)")
             return result
         } catch let error as LanguageModelSession.GenerationError {
             switch error {

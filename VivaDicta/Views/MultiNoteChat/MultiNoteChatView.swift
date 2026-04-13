@@ -6,6 +6,14 @@
 //
 
 import SwiftUI
+import SwiftData
+
+private struct MultiNoteSourceCitationDisplay: Identifiable {
+    let transcription: Transcription
+    let citation: SmartSearchSourceCitation?
+
+    var id: UUID { transcription.id }
+}
 
 /// Chat view for multi-note conversations.
 ///
@@ -15,6 +23,10 @@ struct MultiNoteChatView: View {
 
     @State private var showClearConfirmation = false
     @State private var showNotesList = false
+    @State private var selectedTranscription: Transcription?
+    @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \Transcription.timestamp, order: .reverse)
+    private var allTranscriptions: [Transcription]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,6 +88,18 @@ struct MultiNoteChatView: View {
                 originalCount: viewModel.conversation.sourceNoteCount
             )
         }
+        .sheet(item: $selectedTranscription) { transcription in
+            NavigationStack {
+                TranscriptionDetailView(transcription: transcription)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                selectedTranscription = nil
+                            }
+                        }
+                    }
+            }
+        }
     }
 
     // MARK: - Messages List
@@ -96,8 +120,14 @@ struct MultiNoteChatView: View {
                     }
 
                     ForEach(viewModel.messages, id: \.id) { message in
-                        ChatBubbleView(message: message)
-                            .id(message.id)
+                        VStack(alignment: .leading, spacing: 4) {
+                            ChatBubbleView(message: message)
+
+                            if message.role == "assistant" && !message.isError {
+                                sourceCitationPills(for: message)
+                            }
+                        }
+                        .id(message.id)
                     }
 
                     // Typing indicator while model is thinking
@@ -260,5 +290,100 @@ struct MultiNoteChatView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 8)
+    }
+
+    @ViewBuilder
+    private func sourceCitationPills(for message: ChatMessage) -> some View {
+        let sources = resolveCitationDisplays(for: message)
+        if !sources.isEmpty {
+            ScrollView(.horizontal) {
+                Group {
+                    if #available(iOS 26, *) {
+                        GlassEffectContainer(spacing: 6) {
+                            citationPillRow(for: sources)
+                        }
+                    } else {
+                        citationPillRow(for: sources)
+                    }
+                }
+                .padding(.leading)
+            }
+            .scrollIndicators(.hidden)
+        }
+    }
+
+    @ViewBuilder
+    private func citationPillRow(for sources: [MultiNoteSourceCitationDisplay]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(sources) { source in
+                Button {
+                    selectedTranscription = source.transcription
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "doc.text")
+                        Text(sourceLabel(for: source))
+                            .lineLimit(1)
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(colorScheme == .dark ? Color(.secondaryLabel) : .white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .glassCapsule(
+                        tint: Color.indigo.opacity(colorScheme == .dark ? 0.2 : 0.7),
+                        fallback: Color.secondary.opacity(0.3)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func sourceLabel(for source: MultiNoteSourceCitationDisplay) -> String {
+        let date = source.transcription.timestamp.formatted(date: .abbreviated, time: .omitted)
+
+        if let citation = source.citation {
+            return "\(date) - \(excerptPreview(citation.excerpt))"
+        }
+
+        let title = source.transcription.text
+            .prefix(30)
+            .components(separatedBy: .newlines)
+            .first ?? "Note"
+        return "\(date) - \(title)"
+    }
+
+    private func excerptPreview(_ excerpt: String) -> String {
+        let flattened = excerpt
+            .replacing("\n", with: " ")
+            .replacing("\t", with: " ")
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+
+        guard flattened.count > 44 else { return flattened }
+        return String(flattened.prefix(44)) + "..."
+    }
+
+    private func resolveSourceTranscriptions(ids: [UUID]) -> [Transcription] {
+        let idSet = Set(ids)
+        return allTranscriptions.filter { idSet.contains($0.id) }
+    }
+
+    private func resolveCitationDisplays(for message: ChatMessage) -> [MultiNoteSourceCitationDisplay] {
+        let citations = message.sourceCitations
+        if !citations.isEmpty {
+            let transcriptionMap = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+            return citations
+                .sorted { $0.relevanceScore > $1.relevanceScore }
+                .compactMap { citation in
+                    guard let transcription = transcriptionMap[citation.transcriptionId] else {
+                        return nil
+                    }
+                    return MultiNoteSourceCitationDisplay(transcription: transcription, citation: citation)
+                }
+        }
+
+        return resolveSourceTranscriptions(ids: message.sourceTranscriptionIds).map { transcription in
+            MultiNoteSourceCitationDisplay(transcription: transcription, citation: nil)
+        }
     }
 }

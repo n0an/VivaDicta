@@ -12,23 +12,28 @@ import os
 
 /// Apple FM tool that searches the user's notes outside the current chat context.
 ///
-/// Use this in single-note and multi-note chats when the user asks whether they
-/// mentioned something elsewhere in their notes. The current note or notes are
-/// already in the conversation, so this tool searches other notes only.
+/// Parked for future use.
+/// This tool is intentionally not attached to Apple FM chat sessions right now
+/// because the model invoked it too eagerly for current-note questions like
+/// summaries, insights, and "what is this note about?", which degraded answers.
+/// The current note or notes are already in the conversation, so this tool should
+/// only return when we have a cleaner way to restrict it to true cross-note intent.
 @available(iOS 26, *)
 struct NotesSearchTool: Tool {
-    let name = "searchNotes"
-    let description = "Search the user's other notes when they ask whether they mentioned something elsewhere in their notes, or ask to find related notes. The current note or notes are already in the conversation, so use this tool to search other notes. Prefer this tool over web search for the user's personal notes."
+    let name = "searchOtherNotes"
+    let description = "Search the user's OTHER notes ONLY when the user explicitly asks whether they mentioned something elsewhere in their notes, asks to search other notes, or asks to find related notes beyond the current note or notes already in the conversation. Do NOT use this tool for summarizing, explaining, extracting insights from, or answering questions about the current note or notes already in the conversation. Prefer this tool over web search for the user's personal notes."
 
     private let excludedTranscriptionIDs: Set<UUID>
+    private let captureID: UUID
 
-    init(excludedTranscriptionIDs: Set<UUID>) {
+    init(excludedTranscriptionIDs: Set<UUID>, captureID: UUID) {
         self.excludedTranscriptionIDs = excludedTranscriptionIDs
+        self.captureID = captureID
     }
 
     @Generable
     struct Arguments: Sendable {
-        @Guide(description: "The note search query, such as 'chess', 'burnout', or 'did I mention castling'")
+        @Guide(description: "A short topic or phrase to search for in the user's other notes, such as 'chess', 'burnout', or 'castling'")
         var query: String
     }
 
@@ -38,9 +43,15 @@ struct NotesSearchTool: Tool {
             return NotesSearchToolRuntime.formatError("Notes search query cannot be empty.")
         }
 
+        let logger = Logger(category: .chatViewModel)
+        logger.logInfo(
+            "Apple FM NotesSearchTool called capture=\(String(captureID.uuidString.prefix(8))) excludedNotes=\(excludedTranscriptionIDs.count) query='\(query)'"
+        )
+
         return await NotesSearchToolRuntime.searchNotes(
             query: query,
-            excluding: excludedTranscriptionIDs
+            excluding: excludedTranscriptionIDs,
+            captureID: captureID
         )
     }
 }
@@ -49,6 +60,7 @@ struct NotesSearchTool: Tool {
 @MainActor
 enum NotesSearchToolRuntime {
     static var modelContainer: ModelContainer?
+    private static var capturedCitationsByID: [UUID: [UUID: SmartSearchSourceCitation]] = [:]
 
     private static let logger = Logger(category: .chatViewModel)
     private static let maxResults = 4
@@ -65,10 +77,32 @@ enum NotesSearchToolRuntime {
         var semanticScore: Float?
     }
 
-    static func searchNotes(query: String, excluding excludedIDs: Set<UUID>) async -> GeneratedContent {
+    static func beginCapture(for captureID: UUID) {
+        capturedCitationsByID[captureID] = [:]
+        logger.logInfo("Apple FM NotesSearchTool capture started id=\(captureLabel(for: captureID))")
+    }
+
+    static func consumeCapturedCitations(for captureID: UUID) -> [SmartSearchSourceCitation] {
+        let citations = capturedCitationsByID.removeValue(forKey: captureID).map { Array($0.values) } ?? []
+        logger.logInfo(
+            "Apple FM NotesSearchTool capture consumed id=\(captureLabel(for: captureID)) citations=\(citations.count) ids=\(citations.map { $0.transcriptionId.uuidString }.joined(separator: ","))"
+        )
+        return citations.sorted { lhs, rhs in
+            if lhs.relevanceScore != rhs.relevanceScore {
+                return lhs.relevanceScore > rhs.relevanceScore
+            }
+            return lhs.transcriptionId.uuidString < rhs.transcriptionId.uuidString
+        }
+    }
+
+    static func searchNotes(query: String, excluding excludedIDs: Set<UUID>, captureID: UUID) async -> GeneratedContent {
         guard let modelContainer else {
             return formatError("Notes search is unavailable because the note database is not configured.")
         }
+
+        logger.logInfo(
+            "Apple FM NotesSearchTool search start capture=\(captureLabel(for: captureID)) smartSearchEnabled=\(SmartSearchFeature.isEnabled) excludedNotes=\(excludedIDs.count) query='\(query)'"
+        )
 
         let modelContext = modelContainer.mainContext
 
@@ -131,11 +165,17 @@ enum NotesSearchToolRuntime {
                 .prefix(maxResults)
 
             guard !finalHits.isEmpty else {
+                logger.logInfo("Apple FM NotesSearchTool search empty capture=\(captureLabel(for: captureID)) query='\(query)'")
                 return GeneratedContent(properties: [
                     "status": "empty",
                     "summary": "No matching notes found outside the note or notes already in the conversation."
                 ])
             }
+
+            capture(finalHits, for: captureID)
+            logger.logInfo(
+                "Apple FM NotesSearchTool search success capture=\(captureLabel(for: captureID)) finalHits=\(finalHits.count) hits=\(hitsSummary(finalHits))"
+            )
 
             let summary = finalHits.enumerated().map { index, hit in
                 let date = hit.transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
@@ -255,6 +295,42 @@ enum NotesSearchToolRuntime {
         let firstLine = source.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespacesAndNewlines)
         let title = firstLine.map { String($0.prefix(50)) } ?? "Note"
         return title.isEmpty ? "Note" : title
+    }
+
+    static func captureLabel(for captureID: UUID) -> String {
+        String(captureID.uuidString.prefix(8))
+    }
+
+    private static func capture<S: Sequence>(_ hits: S, for captureID: UUID) where S.Element == NoteSearchHit {
+        var captured = capturedCitationsByID[captureID, default: [:]]
+
+        for hit in hits {
+            let citation = SmartSearchSourceCitation(
+                transcriptionId: hit.transcription.id,
+                excerpt: hit.excerpt,
+                relevanceScore: hit.semanticScore ?? 0
+            )
+
+            if let existing = captured[citation.transcriptionId] {
+                if citation.relevanceScore > existing.relevanceScore {
+                    captured[citation.transcriptionId] = citation
+                }
+            } else {
+                captured[citation.transcriptionId] = citation
+            }
+        }
+
+        capturedCitationsByID[captureID] = captured
+    }
+
+    private static func hitsSummary<S: Sequence>(_ hits: S) -> String where S.Element == NoteSearchHit {
+        hits.map { hit in
+            let title = noteTitle(for: hit.transcription)
+            let sources = hit.sources.map(\.rawValue).sorted().joined(separator: "+")
+            let score = hit.semanticScore.map { Double($0).formatted(.number.precision(.fractionLength(3))) } ?? "n/a"
+            return "[\(hit.transcription.id.uuidString.prefix(6)) title='\(title)' sources=\(sources) score=\(score)]"
+        }
+        .joined(separator: " ")
     }
 
     private static func isPreferred(_ lhs: NoteSearchHit, over rhs: NoteSearchHit) -> Bool {
