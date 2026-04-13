@@ -163,22 +163,12 @@ struct MainView: View {
 
     @ViewBuilder
     private var mainContentView: some View {
-        let selectedSourceTags = Binding(
-            get: { savedNotesFilter.sourceTags },
-            set: { savedNotesFilter.sourceTags = $0 }
-        )
-        let selectedUserTagIds = Binding(
-            get: { savedNotesFilter.userTagIds },
-            set: { savedNotesFilter.userTagIds = $0 }
-        )
-
         TranscriptionsContentView(
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
             selectedTranscriptionIDs: $selectedTranscriptionIDs,
             displayedTranscriptionIDs: $displayedTranscriptionIDs,
-            selectedSourceTags: selectedSourceTags,
-            selectedUserTagIds: selectedUserTagIds,
+            savedFilter: savedNotesFilter,
             floatingControls: .init(
                 sheetTransitions: sheetTransitions,
                 onShowChats: {
