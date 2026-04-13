@@ -83,21 +83,6 @@ struct MultiNoteChatsListView: View {
                         .disabled(!isAIConfigured)
                     }
                 }
-                if selectedTab == .smartSearch {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Button(role: .destructive) {
-                                viewModel?.deleteSmartSearchConversation()
-                                cachedSmartSearchVM = nil
-                            } label: {
-                                Label("Delete Conversation", systemImage: "trash")
-                            }
-                            .disabled(viewModel?.smartSearchConversation == nil)
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                    }
-                }
             }
             .navigationDestination(for: NavigationTarget.self) { target in
                 switch target {
@@ -288,7 +273,7 @@ struct MultiNoteChatsListView: View {
             title: conversation.title.isEmpty ? "Untitled Chat" : conversation.title,
             noteCount: noteCount,
             lastMessage: lastMessage,
-            date: conversation.createdAt
+            date: conversation.lastInteractionAt
         )
     }
 
@@ -307,7 +292,7 @@ struct MultiNoteChatsListView: View {
             title: noteTitle,
             noteCount: nil,
             lastMessage: lastMessage,
-            date: conversation.createdAt
+            date: conversation.lastInteractionAt
         )
     }
 }

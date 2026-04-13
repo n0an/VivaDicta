@@ -18,6 +18,7 @@ final class MultiNoteConversation {
     var id: UUID = UUID()
     var title: String = ""
     var createdAt: Date = Date()
+    var lastInteractionAt: Date = Date()
 
     /// Encoded Apple FM `Transcript` data for session restoration.
     var appleFMTranscriptData: Data?

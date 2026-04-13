@@ -30,14 +30,14 @@ final class ChatsListViewModel {
 
     func loadMultiNote() {
         let descriptor = FetchDescriptor<MultiNoteConversation>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
         )
         multiNoteConversations = (try? modelContext.fetch(descriptor)) ?? []
     }
 
     func loadSingleNote() {
         let descriptor = FetchDescriptor<ChatConversation>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
         )
         let all = (try? modelContext.fetch(descriptor)) ?? []
         // Only show conversations that have messages

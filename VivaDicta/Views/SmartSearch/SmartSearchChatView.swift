@@ -23,7 +23,6 @@ struct SmartSearchChatView: View {
     @State var viewModel: SmartSearchChatViewModel
 
     @State private var showClearConfirmation = false
-    @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
 
     @Query(sort: \Transcription.timestamp, order: .reverse)
@@ -76,10 +75,8 @@ struct SmartSearchChatView: View {
         } message: {
             Text("This will delete all messages in this Smart Search conversation. This cannot be undone.")
         }
-        .sheet(item: $selectedTranscription) { transcription in
-            NavigationStack {
-                SourceNotePreviewView(transcription: transcription)
-            }
+        .navigationDestination(for: Transcription.self) { transcription in
+            TranscriptionDetailView(transcription: transcription)
         }
     }
 
@@ -215,9 +212,7 @@ struct SmartSearchChatView: View {
     private func citationPillRow(for sources: [SmartSearchCitationDisplay]) -> some View {
         HStack(spacing: 6) {
             ForEach(sources) { source in
-                Button {
-                    selectedTranscription = source.transcription
-                } label: {
+                NavigationLink(value: source.transcription) {
                     HStack(spacing: 5) {
                         Image(systemName: "doc.text")
                         Text(sourceLabel(for: source))
@@ -388,113 +383,5 @@ struct SmartSearchChatView: View {
         .padding(.vertical, 3)
         .background(Color.secondary.opacity(0.1))
         .clipShape(.capsule)
-    }
-}
-
-// MARK: - Source Note Preview
-
-/// Simple preview of a source transcription note shown from citation pills.
-struct SourceNotePreviewView: View {
-    let transcription: Transcription
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedChipId: String = "original"
-
-    private var sortedVariations: [TranscriptionVariation] {
-        (transcription.variations ?? []).sorted { $0.createdAt < $1.createdAt }
-    }
-
-    private var hasVariations: Bool {
-        !sortedVariations.isEmpty
-    }
-
-    private var displayedText: String {
-        if selectedChipId == "original" {
-            return transcription.text
-        }
-
-        if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
-            return variation.text
-        }
-
-        return transcription.text
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(transcription.timestamp.formatted(date: .long, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if hasVariations {
-                    variationChipBar
-                }
-
-                Text(displayedText)
-                    .textSelection(.enabled)
-            }
-            .padding()
-        }
-        .navigationTitle("Source Note")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") { dismiss() }
-            }
-        }
-    }
-
-    private var variationChipBar: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 6) {
-                variationChip(id: "original", label: "Original", icon: nil)
-
-                ForEach(sortedVariations, id: \.id) { variation in
-                    variationChip(
-                        id: variation.presetId,
-                        label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
-                        icon: PresetCatalog.icon(for: variation.presetId)
-                    )
-                }
-            }
-        }
-        .scrollIndicators(.hidden)
-    }
-
-    private func variationChip(id: String, label: String, icon: String?) -> some View {
-        let isSelected = selectedChipId == id
-
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                selectedChipId = id
-            }
-            HapticManager.selectionChanged()
-        } label: {
-            HStack(spacing: 4) {
-                if let icon {
-                    PresetIconView(icon: icon, fontSize: 11)
-                }
-
-                Text(label)
-                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(.systemGray6))
-            )
-            .overlay(
-                Capsule()
-                    .strokeBorder(
-                        isSelected ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2),
-                        lineWidth: 1
-                    )
-            )
-            .foregroundStyle(isSelected ? Color.accentColor : .primary)
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -187,6 +187,8 @@ final class ChatViewModel {
 
         inputText = ""
         errorMessage = nil
+        conversation.lastInteractionAt = Date()
+        trySave()
 
         // Create user message for immediate UI display but defer SwiftData
         // insertion to avoid @Model mutation triggering layout disruption.
