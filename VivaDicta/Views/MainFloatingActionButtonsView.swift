@@ -38,7 +38,7 @@ struct MainFloatingActionButtonsView: View {
         }
         .labelStyle(.iconOnly)
         .font(.system(size: 40))
-        .foregroundStyle(.white)
+        .foregroundStyle(colorScheme == .dark ? .white : .black)
         .padding(22)
         .background(recordButtonBackground)
         .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
@@ -122,14 +122,14 @@ struct MainFloatingActionButtonsView: View {
                 .overlay(
                     Circle()
                         .stroke(lineWidth: 3)
-                        .fill(Color.black.opacity(0.5))
+                        .fill(Color.black.opacity(0.7))
                         .blur(radius: 2)
                         .blendMode(.overlay)
                 )
                 .overlay(
                     Circle()
                         .stroke(lineWidth: 1)
-                        .fill(Color.black.opacity(0.8))
+                        .fill(Color.black.opacity(1.0))
                         .blur(radius: 1)
                         .blendMode(.overlay)
                 )
