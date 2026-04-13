@@ -9,8 +9,8 @@ import SwiftUI
 
 struct MainFloatingActionButtonsView: View {
     @Environment(\.isSearching) private var isSearching
+    @Environment(\.colorScheme) private var colorScheme
 
-    let recordButtonBounceTrigger: Int
     let sheetTransitions: Namespace.ID
     let onShowChats: () -> Void
     let onStartRecording: () -> Void
@@ -33,14 +33,13 @@ struct MainFloatingActionButtonsView: View {
     }
 
     private var recordButton: some View {
-        Button("Record", systemImage: "microphone") {
+        Button("Record", systemImage: "microphone.circle") {
             onStartRecording()
         }
         .labelStyle(.iconOnly)
-        .font(.system(size: 24))
-        .symbolEffect(.bounce.up.byLayer, options: .repeat(2), value: recordButtonBounceTrigger)
+        .font(.system(size: 60))
         .foregroundStyle(.white)
-        .padding(18)
+        .padding(12)
         .background(recordButtonBackground)
         .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
     }
@@ -59,12 +58,10 @@ struct MainFloatingActionButtonsView: View {
     @ViewBuilder
     private var recordButtonBackground: some View {
         if #available(iOS 26, *) {
-            Circle()
-                .fill(.clear)
-                .glassEffect(.regular.tint(.orange).interactive(), in: .circle)
+            styledRecordButtonBackground
+                .glassEffect(.clear.interactive(), in: .circle)
         } else {
-            Circle()
-                .fill(.orange)
+            styledRecordButtonBackground
         }
     }
 
@@ -77,6 +74,46 @@ struct MainFloatingActionButtonsView: View {
         } else {
             Circle()
                 .fill(Color(.systemGray6))
+        }
+    }
+
+    @ViewBuilder
+    private var styledRecordButtonBackground: some View {
+        if colorScheme == .dark {
+            AnimatedMeshGradient()
+                .mask(
+                    Circle()
+                        .stroke(lineWidth: 14)
+                        .blur(radius: 6)
+                )
+                .blendMode(.lighten)
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 2)
+                        .fill(Color.white)
+                        .blur(radius: 1.5)
+                        .blendMode(.overlay)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 0.5)
+                        .fill(Color.white)
+                        .blur(radius: 0.5)
+                        .blendMode(.overlay)
+                )
+                .background(.black)
+                .clipShape(.circle)
+        } else {
+            AnimatedMeshGradient2()
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 1)
+                        .fill(Color.white)
+                        .blur(radius: 1)
+                        .blendMode(.overlay)
+                )
+                .clipShape(.circle)
+                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
         }
     }
 }

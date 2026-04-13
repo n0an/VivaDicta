@@ -36,7 +36,6 @@ struct MainView: View {
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
-    @State private var recordButtonBounceTrigger = 0
 
     private let logger = Logger(category: .mainView)
 
@@ -122,7 +121,6 @@ struct MainView: View {
             selectedTranscriptionIDs: $selectedTranscriptionIDs,
             displayedTranscriptionIDs: $displayedTranscriptionIDs,
             floatingControls: .init(
-                recordButtonBounceTrigger: recordButtonBounceTrigger,
                 sheetTransitions: sheetTransitions,
                 onShowChats: {
                     HapticManager.lightImpact()
@@ -288,14 +286,6 @@ struct MainView: View {
     private func handleOnAppear() {
         SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
         SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
-
-        // Trigger record button bounce animation on app start (first 10 launches only)
-        if recordButtonBounceTrigger == 0 && AppLaunchTracker.isWithinFirstLaunches(10) {
-            Task {
-                try? await Task.sleep(for: .milliseconds(500))
-                recordButtonBounceTrigger += 1
-            }
-        }
 
         // Request app rating on app start (with delay to not be jarring)
         Task {

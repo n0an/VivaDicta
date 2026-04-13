@@ -23,7 +23,6 @@ private struct SemanticSearchMatch: Identifiable {
 }
 
 struct TranscriptionsFloatingControls {
-    let recordButtonBounceTrigger: Int
     let sheetTransitions: Namespace.ID
     let onShowChats: () -> Void
     let onStartRecording: () -> Void
@@ -130,7 +129,6 @@ struct TranscriptionsContentView: View {
 
             if let floatingControls, !isSelectionMode {
                 MainFloatingActionButtonsView(
-                    recordButtonBounceTrigger: floatingControls.recordButtonBounceTrigger,
                     sheetTransitions: floatingControls.sheetTransitions,
                     onShowChats: floatingControls.onShowChats,
                     onStartRecording: floatingControls.onStartRecording
