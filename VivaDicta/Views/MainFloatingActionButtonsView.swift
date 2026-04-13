@@ -83,7 +83,7 @@ struct MainFloatingActionButtonsView: View {
             AnimatedMeshGradient()
                 .mask(
                     Circle()
-                        .stroke(lineWidth: 14)
+                        .stroke(lineWidth: 22)
                         .blur(radius: 6)
                 )
                 .blendMode(.lighten)
