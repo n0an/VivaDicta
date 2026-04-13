@@ -12,6 +12,7 @@ struct WatchRecordView: View {
     @Bindable var viewModel: WatchRecordViewModel
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    @State private var isGlowAnimating = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -61,7 +62,12 @@ struct WatchRecordView: View {
                 .foregroundStyle(.primary)
                 .font(.system(size: 50))
                 .frame(width: size, height: size)
-                .background { mainButtonBackground }
+                .background {
+                    ZStack {
+                        mainButtonGlow(size: size)
+                        mainButtonBackground
+                    }
+                }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("WatchRecordView.mainButton")
@@ -111,6 +117,49 @@ struct WatchRecordView: View {
             darkBackground
         }
         
+    }
+
+    @ViewBuilder
+    private func mainButtonGlow(size: CGFloat) -> some View {
+        if viewModel.state == .idle {
+            Circle()
+                .fill(
+                    AngularGradient(
+                        colors: [.teal, .pink, .teal],
+                        center: .center,
+                        angle: .degrees(isGlowAnimating ? 360 : 0)
+                    )
+                )
+                .mask {
+                    Circle()
+                        .stroke(lineWidth: size * 0.16)
+                        .blur(radius: size * 0.04)
+                }
+                .scaleEffect(1.04)
+                .blur(radius: size * 0.09)
+                .opacity(0.95)
+                .onAppear {
+                    withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
+                        isGlowAnimating = true
+                    }
+                }
+                .onDisappear {
+                    isGlowAnimating = false
+                }
+        } else {
+            AngularGradient(
+                colors: [.orange, .red, .pink, .orange],
+                center: .center
+            )
+            .mask {
+                Circle()
+                    .stroke(lineWidth: size * 0.16)
+                    .blur(radius: size * 0.04)
+            }
+            .scaleEffect(1.04)
+            .blur(radius: size * 0.09)
+            .opacity(0.9)
+        }
     }
 
     @ViewBuilder
