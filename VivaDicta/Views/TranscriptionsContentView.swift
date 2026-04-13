@@ -25,6 +25,7 @@ private struct SemanticSearchMatch: Identifiable {
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var colorScheme
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Query(sort: \Transcription.timestamp, order: .reverse) private var allTranscriptions: [Transcription]
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
@@ -164,6 +165,19 @@ struct TranscriptionsContentView: View {
                 performDebouncedSearch(with: searchText)
             }
         }
+        .onChange(of: isSmartSearchEnabled) { _, isEnabled in
+            if !isEnabled {
+                searchMode = .keyword
+                smartSearchMatches = []
+                semanticScoresByID = [:]
+            }
+
+            if !searchText.isEmpty {
+                performDebouncedSearch(with: searchText)
+            } else {
+                syncDisplayedIDs()
+            }
+        }
     }
 
     private var hasActiveTagFilter: Bool {
@@ -171,7 +185,7 @@ struct TranscriptionsContentView: View {
     }
 
     private var showsCombinedResults: Bool {
-        searchMode == .all && !searchText.isEmpty
+        isSmartSearchEnabled && searchMode == .all && !searchText.isEmpty
     }
 
     private var combinedResultsAreEmpty: Bool {
@@ -196,7 +210,11 @@ struct TranscriptionsContentView: View {
     }
 
     private var displayedTranscriptions: [Transcription] {
-        switch searchMode {
+        guard isSmartSearchEnabled else {
+            return keywordDisplayedTranscriptions
+        }
+
+        return switch searchMode {
         case .smart:
             smartDisplayedTranscriptions
         case .all, .keyword:
@@ -205,6 +223,11 @@ struct TranscriptionsContentView: View {
     }
 
     private func syncDisplayedIDs() {
+        guard isSmartSearchEnabled else {
+            displayedTranscriptionIDs = Set(keywordDisplayedTranscriptions.map(\.id))
+            return
+        }
+
         switch searchMode {
         case .all:
             displayedTranscriptionIDs = Set(keywordDisplayedTranscriptions.map(\.id))
@@ -258,6 +281,15 @@ struct TranscriptionsContentView: View {
                 }
 
                 let keywordResults = keywordSearchResults(for: searchTerm)
+                guard isSmartSearchEnabled else {
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = []
+                        semanticScoresByID = [:]
+                    }
+                    return
+                }
+
                 let smartMatches = await semanticSearchMatches(for: searchTerm)
 
                 switch searchMode {
@@ -305,7 +337,7 @@ struct TranscriptionsContentView: View {
     }
 
     private func currentSemanticScore(for transcriptionID: UUID) -> Float? {
-        guard searchMode == .smart else { return nil }
+        guard isSmartSearchEnabled, searchMode == .smart else { return nil }
         return semanticScoresByID[transcriptionID]
     }
 
@@ -425,6 +457,7 @@ private struct TranscriptionSearchControlsView: View {
     let availableSourceTags: [String]
     let allTags: [TranscriptionTag]
     let searchText: String
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Binding var selectedSourceTags: Set<String>
     @Binding var selectedUserTagIds: Set<UUID>
     @Binding var searchMode: TranscriptionSearchMode
@@ -439,7 +472,7 @@ private struct TranscriptionSearchControlsView: View {
             )
         }
 
-        if !searchText.isEmpty {
+        if isSmartSearchEnabled, !searchText.isEmpty {
             Picker("Search Mode", selection: $searchMode) {
                 Text("All")
                     .tag(TranscriptionSearchMode.all)
