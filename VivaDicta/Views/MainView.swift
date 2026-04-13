@@ -153,7 +153,12 @@ struct MainView: View {
                     MultiNoteChatView(viewModel: selectionChatViewModel)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") { self.selectionChatViewModel = nil }
+                                Button {
+                                    self.selectionChatViewModel = nil
+                                } label: {
+                                    Image(systemName: "xmark")
+                                }
+                                .accessibilityLabel("Close")
                             }
                         }
                 }

@@ -41,7 +41,12 @@ struct ChatView: View {
                 chatContent
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") { dismiss() }
+                            Button {
+                                dismiss()
+                            } label: {
+                                Image(systemName: "xmark")
+                            }
+                            .accessibilityLabel("Close")
                         }
                     }
             }
@@ -106,9 +111,12 @@ struct ChatView: View {
                 TranscriptionDetailView(transcription: transcription)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
+                            Button {
                                 selectedTranscription = nil
+                            } label: {
+                                Image(systemName: "xmark")
                             }
+                            .accessibilityLabel("Close")
                         }
                     }
             }

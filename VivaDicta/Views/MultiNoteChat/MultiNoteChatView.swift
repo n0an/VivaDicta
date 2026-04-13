@@ -93,9 +93,12 @@ struct MultiNoteChatView: View {
                 TranscriptionDetailView(transcription: transcription)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
+                            Button {
                                 selectedTranscription = nil
+                            } label: {
+                                Image(systemName: "xmark")
                             }
+                            .accessibilityLabel("Close")
                         }
                     }
             }
