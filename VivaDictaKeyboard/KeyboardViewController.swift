@@ -234,25 +234,10 @@ struct VivaDictaKeyboardToolbarView: View {
             Spacer()
 
             // Always show MicButton - it handles notReady state by opening main app
-            if #available(iOS 26.0, *) {
-                MicButton(
-                    fontSize: 34,
-                    padding: 6,
-                    backgroundColor: .orange.opacity(0.5),
-                    borderWidth: 0,
-                    onTapAction: handleMic)
-                    .glassEffect(.regular.tint(.orange.opacity(1.0)).interactive())
-            } else {
-                MicButton(
-                    fontSize: 36,
-                    padding: 0,
-                    backgroundColor: .orange,
-                    borderWidth: 0.5,
-                    onTapAction: handleMic)
-            }
+            KeyboardMicButton(onTapAction: handleMic)
         }
         .padding(.horizontal, 16)
-        .padding(.top, 16)
+        .padding(.top, 6)
         .padding(.bottom, 8)
     }
 
@@ -318,6 +303,88 @@ struct VivaDictaKeyboardToolbarView: View {
             return Color.primary.opacity(0.1)
         case .error:
             return Color.orange.opacity(0.15)
+        }
+    }
+}
+
+private struct KeyboardMicButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let onTapAction: () -> Void
+
+    var body: some View {
+        Button {
+            onTapAction()
+        } label: {
+            icon
+                .padding(16)
+                .background(background)
+        }
+        .accessibilityLabel("Record")
+    }
+
+    private var icon: some View {
+        
+        Image(systemName: "microphone.fill")
+            .font(.system(size: 26))
+            .foregroundStyle(.white)
+        
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if #available(iOS 26, *) {
+            styledBackground
+                .glassEffect(.clear.interactive(), in: .circle)
+        } else {
+            styledBackground
+        }
+    }
+
+    @ViewBuilder
+    private var styledBackground: some View {
+        if colorScheme == .dark {
+            AnimatedMeshGradient()
+                .mask(
+                    Circle()
+                        .stroke(lineWidth: 12)
+                        .blur(radius: 5)
+                )
+                .blendMode(.lighten)
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 1.5)
+                        .fill(Color.white)
+                        .blur(radius: 1)
+                        .blendMode(.overlay)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 0.4)
+                        .fill(Color.white)
+                        .blur(radius: 0.3)
+                        .blendMode(.overlay)
+                )
+                .background(.black)
+                .clipShape(.circle)
+        } else {
+            AnimatedMeshGradient2()
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 3)
+                        .fill(Color.black.opacity(0.7))
+                        .blur(radius: 2)
+                        .blendMode(.overlay)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 1)
+                        .fill(Color.black.opacity(1.0))
+                        .blur(radius: 1)
+                        .blendMode(.overlay)
+                )
+                .clipShape(.circle)
+                .shadow(color: .black.opacity(0.45), radius: 8, x: 0, y: 4)
         }
     }
 }

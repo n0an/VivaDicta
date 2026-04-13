@@ -8,36 +8,36 @@
 import SwiftUI
 
 struct MicButton: View {
-    @State var isAnimating = false
-    
+    @State private var isAnimating = false
+
     var fontSize: CGFloat
     var padding: CGFloat
     var backgroundColor: Color
     var borderWidth: CGFloat
-    
+
     var onTapAction: () -> Void
-    
-    
+
     var body: some View {
-        
-        
         Button {
             onTapAction()
         } label: {
-            
             Image(systemName: "microphone.circle")
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
                 .font(.system(size: fontSize))
                 .padding(padding)
                 .background(backgroundColor.gradient, in: .circle)
-                
                 .background {
                     Circle()
-                    
-                        .fill(AngularGradient(colors: [.teal, .pink, .teal], center: .center, angle: .degrees(isAnimating ? 360 : 0)))
+                        .fill(
+                            AngularGradient(
+                                colors: [.teal, .pink, .teal],
+                                center: .center,
+                                angle: .degrees(isAnimating ? 360 : 0)
+                            )
+                        )
                         .blur(radius: 10)
                         .onAppear {
-                            withAnimation(Animation.linear(duration: 7).repeatForever(autoreverses: false)) {
+                            withAnimation(.linear(duration: 7).repeatForever(autoreverses: false)) {
                                 isAnimating = true
                             }
                         }
@@ -59,5 +59,6 @@ struct MicButton: View {
         padding: 6,
         backgroundColor: .orange.opacity(0.5),
         borderWidth: 0.5,
-        onTapAction: {})
+        onTapAction: {}
+    )
 }
