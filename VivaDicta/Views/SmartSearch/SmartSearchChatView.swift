@@ -24,6 +24,7 @@ struct SmartSearchChatView: View {
 
     @State private var showClearConfirmation = false
     @State private var selectedTranscription: Transcription?
+    @Environment(\.colorScheme) private var colorScheme
 
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
@@ -202,27 +203,44 @@ struct SmartSearchChatView: View {
         let sources = resolveCitationDisplays(for: message)
         if !sources.isEmpty {
             ScrollView(.horizontal) {
-                HStack(spacing: 6) {
-                    ForEach(sources) { source in
-                        Button {
-                            selectedTranscription = source.transcription
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "doc.text")
-                                Text(sourceLabel(for: source))
-                            }
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.secondary.opacity(0.1))
-                            .clipShape(.capsule)
+                Group {
+                    if #available(iOS 26, *) {
+                        GlassEffectContainer(spacing: 6) {
+                            citationPillRow(for: sources)
                         }
+                    } else {
+                        citationPillRow(for: sources)
                     }
                 }
                 .padding(.leading)
             }
             .scrollIndicators(.hidden)
+        }
+    }
+
+    @ViewBuilder
+    private func citationPillRow(for sources: [SmartSearchCitationDisplay]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(sources) { source in
+                Button {
+                    selectedTranscription = source.transcription
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "doc.text")
+                        Text(sourceLabel(for: source))
+                            .lineLimit(1)
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(colorScheme == .dark ? Color(.secondaryLabel) : .white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .glassCapsule(
+                        tint: Color.indigo.opacity(colorScheme == .dark ? 0.2 : 0.7),
+                        fallback: Color.secondary.opacity(0.3)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -385,6 +403,27 @@ struct SourceNotePreviewView: View {
     let transcription: Transcription
 
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedChipId: String = "original"
+
+    private var sortedVariations: [TranscriptionVariation] {
+        (transcription.variations ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private var hasVariations: Bool {
+        !sortedVariations.isEmpty
+    }
+
+    private var displayedText: String {
+        if selectedChipId == "original" {
+            return transcription.text
+        }
+
+        if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
+            return variation.text
+        }
+
+        return transcription.text
+    }
 
     var body: some View {
         ScrollView {
@@ -393,7 +432,11 @@ struct SourceNotePreviewView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text(transcription.enhancedText ?? transcription.text)
+                if hasVariations {
+                    variationChipBar
+                }
+
+                Text(displayedText)
                     .textSelection(.enabled)
             }
             .padding()
@@ -405,5 +448,58 @@ struct SourceNotePreviewView: View {
                 Button("Done") { dismiss() }
             }
         }
+    }
+
+    private var variationChipBar: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                variationChip(id: "original", label: "Original", icon: nil)
+
+                ForEach(sortedVariations, id: \.id) { variation in
+                    variationChip(
+                        id: variation.presetId,
+                        label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
+                        icon: PresetCatalog.icon(for: variation.presetId)
+                    )
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func variationChip(id: String, label: String, icon: String?) -> some View {
+        let isSelected = selectedChipId == id
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selectedChipId = id
+            }
+            HapticManager.selectionChanged()
+        } label: {
+            HStack(spacing: 4) {
+                if let icon {
+                    PresetIconView(icon: icon, fontSize: 11)
+                }
+
+                Text(label)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(.systemGray6))
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(
+                        isSelected ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2),
+                        lineWidth: 1
+                    )
+            )
+            .foregroundStyle(isSelected ? Color.accentColor : .primary)
+        }
+        .buttonStyle(.plain)
     }
 }
