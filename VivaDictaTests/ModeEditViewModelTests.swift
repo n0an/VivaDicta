@@ -13,12 +13,21 @@ struct ModeEditViewModelTests {
 
     // MARK: - Test Helpers
 
+    private func makePresetManager(suiteName: String = "ModeEditViewModelTests") -> PresetManager {
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removeObject(forKey: "testPresets")
+        defaults.removeObject(forKey: "testHiddenPresetIDs")
+
+        return PresetManager(
+            userDefaults: defaults,
+            storageKey: "testPresets",
+            hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
+        )
+    }
+
     private func makeViewModel() -> ModeEditViewModel {
         let aiService = AIService()
-        let presetManager = PresetManager(
-            userDefaults: UserDefaults(suiteName: "ModeEditViewModelTests")!,
-            storageKey: "testPresets"
-        )
+        let presetManager = makePresetManager()
         let transcriptionManager = TranscriptionManager()
 
         return ModeEditViewModel(
@@ -197,10 +206,7 @@ struct ModeEditViewModelTests {
 
     @Test func testIsEditing_existingMode_returnsTrue() {
         let aiService = AIService()
-        let presetManager = PresetManager(
-            userDefaults: UserDefaults(suiteName: "ModeEditViewModelTests")!,
-            storageKey: "testPresets"
-        )
+        let presetManager = makePresetManager()
         let transcriptionManager = TranscriptionManager()
 
         let existingMode = VivaMode(
@@ -220,6 +226,28 @@ struct ModeEditViewModelTests {
         )
 
         #expect(viewModel.isEditing == true)
+    }
+
+    @Test func testSelectFirstPresetIfNeeded_skipsHiddenPresets() {
+        let viewModel = makeViewModel()
+
+        viewModel.presetManager.setPresetHidden(presetId: "regular", isHidden: true)
+        viewModel.selectedPresetId = nil
+        viewModel.selectFirstPresetIfNeeded()
+
+        #expect(viewModel.selectedPresetId == viewModel.presetManager.visiblePresets.first?.id)
+    }
+
+    @Test func testSelectFirstPresetIfNeeded_allHidden_leavesSelectionNil() {
+        let viewModel = makeViewModel()
+        for preset in viewModel.presetManager.visiblePresets {
+            viewModel.presetManager.setPresetHidden(presetId: preset.id, isHidden: true)
+        }
+
+        viewModel.selectedPresetId = nil
+        viewModel.selectFirstPresetIfNeeded()
+
+        #expect(viewModel.selectedPresetId == nil)
     }
 
     // MARK: - Mode Name Validation Tests

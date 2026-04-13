@@ -16,7 +16,12 @@ struct PresetManagerTests {
     private func makeManager(suiteName: String = "PresetManagerTests") -> PresetManager {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removeObject(forKey: "testPresets")
-        return PresetManager(userDefaults: defaults, storageKey: "testPresets")
+        defaults.removeObject(forKey: "testHiddenPresetIDs")
+        return PresetManager(
+            userDefaults: defaults,
+            storageKey: "testPresets",
+            hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
+        )
     }
 
     private func makeCustomPreset(
@@ -196,6 +201,28 @@ struct PresetManagerTests {
         #expect(manager.hasFavorites == true)
     }
 
+    @Test func visiblePresets_excludesHiddenPresets() {
+        let manager = makeManager()
+
+        #expect(manager.visiblePresets.contains { $0.id == "regular" })
+
+        manager.setPresetHidden(presetId: "regular", isHidden: true)
+
+        #expect(!manager.visiblePresets.contains { $0.id == "regular" })
+        #expect(manager.isPresetHidden(presetId: "regular") == true)
+    }
+
+    @Test func hasVisibleFavorites_ignoresHiddenFavorites() {
+        let manager = makeManager()
+        manager.toggleFavorite(presetId: "regular")
+
+        #expect(manager.hasVisibleFavorites == true)
+
+        manager.setPresetHidden(presetId: "regular", isHidden: true)
+
+        #expect(manager.hasVisibleFavorites == false)
+    }
+
     // MARK: - Duplicate Detection Tests
 
     @Test func isPresetNameDuplicate_detectsDuplicates() {
@@ -225,14 +252,48 @@ struct PresetManagerTests {
         let suiteName = "PresetManagerPersistenceTest_\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removeObject(forKey: "testPresets")
+        defaults.removeObject(forKey: "testHiddenPresetIDs")
 
-        let manager1 = PresetManager(userDefaults: defaults, storageKey: "testPresets")
+        let manager1 = PresetManager(
+            userDefaults: defaults,
+            storageKey: "testPresets",
+            hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
+        )
         let preset = makeCustomPreset()
         manager1.addPreset(preset)
 
-        let manager2 = PresetManager(userDefaults: defaults, storageKey: "testPresets")
+        let manager2 = PresetManager(
+            userDefaults: defaults,
+            storageKey: "testPresets",
+            hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
+        )
 
         #expect(manager2.preset(for: preset.id) != nil)
+
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    @Test func persistence_hiddenPresetIDsPersistAcrossInstances() {
+        let suiteName = "PresetManagerHiddenPersistenceTest_\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removeObject(forKey: "testPresets")
+        defaults.removeObject(forKey: "testHiddenPresetIDs")
+
+        let manager1 = PresetManager(
+            userDefaults: defaults,
+            storageKey: "testPresets",
+            hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
+        )
+        manager1.setPresetHidden(presetId: "regular", isHidden: true)
+
+        let manager2 = PresetManager(
+            userDefaults: defaults,
+            storageKey: "testPresets",
+            hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
+        )
+
+        #expect(manager2.isPresetHidden(presetId: "regular") == true)
+        #expect(!manager2.visiblePresets.contains { $0.id == "regular" })
 
         defaults.removePersistentDomain(forName: suiteName)
     }
@@ -254,5 +315,16 @@ struct PresetManagerTests {
         if let lastBuiltIn = builtInIndices.last, let firstCustom = customIndices.first {
             #expect(lastBuiltIn < firstCustom)
         }
+    }
+
+    @Test func deletePreset_removesHiddenState() {
+        let manager = makeManager()
+        let preset = makeCustomPreset()
+        manager.addPreset(preset)
+        manager.setPresetHidden(presetId: preset.id, isHidden: true)
+
+        manager.deletePreset(preset)
+
+        #expect(manager.isPresetHidden(presetId: preset.id) == false)
     }
 }
