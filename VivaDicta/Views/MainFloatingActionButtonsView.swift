@@ -80,7 +80,7 @@ struct MainFloatingActionButtonsView: View {
     @ViewBuilder
     private var styledRecordButtonBackground: some View {
         if colorScheme == .dark {
-            AnimatedMeshGradient()
+            let darkGradient = AnimatedMeshGradient()
                 .mask(
                     Circle()
                         .stroke(lineWidth: 26)
@@ -101,8 +101,15 @@ struct MainFloatingActionButtonsView: View {
                         .blur(radius: 1)
                         .blendMode(.overlay)
                 )
-//                .background(.black)
-                .clipShape(.circle)
+
+            if #available(iOS 26, *) {
+                darkGradient
+                    .clipShape(.circle)
+            } else {
+                darkGradient
+                    .background(.black)
+                    .clipShape(.circle)
+            }
         } else {
             AnimatedMeshGradient2()
                 .overlay(
@@ -113,7 +120,7 @@ struct MainFloatingActionButtonsView: View {
                         .blendMode(.overlay)
                 )
                 .clipShape(.circle)
-                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 4)
         }
     }
 }
