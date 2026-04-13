@@ -39,6 +39,7 @@ struct TranscriptionsContentView: View {
     @Binding var isSelectionMode: Bool
     @Binding var selectedTranscriptionIDs: Set<UUID>
     @Binding var displayedTranscriptionIDs: Set<UUID>
+    let savedFilter: SavedNotesFilter
     let floatingControls: TranscriptionsFloatingControls?
 
     @State private var filteredTranscriptions: [Transcription] = []
@@ -48,8 +49,8 @@ struct TranscriptionsContentView: View {
     @State private var newlyInsertedIDs: Set<UUID> = []
     @State private var previousTranscriptionCount = 0
     @State private var showGoToTopButton = false
-    @State private var selectedSourceTags: Set<String> = []
-    @State private var selectedUserTagIds: Set<UUID> = []
+    @State private var selectedSourceTags: Set<String>
+    @State private var selectedUserTagIds: Set<UUID>
     @State private var searchMode: TranscriptionSearchMode = .all
 
     private let topAnchorID = "topAnchor"
@@ -62,12 +63,16 @@ struct TranscriptionsContentView: View {
         isSelectionMode: Binding<Bool>,
         selectedTranscriptionIDs: Binding<Set<UUID>>,
         displayedTranscriptionIDs: Binding<Set<UUID>>,
+        savedFilter: SavedNotesFilter,
         floatingControls: TranscriptionsFloatingControls? = nil
     ) {
         self._searchText = searchText
         self._isSelectionMode = isSelectionMode
         self._selectedTranscriptionIDs = selectedTranscriptionIDs
         self._displayedTranscriptionIDs = displayedTranscriptionIDs
+        self.savedFilter = savedFilter
+        self._selectedSourceTags = State(initialValue: savedFilter.sourceTags)
+        self._selectedUserTagIds = State(initialValue: savedFilter.userTagIds)
         self.floatingControls = floatingControls
     }
 
@@ -186,6 +191,10 @@ struct TranscriptionsContentView: View {
         }
         .onChange(of: selectedUserTagIds) {
             syncDisplayedIDs()
+        }
+        .onChange(of: savedFilter) { _, newValue in
+            selectedSourceTags = newValue.sourceTags
+            selectedUserTagIds = newValue.userTagIds
         }
         .onChange(of: searchMode) {
             if !searchText.isEmpty {
@@ -835,7 +844,8 @@ private struct TranscriptionNavigationRow: View {
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
             selectedTranscriptionIDs: $selectedIDs,
-            displayedTranscriptionIDs: .constant([])
+            displayedTranscriptionIDs: .constant([]),
+            savedFilter: SavedNotesFilter()
         )
     }
     .environment(AppState())

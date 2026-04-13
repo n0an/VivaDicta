@@ -16,9 +16,11 @@ struct MainView: View {
     @Environment(AppState.self) var appState
     @Environment(Router.self) var router
     @Query private var transcriptions: [Transcription]
+    @Query(sort: \TranscriptionTag.sortOrder) private var transcriptionTags: [TranscriptionTag]
 
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
+    @State private var showingNotesFilter = false
     @State private var showingFileImport = false
     @State private var searchText = ""
 
@@ -37,6 +39,7 @@ struct MainView: View {
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
+    @State private var savedNotesFilter = SavedNotesFilterStorage.load()
     @State private var exportItem: MarkdownExportItem?
     @State private var exportItems: [MarkdownExportItem] = []
     @State private var zipShareFile: ExportedShareFile?
@@ -51,69 +54,109 @@ struct MainView: View {
     var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
         
     var body: some View {
-        @Bindable var appState = appState
+        configuredNavigationView
+    }
+
+    @ViewBuilder
+    private var rootNavigationStack: some View {
         @Bindable var router = router
 
         NavigationStack(path: $router.path) {
             mainContentView
         }
-        .overlay { recordingOverlay }
-        .overlay { hudOverlay }
-        .animation(.default, value: appState.recordViewModel?.recordingState)
-        .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
-            showingRecordingSheet = (newState == .recording)
-        }
-        .onChange(of: appState.shouldStartRecording) { _, newValue in
-            if newValue {
-                startRecording()
-                appState.shouldStartRecording = false
+    }
+
+    @ViewBuilder
+    private var configuredNavigationView: some View {
+        lifecycleWrappedNavigationView
+            .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
+                SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue
+                SelectTranscriptionModelTipSettingsView.isTranscriptionReady = newValue
             }
-        }
-        .onChange(of: appState.shouldNavigateToModels) { _, newValue in
-            if newValue { showingSettings = true }
-        }
-        .onChange(of: appState.shouldTranscribeSharedAudio) { _, newValue in
-            if newValue {
-                showingSettings = false
-                showingRecordingSheet = false
-                router.popToRoot()
-                handleSharedAudioTranscription()
-                appState.shouldTranscribeSharedAudio = false
+    }
+
+    @ViewBuilder
+    private var lifecycleWrappedNavigationView: some View {
+        presentedNavigationView
+            .onAppear { handleOnAppear() }
+            .onChange(of: savedNotesFilter) { _, newValue in
+                SavedNotesFilterStorage.save(newValue)
             }
-        }
-        .onChange(of: appState.openedAudioFileURL) { _, newValue in
-            if newValue != nil {
-                showingSettings = false
-                showingRecordingSheet = false
-                router.popToRoot()
-                handleOpenedAudioTranscription()
+            .onChange(of: transcriptions) { _, _ in
+                sanitizeSavedNotesFilter()
             }
-        }
-        .overlay(alignment: .top) {
-            if appState.showKeyboardFlowToast {
-                KeyboardFlowToast()
-                    .padding(.top, 60)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            .onChange(of: transcriptionTags) { _, _ in
+                sanitizeSavedNotesFilter()
             }
-        }
-        .animation(.spring(duration: 0.4, bounce: 0.2), value: appState.showKeyboardFlowToast)
-        .sheet(isPresented: $showWhatsNew) {
-            if let release = whatsNewRelease {
-                WhatsNewView(release: release) {
-                    showWhatsNew = false
+            .task {
+                await performMaintenanceTasks()
+            }
+    }
+
+    @ViewBuilder
+    private var presentedNavigationView: some View {
+        contentNavigationView
+            .sheet(isPresented: $showWhatsNew) {
+                if let release = whatsNewRelease {
+                    WhatsNewView(release: release) {
+                        showWhatsNew = false
+                    }
                 }
             }
-        }
-        .onAppear { handleOnAppear() }
-        .task {
-            await NoteCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
-            await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
-            await ChatCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
-        }
-        .onChange(of: appState.transcriptionManager.hasAvailableTranscriptionModels) { _, newValue in
-            SelectTranscriptionModelTipMainView.isTranscriptionReady = newValue
-            SelectTranscriptionModelTipSettingsView.isTranscriptionReady = newValue
-        }
+            .sheet(isPresented: $showingNotesFilter) {
+                NotesFilterView(
+                    sourceTags: availableSourceTags,
+                    userTags: transcriptionTags,
+                    appliedFilter: savedNotesFilter
+                ) { filter in
+                    savedNotesFilter = filter
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var contentNavigationView: some View {
+        rootNavigationStack
+            .overlay { recordingOverlay }
+            .overlay { hudOverlay }
+            .animation(.default, value: appState.recordViewModel?.recordingState)
+            .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
+                showingRecordingSheet = (newState == .recording)
+            }
+            .onChange(of: appState.shouldStartRecording) { _, newValue in
+                if newValue {
+                    startRecording()
+                    appState.shouldStartRecording = false
+                }
+            }
+            .onChange(of: appState.shouldNavigateToModels) { _, newValue in
+                if newValue { showingSettings = true }
+            }
+            .onChange(of: appState.shouldTranscribeSharedAudio) { _, newValue in
+                if newValue {
+                    showingSettings = false
+                    showingRecordingSheet = false
+                    router.popToRoot()
+                    handleSharedAudioTranscription()
+                    appState.shouldTranscribeSharedAudio = false
+                }
+            }
+            .onChange(of: appState.openedAudioFileURL) { _, newValue in
+                if newValue != nil {
+                    showingSettings = false
+                    showingRecordingSheet = false
+                    router.popToRoot()
+                    handleOpenedAudioTranscription()
+                }
+            }
+            .overlay(alignment: .top) {
+                if appState.showKeyboardFlowToast {
+                    KeyboardFlowToast()
+                        .padding(.top, 60)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(duration: 0.4, bounce: 0.2), value: appState.showKeyboardFlowToast)
     }
 
     // MARK: - Main Content View
@@ -125,6 +168,7 @@ struct MainView: View {
             isSelectionMode: $isSelectionMode,
             selectedTranscriptionIDs: $selectedTranscriptionIDs,
             displayedTranscriptionIDs: $displayedTranscriptionIDs,
+            savedFilter: savedNotesFilter,
             floatingControls: .init(
                 sheetTransitions: sheetTransitions,
                 onShowChats: {
@@ -320,6 +364,7 @@ struct MainView: View {
     private func handleOnAppear() {
         SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
         SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
+        sanitizeSavedNotesFilter()
 
         // Request app rating on app start (with delay to not be jarring)
         Task {
@@ -361,7 +406,23 @@ struct MainView: View {
                 }
             }
         } else {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    HapticManager.lightImpact()
+                    showingNotesFilter = true
+                } label: {
+                    Image(systemName: savedNotesFilter.isActive
+                          ? "line.3.horizontal.decrease.circle.fill"
+                          : "line.3.horizontal.decrease.circle")
+                }
+                .accessibilityLabel(savedNotesFilter.isActive ? "Edit Active Notes Filter" : "Filter Notes")
+            }
+
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     HapticManager.lightImpact()
                     showingSettings = true
@@ -590,6 +651,29 @@ struct MainView: View {
         }
 
         exitSelectionMode()
+    }
+
+    private var availableSourceTags: [String] {
+        var seen = Set<String>()
+        return transcriptions.compactMap(\.sourceTag).filter { seen.insert($0).inserted }
+    }
+
+    private func sanitizeSavedNotesFilter() {
+        let sanitizedFilter = SavedNotesFilterStorage.sanitize(
+            savedNotesFilter,
+            availableSourceTags: availableSourceTags,
+            availableUserTagIds: Set(transcriptionTags.map(\.id))
+        )
+
+        if sanitizedFilter != savedNotesFilter {
+            savedNotesFilter = sanitizedFilter
+        }
+    }
+
+    private func performMaintenanceTasks() async {
+        await NoteCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
+        await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
+        await ChatCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
     }
 
     private func exportSelectedTranscriptions() {

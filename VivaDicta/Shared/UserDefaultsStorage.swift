@@ -70,5 +70,9 @@ enum UserDefaultsStorage {
 
         // What's New
         static let lastSeenWhatsNewVersion = "lastSeenWhatsNewVersion"
+
+        // Notes filter
+        static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
+        static let savedNotesFilterUserTagIds = "savedNotesFilterUserTagIds"
     }
 }
