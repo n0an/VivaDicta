@@ -15,8 +15,13 @@ enum MarkdownZipExportService {
         let archiveURL = directoryURL.appending(path: archiveFilename(for: items.count, now: now))
         let entries = items.map { ZipArchiveEntry(filename: $0.filename, data: Data($0.text.utf8)) }
 
-        try ZipArchiveWriter.write(entries: entries, to: archiveURL)
-        return archiveURL
+        do {
+            try ZipArchiveWriter.write(entries: entries, to: archiveURL)
+            return archiveURL
+        } catch {
+            cleanupArchive(at: archiveURL)
+            throw error
+        }
     }
 
     nonisolated static func cleanupArchive(at archiveURL: URL) {

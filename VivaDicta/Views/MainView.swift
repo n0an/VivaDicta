@@ -488,7 +488,7 @@ struct MainView: View {
                 } label: {
                     Label("Export", systemImage: isPreparingZipShare ? "hourglass" : "square.and.arrow.up")
                 }
-                .disabled(selectedTranscriptionIDs.isEmpty)
+                .disabled(selectedTranscriptionIDs.isEmpty || isPreparingZipShare)
             }
             
             if #available(iOS 26.0, *) {

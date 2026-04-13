@@ -9,16 +9,21 @@ import Foundation
 
 enum TranscriptionMarkdownExportService {
     static func item(for transcription: Transcription) -> MarkdownExportItem {
-        MarkdownExportItem(
-            filename: markdownFilename(for: transcription),
-            text: generateMarkdown(for: transcription)
-        )
+        markdownItem(for: transcription, filename: markdownFilename(for: transcription))
     }
 
     static func items(for transcriptions: [Transcription]) -> [MarkdownExportItem] {
-        transcriptions
+        var seenFilenames: [String: Int] = [:]
+
+        return transcriptions
             .sorted { $0.timestamp > $1.timestamp }
-            .map(item(for:))
+            .map { transcription in
+                let filename = uniquedFilename(
+                    markdownFilename(for: transcription),
+                    seenFilenames: &seenFilenames
+                )
+                return markdownItem(for: transcription, filename: filename)
+            }
     }
 
     private static let exportTimestampFormat = Date.FormatStyle()
@@ -27,6 +32,13 @@ enum TranscriptionMarkdownExportService {
         .day()
         .hour()
         .minute()
+
+    private static func markdownItem(for transcription: Transcription, filename: String) -> MarkdownExportItem {
+        MarkdownExportItem(
+            filename: filename,
+            text: generateMarkdown(for: transcription)
+        )
+    }
 
     private static func generateMarkdown(for transcription: Transcription) -> String {
         var lines: [String] = [
@@ -73,6 +85,24 @@ enum TranscriptionMarkdownExportService {
         let second = components.second ?? 0
 
         return "VivaDicta-\(year)-\(twoDigit(month))-\(twoDigit(day))_\(twoDigit(hour))\(twoDigit(minute))\(twoDigit(second)).md"
+    }
+
+    private static func uniquedFilename(_ filename: String, seenFilenames: inout [String: Int]) -> String {
+        let duplicateCount = seenFilenames[filename, default: 0]
+        seenFilenames[filename] = duplicateCount + 1
+
+        guard duplicateCount > 0 else { return filename }
+        return filenameByAppendingDuplicateIndex(duplicateCount + 1, to: filename)
+    }
+
+    private static func filenameByAppendingDuplicateIndex(_ duplicateIndex: Int, to filename: String) -> String {
+        guard let extensionStartIndex = filename.lastIndex(of: ".") else {
+            return "\(filename)-\(duplicateIndex)"
+        }
+
+        let basename = filename[..<extensionStartIndex]
+        let extensionSuffix = filename[extensionStartIndex...]
+        return "\(basename)-\(duplicateIndex)\(extensionSuffix)"
     }
 
     private static func metadataLines(for transcription: Transcription) -> [String] {
