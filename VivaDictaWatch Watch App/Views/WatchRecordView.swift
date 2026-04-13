@@ -15,7 +15,7 @@ struct WatchRecordView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let buttonSize = geometry.size.width * 0.25
+            let buttonSize = geometry.size.width * 0.5
 
             VStack(spacing: 12) {
                 Spacer()
@@ -59,8 +59,8 @@ struct WatchRecordView: View {
             Image(systemName: viewModel.state == .idle ? "microphone.fill" : "stop.circle.fill")
                 .contentTransition(.symbolEffect(.replace))
                 .foregroundStyle(.primary)
-                .font(.system(size: size))
-                .padding(26)
+                .font(.system(size: 50))
+                .frame(width: size, height: size)
                 .background { mainButtonBackground }
         }
         .buttonStyle(.plain)
