@@ -235,31 +235,47 @@ struct ChatView: View {
                 }
                 Spacer()
 
-                Button {
-                    selectedTranscription = viewModel.transcription
-                } label: {
-                    Label("1 note", systemImage: "doc.text")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.secondary.opacity(0.1))
-                        .clipShape(.capsule)
+                Group {
+                    if #available(iOS 26, *) {
+                        GlassEffectContainer(spacing: 6) {
+                            headerPills
+                        }
+                    } else {
+                        headerPills
+                    }
                 }
-
-                let ratio = viewModel.contextFillRatio
-                let percentage = Int(ratio * 100)
-                Text("\(percentage)%")
-                    .font(.caption2)
-                    .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background((ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1))
-                    .clipShape(.capsule)
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
             Divider()
+        }
+    }
+
+    private var headerPills: some View {
+        let ratio = viewModel.contextFillRatio
+        let percentage = Int(ratio * 100)
+
+        return HStack(spacing: 6) {
+            Button {
+                selectedTranscription = viewModel.transcription
+            } label: {
+                Label("1 note", systemImage: "doc.text")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .glassCapsule(fallback: Color.secondary.opacity(0.1))
+            }
+
+            Text("\(percentage)%")
+                .font(.caption2)
+                .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .glassCapsule(
+                    tint: ratio > 0.7 ? Color.orange.opacity(0.35) : nil,
+                    fallback: (ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1)
+                )
         }
     }
 
