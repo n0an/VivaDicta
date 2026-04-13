@@ -437,7 +437,15 @@ struct TranscriptionsContentView: View {
     @ViewBuilder
     private var emptyFilteredStateView: some View {
         if !searchText.isEmpty {
-            ContentUnavailableView.search
+            if isSmartSearchEnabled, searchMode == .smart {
+                ContentUnavailableView(
+                    "No Smart Matches",
+                    systemImage: "sparkle.magnifyingglass",
+                    description: Text("AI-powered semantic search could not find a close match. Try different wording or switch to Keyword.")
+                )
+            } else {
+                ContentUnavailableView.search
+            }
         } else {
             ContentUnavailableView(
                 "No Matching Notes",

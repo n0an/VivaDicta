@@ -188,7 +188,7 @@ struct SmartSearchChatView: View {
         ContentUnavailableView {
             Label("Smart Search", systemImage: "sparkle.magnifyingglass")
         } description: {
-            Text("Ask questions about your notes. Relevant notes are found automatically.")
+            Text("Ask questions about your notes. AI-powered semantic search finds relevant notes automatically.")
         }
         .padding(.top, 40)
     }

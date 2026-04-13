@@ -20,7 +20,7 @@ struct SmartSearchSettingsView: View {
             Section {
                 Toggle("Enable Smart Search", isOn: $isSmartSearchEnabled)
             } footer: {
-                Text("When disabled, Smart Search stops indexing your notes, removes the local semantic index, and hides Smart Search surfaces.")
+                Text("AI-powered semantic search across your notes. When disabled, Smart Search stops indexing your notes, removes the local semantic index, and hides Smart Search surfaces.")
             }
 
             Section {
