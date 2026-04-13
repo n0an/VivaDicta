@@ -33,15 +33,39 @@ struct MainFloatingActionButtonsView: View {
     }
 
     private var recordButton: some View {
-        Button("Record", systemImage: "microphone.fill") {
+        Button {
             onStartRecording()
         }
-        .labelStyle(.iconOnly)
-        .font(.system(size: 40))
-        .foregroundStyle(colorScheme == .dark ? .white : .black)
+        label: {
+            recordIcon
+        }
+        .accessibilityLabel("Record")
         .padding(22)
         .background(recordButtonBackground)
         .matchedTransitionSource(id: "RecordSheetTransition", in: sheetTransitions)
+    }
+
+    private var recordIcon: some View {
+        let icon = Image(systemName: "microphone.fill")
+            .font(.system(size: 40))
+
+        return Group {
+            if colorScheme == .dark {
+                icon
+                    .foregroundStyle(.white)
+                //                AnimatedMeshGradient2()
+//                    .mask { icon }
+                    
+            } else {
+                AnimatedMeshGradient()
+                    .mask { icon }
+                    .overlay {
+                        Color.black.opacity(0.3)
+                            .mask { icon }
+                    }
+            }
+        }
+        .frame(width: 48, height: 48)
     }
 
     private var chatsButton: some View {
@@ -137,26 +161,13 @@ struct MainFloatingActionButtonsView: View {
             if #available(iOS 26, *) {
                 darkGradient
                     .clipShape(.circle)
+                    .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 4)
             } else {
                 darkGradient
                     .background(.white)
                     .clipShape(.circle)
+                    .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 4)
             }
-            
-            
-            
-            
-            
-//            AnimatedMeshGradient2()
-//                .overlay(
-//                    Circle()
-//                        .stroke(lineWidth: 1)
-//                        .fill(Color.white)
-//                        .blur(radius: 1)
-//                        .blendMode(.overlay)
-//                )
-//                .clipShape(.circle)
-//                .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 4)
         }
     }
 }
