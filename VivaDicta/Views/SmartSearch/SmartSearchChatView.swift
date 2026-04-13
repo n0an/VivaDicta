@@ -55,16 +55,12 @@ struct SmartSearchChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button(role: .destructive) {
-                        showClearConfirmation = true
-                    } label: {
-                        Label("Delete Conversation", systemImage: "trash")
-                    }
-                    .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
+                Button {
+                    showClearConfirmation = true
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "trash")
                 }
+                .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
             }
         }
         .alert("Delete Conversation?", isPresented: $showClearConfirmation) {
