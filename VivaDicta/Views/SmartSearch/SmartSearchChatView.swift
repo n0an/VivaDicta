@@ -221,6 +221,7 @@ struct SmartSearchChatView: View {
             ForEach(sources) { source in
                 Button {
                     selectedTranscription = source.transcription
+                    RateAppManager.requestReviewIfAppropriate()
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: "doc.text")

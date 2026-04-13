@@ -329,6 +329,10 @@ final class SmartSearchChatViewModel {
         assistantMessage.smartSearchConversation = conversation
         modelContext.insert(assistantMessage)
         messages.append(assistantMessage)
+
+        if !sourceCitations.isEmpty {
+            RateAppManager.requestReviewIfAppropriate()
+        }
     }
 
     // MARK: - Cancel

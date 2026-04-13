@@ -23,6 +23,7 @@ import os
 @MainActor
 final class ChatViewModel {
     private let logger = Logger(category: .chatViewModel)
+    private let reviewReplyThreshold = 3
 
     // MARK: - State
 
@@ -120,6 +121,8 @@ final class ChatViewModel {
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
+    private var successfulReplyCount = 0
+    private var hasRequestedReviewForSession = false
 
     /// The note text for this conversation.
     var assembledNoteText: String {
@@ -229,6 +232,9 @@ final class ChatViewModel {
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
 
+                successfulReplyCount += 1
+                requestReviewIfNeededForSession()
+
                 HapticManager.heartbeat()
 
             } catch is CancellationError {
@@ -281,6 +287,8 @@ final class ChatViewModel {
             modelContext.delete(message)
         }
         messages.removeAll()
+        successfulReplyCount = 0
+        hasRequestedReviewForSession = false
 
         conversation.appleFMTranscriptData = nil
         trySave()
@@ -290,6 +298,12 @@ final class ChatViewModel {
         }
 
         updateContextFillRatio()
+    }
+
+    private func requestReviewIfNeededForSession() {
+        guard !hasRequestedReviewForSession, successfulReplyCount >= reviewReplyThreshold else { return }
+        hasRequestedReviewForSession = true
+        RateAppManager.requestReviewIfAppropriate()
     }
 
     // MARK: - Compact Chat
