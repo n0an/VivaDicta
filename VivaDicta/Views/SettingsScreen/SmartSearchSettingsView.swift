@@ -10,6 +10,7 @@ import SwiftUI
 /// Settings screen for RAG Smart Search configuration.
 struct SmartSearchSettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
 
     @State private var isReindexing = false
 
@@ -17,6 +18,12 @@ struct SmartSearchSettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle("Enable Smart Search", isOn: $isSmartSearchEnabled)
+            } footer: {
+                Text("When disabled, Smart Search stops indexing your notes, removes the local semantic index, and hides Smart Search surfaces.")
+            }
+
             Section {
                 HStack {
                     Text("Indexed Notes")
@@ -30,6 +37,7 @@ struct SmartSearchSettingsView: View {
                     }
                 }
             }
+            .disabled(!isSmartSearchEnabled)
 
             Section {
                 Button {
@@ -48,7 +56,7 @@ struct SmartSearchSettingsView: View {
                         }
                     }
                 }
-                .disabled(isReindexing || service.isIndexing)
+                .disabled(!isSmartSearchEnabled || isReindexing || service.isIndexing)
             } footer: {
                 Text("Rebuilds the search index from scratch. Use this if search results seem incorrect.")
             }
@@ -61,5 +69,16 @@ struct SmartSearchSettingsView: View {
         }
         .navigationTitle("Smart Search")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: isSmartSearchEnabled) { _, isEnabled in
+            isReindexing = true
+            Task {
+                if isEnabled {
+                    await service.indexAllIfNeeded(modelContext: modelContext)
+                } else {
+                    await service.clearAll()
+                }
+                isReindexing = false
+            }
+        }
     }
 }

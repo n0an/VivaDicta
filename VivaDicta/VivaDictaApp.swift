@@ -162,9 +162,11 @@ struct VivaDictaApp: App {
                         // Migrate enhanced text to variations (one-time)
                         VariationMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
 
-                        // Index all transcriptions for RAG Smart Search
-                        Task {
-                            await RAGIndexingService.shared.indexAllIfNeeded(modelContext: modelContainer.mainContext)
+                        if SmartSearchFeature.isEnabled {
+                            // Index all transcriptions for RAG Smart Search
+                            Task {
+                                await RAGIndexingService.shared.indexAllIfNeeded(modelContext: modelContainer.mainContext)
+                            }
                         }
 
                         // Set up handler for session termination from Live Activity

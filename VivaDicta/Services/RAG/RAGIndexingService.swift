@@ -196,6 +196,12 @@ final class RAGIndexingService {
 
     /// Indexes all transcriptions on first launch, or incrementally updates changed notes.
     func indexAllIfNeeded(modelContext: ModelContext) async {
+        guard SmartSearchFeature.isEnabled else {
+            logger.logInfo("RAG indexing skipped because Smart Search is disabled")
+            indexedTranscriptionCount = chunkMapping.count
+            return
+        }
+
         guard !isIndexing else { return }
         isIndexing = true
         defer {
@@ -317,6 +323,11 @@ final class RAGIndexingService {
 
     /// Indexes or re-indexes a single transcription after creation or edit.
     func indexTranscription(_ transcription: Transcription) async {
+        guard SmartSearchFeature.isEnabled else {
+            logger.logInfo("RAG single-note indexing skipped because Smart Search is disabled")
+            return
+        }
+
         do {
             try await ensureLumoKit()
             let content = indexableContent(for: transcription)
@@ -372,6 +383,17 @@ final class RAGIndexingService {
 
     /// Removes all chunks for a deleted transcription.
     func removeTranscription(id: UUID) async {
+        guard SmartSearchFeature.isEnabled else {
+            var mapping = chunkMapping
+            var hashes = transcriptionHashes
+            mapping.removeValue(forKey: id.uuidString)
+            hashes.removeValue(forKey: id.uuidString)
+            chunkMapping = mapping
+            transcriptionHashes = hashes
+            indexedTranscriptionCount = mapping.count
+            return
+        }
+
         do {
             try await ensureLumoKit()
             let idString = id.uuidString
@@ -397,6 +419,11 @@ final class RAGIndexingService {
 
     /// Clears the entire vector store and re-indexes all notes.
     func reindexAll(modelContext: ModelContext) async {
+        guard SmartSearchFeature.isEnabled else {
+            await clearAll()
+            return
+        }
+
         do {
             try await ensureLumoKit()
             try await _resetDB()
@@ -412,6 +439,22 @@ final class RAGIndexingService {
         }
     }
 
+    /// Clears the entire vector store and all local indexing metadata.
+    func clearAll() async {
+        do {
+            try await ensureLumoKit()
+            try await _resetDB()
+        } catch {
+            logger.logWarning("RAG reset skipped during clearAll: \(error.localizedDescription)")
+        }
+
+        chunkMapping = [:]
+        transcriptionHashes = [:]
+        UserDefaults.standard.set(false, forKey: indexingCompletedKey)
+        indexedTranscriptionCount = 0
+        logger.logInfo("Cleared Smart Search vector store and metadata")
+    }
+
     // MARK: - Search
 
     /// Searches the vector index for chunks relevant to the query.
@@ -419,6 +462,11 @@ final class RAGIndexingService {
     /// Returns results mapped back to source transcription IDs, deduplicated
     /// by transcription (keeps highest-scoring chunk per note).
     func search(query: String, topK: Int = 5) async throws -> [RAGSearchResult] {
+        guard SmartSearchFeature.isEnabled else {
+            searchLogger.logInfo("RAG search skipped because Smart Search is disabled")
+            return []
+        }
+
         try await ensureLumoKit()
         let threshold: Float = 0.4
         let requestedResults = topK * 2
