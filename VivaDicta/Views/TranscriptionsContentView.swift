@@ -22,6 +22,12 @@ private struct SemanticSearchMatch: Identifiable {
     var id: UUID { transcriptionId }
 }
 
+struct TranscriptionsFloatingControls {
+    let sheetTransitions: Namespace.ID
+    let onShowChats: () -> Void
+    let onStartRecording: () -> Void
+}
+
 struct TranscriptionsContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) var colorScheme
@@ -33,6 +39,7 @@ struct TranscriptionsContentView: View {
     @Binding var isSelectionMode: Bool
     @Binding var selectedTranscriptionIDs: Set<UUID>
     @Binding var displayedTranscriptionIDs: Set<UUID>
+    let floatingControls: TranscriptionsFloatingControls?
 
     @State private var filteredTranscriptions: [Transcription] = []
     @State private var smartSearchMatches: [SemanticSearchMatch] = []
@@ -50,34 +57,61 @@ struct TranscriptionsContentView: View {
 
     @Environment(AppState.self) var appState
 
-    init(searchText: Binding<String>, isSelectionMode: Binding<Bool>, selectedTranscriptionIDs: Binding<Set<UUID>>, displayedTranscriptionIDs: Binding<Set<UUID>>) {
+    init(
+        searchText: Binding<String>,
+        isSelectionMode: Binding<Bool>,
+        selectedTranscriptionIDs: Binding<Set<UUID>>,
+        displayedTranscriptionIDs: Binding<Set<UUID>>,
+        floatingControls: TranscriptionsFloatingControls? = nil
+    ) {
         self._searchText = searchText
         self._isSelectionMode = isSelectionMode
         self._selectedTranscriptionIDs = selectedTranscriptionIDs
         self._displayedTranscriptionIDs = displayedTranscriptionIDs
+        self.floatingControls = floatingControls
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            TranscriptionSearchControlsView(
-                hasTranscriptions: !allTranscriptions.isEmpty,
-                availableSourceTags: availableSourceTags,
-                allTags: allTags,
-                searchText: searchText,
-                selectedSourceTags: $selectedSourceTags,
-                selectedUserTagIds: $selectedUserTagIds,
-                searchMode: $searchMode
-            )
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                TranscriptionSearchControlsView(
+                    hasTranscriptions: !allTranscriptions.isEmpty,
+                    availableSourceTags: availableSourceTags,
+                    allTags: allTags,
+                    searchText: searchText,
+                    selectedSourceTags: $selectedSourceTags,
+                    selectedUserTagIds: $selectedUserTagIds,
+                    searchMode: $searchMode
+                )
 
-            if allTranscriptions.isEmpty {
-                emptyAllStateView
-            } else if showsCombinedResults {
-                if combinedResultsAreEmpty {
+                if allTranscriptions.isEmpty {
+                    emptyAllStateView
+                } else if showsCombinedResults {
+                    if combinedResultsAreEmpty {
+                        emptyFilteredStateView
+                    } else {
+                        CombinedSearchResultsView(
+                            keywordTranscriptions: keywordDisplayedTranscriptions,
+                            smartTranscriptions: smartDisplayedTranscriptions,
+                            isSelectionMode: isSelectionMode,
+                            selectedTranscriptionIDs: selectedTranscriptionIDs,
+                            newlyInsertedIDs: newlyInsertedIDs,
+                            allTags: allTags,
+                            topAnchorID: topAnchorID,
+                            colorScheme: colorScheme,
+                            showGoToTopButton: $showGoToTopButton,
+                            semanticScoreProvider: { transcriptionID in semanticScoresByID[transcriptionID] },
+                            audioURLProvider: audioURL(for:),
+                            onToggleSelection: toggleSelection(for:),
+                            onDeleteKeyword: deleteKeywordTranscriptions(at:),
+                            onDeleteSmart: deleteSmartTranscriptions(at:)
+                        )
+                    }
+                } else if displayedTranscriptions.isEmpty {
                     emptyFilteredStateView
                 } else {
-                    CombinedSearchResultsView(
-                        keywordTranscriptions: keywordDisplayedTranscriptions,
-                        smartTranscriptions: smartDisplayedTranscriptions,
+                    TranscriptionsListView(
+                        displayedTranscriptions: displayedTranscriptions,
                         isSelectionMode: isSelectionMode,
                         selectedTranscriptionIDs: selectedTranscriptionIDs,
                         newlyInsertedIDs: newlyInsertedIDs,
@@ -85,29 +119,19 @@ struct TranscriptionsContentView: View {
                         topAnchorID: topAnchorID,
                         colorScheme: colorScheme,
                         showGoToTopButton: $showGoToTopButton,
-                        semanticScoreProvider: { transcriptionID in semanticScoresByID[transcriptionID] },
+                        semanticScoreProvider: currentSemanticScore(for:),
                         audioURLProvider: audioURL(for:),
                         onToggleSelection: toggleSelection(for:),
-                        onDeleteKeyword: deleteKeywordTranscriptions(at:),
-                        onDeleteSmart: deleteSmartTranscriptions(at:)
+                        onDelete: deleteTranscription(at:)
                     )
                 }
-            } else if displayedTranscriptions.isEmpty {
-                emptyFilteredStateView
-            } else {
-                TranscriptionsListView(
-                    displayedTranscriptions: displayedTranscriptions,
-                    isSelectionMode: isSelectionMode,
-                    selectedTranscriptionIDs: selectedTranscriptionIDs,
-                    newlyInsertedIDs: newlyInsertedIDs,
-                    allTags: allTags,
-                    topAnchorID: topAnchorID,
-                    colorScheme: colorScheme,
-                    showGoToTopButton: $showGoToTopButton,
-                    semanticScoreProvider: currentSemanticScore(for:),
-                    audioURLProvider: audioURL(for:),
-                    onToggleSelection: toggleSelection(for:),
-                    onDelete: deleteTranscription(at:)
+            }
+
+            if let floatingControls, !isSelectionMode {
+                MainFloatingActionButtonsView(
+                    sheetTransitions: floatingControls.sheetTransitions,
+                    onShowChats: floatingControls.onShowChats,
+                    onStartRecording: floatingControls.onStartRecording
                 )
             }
         }
@@ -503,6 +527,8 @@ private struct TranscriptionSearchControlsView: View {
 }
 
 private struct TranscriptionsListView: View {
+    private static let floatingControlsInset: CGFloat = 120
+
     let displayedTranscriptions: [Transcription]
     let isSelectionMode: Bool
     let selectedTranscriptionIDs: Set<UUID>
@@ -545,6 +571,10 @@ private struct TranscriptionsListView: View {
                         )
                     }
                     .onDelete(perform: onDelete)
+
+                    if !displayedTranscriptions.isEmpty {
+                        floatingControlsSpacer
+                    }
                 }
             }
             .listStyle(.plain)
@@ -556,22 +586,32 @@ private struct TranscriptionsListView: View {
                     showGoToTopButton = isBeyondThreshold
                 }
             }
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .bottomLeading) {
                 if showGoToTopButton {
                     ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
                         withAnimation {
                             proxy.scrollTo(topAnchorID, anchor: .top)
                         }
                     }
+                    .padding(.leading, 20)
                     .padding(.bottom, 8)
                     .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
                 }
             }
         }
     }
+
+    private var floatingControlsSpacer: some View {
+        Color.clear
+            .frame(height: Self.floatingControlsInset)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
 }
 
 private struct CombinedSearchResultsView: View {
+    private static let floatingControlsInset: CGFloat = 120
+
     let keywordTranscriptions: [Transcription]
     let smartTranscriptions: [Transcription]
     let isSelectionMode: Bool
@@ -612,6 +652,8 @@ private struct CombinedSearchResultsView: View {
                         )
                     }
                 }
+
+                floatingControlsSpacer
             }
             .listStyle(.plain)
             .onScrollGeometryChange(for: Bool.self) { geo in
@@ -622,18 +664,26 @@ private struct CombinedSearchResultsView: View {
                     showGoToTopButton = isBeyondThreshold
                 }
             }
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .bottomLeading) {
                 if showGoToTopButton {
                     ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
                         withAnimation {
                             proxy.scrollTo(topAnchorID, anchor: .top)
                         }
                     }
+                    .padding(.leading, 20)
                     .padding(.bottom, 8)
                     .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
                 }
             }
         }
+    }
+
+    private var floatingControlsSpacer: some View {
+        Color.clear
+            .frame(height: Self.floatingControlsInset)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
     }
 
     @ViewBuilder
