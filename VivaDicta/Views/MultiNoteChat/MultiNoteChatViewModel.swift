@@ -478,13 +478,6 @@ final class MultiNoteChatViewModel {
             throw EnhancementError.notConfigured
         }
 
-        logger.logInfo("Multi-note chat - Apple FM send start transcriptEntries=\(session.transcript.count) query='\(text)'")
-
-        #if DEBUG
-        print("DEBUG APPLE FM [multi-note] PROMPT: \(text)")
-        print("DEBUG APPLE FM [multi-note] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
-        #endif
-
         // No preemptive compaction for Apple FM - let the runtime decide via
         // exceededContextWindowSize. Our character-based fill estimate is too
         // inaccurate for Apple FM's small 4K context window.
@@ -497,7 +490,6 @@ final class MultiNoteChatViewModel {
         do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
-            logger.logInfo("Multi-note chat - Apple FM send success responseChars=\(result.count)")
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Multi-note chat - Apple FM context exceeded, summarizing and retrying")
@@ -510,7 +502,6 @@ final class MultiNoteChatViewModel {
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
             saveAppleFMTranscript()
-            logger.logInfo("Multi-note chat - Apple FM retry success responseChars=\(result.count)")
             return result
         } catch let error as LanguageModelSession.GenerationError {
             switch error {
@@ -549,10 +540,6 @@ final class MultiNoteChatViewModel {
             summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        #if DEBUG
-        print("DEBUG APPLE FM [\(label)] REBUILT SESSION with summary: \(summary.prefix(200))")
-        #endif
-
         let transcript = Transcript.buildCompacted(
             instructions: MultiNoteContextManager.systemPrompt,
             notePrompt: appleFMNotePrompt,
@@ -581,10 +568,6 @@ final class MultiNoteChatViewModel {
         let response = try await stream.collect()
         let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
-        #if DEBUG
-        print("DEBUG APPLE FM [multi-note] RESPONSE (\(filtered.count) chars): \(filtered.prefix(500))")
-        session.logTranscript(label: "multi-note chat")
-        #endif
         streamingText = filtered
         return filtered
     }

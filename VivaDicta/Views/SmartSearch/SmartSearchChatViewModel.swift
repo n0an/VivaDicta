@@ -500,15 +500,6 @@ final class SmartSearchChatViewModel {
             throw EnhancementError.notConfigured
         }
 
-        logger.logInfo(
-            "Smart Search Apple FM request chars=\(augmentedPrompt.count) preview='\(Self.preview(augmentedPrompt))'"
-        )
-
-        #if DEBUG
-        print("DEBUG APPLE FM [smart-search] PROMPT: \(augmentedPrompt.prefix(500))")
-        print("DEBUG APPLE FM [smart-search] TRANSCRIPT ENTRIES BEFORE SEND: \(session.transcript.count)")
-        #endif
-
         let options = GenerationOptions(
             sampling: .random(probabilityThreshold: 0.9),
             temperature: 0.7
@@ -566,10 +557,6 @@ final class SmartSearchChatViewModel {
             summary = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
-        #if DEBUG
-        print("DEBUG APPLE FM [smart-search] REBUILT SESSION with summary: \(summary.prefix(200))")
-        #endif
-
         let segment = Transcript.Segment.text(Transcript.TextSegment(content: SmartSearchContextManager.systemPrompt))
         let summarySegment = Transcript.Segment.text(Transcript.TextSegment(content: "Summary of our earlier conversation: \(summary)"))
         let transcript = Transcript(entries: [
@@ -599,10 +586,6 @@ final class SmartSearchChatViewModel {
         let response = try await stream.collect()
         let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
-        #if DEBUG
-        print("DEBUG APPLE FM [smart-search] RESPONSE (\(filtered.count) chars): \(filtered.prefix(500))")
-        session.logTranscript(label: "smart-search")
-        #endif
         streamingText = filtered
         return filtered
     }
