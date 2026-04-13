@@ -15,6 +15,7 @@
 | [Tags System](Tags-System-Architecture.md) | Source tags, user tags, filtering logic, tag management |
 | [Chat Architecture](Chat-Architecture.md) | Single-note and multi-note chat, context management, compaction |
 | [Apple FM Chat Integration](Apple-FM-Chat-Integration.md) | Apple Foundation Models session lifecycle, synthesized transcripts, reactive compaction |
+| [App Review Requests](App-Review-Request-Architecture.md) | StoreKit review request gating, trigger points, keyboard deferred flow, and future chat/Smart Search direction |
 
 ## Extensions & Integrations
 
