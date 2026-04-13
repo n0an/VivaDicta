@@ -25,8 +25,6 @@ struct MainFloatingActionButtonsView: View {
             }
         }
         .padding(.horizontal)
-        .padding(.top, 8)
-        .padding(.bottom, 12)
         .opacity(isSearching ? 0 : 1)
         .allowsHitTesting(!isSearching)
         .animation(.easeInOut(duration: 0.2), value: isSearching)
@@ -69,12 +67,12 @@ struct MainFloatingActionButtonsView: View {
     }
 
     private var chatsButton: some View {
-        Button("Chats", systemImage: "bubble.left.and.bubble.right") {
+        Button("Chats", systemImage: "bubble.left.and.text.bubble.right") {
             onShowChats()
         }
         .labelStyle(.iconOnly)
-        .font(.system(size: 18))
-        .foregroundStyle(.primary)
+        .font(.system(size: 22, weight: .bold))
+        .foregroundStyle(.white)
         .padding(14)
         .background(chatsButtonBackground)
     }
@@ -92,12 +90,26 @@ struct MainFloatingActionButtonsView: View {
     @ViewBuilder
     private var chatsButtonBackground: some View {
         if #available(iOS 26, *) {
-            Circle()
-                .fill(.clear)
-                .glassEffect(.regular.interactive(), in: .circle)
+            if colorScheme == .dark {
+                AnimatedMeshGradient2()
+                    .mask {
+                        Circle()
+                            .strokeBorder(lineWidth: 3)
+                            .blur(radius: 1)
+                    }
+                    .glassEffect(.regular.tint(.blue.opacity(0.35)).interactive(), in: .circle)
+            } else {
+                AnimatedMeshGradient()
+                    .mask {
+                        Circle()
+                            .strokeBorder(lineWidth: 3)
+                    }
+                    .glassEffect(.regular.tint(.blue.opacity(0.75)).interactive(), in: .circle)
+                    .blur(radius: 1)
+            }
         } else {
             Circle()
-                .fill(Color(.systemGray6))
+                .fill(.blue)
         }
     }
 

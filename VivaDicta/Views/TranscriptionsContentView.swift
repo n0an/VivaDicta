@@ -586,13 +586,14 @@ private struct TranscriptionsListView: View {
                     showGoToTopButton = isBeyondThreshold
                 }
             }
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .bottomLeading) {
                 if showGoToTopButton {
                     ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
                         withAnimation {
                             proxy.scrollTo(topAnchorID, anchor: .top)
                         }
                     }
+                    .padding(.leading, 20)
                     .padding(.bottom, 8)
                     .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
                 }
@@ -663,13 +664,14 @@ private struct CombinedSearchResultsView: View {
                     showGoToTopButton = isBeyondThreshold
                 }
             }
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .bottomLeading) {
                 if showGoToTopButton {
                     ScrollToTopButton(backgroundColor: .indigo.opacity(colorScheme == .dark ? 0.4 : 0.7)) {
                         withAnimation {
                             proxy.scrollTo(topAnchorID, anchor: .top)
                         }
                     }
+                    .padding(.leading, 20)
                     .padding(.bottom, 8)
                     .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .scale(scale: 2)), removal: .opacity.combined(with: .scale(scale: 0.5))))
                 }
