@@ -28,7 +28,9 @@ struct SmartSearchContextManager {
     - Answer questions using the provided note context
     - When referencing a specific note, mention its title or date
     - The provided note blocks are excerpts, not always full notes
-    - If the provided notes don't contain enough information to answer, say so clearly
+    - The <NOTE> blocks are internal formatting for the model, not user-facing content
+    - Never mention XML tags, note IDs, prompt structure, or internal formatting in your answer
+    - If the provided notes don't contain enough information to answer, say so clearly in plain natural language
     - You may combine information from multiple notes to form a complete answer
     - Keep responses concise unless the user asks for detail
     - Do not use long em-dashes; use normal hyphens instead

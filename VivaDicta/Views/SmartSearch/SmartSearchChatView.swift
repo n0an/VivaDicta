@@ -57,17 +57,10 @@ struct SmartSearchChatView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button {
-                        Task { await viewModel.compactChat() }
-                    } label: {
-                        Label("Compact Chat", systemImage: "arrow.trianglehead.2.clockwise")
-                    }
-                    .disabled(viewModel.messages.count < 6 || viewModel.isStreaming || viewModel.isCompacting)
-
                     Button(role: .destructive) {
                         showClearConfirmation = true
                     } label: {
-                        Label("Clear Chat", systemImage: "trash")
+                        Label("Delete Conversation", systemImage: "trash")
                     }
                     .disabled(viewModel.messages.isEmpty || viewModel.isStreaming)
                 } label: {
@@ -75,13 +68,13 @@ struct SmartSearchChatView: View {
                 }
             }
         }
-        .alert("Clear Chat?", isPresented: $showClearConfirmation) {
-            Button("Clear", role: .destructive) {
+        .alert("Delete Conversation?", isPresented: $showClearConfirmation) {
+            Button("Delete", role: .destructive) {
                 viewModel.clearChat()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will delete all chat messages. This cannot be undone.")
+            Text("This will delete all messages in this Smart Search conversation. This cannot be undone.")
         }
         .sheet(item: $selectedTranscription) { transcription in
             NavigationStack {
@@ -278,7 +271,9 @@ struct SmartSearchChatView: View {
         let citations = message.sourceCitations
         if !citations.isEmpty {
             let transcriptionMap = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
-            return citations.compactMap { citation in
+            return citations
+                .sorted { $0.relevanceScore > $1.relevanceScore }
+                .compactMap { citation in
                 guard let transcription = transcriptionMap[citation.transcriptionId] else {
                     return nil
                 }
