@@ -82,7 +82,7 @@ struct WatchRecordView: View {
         let darkBackground = WatchAnimatedMeshGradient()
             .mask(
                 Circle()
-                    .stroke(lineWidth: 26)
+                    .stroke(lineWidth: 22)
                     .blur(radius: 6)
             )
             .blendMode(.lighten)
@@ -100,7 +100,7 @@ struct WatchRecordView: View {
                     .blur(radius: 1)
                     .blendMode(.overlay)
             )
-            .clipShape(Circle())
+            .clipShape(.circle)
         
         
         
