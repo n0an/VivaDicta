@@ -10,6 +10,7 @@ import SwiftData
 import TipKit
 import UniformTypeIdentifiers
 import os
+import CoreTransferable
 
 struct MainView: View {
     @Environment(AppState.self) var appState
@@ -36,6 +37,10 @@ struct MainView: View {
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
+    @State private var exportItem: MarkdownExportItem?
+    @State private var exportItems: [MarkdownExportItem] = []
+    @State private var zipShareFile: ExportedShareFile?
+    @State private var isPreparingZipShare = false
 
     private let logger = Logger(category: .mainView)
 
@@ -173,6 +178,30 @@ struct MainView: View {
             allowsMultipleSelection: false
         ) { result in
             handleFileImport(result)
+        }
+        .fileExporter(
+            isPresented: singleExportSheetBinding,
+            item: exportItem,
+            contentTypes: [MarkdownExportItem.contentType],
+            defaultFilename: exportItem?.filename
+        ) { result in
+            handleSingleExportCompletion(result)
+        } onCancellation: {
+            clearExportState()
+        }
+        .fileExporter(
+            isPresented: multipleExportSheetBinding,
+            items: exportItems,
+            contentTypes: [MarkdownExportItem.contentType]
+        ) { result in
+            handleMultipleExportCompletion(result)
+        } onCancellation: {
+            clearExportState()
+        }
+        .sheet(item: $zipShareFile, onDismiss: cleanupSharedZipIfNeeded) { exportedFile in
+            ActivityShareSheet(activityItems: [exportedFile.url]) { _, _, _, _ in
+                cleanupSharedZipIfNeeded()
+            }
         }
         .navigationDestination(for: Transcription.self) { transcription in
             TranscriptionDetailView(transcription: transcription)
@@ -436,6 +465,31 @@ struct MainView: View {
                 }
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
+
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .bottomBar)
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                Menu {
+                    Button {
+                        HapticManager.lightImpact()
+                        exportSelectedTranscriptions()
+                    } label: {
+                        Label("Markdown Files", systemImage: "doc.text")
+                    }
+
+                    Button {
+                        HapticManager.lightImpact()
+                        prepareZipShare()
+                    } label: {
+                        Label("Share ZIP", systemImage: "doc.zipper")
+                    }
+                } label: {
+                    Label("Export", systemImage: isPreparingZipShare ? "hourglass" : "square.and.arrow.up")
+                }
+                .disabled(selectedTranscriptionIDs.isEmpty)
+            }
             
             if #available(iOS 26.0, *) {
                 ToolbarSpacer(.flexible, placement: .bottomBar)
@@ -463,6 +517,28 @@ struct MainView: View {
 
     private var allDisplayedSelected: Bool {
         !displayedTranscriptionIDs.isEmpty && displayedTranscriptionIDs.isSubset(of: selectedTranscriptionIDs)
+    }
+
+    private var singleExportSheetBinding: Binding<Bool> {
+        Binding(
+            get: { exportItem != nil },
+            set: { isPresented in
+                if !isPresented {
+                    clearExportState()
+                }
+            }
+        )
+    }
+
+    private var multipleExportSheetBinding: Binding<Bool> {
+        Binding(
+            get: { !exportItems.isEmpty },
+            set: { isPresented in
+                if !isPresented {
+                    clearExportState()
+                }
+            }
+        )
     }
 
     private func enterSelectionMode() {
@@ -514,6 +590,83 @@ struct MainView: View {
         }
 
         exitSelectionMode()
+    }
+
+    private func exportSelectedTranscriptions() {
+        let selected = transcriptions.filter { selectedTranscriptionIDs.contains($0.id) }
+        guard !selected.isEmpty else { return }
+
+        clearExportState()
+
+        if selected.count == 1, let transcription = selected.first {
+            exportItem = TranscriptionMarkdownExportService.item(for: transcription)
+        } else {
+            exportItems = TranscriptionMarkdownExportService.items(for: selected)
+        }
+    }
+
+    private func prepareZipShare() {
+        let selected = transcriptions.filter { selectedTranscriptionIDs.contains($0.id) }
+        guard !selected.isEmpty, !isPreparingZipShare else { return }
+
+        let items = TranscriptionMarkdownExportService.items(for: selected)
+        isPreparingZipShare = true
+
+        Task {
+            do {
+                let archiveURL = try await Task.detached(priority: .userInitiated) {
+                    try MarkdownZipExportService.createArchive(from: items)
+                }.value
+
+                zipShareFile = ExportedShareFile(url: archiveURL)
+            } catch {
+                presentExportErrorIfNeeded(error)
+            }
+
+            isPreparingZipShare = false
+        }
+    }
+
+    private func handleSingleExportCompletion(_ result: Result<URL, any Error>) {
+        switch result {
+        case .success:
+            HapticManager.success()
+        case .failure(let error):
+            presentExportErrorIfNeeded(error)
+        }
+
+        clearExportState()
+    }
+
+    private func handleMultipleExportCompletion(_ result: Result<[URL], any Error>) {
+        switch result {
+        case .success:
+            HapticManager.success()
+        case .failure(let error):
+            presentExportErrorIfNeeded(error)
+        }
+
+        clearExportState()
+    }
+
+    private func presentExportErrorIfNeeded(_ error: any Error) {
+        if error is CancellationError { return }
+
+        logger.logError("Markdown export failed: \(error.localizedDescription)")
+        fileErrorMessage = error.localizedDescription
+        showFileErrorAlert = true
+    }
+
+    private func clearExportState() {
+        exportItem = nil
+        exportItems = []
+    }
+
+    private func cleanupSharedZipIfNeeded() {
+        guard let zipShareFile else { return }
+
+        MarkdownZipExportService.cleanupArchive(at: zipShareFile.url)
+        self.zipShareFile = nil
     }
 
     // MARK: - Multi-Note Chat from Selection
@@ -704,6 +857,11 @@ struct MainView: View {
             showFileErrorAlert = true
         }
     }
+}
+
+private struct ExportedShareFile: Identifiable {
+    let id = UUID()
+    let url: URL
 }
 
 #if DEBUG || QA
