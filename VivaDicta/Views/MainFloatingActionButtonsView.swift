@@ -111,16 +111,52 @@ struct MainFloatingActionButtonsView: View {
                     .clipShape(.circle)
             }
         } else {
-            AnimatedMeshGradient2()
+            
+            
+            let darkGradient = AnimatedMeshGradient2()
+                .mask(
+                    Circle()
+                        .stroke(lineWidth: 26)
+                        .blur(radius: 6)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(lineWidth: 3)
+                        .fill(Color.black.opacity(0.5))
+                        .blur(radius: 2)
+                        .blendMode(.overlay)
+                )
                 .overlay(
                     Circle()
                         .stroke(lineWidth: 1)
-                        .fill(Color.white)
+                        .fill(Color.black.opacity(0.8))
                         .blur(radius: 1)
                         .blendMode(.overlay)
                 )
-                .clipShape(.circle)
-                .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 4)
+
+            if #available(iOS 26, *) {
+                darkGradient
+                    .clipShape(.circle)
+            } else {
+                darkGradient
+                    .background(.white)
+                    .clipShape(.circle)
+            }
+            
+            
+            
+            
+            
+//            AnimatedMeshGradient2()
+//                .overlay(
+//                    Circle()
+//                        .stroke(lineWidth: 1)
+//                        .fill(Color.white)
+//                        .blur(radius: 1)
+//                        .blendMode(.overlay)
+//                )
+//                .clipShape(.circle)
+//                .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 4)
         }
     }
 }
