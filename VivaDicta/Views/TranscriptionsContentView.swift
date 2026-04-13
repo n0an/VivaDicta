@@ -119,6 +119,9 @@ struct TranscriptionsContentView: View {
             syncDisplayedIDs()
         }
         .onChange(of: searchText) { _, newValue in
+            if newValue.isEmpty {
+                searchMode = isSmartSearchEnabled ? .all : .keyword
+            }
             performDebouncedSearch(with: newValue)
         }
         .onChange(of: allTranscriptions) { oldValue, newValue in

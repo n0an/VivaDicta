@@ -75,6 +75,24 @@ When polling:
 - Ignore empty bodies and obvious "review in progress" placeholders
 - Stop after a reasonable bounded wait if no review arrives, and tell the user review was requested but not yet returned
 
+## IMPORTANT: Review Inspection Hygiene
+
+Do **not** assume a top-level review with generic text means there are no findings.
+
+- Always inspect **inline review comments / file-level review threads** in addition to issue comments and top-level reviews.
+- Actionable feedback can exist only in inline comments even when the main review body looks boilerplate.
+- Inline comments may be attached to an older reviewed commit on the same branch and still be relevant.
+- Before dismissing a review as empty, check all three surfaces:
+  - issue comments
+  - PR reviews
+  - pull request review comments / inline comments
+
+Suggested extra command:
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<PR_NUMBER>/comments
+```
+
 ## Handling Review Feedback
 
 - **Real critical bugs** (regressions, data loss, crashes, security issues): fix them immediately without asking.

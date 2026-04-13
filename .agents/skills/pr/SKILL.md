@@ -54,6 +54,24 @@ After the PR is created, **always** do the following (skip only if the user expl
 3. **Stop polling** once the full review is received (not just "in progress" status).
 4. **Show the review** to the user and ask "WDYT?" to discuss the findings before acting on them.
 
+## IMPORTANT: Review Inspection Hygiene
+
+When checking review feedback, do **not** rely only on top-level PR reviews or summary comments.
+
+- Always inspect **inline review comments / file-level threads** too.
+- A generic top-level review body can still coexist with actionable inline comments.
+- Inline comments may be attached to an older reviewed commit on the same branch and still be worth evaluating.
+- Before dismissing a review as empty or boilerplate, check:
+  - issue comments
+  - PR reviews
+  - pull request review comments / inline comments
+
+Suggested extra check:
+
+```bash
+gh api repos/<owner>/<repo>/pulls/<PR_NUMBER>/comments
+```
+
 ## Handling Review Feedback
 
 - **Real critical bugs** (regressions, data loss, crashes, security issues): fix them immediately without asking.

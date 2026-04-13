@@ -249,16 +249,29 @@ final class RAGIndexingService {
             var skipped = 0
 
             for transcription in transcriptions {
+                let idString = transcription.id.uuidString
                 let content = indexableContent(for: transcription)
-                let noteTitle = Self.noteTitle(from: content, fallback: transcription.id.uuidString)
+                let noteTitle = Self.noteTitle(from: content, fallback: idString)
+                let mutationToken = beginMutation(for: idString)
+
                 guard !content.isEmpty else {
-                    logger.logInfo("RAG skipping empty note id=\(transcription.id.uuidString) title='\(noteTitle)'")
+                    logger.logInfo("RAG removing indexed data for empty note id=\(idString) title='\(noteTitle)'")
+                    if let oldChunkIds = chunkMapping[idString] {
+                        let uuids = oldChunkIds.compactMap { UUID(uuidString: $0) }
+                        if !uuids.isEmpty {
+                            try? await _deleteChunks(ids: uuids)
+                        }
+                    }
+                    guard isCurrentMutation(mutationToken, for: idString) else {
+                        skipped += 1
+                        continue
+                    }
+                    removeIndexedMetadata(for: idString)
                     skipped += 1
                     continue
                 }
 
                 let contentHash = stableHash(content)
-                let idString = transcription.id.uuidString
 
                 // Skip if content hasn't changed since last index
                 if !isFirstRun, transcriptionHashes[idString] == contentHash {
@@ -268,8 +281,6 @@ final class RAGIndexingService {
                     skipped += 1
                     continue
                 }
-
-                let mutationToken = beginMutation(for: idString)
 
                 logger.logInfo(
                     "RAG indexing note id=\(idString) title='\(noteTitle)' chars=\(content.count) hash=\(contentHash.prefix(12))"
@@ -359,13 +370,22 @@ final class RAGIndexingService {
             let content = indexableContent(for: transcription)
             let idString = transcription.id.uuidString
             let noteTitle = Self.noteTitle(from: content, fallback: idString)
+            let mutationToken = beginMutation(for: idString)
 
             guard !content.isEmpty else {
-                logger.logWarning("Empty content for transcription \(idString), skipping")
+                logger.logInfo("RAG removing indexed data for empty transcription \(idString)")
+                if let oldChunkIds = chunkMapping[idString] {
+                    let uuids = oldChunkIds.compactMap { UUID(uuidString: $0) }
+                    if !uuids.isEmpty {
+                        try await _deleteChunks(ids: uuids)
+                    }
+                }
+                guard isCurrentMutation(mutationToken, for: idString) else {
+                    return
+                }
+                removeIndexedMetadata(for: idString)
                 return
             }
-
-            let mutationToken = beginMutation(for: idString)
 
             // Remove old chunks
             if let oldChunkIds = chunkMapping[idString] {
