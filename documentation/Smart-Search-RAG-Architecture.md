@@ -4,6 +4,8 @@
 
 Smart Search is VivaDicta's retrieval-augmented chat mode for searching across the user's transcription notes.
 
+The same local RAG index also powers the Smart mode in the main notes search surface.
+
 Unlike single-note chat and multi-note chat, Smart Search does not start with a fixed note set. For every user turn, it:
 
 1. Semantically searches the local note index.
@@ -20,8 +22,9 @@ The current setup is:
 - Current embedding model: `minishlab/potion-base-32M`
 - Current chunking: semantic, `chunkSize = 500`, `overlap = 15%`
 - Current retrieval: always search, then inject the ranked chunk hits when available
-- Current empty-retrieval behavior: send the raw question to the model
+- Current empty-retrieval behavior in chat: send the raw question to the model
 - Current prompt injection: chunk excerpts, not full notes
+- Feature flag: Smart Search can be disabled from Settings, which clears the local index and hides Smart Search surfaces
 
 Smart Search intentionally does not use a pre-retrieval router. The local corpus is small enough that always searching is acceptable, and the reliability work happens after retrieval, not before it.
 
@@ -46,14 +49,14 @@ This leads to several deliberate design choices:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                              Smart Search UI                              │
+│                         Smart Search Surfaces                             │
 │                                                                            │
-│  SmartSearchChatView                                                       │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │ Chat bubbles                                                        │  │
-│  │ "Searching notes..." indicator                                      │  │
-│  │ Citation pills: date + matched excerpt preview                      │  │
-│  └──────────────────────────────┬───────────────────────────────────────┘  │
+│  SmartSearchChatView                  TranscriptionsContentView            │
+│  ┌──────────────────────────────┐    ┌──────────────────────────────────┐ │
+│  │ Chat bubbles                 │    │ All | Keyword | Smart           │ │
+│  │ Source pills                 │    │ Smart semantic result rows      │ │
+│  │ Full answer generation       │    │ Match score badges              │ │
+│  └──────────────────────┬───────┘    └───────────────────┬──────────────┘ │
 └─────────────────────────────────│──────────────────────────────────────────┘
                                   │
                                   ▼
@@ -108,6 +111,7 @@ Responsibilities:
 - keep persistent `transcriptionId -> [chunkId]` mapping
 - keep persistent stable content hashes for incremental reindexing
 - perform semantic search and map raw chunk hits back to notes
+- expose observable indexing state for Smart Search settings and chat UI
 
 ### `SmartSearchChatViewModel`
 
@@ -129,8 +133,20 @@ File: [VivaDicta/Views/SmartSearch/SmartSearchContextManager.swift](/Users/anton
 Responsibilities:
 
 - define Smart Search system prompt
-- wrap retrieved excerpts in `<NOTE>` blocks
+- wrap retrieved excerpts in plain-text `SOURCE` sections
 - format the augmented prompt for cloud and Apple FM chat paths
+
+### `TranscriptionsContentView`
+
+File: [VivaDicta/Views/TranscriptionsContentView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionsContentView.swift)
+
+Responsibilities in Smart Search mode:
+
+- run keyword-only search in `Keyword`
+- run keyword plus semantic search in `All`
+- run semantic search only in `Smart`
+- show semantic match scores on Smart result rows
+- avoid running semantic search at all when the user explicitly selected `Keyword`
 
 ### `ChatMessage` citation storage
 
@@ -165,8 +181,9 @@ Current vector DB configuration:
 
 - vector store name: derived from `indexVersion`
 - current namespace: `v14_potion_base_32m`
-- search threshold: `0.4`
-- default results: `5`
+- Vectura config default results: `5`
+- Vectura config default threshold: `0.35`
+- runtime Smart Search query threshold: `0.4`
 
 Current chunking configuration:
 
@@ -210,6 +227,8 @@ This is handled by `indexableContent(for:)` in `RAGIndexingService`.
 ### Startup indexing
 
 Indexing is kicked off on app launch in [VivaDicta/VivaDictaApp.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/VivaDictaApp.swift).
+
+If Smart Search is enabled, callers that hit the service during startup now await the shared initialization task instead of surfacing a transient initialization error.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -266,7 +285,7 @@ This avoids using Swift's non-stable `hashValue`, and makes incremental indexing
 
 ## Retrieval Flow
 
-Smart Search currently performs retrieval for every message and uses the ranked results directly.
+Smart Search chat currently performs retrieval for every message and uses the ranked results directly.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -285,7 +304,7 @@ Smart Search currently performs retrieval for every message and uses the ranked 
                  map chunk IDs back to transcription IDs
                                │
                                ▼
-                  keep best-scoring chunk per note
+                  keep best-ranked chunk per note
                                │
              ┌─────────────────┴──────────────────┐
              │                                    │
@@ -293,7 +312,7 @@ Smart Search currently performs retrieval for every message and uses the ranked 
         no note hits                      note hits exist
              │                                    │
              ▼                                    ▼
-      raw query sent to model           prompt includes <NOTE> excerpts
+      raw query sent to model           prompt includes SOURCE excerpts
                                                   │
                                                   ▼
                                          provider generates answer
@@ -314,11 +333,36 @@ Smart Search currently performs retrieval for every message and uses the ranked 
 - with lexical reranking disabled, keeps the best note chunk by returned semantic score only
 - with lexical reranking enabled, prefers lexical overlap first, then semantic score
 
+Current top-k callers:
+
+- Smart Search chat requests `3` results for Apple Foundation Models
+- Smart Search chat requests `5` results for cloud providers
+- the main search bar Smart mode requests `20` note hits so it can show a broader result list
+
 This means Smart Search is currently a:
 
 - chunk-level retrieval system
 - note-level deduplication system
 - excerpt-level prompt injection system
+
+## Search Bar Smart Mode
+
+The main search surface shares the same `RAGIndexingService.search(...)` backend, but uses it differently from Smart Search chat.
+
+Current search modes:
+
+- `Keyword` - keyword search only, no semantic retrieval
+- `All` - keyword results first, Smart semantic results below
+- `Smart` - semantic results only
+
+Important differences from Smart Search chat:
+
+- search bar does not inject chunk text into any prompt
+- search bar uses chunk hits only to rank and select notes
+- search bar shows note rows with semantic score badges, not excerpt pills
+- clearing the query resets the mode away from hidden Smart-only state
+
+So both surfaces share the same chunk-level retrieval engine, but only Smart Search chat turns retrieved chunks into model context.
 
 ## Chunk Injection
 
@@ -332,10 +376,12 @@ It does **not** inject:
 
 Prompt assembly looks like:
 
-```xml
-<NOTE id="1" title="First line of the note" date="Apr 12, 2026 at 8:42 PM">
+```text
+SOURCE 1
+Title: First line of the note
+Date: Apr 12, 2026 at 8:42 PM
+Excerpt:
 [matched chunk excerpt]
-</NOTE>
 ```
 
 This happens in `SmartSearchContextManager.assembleAugmentedPrompt(...)`.
@@ -368,7 +414,7 @@ The code path returns a fixed response only if:
 That last condition currently depends on `SmartSearchLexicalSupport.queryTerms(from:)`.
 Because lexical reranking is disabled right now, `queryTerms(from:)` returns an empty set, so the no-evidence shortcut does not currently fire.
 
-In today's behavior, an empty retrieval falls through to normal model generation with the raw user question.
+In today's behavior, an empty retrieval usually falls through to normal model generation with the raw user question.
 
 Examples:
 
@@ -417,6 +463,8 @@ The strategy is:
 - always retrieve
 - use the ranked RAG hits directly
 - send the raw query through when retrieval returns no note hits
+
+This applies to Smart Search chat. In the main search bar, `Keyword` mode explicitly skips semantic retrieval.
 
 ## Citation and Source UX
 
@@ -473,11 +521,13 @@ Those experiments informed the current choice. The current implementation uses t
 - deterministic incremental indexing
 - note-aware citations with excerpt previews
 - simple always-retrieve flow with minimal app-side heuristics
+- shared local retrieval backend across Smart Search chat and the search bar
+- feature flag can fully disable Smart Search and clear the local index
 
 ## Current Limitations
 
 - retrieval still always runs for every user message
-- search threshold is currently `0.4`
+- runtime search threshold is currently `0.4`
 - deduplication keeps only one best chunk per note
 - there is no local context window around the matched chunk
 - the optional app-side lexical reranker is currently disabled, so all ranking relies on Vectura's native hybrid search
