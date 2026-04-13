@@ -141,7 +141,7 @@ final class RAGIndexingService {
         let logger = Logger(category: .ragIndexing)
         let searchOptions = VecturaConfig.SearchOptions(
             defaultNumResults: 5,
-            minThreshold: 0.35
+            minThreshold: 0.3
         )
         let config = try VecturaConfig(
             name: Self.vectorStoreName,
