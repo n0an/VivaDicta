@@ -52,13 +52,16 @@ final class RAGIndexingService {
     // MARK: - LumoKit Instance
 
     nonisolated(unsafe) private var lumoKit: LumoKit?
-    private var isInitializing = false
+    private var initializationTask: Task<Void, Error>?
 
     /// Whether the initial bulk indexing is currently running.
     private(set) var isIndexing = false
 
     /// Number of transcriptions that have been indexed.
     private(set) var indexedTranscriptionCount = 0
+
+    private var latestMutationTokenByTranscriptionID: [String: Int] = [:]
+    private var nextMutationToken = 0
 
     // MARK: - Chunk Mapping
 
@@ -96,18 +99,26 @@ final class RAGIndexingService {
             return
         }
 
-        guard !isInitializing else {
-            throw RAGError.initializationInProgress
+        if let initializationTask {
+            return try await initializationTask.value
         }
 
-        isInitializing = true
-        defer { isInitializing = false }
-
-        logger.logInfo("Initializing LumoKit with SwiftEmbedder potion-base-32M...")
-
         let storageDir = RAGIndexingService.storageDirectoryURL
-        try await initializeLumoKit(storageDirectory: storageDir)
-        logger.logInfo("LumoKit initialized successfully")
+        let task = Task { [storageDir, logger] in
+            logger.logInfo("Initializing LumoKit with SwiftEmbedder potion-base-32M...")
+            try await initializeLumoKit(storageDirectory: storageDir)
+            logger.logInfo("LumoKit initialized successfully")
+        }
+        initializationTask = task
+
+        do {
+            try await task.value
+        } catch {
+            initializationTask = nil
+            throw error
+        }
+
+        initializationTask = nil
     }
 
     // MARK: - Nonisolated LumoKit Wrappers
@@ -226,8 +237,6 @@ final class RAGIndexingService {
             }
 
             let isFirstRun = !UserDefaults.standard.bool(forKey: indexingCompletedKey)
-            var hashes = transcriptionHashes
-            var mapping = chunkMapping
             var indexed = 0
             var skipped = 0
 
@@ -244,7 +253,7 @@ final class RAGIndexingService {
                 let idString = transcription.id.uuidString
 
                 // Skip if content hasn't changed since last index
-                if !isFirstRun, hashes[idString] == contentHash {
+                if !isFirstRun, transcriptionHashes[idString] == contentHash {
                     logger.logDebug(
                         "RAG unchanged note id=\(idString) title='\(noteTitle)' hash=\(contentHash.prefix(12))"
                     )
@@ -252,12 +261,14 @@ final class RAGIndexingService {
                     continue
                 }
 
+                let mutationToken = beginMutation(for: idString)
+
                 logger.logInfo(
                     "RAG indexing note id=\(idString) title='\(noteTitle)' chars=\(content.count) hash=\(contentHash.prefix(12))"
                 )
 
                 // Remove old chunks if re-indexing
-                if let oldChunkIds = mapping[idString] {
+                if let oldChunkIds = chunkMapping[idString] {
                     let uuids = oldChunkIds.compactMap { UUID(uuidString: $0) }
                     if !uuids.isEmpty {
                         logger.logInfo("RAG removing \(uuids.count) existing chunks for note id=\(idString)")
@@ -286,8 +297,14 @@ final class RAGIndexingService {
                 }
 
                 let chunkIds = try await _addDocuments(texts: chunks.map(\.text))
-                mapping[idString] = chunkIds.map(\.uuidString)
-                hashes[idString] = contentHash
+                guard isCurrentMutation(mutationToken, for: idString) else {
+                    logger.logInfo("RAG discarded stale bulk indexing result for note id=\(idString) title='\(noteTitle)'")
+                    try? await _deleteChunks(ids: chunkIds)
+                    skipped += 1
+                    continue
+                }
+
+                updateIndexedMetadata(for: idString, chunkIDs: chunkIds, contentHash: contentHash)
                 indexed += 1
                 logger.logInfo(
                     "RAG stored \(chunkIds.count) chunks for note id=\(idString) firstChunkIDs=\(Self.joinedIDs(from: chunkIds))"
@@ -296,20 +313,21 @@ final class RAGIndexingService {
 
             // Clean up mappings for deleted transcriptions
             let currentIds = Set(transcriptions.map(\.id.uuidString))
-            let orphanedIds = Set(mapping.keys).subtracting(currentIds)
+            let orphanedIds = Set(chunkMapping.keys).subtracting(currentIds)
             for orphanId in orphanedIds {
-                if let chunkIds = mapping[orphanId] {
+                let mutationToken = beginMutation(for: orphanId)
+                if let chunkIds = chunkMapping[orphanId] {
                     let uuids = chunkIds.compactMap { UUID(uuidString: $0) }
                     if !uuids.isEmpty {
                         try? await _deleteChunks(ids: uuids)
                     }
                 }
-                mapping.removeValue(forKey: orphanId)
-                hashes.removeValue(forKey: orphanId)
+                guard isCurrentMutation(mutationToken, for: orphanId) else {
+                    continue
+                }
+                removeIndexedMetadata(for: orphanId)
             }
 
-            chunkMapping = mapping
-            transcriptionHashes = hashes
             UserDefaults.standard.set(true, forKey: indexingCompletedKey)
 
             let totalChunks = try await _documentCount()
@@ -339,11 +357,10 @@ final class RAGIndexingService {
                 return
             }
 
-            var mapping = chunkMapping
-            var hashes = transcriptionHashes
+            let mutationToken = beginMutation(for: idString)
 
             // Remove old chunks
-            if let oldChunkIds = mapping[idString] {
+            if let oldChunkIds = chunkMapping[idString] {
                 let uuids = oldChunkIds.compactMap { UUID(uuidString: $0) }
                 if !uuids.isEmpty {
                     logger.logInfo("RAG reindex removing \(uuids.count) chunks for note id=\(idString) title='\(noteTitle)'")
@@ -368,12 +385,14 @@ final class RAGIndexingService {
             }
 
             let chunkIds = try await _addDocuments(texts: chunks.map(\.text))
-            mapping[idString] = chunkIds.map(\.uuidString)
-            hashes[idString] = stableHash(content)
+            guard isCurrentMutation(mutationToken, for: idString) else {
+                logger.logInfo("RAG discarded stale single-note indexing result for note id=\(idString) title='\(noteTitle)'")
+                try? await _deleteChunks(ids: chunkIds)
+                return
+            }
 
-            chunkMapping = mapping
-            transcriptionHashes = hashes
-            indexedTranscriptionCount = mapping.count
+            updateIndexedMetadata(for: idString, chunkIDs: chunkIds, contentHash: stableHash(content))
+            indexedTranscriptionCount = chunkMapping.count
 
             logger.logInfo("Indexed transcription \(idString): \(chunkIds.count) chunks")
         } catch {
@@ -397,19 +416,18 @@ final class RAGIndexingService {
         do {
             try await ensureLumoKit()
             let idString = id.uuidString
-            var mapping = chunkMapping
-            var hashes = transcriptionHashes
+            let mutationToken = beginMutation(for: idString)
 
-            if let chunkIds = mapping[idString] {
+            if let chunkIds = chunkMapping[idString] {
                 let uuids = chunkIds.compactMap { UUID(uuidString: $0) }
                 if !uuids.isEmpty {
                     try await _deleteChunks(ids: uuids)
                 }
-                mapping.removeValue(forKey: idString)
-                hashes.removeValue(forKey: idString)
-                chunkMapping = mapping
-                transcriptionHashes = hashes
-                indexedTranscriptionCount = mapping.count
+                guard isCurrentMutation(mutationToken, for: idString) else {
+                    return
+                }
+                removeIndexedMetadata(for: idString)
+                indexedTranscriptionCount = chunkMapping.count
                 logger.logInfo("Removed \(uuids.count) chunks for transcription \(idString)")
             }
         } catch {
@@ -625,17 +643,46 @@ final class RAGIndexingService {
     nonisolated private static func joinedIDs(from ids: [UUID], maxCount: Int = 3) -> String {
         ids.prefix(maxCount).map(\.uuidString).joined(separator: ", ")
     }
+
+    private func beginMutation(for idString: String) -> Int {
+        nextMutationToken += 1
+        let token = nextMutationToken
+        latestMutationTokenByTranscriptionID[idString] = token
+        return token
+    }
+
+    private func isCurrentMutation(_ token: Int, for idString: String) -> Bool {
+        latestMutationTokenByTranscriptionID[idString] == token
+    }
+
+    private func updateIndexedMetadata(for idString: String, chunkIDs: [UUID], contentHash: String) {
+        var mapping = chunkMapping
+        var hashes = transcriptionHashes
+        mapping[idString] = chunkIDs.map(\.uuidString)
+        hashes[idString] = contentHash
+        chunkMapping = mapping
+        transcriptionHashes = hashes
+        indexedTranscriptionCount = mapping.count
+    }
+
+    private func removeIndexedMetadata(for idString: String) {
+        var mapping = chunkMapping
+        var hashes = transcriptionHashes
+        mapping.removeValue(forKey: idString)
+        hashes.removeValue(forKey: idString)
+        chunkMapping = mapping
+        transcriptionHashes = hashes
+        indexedTranscriptionCount = mapping.count
+    }
 }
 
 // MARK: - Errors
 
 enum RAGError: LocalizedError {
-    case initializationInProgress
     case notInitialized
 
     var errorDescription: String? {
         switch self {
-        case .initializationInProgress: "RAG service is still initializing"
         case .notInitialized: "RAG service is not initialized"
         }
     }
