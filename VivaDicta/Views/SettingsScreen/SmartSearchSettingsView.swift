@@ -62,7 +62,7 @@ struct SmartSearchSettingsView: View {
             }
 
             Section {
-                Text("Smart Search uses an on-device AI model (~16 MB) to understand your notes semantically. The model is downloaded automatically on first use.")
+                Text("Smart Search uses an on-device AI model to understand your notes semantically. The model is downloaded automatically on first use.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
