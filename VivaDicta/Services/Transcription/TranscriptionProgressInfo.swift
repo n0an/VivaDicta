@@ -33,13 +33,13 @@ struct TranscriptionProgressInfo: Sendable, Equatable {
         self.fractionCompleted = fractionCompleted.map { min(max($0, 0), 1) }
     }
 
-    var detailText: String {
+    var detailText: String? {
         switch stage {
         case .transcribing:
             if let fractionCompleted {
                 return "\(fractionCompleted.formatted(.percent.precision(.fractionLength(0)))) complete"
             }
-            return stage.detailText
+            return nil
         default:
             return stage.detailText
         }

@@ -6,6 +6,8 @@ struct HudView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var state: RecordingState
+    var detailText: String? = nil
+    var progress: Double? = nil
     var onCancel: (() -> Void)?
 
     var statusIcon: String {
@@ -33,9 +35,21 @@ struct HudView: View {
     var body: some View {
 
         if colorScheme == .light {
-            HudViewLight(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
+            HudViewLight(
+                statusIcon: statusIcon,
+                statusText: statusText,
+                detailText: detailText,
+                progress: progress,
+                onCancel: onCancel
+            )
         } else {
-            HudViewDark(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
+            HudViewDark(
+                statusIcon: statusIcon,
+                statusText: statusText,
+                detailText: detailText,
+                progress: progress,
+                onCancel: onCancel
+            )
         }
     }
 
@@ -45,6 +59,8 @@ struct HudContentView: View {
 
     var statusIcon: String
     var statusText: String
+    var detailText: String?
+    var progress: Double?
     var onCancel: (() -> Void)?
 
     @State private var isSymbolAnimating = false
@@ -98,6 +114,21 @@ struct HudContentView: View {
                 Rectangle()
                     .fill(.clear)
                     .frame(width: 140, height: 24)
+            }
+
+            if let detailText {
+                Text(detailText)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 180, height: 20)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
+            if let progress {
+                ProgressView(value: progress)
+                    .tint(.white.opacity(0.85))
+                    .frame(width: 180)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             // Cancel button - appears after 1 second
@@ -170,10 +201,18 @@ struct HudViewDark: View {
 
     var statusIcon: String
     var statusText: String
+    var detailText: String?
+    var progress: Double?
     var onCancel: (() -> Void)?
 
     var body: some View {
-        HudContentView(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
+        HudContentView(
+            statusIcon: statusIcon,
+            statusText: statusText,
+            detailText: detailText,
+            progress: progress,
+            onCancel: onCancel
+        )
             .background(
             AnimatedMeshGradient()
                 .mask(
@@ -208,10 +247,18 @@ struct HudViewLight: View {
 
     var statusIcon: String
     var statusText: String
+    var detailText: String?
+    var progress: Double?
     var onCancel: (() -> Void)?
 
     var body: some View {
-        HudContentView(statusIcon: statusIcon, statusText: statusText, onCancel: onCancel)
+        HudContentView(
+            statusIcon: statusIcon,
+            statusText: statusText,
+            detailText: detailText,
+            progress: progress,
+            onCancel: onCancel
+        )
             .background(
             ZStack {
                 AnimatedMeshGradient()
