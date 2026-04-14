@@ -211,12 +211,6 @@ private struct ExtractedReminderDraftRow: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    if draft.priority != .none {
-                        Text(priorityLabel(for: draft.priority))
-                            .font(.caption)
-                            .foregroundStyle(priorityColor(for: draft.priority))
-                    }
-
                     if let statusText {
                         Text(statusText)
                             .font(.caption)
@@ -233,31 +227,5 @@ private struct ExtractedReminderDraftRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-
-    private func priorityLabel(for priority: ReminderDraftPriority) -> String {
-        switch priority {
-        case .none:
-            "No Priority"
-        case .low:
-            "Low Priority"
-        case .medium:
-            "Medium Priority"
-        case .high:
-            "High Priority"
-        }
-    }
-
-    private func priorityColor(for priority: ReminderDraftPriority) -> Color {
-        switch priority {
-        case .none:
-            .secondary
-        case .low:
-            .blue
-        case .medium:
-            .orange
-        case .high:
-            .red
-        }
     }
 }
