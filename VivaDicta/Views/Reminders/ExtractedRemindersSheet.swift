@@ -79,8 +79,15 @@ struct ExtractedRemindersSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
+                    if #available(iOS 26, *) {
+                        Button("Close", systemImage: "xmark") {
+                            dismiss()
+                        }
+                        .labelStyle(.iconOnly)
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
                     }
                 }
 

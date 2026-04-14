@@ -75,6 +75,7 @@ struct BulkTagPickerSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
+                
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Tag", systemImage: "plus") {
                         showCreateTag = true
