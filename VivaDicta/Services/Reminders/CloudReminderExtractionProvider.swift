@@ -8,7 +8,6 @@
 import Foundation
 import os
 
-@available(iOS 26, *)
 final class CloudReminderExtractionProvider {
     private let logger = Logger(category: .reminderExtraction)
     private let aiService: AIService
@@ -181,7 +180,7 @@ final class CloudReminderExtractionProvider {
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.timeoutInterval = 300
 
-        let schema = try reminderSchemaObject()
+        let schema = reminderSchemaObject()
         let systemMessage = systemMessage(now: now, timeZone: timeZone)
         let userMessage = userMessage(noteText: noteText)
 
@@ -258,7 +257,7 @@ final class CloudReminderExtractionProvider {
                 "json_schema": [
                     "name": "reminder_drafts_response",
                     "strict": true,
-                    "schema": try reminderSchemaObject()
+                    "schema": reminderSchemaObject()
                 ]
             ]
         ]
@@ -280,28 +279,8 @@ final class CloudReminderExtractionProvider {
         return requestBody
     }
 
-    private func reminderSchemaObject() throws -> [String: Any] {
-        let data = try JSONEncoder().encode(ReminderDraftsResponseSchema.generationSchema)
-        guard var schema = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ReminderExtractionError.invalidResponse
-        }
-        sanitizeSchema(&schema)
-        return schema
-    }
-
-    private func sanitizeSchema(_ value: inout [String: Any]) {
-        value.removeValue(forKey: "x-order")
-        for (key, child) in value {
-            if var childDictionary = child as? [String: Any] {
-                sanitizeSchema(&childDictionary)
-                value[key] = childDictionary
-            } else if var childArray = child as? [[String: Any]] {
-                for index in childArray.indices {
-                    sanitizeSchema(&childArray[index])
-                }
-                value[key] = childArray
-            }
-        }
+    private func reminderSchemaObject() -> [String: Any] {
+        ReminderDraftsJSONSchema.object
     }
 
     private func systemMessage(now: Date, timeZone: TimeZone) -> String {

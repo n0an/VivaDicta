@@ -22,7 +22,7 @@ enum ReminderExtractionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedOS:
-            return "Reminder extraction requires iOS 26 or later."
+            return "This reminder extraction option is not available on the current OS version."
         case .noExtractorAvailable:
             return "No reminder extraction model is available for the current mode."
         case .providerUnavailable(let message):
@@ -41,7 +41,6 @@ enum ReminderExtractionError: LocalizedError {
     }
 }
 
-@available(iOS 26, *)
 private enum ReminderExtractionBackend {
     case apple
     case cloud(provider: AIProvider, model: String)
@@ -57,15 +56,7 @@ final class ReminderExtractionService {
     }
 
     func canExtractReminders(using mode: VivaMode? = nil) -> Bool {
-        guard #available(iOS 26, *) else {
-            return false
-        }
-
-        do {
-            return try resolvedBackend(for: mode ?? aiService.selectedMode) != nil
-        } catch {
-            return false
-        }
+        resolvedBackend(for: mode ?? aiService.selectedMode) != nil
     }
 
     func extractAndPersist(
@@ -73,12 +64,8 @@ final class ReminderExtractionService {
         modelContext: ModelContext,
         mode: VivaMode? = nil
     ) async throws -> [ExtractedReminderDraft] {
-        guard #available(iOS 26, *) else {
-            throw ReminderExtractionError.unsupportedOS
-        }
-
         let activeMode = mode ?? aiService.selectedMode
-        guard let backend = try resolvedBackend(for: activeMode) else {
+        guard let backend = resolvedBackend(for: activeMode) else {
             throw ReminderExtractionError.noExtractorAvailable
         }
 
@@ -88,6 +75,9 @@ final class ReminderExtractionService {
 
         switch backend {
         case .apple:
+            guard #available(iOS 26, *) else {
+                throw ReminderExtractionError.unsupportedOS
+            }
             response = try await AppleFMReminderExtractionProvider().extract(
                 noteText: transcription.text,
                 now: now,
@@ -115,16 +105,16 @@ final class ReminderExtractionService {
         return persistedDrafts
     }
 
-    @available(iOS 26, *)
-    private func resolvedBackend(for mode: VivaMode) throws -> ReminderExtractionBackend? {
+    private func resolvedBackend(for mode: VivaMode) -> ReminderExtractionBackend? {
+        let cloudProvider = CloudReminderExtractionProvider(aiService: aiService)
+
         if let provider = mode.aiProvider,
            !mode.aiModel.isEmpty {
-            if provider == .apple, AppleFoundationModelAvailability.isAvailable {
-                return .apple
-            }
-
-            let cloudProvider = CloudReminderExtractionProvider(aiService: aiService)
-            if cloudProvider.canExtract(provider: provider, model: mode.aiModel) {
+            if provider == .apple {
+                if AppleFoundationModelAvailability.isAvailable {
+                    return .apple
+                }
+            } else if cloudProvider.canExtract(provider: provider, model: mode.aiModel) {
                 return .cloud(provider: provider, model: mode.aiModel)
             }
         }
@@ -136,7 +126,6 @@ final class ReminderExtractionService {
         return nil
     }
 
-    @available(iOS 26, *)
     private func persist(
         _ drafts: [ReminderDraft],
         on transcription: Transcription,
