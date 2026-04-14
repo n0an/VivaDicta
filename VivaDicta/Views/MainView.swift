@@ -782,6 +782,8 @@ struct MainView: View {
 
     private func startRecording() {
         guard let vm = appState.recordViewModel else { return }
+        let destination = appState.pendingRecordingDestination
+        appState.pendingRecordingDestination = .newNote
 
         // Check if we have a transcription model selected
         if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
@@ -792,7 +794,7 @@ struct MainView: View {
         }
 
         // Start recording directly
-        vm.startCaptureAudio()
+        vm.startCaptureAudio(destination: destination)
     }
 
     private func handleFileImport(_ result: Result<[URL], any Error>) {

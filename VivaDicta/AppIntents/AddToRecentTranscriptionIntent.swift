@@ -20,7 +20,7 @@ struct AddToRecentTranscriptionIntent: AppIntent {
         let recentTranscriptions = try dataController.transcriptions(limit: 1)
 
         if let recentTranscription = recentTranscriptions.first {
-            recentTranscription.text.append(" \(newText)")
+            recentTranscription.appendToOriginalText(newText)
             try? recentTranscription.modelContext?.save()
             return .result(dialog: "Done")
         } else {
