@@ -87,13 +87,14 @@ struct TagFilterBar: View {
                 if let icon {
                     Image(systemName: icon)
                         .font(.caption2)
+                        .foregroundStyle(isSelected ? .white : color)
                 }
                 Text(label)
                     .font(.caption)
+                    .foregroundStyle(isSelected ? .white : .primary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .foregroundStyle(isSelected ? .white : .primary)
             .chipBackground(isSelected: isSelected, color: color.opacity(colorScheme == .dark ? 0.6 : 1.0))
         }
         .buttonStyle(.plain)
