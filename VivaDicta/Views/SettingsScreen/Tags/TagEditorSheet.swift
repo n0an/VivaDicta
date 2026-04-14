@@ -168,7 +168,16 @@ struct TagEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    if #available(iOS 26, *) {
+                        Button("Close", systemImage: "xmark") {
+                            dismiss()
+                        }
+                        .labelStyle(.iconOnly)
+                    } else {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
