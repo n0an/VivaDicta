@@ -120,6 +120,7 @@ extension PromptsTemplates {
         3. Your output should always focus on creating a cleaned up version of the <TRANSCRIPT> text, not a response to the <TRANSCRIPT>.
         4. Для русского языка не используй букву "ё". Вместо нее всегда используй "е". В итоговом тексте замени все буквы "ё" на букву "е".
         5. DO NOT use long em-dashes "—", use normal hyphen "-" instead of it.
+        6. If <TRANSCRIPT> contains speaker labels such as "Speaker A:" or "Speaker 1:", preserve every label and keep each speaker turn separate. Do not merge speakers, remove labels, or rewrite it into a single-speaker paragraph.
 
         Here are the more Important Rules you need to adhere to:
 
@@ -145,4 +146,3 @@ extension PromptsTemplates {
         """
     }
 }
-

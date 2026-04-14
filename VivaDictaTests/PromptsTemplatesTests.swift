@@ -64,6 +64,13 @@ struct PromptsTemplatesTests {
         #expect(result.contains("em-dashes"))
     }
 
+    @Test func systemPrompt_containsSpeakerLabelPreservationRule() {
+        let result = PromptsTemplates.systemPrompt(with: "test")
+
+        #expect(result.contains("Speaker A:"))
+        #expect(result.contains("preserve every label"))
+    }
+
     // MARK: - Prompt Template Cases
 
     @Test func allCases_haveNonEmptyPrompts_exceptCustom() {

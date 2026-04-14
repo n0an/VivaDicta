@@ -106,6 +106,13 @@ struct TranscriptionOutputFilterTests {
         #expect(result == "Hello world")
     }
 
+    @Test func filter_preservesSpeakerParagraphBreaks() {
+        let input = "Speaker A: Hello there.\n\nSpeaker B: Hi."
+        let result = TranscriptionOutputFilter.filter(input)
+
+        #expect(result == input)
+    }
+
     // MARK: - filter Tests — Clean Input
 
     @Test func filter_cleanInput_returnsUnchanged() {

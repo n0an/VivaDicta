@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
     private var isVADEnabled = true
+    @AppStorage(AppGroupCoordinator.kIsSpeakerDiarizationEnabled, store: UserDefaultsStorage.shared)
+    private var isSpeakerDiarizationEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
@@ -157,6 +159,19 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isVADEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    Toggle(isOn: $isSpeakerDiarizationEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Speaker Diarization")
+                                .font(.body)
+                            Text("Labels speakers for WhisperKit, Deepgram, and Mistral")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isSpeakerDiarizationEnabled) { _, _ in
                         HapticManager.selectionChanged()
                     }
 
