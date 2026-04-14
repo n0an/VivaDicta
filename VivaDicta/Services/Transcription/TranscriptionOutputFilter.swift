@@ -60,8 +60,11 @@ struct TranscriptionOutputFilter {
             }
         }
 
-        // Clean whitespace
-        filteredText = filteredText.replacingOccurrences(of: #"\s{2,}"#, with: " ", options: .regularExpression)
+        // Clean whitespace while preserving intentional line breaks.
+        filteredText = filteredText.replacingOccurrences(of: "\r\n", with: "\n")
+        filteredText = filteredText.replacingOccurrences(of: #"[ \t]{2,}"#, with: " ", options: .regularExpression)
+        filteredText = filteredText.replacingOccurrences(of: #" *\n *"#, with: "\n", options: .regularExpression)
+        filteredText = filteredText.replacingOccurrences(of: #"\n{3,}"#, with: "\n\n", options: .regularExpression)
         filteredText = filteredText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Log results

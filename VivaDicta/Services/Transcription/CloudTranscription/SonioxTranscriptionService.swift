@@ -14,7 +14,7 @@ struct SonioxTranscriptionService {
     private let maxWaitSeconds: TimeInterval = 300
     private let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let config = try getAPIConfig(for: model)
 
         let fileId = try await uploadFile(audioURL: audioURL, apiKey: config.apiKey)
@@ -25,7 +25,7 @@ struct SonioxTranscriptionService {
         guard !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CloudTranscriptionError.noTranscriptionReturned
         }
-        return transcript
+        return .plain(transcript)
     }
 
     // MARK: - Private Methods

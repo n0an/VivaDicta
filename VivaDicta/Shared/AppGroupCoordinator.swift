@@ -61,6 +61,7 @@ public final class AppGroupCoordinator {
     public static let kSmartFormattingOnPaste = "smartFormattingOnPaste"
     public static let kKeepTranscriptInClipboard = "keepTranscriptInClipboard"
     public static let kIsVADEnabled = "IsVADEnabled"
+    public static let kIsSpeakerDiarizationEnabled = "isSpeakerDiarizationEnabled"
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
     
@@ -531,6 +532,18 @@ public final class AppGroupCoordinator {
         }
         set {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kKeepTranscriptInClipboard)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// Whether speaker diarization is enabled for supported transcription providers
+    /// Defaults to false if not set
+    public var isSpeakerDiarizationEnabled: Bool {
+        get {
+            sharedDefaults?.bool(forKey: AppGroupCoordinator.kIsSpeakerDiarizationEnabled) ?? false
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsSpeakerDiarizationEnabled)
             sharedDefaults?.synchronize()
         }
     }
@@ -1065,4 +1078,3 @@ public final class AppGroupCoordinator {
         }
     }
 }
-

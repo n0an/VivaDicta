@@ -11,10 +11,11 @@ import os
 struct OpenAITranscriptionService {
     private let logger = Logger(category: .openAITranscriptionService)
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        try await NetworkRetry.withRetry(logger: logger) {
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+        let text = try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL, model: model)
         }
+        return .plain(text)
     }
 
     private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {

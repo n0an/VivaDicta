@@ -28,6 +28,7 @@
 		18E1C7FE2E8E793E00BE8A11 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
 		18E1C80F2E8E793F00BE8A11 /* VivaDictaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E328F72E894C3D0026327D /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328F62E894C3D0026327D /* WhisperKit */; };
+		18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */; };
 		18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD6B22ED1FBFB00C0041E /* FluidAudio */; };
 		18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD7982ED1FCC600C0041E /* FluidAudio */; };
 /* End PBXBuildFile section */
@@ -440,6 +441,7 @@
 				1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */,
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
+				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
@@ -597,6 +599,7 @@
 			name = VivaDicta;
 			packageProductDependencies = (
 				18E328F62E894C3D0026327D /* WhisperKit */,
+				18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */,
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
 				18EBD6B22ED1FBFB00C0041E /* FluidAudio */,
 				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
@@ -2438,6 +2441,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
+		};
+		18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = SpeakerKit;
 		};
 		18EBD6B22ED1FBFB00C0041E /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;

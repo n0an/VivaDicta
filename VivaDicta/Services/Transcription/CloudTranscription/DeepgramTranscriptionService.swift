@@ -11,14 +11,15 @@ import os
 class DeepgramTranscriptionService {
     private let logger = Logger(category: .deepgramService)
     
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL, model: model)
         }
     }
 
-    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let config = try getAPIConfig(for: model)
+        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
 
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
@@ -49,7 +50,13 @@ class DeepgramTranscriptionService {
                 logger.logError("No transcript found in Deepgram response")
                 throw CloudTranscriptionError.noTranscriptionReturned
             }
-            return transcript
+
+            if diarizationEnabled,
+               let diarizedText = makeSpeakerAttributedText(from: transcriptionResponse) {
+                return .speakerAttributed(diarizedText)
+            }
+
+            return .plain(transcript)
         } catch {
             logger.logError("Failed to decode Deepgram API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
@@ -93,6 +100,11 @@ class DeepgramTranscriptionService {
             URLQueryItem(name: "paragraphs", value: "true")
         ])
 
+        if AppGroupCoordinator.shared.isSpeakerDiarizationEnabled {
+            queryItems.append(URLQueryItem(name: "diarize", value: "true"))
+            queryItems.append(URLQueryItem(name: "utterances", value: "true"))
+        }
+
         if let requestLanguage {
             queryItems.append(URLQueryItem(name: "language", value: requestLanguage))
         }
@@ -115,6 +127,17 @@ class DeepgramTranscriptionService {
         
         return APIConfig(url: apiURL, apiKey: apiKey, modelName: model.name)
     }
+
+    private func makeSpeakerAttributedText(from response: DeepgramResponse) -> String? {
+        let turns = response.results.utterances?.map {
+            SpeakerTurn(
+                speakerID: $0.speaker.map(String.init),
+                text: $0.transcript
+            )
+        } ?? []
+
+        return SpeakerDiarizationFormatter.format(turns)
+    }
     
     private struct APIConfig {
         let url: URL
@@ -127,6 +150,7 @@ class DeepgramTranscriptionService {
 
         struct Results: Decodable {
             let channels: [Channel]
+            let utterances: [Utterance]?
 
             struct Channel: Decodable {
                 let alternatives: [Alternative]
@@ -135,6 +159,11 @@ class DeepgramTranscriptionService {
                     let transcript: String
                     let confidence: Double?
                 }
+            }
+
+            struct Utterance: Decodable {
+                let speaker: Int?
+                let transcript: String
             }
         }
     }

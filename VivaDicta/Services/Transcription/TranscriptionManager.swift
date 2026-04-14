@@ -197,12 +197,12 @@ class TranscriptionManager {
         default:
             transcriptionService = cloudTranscriptionService
         }
-        let text = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
+        let transcriptionResult = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
 
-        var result = TranscriptionOutputFilter.filter(text)
+        var result = TranscriptionOutputFilter.filter(transcriptionResult.text)
 
         // Apply text formatting if enabled for current mode
-        if currentMode.isAutoTextFormattingEnabled {
+        if currentMode.isAutoTextFormattingEnabled && transcriptionResult.isSpeakerAttributed == false {
             result = TextFormatter.format(result)
         }
 

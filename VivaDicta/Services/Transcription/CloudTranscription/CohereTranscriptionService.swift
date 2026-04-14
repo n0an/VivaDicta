@@ -6,10 +6,11 @@ import os
 struct CohereTranscriptionService {
     private let logger = Logger(category: .cohereTranscriptionService)
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        try await NetworkRetry.withRetry(logger: logger) {
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+        let text = try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL, model: model)
         }
+        return .plain(text)
     }
 
     private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+@preconcurrency import SpeakerKit
 @preconcurrency import WhisperKit
 import os
 
@@ -15,6 +16,7 @@ import os
 @Observable
 class WhisperKitTranscriptionService: TranscriptionService {
     private var whisperKit: WhisperKit?
+    private var speakerKit: SpeakerKit?
     private var currentModelName: String?
     private var modelState: ModelState = .unloaded
     private let logger = Logger(category: .whisperKitTranscriptionService)
@@ -125,7 +127,7 @@ class WhisperKitTranscriptionService: TranscriptionService {
         }
     }
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         os_signpost(.event, log: SignpostLog.pointsOfInterest, name: "WhisperKit.transcribe starts")
         guard let whisperKitModel = model as? WhisperKitModel else {
             throw TranscriptionError.unsupportedModel
@@ -145,11 +147,13 @@ class WhisperKitTranscriptionService: TranscriptionService {
             let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
             // VAD setting should be shared with keyboard extension
             let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
+            let isSpeakerDiarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
 
             logger.logNotice("🎯 Starting WhisperKit transcription with model: \(whisperKitModel.displayName), VAD: \(isVADEnabled)")
             let decodingOptions = DecodingOptions(
                 language: (language == "auto" ? nil : language),
                 detectLanguage: (language == "auto" ? true : nil),
+                wordTimestamps: isSpeakerDiarizationEnabled,
                 chunkingStrategy: isVADEnabled ? .vad : nil
             )
             
@@ -159,16 +163,66 @@ class WhisperKitTranscriptionService: TranscriptionService {
             // Extract text from segments
             let transcribedText = result.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
 
+            if isSpeakerDiarizationEnabled,
+               let diarizedResult = await makeSpeakerAttributedResult(
+                from: result,
+                audioURL: audioURL
+               ) {
+                logger.logNotice("✅ WhisperKit diarization completed successfully")
+                os_signpost(.event, log: SignpostLog.pointsOfInterest, name: "WhisperKit.transcribe finishes")
+                return diarizedResult
+            }
+
             // NOTE: We NO LONGER clean up models after transcription
             // Models stay loaded in memory for faster subsequent transcriptions
             logger.logNotice("✅ WhisperKit transcription completed, model kept in memory for faster future use")
             
             os_signpost(.event, log: SignpostLog.pointsOfInterest, name: "WhisperKit.transcribe finishes")
 
-            return transcribedText
+            return .plain(transcribedText)
         } catch {
             logger.logError("❌ WhisperKit transcription failed: \(error.localizedDescription)")
             throw TranscriptionError.transcriptionFailed
+        }
+    }
+
+    private func loadSpeakerKitIfNeeded() async throws -> SpeakerKit {
+        if let speakerKit {
+            return speakerKit
+        }
+
+        let config = PyannoteConfig(load: false, verbose: false)
+        let speakerKit = try await SpeakerKit(config)
+        self.speakerKit = speakerKit
+        return speakerKit
+    }
+
+    private func makeSpeakerAttributedResult(
+        from transcription: [TranscriptionResult],
+        audioURL: URL
+    ) async -> TranscriptionServiceResult? {
+        do {
+            let speakerKit = try await loadSpeakerKitIfNeeded()
+            let audioArray = try AudioProcessor.loadAudioAsFloatArray(fromPath: audioURL.path)
+            let diarization = try await speakerKit.diarize(audioArray: audioArray)
+            let turns = diarization
+                .addSpeakerInfo(to: transcription)
+                .flatMap { $0 }
+                .map { segment in
+                    SpeakerTurn(
+                        speakerID: segment.speaker.speakerId.map(String.init),
+                        text: segment.text
+                    )
+                }
+
+            guard let diarizedText = SpeakerDiarizationFormatter.format(turns) else {
+                return nil
+            }
+
+            return .speakerAttributed(diarizedText)
+        } catch {
+            logger.logWarning("⚠️ WhisperKit diarization failed, falling back to plain transcript: \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -177,7 +231,9 @@ class WhisperKitTranscriptionService: TranscriptionService {
         if whisperKit != nil {
             logger.logNotice("🧹 Manually unloading WhisperKit model")
             await whisperKit?.unloadModels()
+            await speakerKit?.unloadModels()
             whisperKit = nil
+            speakerKit = nil
             currentModelName = nil
             modelState = .unloaded
         }
