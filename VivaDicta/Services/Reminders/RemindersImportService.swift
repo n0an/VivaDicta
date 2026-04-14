@@ -27,6 +27,15 @@ enum RemindersImportError: LocalizedError {
             return "No default Reminders list is available on this device."
         }
     }
+
+    var shouldOfferSettingsShortcut: Bool {
+        switch self {
+        case .accessDenied, .readAccessRequired:
+            true
+        case .unknownAuthorizationStatus, .defaultReminderListUnavailable:
+            false
+        }
+    }
 }
 
 @MainActor

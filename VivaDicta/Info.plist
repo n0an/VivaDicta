@@ -123,6 +123,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>VivaDicta needs access to create reminders from reminder suggestions that you choose to import.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>VivaDicta uses Reminders access to save reminder suggestions you choose to import.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

@@ -7,17 +7,22 @@
 
 import SwiftUI
 import SwiftData
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ExtractedRemindersSheet: View {
     @Bindable var transcription: Transcription
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
 
     @State private var importingDraftIDs = Set<UUID>()
     @State private var isImportingAll = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
+    @State private var shouldOfferSettingsShortcut = false
 
     private var pendingDrafts: [ExtractedReminderDraft] {
         transcription.pendingExtractedReminderDrafts
@@ -86,6 +91,11 @@ struct ExtractedRemindersSheet: View {
             }
         }
         .alert("Reminder Import Failed", isPresented: $showErrorAlert) {
+            if shouldOfferSettingsShortcut {
+                Button("Settings") {
+                    openAppSettings()
+                }
+            }
             Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage)
@@ -138,7 +148,15 @@ struct ExtractedRemindersSheet: View {
 
     private func presentError(_ error: any Error) {
         errorMessage = error.localizedDescription
+        shouldOfferSettingsShortcut = (error as? RemindersImportError)?.shouldOfferSettingsShortcut ?? false
         showErrorAlert = true
+    }
+
+    private func openAppSettings() {
+#if canImport(UIKit)
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(settingsURL)
+#endif
     }
 }
 
