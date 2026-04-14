@@ -879,12 +879,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         sourceTag: String?
     ) throws -> Transcription {
         let descriptor = FetchDescriptor<Transcription>(
-            predicate: #Predicate { $0.id == transcriptionID },
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+            predicate: #Predicate { $0.id == transcriptionID }
         )
 
         if let transcription = try modelContext.fetch(descriptor).first {
             transcription.appendToOriginalText(transcribedText)
+
+            for variation in transcription.variations ?? [] {
+                modelContext.delete(variation)
+            }
+            transcription.variations = []
             transcription.enhancedText = nil
             try modelContext.save()
 

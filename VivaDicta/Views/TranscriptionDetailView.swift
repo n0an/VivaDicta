@@ -658,7 +658,7 @@ struct TranscriptionDetailView: View {
 
                 Spacer()
 
-                // Button 4: Copy
+                // Button 5: Copy
                 Button {
                     UIPasteboard.general.string = displayedText
                     HapticManager.success()
@@ -763,7 +763,7 @@ struct TranscriptionDetailView: View {
 
     private func startVoiceAppend(withAI: Bool) {
         HapticManager.lightImpact()
-        guard withAI == false || isAIConfigured else {
+        guard !withAI || isAIConfigured else {
             showConfigureAI = true
             return
         }
