@@ -275,18 +275,11 @@ final class ReminderExtractionService {
             guard !normalizedCandidateTitle.isEmpty else { continue }
 
             if let existingIndex = mergedDrafts.firstIndex(where: {
-                normalizedTitle(for: $0.title) == normalizedCandidateTitle
+                shouldMergeDrafts($0, normalizedCandidate)
             }) {
                 let existingDraft = mergedDrafts[existingIndex]
-                let shouldMerge = existingDraft.optionalDueDateString == normalizedCandidate.optionalDueDateString
-                    || existingDraft.optionalDueDateString == nil
-                    || normalizedCandidate.optionalDueDateString == nil
-                    || normalizedTitle(for: existingDraft.rawDueDatePhrase ?? "") == normalizedTitle(for: normalizedCandidate.rawDueDatePhrase ?? "")
-
-                if shouldMerge {
-                    mergedDrafts[existingIndex] = mergedDraft(existingDraft, with: normalizedCandidate)
-                    continue
-                }
+                mergedDrafts[existingIndex] = mergedDraft(existingDraft, with: normalizedCandidate)
+                continue
             }
 
             mergedDrafts.append(normalizedCandidate)
@@ -344,6 +337,43 @@ final class ReminderExtractionService {
         )
     }
 
+    private func shouldMergeDrafts(_ lhs: ReminderDraft, _ rhs: ReminderDraft) -> Bool {
+        let lhsTitle = normalizedTitle(for: lhs.title)
+        let rhsTitle = normalizedTitle(for: rhs.title)
+
+        if lhsTitle == rhsTitle {
+            return compatibleDueTiming(lhs, rhs)
+        }
+
+        guard compatibleDueTiming(lhs, rhs) else {
+            return false
+        }
+
+        let lhsFingerprint = titleFingerprint(for: lhs.title)
+        let rhsFingerprint = titleFingerprint(for: rhs.title)
+        guard !lhsFingerprint.isEmpty, lhsFingerprint == rhsFingerprint else {
+            return false
+        }
+
+        return true
+    }
+
+    private func compatibleDueTiming(_ lhs: ReminderDraft, _ rhs: ReminderDraft) -> Bool {
+        if lhs.optionalDueDateString == rhs.optionalDueDateString {
+            return true
+        }
+
+        if lhs.optionalDueDateString == nil || rhs.optionalDueDateString == nil {
+            let lhsRaw = normalizedTitle(for: lhs.rawDueDatePhrase ?? "")
+            let rhsRaw = normalizedTitle(for: rhs.rawDueDatePhrase ?? "")
+            if !lhsRaw.isEmpty, lhsRaw == rhsRaw {
+                return true
+            }
+        }
+
+        return false
+    }
+
     private func draftScore(_ draft: ReminderDraft) -> Int {
         var score = 0
         if normalizedOptionalString(draft.optionalDueDateString) != nil { score += 4 }
@@ -359,6 +389,24 @@ final class ReminderExtractionService {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
             .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+    }
+
+    private func titleFingerprint(for title: String) -> String {
+        let stopWords: Set<String> = [
+            "a", "an", "and", "appointment", "at", "book", "buy", "call", "check",
+            "create", "do", "email", "follow", "for", "make", "me",
+            "meeting", "message", "my", "need", "on", "pay", "please", "remind",
+            "schedule", "send", "task", "text", "the", "to", "todo", "up", "visit",
+            "with"
+        ]
+
+        return title
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { token in
+                !token.isEmpty && !stopWords.contains(token)
+            }
             .joined(separator: " ")
     }
 
