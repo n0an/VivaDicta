@@ -279,6 +279,8 @@ class AIService {
             presetId: mode.presetId,
             aiProvider: mode.aiProvider,
             aiModel: mode.aiModel,
+            reminderExtractorProvider: mode.reminderExtractorProvider,
+            reminderExtractorModel: mode.reminderExtractorModel,
             aiEnhanceEnabled: mode.aiEnhanceEnabled,
             useClipboardContext: mode.useClipboardContext,
 
@@ -347,6 +349,8 @@ class AIService {
                     presetId: mode.presetId,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
+                    reminderExtractorProvider: mode.reminderExtractorProvider,
+                    reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
         
@@ -373,6 +377,8 @@ class AIService {
                     presetId: nil,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
+                    reminderExtractorProvider: mode.reminderExtractorProvider,
+                    reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
         
@@ -399,6 +405,8 @@ class AIService {
                     presetId: mode.presetId,
                     aiProvider: nil,
                     aiModel: "",
+                    reminderExtractorProvider: mode.reminderExtractorProvider,
+                    reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
         
@@ -492,6 +500,8 @@ class AIService {
                 presetId: defaultMode.presetId,
                 aiProvider: defaultMode.aiProvider,
                 aiModel: defaultMode.aiModel,
+                reminderExtractorProvider: defaultMode.reminderExtractorProvider,
+                reminderExtractorModel: defaultMode.reminderExtractorModel,
                 aiEnhanceEnabled: defaultMode.aiEnhanceEnabled,
                 useClipboardContext: defaultMode.useClipboardContext,
                 isAutoTextFormattingEnabled: defaultMode.isAutoTextFormattingEnabled,
@@ -2140,6 +2150,8 @@ class AIService {
                     presetId: mode.presetId,
                     aiProvider: nil,
                     aiModel: "",
+                    reminderExtractorProvider: mode.reminderExtractorProvider,
+                    reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
         

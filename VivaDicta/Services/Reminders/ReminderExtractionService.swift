@@ -108,19 +108,44 @@ final class ReminderExtractionService {
     private func resolvedBackend(for mode: VivaMode) -> ReminderExtractionBackend? {
         let cloudProvider = CloudReminderExtractionProvider(aiService: aiService)
 
-        if let provider = mode.aiProvider,
-           !mode.aiModel.isEmpty {
-            if provider == .apple {
-                if AppleFoundationModelAvailability.isAvailable {
-                    return .apple
-                }
-            } else if cloudProvider.canExtract(provider: provider, model: mode.aiModel) {
-                return .cloud(provider: provider, model: mode.aiModel)
-            }
+        if mode.reminderExtractorProvider != nil {
+            return backend(
+                for: mode.reminderExtractorProvider,
+                model: mode.reminderExtractorModel,
+                cloudProvider: cloudProvider
+            )
+        }
+
+        if let backend = backend(
+            for: mode.aiProvider,
+            model: mode.aiModel,
+            cloudProvider: cloudProvider
+        ) {
+            return backend
         }
 
         if AppleFoundationModelAvailability.isAvailable {
             return .apple
+        }
+
+        return nil
+    }
+
+    private func backend(
+        for provider: AIProvider?,
+        model: String?,
+        cloudProvider: CloudReminderExtractionProvider
+    ) -> ReminderExtractionBackend? {
+        guard let provider else { return nil }
+
+        if provider == .apple {
+            return AppleFoundationModelAvailability.isAvailable ? .apple : nil
+        }
+
+        guard let model, !model.isEmpty else { return nil }
+
+        if cloudProvider.canExtract(provider: provider, model: model) {
+            return .cloud(provider: provider, model: model)
         }
 
         return nil
