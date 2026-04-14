@@ -69,6 +69,10 @@ final class ReminderExtractionService {
             throw ReminderExtractionError.noExtractorAvailable
         }
 
+        logger.logInfo(
+            "Reminder extraction - Start noteId=\(transcription.id.uuidString) backend=\(backendDescription(backend)) text='\(preview(transcription.text))'"
+        )
+
         let now = Date()
         let timeZone = TimeZone.current
         let response: ReminderDraftsResponse
@@ -92,6 +96,11 @@ final class ReminderExtractionService {
                 timeZone: timeZone
             )
         }
+
+        logDrafts(
+            response.reminders,
+            prefix: "Reminder extraction - Raw model output noteId=\(transcription.id.uuidString)"
+        )
 
         let persistedDrafts = persist(
             response.reminders,
@@ -159,6 +168,13 @@ final class ReminderExtractionService {
     ) -> [ExtractedReminderDraft] {
         let existingDrafts = reminderDrafts(for: transcription, modelContext: modelContext)
         let importedDrafts = existingDrafts.filter { $0.status == .imported }
+        logger.logInfo(
+            "Reminder extraction - Existing drafts before replace noteId=\(transcription.id.uuidString) count=\(existingDrafts.count) imported=\(importedDrafts.count)"
+        )
+        logStoredDrafts(
+            existingDrafts,
+            prefix: "Reminder extraction - Existing draft snapshot noteId=\(transcription.id.uuidString)"
+        )
 
         existingDrafts
             .filter { $0.status != .imported }
@@ -176,6 +192,10 @@ final class ReminderExtractionService {
         }
 
         let sanitizedDrafts = sanitizeDrafts(drafts)
+        logDrafts(
+            sanitizedDrafts,
+            prefix: "Reminder extraction - Sanitized drafts noteId=\(transcription.id.uuidString)"
+        )
         var seenKeys = Set<String>()
         var persistedDrafts: [ExtractedReminderDraft] = []
 
@@ -205,6 +225,9 @@ final class ReminderExtractionService {
             storedDraft.transcription = transcription
             modelContext.insert(storedDraft)
             persistedDrafts.append(storedDraft)
+            logger.logInfo(
+                "Reminder extraction - Persisting draft noteId=\(transcription.id.uuidString) draftId=\(storedDraft.id.uuidString) title='\(storedDraft.title)' due='\(storedDraft.optionalDueDateString ?? "nil")' raw='\(storedDraft.rawDueDatePhrase ?? "nil")'"
+            )
         }
 
         return persistedDrafts
@@ -218,7 +241,19 @@ final class ReminderExtractionService {
             sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.id)]
         )
         let allDrafts = (try? modelContext.fetch(descriptor)) ?? []
-        return allDrafts.filter { $0.transcription?.id == transcription.id }
+        logger.logDebug(
+            "Reminder extraction - Fetch all drafts total=\(allDrafts.count) targetNoteId=\(transcription.id.uuidString)"
+        )
+        logStoredDrafts(
+            allDrafts,
+            prefix: "Reminder extraction - All stored drafts before note filter"
+        )
+        let filteredDrafts = allDrafts.filter { $0.transcription?.id == transcription.id }
+        logStoredDrafts(
+            filteredDrafts,
+            prefix: "Reminder extraction - Filtered stored drafts targetNoteId=\(transcription.id.uuidString)"
+        )
+        return filteredDrafts
     }
 
     private func sanitizeDrafts(_ drafts: [ReminderDraft]) -> [ReminderDraft] {
@@ -351,5 +386,50 @@ final class ReminderExtractionService {
         }
 
         return rank(lhs) >= rank(rhs) ? lhs : rhs
+    }
+
+    private func backendDescription(_ backend: ReminderExtractionBackend) -> String {
+        switch backend {
+        case .apple:
+            "apple"
+        case .cloud(let provider, let model):
+            "\(provider.rawValue)/\(model)"
+        }
+    }
+
+    private func logDrafts(_ drafts: [ReminderDraft], prefix: String) {
+        if drafts.isEmpty {
+            logger.logDebug("\(prefix) count=0")
+            return
+        }
+
+        for (index, draft) in drafts.enumerated() {
+            logger.logDebug(
+                "\(prefix) [\(index)] title='\(draft.title)' due='\(draft.optionalDueDateString ?? "nil")' raw='\(draft.rawDueDatePhrase ?? "nil")' notes='\(draft.notes ?? "nil")' priority=\(draft.priority.rawValue)"
+            )
+        }
+    }
+
+    private func logStoredDrafts(_ drafts: [ExtractedReminderDraft], prefix: String) {
+        if drafts.isEmpty {
+            logger.logDebug("\(prefix) count=0")
+            return
+        }
+
+        for (index, draft) in drafts.enumerated() {
+            logger.logDebug(
+                "\(prefix) [\(index)] draftId=\(draft.id.uuidString) noteId=\(draft.transcription?.id.uuidString ?? "nil") status=\(draft.status.rawValue) title='\(draft.title)' due='\(draft.optionalDueDateString ?? "nil")' raw='\(draft.rawDueDatePhrase ?? "nil")'"
+            )
+        }
+    }
+
+    private func preview(_ text: String, limit: Int = 120) -> String {
+        let normalized = text
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacing("\n", with: " ")
+        if normalized.count <= limit {
+            return normalized
+        }
+        return String(normalized.prefix(limit)) + "..."
     }
 }

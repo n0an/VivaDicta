@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CoreSpotlight
+import os
 
 struct TranscriptionDetailView: View {
     var transcription: Transcription
@@ -42,6 +43,8 @@ struct TranscriptionDetailView: View {
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
     @State private var rippleEffectTrigger = false
+
+    private let logger = Logger(category: .reminderExtraction)
 
     private var sortedVariations: [TranscriptionVariation] {
         (transcription.variations ?? []).sorted { $0.createdAt < $1.createdAt }
@@ -373,6 +376,7 @@ struct TranscriptionDetailView: View {
                     transcription: transcription,
                     pendingReminderCount: pendingReminderDraftCount,
                     onReviewReminderSuggestions: pendingReminderDraftCount > 0 ? {
+                        logReminderDraftSnapshot(context: "review_chip")
                         showExtractedRemindersSheet = true
                     } : nil,
                     showTagPicker: $showTagPicker
@@ -399,6 +403,7 @@ struct TranscriptionDetailView: View {
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
                 onReviewExtractedTasks: pendingReminderDrafts.isEmpty ? nil : {
                     showPresetPicker = false
+                    logReminderDraftSnapshot(context: "preset_sheet_review")
                     showExtractedRemindersSheet = true
                 },
                 onExtractTasks: canOpenAISheet ? {
@@ -972,6 +977,7 @@ struct TranscriptionDetailView: View {
 
                 guard !Task.isCancelled else { return }
                 processingState = .idle
+                logReminderDraftSnapshot(context: "post_extract_before_sheet")
                 showExtractedRemindersSheet = true
             } catch is CancellationError {
                 processingState = .idle
@@ -980,6 +986,17 @@ struct TranscriptionDetailView: View {
                 enhancementErrorMessage = error.localizedDescription
                 showEnhancementErrorAlert = true
             }
+        }
+    }
+
+    private func logReminderDraftSnapshot(context: String) {
+        logger.logInfo(
+            "Reminder detail - \(context) noteId=\(transcription.id.uuidString) filteredCount=\(pendingReminderDraftCount) allDraftsCount=\(allReminderDrafts.count)"
+        )
+        for (index, draft) in pendingReminderDrafts.enumerated() {
+            logger.logDebug(
+                "Reminder detail - \(context) [\(index)] draftId=\(draft.id.uuidString) noteId=\(draft.transcription?.id.uuidString ?? "nil") title='\(draft.title)' due='\(draft.optionalDueDateString ?? "nil")' raw='\(draft.rawDueDatePhrase ?? "nil")'"
+            )
         }
     }
 
