@@ -8,6 +8,18 @@
 import Foundation
 
 enum ReminderDueDateParser {
+    private static let isoWithoutTimeZoneParseStrategy = Date.VerbatimFormatStyle(
+        format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)T\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits):\(second: .twoDigits)",
+        timeZone: .current,
+        calendar: .current
+    ).parseStrategy
+
+    private static let spacedDateTimeParseStrategy = Date.VerbatimFormatStyle(
+        format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits):\(second: .twoDigits)",
+        timeZone: .current,
+        calendar: .current
+    ).parseStrategy
+
     static func parse(_ dueDateString: String?) -> Date? {
         guard let trimmed = dueDateString?.trimmingCharacters(in: .whitespacesAndNewlines),
               !trimmed.isEmpty else {
@@ -15,6 +27,14 @@ enum ReminderDueDateParser {
         }
 
         if let date = try? Date(trimmed, strategy: .iso8601) {
+            return date
+        }
+
+        if let date = try? Date(trimmed, strategy: isoWithoutTimeZoneParseStrategy) {
+            return date
+        }
+
+        if let date = try? Date(trimmed, strategy: spacedDateTimeParseStrategy) {
             return date
         }
 

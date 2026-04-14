@@ -72,6 +72,13 @@ final class AppleFMReminderExtractionProvider {
         Do not invent deadlines.
         Use concise, actionable titles.
         Move supporting detail into notes.
+        When the note includes a specific date, weekday, or relative phrase that can be resolved, you must calculate the exact absolute due date using the current date and time zone.
+        Examples of resolvable phrases include 'tomorrow noon', 'Saturday at 9 am', 'next Thursday at 14:00', and 'April 20 at 3 PM'.
+        For resolvable phrases, fill optionalDueDateString with an absolute value.
+        Prefer ISO 8601 date-time with time zone, such as 2026-04-19T09:00:00+01:00.
+        A timezone-less value like 2026-04-19T09:00:00 is acceptable if needed.
+        If only the date is known, a date-only value like 2026-04-19 is acceptable.
+        Preserve the original due wording in rawDueDatePhrase whenever a due phrase exists, even when you also provide optionalDueDateString.
         If a due phrase is ambiguous, leave the normalized due date nil and preserve the original wording in rawDueDatePhrase.
         If no reminder-worthy tasks exist, return an empty reminders array.
 

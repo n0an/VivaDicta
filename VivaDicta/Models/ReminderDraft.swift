@@ -86,10 +86,10 @@ struct ReminderDraftSchema: Sendable {
     @Guide(description: "A concise reminder title, such as 'Call mom' or 'Visit dentist'. Keep it short and actionable.")
     var title: String
 
-    @Guide(description: "An absolute due date in ISO 8601 format with time zone when confidently known, such as 2026-04-15T12:00:00+01:00. Leave nil when the timing is ambiguous or not mentioned.")
+    @Guide(description: "An absolute due date when confidently known. If the note contains a resolvable weekday or relative due phrase such as 'Saturday at 9 am', 'tomorrow noon', or 'next Thursday at 14:00', calculate the exact date using the current date and time zone. Prefer ISO 8601 date-time like 2026-04-19T09:00:00+01:00. Also accept 2026-04-19T09:00:00 when no time zone suffix is present. If only the date is known, 2026-04-19 is acceptable. Leave nil only when the timing is ambiguous or not mentioned.")
     var optionalDueDateString: String?
 
-    @Guide(description: "The original due date phrase from the note, such as 'tomorrow noon' or 'end of week'. Leave nil when no due phrase exists.")
+    @Guide(description: "The original due date phrase from the note, such as 'tomorrow noon' or 'end of week'. Preserve this whenever a due phrase exists, even if optionalDueDateString is also set. Leave nil when no due phrase exists.")
     var rawDueDatePhrase: String?
 
     @Guide(description: "Optional supporting context for the reminder, such as meeting details or follow-up notes. Leave nil if unnecessary.")
