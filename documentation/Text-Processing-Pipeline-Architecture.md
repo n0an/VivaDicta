@@ -47,6 +47,15 @@ VivaDicta applies a multi-stage text processing pipeline to transform raw audio 
 │  │  • Only enabled replacements applied                                │   │
 │  └──────────────────────────────────────────────────────────────────────┘   │
 │                                              │                               │
+│                                              ▼                               │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  Gate: TranscriptionOutputFilter.hasMeaningfulContent() [ALWAYS]    │   │
+│  │                                                                      │   │
+│  │  • Runs after filter, formatting, and replacements                  │   │
+│  │  • Rejects empty / whitespace-only / punctuation-only text          │   │
+│  │  • Used before saving the transcription                             │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                              │                               │
 │                            ┌─────────────────┴─────────────────┐            │
 │                            │                                    │            │
 │                   AI Processing enabled?                        │            │
@@ -117,7 +126,7 @@ Removes common speech-to-text artifacts. Applied unconditionally to all transcri
 Also removes trailing comma/period after filler words.
 
 **Meaningful Content Check:**
-`hasMeaningfulContent(_:)` returns `false` for strings that are empty, whitespace-only, or contain only punctuation. Used to skip saving empty transcriptions.
+`hasMeaningfulContent(_:)` returns `false` for strings that are empty, whitespace-only, or contain only punctuation. In the current code path, this gate runs after Stage 1, optional Stage 2, and optional Stage 3, and is used to skip saving empty transcriptions.
 
 ### Stage 2: TextFormatter
 

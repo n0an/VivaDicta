@@ -44,6 +44,9 @@ The transcription system routes audio files to the appropriate speech-to-text pr
 │  │       │  • Case-insensitive regex matching                         │    │
 │  │       │  • Word boundary aware (CJK/Thai exempted)                 │    │
 │  │       ▼                                                             │    │
+│  │  TranscriptionOutputFilter.hasMeaningfulContent() ← Before save     │    │
+│  │       │  • Reject empty / punctuation-only text                     │    │
+│  │       ▼                                                             │    │
 │  │  Final transcribed text                                             │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────────────────┘

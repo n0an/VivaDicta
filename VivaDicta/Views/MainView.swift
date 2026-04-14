@@ -348,6 +348,8 @@ struct MainView: View {
             appState.recordViewModel?.recordingState == .enhancing {
             HudView(
                 state: appState.recordViewModel?.recordingState ?? .idle,
+                detailText: appState.recordViewModel?.transcriptionProgress?.detailText,
+                progress: appState.recordViewModel?.transcriptionProgress?.fractionCompleted,
                 onCancel: {
                     appState.recordViewModel?.cancelProcessing()
                 }

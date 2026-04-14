@@ -12,13 +12,13 @@ Transcription Service (WhisperKit / Parakeet / Cloud)
 TranscriptionOutputFilter.filter()              -- Stage 1: Clean raw transcription
     |
     v
-TranscriptionOutputFilter.hasMeaningfulContent() -- Gate: discard empty/punctuation-only
-    |
-    v
 TextFormatter.format()                           -- Stage 2: Paragraph formatting (if enabled)
     |
     v
 ReplacementsService.applyReplacements()          -- Stage 3: User word replacements (if enabled)
+    |
+    v
+TranscriptionOutputFilter.hasMeaningfulContent() -- Gate: discard empty/punctuation-only before save
     |
     v
 [Transcribed text stored]
@@ -63,10 +63,13 @@ Cleans raw transcription output from any provider.
 Returns `true` if text contains at least one alphanumeric character. Rejects pure punctuation, whitespace, or empty strings.
 
 **Called from:**
-- `TranscriptionManager.transcribe()` -- immediately after receiving raw text
-- `RecordViewModel` -- gates whether to save transcription
+- `RecordViewModel` -- gates whether to save transcription after local formatting and replacements
+- `WatchAudioProcessor` -- gates whether to save watch transcriptions
+- Pending transcription recovery paths before save
 
 **Always active** -- not configurable.
+
+**Important:** In the current code path, this gate runs after `TranscriptionOutputFilter.filter()`, optional `TextFormatter.format()`, and optional `ReplacementsService.applyReplacements()`. It is not performed inside `TranscriptionManager.transcribe()`.
 
 ---
 
@@ -190,9 +193,9 @@ Smart formatting when inserting transcribed text from the keyboard extension.
 | # | Component | Stage | Always Active | Setting |
 |---|-----------|-------|---------------|---------|
 | 1 | `TranscriptionOutputFilter.filter()` | After transcription | Yes | -- |
-| 2 | `TranscriptionOutputFilter.hasMeaningfulContent()` | Gate check | Yes | -- |
-| 3 | `TextFormatter.format()` | Paragraph formatting | No | `VivaMode.isAutoTextFormattingEnabled` |
-| 4 | `ReplacementsService.applyReplacements()` | Word replacements | No | `isReplacementsEnabled` |
+| 2 | `TextFormatter.format()` | Paragraph formatting | No | `VivaMode.isAutoTextFormattingEnabled` |
+| 3 | `ReplacementsService.applyReplacements()` | Word replacements | No | `isReplacementsEnabled` |
+| 4 | `TranscriptionOutputFilter.hasMeaningfulContent()` | Gate check before save | Yes | -- |
 | 5 | `CustomVocabulary.getTerms()` | AI prompt injection | No | `isSpellingCorrectionsEnabled` |
 | 6 | `PromptsTemplates.systemPrompt()` | AI system message | When `useSystemTemplate=true` | -- |
 | 7 | `formatTranscriptForLLM()` | AI user message | When `wrapInTranscriptTags=true` | -- |

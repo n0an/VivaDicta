@@ -117,6 +117,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     // removing old observers before adding new ones (see AppGroupCoordinator.addObserver)
     
     var transcribingSpeechTask: Task<Void, Never>?
+    var transcriptionProgress: TranscriptionProgressInfo?
 
     // Pending transcription data for saving when enhancement is cancelled
     private var pendingTranscription: PendingTranscriptionData?
@@ -409,43 +410,47 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             do {
                 self.recordingState = .transcribing
+                self.transcriptionProgress = nil
 
                 // Notify keyboard that transcription has started
                 AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
 
-                // Check if file needs downsampling (keyboard recordings are 48kHz)
                 var audioURLToTranscribe = recordURL
 
-                // Detect sample rate
-                let tempFile = try AVAudioFile(forReading: recordURL)
-                let sampleRate = tempFile.processingFormat.sampleRate
+                if transcriptionManager.currentMode.transcriptionProvider == .parakeet {
+                    logger.logInfo("🎙️ Skipping pre-downsampling for Parakeet because FluidAudio handles file conversion internally")
+                } else {
+                    // Check if file needs downsampling (keyboard recordings are 48kHz)
+                    let tempFile = try AVAudioFile(forReading: recordURL)
+                    let sampleRate = tempFile.processingFormat.sampleRate
 
-                if sampleRate > 16000 {
-                    logger.logInfo("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
-                    // Use .wav extension for cross-platform PCM support
-                    let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
+                    if sampleRate > 16000 {
+                        logger.logInfo("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
+                        // Use .wav extension for cross-platform PCM support
+                        let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
 
-                    do {
-                        try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
+                        do {
+                            try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
 
-                        // Verify the output file was created and has content
-                        let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
-                        let fileSize = attributes[.size] as? Int64 ?? 0
+                            // Verify the output file was created and has content
+                            let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
+                            let fileSize = attributes[.size] as? Int64 ?? 0
 
-                        if fileSize > 1000 {  // At least 1KB
-                            // Delete original high-rate file to save space
-                            try? FileManager.default.removeItem(at: recordURL)
+                            if fileSize > 1000 {  // At least 1KB
+                                // Delete original high-rate file to save space
+                                try? FileManager.default.removeItem(at: recordURL)
 
-                            // Use downsampled file for transcription
-                            audioURLToTranscribe = downsampledURL
-                            logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
-                        } else {
-                            logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
-                            try? FileManager.default.removeItem(at: downsampledURL)
+                                // Use downsampled file for transcription
+                                audioURLToTranscribe = downsampledURL
+                                logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
+                            } else {
+                                logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
+                                try? FileManager.default.removeItem(at: downsampledURL)
+                            }
+                        } catch {
+                            logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
+                            // Continue with original file if downsampling fails
                         }
-                    } catch {
-                        logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
-                        // Continue with original file if downsampling fails
                     }
                 }
 
@@ -453,7 +458,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try Task.checkCancellation()
 
                 let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURLToTranscribe)
+                let transcribedText = try await transcriptionManager.transcribe(
+                    audioURL: audioURLToTranscribe,
+                    progressHandler: { progress in
+                        await MainActor.run {
+                            self.transcriptionProgress = progress
+                        }
+                    }
+                )
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
                 // Check for cancellation after transcription
@@ -503,6 +515,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     )
 
                     // Update state to show enhancing animation
+                    self.transcriptionProgress = nil
                     self.recordingState = .enhancing
                     HapticManager.lightImpact()
 
@@ -923,6 +936,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
     func resetValues() {
         audioPower = 0
+        transcriptionProgress = nil
         AppGroupCoordinator.shared.updateAudioLevel(0)
 
         audioRecorder?.stop()

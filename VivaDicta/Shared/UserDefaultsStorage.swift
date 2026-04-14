@@ -43,6 +43,7 @@ enum UserDefaultsStorage {
         static let textReplacements = "textReplacements"
         static let isReplacementsEnabled = "isReplacementsEnabled"
         static let isSpellingCorrectionsEnabled = "isSpellingCorrectionsEnabled"
+        static let isParakeetVocabularyBoostingEnabled = "isParakeetVocabularyBoostingEnabled"
         static let isAutoAudioCleanupEnabled = "isAutoAudioCleanupEnabled"
         static let audioRetentionDays = "audioRetentionDays"
         static let isAutoNoteCleanupEnabled = "isAutoNoteCleanupEnabled"

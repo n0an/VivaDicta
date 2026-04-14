@@ -10,6 +10,7 @@ import os
 
 struct GroqTranscriptionService {
     private let logger = Logger(category: .groqTranscriptionService)
+    private let maxVocabularyPromptTerms = 25
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let text = try await NetworkRetry.withRetry(logger: logger) {
@@ -130,10 +131,11 @@ struct GroqTranscriptionService {
         }
     }
     
-    /// Use custom vocabulary words as prompt
+    /// Provide Groq with a concise spelling hint for custom vocabulary terms.
     private func buildPromptWithVocabulary() -> String {
-        let vocabularyWords = CustomVocabulary.getTerms()
+        let vocabularyWords = CustomVocabulary.getTerms(maxTerms: maxVocabularyPromptTerms)
         guard !vocabularyWords.isEmpty else { return "" }
-        return vocabularyWords.joined(separator: ", ")
+        let preferredSpellings = vocabularyWords.joined(separator: ", ")
+        return "Prefer these spellings if they are heard in the audio: \(preferredSpellings)."
     }
 }

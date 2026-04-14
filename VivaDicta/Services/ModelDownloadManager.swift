@@ -76,7 +76,6 @@ class ModelDownloadManager: @unchecked Sendable {
     /// Current download status per model, keyed by model name.
     public var downloadStatuses: [String: DownloadStatus] = [:]
 
-    private var observations: [String: NSKeyValueObservation] = [:]
     private var downloadTasks: [String: Task<Void, any Error>] = [:]
     private let logger = Logger(category: .modelDownloadManager)
 
@@ -220,28 +219,32 @@ class ModelDownloadManager: @unchecked Sendable {
 
         logger.logNotice("📥 Starting download of \(model.displayName)")
 
-        // Start progress simulation - declare outside do block to ensure cleanup
-        let progressTask = Task { @MainActor in
-            while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
-                if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
-                    self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
-                }
-                try? await Task.sleep(for: .seconds(1))
-            }
-        }
-        
-        defer {
-            progressTask.cancel()
-        }
-
         do {
-            // Download to FluidAudio's default cache directory
-            async let asrDownload = AsrModels.downloadAndLoad(version: model.version)
-            // Initialize VAD manager to download VAD models to default cache
-            async let vadDownload = VadManager()
+            let modelName = model.name
 
-            _ = try await (asrDownload, vadDownload)
-            
+            _ = try await AsrModels.downloadAndLoad(
+                version: model.version,
+                progressHandler: { progress in
+                    self.updateParakeetDownloadProgress(
+                        for: modelName,
+                        progress: progress,
+                        within: 0.0 ... 0.85
+                    )
+                }
+            )
+
+            try Task.checkCancellation()
+
+            _ = try await VadManager(
+                progressHandler: { progress in
+                    self.updateParakeetDownloadProgress(
+                        for: modelName,
+                        progress: progress,
+                        within: 0.85 ... 1.0
+                    )
+                }
+            )
+
             try Task.checkCancellation()
 
             await MainActor.run {
@@ -274,6 +277,21 @@ class ModelDownloadManager: @unchecked Sendable {
 
             logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
+        }
+    }
+
+    nonisolated private func updateParakeetDownloadProgress(
+        for modelName: String,
+        progress: DownloadUtils.DownloadProgress,
+        within range: ClosedRange<Double>
+    ) {
+        let boundedProgress =
+            range.lowerBound
+            + ((range.upperBound - range.lowerBound) * progress.fractionCompleted)
+
+        Task { @MainActor in
+            guard self.downloadStatuses[modelName] == .downloading else { return }
+            self.downloadProgress[modelName] = boundedProgress
         }
     }
 
@@ -474,49 +492,6 @@ class ModelDownloadManager: @unchecked Sendable {
 
             // Update every 0.5 seconds for smooth animation
             try? await Task.sleep(for: .milliseconds(500))
-        }
-    }
-
-    // MARK: - Common Download Utilities
-
-    private func downloadFileWithProgress(from url: URL, progressKey: String) async throws -> Data {
-        let destinationURL = FileManager.appDirectory(for: .models).appendingPathComponent(UUID().uuidString)
-
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode),
-                      let tempURL = tempURL else {
-                    continuation.resume(throwing: URLError(.badServerResponse))
-                    return
-                }
-
-                do {
-                    try FileManager.default.moveItem(at: tempURL, to: destinationURL)
-                    let data = try Data(contentsOf: destinationURL, options: .mappedIfSafe)
-                    continuation.resume(returning: data)
-                    try? FileManager.default.removeItem(at: destinationURL)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-
-            task.resume()
-
-            let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-                let currentProgress = round(progress.fractionCompleted * 100) / 100
-                Task { @MainActor in
-                    self?.downloadProgress[progressKey] = currentProgress
-                }
-            }
-
-            // Store observation for potential cleanup
-            observations[progressKey] = observation
         }
     }
 }
