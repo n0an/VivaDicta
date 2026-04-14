@@ -183,21 +183,27 @@ class TranscriptionManager {
     ///
     /// - Throws: ``TranscriptionError/transcriptionFailed`` if no valid model is configured,
     ///   or any error thrown by the underlying transcription service.
-    public func transcribe(audioURL: URL) async throws -> String {
+    public func transcribe(
+        audioURL: URL,
+        progressHandler: TranscriptionProgressHandler? = nil
+    ) async throws -> String {
         guard let model = getCurrentTranscriptionModel() else {
             throw TranscriptionError.transcriptionFailed
         }
 
-        let transcriptionService: any TranscriptionService
+        let transcriptionResult: TranscriptionServiceResult
         switch model.provider {
         case .parakeet:
-            transcriptionService = parakeetTranscriptionService
+            transcriptionResult = try await parakeetTranscriptionService.transcribe(
+                audioURL: audioURL,
+                model: model,
+                progressHandler: progressHandler
+            )
         case .whisperKit:
-            transcriptionService = whisperKitTranscriptionService
+            transcriptionResult = try await whisperKitTranscriptionService.transcribe(audioURL: audioURL, model: model)
         default:
-            transcriptionService = cloudTranscriptionService
+            transcriptionResult = try await cloudTranscriptionService.transcribe(audioURL: audioURL, model: model)
         }
-        let transcriptionResult = try await transcriptionService.transcribe(audioURL: audioURL, model: model)
 
         var result = TranscriptionOutputFilter.filter(transcriptionResult.text)
 

@@ -44,18 +44,28 @@ class ParakeetTranscriptionService: TranscriptionService {
     }
  
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+        try await transcribe(audioURL: audioURL, model: model, progressHandler: nil)
+    }
+
+    func transcribe(
+        audioURL: URL,
+        model: any TranscriptionModel,
+        progressHandler: TranscriptionProgressHandler?
+    ) async throws -> TranscriptionServiceResult {
         guard let parakeetModel = model as? ParakeetModel else {
             throw TranscriptionError.unsupportedModel
         }
-        
+
         try await loadModel(model: parakeetModel)
-        
+
         guard let asrManager = asrManager else {
             logger.logNotice("🦜 ASR manager not initialized, cannot transcribe")
             throw TranscriptionError.modelLoadFailed
         }
-        
+
         logger.logNotice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
+
+        await reportProgress(.init(stage: .preparingAudio), to: progressHandler)
 
         let audioFile = try AVAudioFile(forReading: audioURL)
         let durationSeconds = Double(audioFile.length) / audioFile.processingFormat.sampleRate
@@ -67,17 +77,24 @@ class ParakeetTranscriptionService: TranscriptionService {
 
         if durationSeconds < 20.0 || !isVADEnabled {
             logger.logNotice("🎙️ Using direct file transcription for Parakeet")
-            let result = try await asrManager.transcribe(audioURL, source: .system)
+            await reportProgress(.init(stage: .transcribing), to: progressHandler)
 
-            await asrManager.cleanup()
-            self.asrManager = nil
-            self.vadManager = nil
-            logger.logNotice("🦜 Parakeet ASR models cleaned up from memory")
+            let shouldObserveProgress = durationSeconds > 15.0
+            let result = try await transcribeWithProgressObservation(
+                using: asrManager,
+                shouldObserveProgress: shouldObserveProgress,
+                progressHandler: progressHandler
+            ) {
+                try await asrManager.transcribe(audioURL, source: .system)
+            }
+
+            await cleanupAfterTranscription(using: asrManager)
             logger.logNotice("✅ Parakeet transcription completed successfully")
             return result.text
         }
 
         logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
+        await reportProgress(.init(stage: .detectingSpeech), to: progressHandler)
 
         // VAD segmentation still requires 16kHz mono Float32 samples.
         var speechAudio = try await readAndConvertAudio(from: audioURL)
@@ -90,16 +107,18 @@ class ParakeetTranscriptionService: TranscriptionService {
             speechAudio += [Float](repeating: 0, count: trailingSilenceSamples)
         }
 
-        // Transcribe the audio
-        let result = try await asrManager.transcribe(speechAudio, source: .system)
+        await reportProgress(.init(stage: .transcribing), to: progressHandler)
 
-        // Clean up models after transcription to minimize RAM usage
-        await asrManager.cleanup()
-        
-        self.asrManager = nil
-        self.vadManager = nil
-        logger.logNotice("🦜 Parakeet ASR models cleaned up from memory")
-        
+        let shouldObserveProgress = speechAudio.count > 240_000
+        let result = try await transcribeWithProgressObservation(
+            using: asrManager,
+            shouldObserveProgress: shouldObserveProgress,
+            progressHandler: progressHandler
+        ) {
+            try await asrManager.transcribe(speechAudio, source: .system)
+        }
+
+        await cleanupAfterTranscription(using: asrManager)
         logger.logNotice("✅ Parakeet transcription completed successfully")
         return .plain(result.text)
     }
@@ -145,6 +164,62 @@ class ParakeetTranscriptionService: TranscriptionService {
         } catch {
             logger.logWarning("⚠️ VAD processing failed: \(error.localizedDescription), using full audio")
             return audioSamples
+        }
+    }
+
+    private func reportProgress(
+        _ progress: TranscriptionProgressInfo,
+        to progressHandler: TranscriptionProgressHandler?
+    ) async {
+        guard let progressHandler else { return }
+        await progressHandler(progress)
+    }
+
+    private func cleanupAfterTranscription(using asrManager: AsrManager) async {
+        await asrManager.cleanup()
+        self.asrManager = nil
+        self.vadManager = nil
+        logger.logNotice("🦜 Parakeet ASR models cleaned up from memory")
+    }
+
+    private func transcribeWithProgressObservation(
+        using asrManager: AsrManager,
+        shouldObserveProgress: Bool,
+        progressHandler: TranscriptionProgressHandler?,
+        operation: () async throws -> ASRResult
+    ) async throws -> ASRResult {
+        let observationTask = await makeProgressObservationTask(
+            using: asrManager,
+            shouldObserveProgress: shouldObserveProgress,
+            progressHandler: progressHandler
+        )
+        defer {
+            observationTask?.cancel()
+        }
+
+        return try await operation()
+    }
+
+    private func makeProgressObservationTask(
+        using asrManager: AsrManager,
+        shouldObserveProgress: Bool,
+        progressHandler: TranscriptionProgressHandler?
+    ) async -> Task<Void, Never>? {
+        guard shouldObserveProgress, let progressHandler else {
+            return nil
+        }
+
+        let progressStream = await asrManager.transcriptionProgressStream
+        return Task {
+            do {
+                for try await progress in progressStream {
+                    await progressHandler(
+                        .init(stage: .transcribing, fractionCompleted: progress)
+                    )
+                }
+            } catch {
+                return
+            }
         }
     }
 }

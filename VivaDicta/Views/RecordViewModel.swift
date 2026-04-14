@@ -117,6 +117,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     // removing old observers before adding new ones (see AppGroupCoordinator.addObserver)
     
     var transcribingSpeechTask: Task<Void, Never>?
+    var transcriptionProgress: TranscriptionProgressInfo?
 
     // Pending transcription data for saving when enhancement is cancelled
     private var pendingTranscription: PendingTranscriptionData?
@@ -409,6 +410,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             do {
                 self.recordingState = .transcribing
+                self.transcriptionProgress = nil
 
                 // Notify keyboard that transcription has started
                 AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
@@ -456,7 +458,14 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 try Task.checkCancellation()
 
                 let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURLToTranscribe)
+                let transcribedText = try await transcriptionManager.transcribe(
+                    audioURL: audioURLToTranscribe,
+                    progressHandler: { progress in
+                        await MainActor.run {
+                            self.transcriptionProgress = progress
+                        }
+                    }
+                )
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
                 // Check for cancellation after transcription
@@ -506,6 +515,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     )
 
                     // Update state to show enhancing animation
+                    self.transcriptionProgress = nil
                     self.recordingState = .enhancing
                     HapticManager.lightImpact()
 
@@ -926,6 +936,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
     func resetValues() {
         audioPower = 0
+        transcriptionProgress = nil
         AppGroupCoordinator.shared.updateAudioLevel(0)
 
         audioRecorder?.stop()
