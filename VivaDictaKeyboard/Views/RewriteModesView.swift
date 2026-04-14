@@ -86,7 +86,7 @@ struct RewriteModesView: View {
         }
         .frame(height: 260)
         .onAppear {
-            presets = KeyboardPresetLoader.loadPresets()
+            presets = KeyboardPresetLoader.loadVisiblePresets()
         }
     }
 
@@ -133,27 +133,61 @@ struct RewriteModesView: View {
             )
             .padding(.bottom, 6)
 
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    // Favorites section when no category filter is active
-                    if selectedCategory == nil {
-                        let favorites = presets.filter(\.isFavorite)
-                        if !favorites.isEmpty {
-                            presetSection(title: "Favorites", presets: favorites)
+            if presets.isEmpty {
+                VStack(spacing: 10) {
+                    Spacer()
+
+                    Image(systemName: "eye.slash")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.secondary)
+
+                    Text("No Visible Presets")
+                        .font(.system(size: 16, weight: .semibold))
+
+                    Text("Unhide presets in the app to use them from the keyboard.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    Button {
+                        HapticManager.mediumImpact()
+                        onOpenApp()
+                    } label: {
+                        Label("Open VivaDicta", systemImage: "arrow.up.forward.app")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                    }
+                    .prominentButton(color: .orange)
+                    .padding(.top, 2)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        // Favorites section when no category filter is active
+                        if selectedCategory == nil {
+                            let favorites = presets.filter(\.isFavorite)
+                            if !favorites.isEmpty {
+                                presetSection(title: "Favorites", presets: favorites)
+                            }
+                        }
+
+                        ForEach(orderedCategories, id: \.self) { category in
+                            presetSection(
+                                title: category,
+                                presets: filteredPresets.filter { $0.category == category }
+                            )
                         }
                     }
-
-                    ForEach(orderedCategories, id: \.self) { category in
-                        presetSection(
-                            title: category,
-                            presets: filteredPresets.filter { $0.category == category }
-                        )
-                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
                 }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
         }
     }
 

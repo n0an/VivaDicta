@@ -560,7 +560,7 @@ class ModeEditViewModel {
     }
 
     func selectFirstPresetIfNeeded() {
-        if selectedPresetId == nil, let firstPreset = presetManager.presets.first {
+        if selectedPresetId == nil, let firstPreset = presetManager.visiblePresets.first {
             selectedPresetId = firstPreset.id
             logger.logInfo("Auto-selected first preset: \(firstPreset.name)")
         }

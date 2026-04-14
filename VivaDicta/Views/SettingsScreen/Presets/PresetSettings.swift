@@ -80,18 +80,7 @@ struct PresetSettings: View {
                 if !favorites.isEmpty {
                     Section("Favorites") {
                         ForEach(favorites) { preset in
-                            NavigationLink(value: preset) {
-                                PresetRowView(preset: preset, onToggleFavorite: {
-                                    presetManager.toggleFavorite(presetId: preset.id)
-                                })
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                if !preset.isBuiltIn {
-                                    Button("Delete", role: .destructive) {
-                                        deletePreset(preset)
-                                    }
-                                }
-                            }
+                            presetRowLink(for: preset)
                         }
                     }
                 }
@@ -100,18 +89,7 @@ struct PresetSettings: View {
             ForEach(filteredCategories, id: \.self) { category in
                 Section(category) {
                     ForEach(filteredPresets.filter { $0.category == category }) { preset in
-                        NavigationLink(value: preset) {
-                            PresetRowView(preset: preset, onToggleFavorite: {
-                                presetManager.toggleFavorite(presetId: preset.id)
-                            })
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if !preset.isBuiltIn {
-                                Button("Delete", role: .destructive) {
-                                    deletePreset(preset)
-                                }
-                            }
-                        }
+                        presetRowLink(for: preset)
                     }
                 }
             }
@@ -145,6 +123,41 @@ struct PresetSettings: View {
         HapticManager.mediumImpact()
         presetManager.deletePreset(preset)
     }
+
+    private func togglePresetVisibility(_ preset: Preset) {
+        HapticManager.lightImpact()
+        let isHidden = presetManager.isPresetHidden(presetId: preset.id)
+        presetManager.setPresetHidden(presetId: preset.id, isHidden: !isHidden)
+    }
+
+    private func presetRowLink(for preset: Preset) -> some View {
+        let isHidden = presetManager.isPresetHidden(presetId: preset.id)
+
+        return NavigationLink(value: preset) {
+            PresetRowView(
+                preset: preset,
+                isHidden: isHidden,
+                onToggleFavorite: {
+                    presetManager.toggleFavorite(presetId: preset.id)
+                }
+            )
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                togglePresetVisibility(preset)
+            } label: {
+                Label(isHidden ? "Show" : "Hide", systemImage: isHidden ? "eye" : "eye.slash")
+            }
+            .tint(isHidden ? .green : .indigo)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if !preset.isBuiltIn {
+                Button("Delete", role: .destructive) {
+                    deletePreset(preset)
+                }
+            }
+        }
+    }
 }
 
 enum PresetFilter: String, CaseIterable, Identifiable {
@@ -163,6 +176,7 @@ enum PresetFilter: String, CaseIterable, Identifiable {
 
 private struct PresetRowView: View {
     let preset: Preset
+    let isHidden: Bool
     var onToggleFavorite: (() -> Void)?
 
     var body: some View {
@@ -193,6 +207,13 @@ private struct PresetRowView: View {
             }
 
             Spacer()
+
+            if isHidden {
+                Image(systemName: "eye.slash")
+                    .foregroundStyle(.secondary.opacity(0.7))
+                    .font(.system(size: 14))
+                    .accessibilityLabel("Hidden from pickers and keyboard")
+            }
 
             if let onToggleFavorite {
                 Button {

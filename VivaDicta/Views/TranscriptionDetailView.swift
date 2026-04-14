@@ -1203,9 +1203,9 @@ private struct PresetPickerSheet: View {
 
     private var typeFilteredPresets: [Preset] {
         let byType: [Preset] = switch filter {
-        case .all: presetManager.presets
-        case .system: presetManager.presets.filter(\.isBuiltIn)
-        case .custom: presetManager.presets.filter { !$0.isBuiltIn }
+        case .all: presetManager.visiblePresets
+        case .system: presetManager.visiblePresets.filter(\.isBuiltIn)
+        case .custom: presetManager.visiblePresets.filter { !$0.isBuiltIn }
         }
         guard !searchText.isEmpty else { return byType }
         return byType.filter {
@@ -1256,28 +1256,38 @@ private struct PresetPickerSheet: View {
                     CategoryChipsView(
                         categories: allCategories,
                         selectedCategory: $selectedCategory,
-                        showFavorites: presetManager.hasFavorites
+                        showFavorites: presetManager.hasVisibleFavorites
                     )
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 }
                 .listSectionSpacing(0)
 
-                if selectedCategory == nil {
-                    let favorites = typeFilteredPresets.filter(\.isFavorite)
-                    if !favorites.isEmpty {
-                        Section("Favorites") {
-                            ForEach(favorites) { preset in
-                                presetRow(preset)
+                if typeFilteredPresets.isEmpty {
+                    ContentUnavailableView {
+                        Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
+                    } description: {
+                        Text(searchText.isEmpty
+                             ? "Unhide presets in AI Presets to show them here."
+                             : "Try a different search or filter.")
+                    }
+                } else {
+                    if selectedCategory == nil {
+                        let favorites = typeFilteredPresets.filter(\.isFavorite)
+                        if !favorites.isEmpty {
+                            Section("Favorites") {
+                                ForEach(favorites) { preset in
+                                    presetRow(preset)
+                                }
                             }
                         }
                     }
-                }
 
-                ForEach(filteredCategories, id: \.self) { category in
-                    Section(category) {
-                        ForEach(filteredPresets.filter { $0.category == category }) { preset in
-                            presetRow(preset)
+                    ForEach(filteredCategories, id: \.self) { category in
+                        Section(category) {
+                            ForEach(filteredPresets.filter { $0.category == category }) { preset in
+                                presetRow(preset)
+                            }
                         }
                     }
                 }
@@ -1286,8 +1296,8 @@ private struct PresetPickerSheet: View {
             .onChange(of: filter) { _, _ in
                 selectedCategory = nil
             }
-            .onChange(of: presetManager.hasFavorites) {
-                if !presetManager.hasFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
+            .onChange(of: presetManager.hasVisibleFavorites) {
+                if !presetManager.hasVisibleFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
                     selectedCategory = nil
                 }
             }

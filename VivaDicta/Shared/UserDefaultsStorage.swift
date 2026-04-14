@@ -25,6 +25,7 @@ enum UserDefaultsStorage {
 
     enum SharedKeys {
         static let presets = "Presets_v1"
+        static let hiddenPresetIDs = "HiddenPresetIDs_v1"
     }
 
     // MARK: - App-Private Keys

@@ -23,18 +23,25 @@ class PresetManager {
     private let logger = Logger(category: .presetManager)
     private let userDefaults: UserDefaults
     private let storageKey: String
+    private let hiddenPresetIDsStorageKey: String
 
     /// All available presets (built-in + custom from UserDefaults).
     private(set) var presets: [Preset] = []
+
+    /// Preset IDs hidden from pickers and keyboard on this device.
+    private(set) var hiddenPresetIDs: Set<String> = []
 
     /// Sync service for writing preset changes to SwiftData/CloudKit.
     var syncService: PresetSyncService?
 
     init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
-         storageKey: String = UserDefaultsStorage.SharedKeys.presets) {
+         storageKey: String = UserDefaultsStorage.SharedKeys.presets,
+         hiddenPresetIDsStorageKey: String = UserDefaultsStorage.SharedKeys.hiddenPresetIDs) {
         self.userDefaults = userDefaults
         self.storageKey = storageKey
+        self.hiddenPresetIDsStorageKey = hiddenPresetIDsStorageKey
         loadPresets()
+        loadHiddenPresetIDs()
         populateBuiltInsIfNeeded()
     }
 
@@ -43,6 +50,11 @@ class PresetManager {
     /// Returns a preset by its ID.
     func preset(for id: String) -> Preset? {
         presets.first { $0.id == id }
+    }
+
+    /// Returns presets visible in pickers and keyboard on this device.
+    var visiblePresets: [Preset] {
+        presets.filter { !hiddenPresetIDs.contains($0.id) }
     }
 
     /// Returns all presets for a given category.
@@ -55,22 +67,38 @@ class PresetManager {
         presets.contains { $0.isFavorite }
     }
 
+    /// Whether any visible presets are marked as favorites.
+    var hasVisibleFavorites: Bool {
+        visiblePresets.contains { $0.isFavorite }
+    }
+
     /// Returns ordered category names using explicit category ordering.
     var categories: [String] {
-        var seen = Set<String>()
-        var result: [String] = []
-        for preset in presets {
-            if !seen.contains(preset.category) {
-                seen.insert(preset.category)
-                result.append(preset.category)
-            }
+        categories(from: presets)
+    }
+
+    /// Returns ordered category names for presets visible in pickers and keyboard.
+    var visibleCategories: [String] {
+        categories(from: visiblePresets)
+    }
+
+    /// Returns whether the preset is hidden from pickers and keyboard on this device.
+    func isPresetHidden(presetId: String) -> Bool {
+        hiddenPresetIDs.contains(presetId)
+    }
+
+    /// Updates whether the preset is hidden from pickers and keyboard on this device.
+    func setPresetHidden(presetId: String, isHidden: Bool) {
+        guard preset(for: presetId) != nil else { return }
+
+        if isHidden {
+            hiddenPresetIDs.insert(presetId)
+        } else {
+            hiddenPresetIDs.remove(presetId)
         }
-        return result.sorted { lhs, rhs in
-            let lhsIdx = PresetCatalog.categoryOrder.firstIndex(of: lhs) ?? Int.max
-            let rhsIdx = PresetCatalog.categoryOrder.firstIndex(of: rhs) ?? Int.max
-            if lhsIdx != rhsIdx { return lhsIdx < rhsIdx }
-            return lhs < rhs
-        }
+
+        saveHiddenPresetIDs()
+        logger.logInfo("Updated preset visibility: \(presetId) → hidden=\(isHidden)")
     }
 
     // MARK: - CRUD
@@ -109,7 +137,9 @@ class PresetManager {
             return
         }
         presets.removeAll { $0.id == preset.id }
+        hiddenPresetIDs.remove(preset.id)
         savePresets()
+        saveHiddenPresetIDs()
 
         if preset.id.hasPrefix("custom_") {
             syncService?.deletePresetRecord(presetId: preset.id)
@@ -224,7 +254,39 @@ class PresetManager {
         logger.logInfo("Saved \(self.presets.count) presets")
     }
 
+    private func loadHiddenPresetIDs() {
+        guard let ids = userDefaults.array(forKey: hiddenPresetIDsStorageKey) as? [String] else {
+            hiddenPresetIDs = []
+            return
+        }
+
+        hiddenPresetIDs = Set(ids)
+        logger.logInfo("Loaded \(ids.count) hidden preset IDs")
+    }
+
+    private func saveHiddenPresetIDs() {
+        userDefaults.set(Array(hiddenPresetIDs).sorted(), forKey: hiddenPresetIDsStorageKey)
+        logger.logInfo("Saved \(hiddenPresetIDs.count) hidden preset IDs")
+    }
+
     // MARK: - Helpers
+
+    private func categories(from presets: [Preset]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for preset in presets {
+            if !seen.contains(preset.category) {
+                seen.insert(preset.category)
+                result.append(preset.category)
+            }
+        }
+        return result.sorted { lhs, rhs in
+            let lhsIdx = PresetCatalog.categoryOrder.firstIndex(of: lhs) ?? Int.max
+            let rhsIdx = PresetCatalog.categoryOrder.firstIndex(of: rhs) ?? Int.max
+            if lhsIdx != rhsIdx { return lhsIdx < rhsIdx }
+            return lhs < rhs
+        }
+    }
 
     private func normalizeForComparison(_ name: String) -> String {
         name.split(separator: /\s+/).joined().lowercased()
