@@ -62,14 +62,17 @@ extension ParakeetModel {
         AsrModels.defaultCacheDirectory(for: version)
     }
 
-    var isDownloaded: Bool {
+    private var hasCachedModelDirectory: Bool {
         FileManager.default.fileExists(atPath: modelsDirectory.path)
     }
 
+    var isDownloaded: Bool {
+        AsrModels.modelsExist(at: modelsDirectory, version: version)
+    }
+
     func deleteModel() throws {
-        if isDownloaded {
+        if hasCachedModelDirectory {
             try FileManager.default.removeItem(at: modelsDirectory)
         }
     }
 }
-
