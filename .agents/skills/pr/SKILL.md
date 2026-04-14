@@ -77,6 +77,15 @@ gh api repos/<owner>/<repo>/pulls/<PR_NUMBER>/comments
 - **Real critical bugs** (regressions, data loss, crashes, security issues): fix them immediately without asking.
 - **Everything else** (style, theoretical issues, nice-to-haves, non-critical improvements): present to the user with your assessment and ask before fixing.
 
+## Merge Requests
+
+If the user explicitly says `merge`, do not wait for CI to finish.
+
+- Merge the PR immediately using a regular merge commit.
+- Do not block on pending checks unless the user explicitly asks to wait.
+- If you see ongoing GitHub Actions build jobs for that PR or branch, submit a cancel request after merging instead of leaving them running.
+- Do not wait for GitHub to confirm the cancellation. One cancel request is enough unless the user explicitly asks you to verify.
+
 ## Post-Merge: Update What's New
 
 After the PR is merged, update the running What's New file in the Obsidian vault:
