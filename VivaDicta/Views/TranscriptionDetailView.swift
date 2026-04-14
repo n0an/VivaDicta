@@ -26,6 +26,7 @@ struct TranscriptionDetailView: View {
     @State private var showEnhancementErrorAlert: Bool = false
     @State private var enhancementErrorMessage: String = ""
     @State private var showPresetPicker: Bool = false
+    @State private var showExtractedRemindersSheet: Bool = false
     @State private var showMetaInfo: Bool = false
     @State private var showConfigureAI: Bool = false
     @State private var showConfigureChat: Bool = false
@@ -82,6 +83,10 @@ struct TranscriptionDetailView: View {
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
     }
+
+    private var canOpenAISheet: Bool {
+        isAIConfigured || ReminderExtractionService(aiService: appState.aiService).canExtractReminders()
+    }
     
     
     @ViewBuilder
@@ -92,11 +97,11 @@ struct TranscriptionDetailView: View {
                 Text("AI")
             }
             .font(.system(size: 16, weight: .bold))
-            .foregroundStyle(isAIConfigured ? .white : .secondary)
+            .foregroundStyle(canOpenAISheet ? .white : .secondary)
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background {
-                if isAIConfigured {
+                if canOpenAISheet {
                     if colorScheme == .dark {
                         // Dark mode: edge-glow HUD style
                         AnimatedMeshGradient()
@@ -159,11 +164,11 @@ struct TranscriptionDetailView: View {
                 Text("AI")
             }
             .font(.system(size: 16, weight: .bold))
-            .foregroundStyle(isAIConfigured ? .white : .secondary)
+            .foregroundStyle(canOpenAISheet ? .white : .secondary)
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background {
-                if isAIConfigured {
+                if canOpenAISheet {
                     if colorScheme == .dark {
                         // Dark mode: edge-glow HUD style
                         AnimatedMeshGradient()
@@ -375,12 +380,24 @@ struct TranscriptionDetailView: View {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
+                onReviewExtractedTasks: transcription.pendingExtractedReminderDrafts.isEmpty ? nil : {
+                    showPresetPicker = false
+                    showExtractedRemindersSheet = true
+                },
+                onExtractTasks: canOpenAISheet ? {
+                    showPresetPicker = false
+                    extractReminderSuggestions()
+                } : nil,
                 onSelect: { preset in
                     showPresetPicker = false
                     generateVariation(preset: preset)
                 }
             )
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showExtractedRemindersSheet) {
+            ExtractedRemindersSheet(transcription: transcription)
+                .presentationDetents([.medium, .large])
         }
         .sheet(isPresented: $showTextEditor) {
             TextEditSheet(
@@ -613,7 +630,7 @@ struct TranscriptionDetailView: View {
                 // Button 2: AI Presets picker
                 Button {
                     HapticManager.lightImpact()
-                    if isAIConfigured {
+                    if canOpenAISheet {
                         showPresetPicker = true
                     } else {
                         showConfigureAI = true
@@ -923,6 +940,32 @@ struct TranscriptionDetailView: View {
         generateVariation(preset: preset)
     }
 
+    private func extractReminderSuggestions() {
+        HapticManager.lightImpact()
+        cancelProcessing()
+        processingState = .enhancing
+
+        let service = ReminderExtractionService(aiService: appState.aiService)
+        processingTask = Task {
+            do {
+                _ = try await service.extractAndPersist(
+                    for: transcription,
+                    modelContext: modelContext
+                )
+
+                guard !Task.isCancelled else { return }
+                processingState = .idle
+                showExtractedRemindersSheet = true
+            } catch is CancellationError {
+                processingState = .idle
+            } catch {
+                processingState = .idle
+                enhancementErrorMessage = error.localizedDescription
+                showEnhancementErrorAlert = true
+            }
+        }
+    }
+
     private func generateVariation(preset: Preset) {
         let shouldStreamResponse = appState.aiService.currentModeSupportsResponseStreaming
         generatingPresetId = preset.id
@@ -1225,6 +1268,8 @@ private struct MetaInfoSheet: View {
 private struct PresetPickerSheet: View {
     let presetManager: PresetManager
     let existingVariationIds: Set<String>
+    let onReviewExtractedTasks: (() -> Void)?
+    let onExtractTasks: (() -> Void)?
     let onSelect: (Preset) -> Void
 
     @State private var filter: PresetFilter = .all
@@ -1273,6 +1318,54 @@ private struct PresetPickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
+                if let onExtractTasks {
+                    Section("Smart Actions") {
+                        if let onReviewExtractedTasks {
+                            Button {
+                                onReviewExtractedTasks()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "tray.full")
+                                        .frame(width: 20)
+                                        .foregroundStyle(.secondary)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Review Reminder Suggestions")
+                                            .font(.body)
+                                        Text("Open the reminder suggestions already extracted from this note.")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Spacer()
+                                }
+                            }
+                            .tint(.primary)
+                        }
+
+                        Button {
+                            onExtractTasks()
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "checklist")
+                                    .frame(width: 20)
+                                    .foregroundStyle(.secondary)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Extract Tasks to Reminders")
+                                        .font(.body)
+                                    Text("Find reminder suggestions in this note and review them before importing to Apple Reminders.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+                            }
+                        }
+                        .tint(.primary)
+                    }
+                }
+
                 Section {
                     Picker("Filter", selection: $filter) {
                         ForEach(PresetFilter.allCases) { filter in
@@ -1293,7 +1386,7 @@ private struct PresetPickerSheet: View {
                 }
                 .listSectionSpacing(0)
 
-                if typeFilteredPresets.isEmpty {
+                if typeFilteredPresets.isEmpty, onExtractTasks == nil {
                     ContentUnavailableView {
                         Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
                     } description: {
@@ -1331,7 +1424,7 @@ private struct PresetPickerSheet: View {
                     selectedCategory = nil
                 }
             }
-            .navigationTitle("AI Rewrite")
+            .navigationTitle("AI Actions")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
