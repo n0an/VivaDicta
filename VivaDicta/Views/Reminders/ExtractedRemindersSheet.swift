@@ -17,7 +17,6 @@ struct ExtractedRemindersSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
-    @Query(sort: \ExtractedReminderDraft.createdAt) private var allReminderDrafts: [ExtractedReminderDraft]
 
     @State private var importingDraftIDs = Set<UUID>()
     @State private var isImportingAll = false
@@ -26,9 +25,7 @@ struct ExtractedRemindersSheet: View {
     @State private var shouldOfferSettingsShortcut = false
 
     private var pendingDrafts: [ExtractedReminderDraft] {
-        allReminderDrafts.filter {
-            $0.transcription?.id == transcription.id && $0.status == .pending
-        }
+        transcription.pendingExtractedReminderDrafts
     }
 
     private var isBusy: Bool {
@@ -138,12 +135,14 @@ struct ExtractedRemindersSheet: View {
             isImportingAll = false
         }
 
+        let importService = RemindersImportService()
+
         do {
-            let identifiers = try await RemindersImportService().importDrafts(draftsToImport.map(\.reminderDraft))
-            for (draft, identifier) in zip(draftsToImport, identifiers) {
+            for draft in draftsToImport {
+                let identifier = try await importService.importDraft(draft.reminderDraft)
                 draft.markImported(reminderIdentifier: identifier)
+                try modelContext.save()
             }
-            try modelContext.save()
         } catch {
             presentError(error)
         }

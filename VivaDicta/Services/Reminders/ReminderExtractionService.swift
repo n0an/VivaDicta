@@ -165,7 +165,7 @@ final class ReminderExtractionService {
         now: Date,
         timeZone: TimeZone
     ) -> [ExtractedReminderDraft] {
-        let existingDrafts = reminderDrafts(for: transcription, modelContext: modelContext)
+        let existingDrafts = reminderDrafts(for: transcription)
         let importedDrafts = existingDrafts.filter { $0.status == .imported }
 
         existingDrafts
@@ -219,14 +219,9 @@ final class ReminderExtractionService {
     }
 
     private func reminderDrafts(
-        for transcription: Transcription,
-        modelContext: ModelContext
+        for transcription: Transcription
     ) -> [ExtractedReminderDraft] {
-        let descriptor = FetchDescriptor<ExtractedReminderDraft>(
-            sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.id)]
-        )
-        let allDrafts = (try? modelContext.fetch(descriptor)) ?? []
-        return allDrafts.filter { $0.transcription?.id == transcription.id }
+        transcription.sortedExtractedReminderDrafts
     }
 
     private func sanitizeDrafts(
@@ -388,19 +383,29 @@ final class ReminderExtractionService {
     }
 
     private func likelyTimingOnlyTitle(_ title: String) -> Bool {
-        let normalized = normalizedTitle(for: title)
-        guard !normalized.isEmpty else { return false }
+        let tokens = title
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
 
-        let dateWords = [
+        guard !tokens.isEmpty else { return false }
+
+        let timingWords: Set<String> = [
+            "at", "on", "this", "next",
             "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
-            "today", "tomorrow", "tonight", "morning", "afternoon", "evening", "noon"
+            "today", "tomorrow", "tonight", "morning", "afternoon", "evening", "noon",
+            "am", "pm", "a", "p"
         ]
 
-        let containsDateWord = dateWords.contains { normalized.contains($0) }
-        let containsTimeMarker = normalized.contains("am") || normalized.contains("pm") || normalized.contains(":")
+        let hasTimingSignal = tokens.contains { token in
+            timingWords.contains(token) || token.allSatisfy(\.isNumber)
+        } || title.localizedStandardContains(":")
 
-        guard containsDateWord else { return false }
-        return containsTimeMarker || normalized.split(separator: " ").count <= 3
+        guard hasTimingSignal else { return false }
+
+        return tokens.allSatisfy { token in
+            timingWords.contains(token) || token.allSatisfy(\.isNumber)
+        }
     }
 
     private func draftKey(title: String, dueDateString: String?) -> String {

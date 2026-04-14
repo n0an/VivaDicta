@@ -8,7 +8,6 @@
 import SwiftUI
 import SwiftData
 import CoreSpotlight
-import os
 
 struct TranscriptionDetailView: View {
     var transcription: Transcription
@@ -16,7 +15,6 @@ struct TranscriptionDetailView: View {
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
-    @Query(sort: \ExtractedReminderDraft.createdAt) private var allReminderDrafts: [ExtractedReminderDraft]
 
     /// "original" or a variation's presetId
     @State private var selectedChipId: String = "original"
@@ -43,8 +41,6 @@ struct TranscriptionDetailView: View {
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
     @State private var rippleEffectTrigger = false
-
-    private let logger = Logger(category: .reminderExtraction)
 
     private var sortedVariations: [TranscriptionVariation] {
         (transcription.variations ?? []).sorted { $0.createdAt < $1.createdAt }
@@ -88,16 +84,12 @@ struct TranscriptionDetailView: View {
         appState.aiService.isProperlyConfigured()
     }
 
-    private var reminderDraftsForCurrentTranscription: [ExtractedReminderDraft] {
-        allReminderDrafts.filter { $0.transcription?.id == transcription.id }
-    }
-
     private var pendingReminderDrafts: [ExtractedReminderDraft] {
-        reminderDraftsForCurrentTranscription.filter { $0.status == .pending }
+        transcription.pendingExtractedReminderDrafts
     }
 
     private var pendingReminderDraftCount: Int {
-        pendingReminderDrafts.count
+        transcription.pendingExtractedReminderDraftCount
     }
 
     private var canOpenAISheet: Bool {
