@@ -220,28 +220,32 @@ class ModelDownloadManager: @unchecked Sendable {
 
         logger.logNotice("📥 Starting download of \(model.displayName)")
 
-        // Start progress simulation - declare outside do block to ensure cleanup
-        let progressTask = Task { @MainActor in
-            while !Task.isCancelled && self.downloadStatuses[model.name] == .downloading {
-                if let currentProgress = self.downloadProgress[model.name], currentProgress < 0.9 {
-                    self.downloadProgress[model.name] = min(currentProgress + 0.02, 0.9)
-                }
-                try? await Task.sleep(for: .seconds(1))
-            }
-        }
-        
-        defer {
-            progressTask.cancel()
-        }
-
         do {
-            // Download to FluidAudio's default cache directory
-            async let asrDownload = AsrModels.downloadAndLoad(version: model.version)
-            // Initialize VAD manager to download VAD models to default cache
-            async let vadDownload = VadManager()
+            let modelName = model.name
 
-            _ = try await (asrDownload, vadDownload)
-            
+            _ = try await AsrModels.downloadAndLoad(
+                version: model.version,
+                progressHandler: { progress in
+                    self.updateParakeetDownloadProgress(
+                        for: modelName,
+                        progress: progress,
+                        within: 0.0 ... 0.85
+                    )
+                }
+            )
+
+            try Task.checkCancellation()
+
+            _ = try await VadManager(
+                progressHandler: { progress in
+                    self.updateParakeetDownloadProgress(
+                        for: modelName,
+                        progress: progress,
+                        within: 0.85 ... 1.0
+                    )
+                }
+            )
+
             try Task.checkCancellation()
 
             await MainActor.run {
@@ -274,6 +278,21 @@ class ModelDownloadManager: @unchecked Sendable {
 
             logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
+        }
+    }
+
+    nonisolated private func updateParakeetDownloadProgress(
+        for modelName: String,
+        progress: DownloadUtils.DownloadProgress,
+        within range: ClosedRange<Double>
+    ) {
+        let boundedProgress =
+            range.lowerBound
+            + ((range.upperBound - range.lowerBound) * progress.fractionCompleted)
+
+        Task { @MainActor in
+            guard self.downloadStatuses[modelName] == .downloading else { return }
+            self.downloadProgress[modelName] = boundedProgress
         }
     }
 
