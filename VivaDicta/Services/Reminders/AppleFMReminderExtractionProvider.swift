@@ -66,6 +66,7 @@ final class AppleFMReminderExtractionProvider {
     private func systemPrompt(now: Date, timeZone: TimeZone) -> String {
         """
         You extract reminder suggestions from transcription notes.
+        The user's next message is the note text itself.
 
         Only extract genuine reminder-worthy actions, next steps, or commitments that the user is likely to want in Apple Reminders.
         Do not invent tasks.
@@ -94,12 +95,6 @@ final class AppleFMReminderExtractionProvider {
 
     @PromptBuilder
     private func userPrompt(noteText: String) -> Prompt {
-        """
-        Extract reminder suggestions from the following transcription note.
-
-        <NOTE>
-        \(noteText)
-        </NOTE>
-        """
+        "\(noteText)"
     }
 }
