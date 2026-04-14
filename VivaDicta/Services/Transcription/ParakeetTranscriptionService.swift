@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2025.09.27
 //
 
+import AVFoundation
 import Foundation
 @preconcurrency import FluidAudio
 import os
@@ -56,24 +57,31 @@ class ParakeetTranscriptionService: TranscriptionService {
         
         logger.logNotice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
 
-        // Read and convert audio to 16kHz mono Float32
-        let audioSamples = try await readAndConvertAudio(from: audioURL)
-        let durationSeconds = Double(audioSamples.count) / 16000.0
-
+        let audioFile = try AVAudioFile(forReading: audioURL)
+        let durationSeconds = Double(audioFile.length) / audioFile.processingFormat.sampleRate
         logger.logNotice("📊 Audio duration: \(durationSeconds.formatted(.number.precision(.fractionLength(2)))) seconds")
 
         // Apply VAD for recordings longer than 20 seconds
         // VAD setting should be shared with keyboard extension
         let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
-        
-        var speechAudio: [Float]
-        
+
         if durationSeconds < 20.0 || !isVADEnabled {
-            speechAudio = audioSamples
-        } else {
-            logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
-            speechAudio = try await applyVAD(to: audioSamples)
+            logger.logNotice("🎙️ Using direct file transcription for Parakeet")
+            let result = try await asrManager.transcribe(audioURL, source: .system)
+
+            await asrManager.cleanup()
+            self.asrManager = nil
+            self.vadManager = nil
+            logger.logNotice("🦜 Parakeet ASR models cleaned up from memory")
+            logger.logNotice("✅ Parakeet transcription completed successfully")
+            return result.text
         }
+
+        logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
+
+        // VAD segmentation still requires 16kHz mono Float32 samples.
+        var speechAudio = try await readAndConvertAudio(from: audioURL)
+        speechAudio = try await applyVAD(to: speechAudio)
 
         // Add trailing silence to improve final word punctuation detection
         let trailingSilenceSamples = 16_000 // 1 second at 16kHz
@@ -83,7 +91,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         }
 
         // Transcribe the audio
-        let result = try await asrManager.transcribe(speechAudio)
+        let result = try await asrManager.transcribe(speechAudio, source: .system)
 
         // Clean up models after transcription to minimize RAM usage
         await asrManager.cleanup()

@@ -413,39 +413,42 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Notify keyboard that transcription has started
                 AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
 
-                // Check if file needs downsampling (keyboard recordings are 48kHz)
                 var audioURLToTranscribe = recordURL
 
-                // Detect sample rate
-                let tempFile = try AVAudioFile(forReading: recordURL)
-                let sampleRate = tempFile.processingFormat.sampleRate
+                if transcriptionManager.currentMode.transcriptionProvider == .parakeet {
+                    logger.logInfo("🎙️ Skipping pre-downsampling for Parakeet because FluidAudio handles file conversion internally")
+                } else {
+                    // Check if file needs downsampling (keyboard recordings are 48kHz)
+                    let tempFile = try AVAudioFile(forReading: recordURL)
+                    let sampleRate = tempFile.processingFormat.sampleRate
 
-                if sampleRate > 16000 {
-                    logger.logInfo("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
-                    // Use .wav extension for cross-platform PCM support
-                    let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
+                    if sampleRate > 16000 {
+                        logger.logInfo("🎙️ Detected high sample rate (\(Int(sampleRate))Hz), downsampling to 16kHz")
+                        // Use .wav extension for cross-platform PCM support
+                        let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
 
-                    do {
-                        try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
+                        do {
+                            try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
 
-                        // Verify the output file was created and has content
-                        let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
-                        let fileSize = attributes[.size] as? Int64 ?? 0
+                            // Verify the output file was created and has content
+                            let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
+                            let fileSize = attributes[.size] as? Int64 ?? 0
 
-                        if fileSize > 1000 {  // At least 1KB
-                            // Delete original high-rate file to save space
-                            try? FileManager.default.removeItem(at: recordURL)
+                            if fileSize > 1000 {  // At least 1KB
+                                // Delete original high-rate file to save space
+                                try? FileManager.default.removeItem(at: recordURL)
 
-                            // Use downsampled file for transcription
-                            audioURLToTranscribe = downsampledURL
-                            logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
-                        } else {
-                            logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
-                            try? FileManager.default.removeItem(at: downsampledURL)
+                                // Use downsampled file for transcription
+                                audioURLToTranscribe = downsampledURL
+                                logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
+                            } else {
+                                logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
+                                try? FileManager.default.removeItem(at: downsampledURL)
+                            }
+                        } catch {
+                            logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
+                            // Continue with original file if downsampling fails
                         }
-                    } catch {
-                        logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
-                        // Continue with original file if downsampling fails
                     }
                 }
 
