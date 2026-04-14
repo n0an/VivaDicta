@@ -11,6 +11,20 @@ import os
 struct MistralTranscriptionService {
     private let logger = Logger(category: .mistralTranscriptionService)
 
+    static func requestLanguage(for selectedLanguage: String, diarizationEnabled: Bool) -> String? {
+        let normalizedLanguage = selectedLanguage.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard normalizedLanguage.isEmpty == false, normalizedLanguage != "auto" else {
+            return nil
+        }
+
+        guard diarizationEnabled == false else {
+            return nil
+        }
+
+        return normalizedLanguage
+    }
+
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL, model: model)
@@ -101,12 +115,21 @@ struct MistralTranscriptionService {
 
         // Add language field if not auto-detect
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        if selectedLanguage != "auto", !selectedLanguage.isEmpty {
+        let requestLanguage = Self.requestLanguage(
+            for: selectedLanguage,
+            diarizationEnabled: diarizationEnabled
+        )
+
+        if let requestLanguage {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append(selectedLanguage.data(using: .utf8)!)
+            body.append(requestLanguage.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
-            logger.logInfo("Using language: \(selectedLanguage)")
+            logger.logInfo("Using language: \(requestLanguage)")
+        } else if diarizationEnabled,
+                  selectedLanguage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false,
+                  selectedLanguage != "auto" {
+            logger.logNotice("Skipping explicit language because Mistral diarization requires automatic language detection")
         }
 
         if diarizationEnabled {
