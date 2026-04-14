@@ -12,6 +12,11 @@ import AVFoundation
 import SwiftData
 import os
 
+enum RecordingDestination: Equatable {
+    case newNote
+    case appendToTranscription(id: UUID, withAI: Bool)
+}
+
 /// Data structure to hold pending transcription when enhancement is in progress.
 private struct PendingTranscriptionData {
     let text: String
@@ -115,6 +120,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
     // Pending transcription data for saving when enhancement is cancelled
     private var pendingTranscription: PendingTranscriptionData?
+    private var activeRecordingDestination: RecordingDestination = .newNote
 
     var captureURL: URL {
         FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
@@ -170,7 +176,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     ///
     /// If a keyboard prewarm session is active, uses the prewarmed audio engine.
     /// Otherwise, configures and starts a standard AVAudioRecorder.
-    func startCaptureAudio() {
+    func startCaptureAudio(destination: RecordingDestination = .newNote) {
         Task { @MainActor in
             // Guard against duplicate starts
             guard recordingState != .recording else {
@@ -184,6 +190,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 aiService.captureClipboardContext()
+                activeRecordingDestination = destination
                 recordingState = .recording
                 HapticManager.mediumImpact()
 
@@ -205,6 +212,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     })
 
                 } catch {
+                    activeRecordingDestination = .newNote
                     resetValues()
                     recordingState = .error(.recordError)
                     return
@@ -230,6 +238,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 resetValues()
                 aiService.captureClipboardContext()
+                activeRecordingDestination = destination
                 recordingState = .recording
                 HapticManager.mediumImpact()
 
@@ -266,6 +275,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     })
 
                 } catch {
+                    activeRecordingDestination = .newNote
                     resetValues()
                     recordingState = .error(.recordError)
                 }
@@ -278,6 +288,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     /// - Parameter modelContext: The SwiftData context for saving the transcription.
     func stopCaptureAudio(modelContext: ModelContext) {
         HapticManager.mediumImpact()
+        let destination = activeRecordingDestination
+        activeRecordingDestination = .newNote
 
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
@@ -297,7 +309,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
                 do {
                     try FileManager.default.moveItem(at: captureURL, to: finalURL)
-                    transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
+                    transcribingSpeechTask = transcribeSpeechTask(
+                        recordURL: finalURL,
+                        modelContext: modelContext,
+                        destination: destination
+                    )
                 } catch {
                     logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
                 }
@@ -312,7 +328,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
             do {
                 try FileManager.default.moveItem(at: captureURL, to: finalURL)
-                transcribingSpeechTask = transcribeSpeechTask(recordURL: finalURL, modelContext: modelContext)
+                transcribingSpeechTask = transcribeSpeechTask(
+                    recordURL: finalURL,
+                    modelContext: modelContext,
+                    destination: destination
+                )
             } catch {
                 logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
             }
@@ -370,7 +390,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         try outFile.write(from: outputBuffer)
     }
 
-    func transcribeSpeechTask(recordURL: URL, modelContext: ModelContext, sourceTag: String? = nil) -> Task<Void, Never> {
+    func transcribeSpeechTask(
+        recordURL: URL,
+        modelContext: ModelContext,
+        sourceTag: String? = nil,
+        destination: RecordingDestination = .newNote
+    ) -> Task<Void, Never> {
         Task { @MainActor in
             // Begin background task to allow transcription to complete if user switches apps
             let bgTaskID = appState?.backgroundTaskService.beginBackgroundTask(
@@ -457,9 +482,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 var promptName: String? = nil
                 var enhancementDur: TimeInterval? = nil
                 let resolvedSourceTag = sourceTag ?? (prewarmManager.isSessionActive ? SourceTag.keyboard : SourceTag.app)
+                let shouldEnhance = destination == .newNote && aiService.isProperlyConfigured()
 
                 // Check if AI Processing is properly configured
-                if aiService.isProperlyConfigured() {
+                if shouldEnhance {
                     // Check for cancellation before starting enhancement
                     try Task.checkCancellation()
 
@@ -520,67 +546,79 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     }
                 }
                 
-                // Create and save transcription to SwiftData
-                let transcription = Transcription(
-                    text: transcribedText,
-                    enhancedText: enhancedText,
-                    audioDuration: audioDuration,
-                    audioFileName: audioURLToTranscribe.lastPathComponent,
-                    transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
-                    transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
-                    aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
-                    aiProviderName: enhancedText != nil ? aiService.selectedMode.aiProvider?.displayName : nil,
-                    promptName: promptName,
-                    transcriptionDuration: transcriptionDuration,
-                    enhancementDuration: enhancementDur,
-                    powerModeId: aiService.selectedMode.id.uuidString,
-                    sourceTag: resolvedSourceTag
-                )
+                let savedTranscription: Transcription
+                let textToShare: String
 
-                modelContext.insert(transcription)
-
-                // Dual-write: create variation alongside enhancedText
-                if let enhancedText {
-                    let variation = TranscriptionVariation(
-                        presetId: aiService.selectedMode.presetId ?? "regular",
-                        presetDisplayName: promptName ?? "Regular",
-                        text: enhancedText,
-                        aiModelName: aiService.selectedMode.aiModel,
-                        aiProviderName: aiService.selectedMode.aiProvider?.displayName,
-                        processingDuration: enhancementDur,
-                        aiRequestSystemMessage: aiService.lastSystemMessageSent,
-                        aiRequestUserMessage: aiService.lastUserMessageSent
+                switch destination {
+                case .newNote:
+                    savedTranscription = try saveNewTranscription(
+                        transcribedText: transcribedText,
+                        enhancedText: enhancedText,
+                        promptName: promptName,
+                        enhancementDur: enhancementDur,
+                        audioURL: audioURLToTranscribe,
+                        audioDuration: audioDuration,
+                        transcriptionDuration: transcriptionDuration,
+                        modelContext: modelContext,
+                        sourceTag: resolvedSourceTag
                     )
-                    variation.transcription = transcription
-                    modelContext.insert(variation)
+                    textToShare = enhancedText ?? transcribedText
+
+                case .appendToTranscription(id: let transcriptionID, withAI: let withAI):
+                    savedTranscription = try appendTranscribedText(
+                        transcribedText,
+                        to: transcriptionID,
+                        audioURL: audioURLToTranscribe,
+                        modelContext: modelContext,
+                        audioDuration: audioDuration,
+                        transcriptionDuration: transcriptionDuration,
+                        sourceTag: resolvedSourceTag
+                    )
+                    if withAI && aiService.isProperlyConfigured() {
+                        do {
+                            self.recordingState = .enhancing
+                            HapticManager.lightImpact()
+                            AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
+                            textToShare = try await enhanceAppendedTranscription(
+                                savedTranscription,
+                                modelContext: modelContext
+                            )
+                        } catch is CancellationError {
+                            RecentNotesCache.addNote(
+                                id: savedTranscription.id.uuidString,
+                                text: savedTranscription.enhancedText ?? savedTranscription.text,
+                                timestamp: savedTranscription.timestamp
+                            )
+                            throw CancellationError()
+                        } catch let error as AppleFoundationModelError {
+                            switch error {
+                            case .guardrailViolation:
+                                self.recordError = .aiGuardrail
+                                self.isShowingAlert = true
+                            case .refusal(let reason):
+                                self.recordError = .aiRefusal(reason)
+                                self.isShowingAlert = true
+                            default:
+                                break
+                            }
+                            textToShare = transcribedText
+                        } catch {
+                            self.recordError = .aiEnhancement(error.localizedDescription)
+                            self.isShowingAlert = true
+                            textToShare = transcribedText
+                        }
+                    } else {
+                        textToShare = transcribedText
+                    }
                 }
 
-                try modelContext.save()
-
-                // Index the new transcription in Spotlight (non-blocking to avoid SwiftData actor isolation issues)
-                let transcriptionEntity = transcription.entity // Extract entity on MainActor
-                Task.detached {
-                    await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
-                }
-
-                // Index for RAG Smart Search
-                Task { await RAGIndexingService.shared.indexTranscription(transcription) }
-
-                // Create and donate user activity for Siri predictions
-                if let appState = self.appState {
-                    let activity = appState.userActivity(for: transcription)
-                    activity.becomeCurrent()
-                }
-
-                // Share transcribed text with keyboard (enhanced text if available, otherwise original)
-                let textToShare = enhancedText ?? transcribedText
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
                 // Cache for keyboard "Recent Notes" feature
                 RecentNotesCache.addNote(
-                    id: transcription.id.uuidString,
-                    text: textToShare,
-                    timestamp: transcription.timestamp
+                    id: savedTranscription.id.uuidString,
+                    text: savedTranscription.enhancedText ?? savedTranscription.text,
+                    timestamp: savedTranscription.timestamp
                 )
 
                 // Auto-copy to clipboard if enabled
@@ -644,6 +682,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcribingSpeechTask?.cancel()
         transcribingSpeechTask = nil
         pendingTranscription = nil
+        activeRecordingDestination = .newNote
 
         // Stop real capture if still recording
         if prewarmManager.isSessionActive && prewarmManager.audioEngine?.isRunning == true {
@@ -768,7 +807,155 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             cancelTranscribe()
         }
     }
-    
+
+    private func saveNewTranscription(
+        transcribedText: String,
+        enhancedText: String?,
+        promptName: String?,
+        enhancementDur: TimeInterval?,
+        audioURL: URL,
+        audioDuration: Double,
+        transcriptionDuration: TimeInterval?,
+        modelContext: ModelContext,
+        sourceTag: String?
+    ) throws -> Transcription {
+        let transcription = Transcription(
+            text: transcribedText,
+            enhancedText: enhancedText,
+            audioDuration: audioDuration,
+            audioFileName: audioURL.lastPathComponent,
+            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+            transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
+            aiEnhancementModelName: enhancedText != nil ? aiService.selectedMode.aiModel : nil,
+            aiProviderName: enhancedText != nil ? aiService.selectedMode.aiProvider?.displayName : nil,
+            promptName: promptName,
+            transcriptionDuration: transcriptionDuration,
+            enhancementDuration: enhancementDur,
+            powerModeId: aiService.selectedMode.id.uuidString,
+            sourceTag: sourceTag
+        )
+
+        modelContext.insert(transcription)
+
+        if let enhancedText {
+            let variation = TranscriptionVariation(
+                presetId: aiService.selectedMode.presetId ?? "regular",
+                presetDisplayName: promptName ?? "Regular",
+                text: enhancedText,
+                aiModelName: aiService.selectedMode.aiModel,
+                aiProviderName: aiService.selectedMode.aiProvider?.displayName,
+                processingDuration: enhancementDur,
+                aiRequestSystemMessage: aiService.lastSystemMessageSent,
+                aiRequestUserMessage: aiService.lastUserMessageSent
+            )
+            variation.transcription = transcription
+            modelContext.insert(variation)
+        }
+
+        try modelContext.save()
+
+        let transcriptionEntity = transcription.entity
+        Task.detached {
+            await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
+        }
+
+        Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+
+        if let appState {
+            let activity = appState.userActivity(for: transcription)
+            activity.becomeCurrent()
+        }
+
+        return transcription
+    }
+
+    private func appendTranscribedText(
+        _ transcribedText: String,
+        to transcriptionID: UUID,
+        audioURL: URL,
+        modelContext: ModelContext,
+        audioDuration: Double,
+        transcriptionDuration: TimeInterval?,
+        sourceTag: String?
+    ) throws -> Transcription {
+        let descriptor = FetchDescriptor<Transcription>(
+            predicate: #Predicate { $0.id == transcriptionID },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+
+        if let transcription = try modelContext.fetch(descriptor).first {
+            transcription.appendToOriginalText(transcribedText)
+            transcription.enhancedText = nil
+            try modelContext.save()
+
+            let transcriptionEntity = transcription.entity
+            Task.detached {
+                await self.appState?.updateTranscriptionEntityInSpotlight(transcriptionEntity)
+            }
+
+            Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+            try? FileManager.default.removeItem(at: audioURL)
+            return transcription
+        }
+
+        logger.logWarning("📱 Append target note was not found, saving as a new note instead")
+        return try saveNewTranscription(
+            transcribedText: transcribedText,
+            enhancedText: nil,
+            promptName: nil,
+            enhancementDur: nil,
+            audioURL: audioURL,
+            audioDuration: audioDuration,
+            transcriptionDuration: transcriptionDuration,
+            modelContext: modelContext,
+            sourceTag: sourceTag
+        )
+    }
+
+    private func enhanceAppendedTranscription(
+        _ transcription: Transcription,
+        modelContext: ModelContext
+    ) async throws -> String {
+        let (resultText, duration, promptName) = try await aiService.enhance(transcription.text)
+        let presetId = aiService.selectedMode.presetId ?? "regular"
+        let presetDisplayName = promptName ?? PresetCatalog.displayName(for: presetId, fallback: "Regular")
+
+        if let existing = (transcription.variations ?? []).first(where: { $0.presetId == presetId }) {
+            existing.text = resultText
+            existing.createdAt = Date()
+            existing.presetDisplayName = presetDisplayName
+            existing.aiModelName = aiService.selectedMode.aiModel
+            existing.aiProviderName = aiService.selectedMode.aiProvider?.displayName
+            existing.processingDuration = duration
+            existing.aiRequestSystemMessage = aiService.lastSystemMessageSent
+            existing.aiRequestUserMessage = aiService.lastUserMessageSent
+        } else {
+            let variation = TranscriptionVariation(
+                presetId: presetId,
+                presetDisplayName: presetDisplayName,
+                text: resultText,
+                aiModelName: aiService.selectedMode.aiModel,
+                aiProviderName: aiService.selectedMode.aiProvider?.displayName,
+                processingDuration: duration,
+                aiRequestSystemMessage: aiService.lastSystemMessageSent,
+                aiRequestUserMessage: aiService.lastUserMessageSent
+            )
+            variation.transcription = transcription
+            modelContext.insert(variation)
+        }
+
+        transcription.enhancedText = resultText
+        try modelContext.save()
+
+        let transcriptionEntity = transcription.entity
+        Task.detached {
+            await self.appState?.updateTranscriptionEntityInSpotlight(transcriptionEntity)
+        }
+
+        Task { await RAGIndexingService.shared.indexTranscription(transcription) }
+        return resultText
+    }
+
     func resetValues() {
         audioPower = 0
         AppGroupCoordinator.shared.updateAudioLevel(0)

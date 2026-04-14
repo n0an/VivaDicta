@@ -154,6 +154,19 @@ class Transcription {
         self.sourceTag = sourceTag
     }
 
+    /// Appends new raw transcription text to the original note body.
+    ///
+    /// The appended text is separated by a blank line so dictated additions read
+    /// like a natural continuation instead of collapsing into the previous paragraph.
+    func appendToOriginalText(_ appendedText: String) {
+        let trimmedAppendedText = appendedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedAppendedText.isEmpty else { return }
+
+        let trimmedExistingText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let separator = trimmedExistingText.isEmpty ? "" : "\n\n"
+        text = trimmedExistingText + separator + trimmedAppendedText
+    }
+
     
     func getDurationFormatted(_ duration: Double) -> String {
         if duration < 1 {

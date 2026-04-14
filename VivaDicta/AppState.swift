@@ -89,6 +89,9 @@ class AppState {
     /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
 
+    /// Describes what the next recording should do after transcription finishes.
+    var pendingRecordingDestination: RecordingDestination = .newNote
+
     /// Controls display of the keyboard flow toast.
     var showKeyboardFlowToast: Bool = false
 

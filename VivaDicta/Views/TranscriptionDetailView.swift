@@ -634,10 +634,22 @@ struct TranscriptionDetailView: View {
                 
                 Spacer()
 
-                // Button 4: Edit
-                Button {
-                    HapticManager.lightImpact()
-                    showTextEditor = true
+                // Button 4: Edit / Append
+                Menu {
+                    Button("Edit Selected Text", systemImage: "pencil") {
+                        HapticManager.lightImpact()
+                        showTextEditor = true
+                    }
+
+                    Button("Append with Voice", systemImage: "mic") {
+                        startVoiceAppend(withAI: false)
+                    }
+                    .disabled(appState.recordViewModel.recordingState != .idle)
+
+                    Button("Append with AI", systemImage: "sparkles") {
+                        startVoiceAppend(withAI: true)
+                    }
+                    .disabled(appState.recordViewModel.recordingState != .idle)
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 20))
@@ -747,6 +759,18 @@ struct TranscriptionDetailView: View {
         Task { await RAGIndexingService.shared.indexTranscription(transcription) }
 
         HapticManager.success()
+    }
+
+    private func startVoiceAppend(withAI: Bool) {
+        HapticManager.lightImpact()
+        guard withAI == false || isAIConfigured else {
+            showConfigureAI = true
+            return
+        }
+
+        selectedChipId = "original"
+        appState.pendingRecordingDestination = .appendToTranscription(id: transcription.id, withAI: withAI)
+        appState.shouldStartRecording = true
     }
 
     private func retranscribe() {
