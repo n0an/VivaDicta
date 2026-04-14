@@ -126,10 +126,18 @@ struct TranscriptionDetailView: View {
                     } else {
                         // Light mode: full gradient fill
                         AnimatedMeshGradient2()
+                        
+                            .overlay(
+                                Capsule()
+                                    .stroke(lineWidth: 3)
+                                    .fill(Color.black.opacity(0.7))
+                                    .blur(radius: 2)
+                                    .blendMode(.overlay)
+                            )
                             .overlay(
                                 Capsule()
                                     .stroke(lineWidth: 1)
-                                    .fill(Color.white)
+                                    .fill(Color.black.opacity(1.0))
                                     .blur(radius: 1)
                                     .blendMode(.overlay)
                             )
@@ -145,6 +153,7 @@ struct TranscriptionDetailView: View {
             }
 
         } else {
+            // ios 18
             HStack(spacing: 4) {
                 Image(systemName: "sparkles")
                 Text("AI")
@@ -185,8 +194,15 @@ struct TranscriptionDetailView: View {
                         AnimatedMeshGradient2()
                             .overlay(
                                 Capsule()
+                                    .stroke(lineWidth: 3)
+                                    .fill(Color.black.opacity(0.7))
+                                    .blur(radius: 2)
+                                    .blendMode(.overlay)
+                            )
+                            .overlay(
+                                Capsule()
                                     .stroke(lineWidth: 1)
-                                    .fill(Color.white)
+                                    .fill(Color.black.opacity(1.0))
                                     .blur(radius: 1)
                                     .blendMode(.overlay)
                             )
