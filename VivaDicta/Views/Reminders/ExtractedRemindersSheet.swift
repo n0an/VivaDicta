@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import os
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -25,8 +24,6 @@ struct ExtractedRemindersSheet: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var shouldOfferSettingsShortcut = false
-
-    private let logger = Logger(category: .reminderExtraction)
 
     private var pendingDrafts: [ExtractedReminderDraft] {
         allReminderDrafts.filter {
@@ -96,9 +93,6 @@ struct ExtractedRemindersSheet: View {
                 }
             }
         }
-        .onAppear {
-            logSheetSnapshot(context: "appear")
-        }
         .alert("Reminder Import Failed", isPresented: $showErrorAlert) {
             if shouldOfferSettingsShortcut {
                 Button("Settings") {
@@ -159,17 +153,6 @@ struct ExtractedRemindersSheet: View {
         errorMessage = error.localizedDescription
         shouldOfferSettingsShortcut = (error as? RemindersImportError)?.shouldOfferSettingsShortcut ?? false
         showErrorAlert = true
-    }
-
-    private func logSheetSnapshot(context: String) {
-        logger.logInfo(
-            "Reminder sheet - \(context) noteId=\(transcription.id.uuidString) pendingCount=\(pendingDrafts.count) allDraftsCount=\(allReminderDrafts.count)"
-        )
-        for (index, draft) in pendingDrafts.enumerated() {
-            logger.logDebug(
-                "Reminder sheet - \(context) [\(index)] draftId=\(draft.id.uuidString) noteId=\(draft.transcription?.id.uuidString ?? "nil") title='\(draft.title)' due='\(draft.optionalDueDateString ?? "nil")' raw='\(draft.rawDueDatePhrase ?? "nil")'"
-            )
-        }
     }
 
     private func openAppSettings() {
