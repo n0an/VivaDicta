@@ -106,7 +106,9 @@ final class ReminderExtractionService {
             response.reminders,
             on: transcription,
             backend: backend,
-            modelContext: modelContext
+            modelContext: modelContext,
+            now: now,
+            timeZone: timeZone
         )
 
         try modelContext.save()
@@ -164,7 +166,9 @@ final class ReminderExtractionService {
         _ drafts: [ReminderDraft],
         on transcription: Transcription,
         backend: ReminderExtractionBackend,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        now: Date,
+        timeZone: TimeZone
     ) -> [ExtractedReminderDraft] {
         let existingDrafts = reminderDrafts(for: transcription, modelContext: modelContext)
         let importedDrafts = existingDrafts.filter { $0.status == .imported }
@@ -191,7 +195,7 @@ final class ReminderExtractionService {
             modelName = model
         }
 
-        let sanitizedDrafts = sanitizeDrafts(drafts)
+        let sanitizedDrafts = sanitizeDrafts(drafts, now: now, timeZone: timeZone)
         logDrafts(
             sanitizedDrafts,
             prefix: "Reminder extraction - Sanitized drafts noteId=\(transcription.id.uuidString)"
@@ -256,31 +260,36 @@ final class ReminderExtractionService {
         return filteredDrafts
     }
 
-    private func sanitizeDrafts(_ drafts: [ReminderDraft]) -> [ReminderDraft] {
+    private func sanitizeDrafts(
+        _ drafts: [ReminderDraft],
+        now: Date,
+        timeZone: TimeZone
+    ) -> [ReminderDraft] {
         var mergedDrafts: [ReminderDraft] = []
 
         for draft in drafts {
-            guard shouldKeepDraft(draft) else { continue }
+            let normalizedCandidate = normalizedDraft(draft, now: now, timeZone: timeZone)
+            guard shouldKeepDraft(normalizedCandidate) else { continue }
 
-            let normalizedCandidateTitle = normalizedTitle(for: draft.title)
+            let normalizedCandidateTitle = normalizedTitle(for: normalizedCandidate.title)
             guard !normalizedCandidateTitle.isEmpty else { continue }
 
             if let existingIndex = mergedDrafts.firstIndex(where: {
                 normalizedTitle(for: $0.title) == normalizedCandidateTitle
             }) {
                 let existingDraft = mergedDrafts[existingIndex]
-                let shouldMerge = existingDraft.optionalDueDateString == draft.optionalDueDateString
+                let shouldMerge = existingDraft.optionalDueDateString == normalizedCandidate.optionalDueDateString
                     || existingDraft.optionalDueDateString == nil
-                    || draft.optionalDueDateString == nil
-                    || normalizedTitle(for: existingDraft.rawDueDatePhrase ?? "") == normalizedTitle(for: draft.rawDueDatePhrase ?? "")
+                    || normalizedCandidate.optionalDueDateString == nil
+                    || normalizedTitle(for: existingDraft.rawDueDatePhrase ?? "") == normalizedTitle(for: normalizedCandidate.rawDueDatePhrase ?? "")
 
                 if shouldMerge {
-                    mergedDrafts[existingIndex] = mergedDraft(existingDraft, with: draft)
+                    mergedDrafts[existingIndex] = mergedDraft(existingDraft, with: normalizedCandidate)
                     continue
                 }
             }
 
-            mergedDrafts.append(normalizedDraft(draft))
+            mergedDrafts.append(normalizedCandidate)
         }
 
         return mergedDrafts
@@ -298,11 +307,21 @@ final class ReminderExtractionService {
         return likelyTimingOnlyTitle(draft.title) == false
     }
 
-    private func normalizedDraft(_ draft: ReminderDraft) -> ReminderDraft {
-        ReminderDraft(
-            title: draft.title.trimmingCharacters(in: .whitespacesAndNewlines),
-            optionalDueDateString: normalizedOptionalString(draft.optionalDueDateString),
-            rawDueDatePhrase: normalizedOptionalString(draft.rawDueDatePhrase),
+    private func normalizedDraft(
+        _ draft: ReminderDraft,
+        now: Date,
+        timeZone: TimeZone
+    ) -> ReminderDraft {
+        let recoveredTitleData = ReminderDueDateParser.splitEmbeddedDuePhrase(
+            from: draft.title,
+            now: now,
+            timeZone: timeZone
+        )
+
+        return ReminderDraft(
+            title: recoveredTitleData.cleanTitle,
+            optionalDueDateString: normalizedOptionalString(draft.optionalDueDateString) ?? recoveredTitleData.dueDateString,
+            rawDueDatePhrase: normalizedOptionalString(draft.rawDueDatePhrase) ?? recoveredTitleData.rawDueDatePhrase,
             notes: normalizedOptionalString(draft.notes),
             priority: draft.priority
         )
