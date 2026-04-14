@@ -25,6 +25,12 @@ final class ChatViewModel {
     private let logger = Logger(category: .chatViewModel)
     private let reviewReplyThreshold = 3
 
+    private struct CrossNoteSearchTurnContext {
+        let augmentedPrompt: String
+        let sourceIDs: [UUID]
+        let sourceCitations: [SmartSearchSourceCitation]
+    }
+
     // MARK: - State
 
     var messages: [ChatMessage] = []
@@ -33,6 +39,7 @@ final class ChatViewModel {
     var streamingText: String = ""
     var errorMessage: String?
     var isCompacting: Bool = false
+    var isCrossNoteSearchArmed: Bool = false
 
     // MARK: - Provider/Model (from current VivaMode)
 
@@ -188,6 +195,8 @@ final class ChatViewModel {
             return
         }
 
+        let shouldSearchOtherNotes = isCrossNoteSearchArmed
+        isCrossNoteSearchArmed = false
         inputText = ""
         errorMessage = nil
         conversation.lastInteractionAt = Date()
@@ -210,11 +219,21 @@ final class ChatViewModel {
         streamingTask = Task {
             do {
                 let result: String
+                let crossNoteContext = await makeCrossNoteSearchContext(
+                    for: text,
+                    enabled: shouldSearchOtherNotes
+                )
+                let promptText = crossNoteContext?.augmentedPrompt ?? text
 
                 if provider == .apple {
-                    result = try await sendAppleFMMessage(text)
+                    result = try await sendAppleFMMessage(promptText)
                 } else {
-                    result = try await sendCloudMessage(text, provider: provider, model: model)
+                    result = try await sendCloudMessage(
+                        originalText: text,
+                        promptText: promptText,
+                        provider: provider,
+                        model: model
+                    )
                 }
 
                 pendingUserMessage = nil
@@ -228,6 +247,8 @@ final class ChatViewModel {
                     aiModelName: model,
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
+                assistantMessage.sourceTranscriptionIds = crossNoteContext?.sourceIDs ?? []
+                assistantMessage.sourceCitations = crossNoteContext?.sourceCitations ?? []
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -279,6 +300,10 @@ final class ChatViewModel {
         streamingTask = nil
     }
 
+    func toggleCrossNoteSearchArmed() {
+        isCrossNoteSearchArmed.toggle()
+    }
+
     // MARK: - Clear Chat
 
     func clearChat() {
@@ -289,6 +314,7 @@ final class ChatViewModel {
         messages.removeAll()
         successfulReplyCount = 0
         hasRequestedReviewForSession = false
+        isCrossNoteSearchArmed = false
 
         conversation.appleFMTranscriptData = nil
         trySave()
@@ -609,7 +635,12 @@ final class ChatViewModel {
         }
     }
 
-    private func sendCloudMessage(_ text: String, provider: AIProvider, model: String) async throws -> String {
+    private func sendCloudMessage(
+        originalText: String,
+        promptText: String,
+        provider: AIProvider,
+        model: String
+    ) async throws -> String {
         if ChatContextManager.shouldAutoCompact(
             noteText: assembledNoteText,
             messages: messages,
@@ -620,12 +651,27 @@ final class ChatViewModel {
             try await performCompaction()
         }
 
+        var chatMessages = messages.dropLast()
+        let outboundUserMessage = ChatMessage(
+            role: "user",
+            content: promptText,
+            estimatedTokenCount: ChatContextManager.estimateTokens(promptText)
+        )
+        var allChatMessages = Array(chatMessages)
+        allChatMessages.append(outboundUserMessage)
+
         let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
             noteText: assembledNoteText,
-            chatMessages: messages,
+            chatMessages: allChatMessages,
             provider: provider,
             model: model
         )
+
+        if promptText != originalText {
+            logger.logInfo(
+                "Chat - Sending augmented prompt originalChars=\(originalText.count) augmentedChars=\(promptText.count)"
+            )
+        }
 
         return try await aiService.makeChatStreamingRequest(
             provider: provider,
@@ -646,6 +692,49 @@ final class ChatViewModel {
     }
 
     // MARK: - Private Helpers
+
+    private func makeCrossNoteSearchContext(
+        for query: String,
+        enabled: Bool
+    ) async -> CrossNoteSearchTurnContext? {
+        guard enabled else { return nil }
+
+        let payload = await NotesSearchToolRuntime.searchNotesPayload(
+            query: query,
+            excluding: [transcription.id]
+        )
+
+        switch payload.status {
+        case .success:
+            logger.logInfo(
+                "Chat - Cross-note search found \(payload.results.count) note matches for query='\(query)'"
+            )
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
+                    query: query,
+                    payload: payload
+                ),
+                sourceIDs: payload.sourceIDs,
+                sourceCitations: payload.sourceCitations
+            )
+        case .empty:
+            logger.logInfo("Chat - Cross-note search found no matches for query='\(query)'")
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
+                    query: query,
+                    payload: payload
+                ),
+                sourceIDs: [],
+                sourceCitations: []
+            )
+        case .error:
+            if let message = payload.message {
+                errorMessage = message
+                logger.logWarning("Chat - Cross-note search error: \(message)")
+            }
+            return nil
+        }
+    }
 
     private func performCompaction() async throws {
         guard let provider = selectedProvider, let model = selectedModel else { return }

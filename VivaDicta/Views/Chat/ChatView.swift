@@ -71,8 +71,11 @@ struct ChatView: View {
                 text: $viewModel.inputText,
                 isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                 isBusy: viewModel.isCompacting,
+                secondaryActionTitle: viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes",
+                isSecondaryActionArmed: viewModel.isCrossNoteSearchArmed,
                 onSend: { viewModel.sendMessage() },
-                onStop: { viewModel.cancelStreaming() }
+                onStop: { viewModel.cancelStreaming() },
+                onSecondaryAction: { viewModel.toggleCrossNoteSearchArmed() }
             )
         }
         .navigationTitle("Chat")
