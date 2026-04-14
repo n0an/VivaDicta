@@ -7,9 +7,10 @@
 
 import SwiftUI
 
+/// Legacy orange onboarding mic button kept as a visual reference.
+/// The keyboard onboarding now uses `OnboardingKeyboardMicButton`, which
+/// matches the current mesh-gradient button from the keyboard target.
 struct MicButton: View {
-    @State private var isAnimating = false
-
     var fontSize: CGFloat
     var padding: CGFloat
     var backgroundColor: Color
@@ -22,8 +23,8 @@ struct MicButton: View {
             onTapAction()
         } label: {
             Image(systemName: "microphone.circle")
-                .foregroundStyle(.primary)
                 .font(.system(size: fontSize))
+                .foregroundStyle(.primary)
                 .padding(padding)
                 .background(backgroundColor.gradient, in: .circle)
                 .background {
@@ -51,6 +52,8 @@ struct MicButton: View {
                 }
         }
     }
+
+    @State private var isAnimating = false
 }
 
 #Preview {

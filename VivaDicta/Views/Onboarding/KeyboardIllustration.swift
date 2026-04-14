@@ -19,11 +19,9 @@ struct KeyboardIllustration: View {
             .scaledToFit()
             .frame(maxWidth: 350)
             .overlay(alignment: .topTrailing) {
-                MicButton(
-                    fontSize: 44,
-                    padding: 12,
-                    backgroundColor: .orange.opacity(0.5),
-                    borderWidth: 0.5,
+                OnboardingKeyboardMicButton(
+                    fontSize: 34,
+                    padding: 24,
                     onTapAction: {}
                 )
                 .scaleEffect(animate ? 1.5 : 1.0)
