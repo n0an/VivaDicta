@@ -41,7 +41,7 @@ final class AppleFMReminderExtractionProvider {
                 generating: ReminderDraftsResponseSchema.self,
                 options: GenerationOptions(sampling: .greedy)
             ) {
-                userPrompt(noteText: trimmedText)
+                userPrompt(noteText: trimmedText, now: now, timeZone: timeZone)
             }
 
             logger.logNotice("Reminder extraction - Apple Foundation Models request completed")
@@ -66,30 +66,9 @@ final class AppleFMReminderExtractionProvider {
     private func systemPrompt(now: Date, timeZone: TimeZone) -> String {
         """
         You extract reminder suggestions from transcription notes.
-        The user's next message is the note text itself.
-
-        Only extract genuine reminder-worthy actions, next steps, or commitments that the user is likely to want in Apple Reminders.
-        Do not invent tasks.
-        Do not invent deadlines.
-        The current note is the only source of truth. Never carry over tasks from previous notes or earlier requests.
-        Every reminder title must be derived from the words and meaning of the current note. Never copy placeholder or example titles from instructions or schemas unless the same task is explicitly present in the note.
-        Use concise, actionable titles.
-        Move supporting detail into notes.
-        Never create a reminder whose title is only a date, time, weekday, or scheduling phrase such as 'Saturday at 10 am'.
-        A due phrase belongs in the due-date fields of the task it refers to, not as a separate reminder.
-        Return at most one reminder per actionable task or commitment in the note.
-        When the note includes a specific date, weekday, or relative phrase that can be resolved, you must calculate the exact absolute due date using the current date and time zone.
-        Examples of resolvable phrases include 'tomorrow noon', 'Saturday at 9 am', 'next Thursday at 14:00', and 'April 20 at 3 PM'.
-        For resolvable phrases, fill optionalDueDateString with an absolute value.
-        Prefer ISO 8601 date-time with time zone, such as 2026-04-19T09:00:00+01:00.
-        A timezone-less value like 2026-04-19T09:00:00 is acceptable if needed.
-        If only the date is known, a date-only value like 2026-04-19 is acceptable.
-        Preserve the original due wording in rawDueDatePhrase whenever a due phrase exists, even when you also provide optionalDueDateString.
-        If a due phrase is ambiguous, leave the normalized due date nil and preserve the original wording in rawDueDatePhrase.
-        If no reminder-worthy tasks exist, return an empty reminders array.
-
-        Good extraction examples:
-        \(fewShotExamples(now: now, timeZone: timeZone))
+        Return structured reminder drafts for user review before importing to Apple Reminders.
+        Use only the current note as the source of truth.
+        Do not invent tasks or deadlines.
 
         Current absolute date and time: \(now.ISO8601Format())
         Current time zone identifier: \(timeZone.identifier)
@@ -97,8 +76,33 @@ final class AppleFMReminderExtractionProvider {
     }
 
     @PromptBuilder
-    private func userPrompt(noteText: String) -> Prompt {
-        "\(noteText)"
+    private func userPrompt(noteText: String, now: Date, timeZone: TimeZone) -> Prompt {
+        """
+        Extract reminder suggestions from this note.
+
+        Current absolute date and time: \(now.ISO8601Format())
+        Current time zone: \(timeZone.identifier)
+
+        Rules:
+        - Extract only genuine reminder-worthy actions, next steps, or commitments that the user is likely to want in Apple Reminders.
+        - Use a concise, actionable title grounded in the note text.
+        - Do not create a reminder whose title is only a date, time, weekday, or scheduling phrase.
+        - A due phrase belongs in optionalDueDateString and rawDueDatePhrase, not in the title.
+        - If the note includes a resolvable date or time such as 'tomorrow noon', 'Saturday at 10 a.m.', 'next Thursday at 14:00', or 'April 20 at 3 PM', calculate the exact absolute due date.
+        - Prefer ISO 8601 date-time with time zone such as 2026-04-19T10:00:00+01:00.
+        - A timezone-less value like 2026-04-19T10:00:00 is acceptable if needed.
+        - If only the date is known, a date-only value like 2026-04-19 is acceptable.
+        - Preserve the original due wording in rawDueDatePhrase whenever a due phrase exists.
+        - If the timing is ambiguous, leave optionalDueDateString empty and preserve the original wording in rawDueDatePhrase.
+        - Return at most one reminder per actionable task.
+        - If the note contains no reminder-worthy task, return an empty reminders array.
+
+        Examples of good extraction:
+        \(fewShotExamples(now: now, timeZone: timeZone))
+
+        Note:
+        \(noteText)
+        """
     }
 
     private func fewShotExamples(now: Date, timeZone: TimeZone) -> String {
