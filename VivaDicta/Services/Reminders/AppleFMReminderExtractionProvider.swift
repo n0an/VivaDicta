@@ -71,6 +71,7 @@ final class AppleFMReminderExtractionProvider {
         Do not invent tasks.
         Do not invent deadlines.
         The current note is the only source of truth. Never carry over tasks from previous notes or earlier requests.
+        Every reminder title must be derived from the words and meaning of the current note. Never copy placeholder or example titles from instructions or schemas unless the same task is explicitly present in the note.
         Use concise, actionable titles.
         Move supporting detail into notes.
         Never create a reminder whose title is only a date, time, weekday, or scheduling phrase such as 'Saturday at 10 am'.
