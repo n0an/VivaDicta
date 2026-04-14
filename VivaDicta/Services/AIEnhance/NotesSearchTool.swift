@@ -9,6 +9,47 @@ import Foundation
 import FoundationModels
 import SwiftData
 
+enum CrossNoteSearchStatus: String, Sendable {
+    case success
+    case empty
+    case error
+}
+
+enum CrossNoteSearchMatchSource: String, Sendable {
+    case semantic
+    case keyword
+}
+
+struct CrossNoteSearchResult: Sendable {
+    let transcriptionId: UUID
+    let title: String
+    let date: String
+    let excerpt: String
+    let sources: [CrossNoteSearchMatchSource]
+    let relevanceScore: Float?
+}
+
+struct CrossNoteSearchPayload: Sendable {
+    let query: String
+    let status: CrossNoteSearchStatus
+    let results: [CrossNoteSearchResult]
+    let message: String?
+
+    var sourceIDs: [UUID] {
+        results.map(\.transcriptionId)
+    }
+
+    var sourceCitations: [SmartSearchSourceCitation] {
+        results.map { result in
+            SmartSearchSourceCitation(
+                transcriptionId: result.transcriptionId,
+                excerpt: result.excerpt,
+                relevanceScore: result.relevanceScore ?? 0
+            )
+        }
+    }
+}
+
 /// Apple FM tool that searches the user's notes outside the current chat context.
 ///
 /// Parked for future use.
@@ -42,30 +83,25 @@ struct NotesSearchTool: Tool {
             return NotesSearchToolRuntime.formatError("Notes search query cannot be empty.")
         }
 
-        return await NotesSearchToolRuntime.searchNotes(
+        let payload = await NotesSearchToolRuntime.searchNotesPayload(
             query: query,
-            excluding: excludedTranscriptionIDs,
-            captureID: captureID
+            excluding: excludedTranscriptionIDs
         )
+        await NotesSearchToolRuntime.capture(payload.sourceCitations, for: captureID)
+        return await NotesSearchToolRuntime.formatGeneratedContent(from: payload)
     }
 }
 
-@available(iOS 26, *)
 @MainActor
 enum NotesSearchToolRuntime {
     static var modelContainer: ModelContainer?
     private static var capturedCitationsByID: [UUID: [UUID: SmartSearchSourceCitation]] = [:]
     private static let maxResults = 4
 
-    private enum MatchSource: String {
-        case semantic
-        case keyword
-    }
-
     private struct NoteSearchHit {
         let transcription: Transcription
         var excerpt: String
-        var sources: Set<MatchSource>
+        var sources: Set<CrossNoteSearchMatchSource>
         var semanticScore: Float?
     }
 
@@ -83,9 +119,27 @@ enum NotesSearchToolRuntime {
         }
     }
 
-    static func searchNotes(query: String, excluding excludedIDs: Set<UUID>, captureID: UUID) async -> GeneratedContent {
+    static func searchNotesPayload(
+        query: String,
+        excluding excludedIDs: Set<UUID>
+    ) async -> CrossNoteSearchPayload {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else {
+            return CrossNoteSearchPayload(
+                query: trimmedQuery,
+                status: .error,
+                results: [],
+                message: "Notes search query cannot be empty."
+            )
+        }
+
         guard let modelContainer else {
-            return formatError("Notes search is unavailable because the note database is not configured.")
+            return CrossNoteSearchPayload(
+                query: trimmedQuery,
+                status: .error,
+                results: [],
+                message: "Notes search is unavailable because the note database is not configured."
+            )
         }
 
         let modelContext = modelContainer.mainContext
@@ -101,7 +155,7 @@ enum NotesSearchToolRuntime {
             var hitsByID: [UUID: NoteSearchHit] = [:]
 
             if SmartSearchFeature.isEnabled {
-                let ragResults = try await RAGIndexingService.shared.search(query: query, topK: maxResults * 2)
+                let ragResults = try await RAGIndexingService.shared.search(query: trimmedQuery, topK: maxResults * 2)
 
                 for result in ragResults where !excludedIDs.contains(result.transcriptionId) {
                     guard let transcription = noteMap[result.transcriptionId] else { continue }
@@ -116,13 +170,13 @@ enum NotesSearchToolRuntime {
             }
 
             let keywordMatches = try keywordMatches(
-                query: query,
+                query: trimmedQuery,
                 modelContext: modelContext,
                 allNotes: allNotes
             )
 
             for transcription in keywordMatches where !excludedIDs.contains(transcription.id) {
-                let keywordExcerpt = keywordExcerpt(for: transcription, query: query)
+                let keywordExcerpt = keywordExcerpt(for: transcription, query: trimmedQuery)
 
                 if var existing = hitsByID[transcription.id] {
                     existing.sources.insert(.keyword)
@@ -145,27 +199,55 @@ enum NotesSearchToolRuntime {
                 .prefix(maxResults)
 
             guard !finalHits.isEmpty else {
-                return GeneratedContent(properties: [
-                    "status": "empty",
-                    "summary": "No matching notes found outside the note or notes already in the conversation."
-                ])
+                return CrossNoteSearchPayload(
+                    query: trimmedQuery,
+                    status: .empty,
+                    results: [],
+                    message: "No matching notes found outside the note or notes already in the conversation."
+                )
             }
 
-            capture(finalHits, for: captureID)
+            let results = finalHits.map { hit in
+                CrossNoteSearchResult(
+                    transcriptionId: hit.transcription.id,
+                    title: noteTitle(for: hit.transcription),
+                    date: hit.transcription.timestamp.formatted(date: .abbreviated, time: .shortened),
+                    excerpt: hit.excerpt,
+                    sources: hit.sources.sorted { $0.rawValue < $1.rawValue },
+                    relevanceScore: hit.semanticScore
+                )
+            }
 
-            let summary = finalHits.enumerated().map { index, hit in
-                let date = hit.transcription.timestamp.formatted(date: .abbreviated, time: .shortened)
-                let title = noteTitle(for: hit.transcription)
+            return CrossNoteSearchPayload(
+                query: trimmedQuery,
+                status: .success,
+                results: results,
+                message: nil
+            )
+        } catch {
+            return CrossNoteSearchPayload(
+                query: trimmedQuery,
+                status: .error,
+                results: [],
+                message: "Notes search failed: \(error.localizedDescription)"
+            )
+        }
+    }
+
+    @available(iOS 26, *)
+    static func formatGeneratedContent(from payload: CrossNoteSearchPayload) -> GeneratedContent {
+        switch payload.status {
+        case .success:
+            let summary = payload.results.enumerated().map { index, hit in
                 let sourceLabel = hit.sources
                     .map(\.rawValue)
-                    .sorted()
                     .joined(separator: " + ")
-                let scoreLabel = hit.semanticScore.map {
+                let scoreLabel = hit.relevanceScore.map {
                     " score=\(Double($0).formatted(.number.precision(.fractionLength(3))))"
                 } ?? ""
 
                 return """
-                \(index + 1). \(date) - \(title)
+                \(index + 1). \(hit.date) - \(hit.title)
                 Match: \(sourceLabel)\(scoreLabel)
                 Excerpt: \(hit.excerpt)
                 """
@@ -173,14 +255,18 @@ enum NotesSearchToolRuntime {
             .joined(separator: "\n\n")
 
             return GeneratedContent(properties: [
-                "status": "success",
+                "status": CrossNoteSearchStatus.success.rawValue,
                 "summary": summary
             ])
-        } catch {
-            return formatError("Notes search failed: \(error.localizedDescription)")
+        case .empty, .error:
+            return GeneratedContent(properties: [
+                "status": payload.status.rawValue,
+                "summary": payload.message ?? "Unknown notes search result."
+            ])
         }
     }
 
+    @available(iOS 26, *)
     nonisolated static func formatError(_ message: String) -> GeneratedContent {
         GeneratedContent(properties: [
             "status": "error",
@@ -272,16 +358,10 @@ enum NotesSearchToolRuntime {
         return title.isEmpty ? "Note" : title
     }
 
-    private static func capture<S: Sequence>(_ hits: S, for captureID: UUID) where S.Element == NoteSearchHit {
+    static func capture(_ citations: [SmartSearchSourceCitation], for captureID: UUID) {
         var captured = capturedCitationsByID[captureID, default: [:]]
 
-        for hit in hits {
-            let citation = SmartSearchSourceCitation(
-                transcriptionId: hit.transcription.id,
-                excerpt: hit.excerpt,
-                relevanceScore: hit.semanticScore ?? 0
-            )
-
+        for citation in citations {
             if let existing = captured[citation.transcriptionId] {
                 if citation.relevanceScore > existing.relevanceScore {
                     captured[citation.transcriptionId] = citation
