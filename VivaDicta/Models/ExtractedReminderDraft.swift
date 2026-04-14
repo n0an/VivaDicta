@@ -117,8 +117,16 @@ extension Transcription {
         }
     }
 
+    var activeExtractedReminderDrafts: [ExtractedReminderDraft] {
+        sortedExtractedReminderDrafts.filter { $0.status != .dismissed }
+    }
+
     var pendingExtractedReminderDrafts: [ExtractedReminderDraft] {
-        sortedExtractedReminderDrafts.filter { $0.status == .pending }
+        activeExtractedReminderDrafts.filter { $0.status == .pending }
+    }
+
+    var activeExtractedReminderDraftCount: Int {
+        activeExtractedReminderDrafts.count
     }
 
     var pendingExtractedReminderDraftCount: Int {

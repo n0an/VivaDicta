@@ -11,6 +11,7 @@ import SwiftData
 /// Horizontal scrollable row of tag chips for a transcription.
 struct TranscriptionTagChipsView: View {
     let transcription: Transcription
+    let reviewReminderCount: Int
     let pendingReminderCount: Int
     var onReviewReminderSuggestions: (() -> Void)?
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
@@ -21,8 +22,9 @@ struct TranscriptionTagChipsView: View {
         return allTags.filter { assignedIds.contains($0.id) }
     }
 
-    private var pendingReminderTitle: String {
-        pendingReminderCount == 1 ? "1 Task" : "\(pendingReminderCount) Tasks"
+    private var reminderTitle: String {
+        let count = pendingReminderCount > 0 ? pendingReminderCount : reviewReminderCount
+        return count == 1 ? "1 Task" : "\(count) Tasks"
     }
 
     var body: some View {
@@ -50,12 +52,12 @@ struct TranscriptionTagChipsView: View {
                         .clipShape(.capsule)
                 }
 
-                if pendingReminderCount > 0,
+                if reviewReminderCount > 0,
                    let onReviewReminderSuggestions {
                     Button(action: onReviewReminderSuggestions) {
                         HStack(spacing: 4) {
                             Image(systemName: "checklist")
-                            Text(pendingReminderTitle)
+                            Text(reminderTitle)
                         }
                         .font(.caption)
                         .padding(.horizontal, 8)
@@ -65,7 +67,7 @@ struct TranscriptionTagChipsView: View {
                         .clipShape(.capsule)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Review \(pendingReminderTitle.lowercased())")
+                    .accessibilityLabel("Review \(reminderTitle.lowercased())")
                 }
 
                 // Add tag button

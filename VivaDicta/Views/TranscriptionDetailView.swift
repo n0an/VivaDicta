@@ -88,6 +88,14 @@ struct TranscriptionDetailView: View {
         transcription.pendingExtractedReminderDrafts
     }
 
+    private var reviewableReminderDrafts: [ExtractedReminderDraft] {
+        transcription.activeExtractedReminderDrafts
+    }
+
+    private var reviewableReminderDraftCount: Int {
+        transcription.activeExtractedReminderDraftCount
+    }
+
     private var pendingReminderDraftCount: Int {
         transcription.pendingExtractedReminderDraftCount
     }
@@ -366,8 +374,9 @@ struct TranscriptionDetailView: View {
             VStack(spacing: 0) {
                 TranscriptionTagChipsView(
                     transcription: transcription,
+                    reviewReminderCount: reviewableReminderDraftCount,
                     pendingReminderCount: pendingReminderDraftCount,
-                    onReviewReminderSuggestions: pendingReminderDraftCount > 0 ? {
+                    onReviewReminderSuggestions: reviewableReminderDraftCount > 0 ? {
                         showExtractedRemindersSheet = true
                     } : nil,
                     showTagPicker: $showTagPicker
@@ -392,7 +401,7 @@ struct TranscriptionDetailView: View {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
-                onReviewExtractedTasks: pendingReminderDrafts.isEmpty ? nil : {
+                onReviewExtractedTasks: reviewableReminderDrafts.isEmpty ? nil : {
                     showPresetPicker = false
                     showExtractedRemindersSheet = true
                 },

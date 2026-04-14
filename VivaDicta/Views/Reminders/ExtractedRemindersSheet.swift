@@ -24,6 +24,10 @@ struct ExtractedRemindersSheet: View {
     @State private var errorMessage = ""
     @State private var shouldOfferSettingsShortcut = false
 
+    private var visibleDrafts: [ExtractedReminderDraft] {
+        transcription.activeExtractedReminderDrafts
+    }
+
     private var pendingDrafts: [ExtractedReminderDraft] {
         transcription.pendingExtractedReminderDrafts
     }
@@ -35,7 +39,7 @@ struct ExtractedRemindersSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if pendingDrafts.isEmpty {
+                if visibleDrafts.isEmpty {
                     ContentUnavailableView(
                         "No Reminder Suggestions",
                         systemImage: "checklist",
@@ -43,19 +47,21 @@ struct ExtractedRemindersSheet: View {
                     )
                 } else {
                     List {
-                        ForEach(pendingDrafts, id: \.id) { draft in
+                        ForEach(visibleDrafts, id: \.id) { draft in
                             ExtractedReminderDraftRow(
                                 draft: draft,
                                 isImporting: importingDraftIDs.contains(draft.id) || isImportingAll
                             )
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button("Add to Reminders", systemImage: "checkmark.circle.fill") {
-                                    Task {
-                                        await importDraft(draft)
+                                if draft.status == .pending {
+                                    Button("Add to Reminders", systemImage: "checkmark.circle.fill") {
+                                        Task {
+                                            await importDraft(draft)
+                                        }
                                     }
+                                    .tint(.green)
+                                    .disabled(isBusy)
                                 }
-                                .tint(.green)
-                                .disabled(isBusy)
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button("Dismiss", systemImage: "trash") {
@@ -173,6 +179,17 @@ private struct ExtractedReminderDraftRow: View {
         )
     }
 
+    private var statusText: String? {
+        switch draft.status {
+        case .pending:
+            nil
+        case .imported:
+            "Added to Reminders"
+        case .dismissed:
+            "Dismissed"
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
@@ -198,6 +215,12 @@ private struct ExtractedReminderDraftRow: View {
                         Text(priorityLabel(for: draft.priority))
                             .font(.caption)
                             .foregroundStyle(priorityColor(for: draft.priority))
+                    }
+
+                    if let statusText {
+                        Text(statusText)
+                            .font(.caption)
+                            .foregroundStyle(.green)
                     }
                 }
 
