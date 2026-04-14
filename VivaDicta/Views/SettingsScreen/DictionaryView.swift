@@ -20,10 +20,13 @@ struct WordsDictionaryView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled)
     private var isSpellingCorrectionsEnabled: Bool = true
+    @AppStorage(UserDefaultsStorage.Keys.isParakeetVocabularyBoostingEnabled)
+    private var isParakeetVocabularyBoostingEnabled: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
             enableToggle
+            parakeetVocabularyToggle
 
             if words.isEmpty {
                 emptyStateView
@@ -88,6 +91,22 @@ struct WordsDictionaryView: View {
             .onChange(of: isSpellingCorrectionsEnabled) { _, _ in
                 HapticManager.selectionChanged()
             }
+    }
+
+    private var parakeetVocabularyToggle: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle("Use with Parakeet Transcription", isOn: $isParakeetVocabularyBoostingEnabled)
+                .disabled(!isSpellingCorrectionsEnabled)
+                .onChange(of: isParakeetVocabularyBoostingEnabled) { _, _ in
+                    HapticManager.selectionChanged()
+                }
+
+            Text("Experimental. Uses the words from this list as custom vocabulary for local Parakeet transcription. May download extra model files and use more memory. Off by default.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
     }
 
     private var emptyStateView: some View {
