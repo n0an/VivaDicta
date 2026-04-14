@@ -86,10 +86,13 @@ struct ReminderDraftSchema: Sendable {
     @Guide(description: "A concise reminder title grounded in the note text. Keep it short and actionable, and preserve the actual action, person, or object mentioned in the note.")
     var title: String
 
-    @Guide(description: "An absolute due date when confidently known. If the note contains a resolvable weekday or relative due phrase such as 'Saturday at 9 am', 'tomorrow noon', or 'next Thursday at 14:00', calculate the exact date using the current date and time zone. Prefer ISO 8601 date-time like 2026-04-19T09:00:00+01:00. Also accept 2026-04-19T09:00:00 when no time zone suffix is present. If only the date is known, 2026-04-19 is acceptable. Leave nil only when the timing is ambiguous or not mentioned.")
-    var optionalDueDateString: String?
+    @Guide(description: "An optional due date for the reminder in YYYY-MM-DD format. Leave nil if no date is specified or the timing is ambiguous.")
+    var dueDateString: String?
 
-    @Guide(description: "The original due date phrase from the note, such as 'tomorrow noon' or 'end of week'. Preserve this whenever a due phrase exists, even if optionalDueDateString is also set. Leave nil when no due phrase exists.")
+    @Guide(description: "An optional due time for the reminder in HH:mm 24-hour format, such as 10:00 or 14:30. Leave nil if no specific time is mentioned.")
+    var dueTimeString: String?
+
+    @Guide(description: "The original due date phrase from the note, such as 'tomorrow noon' or 'end of week'. Preserve this whenever a due phrase exists, even if dueDateString or dueTimeString is also set. Leave nil when no due phrase exists.")
     var rawDueDatePhrase: String?
 
     @Guide(description: "Optional supporting context for the reminder, such as meeting details or follow-up notes. Leave nil if unnecessary.")
@@ -101,11 +104,25 @@ struct ReminderDraftSchema: Sendable {
     var reminderDraft: ReminderDraft {
         ReminderDraft(
             title: title,
-            optionalDueDateString: optionalDueDateString,
+            optionalDueDateString: combinedDueDateString,
             rawDueDatePhrase: rawDueDatePhrase,
             notes: notes,
             priority: priority.reminderPriority
         )
+    }
+
+    private var combinedDueDateString: String? {
+        let trimmedDate = dueDateString?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmedDate, !trimmedDate.isEmpty else {
+            return nil
+        }
+
+        let trimmedTime = dueTimeString?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmedTime, !trimmedTime.isEmpty else {
+            return trimmedDate
+        }
+
+        return "\(trimmedDate)T\(trimmedTime):00"
     }
 }
 

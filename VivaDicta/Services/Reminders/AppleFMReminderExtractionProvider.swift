@@ -87,13 +87,12 @@ final class AppleFMReminderExtractionProvider {
         - Extract only genuine reminder-worthy actions, next steps, or commitments that the user is likely to want in Apple Reminders.
         - Use a concise, actionable title grounded in the note text.
         - Do not create a reminder whose title is only a date, time, weekday, or scheduling phrase.
-        - A due phrase belongs in optionalDueDateString and rawDueDatePhrase, not in the title.
-        - If the note includes a resolvable date or time such as 'tomorrow noon', 'Saturday at 10 a.m.', 'next Thursday at 14:00', or 'April 20 at 3 PM', calculate the exact absolute due date.
-        - Prefer ISO 8601 date-time with time zone such as 2026-04-19T10:00:00+01:00.
-        - A timezone-less value like 2026-04-19T10:00:00 is acceptable if needed.
-        - If only the date is known, a date-only value like 2026-04-19 is acceptable.
+        - A due phrase belongs in dueDateString, dueTimeString, and rawDueDatePhrase, not in the title.
+        - If the note includes a resolvable day, date, or time such as 'tomorrow noon', 'Saturday at 10 a.m.', 'next Thursday at 14:00', or 'April 20 at 3 PM', calculate the exact due date and time using the current date and time zone.
+        - Set dueDateString in YYYY-MM-DD format when you can determine the date.
+        - Set dueTimeString in HH:mm 24-hour format only when a specific time is mentioned.
         - Preserve the original due wording in rawDueDatePhrase whenever a due phrase exists.
-        - If the timing is ambiguous, leave optionalDueDateString empty and preserve the original wording in rawDueDatePhrase.
+        - If the timing is ambiguous, leave dueDateString and dueTimeString empty and preserve the original wording in rawDueDatePhrase.
         - Return at most one reminder per actionable task.
         - If the note contains no reminder-worthy task, return an empty reminders array.
 
@@ -132,17 +131,17 @@ final class AppleFMReminderExtractionProvider {
         Example 1
         Note: "Okay, I need to visit the dentist on Saturday at 10 a.m."
         Good response:
-        {"reminders":[{"title":"Visit dentist","optionalDueDateString":"\(saturdayAtTen)","rawDueDatePhrase":"Saturday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
+        {"reminders":[{"title":"Visit dentist","dueDateString":"\(datePortion(from: saturdayAtTen) ?? "2026-04-18")","dueTimeString":"\(timePortion(from: saturdayAtTen) ?? "10:00")","rawDueDatePhrase":"Saturday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
 
         Example 2
         Note: "Okay, I need to call my parents on Sunday at 10 a.m."
         Good response:
-        {"reminders":[{"title":"Call parents","optionalDueDateString":"\(sundayAtTen)","rawDueDatePhrase":"Sunday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
+        {"reminders":[{"title":"Call parents","dueDateString":"\(datePortion(from: sundayAtTen) ?? "2026-04-19")","dueTimeString":"\(timePortion(from: sundayAtTen) ?? "10:00")","rawDueDatePhrase":"Sunday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
 
         Example 3
         Note: "I have a dinner with my friends this Friday, so please remind me."
         Good response:
-        {"reminders":[{"title":"Dinner with friends","optionalDueDateString":"\(fridayDateOnly)","rawDueDatePhrase":"this Friday","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
+        {"reminders":[{"title":"Dinner with friends","dueDateString":"\(fridayDateOnly)","dueTimeString":null,"rawDueDatePhrase":"this Friday","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
 
         Example 4
         Note: "I had coffee and answered emails."
@@ -177,6 +176,29 @@ final class AppleFMReminderExtractionProvider {
         }
 
         return date.ISO8601Format()
+    }
+
+    private func datePortion(from isoString: String) -> String? {
+        let trimmed = isoString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 10 else {
+            return nil
+        }
+
+        return String(trimmed.prefix(10))
+    }
+
+    private func timePortion(from isoString: String) -> String? {
+        guard let timeStart = isoString.firstIndex(of: "T") else {
+            return nil
+        }
+
+        let timeSection = isoString[isoString.index(after: timeStart)...]
+        let timeValue = timeSection.prefix(5)
+        guard timeValue.count == 5 else {
+            return nil
+        }
+
+        return String(timeValue)
     }
 
     private func nextWeekdayDateOnlyString(
