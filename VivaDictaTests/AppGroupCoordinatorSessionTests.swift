@@ -89,6 +89,7 @@ struct AppGroupCoordinatorSessionTests {
 
         #expect(coordinator.isSmartFormattingOnPasteEnabled == true)
         #expect(coordinator.isKeepTranscriptInClipboardEnabled == false)
+        #expect(coordinator.isSpeakerDiarizationEnabled == false)
         #expect(coordinator.isKeyboardHapticFeedbackEnabled == true)
         #expect(coordinator.isKeyboardSoundFeedbackEnabled == true)
     }
@@ -101,6 +102,9 @@ struct AppGroupCoordinatorSessionTests {
 
         coordinator.isKeepTranscriptInClipboardEnabled = true
         #expect(coordinator.isKeepTranscriptInClipboardEnabled == true)
+
+        coordinator.isSpeakerDiarizationEnabled = true
+        #expect(coordinator.isSpeakerDiarizationEnabled == true)
 
         coordinator.isKeyboardHapticFeedbackEnabled = false
         #expect(coordinator.isKeyboardHapticFeedbackEnabled == false)

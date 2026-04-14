@@ -42,7 +42,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         }
     }
  
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         guard let parakeetModel = model as? ParakeetModel else {
             throw TranscriptionError.unsupportedModel
         }
@@ -93,7 +93,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         logger.logNotice("🦜 Parakeet ASR models cleaned up from memory")
         
         logger.logNotice("✅ Parakeet transcription completed successfully")
-        return result.text
+        return .plain(result.text)
     }
 
     private func readAndConvertAudio(from url: URL) async throws -> [Float] {

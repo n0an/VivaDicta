@@ -102,3 +102,24 @@ struct TranscriptionManagerConfigTests {
         #expect(manager.allAvailableModels.count == countBefore)
     }
 }
+
+struct MistralTranscriptionServiceTests {
+
+    @Test func requestLanguage_keepsExplicitLanguageWhenDiarizationDisabled() {
+        let requestLanguage = MistralTranscriptionService.requestLanguage(
+            for: "en",
+            diarizationEnabled: false
+        )
+
+        #expect(requestLanguage == "en")
+    }
+
+    @Test func requestLanguage_skipsExplicitLanguageWhenDiarizationEnabled() {
+        let requestLanguage = MistralTranscriptionService.requestLanguage(
+            for: "en",
+            diarizationEnabled: true
+        )
+
+        #expect(requestLanguage == nil)
+    }
+}

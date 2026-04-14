@@ -31,9 +31,9 @@ protocol TranscriptionService {
     ///     pointing to an audio file in a supported format (WAV, M4A, MP3).
     ///   - model: The transcription model to use. Must be compatible with the service implementation.
     ///
-    /// - Returns: The transcribed text from the audio file.
+    /// - Returns: The transcribed text plus metadata about the result.
     ///
     /// - Throws: ``TranscriptionError`` if transcription fails, including network errors
     ///   for cloud services or model loading errors for on-device services.
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult
 }

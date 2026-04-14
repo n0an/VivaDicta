@@ -11,14 +11,29 @@ import os
 struct MistralTranscriptionService {
     private let logger = Logger(category: .mistralTranscriptionService)
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    static func requestLanguage(for selectedLanguage: String, diarizationEnabled: Bool) -> String? {
+        let normalizedLanguage = selectedLanguage.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard normalizedLanguage.isEmpty == false, normalizedLanguage != "auto" else {
+            return nil
+        }
+
+        guard diarizationEnabled == false else {
+            return nil
+        }
+
+        return normalizedLanguage
+    }
+
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL, model: model)
         }
     }
 
-    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
+    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let config = try getAPIConfig(for: model)
+        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
 
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: config.url)
@@ -27,7 +42,12 @@ struct MistralTranscriptionService {
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
-        let body = try createRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)
+        let body = try createRequestBody(
+            audioURL: audioURL,
+            modelName: config.modelName,
+            boundary: boundary,
+            diarizationEnabled: diarizationEnabled
+        )
 
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
 
@@ -43,7 +63,13 @@ struct MistralTranscriptionService {
 
         do {
             let transcriptionResponse = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
-            return transcriptionResponse.text
+
+            if diarizationEnabled,
+               let diarizedText = makeSpeakerAttributedText(from: transcriptionResponse) {
+                return .speakerAttributed(diarizedText)
+            }
+
+            return .plain(transcriptionResponse.text)
         } catch {
             logger.logError("Failed to decode Mistral API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
@@ -61,7 +87,12 @@ struct MistralTranscriptionService {
         return APIConfig(url: apiURL, apiKey: apiKey, modelName: model.name)
     }
 
-    private func createRequestBody(audioURL: URL, modelName: String, boundary: String) throws -> Data {
+    private func createRequestBody(
+        audioURL: URL,
+        modelName: String,
+        boundary: String,
+        diarizationEnabled: Bool
+    ) throws -> Data {
         var body = Data()
         let crlf = "\r\n"
 
@@ -84,17 +115,49 @@ struct MistralTranscriptionService {
 
         // Add language field if not auto-detect
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        if selectedLanguage != "auto", !selectedLanguage.isEmpty {
+        let requestLanguage = Self.requestLanguage(
+            for: selectedLanguage,
+            diarizationEnabled: diarizationEnabled
+        )
+
+        if let requestLanguage {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append(selectedLanguage.data(using: .utf8)!)
+            body.append(requestLanguage.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
-            logger.logInfo("Using language: \(selectedLanguage)")
+            logger.logInfo("Using language: \(requestLanguage)")
+        } else if diarizationEnabled,
+                  selectedLanguage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false,
+                  selectedLanguage != "auto" {
+            logger.logNotice("Skipping explicit language because Mistral diarization requires automatic language detection")
+        }
+
+        if diarizationEnabled {
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"diarize\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append("true".data(using: .utf8)!)
+            body.append(crlf.data(using: .utf8)!)
+
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"timestamp_granularities\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append("segment".data(using: .utf8)!)
+            body.append(crlf.data(using: .utf8)!)
         }
 
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
+    }
+
+    private func makeSpeakerAttributedText(from response: TranscriptionResponse) -> String? {
+        let turns = response.segments?.map {
+            SpeakerTurn(
+                speakerID: $0.speakerID,
+                text: $0.text
+            )
+        } ?? []
+
+        return SpeakerDiarizationFormatter.format(turns)
     }
 
     private struct APIConfig {
@@ -105,5 +168,16 @@ struct MistralTranscriptionService {
 
     private struct TranscriptionResponse: Decodable {
         let text: String
+        let segments: [TranscriptionSegment]?
+    }
+
+    private struct TranscriptionSegment: Decodable {
+        let text: String
+        let speakerID: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case text
+            case speakerID = "speaker_id"
+        }
     }
 }

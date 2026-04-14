@@ -77,35 +77,35 @@ class CloudTranscriptionService: TranscriptionService {
     private lazy var cohereService = CohereTranscriptionService()
     private lazy var customService = CustomTranscriptionService()
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        var text: String
+    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+        let result: TranscriptionServiceResult
         
         switch model.provider {
         case .openAI:
-            text = try await openAIService.transcribe(audioURL: audioURL, model: model)
+            result = try await openAIService.transcribe(audioURL: audioURL, model: model)
         case .groq:
-            text = try await groqService.transcribe(audioURL: audioURL, model: model)
+            result = try await groqService.transcribe(audioURL: audioURL, model: model)
         case .elevenLabs:
-            text = try await elevenLabsService.transcribe(audioURL: audioURL, model: model)
+            result = try await elevenLabsService.transcribe(audioURL: audioURL, model: model)
         case .deepgram:
-            text = try await deepgramService.transcribe(audioURL: audioURL, model: model)
+            result = try await deepgramService.transcribe(audioURL: audioURL, model: model)
         case .gemini:
-            text = try await geminiService.transcribe(audioURL: audioURL, model: model)
+            result = try await geminiService.transcribe(audioURL: audioURL, model: model)
         case .mistral:
-            text = try await mistralService.transcribe(audioURL: audioURL, model: model)
+            result = try await mistralService.transcribe(audioURL: audioURL, model: model)
         case .soniox:
-            text = try await sonioxService.transcribe(audioURL: audioURL, model: model)
+            result = try await sonioxService.transcribe(audioURL: audioURL, model: model)
         case .cohere:
-            text = try await cohereService.transcribe(audioURL: audioURL, model: model)
+            result = try await cohereService.transcribe(audioURL: audioURL, model: model)
         case .customTranscription:
             guard let customModel = model as? CustomTranscriptionModel else {
                 throw CloudTranscriptionError.unsupportedProvider
             }
-            text = try await customService.transcribe(audioURL: audioURL, model: customModel)
+            result = try await customService.transcribe(audioURL: audioURL, model: customModel)
         default:
             throw CloudTranscriptionError.unsupportedProvider
         }
         
-        return text
+        return result
     }
 }
