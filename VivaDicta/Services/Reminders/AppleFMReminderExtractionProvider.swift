@@ -88,6 +88,9 @@ final class AppleFMReminderExtractionProvider {
         If a due phrase is ambiguous, leave the normalized due date nil and preserve the original wording in rawDueDatePhrase.
         If no reminder-worthy tasks exist, return an empty reminders array.
 
+        Good extraction examples:
+        \(fewShotExamples(now: now, timeZone: timeZone))
+
         Current absolute date and time: \(now.ISO8601Format())
         Current time zone identifier: \(timeZone.identifier)
         """
@@ -96,5 +99,117 @@ final class AppleFMReminderExtractionProvider {
     @PromptBuilder
     private func userPrompt(noteText: String) -> Prompt {
         "\(noteText)"
+    }
+
+    private func fewShotExamples(now: Date, timeZone: TimeZone) -> String {
+        let saturdayAtTen = nextWeekdayDateString(
+            weekday: 7,
+            hour: 10,
+            minute: 0,
+            now: now,
+            timeZone: timeZone
+        ) ?? "2026-04-18T10:00:00+01:00"
+
+        let sundayAtTen = nextWeekdayDateString(
+            weekday: 1,
+            hour: 10,
+            minute: 0,
+            now: now,
+            timeZone: timeZone
+        ) ?? "2026-04-19T10:00:00+01:00"
+
+        let fridayDateOnly = nextWeekdayDateOnlyString(
+            weekday: 6,
+            now: now,
+            timeZone: timeZone
+        ) ?? "2026-04-17"
+
+        return """
+        Example 1
+        Note: "Okay, I need to visit the dentist on Saturday at 10 a.m."
+        Good response:
+        {"reminders":[{"title":"Visit dentist","optionalDueDateString":"\(saturdayAtTen)","rawDueDatePhrase":"Saturday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
+
+        Example 2
+        Note: "Okay, I need to call my parents on Sunday at 10 a.m."
+        Good response:
+        {"reminders":[{"title":"Call parents","optionalDueDateString":"\(sundayAtTen)","rawDueDatePhrase":"Sunday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
+
+        Example 3
+        Note: "I have a dinner with my friends this Friday, so please remind me."
+        Good response:
+        {"reminders":[{"title":"Dinner with friends","optionalDueDateString":"\(fridayDateOnly)","rawDueDatePhrase":"this Friday","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
+
+        Example 4
+        Note: "I had coffee and answered emails."
+        Good response:
+        {"reminders":[],"summary":"No reminder suggestions found."}
+        """
+    }
+
+    private func nextWeekdayDateString(
+        weekday: Int,
+        hour: Int,
+        minute: Int,
+        now: Date,
+        timeZone: TimeZone
+    ) -> String? {
+        let calendar = calendar(timeZone: timeZone)
+        var components = DateComponents()
+        components.weekday = weekday
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+        components.timeZone = timeZone
+
+        guard let date = calendar.nextDate(
+            after: now.addingTimeInterval(-1),
+            matching: components,
+            matchingPolicy: .nextTimePreservingSmallerComponents,
+            repeatedTimePolicy: .first,
+            direction: .forward
+        ) else {
+            return nil
+        }
+
+        return date.ISO8601Format()
+    }
+
+    private func nextWeekdayDateOnlyString(
+        weekday: Int,
+        now: Date,
+        timeZone: TimeZone
+    ) -> String? {
+        let calendar = calendar(timeZone: timeZone)
+        var components = DateComponents()
+        components.weekday = weekday
+        components.hour = 9
+        components.minute = 0
+        components.second = 0
+        components.timeZone = timeZone
+
+        guard let date = calendar.nextDate(
+            after: now.addingTimeInterval(-1),
+            matching: components,
+            matchingPolicy: .nextTimePreservingSmallerComponents,
+            repeatedTimePolicy: .first,
+            direction: .forward
+        ) else {
+            return nil
+        }
+
+        return date.formatted(
+            Date.VerbatimFormatStyle(
+                format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
+                timeZone: timeZone,
+                calendar: calendar
+            )
+        )
+    }
+
+    private func calendar(timeZone: TimeZone) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        return calendar
     }
 }
