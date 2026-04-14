@@ -68,7 +68,7 @@ class ParakeetTranscriptionService: TranscriptionService {
             isVADEnabled: isVADEnabled,
             progressHandler: progressHandler
         ) {
-            return boostedText
+            return .plain(boostedText)
         }
 
         try await loadModel(model: parakeetModel)
@@ -93,7 +93,7 @@ class ParakeetTranscriptionService: TranscriptionService {
 
             await cleanupAfterTranscription(using: asrManager)
             logger.logNotice("✅ Parakeet transcription completed successfully")
-            return result.text
+            return .plain(result.text)
         }
 
         logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
