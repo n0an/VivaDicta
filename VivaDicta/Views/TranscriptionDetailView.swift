@@ -138,10 +138,9 @@ struct TranscriptionDetailView: View {
                             .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
                     }
                 } else {
-                    Color(.systemGray5)
-                        .glassEffect(.clear, in: .capsule)
-//                    Capsule()
-//                        .fill(Color(.systemGray5))
+                    Capsule()
+                        .fill(Color(.systemGray5))
+                        .glassEffect(.clear.interactive(), in: .capsule)
                 }
             }
 
@@ -237,6 +236,7 @@ struct TranscriptionDetailView: View {
                     } else {
                         Capsule()
                             .fill(Color(.systemGray5))
+                            .glassEffect(.clear.interactive(), in: .capsule)
                     }
                 }
             
