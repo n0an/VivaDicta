@@ -49,7 +49,8 @@ final class RemindersImportService {
         let reminder = EKReminder(eventStore: eventStore)
         reminder.title = draft.title
         reminder.notes = draft.notes
-        reminder.priority = draft.priority.eventKitPriority
+        // Keep imported reminders neutral for now.
+        // We still persist extracted priority in our draft model so we can revisit EventKit mapping later.
         reminder.calendar = try defaultReminderCalendar()
 
         if let dueDateComponents = ReminderDueDateParser.dueDateComponents(from: draft.optionalDueDateString) {
