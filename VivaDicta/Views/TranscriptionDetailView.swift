@@ -358,6 +358,9 @@ struct TranscriptionDetailView: View {
             VStack(spacing: 0) {
                 TranscriptionTagChipsView(
                     transcription: transcription,
+                    onReviewReminderSuggestions: transcription.pendingExtractedReminderDraftCount > 0 ? {
+                        showExtractedRemindersSheet = true
+                    } : nil,
                     showTagPicker: $showTagPicker
                 )
                 .padding(.horizontal)

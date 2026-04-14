@@ -11,12 +11,21 @@ import SwiftData
 /// Horizontal scrollable row of tag chips for a transcription.
 struct TranscriptionTagChipsView: View {
     let transcription: Transcription
+    var onReviewReminderSuggestions: (() -> Void)?
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
     @Binding var showTagPicker: Bool
 
     private var assignedTags: [TranscriptionTag] {
         let assignedIds = Set((transcription.tagAssignments ?? []).map(\.tagId))
         return allTags.filter { assignedIds.contains($0.id) }
+    }
+
+    private var pendingReminderCount: Int {
+        transcription.pendingExtractedReminderDraftCount
+    }
+
+    private var pendingReminderTitle: String {
+        pendingReminderCount == 1 ? "1 Task" : "\(pendingReminderCount) Tasks"
     }
 
     var body: some View {
@@ -42,6 +51,24 @@ struct TranscriptionTagChipsView: View {
                         .background((Color(hex: tag.colorHex) ?? .blue).opacity(0.15))
                         .foregroundStyle(Color(hex: tag.colorHex) ?? .blue)
                         .clipShape(.capsule)
+                }
+
+                if pendingReminderCount > 0,
+                   let onReviewReminderSuggestions {
+                    Button(action: onReviewReminderSuggestions) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checklist")
+                            Text(pendingReminderTitle)
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.blue.opacity(0.15))
+                        .foregroundStyle(.blue)
+                        .clipShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Review \(pendingReminderTitle.lowercased())")
                 }
 
                 // Add tag button

@@ -21,6 +21,8 @@ struct SettingsView: View {
     private var isVADEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
+    @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
+    private var isAutoReminderExtractionEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
     private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -194,6 +196,18 @@ struct SettingsView: View {
                     }
                     NavigationLink(value: SettingsDestination.presetsSettings) {
                         Text("AI Presets")
+                    }
+                    Toggle(isOn: $isAutoReminderExtractionEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Extract Reminder Suggestions Automatically")
+                                .font(.body)
+                            Text("After saving a new note, detect reminder-worthy tasks in the background and keep them ready for review.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isAutoReminderExtractionEnabled) { _, _ in
+                        HapticManager.selectionChanged()
                     }
                     NavigationLink(value: SettingsDestination.chatTools) {
                         HStack {

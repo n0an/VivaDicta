@@ -120,4 +120,8 @@ extension Transcription {
     var pendingExtractedReminderDrafts: [ExtractedReminderDraft] {
         sortedExtractedReminderDrafts.filter { $0.status == .pending }
     }
+
+    var pendingExtractedReminderDraftCount: Int {
+        pendingExtractedReminderDrafts.count
+    }
 }
