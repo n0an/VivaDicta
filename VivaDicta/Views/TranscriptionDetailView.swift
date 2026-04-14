@@ -100,8 +100,8 @@ struct TranscriptionDetailView: View {
         transcription.pendingExtractedReminderDraftCount
     }
 
-    private var canOpenAISheet: Bool {
-        isAIConfigured || ReminderExtractionService(aiService: appState.aiService).canExtractReminders()
+    private var canExtractReminderSuggestions: Bool {
+        ReminderExtractionService(aiService: appState.aiService).canExtractReminders()
     }
     
     
@@ -113,11 +113,11 @@ struct TranscriptionDetailView: View {
                 Text("AI")
             }
             .font(.system(size: 16, weight: .bold))
-            .foregroundStyle(canOpenAISheet ? .white : .secondary)
+            .foregroundStyle(isAIConfigured ? .white : .secondary)
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background {
-                if canOpenAISheet {
+                if isAIConfigured {
                     if colorScheme == .dark {
                         // Dark mode: edge-glow HUD style
                         AnimatedMeshGradient()
@@ -180,11 +180,11 @@ struct TranscriptionDetailView: View {
                 Text("AI")
             }
             .font(.system(size: 16, weight: .bold))
-            .foregroundStyle(canOpenAISheet ? .white : .secondary)
+            .foregroundStyle(isAIConfigured ? .white : .secondary)
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background {
-                if canOpenAISheet {
+                if isAIConfigured {
                     if colorScheme == .dark {
                         // Dark mode: edge-glow HUD style
                         AnimatedMeshGradient()
@@ -405,7 +405,7 @@ struct TranscriptionDetailView: View {
                     showPresetPicker = false
                     showExtractedRemindersSheet = true
                 },
-                onExtractTasks: canOpenAISheet ? {
+                onExtractTasks: canExtractReminderSuggestions ? {
                     showPresetPicker = false
                     extractReminderSuggestions()
                 } : nil,
@@ -651,7 +651,7 @@ struct TranscriptionDetailView: View {
                 // Button 2: AI Presets picker
                 Button {
                     HapticManager.lightImpact()
-                    if canOpenAISheet {
+                    if isAIConfigured {
                         showPresetPicker = true
                     } else {
                         showConfigureAI = true

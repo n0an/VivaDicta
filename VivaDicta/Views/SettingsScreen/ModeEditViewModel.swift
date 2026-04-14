@@ -62,7 +62,7 @@ class ModeEditViewModel {
         }
 
         let reminderExtractorReady: Bool
-        if !usesSeparateReminderExtractor {
+        if !aiEnhanceEnabled || !usesSeparateReminderExtractor {
             reminderExtractorReady = true
         } else if let provider = reminderExtractorProvider,
                   let model = reminderExtractorModel,
@@ -139,7 +139,7 @@ class ModeEditViewModel {
     }
 
     var reminderExtractorValidationMessage: String? {
-        guard usesSeparateReminderExtractor else { return nil }
+        guard aiEnhanceEnabled, usesSeparateReminderExtractor else { return nil }
         guard let provider = reminderExtractorProvider else {
             return "Select a reminder extractor provider\(Self.disableReminderExtractorHint)"
         }
@@ -189,6 +189,9 @@ class ModeEditViewModel {
             validateLanguageSelection()
             validateAIModelSelection()
             validateReminderExtractorModelSelection()
+            if !aiEnhanceEnabled {
+                setSeparateReminderExtractorEnabled(false)
+            }
         } else {
             transcriptionProvider = .whisperKit
             transcriptionModel = ""
@@ -217,8 +220,8 @@ class ModeEditViewModel {
             presetId: aiEnhanceEnabled ? selectedPresetId : nil,
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
-            reminderExtractorProvider: usesSeparateReminderExtractor ? reminderExtractorProvider : nil,
-            reminderExtractorModel: usesSeparateReminderExtractor ? reminderExtractorModel : nil,
+            reminderExtractorProvider: aiEnhanceEnabled && usesSeparateReminderExtractor ? reminderExtractorProvider : nil,
+            reminderExtractorModel: aiEnhanceEnabled && usesSeparateReminderExtractor ? reminderExtractorModel : nil,
             aiEnhanceEnabled: aiEnhanceEnabled,
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
@@ -456,6 +459,14 @@ class ModeEditViewModel {
             reminderExtractorProvider = provider
             reminderExtractorModel = defaultModel(for: provider)
             logger.logInfo("Auto-selected reminder extractor provider: \(provider.rawValue)")
+        }
+    }
+
+    func setAIEnhancementEnabled(_ isEnabled: Bool) {
+        aiEnhanceEnabled = isEnabled
+
+        if !isEnabled {
+            setSeparateReminderExtractorEnabled(false)
         }
     }
 

@@ -312,7 +312,16 @@ struct ModeEditView: View {
                             .tipBackground(aiEnhancementGradient.opacity(0.3))
                     }
 
-                    Toggle("Enable", isOn: $viewModel.aiEnhanceEnabled)
+                    Toggle(
+                        "Enable",
+                        isOn: Binding(
+                            get: { viewModel.aiEnhanceEnabled },
+                            set: { newValue in
+                                viewModel.setAIEnhancementEnabled(newValue)
+                                HapticManager.selectionChanged()
+                            }
+                        )
+                    )
                         .id("aiProcessingSection")
 
                     if viewModel.aiEnhanceEnabled {
@@ -593,155 +602,157 @@ struct ModeEditView: View {
                     viewModel.refreshAIModelSelection()
                 }
 
-                Section(header: reminderSuggestionsSectionHeader,
-                        footer: reminderExtractorSectionFooter) {
-                    Toggle(
-                        isOn: Binding(
-                            get: { viewModel.usesSeparateReminderExtractor },
-                            set: { newValue in
-                                viewModel.setSeparateReminderExtractorEnabled(newValue)
+                if viewModel.aiEnhanceEnabled {
+                    Section(header: reminderSuggestionsSectionHeader,
+                            footer: reminderExtractorSectionFooter) {
+                        Toggle(
+                            isOn: Binding(
+                                get: { viewModel.usesSeparateReminderExtractor },
+                                set: { newValue in
+                                    viewModel.setSeparateReminderExtractorEnabled(newValue)
+                                    HapticManager.selectionChanged()
+                                }
+                            )
+                        ) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Use Separate Extractor")
+                                    .font(.body)
+                                Text("Choose a different provider or model for reminder suggestions than the one used for regular AI processing.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .id("reminderExtractorSection")
+
+                        if viewModel.usesSeparateReminderExtractor {
+                            Picker(selection: $viewModel.reminderExtractorProvider) {
+                                if viewModel.isAppleFoundationModelAvailable {
+                                    Section("On-Device") {
+                                        Label("Apple", systemImage: "apple.intelligence")
+                                            .tag(AIProvider.apple)
+                                    }
+                                }
+
+                                Section("Cloud") {
+                                    ForEach(AIProvider.cloudProviders) { provider in
+                                        if viewModel.isProviderReady(provider) {
+                                            Text(provider.displayName).tag(provider)
+                                        } else {
+                                            HStack(spacing: 4) {
+                                                Text(provider.displayName)
+                                                if provider == .ollama || provider == .customOpenAI {
+                                                    Image(systemName: "gear")
+                                                } else {
+                                                    Image(systemName: "key.slash.fill")
+                                                }
+                                            }
+                                            .tag(provider)
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "checklist")
+                                        .foregroundStyle(aiEnhancementGradient)
+                                    Text("Reminder Provider")
+                                }
+                            }
+                            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            .onChange(of: viewModel.reminderExtractorProvider) { _, newProvider in
+                                viewModel.updateReminderExtractorProvider(newProvider)
                                 HapticManager.selectionChanged()
                             }
-                        )
-                    ) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Use Separate Extractor")
-                                .font(.body)
-                            Text("Choose a different provider or model for reminder suggestions than the one used for regular AI processing.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .id("reminderExtractorSection")
-
-                    if viewModel.usesSeparateReminderExtractor {
-                        Picker(selection: $viewModel.reminderExtractorProvider) {
-                            if viewModel.isAppleFoundationModelAvailable {
-                                Section("On-Device") {
-                                    Label("Apple", systemImage: "apple.intelligence")
-                                        .tag(AIProvider.apple)
-                                }
+                            .onAppear {
+                                viewModel.refreshConnectedProviders()
+                                viewModel.selectFirstReminderExtractorProviderIfNeeded()
                             }
 
-                            Section("Cloud") {
-                                ForEach(AIProvider.cloudProviders) { provider in
-                                    if viewModel.isProviderReady(provider) {
-                                        Text(provider.displayName).tag(provider)
-                                    } else {
-                                        HStack(spacing: 4) {
-                                            Text(provider.displayName)
-                                            if provider == .ollama || provider == .customOpenAI {
-                                                Image(systemName: "gear")
-                                            } else {
-                                                Image(systemName: "key.slash.fill")
-                                            }
-                                        }
-                                        .tag(provider)
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "checklist")
-                                    .foregroundStyle(aiEnhancementGradient)
-                                Text("Reminder Provider")
-                            }
-                        }
-                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                        .onChange(of: viewModel.reminderExtractorProvider) { _, newProvider in
-                            viewModel.updateReminderExtractorProvider(newProvider)
-                            HapticManager.selectionChanged()
-                        }
-                        .onAppear {
-                            viewModel.refreshConnectedProviders()
-                            viewModel.selectFirstReminderExtractorProviderIfNeeded()
-                        }
-
-                        if let provider = viewModel.reminderExtractorProvider {
-                            if viewModel.isProviderReady(provider) {
-                                if provider == .apple {
-                                    HStack {
-                                        Image(systemName: "wand.and.sparkles")
-                                            .foregroundStyle(aiEnhancementGradient)
-                                        Text("Reminder Model")
-                                        Spacer()
-                                        Text("Foundation Model")
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                } else if provider == .customOpenAI {
-                                    HStack {
-                                        Image(systemName: "wand.and.sparkles")
-                                            .foregroundStyle(aiEnhancementGradient)
-                                        Text("Reminder Model")
-                                        Spacer()
-                                        Text(viewModel.aiService.customOpenAIModelName)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                } else {
-                                    Button {
-                                        showReminderExtractorModelPicker = true
-                                    } label: {
+                            if let provider = viewModel.reminderExtractorProvider {
+                                if viewModel.isProviderReady(provider) {
+                                    if provider == .apple {
                                         HStack {
                                             Image(systemName: "wand.and.sparkles")
                                                 .foregroundStyle(aiEnhancementGradient)
                                             Text("Reminder Model")
                                             Spacer()
-                                            Text(viewModel.reminderExtractorModel ?? "Select")
+                                            Text("Foundation Model")
                                                 .foregroundStyle(.secondary)
-                                                .lineLimit(1)
-                                            Image(systemName: "chevron.up.chevron.down")
-                                                .font(.system(size: 10, weight: .semibold))
-                                                .foregroundStyle(.tertiary)
+                                        }
+                                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                    } else if provider == .customOpenAI {
+                                        HStack {
+                                            Image(systemName: "wand.and.sparkles")
+                                                .foregroundStyle(aiEnhancementGradient)
+                                            Text("Reminder Model")
+                                            Spacer()
+                                            Text(viewModel.aiService.customOpenAIModelName)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                    } else {
+                                        Button {
+                                            showReminderExtractorModelPicker = true
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "wand.and.sparkles")
+                                                    .foregroundStyle(aiEnhancementGradient)
+                                                Text("Reminder Model")
+                                                Spacer()
+                                                Text(viewModel.reminderExtractorModel ?? "Select")
+                                                    .foregroundStyle(.secondary)
+                                                    .lineLimit(1)
+                                                Image(systemName: "chevron.up.chevron.down")
+                                                    .font(.system(size: 10, weight: .semibold))
+                                                    .foregroundStyle(.tertiary)
+                                            }
+                                        }
+                                        .tint(.primary)
+                                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                        .sheet(isPresented: $showReminderExtractorModelPicker) {
+                                            ModelPickerSheet(
+                                                models: viewModel.aiService.getAvailableModels(for: provider),
+                                                selectedModel: $viewModel.reminderExtractorModel
+                                            )
+                                            .presentationDetents([.medium, .large])
+                                        }
+                                        .onChange(of: viewModel.reminderExtractorModel) { _, newModel in
+                                            viewModel.updateReminderExtractorModel(newModel)
+                                            HapticManager.selectionChanged()
+                                        }
+                                    }
+                                } else if provider == .apple {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text(viewModel.appleFoundationModelStatusMessage)
+                                            .font(.callout)
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else {
+                                    Button {
+                                        navigationPath.append(SettingsDestination.aiProviders)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.orange)
+                                            Text("Open AI Providers Settings")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Image(systemName: "chevron.right")
+                                                .foregroundStyle(.secondary)
                                         }
                                     }
                                     .tint(.primary)
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                    .sheet(isPresented: $showReminderExtractorModelPicker) {
-                                        ModelPickerSheet(
-                                            models: viewModel.aiService.getAvailableModels(for: provider),
-                                            selectedModel: $viewModel.reminderExtractorModel
-                                        )
-                                        .presentationDetents([.medium, .large])
-                                    }
-                                    .onChange(of: viewModel.reminderExtractorModel) { _, newModel in
-                                        viewModel.updateReminderExtractorModel(newModel)
-                                        HapticManager.selectionChanged()
-                                    }
                                 }
-                            } else if provider == .apple {
-                                HStack {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundStyle(.orange)
-                                    Text(viewModel.appleFoundationModelStatusMessage)
-                                        .font(.callout)
-                                }
-                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                            } else {
-                                Button {
-                                    navigationPath.append(SettingsDestination.aiProviders)
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .foregroundStyle(.orange)
-                                        Text("Open AI Providers Settings")
-                                        Spacer()
-                                        Text("Required")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .tint(.primary)
-                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                             }
                         }
                     }
-                }
-                .onAppear {
-                    viewModel.refreshReminderExtractorModelSelection()
+                    .onAppear {
+                        viewModel.refreshReminderExtractorModelSelection()
+                    }
                 }
             }
 
