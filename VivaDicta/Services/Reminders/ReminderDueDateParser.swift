@@ -21,7 +21,7 @@ enum ReminderDueDateParser {
     ).parseStrategy
 
     static func parse(_ dueDateString: String?) -> Date? {
-        guard let trimmed = dueDateString?.trimmingCharacters(in: .whitespacesAndNewlines),
+        guard let trimmed = normalizedDueDateString(dueDateString),
               !trimmed.isEmpty else {
             return nil
         }
@@ -39,28 +39,18 @@ enum ReminderDueDateParser {
         }
 
         if trimmed.count == 10 {
-            let parts = trimmed.split(separator: "-")
-            guard parts.count == 3,
-                  let year = Int(parts[0]),
-                  let month = Int(parts[1]),
-                  let day = Int(parts[2]) else {
-                return nil
-            }
-
-            var components = DateComponents()
-            components.calendar = .current
-            components.timeZone = .current
-            components.year = year
-            components.month = month
-            components.day = day
-            components.hour = 9
-            return components.date
+            return dateOnlyComponents(from: trimmed)?.date
         }
 
         return nil
     }
 
     static func dueDateComponents(from dueDateString: String?) -> DateComponents? {
+        if let normalized = normalizedDueDateString(dueDateString),
+           normalized.count == 10 {
+            return dateOnlyComponents(from: normalized)
+        }
+
         guard let dueDate = parse(dueDateString) else {
             return nil
         }
@@ -75,6 +65,12 @@ enum ReminderDueDateParser {
     }
 
     static func displayText(dueDateString: String?, rawDueDatePhrase: String?) -> String? {
+        if let normalized = normalizedDueDateString(dueDateString),
+           normalized.count == 10,
+           let dateOnly = parse(normalized) {
+            return dateOnly.formatted(date: .abbreviated, time: .omitted)
+        }
+
         if let dueDate = parse(dueDateString) {
             return dueDate.formatted(date: .abbreviated, time: .shortened)
         }
@@ -164,14 +160,12 @@ enum ReminderDueDateParser {
 
         var components = DateComponents()
         components.weekday = weekdayEntry.value
-        components.hour = 9
-        components.minute = 0
-        components.second = 0
         components.timeZone = timeZone
 
         if let hourValue {
             components.hour = convertedHour(hourValue, meridiem: meridiem)
             components.minute = minuteValue
+            components.second = 0
         }
 
         guard let resolvedDate = searchCalendar.nextDate(
@@ -184,7 +178,49 @@ enum ReminderDueDateParser {
             return nil
         }
 
+        if hourValue == nil {
+            return resolvedDate.formatted(
+                Date.VerbatimFormatStyle(
+                    format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
+                    timeZone: timeZone,
+                    calendar: searchCalendar
+                )
+            )
+        }
+
         return resolvedDate.ISO8601Format()
+    }
+
+    private static func normalizedDueDateString(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+
+        switch trimmed.lowercased() {
+        case "nil", "null", "none":
+            return nil
+        default:
+            return trimmed
+        }
+    }
+
+    private static func dateOnlyComponents(from value: String) -> DateComponents? {
+        let parts = value.split(separator: "-")
+        guard parts.count == 3,
+              let year = Int(parts[0]),
+              let month = Int(parts[1]),
+              let day = Int(parts[2]) else {
+            return nil
+        }
+
+        var components = DateComponents()
+        components.calendar = .current
+        components.timeZone = .current
+        components.year = year
+        components.month = month
+        components.day = day
+        return components
     }
 
     private static func convertedHour(_ hour: Int, meridiem: Substring?) -> Int {
