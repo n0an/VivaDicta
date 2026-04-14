@@ -721,6 +721,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 do {
                     try pending.modelContext.save()
                     logger.logInfo("📱 Saved transcription without enhancement")
+                    scheduleAutomaticReminderExtractionIfNeeded(
+                        for: transcription,
+                        modelContext: pending.modelContext
+                    )
 
                     // Haptic feedback for successful save
                     HapticManager.heartbeat()
@@ -831,6 +835,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             activity.becomeCurrent()
         }
 
+        scheduleAutomaticReminderExtractionIfNeeded(
+            for: transcription,
+            modelContext: modelContext
+        )
+
         return transcription
     }
 
@@ -879,6 +888,37 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             modelContext: modelContext,
             sourceTag: sourceTag
         )
+    }
+
+    private func scheduleAutomaticReminderExtractionIfNeeded(
+        for transcription: Transcription,
+        modelContext: ModelContext
+    ) {
+        guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled) else {
+            return
+        }
+
+        let extractionMode = aiService.selectedMode
+        let extractionService = ReminderExtractionService(aiService: aiService)
+        guard extractionService.canExtractReminders(using: extractionMode) else {
+            logger.logDebug("Reminder extraction - Auto extraction skipped because no extractor is available for mode \(extractionMode.name)")
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                let drafts = try await extractionService.extractAndPersist(
+                    for: transcription,
+                    modelContext: modelContext,
+                    mode: extractionMode
+                )
+                logger.logNotice("Reminder extraction - Auto extracted \(drafts.count) draft(s) for note \(transcription.id.uuidString)")
+            } catch {
+                logger.logWarning("Reminder extraction - Auto extraction failed for note \(transcription.id.uuidString): \(error.localizedDescription)")
+            }
+        }
     }
 
     func resetValues() {
