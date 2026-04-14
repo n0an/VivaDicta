@@ -21,6 +21,7 @@ struct PresetFormView: View {
     @State private var promptInstructions: String
     @State private var useSystemTemplate: Bool
     @State private var wrapInTranscriptTags: Bool
+    @State private var isVisible: Bool
     @State private var showResetConfirmation = false
 
     private var isCreateMode: Bool { existingPreset == nil }
@@ -73,6 +74,7 @@ struct PresetFormView: View {
         self._promptInstructions = State(initialValue: preset.promptInstructions)
         self._useSystemTemplate = State(initialValue: preset.useSystemTemplate)
         self._wrapInTranscriptTags = State(initialValue: preset.wrapInTranscriptTags)
+        self._isVisible = State(initialValue: !presetManager.isPresetHidden(presetId: preset.id))
     }
 
     /// Create mode: no preset provided.
@@ -85,6 +87,7 @@ struct PresetFormView: View {
         self._promptInstructions = State(initialValue: "")
         self._useSystemTemplate = State(initialValue: true)
         self._wrapInTranscriptTags = State(initialValue: true)
+        self._isVisible = State(initialValue: true)
     }
 
     var body: some View {
@@ -105,6 +108,10 @@ struct PresetFormView: View {
                 } else {
                     TextField("Short description", text: $presetDescription)
                 }
+            }
+
+            Section("Visibility") {
+                Toggle("Visible", isOn: $isVisible)
             }
 
             if isAssistantPreset {
@@ -150,6 +157,11 @@ struct PresetFormView: View {
                     .foregroundStyle(.orange)
                 }
             }
+        }
+        .onChange(of: isVisible) { _, isVisible in
+            guard let preset = existingPreset else { return }
+            HapticManager.lightImpact()
+            presetManager.setPresetHidden(presetId: preset.id, isHidden: !isVisible)
         }
         .navigationTitle(navigationTitle)
         .toolbar {
@@ -207,6 +219,7 @@ struct PresetFormView: View {
             isBuiltIn: false
         )
         presetManager.addPreset(newPreset)
+        presetManager.setPresetHidden(presetId: newPreset.id, isHidden: !isVisible)
         dismiss()
     }
 
