@@ -759,6 +759,14 @@ private struct ModeInfoRow: View {
         }
     }
 
+    private var reminderExtractorSummary: String? {
+        guard let provider = mode.reminderExtractorProvider else { return nil }
+        if let model = mode.reminderExtractorModel, !model.isEmpty, provider != .apple {
+            return "Reminders: \(provider.displayName) - \(model)"
+        }
+        return "Reminders: \(provider.displayName)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(mode.name)
@@ -833,6 +841,13 @@ private struct ModeInfoRow: View {
                 }
                 .font(.caption2)
                 .padding(.leading, 4)
+            }
+
+            if let reminderExtractorSummary {
+                Label(reminderExtractorSummary, systemImage: "checklist")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.leading, 4)
             }
         }
         .padding(.vertical, 4)
