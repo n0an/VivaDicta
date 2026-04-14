@@ -149,7 +149,7 @@ struct MainFloatingActionButtonsView: View {
         } else {
             
             
-            let darkGradient = AnimatedMeshGradient2()
+            let lightGradient = AnimatedMeshGradient2()
                 .mask(
                     Circle()
                         .stroke(lineWidth: 26)
@@ -171,11 +171,11 @@ struct MainFloatingActionButtonsView: View {
                 )
 
             if #available(iOS 26, *) {
-                darkGradient
+                lightGradient
                     .clipShape(.circle)
                     .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 4)
             } else {
-                darkGradient
+                lightGradient
                     .background(.white)
                     .clipShape(.circle)
                     .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 4)
