@@ -61,6 +61,12 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The specific AI model name for enhancement.
     var aiModel: String
 
+    /// Optional provider override used only for reminder suggestion extraction.
+    var reminderExtractorProvider: AIProvider?
+
+    /// Optional model override used only for reminder suggestion extraction.
+    var reminderExtractorModel: String?
+
     /// Whether AI processing is enabled for this mode.
     let aiEnhanceEnabled: Bool
 
@@ -82,6 +88,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
          presetId: String? = nil,
          aiProvider: AIProvider? = nil,
          aiModel: String,
+         reminderExtractorProvider: AIProvider? = nil,
+         reminderExtractorModel: String? = nil,
          aiEnhanceEnabled: Bool,
          useClipboardContext: Bool = false,
          isAutoTextFormattingEnabled: Bool = false,
@@ -94,6 +102,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.presetId = presetId
         self.aiProvider = aiProvider
         self.aiModel = aiModel
+        self.reminderExtractorProvider = reminderExtractorProvider
+        self.reminderExtractorModel = reminderExtractorModel
         self.aiEnhanceEnabled = aiEnhanceEnabled
         self.useClipboardContext = useClipboardContext
         self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
@@ -112,6 +122,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         transcriptionLanguage = try container.decodeIfPresent(String.self, forKey: .transcriptionLanguage)
         aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
         aiModel = try container.decode(String.self, forKey: .aiModel)
+        reminderExtractorProvider = try container.decodeIfPresent(AIProvider.self, forKey: .reminderExtractorProvider)
+        reminderExtractorModel = try container.decodeIfPresent(String.self, forKey: .reminderExtractorModel)
         aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
@@ -134,7 +146,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case id, name, transcriptionProvider, transcriptionModel, transcriptionLanguage
         case presetId, userPrompt
-        case aiProvider, aiModel, aiEnhanceEnabled
+        case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
         case useClipboardContext
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
     }
@@ -150,6 +162,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encodeIfPresent(presetId, forKey: .presetId)
         try container.encodeIfPresent(aiProvider, forKey: .aiProvider)
         try container.encode(aiModel, forKey: .aiModel)
+        try container.encodeIfPresent(reminderExtractorProvider, forKey: .reminderExtractorProvider)
+        try container.encodeIfPresent(reminderExtractorModel, forKey: .reminderExtractorModel)
         try container.encode(aiEnhanceEnabled, forKey: .aiEnhanceEnabled)
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
         try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)

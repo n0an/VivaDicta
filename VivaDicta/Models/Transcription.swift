@@ -103,6 +103,10 @@ class Transcription {
     @Relationship(deleteRule: .cascade)
     var tagAssignments: [TranscriptionTagAssignment]? = []
 
+    /// AI-extracted reminder drafts awaiting review or already imported/dismissed.
+    @Relationship(deleteRule: .cascade)
+    var extractedReminderDrafts: [ExtractedReminderDraft]? = []
+
     /// Chat conversations that reference this transcription as a source note.
     @Relationship(deleteRule: .cascade, inverse: \ChatConversation.transcription)
     var chatConversations: [ChatConversation]? = []

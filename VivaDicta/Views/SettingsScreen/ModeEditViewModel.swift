@@ -21,6 +21,9 @@ class ModeEditViewModel {
     var aiEnhanceEnabled: Bool = false
     var aiProvider: AIProvider?
     var aiModel: String?
+    var usesSeparateReminderExtractor: Bool = false
+    var reminderExtractorProvider: AIProvider?
+    var reminderExtractorModel: String?
     var selectedPresetId: String?
     var useClipboardContext: Bool = false
     var isAutoTextFormattingEnabled: Bool = false
@@ -58,7 +61,19 @@ class ModeEditViewModel {
             aiEnhancementReady = false
         }
 
-        return hasName && transcriptionReady && aiEnhancementReady
+        let reminderExtractorReady: Bool
+        if !usesSeparateReminderExtractor {
+            reminderExtractorReady = true
+        } else if let provider = reminderExtractorProvider,
+                  let model = reminderExtractorModel,
+                  !model.isEmpty,
+                  isProviderReady(provider) {
+            reminderExtractorReady = true
+        } else {
+            reminderExtractorReady = false
+        }
+
+        return hasName && transcriptionReady && aiEnhancementReady && reminderExtractorReady
     }
 
     var hasNameError: Bool {
@@ -91,6 +106,7 @@ class ModeEditViewModel {
     }
 
     private static let disableHint = ", or disable AI Processing"
+    private static let disableReminderExtractorHint = ", or turn off the separate extractor"
 
     var aiEnhancementValidationMessage: String? {
         guard aiEnhanceEnabled else { return nil }
@@ -118,6 +134,33 @@ class ModeEditViewModel {
         return nil
     }
 
+    var hasReminderExtractorError: Bool {
+        reminderExtractorValidationMessage != nil
+    }
+
+    var reminderExtractorValidationMessage: String? {
+        guard usesSeparateReminderExtractor else { return nil }
+        guard let provider = reminderExtractorProvider else {
+            return "Select a reminder extractor provider\(Self.disableReminderExtractorHint)"
+        }
+        if !isProviderReady(provider) {
+            if provider == .apple {
+                return "\(appleFoundationModelStatusMessage)\(Self.disableReminderExtractorHint)"
+            }
+            if provider == .ollama {
+                return "Configure Ollama server in AI Providers settings\(Self.disableReminderExtractorHint)"
+            }
+            if provider == .customOpenAI {
+                return "Configure Custom AI Provider in AI Providers settings\(Self.disableReminderExtractorHint)"
+            }
+            return "Add API key to continue\(Self.disableReminderExtractorHint)"
+        }
+        if reminderExtractorModel == nil || reminderExtractorModel?.isEmpty == true {
+            return "Select a reminder extractor model\(Self.disableReminderExtractorHint)"
+        }
+        return nil
+    }
+
     init(mode: VivaMode?,
          aiService: AIService,
          presetManager: PresetManager,
@@ -135,6 +178,9 @@ class ModeEditViewModel {
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
+            usesSeparateReminderExtractor = existingMode.reminderExtractorProvider != nil
+            reminderExtractorProvider = existingMode.reminderExtractorProvider
+            reminderExtractorModel = existingMode.reminderExtractorModel
             selectedPresetId = existingMode.presetId
             useClipboardContext = existingMode.useClipboardContext
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
@@ -142,6 +188,7 @@ class ModeEditViewModel {
 
             validateLanguageSelection()
             validateAIModelSelection()
+            validateReminderExtractorModelSelection()
         } else {
             transcriptionProvider = .whisperKit
             transcriptionModel = ""
@@ -170,6 +217,8 @@ class ModeEditViewModel {
             presetId: aiEnhanceEnabled ? selectedPresetId : nil,
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
+            reminderExtractorProvider: usesSeparateReminderExtractor ? reminderExtractorProvider : nil,
+            reminderExtractorModel: usesSeparateReminderExtractor ? reminderExtractorModel : nil,
             aiEnhanceEnabled: aiEnhanceEnabled,
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
@@ -264,6 +313,35 @@ class ModeEditViewModel {
         }
     }
 
+    private func validateReminderExtractorModelSelection() {
+        guard let provider = reminderExtractorProvider else { return }
+
+        if provider == .ollama {
+            let availableModels = aiService.ollamaModels
+            guard let currentModel = reminderExtractorModel else { return }
+
+            if !availableModels.contains(currentModel) {
+                let oldModel = currentModel
+                if let firstModel = availableModels.first {
+                    reminderExtractorModel = firstModel
+                    logger.logInfo("Reminder extractor Ollama model '\(oldModel)' not available, reset to '\(firstModel)'")
+                } else {
+                    reminderExtractorModel = nil
+                    logger.logInfo("Reminder extractor Ollama model '\(oldModel)' not available and no models found")
+                }
+            }
+        } else if provider == .customOpenAI {
+            let configuredModel = aiService.customOpenAIModelName
+            if configuredModel.isEmpty {
+                reminderExtractorModel = nil
+                logger.logInfo("Reminder extractor Custom OpenAI model not configured")
+            } else if reminderExtractorModel != configuredModel {
+                reminderExtractorModel = configuredModel
+                logger.logInfo("Reminder extractor Custom OpenAI model updated to configured: '\(configuredModel)'")
+            }
+        }
+    }
+
     // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
@@ -347,104 +425,169 @@ class ModeEditViewModel {
     }
 
     // MARK: - AI Processing settings
+    private enum ModelSelectionTarget {
+        case aiEnhancement
+        case reminderExtraction
+
+        var logName: String {
+            switch self {
+            case .aiEnhancement:
+                "AI"
+            case .reminderExtraction:
+                "reminder extractor"
+            }
+        }
+    }
+
     func selectFirstProviderIfNeeded() {
         guard aiProvider == nil else { return }
 
-        // First try Apple if available (on-device is preferred)
-        if aiService.connectedProviders.contains(.apple) {
-            aiProvider = .apple
-            aiModel = AIProvider.apple.defaultModel
-            logger.logInfo("Auto-selected Apple Foundation Model (on-device)")
+        if let provider = preferredProviderForSelection() {
+            aiProvider = provider
+            aiModel = defaultModel(for: provider)
+            logger.logInfo("Auto-selected provider: \(provider.rawValue)")
+        }
+    }
+
+    func selectFirstReminderExtractorProviderIfNeeded() {
+        guard reminderExtractorProvider == nil else { return }
+
+        if let provider = preferredProviderForSelection() {
+            reminderExtractorProvider = provider
+            reminderExtractorModel = defaultModel(for: provider)
+            logger.logInfo("Auto-selected reminder extractor provider: \(provider.rawValue)")
+        }
+    }
+
+    func setSeparateReminderExtractorEnabled(_ isEnabled: Bool) {
+        usesSeparateReminderExtractor = isEnabled
+
+        if !isEnabled {
+            reminderExtractorProvider = nil
+            reminderExtractorModel = nil
+            logger.logInfo("Disabled separate reminder extractor")
             return
         }
 
-        // Then try to find a cloud provider with API key configured
-        let firstConnectedProvider = AIProvider.cloudProviders.first { provider in
-            aiService.connectedProviders.contains(provider)
-        }
-
-        // If no connected provider, just select the first cloud provider (so UI shows "Add API Key")
-        let providerToSelect = firstConnectedProvider ?? AIProvider.cloudProviders.first
-
-        if let provider = providerToSelect {
-            aiProvider = provider
-
-            // For Ollama, select first available model if default isn't available
-            if provider == .ollama {
-                let availableModels = aiService.ollamaModels
-                if availableModels.contains(provider.defaultModel) {
-                    aiModel = provider.defaultModel
-                } else if let firstModel = availableModels.first {
-                    aiModel = firstModel
-                } else {
-                    aiModel = nil // No models available
-                }
+        if reminderExtractorProvider == nil {
+            if let provider = aiProvider,
+               isProviderReady(provider),
+               let model = aiModel,
+               !model.isEmpty {
+                reminderExtractorProvider = provider
+                reminderExtractorModel = model
+                logger.logInfo("Prefilled separate reminder extractor from AI processing provider: \(provider.rawValue)")
             } else {
-                aiModel = provider.defaultModel
+                selectFirstReminderExtractorProviderIfNeeded()
             }
-
-            logger.logInfo("Auto-selected provider: \(provider.rawValue)")
         }
     }
 
     func updateProvider(_ newProvider: AIProvider?) {
         aiProvider = newProvider
-
-        // For Ollama, select first available model if default isn't available
-        if let provider = newProvider, provider == .ollama {
-            let availableModels = aiService.ollamaModels
-            if availableModels.contains(provider.defaultModel) {
-                aiModel = provider.defaultModel
-            } else if let firstModel = availableModels.first {
-                aiModel = firstModel
-            } else {
-                aiModel = nil // No models available
-            }
-
-            // Verify Ollama connection when selected
-            verifyOllamaConnection()
-        } else if let provider = newProvider, provider == .customOpenAI {
-            // For Custom OpenAI, use the configured model name
-            let modelName = aiService.customOpenAIModelName
-            aiModel = modelName.isEmpty ? nil : modelName
-
-            // Verify Custom OpenAI connection when selected
-            verifyCustomOpenAIConnection()
-        } else {
-            aiModel = newProvider?.defaultModel
-        }
-
+        aiModel = defaultModel(for: newProvider)
+        triggerProviderVerificationIfNeeded(for: newProvider, target: .aiEnhancement)
         logger.logInfo("Updated provider to: \(newProvider?.rawValue ?? "none"), model: \(aiModel ?? "none")")
     }
 
-    /// Verifies Ollama connection when user selects it as provider
-    private func verifyOllamaConnection() {
+    func updateReminderExtractorProvider(_ newProvider: AIProvider?) {
+        reminderExtractorProvider = newProvider
+        reminderExtractorModel = defaultModel(for: newProvider)
+        triggerProviderVerificationIfNeeded(for: newProvider, target: .reminderExtraction)
+        logger.logInfo("Updated reminder extractor provider to: \(newProvider?.rawValue ?? "none"), model: \(reminderExtractorModel ?? "none")")
+    }
+
+    func updateModel(_ newModel: String?) {
+        aiModel = newModel
+        logger.logInfo("Updated model to: \(newModel ?? "none")")
+    }
+
+    func updateReminderExtractorModel(_ newModel: String?) {
+        reminderExtractorModel = newModel
+        logger.logInfo("Updated reminder extractor model to: \(newModel ?? "none")")
+    }
+
+    /// Refreshes the AI model selection based on current provider state
+    /// Called when returning from configuration screens to sync with any changes
+    func refreshAIModelSelection() {
+        guard let provider = aiProvider else { return }
+        refreshModelSelection(for: provider, target: .aiEnhancement)
+    }
+
+    func refreshReminderExtractorModelSelection() {
+        guard let provider = reminderExtractorProvider else { return }
+        refreshModelSelection(for: provider, target: .reminderExtraction)
+    }
+
+    private func preferredProviderForSelection() -> AIProvider? {
+        if aiService.connectedProviders.contains(.apple) {
+            return .apple
+        }
+
+        let firstConnectedProvider = AIProvider.cloudProviders.first { provider in
+            aiService.connectedProviders.contains(provider)
+        }
+
+        return firstConnectedProvider ?? AIProvider.cloudProviders.first
+    }
+
+    private func defaultModel(for provider: AIProvider?) -> String? {
+        guard let provider else { return nil }
+
+        if provider == .ollama {
+            let availableModels = aiService.ollamaModels
+            if availableModels.contains(provider.defaultModel) {
+                return provider.defaultModel
+            }
+            return availableModels.first
+        }
+
+        if provider == .customOpenAI {
+            let modelName = aiService.customOpenAIModelName
+            return modelName.isEmpty ? nil : modelName
+        }
+
+        return provider.defaultModel
+    }
+
+    private func triggerProviderVerificationIfNeeded(
+        for provider: AIProvider?,
+        target: ModelSelectionTarget
+    ) {
+        guard let provider else { return }
+
+        if provider == .ollama {
+            verifyOllamaConnection(for: target)
+        } else if provider == .customOpenAI {
+            verifyCustomOpenAIConnection(for: target)
+        }
+    }
+
+    private func verifyOllamaConnection(for target: ModelSelectionTarget) {
         Task {
             let result = await aiService.verifyOllamaSetup()
             await MainActor.run {
                 if result.success {
                     logger.logInfo("Ollama connection verified: \(result.message)")
-                    // Update model selection with fresh models list
                     if let firstModel = aiService.ollamaModels.first {
-                        if aiModel == nil || !aiService.ollamaModels.contains(aiModel!) {
-                            aiModel = firstModel
+                        if let currentModel = currentModel(for: target),
+                           aiService.ollamaModels.contains(currentModel) {
+                            return
                         }
+                        setModel(firstModel, for: target)
                     }
                 } else {
                     logger.logWarning("Ollama connection failed: \(result.message)")
-                    // Clear models and disable for all modes
                     aiService.ollamaModels = []
                     aiService.disableOllamaEnhancementForAllModes()
-                    aiModel = nil
+                    setModel(nil, for: target)
                 }
                 aiService.refreshConnectedProviders()
             }
         }
     }
 
-    /// Verifies Custom OpenAI connection when user selects it as provider
-    private func verifyCustomOpenAIConnection() {
-        // Only verify if configuration exists
+    private func verifyCustomOpenAIConnection(for target: ModelSelectionTarget) {
         guard !aiService.customOpenAIEndpointURL.isEmpty,
               !aiService.customOpenAIModelName.isEmpty else {
             return
@@ -456,47 +599,64 @@ class ModeEditViewModel {
                 if result.success {
                     aiService.customOpenAIIsVerified = true
                     logger.logInfo("Custom OpenAI connection verified: \(result.message)")
+                    let configuredModel = aiService.customOpenAIModelName
+                    if !configuredModel.isEmpty {
+                        setModel(configuredModel, for: target)
+                    }
                 } else {
                     aiService.customOpenAIIsVerified = false
                     aiService.disableCustomOpenAIEnhancementForAllModes()
                     logger.logWarning("Custom OpenAI connection failed: \(result.message)")
+                    setModel(nil, for: target)
                 }
                 aiService.refreshConnectedProviders()
             }
         }
     }
 
-    func updateModel(_ newModel: String?) {
-        aiModel = newModel
-        logger.logInfo("Updated model to: \(newModel ?? "none")")
-    }
-
-    /// Refreshes the AI model selection based on current provider state
-    /// Called when returning from configuration screens to sync with any changes
-    func refreshAIModelSelection() {
-        guard let provider = aiProvider else { return }
-
+    private func refreshModelSelection(
+        for provider: AIProvider,
+        target: ModelSelectionTarget
+    ) {
         if provider == .ollama {
             let availableModels = aiService.ollamaModels
-            if let currentModel = aiModel, availableModels.contains(currentModel) {
-                // Current model is still valid, keep it
+            if let currentModel = currentModel(for: target),
+               availableModels.contains(currentModel) {
                 return
             }
-            // Select first available model
+
             if let firstModel = availableModels.first {
-                aiModel = firstModel
-                logger.logInfo("Refreshed Ollama model to: \(firstModel)")
+                setModel(firstModel, for: target)
+                logger.logInfo("Refreshed \(target.logName) Ollama model to: \(firstModel)")
             } else {
-                aiModel = nil
+                setModel(nil, for: target)
             }
         } else if provider == .customOpenAI {
             let configuredModel = aiService.customOpenAIModelName
-            if !configuredModel.isEmpty && aiModel != configuredModel {
-                aiModel = configuredModel
-                logger.logInfo("Refreshed Custom OpenAI model to: \(configuredModel)")
+            if !configuredModel.isEmpty && currentModel(for: target) != configuredModel {
+                setModel(configuredModel, for: target)
+                logger.logInfo("Refreshed \(target.logName) Custom OpenAI model to: \(configuredModel)")
             } else if configuredModel.isEmpty {
-                aiModel = nil
+                setModel(nil, for: target)
             }
+        }
+    }
+
+    private func currentModel(for target: ModelSelectionTarget) -> String? {
+        switch target {
+        case .aiEnhancement:
+            aiModel
+        case .reminderExtraction:
+            reminderExtractorModel
+        }
+    }
+
+    private func setModel(_ model: String?, for target: ModelSelectionTarget) {
+        switch target {
+        case .aiEnhancement:
+            aiModel = model
+        case .reminderExtraction:
+            reminderExtractorModel = model
         }
     }
 

@@ -21,6 +21,8 @@ struct SettingsView: View {
     private var isVADEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
+    @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
+    private var isAutoReminderExtractionEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
     private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -194,6 +196,18 @@ struct SettingsView: View {
                     }
                     NavigationLink(value: SettingsDestination.presetsSettings) {
                         Text("AI Presets")
+                    }
+                    Toggle(isOn: $isAutoReminderExtractionEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Extract Reminder Suggestions Automatically")
+                                .font(.body)
+                            Text("After saving a new note, detect reminder-worthy tasks in the background and keep them ready for review.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isAutoReminderExtractionEnabled) { _, _ in
+                        HapticManager.selectionChanged()
                     }
                     NavigationLink(value: SettingsDestination.chatTools) {
                         HStack {
@@ -745,6 +759,14 @@ private struct ModeInfoRow: View {
         }
     }
 
+    private var reminderExtractorSummary: String? {
+        guard let provider = mode.reminderExtractorProvider else { return nil }
+        if let model = mode.reminderExtractorModel, !model.isEmpty, provider != .apple {
+            return "Reminders: \(provider.displayName) - \(model)"
+        }
+        return "Reminders: \(provider.displayName)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(mode.name)
@@ -819,6 +841,13 @@ private struct ModeInfoRow: View {
                 }
                 .font(.caption2)
                 .padding(.leading, 4)
+            }
+
+            if let reminderExtractorSummary {
+                Label(reminderExtractorSummary, systemImage: "checklist")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.leading, 4)
             }
         }
         .padding(.vertical, 4)

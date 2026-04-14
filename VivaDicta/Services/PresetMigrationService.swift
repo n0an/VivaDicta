@@ -125,6 +125,8 @@ enum PresetMigrationService {
                     presetId: builtInId,
                     aiProvider: mode.aiProvider,
                     aiModel: mode.aiModel,
+                    reminderExtractorProvider: mode.reminderExtractorProvider,
+                    reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: mode.aiEnhanceEnabled
                 )
                 updated = true
@@ -142,6 +144,8 @@ enum PresetMigrationService {
                         presetId: mappedId,
                         aiProvider: mode.aiProvider,
                         aiModel: mode.aiModel,
+                        reminderExtractorProvider: mode.reminderExtractorProvider,
+                        reminderExtractorModel: mode.reminderExtractorModel,
                         aiEnhanceEnabled: mode.aiEnhanceEnabled
                     )
                     updated = true
