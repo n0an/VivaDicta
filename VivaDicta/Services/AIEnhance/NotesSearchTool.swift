@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import SwiftData
+import os
 
 enum CrossNoteSearchStatus: String, Sendable {
     case success
@@ -97,6 +98,7 @@ enum NotesSearchToolRuntime {
     static var modelContainer: ModelContainer?
     private static var capturedCitationsByID: [UUID: [UUID: SmartSearchSourceCitation]] = [:]
     private static let maxResults = 4
+    private static let logger = Logger(category: .ragSearch)
 
     private struct NoteSearchHit {
         let transcription: Transcription
@@ -145,17 +147,22 @@ enum NotesSearchToolRuntime {
         let modelContext = modelContainer.mainContext
 
         do {
+            logger.logInfo(
+                "Cross-note search start query='\(trimmedQuery)' excludedNotes=\(excludedIDs.count) smartEnabled=\(SmartSearchFeature.isEnabled)"
+            )
             let allNotes = try modelContext.fetch(
                 FetchDescriptor<Transcription>(
                     sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
                 )
             )
+            logger.logInfo("Cross-note search loaded allNotes=\(allNotes.count)")
             let noteMap = Dictionary(uniqueKeysWithValues: allNotes.map { ($0.id, $0) })
 
             var hitsByID: [UUID: NoteSearchHit] = [:]
 
             if SmartSearchFeature.isEnabled {
                 let ragResults = try await RAGIndexingService.shared.search(query: trimmedQuery, topK: maxResults * 2)
+                logger.logInfo("Cross-note search semantic hits=\(ragResults.count)")
 
                 for result in ragResults where !excludedIDs.contains(result.transcriptionId) {
                     guard let transcription = noteMap[result.transcriptionId] else { continue }
@@ -167,6 +174,8 @@ enum NotesSearchToolRuntime {
                         semanticScore: result.relevanceScore
                     )
                 }
+            } else {
+                logger.logInfo("Cross-note search semantic step skipped because Smart Search is disabled")
             }
 
             let keywordMatches = try keywordMatches(
@@ -174,6 +183,7 @@ enum NotesSearchToolRuntime {
                 modelContext: modelContext,
                 allNotes: allNotes
             )
+            logger.logInfo("Cross-note search keyword hits=\(keywordMatches.count)")
 
             for transcription in keywordMatches where !excludedIDs.contains(transcription.id) {
                 let keywordExcerpt = keywordExcerpt(for: transcription, query: trimmedQuery)
@@ -199,6 +209,7 @@ enum NotesSearchToolRuntime {
                 .prefix(maxResults)
 
             guard !finalHits.isEmpty else {
+                logger.logInfo("Cross-note search returned 0 final hits")
                 return CrossNoteSearchPayload(
                     query: trimmedQuery,
                     status: .empty,
@@ -217,6 +228,13 @@ enum NotesSearchToolRuntime {
                     relevanceScore: hit.semanticScore
                 )
             }
+            let sourceSummary = results
+                .map { $0.sources.map(\.rawValue).joined(separator: "+") }
+                .joined(separator: ",")
+
+            logger.logInfo(
+                "Cross-note search final hits=\(results.count) sources=\(sourceSummary)"
+            )
 
             return CrossNoteSearchPayload(
                 query: trimmedQuery,
@@ -225,6 +243,7 @@ enum NotesSearchToolRuntime {
                 message: nil
             )
         } catch {
+            logger.logError("Cross-note search failed: \(error.localizedDescription)")
             return CrossNoteSearchPayload(
                 query: trimmedQuery,
                 status: .error,

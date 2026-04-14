@@ -183,6 +183,9 @@ final class SmartSearchChatViewModel {
                 logger.logInfo(
                     "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
                 )
+                logger.logInfo(
+                    "Smart Search retrieval entering smartEnabled=\(SmartSearchFeature.isEnabled) indexedNotes=\(RAGIndexingService.shared.indexedTranscriptionCount)"
+                )
 
                 let requestedTopK = provider == .apple ? 3 : 5
                 isSearching = true

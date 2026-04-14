@@ -39,6 +39,9 @@ final class RAGIndexingService {
     static let shared = RAGIndexingService()
     private static let previewCharacterLimit = 180
     private static let maxLoggedChunksPerNote = 3
+    private static let maxLoggedDiagnosticResults = 5
+    nonisolated(unsafe) private static let semanticSearchThreshold: Float = 0.3
+    private static let diagnosticThresholds: [Float] = [0.2, 0.0]
     nonisolated(unsafe) private static let indexVersion = "v14_potion_base_32m"
     nonisolated(unsafe) private static let vectorStoreName = "vivadicta-rag-\(indexVersion)"
 
@@ -97,6 +100,9 @@ final class RAGIndexingService {
 
     private init() {
         indexedTranscriptionCount = chunkMapping.count
+        logger.logInfo(
+            "RAG service restored featureEnabled=\(SmartSearchFeature.isEnabled) indexingCompleted=\(UserDefaults.standard.bool(forKey: indexingCompletedKey)) mappedNotes=\(chunkMapping.count) storage=\(Self.storageDirectoryURL.path)"
+        )
     }
 
     // MARK: - Initialization
@@ -141,7 +147,7 @@ final class RAGIndexingService {
         let logger = Logger(category: .ragIndexing)
         let searchOptions = VecturaConfig.SearchOptions(
             defaultNumResults: 5,
-            minThreshold: 0.3
+            minThreshold: Self.semanticSearchThreshold
         )
         let config = try VecturaConfig(
             name: Self.vectorStoreName,
@@ -221,7 +227,10 @@ final class RAGIndexingService {
             return
         }
 
-        guard !isIndexing else { return }
+        guard !isIndexing else {
+            logger.logDebug("RAG bulk indexing request ignored because indexing is already in progress")
+            return
+        }
         isIndexing = true
         defer {
             isIndexing = false
@@ -230,6 +239,7 @@ final class RAGIndexingService {
 
         do {
             try await ensureLumoKit()
+            await logIndexSnapshot(reason: "bulk-index-start", using: logger)
             let descriptor = FetchDescriptor<Transcription>(
                 sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
             )
@@ -351,6 +361,7 @@ final class RAGIndexingService {
 
             let totalChunks = try await _documentCount()
             logger.logInfo("Indexing complete: \(indexed) indexed, \(skipped) skipped, \(orphanedIds.count) orphans removed, \(totalChunks) total chunks")
+            await logIndexSnapshot(reason: "bulk-index-complete", using: logger)
         } catch {
             logger.logError("Bulk indexing failed: \(error.localizedDescription)")
         }
@@ -472,6 +483,7 @@ final class RAGIndexingService {
 
         do {
             try await ensureLumoKit()
+            await logIndexSnapshot(reason: "reindex-request", using: logger)
             try await _resetDB()
 
             chunkMapping = [:]
@@ -489,6 +501,7 @@ final class RAGIndexingService {
     func clearAll() async {
         do {
             try await ensureLumoKit()
+            await logIndexSnapshot(reason: "clear-all-before-reset", using: logger)
             try await _resetDB()
         } catch {
             logger.logWarning("RAG reset skipped during clearAll: \(error.localizedDescription)")
@@ -514,15 +527,20 @@ final class RAGIndexingService {
         }
 
         try await ensureLumoKit()
-        let threshold: Float = 0.4
+        let threshold = Self.semanticSearchThreshold
         let requestedResults = topK * 2
         let queryPreview = Self.preview(query, limit: 80)
         let mapping = chunkMapping
         let queryTerms = SmartSearchLexicalSupport.queryTerms(from: query)
+        let indexingCompleted = UserDefaults.standard.bool(forKey: indexingCompletedKey)
 
         searchLogger.logInfo(
-            "RAG search start query='\(queryPreview)' topK=\(topK) requested=\(requestedResults) threshold=\(Double(threshold).formatted(.number.precision(.fractionLength(2)))) mappedNotes=\(mapping.count) lexicalRerankingEnabled=\(SmartSearchLexicalSupport.isLexicalRerankingEnabled)"
+            "RAG search start query='\(queryPreview)' topK=\(topK) requested=\(requestedResults) threshold=\(Double(threshold).formatted(.number.precision(.fractionLength(2)))) mappedNotes=\(mapping.count) indexedNotes=\(indexedTranscriptionCount) indexingCompleted=\(indexingCompleted) lexicalRerankingEnabled=\(SmartSearchLexicalSupport.isLexicalRerankingEnabled)"
         )
+        if mapping.isEmpty {
+            searchLogger.logWarning("RAG search is running with 0 mapped notes - search will likely return no results")
+            await logIndexSnapshot(reason: "search-start-empty-index", using: searchLogger)
+        }
         if !queryTerms.isEmpty {
             searchLogger.logInfo("RAG lexical query terms: \(queryTerms.sorted().joined(separator: ", "))")
         }
@@ -535,6 +553,13 @@ final class RAGIndexingService {
 
         guard !results.isEmpty else {
             searchLogger.logInfo("No results for query: \(query.prefix(50))")
+            await logIndexSnapshot(reason: "search-empty-results", using: searchLogger)
+            await logDiagnosticSearchSweep(
+                query: query,
+                requestedResults: requestedResults,
+                baseThreshold: threshold,
+                mapping: mapping
+            )
             return []
         }
 
@@ -618,6 +643,10 @@ final class RAGIndexingService {
             )
         }
 
+        if finalResults.isEmpty {
+            searchLogger.logWarning("RAG semantic search returned chunk hits but none could be mapped back to transcriptions")
+            await logIndexSnapshot(reason: "search-unmapped-raw-hits", using: searchLogger)
+        }
         searchLogger.logInfo("Search '\(query.prefix(50))': \(finalResults.count) transcriptions matched")
         return finalResults
     }
@@ -701,6 +730,58 @@ final class RAGIndexingService {
         chunkMapping = mapping
         transcriptionHashes = hashes
         indexedTranscriptionCount = mapping.count
+    }
+
+    private func logDiagnosticSearchSweep(
+        query: String,
+        requestedResults: Int,
+        baseThreshold: Float,
+        mapping: [String: [String]]
+    ) async {
+        for diagnosticThreshold in Self.diagnosticThresholds where diagnosticThreshold < baseThreshold {
+            do {
+                let diagnosticResults = try await _semanticSearch(
+                    query: query,
+                    numResults: requestedResults,
+                    threshold: diagnosticThreshold
+                )
+                let mappedCount = diagnosticResults.reduce(into: 0) { count, result in
+                    let chunkIdString = result.id.uuidString
+                    if mapping.first(where: { $0.value.contains(chunkIdString) }) != nil {
+                        count += 1
+                    }
+                }
+
+                searchLogger.logInfo(
+                    "RAG diagnostic threshold=\(Double(diagnosticThreshold).formatted(.number.precision(.fractionLength(2)))) rawHits=\(diagnosticResults.count) mappedRawHits=\(mappedCount)"
+                )
+
+                for (index, result) in diagnosticResults.prefix(Self.maxLoggedDiagnosticResults).enumerated() {
+                    let chunkIdString = result.id.uuidString
+                    let transcriptionID = mapping.first(where: { $0.value.contains(chunkIdString) })?.key ?? "unmapped"
+                    searchLogger.logInfo(
+                        "RAG diagnostic[\(index + 1)] threshold=\(Double(diagnosticThreshold).formatted(.number.precision(.fractionLength(2)))) chunkId=\(chunkIdString) transcriptionId=\(transcriptionID) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3)))) preview='\(Self.preview(result.text))'"
+                    )
+                }
+            } catch {
+                searchLogger.logWarning(
+                    "RAG diagnostic threshold=\(Double(diagnosticThreshold).formatted(.number.precision(.fractionLength(2)))) failed: \(error.localizedDescription)"
+                )
+            }
+        }
+    }
+
+    private func logIndexSnapshot(reason: String, using logger: Logger) async {
+        let storedChunksText: String
+        if let storedChunks = try? await _documentCount() {
+            storedChunksText = String(storedChunks)
+        } else {
+            storedChunksText = "unavailable"
+        }
+
+        logger.logInfo(
+            "RAG snapshot reason=\(reason) featureEnabled=\(SmartSearchFeature.isEnabled) indexingCompleted=\(UserDefaults.standard.bool(forKey: indexingCompletedKey)) mappedNotes=\(chunkMapping.count) indexedNotes=\(indexedTranscriptionCount) storedChunks=\(storedChunksText) storage=\(Self.storageDirectoryURL.path)"
+        )
     }
 }
 
