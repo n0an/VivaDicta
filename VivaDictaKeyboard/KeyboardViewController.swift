@@ -344,48 +344,80 @@ private struct KeyboardMicButton: View {
     @ViewBuilder
     private var styledBackground: some View {
         if colorScheme == .dark {
-            KeyboardAnimatedMeshGradient()
-                .mask(
-                    Circle()
-                        .stroke(lineWidth: 12)
-                        .blur(radius: 5)
-                )
-                .blendMode(.lighten)
-                .overlay(
-                    Circle()
-                        .stroke(lineWidth: 1.5)
-                        .fill(Color.white)
-                        .blur(radius: 1)
-                        .blendMode(.overlay)
-                )
-                .overlay(
-                    Circle()
-                        .stroke(lineWidth: 0.4)
-                        .fill(Color.white)
-                        .blur(radius: 0.3)
-                        .blendMode(.overlay)
-                )
-                .background(.black)
-                .clipShape(.circle)
+            KeyboardDarkMicGradientBackground()
         } else {
-            KeyboardAnimatedMeshGradient2()
-                .overlay(
-                    Circle()
-                        .stroke(lineWidth: 3)
-                        .fill(Color.black.opacity(0.7))
-                        .blur(radius: 2)
-                        .blendMode(.overlay)
-                )
-                .overlay(
-                    Circle()
-                        .stroke(lineWidth: 1)
-                        .fill(Color.black.opacity(1.0))
-                        .blur(radius: 1)
-                        .blendMode(.overlay)
-                )
-                .clipShape(.circle)
-                .shadow(color: .black.opacity(0.45), radius: 8, x: 0, y: 4)
+            KeyboardLightMicGradientBackground()
         }
+    }
+}
+
+private struct KeyboardDarkMicGradientBackground: View {
+    var body: some View {
+        ZStack {
+            // Keep a static gradient under the mesh so keyboard rendering glitches
+            // fall back to color instead of a black ring.
+            LinearGradient(
+                colors: [.red, .purple, .indigo, .blue, .mint],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            KeyboardAnimatedMeshGradient()
+        }
+        .mask(
+            Circle()
+                .stroke(lineWidth: 12)
+                .blur(radius: 5)
+        )
+        .blendMode(.lighten)
+        .overlay(
+            Circle()
+                .stroke(lineWidth: 1.5)
+                .fill(Color.white)
+                .blur(radius: 1)
+                .blendMode(.overlay)
+        )
+        .overlay(
+            Circle()
+                .stroke(lineWidth: 0.4)
+                .fill(Color.white)
+                .blur(radius: 0.3)
+                .blendMode(.overlay)
+        )
+        .background(.black)
+        .clipShape(.circle)
+    }
+}
+
+private struct KeyboardLightMicGradientBackground: View {
+    var body: some View {
+        ZStack {
+            // Keep a static gradient under the mesh so keyboard rendering glitches
+            // fall back to color instead of a washed-out circle.
+            LinearGradient(
+                colors: [.blue, .indigo, .purple, .orange, .mint],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            KeyboardAnimatedMeshGradient2()
+        }
+        .overlay(
+            Circle()
+                .stroke(lineWidth: 3)
+                .fill(Color.black.opacity(0.7))
+                .blur(radius: 2)
+                .blendMode(.overlay)
+        )
+        .overlay(
+            Circle()
+                .stroke(lineWidth: 1)
+                .fill(Color.black.opacity(1.0))
+                .blur(radius: 1)
+                .blendMode(.overlay)
+        )
+        .clipShape(.circle)
+        .shadow(color: .black.opacity(0.45), radius: 8, x: 0, y: 4)
     }
 }
 

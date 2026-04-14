@@ -642,12 +642,7 @@ struct TranscriptionDetailView: View {
                     }
 
                     Button("Append with Voice", systemImage: "mic") {
-                        startVoiceAppend(withAI: false)
-                    }
-                    .disabled(appState.recordViewModel.recordingState != .idle)
-
-                    Button("Append with AI", systemImage: "sparkles") {
-                        startVoiceAppend(withAI: true)
+                        startVoiceAppend()
                     }
                     .disabled(appState.recordViewModel.recordingState != .idle)
                 } label: {
@@ -761,15 +756,10 @@ struct TranscriptionDetailView: View {
         HapticManager.success()
     }
 
-    private func startVoiceAppend(withAI: Bool) {
+    private func startVoiceAppend() {
         HapticManager.lightImpact()
-        guard !withAI || isAIConfigured else {
-            showConfigureAI = true
-            return
-        }
-
         selectedChipId = "original"
-        appState.pendingRecordingDestination = .appendToTranscription(id: transcription.id, withAI: withAI)
+        appState.pendingRecordingDestination = .appendToTranscription(id: transcription.id)
         appState.shouldStartRecording = true
     }
 

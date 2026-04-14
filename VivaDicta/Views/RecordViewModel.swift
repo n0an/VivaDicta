@@ -14,7 +14,7 @@ import os
 
 enum RecordingDestination: Equatable {
     case newNote
-    case appendToTranscription(id: UUID, withAI: Bool)
+    case appendToTranscription(id: UUID)
 }
 
 /// Data structure to hold pending transcription when enhancement is in progress.
@@ -564,7 +564,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     )
                     textToShare = enhancedText ?? transcribedText
 
-                case .appendToTranscription(id: let transcriptionID, withAI: let withAI):
+                case .appendToTranscription(id: let transcriptionID):
                     savedTranscription = try appendTranscribedText(
                         transcribedText,
                         to: transcriptionID,
@@ -574,42 +574,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         transcriptionDuration: transcriptionDuration,
                         sourceTag: resolvedSourceTag
                     )
-                    if withAI && aiService.isProperlyConfigured() {
-                        do {
-                            self.recordingState = .enhancing
-                            HapticManager.lightImpact()
-                            AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
-                            textToShare = try await enhanceAppendedTranscription(
-                                savedTranscription,
-                                modelContext: modelContext
-                            )
-                        } catch is CancellationError {
-                            RecentNotesCache.addNote(
-                                id: savedTranscription.id.uuidString,
-                                text: savedTranscription.enhancedText ?? savedTranscription.text,
-                                timestamp: savedTranscription.timestamp
-                            )
-                            throw CancellationError()
-                        } catch let error as AppleFoundationModelError {
-                            switch error {
-                            case .guardrailViolation:
-                                self.recordError = .aiGuardrail
-                                self.isShowingAlert = true
-                            case .refusal(let reason):
-                                self.recordError = .aiRefusal(reason)
-                                self.isShowingAlert = true
-                            default:
-                                break
-                            }
-                            textToShare = transcribedText
-                        } catch {
-                            self.recordError = .aiEnhancement(error.localizedDescription)
-                            self.isShowingAlert = true
-                            textToShare = transcribedText
-                        }
-                    } else {
-                        textToShare = transcribedText
-                    }
+                    textToShare = transcribedText
                 }
 
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
@@ -914,50 +879,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             modelContext: modelContext,
             sourceTag: sourceTag
         )
-    }
-
-    private func enhanceAppendedTranscription(
-        _ transcription: Transcription,
-        modelContext: ModelContext
-    ) async throws -> String {
-        let (resultText, duration, promptName) = try await aiService.enhance(transcription.text)
-        let presetId = aiService.selectedMode.presetId ?? "regular"
-        let presetDisplayName = promptName ?? PresetCatalog.displayName(for: presetId, fallback: "Regular")
-
-        if let existing = (transcription.variations ?? []).first(where: { $0.presetId == presetId }) {
-            existing.text = resultText
-            existing.createdAt = Date()
-            existing.presetDisplayName = presetDisplayName
-            existing.aiModelName = aiService.selectedMode.aiModel
-            existing.aiProviderName = aiService.selectedMode.aiProvider?.displayName
-            existing.processingDuration = duration
-            existing.aiRequestSystemMessage = aiService.lastSystemMessageSent
-            existing.aiRequestUserMessage = aiService.lastUserMessageSent
-        } else {
-            let variation = TranscriptionVariation(
-                presetId: presetId,
-                presetDisplayName: presetDisplayName,
-                text: resultText,
-                aiModelName: aiService.selectedMode.aiModel,
-                aiProviderName: aiService.selectedMode.aiProvider?.displayName,
-                processingDuration: duration,
-                aiRequestSystemMessage: aiService.lastSystemMessageSent,
-                aiRequestUserMessage: aiService.lastUserMessageSent
-            )
-            variation.transcription = transcription
-            modelContext.insert(variation)
-        }
-
-        transcription.enhancedText = resultText
-        try modelContext.save()
-
-        let transcriptionEntity = transcription.entity
-        Task.detached {
-            await self.appState?.updateTranscriptionEntityInSpotlight(transcriptionEntity)
-        }
-
-        Task { await RAGIndexingService.shared.indexTranscription(transcription) }
-        return resultText
     }
 
     func resetValues() {
