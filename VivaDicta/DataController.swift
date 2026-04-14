@@ -53,7 +53,7 @@ class DataController {
     /// Preview initializer with in-memory storage.
     convenience init() {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: Transcription.self, configurations: config)
+        let container = try! ModelContainer(for: Transcription.self, ExtractedReminderDraft.self, configurations: config)
         self.init(modelContainer: container)
     }
     #endif

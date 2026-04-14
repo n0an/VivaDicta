@@ -11,7 +11,7 @@ import SwiftData
 struct TranscriptionsMockData: PreviewModifier {
 
     static func makeSharedContext() async throws -> ModelContainer {
-        let container = try ModelContainer(for: Transcription.self, VocabularyWord.self, WordReplacement.self, configurations: .init(isStoredInMemoryOnly: true))
+        let container = try ModelContainer(for: Transcription.self, ExtractedReminderDraft.self, VocabularyWord.self, WordReplacement.self, configurations: .init(isStoredInMemoryOnly: true))
         Transcription.mockData.forEach { container.mainContext.insert($0) }
         return container
     }
@@ -28,7 +28,7 @@ extension PreviewTrait where T == Preview.ViewTraits {
 struct TranscriptionsMockDataMany: PreviewModifier {
 
     static func makeSharedContext() async throws -> ModelContainer {
-        let container = try ModelContainer(for: Transcription.self, VocabularyWord.self, WordReplacement.self, configurations: .init(isStoredInMemoryOnly: true))
+        let container = try ModelContainer(for: Transcription.self, ExtractedReminderDraft.self, VocabularyWord.self, WordReplacement.self, configurations: .init(isStoredInMemoryOnly: true))
         Transcription.mockDataMany.forEach { container.mainContext.insert($0) }
         return container
     }
