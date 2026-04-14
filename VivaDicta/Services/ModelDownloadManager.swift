@@ -76,7 +76,6 @@ class ModelDownloadManager: @unchecked Sendable {
     /// Current download status per model, keyed by model name.
     public var downloadStatuses: [String: DownloadStatus] = [:]
 
-    private var observations: [String: NSKeyValueObservation] = [:]
     private var downloadTasks: [String: Task<Void, any Error>] = [:]
     private let logger = Logger(category: .modelDownloadManager)
 
@@ -493,49 +492,6 @@ class ModelDownloadManager: @unchecked Sendable {
 
             // Update every 0.5 seconds for smooth animation
             try? await Task.sleep(for: .milliseconds(500))
-        }
-    }
-
-    // MARK: - Common Download Utilities
-
-    private func downloadFileWithProgress(from url: URL, progressKey: String) async throws -> Data {
-        let destinationURL = FileManager.appDirectory(for: .models).appendingPathComponent(UUID().uuidString)
-
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-            let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode),
-                      let tempURL = tempURL else {
-                    continuation.resume(throwing: URLError(.badServerResponse))
-                    return
-                }
-
-                do {
-                    try FileManager.default.moveItem(at: tempURL, to: destinationURL)
-                    let data = try Data(contentsOf: destinationURL, options: .mappedIfSafe)
-                    continuation.resume(returning: data)
-                    try? FileManager.default.removeItem(at: destinationURL)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-
-            task.resume()
-
-            let observation = task.progress.observe(\.fractionCompleted) { [weak self] progress, _ in
-                let currentProgress = round(progress.fractionCompleted * 100) / 100
-                Task { @MainActor in
-                    self?.downloadProgress[progressKey] = currentProgress
-                }
-            }
-
-            // Store observation for potential cleanup
-            observations[progressKey] = observation
         }
     }
 }

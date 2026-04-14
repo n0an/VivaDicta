@@ -13,6 +13,10 @@ import os
 class ParakeetTranscriptionService: TranscriptionService {
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
+    private var cachedVocabularyTerms: [String] = []
+    private var cachedVocabularyContext: CustomVocabularyContext?
+    private var cachedCtcModels: CtcModels?
+    private var cachedCtcTokenizer: CtcTokenizer?
     private let logger = Logger(category: .parakeetTranscriptionService)
     private let boostedStreamingConfig = SlidingWindowAsrConfig.default
 
@@ -99,16 +103,7 @@ class ParakeetTranscriptionService: TranscriptionService {
         logger.logNotice("🎙️ Applying VAD for long audio (> 20s)")
         await reportProgress(.init(stage: .detectingSpeech), to: progressHandler)
 
-        // VAD segmentation still requires 16kHz mono Float32 samples.
-        var speechAudio = try await readAndConvertAudio(from: audioURL)
-        speechAudio = try await applyVAD(to: speechAudio)
-
-        // Add trailing silence to improve final word punctuation detection
-        let trailingSilenceSamples = 16_000 // 1 second at 16kHz
-        let maxSingleChunkSamples = 240_000
-        if speechAudio.count + trailingSilenceSamples <= maxSingleChunkSamples {
-            speechAudio += [Float](repeating: 0, count: trailingSilenceSamples)
-        }
+        let speechAudio = try await prepareSpeechAudio(from: audioURL)
 
         await reportProgress(.init(stage: .transcribing), to: progressHandler)
 
@@ -130,6 +125,23 @@ class ParakeetTranscriptionService: TranscriptionService {
         // Use AudioConverter from FluidAudio to properly convert audio to 16kHz mono
         let converter = AudioConverter()
         return try converter.resampleAudioFile(path: url.path)
+    }
+
+    private func prepareSpeechAudio(from audioURL: URL) async throws -> [Float] {
+        var speechAudio = try await readAndConvertAudio(from: audioURL)
+        speechAudio = try await applyVAD(to: speechAudio)
+        return addTrailingSilenceIfNeeded(to: speechAudio)
+    }
+
+    private func addTrailingSilenceIfNeeded(to audioSamples: [Float]) -> [Float] {
+        let trailingSilenceSamples = 16_000 // 1 second at 16kHz
+        let maxSingleChunkSamples = 240_000
+
+        guard audioSamples.count + trailingSilenceSamples <= maxSingleChunkSamples else {
+            return audioSamples
+        }
+
+        return audioSamples + [Float](repeating: 0, count: trailingSilenceSamples)
     }
 
     private func loadAsrModels(for model: ParakeetModel) async throws -> AsrModels {
@@ -181,7 +193,15 @@ class ParakeetTranscriptionService: TranscriptionService {
     }
 
     private var isVocabularyBoostingEnabled: Bool {
-        UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isParakeetVocabularyBoostingEnabled)
+        let isSpellingCorrectionsEnabled =
+            UserDefaultsStorage.appPrivate.object(
+                forKey: UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled
+            ) as? Bool ?? true
+
+        return isSpellingCorrectionsEnabled
+            && UserDefaultsStorage.appPrivate.bool(
+                forKey: UserDefaultsStorage.Keys.isParakeetVocabularyBoostingEnabled
+            )
     }
 
     private func transcribeWithVocabularyBoostingIfEnabled(
@@ -228,10 +248,13 @@ class ParakeetTranscriptionService: TranscriptionService {
             return nil
         }
 
-        let ctcModels = try await CtcModels.downloadAndLoad(variant: .ctc110m)
-        let tokenizer = try await CtcTokenizer.load(
-            from: CtcModels.defaultCacheDirectory(for: ctcModels.variant)
-        )
+        let ctcModels = try await loadCachedCtcModels()
+
+        if cachedVocabularyTerms == terms, let cachedVocabularyContext {
+            return (cachedVocabularyContext, ctcModels)
+        }
+
+        let tokenizer = try await loadCachedCtcTokenizer(for: ctcModels)
 
         let tokenizedTerms = terms.compactMap { term -> CustomVocabularyTerm? in
             let tokenIds = tokenizer.encode(term)
@@ -250,7 +273,33 @@ class ParakeetTranscriptionService: TranscriptionService {
             return nil
         }
 
-        return (CustomVocabularyContext(terms: tokenizedTerms), ctcModels)
+        let vocabularyContext = CustomVocabularyContext(terms: tokenizedTerms)
+        cachedVocabularyTerms = terms
+        cachedVocabularyContext = vocabularyContext
+
+        return (vocabularyContext, ctcModels)
+    }
+
+    private func loadCachedCtcModels() async throws -> CtcModels {
+        if let cachedCtcModels {
+            return cachedCtcModels
+        }
+
+        let ctcModels = try await CtcModels.downloadAndLoad(variant: .ctc110m)
+        cachedCtcModels = ctcModels
+        return ctcModels
+    }
+
+    private func loadCachedCtcTokenizer(for ctcModels: CtcModels) async throws -> CtcTokenizer {
+        if let cachedCtcTokenizer {
+            return cachedCtcTokenizer
+        }
+
+        let tokenizer = try await CtcTokenizer.load(
+            from: CtcModels.defaultCacheDirectory(for: ctcModels.variant)
+        )
+        cachedCtcTokenizer = tokenizer
+        return tokenizer
     }
 
     private func transcribeWithVocabularyBoosting(
@@ -288,14 +337,7 @@ class ParakeetTranscriptionService: TranscriptionService {
                 logger.logNotice("🎙️ Applying VAD before vocabulary-boosted Parakeet transcription")
                 await reportProgress(.init(stage: .detectingSpeech), to: progressHandler)
 
-                var speechAudio = try await readAndConvertAudio(from: audioURL)
-                speechAudio = try await applyVAD(to: speechAudio)
-
-                let trailingSilenceSamples = 16_000
-                let maxSingleChunkSamples = 240_000
-                if speechAudio.count + trailingSilenceSamples <= maxSingleChunkSamples {
-                    speechAudio += [Float](repeating: 0, count: trailingSilenceSamples)
-                }
+                let speechAudio = try await prepareSpeechAudio(from: audioURL)
 
                 await reportProgress(.init(stage: .transcribing), to: progressHandler)
                 try await streamAudioSamples(

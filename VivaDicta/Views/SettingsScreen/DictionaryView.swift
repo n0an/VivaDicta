@@ -88,7 +88,10 @@ struct WordsDictionaryView: View {
         Toggle("Enable Spelling Corrections", isOn: $isSpellingCorrectionsEnabled)
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .onChange(of: isSpellingCorrectionsEnabled) { _, _ in
+            .onChange(of: isSpellingCorrectionsEnabled) { _, isEnabled in
+                if !isEnabled {
+                    isParakeetVocabularyBoostingEnabled = false
+                }
                 HapticManager.selectionChanged()
             }
     }

@@ -10,6 +10,8 @@ import AVFoundation
 
 extension SlidingWindowAsrManager {
     func streamFloatSamples(_ audioSamples: [Float]) throws {
+        guard !audioSamples.isEmpty else { return }
+
         guard let format = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 16_000,
