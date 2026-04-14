@@ -70,8 +70,12 @@ final class AppleFMReminderExtractionProvider {
         Only extract genuine reminder-worthy actions, next steps, or commitments that the user is likely to want in Apple Reminders.
         Do not invent tasks.
         Do not invent deadlines.
+        The current note is the only source of truth. Never carry over tasks from previous notes or earlier requests.
         Use concise, actionable titles.
         Move supporting detail into notes.
+        Never create a reminder whose title is only a date, time, weekday, or scheduling phrase such as 'Saturday at 10 am'.
+        A due phrase belongs in the due-date fields of the task it refers to, not as a separate reminder.
+        Return at most one reminder per actionable task or commitment in the note.
         When the note includes a specific date, weekday, or relative phrase that can be resolved, you must calculate the exact absolute due date using the current date and time zone.
         Examples of resolvable phrases include 'tomorrow noon', 'Saturday at 9 am', 'next Thursday at 14:00', and 'April 20 at 3 PM'.
         For resolvable phrases, fill optionalDueDateString with an absolute value.

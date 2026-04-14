@@ -15,6 +15,7 @@ struct TranscriptionDetailView: View {
     @Environment(AppState.self) var appState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
+    @Query(sort: \ExtractedReminderDraft.createdAt) private var allReminderDrafts: [ExtractedReminderDraft]
 
     /// "original" or a variation's presetId
     @State private var selectedChipId: String = "original"
@@ -82,6 +83,18 @@ struct TranscriptionDetailView: View {
 
     private var isAIConfigured: Bool {
         appState.aiService.isProperlyConfigured()
+    }
+
+    private var reminderDraftsForCurrentTranscription: [ExtractedReminderDraft] {
+        allReminderDrafts.filter { $0.transcription?.id == transcription.id }
+    }
+
+    private var pendingReminderDrafts: [ExtractedReminderDraft] {
+        reminderDraftsForCurrentTranscription.filter { $0.status == .pending }
+    }
+
+    private var pendingReminderDraftCount: Int {
+        pendingReminderDrafts.count
     }
 
     private var canOpenAISheet: Bool {
@@ -358,7 +371,8 @@ struct TranscriptionDetailView: View {
             VStack(spacing: 0) {
                 TranscriptionTagChipsView(
                     transcription: transcription,
-                    onReviewReminderSuggestions: transcription.pendingExtractedReminderDraftCount > 0 ? {
+                    pendingReminderCount: pendingReminderDraftCount,
+                    onReviewReminderSuggestions: pendingReminderDraftCount > 0 ? {
                         showExtractedRemindersSheet = true
                     } : nil,
                     showTagPicker: $showTagPicker
@@ -383,7 +397,7 @@ struct TranscriptionDetailView: View {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
-                onReviewExtractedTasks: transcription.pendingExtractedReminderDrafts.isEmpty ? nil : {
+                onReviewExtractedTasks: pendingReminderDrafts.isEmpty ? nil : {
                     showPresetPicker = false
                     showExtractedRemindersSheet = true
                 },

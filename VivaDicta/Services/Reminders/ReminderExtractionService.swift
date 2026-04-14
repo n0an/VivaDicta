@@ -157,7 +157,7 @@ final class ReminderExtractionService {
         backend: ReminderExtractionBackend,
         modelContext: ModelContext
     ) -> [ExtractedReminderDraft] {
-        let existingDrafts = transcription.sortedExtractedReminderDrafts
+        let existingDrafts = reminderDrafts(for: transcription, modelContext: modelContext)
         let importedDrafts = existingDrafts.filter { $0.status == .imported }
 
         existingDrafts
@@ -175,10 +175,11 @@ final class ReminderExtractionService {
             modelName = model
         }
 
+        let sanitizedDrafts = sanitizeDrafts(drafts)
         var seenKeys = Set<String>()
         var persistedDrafts: [ExtractedReminderDraft] = []
 
-        for draft in drafts {
+        for draft in sanitizedDrafts {
             let normalizedDraftTitle = normalizedTitle(for: draft.title)
             guard !normalizedDraftTitle.isEmpty else { continue }
 
@@ -209,6 +210,96 @@ final class ReminderExtractionService {
         return persistedDrafts
     }
 
+    private func reminderDrafts(
+        for transcription: Transcription,
+        modelContext: ModelContext
+    ) -> [ExtractedReminderDraft] {
+        let descriptor = FetchDescriptor<ExtractedReminderDraft>(
+            sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.id)]
+        )
+        let allDrafts = (try? modelContext.fetch(descriptor)) ?? []
+        return allDrafts.filter { $0.transcription?.id == transcription.id }
+    }
+
+    private func sanitizeDrafts(_ drafts: [ReminderDraft]) -> [ReminderDraft] {
+        var mergedDrafts: [ReminderDraft] = []
+
+        for draft in drafts {
+            guard shouldKeepDraft(draft) else { continue }
+
+            let normalizedCandidateTitle = normalizedTitle(for: draft.title)
+            guard !normalizedCandidateTitle.isEmpty else { continue }
+
+            if let existingIndex = mergedDrafts.firstIndex(where: {
+                normalizedTitle(for: $0.title) == normalizedCandidateTitle
+            }) {
+                let existingDraft = mergedDrafts[existingIndex]
+                let shouldMerge = existingDraft.optionalDueDateString == draft.optionalDueDateString
+                    || existingDraft.optionalDueDateString == nil
+                    || draft.optionalDueDateString == nil
+                    || normalizedTitle(for: existingDraft.rawDueDatePhrase ?? "") == normalizedTitle(for: draft.rawDueDatePhrase ?? "")
+
+                if shouldMerge {
+                    mergedDrafts[existingIndex] = mergedDraft(existingDraft, with: draft)
+                    continue
+                }
+            }
+
+            mergedDrafts.append(normalizedDraft(draft))
+        }
+
+        return mergedDrafts
+    }
+
+    private func shouldKeepDraft(_ draft: ReminderDraft) -> Bool {
+        let normalizedDraftTitle = normalizedTitle(for: draft.title)
+        guard !normalizedDraftTitle.isEmpty else { return false }
+
+        let normalizedDuePhrase = normalizedTitle(for: draft.rawDueDatePhrase ?? "")
+        if !normalizedDuePhrase.isEmpty && normalizedDraftTitle == normalizedDuePhrase {
+            return false
+        }
+
+        return likelyTimingOnlyTitle(draft.title) == false
+    }
+
+    private func normalizedDraft(_ draft: ReminderDraft) -> ReminderDraft {
+        ReminderDraft(
+            title: draft.title.trimmingCharacters(in: .whitespacesAndNewlines),
+            optionalDueDateString: normalizedOptionalString(draft.optionalDueDateString),
+            rawDueDatePhrase: normalizedOptionalString(draft.rawDueDatePhrase),
+            notes: normalizedOptionalString(draft.notes),
+            priority: draft.priority
+        )
+    }
+
+    private func mergedDraft(_ lhs: ReminderDraft, with rhs: ReminderDraft) -> ReminderDraft {
+        let preferred = draftScore(lhs) >= draftScore(rhs) ? lhs : rhs
+        let secondary = preferred.title == lhs.title
+            && preferred.optionalDueDateString == lhs.optionalDueDateString
+            && preferred.rawDueDatePhrase == lhs.rawDueDatePhrase
+            && preferred.notes == lhs.notes
+            && preferred.priority == lhs.priority ? rhs : lhs
+
+        return ReminderDraft(
+            title: preferred.title,
+            optionalDueDateString: preferred.optionalDueDateString ?? secondary.optionalDueDateString,
+            rawDueDatePhrase: preferred.rawDueDatePhrase ?? secondary.rawDueDatePhrase,
+            notes: preferred.notes ?? secondary.notes,
+            priority: mergedPriority(preferred.priority, secondary.priority)
+        )
+    }
+
+    private func draftScore(_ draft: ReminderDraft) -> Int {
+        var score = 0
+        if normalizedOptionalString(draft.optionalDueDateString) != nil { score += 4 }
+        if normalizedOptionalString(draft.rawDueDatePhrase) != nil { score += 2 }
+        if normalizedOptionalString(draft.notes) != nil { score += 2 }
+        if draft.priority != .none { score += 1 }
+        score += draft.title.count / 20
+        return score
+    }
+
     private func normalizedTitle(for title: String) -> String {
         title
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -217,7 +308,48 @@ final class ReminderExtractionService {
             .joined(separator: " ")
     }
 
+    private func normalizedOptionalString(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private func likelyTimingOnlyTitle(_ title: String) -> Bool {
+        let normalized = normalizedTitle(for: title)
+        guard !normalized.isEmpty else { return false }
+
+        let dateWords = [
+            "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+            "today", "tomorrow", "tonight", "morning", "afternoon", "evening", "noon"
+        ]
+
+        let containsDateWord = dateWords.contains { normalized.contains($0) }
+        let containsTimeMarker = normalized.contains("am") || normalized.contains("pm") || normalized.contains(":")
+
+        guard containsDateWord else { return false }
+        return containsTimeMarker || normalized.split(separator: " ").count <= 3
+    }
+
     private func draftKey(title: String, dueDateString: String?) -> String {
         "\(title)|\(dueDateString ?? "")"
+    }
+
+    private func mergedPriority(_ lhs: ReminderDraftPriority, _ rhs: ReminderDraftPriority) -> ReminderDraftPriority {
+        func rank(_ priority: ReminderDraftPriority) -> Int {
+            switch priority {
+            case .high:
+                3
+            case .medium:
+                2
+            case .low:
+                1
+            case .none:
+                0
+            }
+        }
+
+        return rank(lhs) >= rank(rhs) ? lhs : rhs
     }
 }

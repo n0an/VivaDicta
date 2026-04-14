@@ -17,6 +17,7 @@ struct ExtractedRemindersSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
+    @Query(sort: \ExtractedReminderDraft.createdAt) private var allReminderDrafts: [ExtractedReminderDraft]
 
     @State private var importingDraftIDs = Set<UUID>()
     @State private var isImportingAll = false
@@ -25,7 +26,9 @@ struct ExtractedRemindersSheet: View {
     @State private var shouldOfferSettingsShortcut = false
 
     private var pendingDrafts: [ExtractedReminderDraft] {
-        transcription.pendingExtractedReminderDrafts
+        allReminderDrafts.filter {
+            $0.transcription?.id == transcription.id && $0.status == .pending
+        }
     }
 
     private var isBusy: Bool {

@@ -290,8 +290,12 @@ final class CloudReminderExtractionProvider {
         Only extract genuine reminder-worthy actions, commitments, or follow-ups that belong in Apple Reminders.
         Do not invent tasks.
         Do not invent deadlines.
+        The current note is the only source of truth. Never carry over tasks from previous notes or earlier requests.
         Use concise, actionable titles.
         Put supporting detail into notes.
+        Never create a reminder whose title is only a date, time, weekday, or scheduling phrase such as 'Saturday at 10 am'.
+        A due phrase belongs in the due-date fields of the task it refers to, not as a separate reminder.
+        Return at most one reminder per actionable task or commitment in the note.
         If timing is ambiguous, keep optionalDueDateString null and preserve the original wording in rawDueDatePhrase.
         If no reminder-worthy tasks exist, return an empty reminders array.
 

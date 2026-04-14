@@ -11,6 +11,7 @@ import SwiftData
 /// Horizontal scrollable row of tag chips for a transcription.
 struct TranscriptionTagChipsView: View {
     let transcription: Transcription
+    let pendingReminderCount: Int
     var onReviewReminderSuggestions: (() -> Void)?
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
     @Binding var showTagPicker: Bool
@@ -18,10 +19,6 @@ struct TranscriptionTagChipsView: View {
     private var assignedTags: [TranscriptionTag] {
         let assignedIds = Set((transcription.tagAssignments ?? []).map(\.tagId))
         return allTags.filter { assignedIds.contains($0.id) }
-    }
-
-    private var pendingReminderCount: Int {
-        transcription.pendingExtractedReminderDraftCount
     }
 
     private var pendingReminderTitle: String {
