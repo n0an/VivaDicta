@@ -15,6 +15,7 @@ struct NotesFilterResetPolicyTests {
             isSearching: false,
             oldTranscriptionCount: 4,
             newTranscriptionCount: 2,
+            previousFilteredCount: 2,
             remainingFilteredCount: 0
         )
 
@@ -27,6 +28,7 @@ struct NotesFilterResetPolicyTests {
             isSearching: false,
             oldTranscriptionCount: 4,
             newTranscriptionCount: 3,
+            previousFilteredCount: 2,
             remainingFilteredCount: 1
         )
 
@@ -39,6 +41,7 @@ struct NotesFilterResetPolicyTests {
             isSearching: true,
             oldTranscriptionCount: 4,
             newTranscriptionCount: 2,
+            previousFilteredCount: 2,
             remainingFilteredCount: 0
         )
 
@@ -51,6 +54,20 @@ struct NotesFilterResetPolicyTests {
             isSearching: false,
             oldTranscriptionCount: 2,
             newTranscriptionCount: 0,
+            previousFilteredCount: 2,
+            remainingFilteredCount: 0
+        )
+
+        #expect(!shouldReset)
+    }
+
+    @Test func keepsFilterWhenDeletionDoesNotRemoveAnyVisibleMatches() {
+        let shouldReset = NotesFilterResetPolicy.shouldResetToAllAfterDeletion(
+            hasActiveFilter: true,
+            isSearching: false,
+            oldTranscriptionCount: 4,
+            newTranscriptionCount: 3,
+            previousFilteredCount: 0,
             remainingFilteredCount: 0
         )
 

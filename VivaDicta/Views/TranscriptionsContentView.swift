@@ -159,6 +159,7 @@ struct TranscriptionsContentView: View {
                 isSearching: !searchText.isEmpty,
                 oldTranscriptionCount: oldValue.count,
                 newTranscriptionCount: newValue.count,
+                previousFilteredCount: filterTranscriptionsByActiveTags(oldValue).count,
                 remainingFilteredCount: filterTranscriptionsByActiveTags(newValue).count
             )
 
