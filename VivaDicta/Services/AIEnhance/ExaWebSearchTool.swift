@@ -19,9 +19,11 @@ struct ExaWebSearchTool: Tool {
     let description = "Search the web ONLY when the user explicitly asks to look something up online, or asks about current events, news, or real-time facts. Do NOT use this tool to answer questions about the user's notes - those are already in the conversation."
 
     private let apiKey: String
+    private let captureID: UUID
 
-    init(apiKey: String) {
+    init(apiKey: String, captureID: UUID) {
         self.apiKey = apiKey
+        self.captureID = captureID
     }
 
     @Generable
@@ -36,6 +38,7 @@ struct ExaWebSearchTool: Tool {
             return ExaAPIClient.formatError("Search query cannot be empty.")
         }
 
+        await ExaWebSearchToolRuntime.markInvoked(for: captureID)
         do {
             let results = try await ExaAPIClient.search(query: query, apiKey: apiKey)
             return ExaAPIClient.formatResults(query: query, results: results)
@@ -44,6 +47,23 @@ struct ExaWebSearchTool: Tool {
             logger.logError("Apple FM ExaWebSearchTool failed query='\(query)': \(error.localizedDescription)")
             return ExaAPIClient.formatError("Web search failed: \(error.localizedDescription)")
         }
+    }
+}
+
+@MainActor
+enum ExaWebSearchToolRuntime {
+    private static var invokedCaptureIDs: Set<UUID> = []
+
+    static func beginCapture(for captureID: UUID) {
+        invokedCaptureIDs.remove(captureID)
+    }
+
+    static func markInvoked(for captureID: UUID) {
+        invokedCaptureIDs.insert(captureID)
+    }
+
+    static func consumeDidInvoke(for captureID: UUID) -> Bool {
+        invokedCaptureIDs.remove(captureID) != nil
     }
 }
 

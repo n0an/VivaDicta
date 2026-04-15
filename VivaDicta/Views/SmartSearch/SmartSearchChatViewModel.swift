@@ -112,6 +112,7 @@ final class SmartSearchChatViewModel {
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
+    private let webSearchToolCaptureID = UUID()
 
     // MARK: - Init
 
@@ -218,7 +219,8 @@ final class SmartSearchChatViewModel {
                         model: model,
                         responseText: deterministicResponse.content,
                         sourceIds: deterministicResponse.sourceIds,
-                        sourceCitations: deterministicResponse.sourceCitations
+                        sourceCitations: deterministicResponse.sourceCitations,
+                        didUseWebSearchTool: false
                     )
                     HapticManager.heartbeat()
                     return
@@ -239,10 +241,16 @@ final class SmartSearchChatViewModel {
                 logger.logInfo("Smart Search assigned source IDs: \(describeSourceIDs(sourceIds, transcriptions: transcriptions))")
 
                 let result: String
+                let didUseWebSearchTool: Bool
                 if provider == .apple {
+                    ExaWebSearchToolRuntime.beginCapture(for: webSearchToolCaptureID)
                     result = try await sendAppleFMMessage(augmentedPrompt)
+                    didUseWebSearchTool = ExaWebSearchToolRuntime.consumeDidInvoke(
+                        for: webSearchToolCaptureID
+                    )
                 } else {
                     result = try await sendCloudMessage(augmentedPrompt, provider: provider, model: model)
+                    didUseWebSearchTool = false
                 }
 
                 logger.logInfo(
@@ -255,7 +263,8 @@ final class SmartSearchChatViewModel {
                     model: model,
                     responseText: result,
                     sourceIds: sourceIds,
-                    sourceCitations: sourceCitations
+                    sourceCitations: sourceCitations,
+                    didUseWebSearchTool: didUseWebSearchTool
                 )
 
                 HapticManager.heartbeat()
@@ -322,7 +331,8 @@ final class SmartSearchChatViewModel {
         model: String,
         responseText: String,
         sourceIds: [UUID],
-        sourceCitations: [SmartSearchSourceCitation]
+        sourceCitations: [SmartSearchSourceCitation],
+        didUseWebSearchTool: Bool
     ) {
         pendingUserMessage = nil
         userMessage.smartSearchConversation = conversation
@@ -337,6 +347,7 @@ final class SmartSearchChatViewModel {
         )
         assistantMessage.sourceTranscriptionIds = sourceIds
         assistantMessage.sourceCitations = sourceCitations
+        assistantMessage.didUseWebSearchTool = didUseWebSearchTool
         assistantMessage.smartSearchConversation = conversation
         modelContext.insert(assistantMessage)
         messages.append(assistantMessage)
@@ -469,7 +480,7 @@ final class SmartSearchChatViewModel {
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
         guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
-        return [ExaWebSearchTool(apiKey: key)]
+        return [ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID)]
     }
 
     private func initializeAppleFMSession() {

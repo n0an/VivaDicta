@@ -133,6 +133,7 @@ final class ChatViewModel {
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
     private let notesSearchToolCaptureID = UUID()
+    private let webSearchToolCaptureID = UUID()
     private var successfulReplyCount = 0
     private var hasRequestedReviewForSession = false
 
@@ -225,6 +226,8 @@ final class ChatViewModel {
             do {
                 let result: String
                 let implicitToolCitations: [SmartSearchSourceCitation]
+                let implicitNoteToolUsed: Bool
+                let implicitWebToolUsed: Bool
                 let crossNoteContext = await makeCrossNoteSearchContext(
                     for: text,
                     enabled: shouldSearchOtherNotes,
@@ -234,12 +237,19 @@ final class ChatViewModel {
                 let promptText = crossNoteContext?.augmentedPrompt ?? text
 
                 if provider == .apple {
+                    ExaWebSearchToolRuntime.beginCapture(for: webSearchToolCaptureID)
                     result = try await sendAppleFMMessage(
                         promptText,
                         allowImplicitCrossNoteTool: crossNoteContext == nil
                     )
                     implicitToolCitations = NotesSearchToolRuntime.consumeCapturedCitations(
                         for: notesSearchToolCaptureID
+                    )
+                    implicitNoteToolUsed = NotesSearchToolRuntime.consumeDidInvoke(
+                        for: notesSearchToolCaptureID
+                    )
+                    implicitWebToolUsed = ExaWebSearchToolRuntime.consumeDidInvoke(
+                        for: webSearchToolCaptureID
                     )
                 } else {
                     result = try await sendCloudMessage(
@@ -249,6 +259,8 @@ final class ChatViewModel {
                         model: model
                     )
                     implicitToolCitations = []
+                    implicitNoteToolUsed = false
+                    implicitWebToolUsed = false
                 }
 
                 pendingUserMessage = nil
@@ -270,6 +282,8 @@ final class ChatViewModel {
                     explicit: crossNoteContext?.sourceCitations ?? [],
                     implicit: implicitToolCitations
                 )
+                assistantMessage.didUseCrossNoteSearchTool = crossNoteContext != nil || implicitNoteToolUsed
+                assistantMessage.didUseWebSearchTool = implicitWebToolUsed
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -501,7 +515,7 @@ final class ChatViewModel {
     private func appleFMTools(includeImplicitCrossNoteSearch: Bool = true) -> [any Tool] {
         var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
-            tools.append(ExaWebSearchTool(apiKey: key))
+            tools.append(ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID))
         }
         if includeImplicitCrossNoteSearch,
            CrossNoteSearchToolFeature.isEnabled,

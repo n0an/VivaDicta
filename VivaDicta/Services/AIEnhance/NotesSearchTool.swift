@@ -80,6 +80,7 @@ struct NotesSearchTool: Tool {
             return NotesSearchToolRuntime.formatError("Notes search query cannot be empty.")
         }
 
+        await NotesSearchToolRuntime.markInvoked(for: captureID)
         let payload = await NotesSearchToolRuntime.searchNotesPayload(
             query: query,
             excluding: excludedTranscriptionIDs
@@ -93,11 +94,13 @@ struct NotesSearchTool: Tool {
 enum NotesSearchToolRuntime {
     static var modelContainer: ModelContainer?
     private static var capturedCitationsByID: [UUID: [UUID: SmartSearchSourceCitation]] = [:]
+    private static var invokedCaptureIDs: Set<UUID> = []
     private static let maxResults = 4
     private static let logger = Logger(category: .ragSearch)
 
     static func beginCapture(for captureID: UUID) {
         capturedCitationsByID[captureID] = [:]
+        invokedCaptureIDs.remove(captureID)
     }
 
     static func consumeCapturedCitations(for captureID: UUID) -> [SmartSearchSourceCitation] {
@@ -108,6 +111,10 @@ enum NotesSearchToolRuntime {
             }
             return lhs.transcriptionId.uuidString < rhs.transcriptionId.uuidString
         }
+    }
+
+    static func consumeDidInvoke(for captureID: UUID) -> Bool {
+        invokedCaptureIDs.remove(captureID) != nil
     }
 
     static func searchNotesPayload(
@@ -303,5 +310,9 @@ enum NotesSearchToolRuntime {
         }
 
         capturedCitationsByID[captureID] = captured
+    }
+
+    static func markInvoked(for captureID: UUID) {
+        invokedCaptureIDs.insert(captureID)
     }
 }

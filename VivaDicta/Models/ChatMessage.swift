@@ -67,6 +67,12 @@ final class ChatMessage {
     /// Stores the matched excerpt and score so the UI can show evidence, not only note titles.
     var sourceCitationsData: Data?
 
+    /// Whether this assistant response used cross-note search during generation.
+    var didUseCrossNoteSearchTool: Bool = false
+
+    /// Whether this assistant response used web search during generation.
+    var didUseWebSearchTool: Bool = false
+
     /// Convenience accessor for source transcription IDs.
     var sourceTranscriptionIds: [UUID] {
         get {
