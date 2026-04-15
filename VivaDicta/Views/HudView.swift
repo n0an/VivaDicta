@@ -217,7 +217,7 @@ struct HudViewDark: View {
             AnimatedMeshGradient()
                 .mask(
                     RoundedRectangle(cornerRadius: 30)
-                        .stroke(lineWidth: 20)
+                        .stroke(lineWidth: 26)
                         .blur(radius: 10)
                 )
                 .blendMode(.lighten)
@@ -236,7 +236,7 @@ struct HudViewDark: View {
                 .blur(radius: 1)
                 .blendMode(.overlay)
         )
-        .background(.black)
+//        .background(.black)
         .clipShape(.rect(cornerRadius: 30))
         .applyHudGlassEffect(cornerRadius: 30, isInteractive: onCancel != nil)
     }
