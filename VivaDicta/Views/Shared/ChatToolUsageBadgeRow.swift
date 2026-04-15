@@ -20,7 +20,7 @@ struct ChatToolUsageBadgeRow: View {
             items.append(
                 ChatToolUsageBadge(
                     icon: "sparkle.magnifyingglass",
-                    title: "Other notes searched",
+                    accessibilityLabel: "Other notes searched",
                     tint: .teal
                 )
             )
@@ -30,7 +30,7 @@ struct ChatToolUsageBadgeRow: View {
             items.append(
                 ChatToolUsageBadge(
                     icon: "globe",
-                    title: "Web searched",
+                    accessibilityLabel: "Web searched",
                     tint: .blue
                 )
             )
@@ -60,19 +60,16 @@ struct ChatToolUsageBadgeRow: View {
     private var badgeRow: some View {
         HStack(spacing: 6) {
             ForEach(badges) { badge in
-                HStack(spacing: 5) {
-                    Image(systemName: badge.icon)
-                    Text(badge.title)
-                        .lineLimit(1)
-                }
+                Image(systemName: badge.icon)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(colorScheme == .dark ? Color(.secondaryLabel) : .white)
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 8)
                 .padding(.vertical, 5)
                 .glassCapsule(
                     tint: badge.tint.opacity(colorScheme == .dark ? 0.25 : 0.75),
                     fallback: badge.tint.opacity(0.3)
                 )
+                .accessibilityLabel(badge.accessibilityLabel)
             }
         }
     }
@@ -81,6 +78,6 @@ struct ChatToolUsageBadgeRow: View {
 private struct ChatToolUsageBadge: Identifiable {
     let id = UUID()
     let icon: String
-    let title: String
+    let accessibilityLabel: String
     let tint: Color
 }

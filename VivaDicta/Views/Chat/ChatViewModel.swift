@@ -512,7 +512,7 @@ final class ChatViewModel {
     }
 
     @available(iOS 26, *)
-    private func appleFMTools(includeImplicitCrossNoteSearch: Bool = true) -> [any Tool] {
+    private func appleFMTools(includeImplicitCrossNoteSearch: Bool = false) -> [any Tool] {
         var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID))
