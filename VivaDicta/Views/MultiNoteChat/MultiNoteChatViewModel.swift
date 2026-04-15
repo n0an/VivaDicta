@@ -52,13 +52,13 @@ final class MultiNoteChatViewModel {
     var isWebSearchArmed: Bool = false
 
     var canSearchOtherNotes: Bool {
-        aiService.selectedMode.isChatEnabled &&
+        aiService.selectedMode.aiEnhanceEnabled &&
         aiService.selectedMode.isImplicitCrossNoteSearchEnabled &&
         SmartSearchFeature.isEnabled
     }
 
     var canSearchWeb: Bool {
-        aiService.selectedMode.isChatEnabled &&
+        aiService.selectedMode.aiEnhanceEnabled &&
         aiService.selectedMode.isImplicitWebSearchEnabled &&
         ExaAPIKeyManager.isConfigured
     }

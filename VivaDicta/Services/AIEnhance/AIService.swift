@@ -698,22 +698,29 @@ class AIService {
     }
 
     public var selectedChatProvider: AIProvider? {
-        guard selectedMode.isChatEnabled else { return nil }
-        return selectedMode.chatProvider
+        guard selectedMode.aiEnhanceEnabled else { return nil }
+        return selectedMode.chatProvider ?? selectedMode.aiProvider
     }
 
     public var selectedChatModel: String? {
-        guard selectedMode.isChatEnabled,
-              let model = selectedMode.chatModel,
-              !model.isEmpty else {
+        guard selectedMode.aiEnhanceEnabled else {
             return nil
         }
-        return model
+
+        if let model = selectedMode.chatModel, !model.isEmpty {
+            return model
+        }
+
+        guard !selectedMode.aiModel.isEmpty else {
+            return nil
+        }
+
+        return selectedMode.aiModel
     }
 
     public func isChatProperlyConfigured() -> Bool {
-        guard selectedMode.isChatEnabled else {
-            logger.logInfo("Chat is disabled for mode: \(self.selectedMode.name)")
+        guard selectedMode.aiEnhanceEnabled else {
+            logger.logInfo("Chat is unavailable because AI processing is disabled for mode: \(self.selectedMode.name)")
             return false
         }
 
