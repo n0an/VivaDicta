@@ -71,6 +71,16 @@ struct ExtractedRemindersSheet: View {
                                 .disabled(isBusy)
                             }
                         }
+
+                        Section {
+                            Text("Swipe right to add a reminder. Swipe left to dismiss it.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 4, trailing: 16))
+                                .listRowBackground(Color.clear)
+                        }
                     }
                     .scrollIndicators(.hidden)
                 }
@@ -91,9 +101,9 @@ struct ExtractedRemindersSheet: View {
                     }
                 }
 
-                if pendingDrafts.count > 1 {
+                if !pendingDrafts.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Add All") {
+                        Button(pendingDrafts.count > 1 ? "Add All" : "Add") {
                             Task {
                                 await importAllDrafts()
                             }

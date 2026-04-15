@@ -225,16 +225,10 @@ struct HudContentView: View {
                 } label: {
                     Text("Cancel")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(colorScheme == .dark ? .white.opacity(0.8) : .primary.opacity(0.8))
+                        .foregroundStyle(colorScheme == .dark ? .white.opacity(0.85) : .primary.opacity(0.8))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(colorScheme == .dark ? .white.opacity(0.6) : .black.opacity(0.08), in: .capsule)
-                        .overlay {
-                            if colorScheme == .light {
-                                Capsule()
-                                    .stroke(.black.opacity(0.12), lineWidth: 1)
-                            }
-                        }
+                        .hudCancelButtonBackground()
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity).combined(with: .scale(0.5)))
             }
@@ -400,6 +394,32 @@ private struct HudGlassEffectModifier: ViewModifier {
 extension View {
     fileprivate func applyHudGlassEffect(cornerRadius: CGFloat, isInteractive: Bool) -> some View {
         modifier(HudGlassEffectModifier(cornerRadius: cornerRadius, isInteractive: isInteractive))
+    }
+}
+
+private struct HudCancelButtonBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: .capsule)
+        } else {
+            content
+                .background(colorScheme == .dark ? .white.opacity(0.4) : .black.opacity(0.08), in: .capsule)
+                .overlay {
+                    if colorScheme == .light {
+                        Capsule()
+                            .stroke(.black.opacity(0.12), lineWidth: 1)
+                    }
+                }
+        }
+    }
+}
+
+extension View {
+    fileprivate func hudCancelButtonBackground() -> some View {
+        modifier(HudCancelButtonBackgroundModifier())
     }
 }
 

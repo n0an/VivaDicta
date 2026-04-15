@@ -23,7 +23,7 @@ struct SmartSearchSettingsView: View {
             Section {
                 Toggle("Enable Smart Search", isOn: $isSmartSearchEnabled)
             } footer: {
-                Text("AI-powered semantic search across your notes. When disabled, Smart Search stops indexing your notes, removes the local semantic index, and hides Smart Search surfaces.")
+                Text("AI-powered semantic search across your notes in the search bar, Smart Chat, and the cross-note search tool. When disabled, Smart Search stops indexing your notes, removes the local semantic index, and hides those surfaces.")
             }
 
             Section {
@@ -66,7 +66,7 @@ struct SmartSearchSettingsView: View {
             }
 
             Section {
-                Text("Smart Search uses an on-device AI model to understand your notes semantically. The model is downloaded automatically on first use.")
+                Text("Smart Search uses an on-device AI model to understand your notes semantically in the search bar, Smart Chat, and the cross-note search tool. The model is downloaded automatically on first use.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

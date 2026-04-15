@@ -164,9 +164,9 @@ struct SettingsView: View {
 
                     Toggle(isOn: $isSpeakerDiarizationEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Speaker Diarization")
+                            Text("Speaker Labels")
                                 .font(.body)
-                            Text("Labels speakers for WhisperKit, Deepgram, and Mistral")
+                            Text("Identify and label different speakers for local Whisper, Deepgram, and Mistral")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
