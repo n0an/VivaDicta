@@ -435,6 +435,7 @@ struct MainView: View {
                     Image(systemName: "gearshape.fill")
                 }
                 .accessibilityLabel("Settings")
+                .matchedTransitionSource(id: "SettingsSheetTransition", in: sheetTransitions)
                 .popoverTip(selectTranscriptionModelTipMainView) { action in
                     if action.id == "go-to-models" {
                         showingSettings = true
