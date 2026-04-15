@@ -1,6 +1,6 @@
 ---
 name: prcdx
-description: Create a GitHub Pull Request in Codex with optional Claude review request and standard GitHub polling
+description: Create a GitHub Pull Request in Codex with Claude and Codex review requests and standard GitHub polling
 disable-model-invocation: true
 ---
 
@@ -32,6 +32,7 @@ Based on the provided context, create a pull request following these steps:
 - What was done (branch created, commits made, PR opened, review requested, etc.)
 - **The PR URL** (for example: `PR #123: https://github.com/owner/repo/pull/123`)
 - Whether Claude review was requested
+- Whether Codex review was requested
 - Whether the PR is ready for review
 
 Format the PR link prominently so it's easy to find.
@@ -40,7 +41,7 @@ If no arguments are provided, create a PR with an auto-generated title and descr
 
 Use `--draft` if the work is clearly in progress.
 
-## Codex Review Flow
+## Review Flow
 
 After the PR is created, follow this review workflow unless the user explicitly says not to:
 
@@ -48,10 +49,15 @@ After the PR is created, follow this review workflow unless the user explicitly 
    ```bash
    gh pr comment <PR_NUMBER> --body "@claude please review this PR"
    ```
-2. Poll GitHub using standard CLI or API commands, not Claude Code slash commands.
-3. Check both issue comments and PR reviews every 2 minutes for a bounded period.
-4. Stop polling once a real review arrives, not just an "in progress" placeholder.
-5. Show the review to the user and ask what they want to do next.
+2. Post a second comment requesting Codex review:
+   ```bash
+   gh pr comment <PR_NUMBER> --body "@codex please review this PR"
+   ```
+3. Poll GitHub using standard CLI or API commands, not Claude Code slash commands.
+4. Check issue comments, PR reviews, and inline review comments every 2 minutes for a bounded period.
+5. Codex review usually takes longer than Claude review. Do not stop polling just because Claude replied first.
+6. Continue polling until you see a real Codex comment or review, not just an "in progress" placeholder, or until a reasonable bounded wait expires.
+7. Show the returned review feedback to the user and ask what they want to do next. If Claude replied but Codex has not yet replied, say that Codex review is still pending and keep polling until the bounded wait is reached.
 
 ## Suggested Polling Approach
 
@@ -70,10 +76,11 @@ gh api repos/<owner>/<repo>/pulls/<PR_NUMBER>/reviews
 
 When polling:
 
-- Record a baseline timestamp immediately before or after posting the `@claude` comment
+- Record a baseline timestamp immediately before or after posting the `@claude` and `@codex` comments
 - Only treat newer comments or reviews as candidate review results
 - Ignore empty bodies and obvious "review in progress" placeholders
-- Stop after a reasonable bounded wait if no review arrives, and tell the user review was requested but not yet returned
+- Codex review usually takes longer, so keep checking until you see Codex feedback or the bounded wait expires
+- Stop after a reasonable bounded wait if no review arrives, and tell the user that Claude review and Codex review were requested but have not yet returned
 
 ## IMPORTANT: Review Inspection Hygiene
 

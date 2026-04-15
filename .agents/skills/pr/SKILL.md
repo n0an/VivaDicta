@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Create a GitHub Pull Request in Claude Code with Claude review request and built-in polling workflow
+description: Create a GitHub Pull Request in Claude Code with Claude and Codex review requests and built-in polling workflow
 disable-model-invocation: true
 ---
 
@@ -31,6 +31,8 @@ Based on the provided context, create a pull request following these steps:
 **ALWAYS** end your response with a clear summary that includes:
 - What was done (branch created, commits made, etc.)
 - **The PR URL** (e.g., "PR #123: https://github.com/owner/repo/pull/123")
+- Whether Claude review was requested
+- Whether Codex review was requested
 - The PR is ready for review
 
 Format the PR link prominently so it's easy to find.
@@ -43,16 +45,20 @@ Use appropriate flags like `--draft` if the PR is work in progress.
 
 After the PR is created, **always** do the following (skip only if the user explicitly says not to):
 
-1. **Request a review** by posting a comment on the PR:
+1. **Request reviews** by posting two comments on the PR:
    ```
    gh pr comment <PR_NUMBER> --body "@claude please review this PR"
+   gh pr comment <PR_NUMBER> --body "@codex please review this PR"
    ```
-2. **Start polling** for Claude's review using `/loop 2m` to check PR comments every 2 minutes:
+2. **Start polling** for Claude and Codex review using `/loop 2m` to check PR comments, PR reviews, and inline review comments every 2 minutes:
    ```
-   gh api repos/<owner>/<repo>/issues/<PR_NUMBER>/comments --jq '.[-1].body' | head -80
+   gh pr view <PR_NUMBER> --json comments,reviews,url
+   gh api repos/<owner>/<repo>/issues/<PR_NUMBER>/comments
+   gh api repos/<owner>/<repo>/pulls/<PR_NUMBER>/comments
    ```
-3. **Stop polling** once the full review is received (not just "in progress" status).
-4. **Show the review** to the user and ask "WDYT?" to discuss the findings before acting on them.
+3. **Do not stop polling** just because Claude replied first. Codex review usually takes longer.
+4. **Keep polling** until you see a real Codex comment or review, not just "in progress" status, or until a reasonable bounded wait expires.
+5. **Show the returned review feedback** to the user and ask "WDYT?" to discuss the findings before acting on them. If Claude replied but Codex has not yet replied, say that Codex review is still pending and keep polling until the bounded wait is reached.
 
 ## IMPORTANT: Review Inspection Hygiene
 
