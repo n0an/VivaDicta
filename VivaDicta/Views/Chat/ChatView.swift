@@ -30,6 +30,7 @@ struct ChatView: View {
     @State private var showClearConfirmation = false
     @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
 
@@ -71,6 +72,22 @@ struct ChatView: View {
                 text: $viewModel.inputText,
                 isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                 isBusy: viewModel.isCompacting,
+                leadingActions: [
+                    viewModel.canSearchWeb ? ChatInputBar.LeadingAction(
+                        systemImage: "globe",
+                        accessibilityLabel: viewModel.isWebSearchArmed ? "Will search the web" : "Search the web",
+                        isArmed: viewModel.isWebSearchArmed,
+                        isEnabled: viewModel.canSearchWeb,
+                        action: { viewModel.toggleWebSearchArmed() }
+                    ) : nil,
+                    isSmartSearchEnabled ? ChatInputBar.LeadingAction(
+                        systemImage: "sparkle.magnifyingglass",
+                        accessibilityLabel: viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes",
+                        isArmed: viewModel.isCrossNoteSearchArmed,
+                        isEnabled: viewModel.canSearchOtherNotes,
+                        action: { viewModel.toggleCrossNoteSearchArmed() }
+                    ) : nil
+                ].compactMap { $0 },
                 onSend: { viewModel.sendMessage() },
                 onStop: { viewModel.cancelStreaming() }
             )
@@ -145,6 +162,10 @@ struct ChatView: View {
                             ChatBubbleView(message: message)
 
                             if message.role == "assistant" && !message.isError {
+                                ChatToolUsageBadgeRow(
+                                    didUseCrossNoteSearchTool: message.didUseCrossNoteSearchTool,
+                                    didUseWebSearchTool: message.didUseWebSearchTool
+                                )
                                 sourceCitationPills(for: message)
                             }
                         }

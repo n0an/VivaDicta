@@ -148,9 +148,7 @@ struct VivaDictaApp: App {
                             .datastoreLocation(.applicationDefault)])
                     }
                     .onAppear {
-                        if #available(iOS 26, *) {
-                            NotesSearchToolRuntime.modelContainer = modelContainer
-                        }
+                        NotesSearchToolRuntime.modelContainer = modelContainer
 
                         // Set the AppState reference for quick actions
 #if !os(macOS)

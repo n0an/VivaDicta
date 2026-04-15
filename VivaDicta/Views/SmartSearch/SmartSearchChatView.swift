@@ -111,6 +111,10 @@ struct SmartSearchChatView: View {
                             ChatBubbleView(message: message)
 
                             if message.role == "assistant" && !message.isError {
+                                ChatToolUsageBadgeRow(
+                                    didUseCrossNoteSearchTool: message.didUseCrossNoteSearchTool,
+                                    didUseWebSearchTool: message.didUseWebSearchTool
+                                )
                                 sourceCitationPills(for: message)
                             }
                         }

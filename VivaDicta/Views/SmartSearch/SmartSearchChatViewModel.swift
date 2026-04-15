@@ -112,6 +112,7 @@ final class SmartSearchChatViewModel {
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
+    private let webSearchToolCaptureID = UUID()
 
     // MARK: - Init
 
@@ -180,27 +181,36 @@ final class SmartSearchChatViewModel {
             }
 
             do {
-                logger.logInfo(
-                    "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
+                let plannedQuery = await makePlannedSearchQuery(
+                    for: text,
+                    provider: provider,
+                    model: model
                 )
 
                 let requestedTopK = provider == .apple ? 3 : 5
                 isSearching = true
-                let searchResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
+                logger.logInfo(
+                    "Smart Search retrieval start originalQuery='\(Self.preview(text, limit: 80))' plannedQuery='\(Self.preview(plannedQuery, limit: 80))' topK=\(requestedTopK) smartEnabled=\(SmartSearchFeature.isEnabled)"
+                )
+                let searchResults = try await RAGIndexingService.shared.search(query: plannedQuery, topK: requestedTopK)
                 let transcriptions = resolveTranscriptions(for: searchResults)
                 isSearching = false
 
                 if searchResults.isEmpty {
-                    logger.logInfo("Smart Search retrieval returned no note context for query='\(Self.preview(text, limit: 80))'")
+                    logger.logInfo(
+                        "Smart Search retrieval returned no note context for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(text, limit: 80))'"
+                    )
                 } else {
-                    logSearchResults(searchResults, transcriptions: transcriptions)
+                    logger.logInfo(
+                        "Smart Search retrieval resolved \(searchResults.count) note hits for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(text, limit: 80))'"
+                    )
                 }
 
-                let substantiveQueryTerms = groundedQueryTerms(from: text)
+                let substantiveQueryTerms = groundedQueryTerms(from: plannedQuery)
                 if searchResults.isEmpty, !substantiveQueryTerms.isEmpty {
                     let deterministicResponse = noEvidenceResponse(for: text)
                     logger.logInfo(
-                        "Smart Search returned deterministic no-evidence response queryTerms=\(substantiveQueryTerms.sorted().joined(separator: ", "))"
+                        "Smart Search returned deterministic no-evidence response originalQuery='\(Self.preview(text, limit: 80))' plannedQuery='\(Self.preview(plannedQuery, limit: 80))' queryTerms=\(substantiveQueryTerms.sorted().joined(separator: ", "))"
                     )
                     persistSuccessfulTurn(
                         userMessage: userMessage,
@@ -208,7 +218,8 @@ final class SmartSearchChatViewModel {
                         model: model,
                         responseText: deterministicResponse.content,
                         sourceIds: deterministicResponse.sourceIds,
-                        sourceCitations: deterministicResponse.sourceCitations
+                        sourceCitations: deterministicResponse.sourceCitations,
+                        didUseWebSearchTool: false
                     )
                     HapticManager.heartbeat()
                     return
@@ -216,27 +227,26 @@ final class SmartSearchChatViewModel {
 
                 let augmentedPrompt = SmartSearchContextManager.assembleAugmentedPrompt(
                     query: text,
+                    plannedQuery: plannedQuery,
                     searchResults: searchResults,
                     transcriptions: transcriptions
-                )
-                logger.logInfo(
-                    "Smart Search augmented prompt chars=\(augmentedPrompt.count) preview='\(Self.preview(augmentedPrompt))'"
                 )
 
                 let sourceIds = uniqueSourceIDs(from: searchResults)
                 let sourceCitations = buildSourceCitations(from: searchResults)
-                logger.logInfo("Smart Search assigned source IDs: \(describeSourceIDs(sourceIds, transcriptions: transcriptions))")
 
                 let result: String
+                let didUseWebSearchTool: Bool
                 if provider == .apple {
+                    ExaWebSearchToolRuntime.beginCapture(for: webSearchToolCaptureID)
                     result = try await sendAppleFMMessage(augmentedPrompt)
+                    didUseWebSearchTool = ExaWebSearchToolRuntime.consumeDidInvoke(
+                        for: webSearchToolCaptureID
+                    )
                 } else {
                     result = try await sendCloudMessage(augmentedPrompt, provider: provider, model: model)
+                    didUseWebSearchTool = false
                 }
-
-                logger.logInfo(
-                    "Smart Search response chars=\(result.count) preview='\(Self.preview(result))'"
-                )
 
                 persistSuccessfulTurn(
                     userMessage: userMessage,
@@ -244,7 +254,8 @@ final class SmartSearchChatViewModel {
                     model: model,
                     responseText: result,
                     sourceIds: sourceIds,
-                    sourceCitations: sourceCitations
+                    sourceCitations: sourceCitations,
+                    didUseWebSearchTool: didUseWebSearchTool
                 )
 
                 HapticManager.heartbeat()
@@ -311,7 +322,8 @@ final class SmartSearchChatViewModel {
         model: String,
         responseText: String,
         sourceIds: [UUID],
-        sourceCitations: [SmartSearchSourceCitation]
+        sourceCitations: [SmartSearchSourceCitation],
+        didUseWebSearchTool: Bool
     ) {
         pendingUserMessage = nil
         userMessage.smartSearchConversation = conversation
@@ -326,6 +338,7 @@ final class SmartSearchChatViewModel {
         )
         assistantMessage.sourceTranscriptionIds = sourceIds
         assistantMessage.sourceCitations = sourceCitations
+        assistantMessage.didUseWebSearchTool = didUseWebSearchTool
         assistantMessage.smartSearchConversation = conversation
         modelContext.insert(assistantMessage)
         messages.append(assistantMessage)
@@ -458,7 +471,7 @@ final class SmartSearchChatViewModel {
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
         guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
-        return [ExaWebSearchTool(apiKey: key)]
+        return [ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID)]
     }
 
     private func initializeAppleFMSession() {
@@ -774,6 +787,47 @@ final class SmartSearchChatViewModel {
         trySave()
     }
 
+    private func makePlannedSearchQuery(
+        for query: String,
+        provider: AIProvider,
+        model: String
+    ) async -> String {
+        guard let plan = await SmartSearchQueryPlanner.makePlan(
+            aiService: aiService,
+            provider: provider,
+            model: model,
+            recentMessages: plannerMessagesForSmartSearch(),
+            latestUserMessage: query
+        ) else {
+            logger.logWarning(
+                "Smart Search planner unavailable - falling back to original query='\(Self.preview(query, limit: 80))'"
+            )
+            return query
+        }
+
+        guard plan.shouldSearch, let plannedQuery = plan.searchQuery else {
+            logger.logInfo(
+                "Smart Search planner decided to keep original query='\(Self.preview(query, limit: 80))' reason='\(plan.reasoning ?? "")'"
+            )
+            return query
+        }
+
+        return plannedQuery
+    }
+
+    private func plannerMessagesForSmartSearch() -> [SmartSearchQueryPlannerMessage] {
+        messages
+            .dropLast()
+            .filter { !$0.isSummary }
+            .suffix(4)
+            .map {
+                SmartSearchQueryPlannerMessage(
+                    role: $0.role,
+                    content: $0.content
+                )
+            }
+    }
+
     private func trySave() {
         do {
             try modelContext.save()
@@ -782,43 +836,18 @@ final class SmartSearchChatViewModel {
         }
     }
 
-    private func logSearchResults(_ searchResults: [RAGSearchResult], transcriptions: [Transcription]) {
-        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
-
-        logger.logInfo(
-            "Smart Search retrieval yielded \(searchResults.count) deduped hits across \(transcriptions.count) resolved notes"
-        )
-
-        for (index, result) in searchResults.enumerated() {
-            let title = transcriptionMap[result.transcriptionId]
-                .map { noteTitle(for: $0) } ?? "Missing note"
-            logger.logInfo(
-                "Smart Search hit[\(index + 1)] noteId=\(result.transcriptionId.uuidString) title='\(title)' score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
-            )
-        }
-    }
-
-    private func describeSourceIDs(_ sourceIds: [UUID], transcriptions: [Transcription]) -> String {
-        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
-        let summaries = sourceIds.map { id in
-            let title = transcriptionMap[id].map { noteTitle(for: $0) } ?? "Missing note"
-            return "\(id.uuidString):\(title)"
-        }
-        return summaries.isEmpty ? "none" : summaries.joined(separator: " | ")
-    }
-
-    private func noteTitle(for transcription: Transcription) -> String {
-        let firstLine = transcription.text
-            .components(separatedBy: .newlines)
-            .first?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let title = firstLine.map { String($0.prefix(60)) } ?? "Untitled"
-        return title.isEmpty ? "Untitled" : title
-    }
-
     private func groundedQueryTerms(from query: String) -> Set<String> {
-        SmartSearchLexicalSupport.queryTerms(from: query)
+        let normalized = query
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .unicodeScalars
+            .map { CharacterSet.alphanumerics.contains($0) ? Character($0) : " " }
+        let tokenString = String(normalized)
+        let tokens = tokenString
+            .split(separator: " ")
+            .map(String.init)
+            .filter { $0.count >= 2 }
+            .map { $0.lowercased() }
+        return Set(tokens)
     }
 
     private func isLikelyRussian(_ text: String) -> Bool {

@@ -46,11 +46,13 @@ struct SmartSearchContextManager {
     ///
     /// - Parameters:
     ///   - query: The user's original question text.
+    ///   - plannedQuery: The focused retrieval query used for RAG search.
     ///   - searchResults: RAG search results with chunk text and scores.
     ///   - transcriptions: Resolved Transcription objects matching the search results.
     /// - Returns: A single prompt string with note context + user question.
     static func assembleAugmentedPrompt(
         query: String,
+        plannedQuery: String,
         searchResults: [RAGSearchResult],
         transcriptions: [Transcription]
     ) -> String {
@@ -104,10 +106,21 @@ struct SmartSearchContextManager {
 
         let context = noteParts.joined(separator: "\n\n")
         logger.logInfo("Smart Search prompt assembly complete noteBlocks=\(noteParts.count) contextChars=\(context.count)")
+        let focusedQuerySection: String
+        if plannedQuery.compare(query, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame {
+            focusedQuerySection = ""
+        } else {
+            focusedQuerySection = """
+            Focused retrieval query used for note search:
+            \(plannedQuery)
+
+            """
+        }
+
         return """
         Here are relevant excerpts from the user's notes:
 
-        \(context)
+        \(focusedQuerySection)\(context)
 
         USER QUESTION:
         \(query)

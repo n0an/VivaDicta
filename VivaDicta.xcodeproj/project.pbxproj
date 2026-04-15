@@ -28,9 +28,9 @@
 		18E1C7FE2E8E793E00BE8A11 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
 		18E1C80F2E8E793F00BE8A11 /* VivaDictaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E328F72E894C3D0026327D /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328F62E894C3D0026327D /* WhisperKit */; };
-		18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */; };
 		18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD6B22ED1FBFB00C0041E /* FluidAudio */; };
 		18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD7982ED1FCC600C0041E /* FluidAudio */; };
+		18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2442,11 +2442,6 @@
 			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
 		};
-		18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
-			productName = SpeakerKit;
-		};
 		18EBD6B22ED1FBFB00C0041E /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
@@ -2456,6 +2451,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = SpeakerKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

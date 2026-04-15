@@ -25,6 +25,7 @@ struct MultiNoteChatView: View {
     @State private var showNotesList = false
     @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
 
@@ -47,6 +48,22 @@ struct MultiNoteChatView: View {
                 isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                 isBusy: viewModel.isCompacting,
                 placeholder: "Ask about these notes...",
+                leadingActions: [
+                    viewModel.canSearchWeb ? ChatInputBar.LeadingAction(
+                        systemImage: "globe",
+                        accessibilityLabel: viewModel.isWebSearchArmed ? "Will search the web" : "Search the web",
+                        isArmed: viewModel.isWebSearchArmed,
+                        isEnabled: viewModel.canSearchWeb,
+                        action: { viewModel.toggleWebSearchArmed() }
+                    ) : nil,
+                    isSmartSearchEnabled ? ChatInputBar.LeadingAction(
+                        systemImage: "sparkle.magnifyingglass",
+                        accessibilityLabel: viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes",
+                        isArmed: viewModel.isCrossNoteSearchArmed,
+                        isEnabled: viewModel.canSearchOtherNotes,
+                        action: { viewModel.toggleCrossNoteSearchArmed() }
+                    ) : nil
+                ].compactMap { $0 },
                 onSend: { viewModel.sendMessage() },
                 onStop: { viewModel.cancelStreaming() }
             )
@@ -127,6 +144,10 @@ struct MultiNoteChatView: View {
                             ChatBubbleView(message: message)
 
                             if message.role == "assistant" && !message.isError {
+                                ChatToolUsageBadgeRow(
+                                    didUseCrossNoteSearchTool: message.didUseCrossNoteSearchTool,
+                                    didUseWebSearchTool: message.didUseWebSearchTool
+                                )
                                 sourceCitationPills(for: message)
                             }
                         }

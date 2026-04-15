@@ -335,6 +335,15 @@ struct TranscriptionsContentView: View {
                     return
                 }
 
+                guard shouldRunSemanticSearch(for: searchTerm) else {
+                    await MainActor.run {
+                        filteredTranscriptions = keywordResults
+                        smartSearchMatches = []
+                        semanticScoresByID = [:]
+                    }
+                    return
+                }
+
                 let smartMatches = await semanticSearchMatches(for: searchTerm)
 
                 switch searchMode {
@@ -410,9 +419,31 @@ struct TranscriptionsContentView: View {
             .sorted { $0.timestamp > $1.timestamp }
     }
 
+    private func shouldRunSemanticSearch(for searchTerm: String) -> Bool {
+        let trimmed = searchTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 4 else { return false }
+
+        let tokens = trimmed
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .map(String.init)
+
+        if tokens.contains(where: { $0.count >= 4 }) {
+            return true
+        }
+
+        let combinedTokenLength = tokens.reduce(0) { $0 + $1.count }
+        return tokens.count >= 2 && combinedTokenLength >= 6
+    }
+
     private func semanticSearchMatches(for searchTerm: String) async -> [SemanticSearchMatch] {
         do {
+            logger.logInfo(
+                "Semantic notes search start query='\(searchTerm)' indexedNotes=\(RAGIndexingService.shared.indexedTranscriptionCount)"
+            )
             let results = try await RAGIndexingService.shared.search(query: searchTerm, topK: 20)
+            logger.logInfo(
+                "Semantic notes search finished query='\(searchTerm)' matchedNotes=\(results.count)"
+            )
             return results.map { result in
                 SemanticSearchMatch(
                     transcriptionId: result.transcriptionId,

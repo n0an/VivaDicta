@@ -76,7 +76,7 @@ private struct BubbleBackgroundModifier: ViewModifier {
         if #available(iOS 26, *) {
             content
                 .glassEffect(
-                    .regular.tint(glassTint).interactive(),
+                    .regular.tint(glassTint),
                     in: .rect(cornerRadius: 18)
                 )
         } else {

@@ -205,12 +205,12 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("AI Processing") {
+                Section("AI Settings") {
                     NavigationLink(value: SettingsDestination.aiProviders) {
                         Text("AI Providers")
                     }
                     NavigationLink(value: SettingsDestination.presetsSettings) {
-                        Text("AI Presets")
+                        Text("AI Processing Presets")
                     }
                     Toggle(isOn: $isAutoReminderExtractionEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -227,12 +227,6 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsDestination.chatTools) {
                         HStack {
                             Text("Chat Tools")
-                            Spacer()
-                            if ExaAPIKeyManager.isConfigured {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            }
                         }
                     }
                 }

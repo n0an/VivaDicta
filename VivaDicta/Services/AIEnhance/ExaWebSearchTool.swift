@@ -9,6 +9,19 @@ import Foundation
 import FoundationModels
 import os
 
+enum WebSearchStatus: String, Sendable {
+    case success
+    case empty
+    case error
+}
+
+struct WebSearchPayload: Sendable {
+    let query: String
+    let status: WebSearchStatus
+    let results: [ExaResult]
+    let message: String?
+}
+
 /// Apple FM tool that searches the web using the Exa API.
 ///
 /// The model decides when to call this tool during chat to answer
@@ -19,9 +32,11 @@ struct ExaWebSearchTool: Tool {
     let description = "Search the web ONLY when the user explicitly asks to look something up online, or asks about current events, news, or real-time facts. Do NOT use this tool to answer questions about the user's notes - those are already in the conversation."
 
     private let apiKey: String
+    private let captureID: UUID
 
-    init(apiKey: String) {
+    init(apiKey: String, captureID: UUID) {
         self.apiKey = apiKey
+        self.captureID = captureID
     }
 
     @Generable
@@ -36,21 +51,92 @@ struct ExaWebSearchTool: Tool {
             return ExaAPIClient.formatError("Search query cannot be empty.")
         }
 
+        let logger = Logger(category: .chatViewModel)
+        logger.logInfo("Apple FM web tool invoked query='\(query)'")
+        await ExaWebSearchToolRuntime.markInvoked(for: captureID)
         do {
             let results = try await ExaAPIClient.search(query: query, apiKey: apiKey)
             return ExaAPIClient.formatResults(query: query, results: results)
         } catch {
-            let logger = Logger(category: .chatViewModel)
             logger.logError("Apple FM ExaWebSearchTool failed query='\(query)': \(error.localizedDescription)")
             return ExaAPIClient.formatError("Web search failed: \(error.localizedDescription)")
         }
     }
 }
 
+@MainActor
+enum ExaWebSearchToolRuntime {
+    private static let logger = Logger(category: .chatViewModel)
+    private static var invokedCaptureIDs: Set<UUID> = []
+
+    static func beginCapture(for captureID: UUID) {
+        invokedCaptureIDs.remove(captureID)
+    }
+
+    static func markInvoked(for captureID: UUID) {
+        invokedCaptureIDs.insert(captureID)
+    }
+
+    static func consumeDidInvoke(for captureID: UUID) -> Bool {
+        invokedCaptureIDs.remove(captureID) != nil
+    }
+
+    static func searchPayload(query: String) async -> WebSearchPayload {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else {
+            return WebSearchPayload(
+                query: trimmedQuery,
+                status: .error,
+                results: [],
+                message: "Web search query cannot be empty."
+            )
+        }
+
+        guard let apiKey = ExaAPIKeyManager.apiKey,
+              !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return WebSearchPayload(
+                query: trimmedQuery,
+                status: .error,
+                results: [],
+                message: "Web search is unavailable because the Exa API key is not configured."
+            )
+        }
+
+        do {
+            logger.logInfo("Web search start query='\(trimmedQuery)'")
+            let results = try await ExaSearchClient.search(query: trimmedQuery, apiKey: apiKey)
+            logger.logInfo("Web search raw results=\(results.count)")
+
+            if results.isEmpty {
+                return WebSearchPayload(
+                    query: trimmedQuery,
+                    status: .empty,
+                    results: [],
+                    message: "No relevant web results were found."
+                )
+            }
+
+            return WebSearchPayload(
+                query: trimmedQuery,
+                status: .success,
+                results: Array(results.prefix(5)),
+                message: nil
+            )
+        } catch {
+            logger.logError("Web search failed query='\(trimmedQuery)': \(error.localizedDescription)")
+            return WebSearchPayload(
+                query: trimmedQuery,
+                status: .error,
+                results: [],
+                message: "Web search failed: \(error.localizedDescription)"
+            )
+        }
+    }
+}
+
 // MARK: - API Client (nonisolated for Tool protocol compatibility)
 
-@available(iOS 26, *)
-nonisolated enum ExaAPIClient: Sendable {
+nonisolated enum ExaSearchClient: Sendable {
     nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
         guard let url = URL(string: "https://api.exa.ai/search") else {
             throw ExaError.invalidURL
@@ -80,6 +166,15 @@ nonisolated enum ExaAPIClient: Sendable {
 
         let results = try JSONDecoder().decode(ExaResponse.self, from: data).results
         return results
+    }
+}
+
+// MARK: - API Client (nonisolated for Tool protocol compatibility)
+
+@available(iOS 26, *)
+nonisolated enum ExaAPIClient: Sendable {
+    nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
+        try await ExaSearchClient.search(query: query, apiKey: apiKey)
     }
 
     nonisolated static func formatResults(query: String, results: [ExaResult]) -> GeneratedContent {

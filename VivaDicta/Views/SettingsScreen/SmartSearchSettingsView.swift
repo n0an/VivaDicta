@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 
 /// Settings screen for RAG Smart Search configuration.
 struct SmartSearchSettingsView: View {
@@ -14,6 +15,8 @@ struct SmartSearchSettingsView: View {
 
     @State private var isReindexing = false
     @State private var service = RAGIndexingService.shared
+
+    private let logger = Logger(category: .ragIndexing)
 
     var body: some View {
         Form {
@@ -40,9 +43,11 @@ struct SmartSearchSettingsView: View {
 
             Section {
                 Button {
+                    logger.logInfo("Smart Search settings requested manual reindex indexedNotes=\(service.indexedTranscriptionCount)")
                     isReindexing = true
                     Task {
                         await service.reindexAll(modelContext: modelContext)
+                        logger.logInfo("Smart Search settings manual reindex finished indexedNotes=\(service.indexedTranscriptionCount)")
                         isReindexing = false
                     }
                 } label: {
@@ -69,6 +74,7 @@ struct SmartSearchSettingsView: View {
         .navigationTitle("Smart Search")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: isSmartSearchEnabled) { _, isEnabled in
+            logger.logInfo("Smart Search settings toggled enabled=\(isEnabled) indexedNotes=\(service.indexedTranscriptionCount)")
             isReindexing = true
             Task {
                 if isEnabled {
@@ -76,6 +82,7 @@ struct SmartSearchSettingsView: View {
                 } else {
                     await service.clearAll()
                 }
+                logger.logInfo("Smart Search settings toggle finished enabled=\(isEnabled) indexedNotes=\(service.indexedTranscriptionCount)")
                 isReindexing = false
             }
         }
