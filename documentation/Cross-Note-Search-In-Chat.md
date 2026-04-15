@@ -27,6 +27,10 @@ In single-note normal chat, the composer shows:
 
 - `Search other notes`
 
+This control is shown only when Smart Search is enabled.
+
+If the Smart Search toggle is off, normal chat does not expose cross-note search at all.
+
 When tapped:
 
 - the action is armed for the next send only
@@ -109,8 +113,8 @@ and retrieval runs with that focused query.
 │ App runs cross-note retrieval with planned query             │
 │ - excludes current note                                      │
 │ - semantic RAG over indexed chunks                           │
-│ - lexical/original-text match over notes                     │
-│ - merges and ranks note hits                                 │
+│ - no lexical fallback layer                                  │
+│ - no SwiftData keyword scan                                  │
 └──────────────────────────────┬────────────────────────────────┘
                                │
                                ▼
@@ -209,21 +213,20 @@ Cross-note retrieval is implemented in `NotesSearchToolRuntime.searchNotesPayloa
 
 This is app-controlled retrieval. It does not call an LLM.
 
-### Data Sources
+### Data Source
 
-The retrieval layer is hybrid.
-
-It uses:
+The retrieval layer is intentionally simple:
 
 - semantic RAG search through the local note index
-- lexical search over original `Transcription.text`
 
-It does not search:
+It does not add:
 
-- `enhancedText`
-- `TranscriptionVariation.text`
+- lexical/original-text fallback matching
+- SwiftData keyword predicates
+- `enhancedText` search
+- `TranscriptionVariation.text` search
 
-This keeps retrieval grounded in the same original note corpus that RAG indexes.
+This keeps cross-note search aligned with Smart Search and avoids a second custom retrieval stack in normal chat.
 
 ### 2.1 Semantic Search
 
@@ -233,103 +236,37 @@ If Smart Search is enabled, the app calls:
 
 This searches the local vector index over semantically chunked note text and returns chunk-level matches that are already mapped back to note IDs.
 
-### 2.2 Lexical Search
+### 2.2 Note Resolution
 
-The app also performs lexical matching over original note text:
+RAG returns note identifiers plus chunk excerpts and semantic relevance scores.
 
-- exact phrase match against the focused query
-- token overlap between focused query terms and note terms
+The app then:
 
-Lexical query terms are produced by tokenizing the planner-generated query and keeping normalized alphanumeric terms of length `>= 2`.
-
-### Lexical Signals
-
-For each note:
-
-- `exactPhraseMatch`:
-  - `1.0` if the full focused query appears contiguously in original text
-  - otherwise `0.0`
-- `tokenCoverage`:
-  - `overlapTerms.count / queryTerms.count`
-  - when `queryTerms` is empty, exact phrase match becomes the only lexical signal
-
-Lexical score:
-
-```text
-lexicalScore = 0.60 * exactPhraseScore + 0.40 * tokenCoverage
-```
-
-### Excerpt Selection
-
-Lexical excerpts are chosen like this:
-
-1. excerpt around exact phrase match
-2. otherwise excerpt around the strongest overlapping term
-3. otherwise a flattened preview
-
-## Step 3 - Merge
-
-Semantic and lexical hits are merged by note ID.
-
-Behavior:
-
-- current note is excluded before ranking
-- if a note is found by both semantic and lexical search:
-  - it keeps both source labels
-  - lexical score is updated
-  - exact phrase / token coverage are updated
-  - lexical excerpt can replace semantic excerpt when it is a stronger exact phrase hit
+- excludes the current note
+- resolves matched note IDs back to `Transcription` records
+- keeps the RAG ordering
+- takes up to `4` results
 
 Each final note hit carries:
 
 - note identity
-- chosen excerpt
-- source types
-- semantic score when available
-- lexical score
-- exact phrase flag
-- token coverage
+- title
+- formatted date
+- excerpt from the matched chunk
+- source type
+- semantic relevance score
 
-## Step 4 - Ranking
+## Step 3 - Result Ordering
 
-After merging, note hits are ranked with a blended score:
+Cross-note search now uses the ordering already produced by RAG.
 
-```text
-finalScore =
-    0.72 * semanticScore +
-    0.20 * lexicalScore +
-    0.06 * dualSourceBoost +
-    0.02 * recencyBoost
-```
+That means:
 
-Where:
+- no secondary lexical ranking formula
+- no dual-source boost
+- no app-side merge score
 
-- `semanticScore`:
-  - semantic relevance from RAG, or `0` when absent
-- `lexicalScore`:
-  - from exact phrase + token coverage
-- `dualSourceBoost`:
-  - `1.0` when the note was found by both semantic and lexical search
-  - otherwise `0.0`
-- `recencyBoost`:
-  - normalized relative recency across fetched notes
-  - tiny tie-breaker only
-
-### Ranking Intent
-
-This favors:
-
-- strong semantic matches
-- exact lexical confirmation
-- notes confirmed by both retrieval signals
-
-while keeping recency as a small secondary signal.
-
-### Result Limit
-
-The cross-note payload currently returns up to:
-
-- `4` notes
+This is intentionally simpler and easier to reason about.
 
 ## Step 5 - Prompt Injection
 
@@ -394,6 +331,7 @@ If retrieval itself fails:
 - The feature is one-shot and resets after send
 - The final answer model never receives raw retrieval internals like ranking formulas
 - The raw user message is not used directly as the retrieval query
+- Cross-note search is available only when Smart Search is enabled
 
 ## Model Support
 
@@ -434,6 +372,12 @@ The current design is safer and more predictable:
 - a planner derives the focused query
 - the app performs retrieval
 - the final answer model reasons over the retrieved results
+
+The current design is also intentionally simple:
+
+- planner-first
+- RAG-only retrieval
+- no separate lexical retrieval layer in normal chat
 
 ## Citations
 

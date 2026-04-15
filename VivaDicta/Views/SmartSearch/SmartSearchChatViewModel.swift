@@ -183,27 +183,34 @@ final class SmartSearchChatViewModel {
                 logger.logInfo(
                     "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
                 )
-                logger.logInfo(
-                    "Smart Search retrieval entering smartEnabled=\(SmartSearchFeature.isEnabled) indexedNotes=\(RAGIndexingService.shared.indexedTranscriptionCount)"
+                let plannedQuery = await makePlannedSearchQuery(
+                    for: text,
+                    provider: provider,
+                    model: model
                 )
 
                 let requestedTopK = provider == .apple ? 3 : 5
                 isSearching = true
-                let searchResults = try await RAGIndexingService.shared.search(query: text, topK: requestedTopK)
+                logger.logInfo(
+                    "Smart Search retrieval start originalQuery='\(Self.preview(text, limit: 80))' plannedQuery='\(Self.preview(plannedQuery, limit: 80))' topK=\(requestedTopK) smartEnabled=\(SmartSearchFeature.isEnabled)"
+                )
+                let searchResults = try await RAGIndexingService.shared.search(query: plannedQuery, topK: requestedTopK)
                 let transcriptions = resolveTranscriptions(for: searchResults)
                 isSearching = false
 
                 if searchResults.isEmpty {
-                    logger.logInfo("Smart Search retrieval returned no note context for query='\(Self.preview(text, limit: 80))'")
+                    logger.logInfo(
+                        "Smart Search retrieval returned no note context for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(text, limit: 80))'"
+                    )
                 } else {
-                    logSearchResults(searchResults, transcriptions: transcriptions)
+                    logSearchResults(searchResults, transcriptions: transcriptions, plannedQuery: plannedQuery, originalQuery: text)
                 }
 
-                let substantiveQueryTerms = groundedQueryTerms(from: text)
+                let substantiveQueryTerms = groundedQueryTerms(from: plannedQuery)
                 if searchResults.isEmpty, !substantiveQueryTerms.isEmpty {
                     let deterministicResponse = noEvidenceResponse(for: text)
                     logger.logInfo(
-                        "Smart Search returned deterministic no-evidence response queryTerms=\(substantiveQueryTerms.sorted().joined(separator: ", "))"
+                        "Smart Search returned deterministic no-evidence response originalQuery='\(Self.preview(text, limit: 80))' plannedQuery='\(Self.preview(plannedQuery, limit: 80))' queryTerms=\(substantiveQueryTerms.sorted().joined(separator: ", "))"
                     )
                     persistSuccessfulTurn(
                         userMessage: userMessage,
@@ -219,6 +226,7 @@ final class SmartSearchChatViewModel {
 
                 let augmentedPrompt = SmartSearchContextManager.assembleAugmentedPrompt(
                     query: text,
+                    plannedQuery: plannedQuery,
                     searchResults: searchResults,
                     transcriptions: transcriptions
                 )
@@ -777,6 +785,47 @@ final class SmartSearchChatViewModel {
         trySave()
     }
 
+    private func makePlannedSearchQuery(
+        for query: String,
+        provider: AIProvider,
+        model: String
+    ) async -> String {
+        guard let plan = await SmartSearchQueryPlanner.makePlan(
+            aiService: aiService,
+            provider: provider,
+            model: model,
+            recentMessages: plannerMessagesForSmartSearch(),
+            latestUserMessage: query
+        ) else {
+            logger.logWarning(
+                "Smart Search planner unavailable - falling back to original query='\(Self.preview(query, limit: 80))'"
+            )
+            return query
+        }
+
+        guard plan.shouldSearch, let plannedQuery = plan.searchQuery else {
+            logger.logInfo(
+                "Smart Search planner decided to keep original query='\(Self.preview(query, limit: 80))' reason='\(plan.reasoning ?? "")'"
+            )
+            return query
+        }
+
+        return plannedQuery
+    }
+
+    private func plannerMessagesForSmartSearch() -> [SmartSearchQueryPlannerMessage] {
+        messages
+            .dropLast()
+            .filter { !$0.isSummary }
+            .suffix(4)
+            .map {
+                SmartSearchQueryPlannerMessage(
+                    role: $0.role,
+                    content: $0.content
+                )
+            }
+    }
+
     private func trySave() {
         do {
             try modelContext.save()
@@ -785,11 +834,16 @@ final class SmartSearchChatViewModel {
         }
     }
 
-    private func logSearchResults(_ searchResults: [RAGSearchResult], transcriptions: [Transcription]) {
+    private func logSearchResults(
+        _ searchResults: [RAGSearchResult],
+        transcriptions: [Transcription],
+        plannedQuery: String,
+        originalQuery: String
+    ) {
         let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
 
         logger.logInfo(
-            "Smart Search retrieval yielded \(searchResults.count) deduped hits across \(transcriptions.count) resolved notes"
+            "Smart Search retrieval yielded \(searchResults.count) deduped hits across \(transcriptions.count) resolved notes for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(originalQuery, limit: 80))'"
         )
 
         for (index, result) in searchResults.enumerated() {
