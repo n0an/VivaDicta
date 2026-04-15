@@ -16,7 +16,7 @@ struct WatchRecordView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let buttonSize = geometry.size.width * 0.5
+            let buttonSize = geometry.size.width * 0.6
 
             VStack(spacing: 12) {
                 Spacer()
