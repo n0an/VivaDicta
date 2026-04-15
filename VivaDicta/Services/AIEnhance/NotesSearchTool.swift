@@ -52,12 +52,9 @@ struct CrossNoteSearchPayload: Sendable {
 
 /// Apple FM tool that searches the user's notes outside the current chat context.
 ///
-/// Parked for future use.
-/// This tool is intentionally not attached to Apple FM chat sessions right now
-/// because the model invoked it too eagerly for current-note questions like
-/// summaries, insights, and "what is this note about?", which degraded answers.
-/// The current note or notes are already in the conversation, so this tool should
-/// only return when we have a cleaner way to restrict it to true cross-note intent.
+/// This tool is attached only when the global experimental setting for automatic
+/// cross-note search is enabled. It is still kept off by default because weaker
+/// models may invoke it too eagerly for current-note questions.
 @available(iOS 26, *)
 struct NotesSearchTool: Tool {
     let name = "searchOtherNotes"

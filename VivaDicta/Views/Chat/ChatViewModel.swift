@@ -132,6 +132,7 @@ final class ChatViewModel {
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
+    private let notesSearchToolCaptureID = UUID()
     private var successfulReplyCount = 0
     private var hasRequestedReviewForSession = false
 
@@ -223,6 +224,7 @@ final class ChatViewModel {
         streamingTask = Task {
             do {
                 let result: String
+                let implicitToolCitations: [SmartSearchSourceCitation]
                 let crossNoteContext = await makeCrossNoteSearchContext(
                     for: text,
                     enabled: shouldSearchOtherNotes,
@@ -232,7 +234,13 @@ final class ChatViewModel {
                 let promptText = crossNoteContext?.augmentedPrompt ?? text
 
                 if provider == .apple {
-                    result = try await sendAppleFMMessage(promptText)
+                    result = try await sendAppleFMMessage(
+                        promptText,
+                        allowImplicitCrossNoteTool: crossNoteContext == nil
+                    )
+                    implicitToolCitations = NotesSearchToolRuntime.consumeCapturedCitations(
+                        for: notesSearchToolCaptureID
+                    )
                 } else {
                     result = try await sendCloudMessage(
                         originalText: text,
@@ -240,6 +248,7 @@ final class ChatViewModel {
                         provider: provider,
                         model: model
                     )
+                    implicitToolCitations = []
                 }
 
                 pendingUserMessage = nil
@@ -253,8 +262,14 @@ final class ChatViewModel {
                     aiModelName: model,
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
-                assistantMessage.sourceTranscriptionIds = crossNoteContext?.sourceIDs ?? []
-                assistantMessage.sourceCitations = crossNoteContext?.sourceCitations ?? []
+                assistantMessage.sourceTranscriptionIds = mergedSourceIDs(
+                    explicit: crossNoteContext?.sourceIDs ?? [],
+                    implicit: implicitToolCitations
+                )
+                assistantMessage.sourceCitations = mergeSourceCitations(
+                    explicit: crossNoteContext?.sourceCitations ?? [],
+                    implicit: implicitToolCitations
+                )
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -483,10 +498,20 @@ final class ChatViewModel {
     }
 
     @available(iOS 26, *)
-    private func appleFMTools() -> [any Tool] {
+    private func appleFMTools(includeImplicitCrossNoteSearch: Bool = true) -> [any Tool] {
         var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key))
+        }
+        if includeImplicitCrossNoteSearch,
+           CrossNoteSearchToolFeature.isEnabled,
+           SmartSearchFeature.isEnabled {
+            tools.append(
+                NotesSearchTool(
+                    excludedTranscriptionIDs: [transcription.id],
+                    captureID: notesSearchToolCaptureID
+                )
+            )
         }
         return tools
     }
@@ -538,10 +563,21 @@ final class ChatViewModel {
     // MARK: - Send Helpers
 
     @available(iOS 26, *)
-    private func sendAppleFMMessageImpl(_ text: String) async throws -> String {
-        guard var session = appleFMSession else {
+    private func sendAppleFMMessageImpl(
+        _ text: String,
+        allowImplicitCrossNoteTool: Bool
+    ) async throws -> String {
+        guard let currentSession = appleFMSession else {
             throw EnhancementError.notConfigured
         }
+
+        NotesSearchToolRuntime.beginCapture(for: notesSearchToolCaptureID)
+
+        var session = LanguageModelSession(
+            model: appleFMModel,
+            tools: appleFMTools(includeImplicitCrossNoteSearch: allowImplicitCrossNoteTool),
+            transcript: currentSession.transcript
+        )
 
         // No preemptive compaction for Apple FM - let the runtime decide via
         // exceededContextWindowSize. Our character-based fill estimate is too
@@ -649,9 +685,15 @@ final class ChatViewModel {
         return filtered
     }
 
-    private func sendAppleFMMessage(_ text: String) async throws -> String {
+    private func sendAppleFMMessage(
+        _ text: String,
+        allowImplicitCrossNoteTool: Bool
+    ) async throws -> String {
         if #available(iOS 26, *) {
-            return try await sendAppleFMMessageImpl(text)
+            return try await sendAppleFMMessageImpl(
+                text,
+                allowImplicitCrossNoteTool: allowImplicitCrossNoteTool
+            )
         } else {
             throw EnhancementError.notConfigured
         }
@@ -806,6 +848,37 @@ final class ChatViewModel {
                     content: $0.content
                 )
             }
+    }
+
+    private func mergedSourceIDs(
+        explicit: [UUID],
+        implicit: [SmartSearchSourceCitation]
+    ) -> [UUID] {
+        Array(Set(explicit + implicit.map(\.transcriptionId))).sorted { $0.uuidString < $1.uuidString }
+    }
+
+    private func mergeSourceCitations(
+        explicit: [SmartSearchSourceCitation],
+        implicit: [SmartSearchSourceCitation]
+    ) -> [SmartSearchSourceCitation] {
+        var merged: [UUID: SmartSearchSourceCitation] = [:]
+
+        for citation in explicit + implicit {
+            if let existing = merged[citation.transcriptionId] {
+                if citation.relevanceScore > existing.relevanceScore {
+                    merged[citation.transcriptionId] = citation
+                }
+            } else {
+                merged[citation.transcriptionId] = citation
+            }
+        }
+
+        return merged.values.sorted { lhs, rhs in
+            if lhs.relevanceScore != rhs.relevanceScore {
+                return lhs.relevanceScore > rhs.relevanceScore
+            }
+            return lhs.transcriptionId.uuidString < rhs.transcriptionId.uuidString
+        }
     }
 
     private func performCompaction() async throws {

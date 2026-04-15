@@ -7,9 +7,64 @@
 
 import SwiftUI
 
-/// Settings view for configuring chat tools (web search, etc.)
-/// that Apple FM can use during chat conversations.
+/// Settings hub for chat tools such as automatic note search and web search.
 struct ChatToolsSettingsView: View {
+    @AppStorage(CrossNoteSearchToolFeature.isEnabledKey)
+    private var isImplicitCrossNoteSearchEnabled = false
+
+    @AppStorage(SmartSearchFeature.isEnabledKey)
+    private var isSmartSearchEnabled = true
+
+    var body: some View {
+        Form {
+            Section("Other Notes") {
+                Toggle(isOn: $isImplicitCrossNoteSearchEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Automatic search in other notes (Experimental)")
+                            .font(.body)
+                        Text("Allow Apple Foundation Models to decide when to search your other notes during chat. Off by default.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!isSmartSearchEnabled)
+
+                if !isSmartSearchEnabled {
+                    Text("Requires Smart Search to be enabled because other-note search uses the shared RAG index.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Web Search") {
+                NavigationLink {
+                    ExaWebSearchSettingsView()
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Web Search (Exa)")
+                            Text("Configure the Exa API key used for Apple web search.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        if ExaAPIKeyManager.isConfigured {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Chat Tools")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct ExaWebSearchSettingsView: View {
     @State private var exaAPIKey: String = ""
     @State private var hasExistingKey = false
     @State private var showDeleteConfirmation = false
@@ -51,13 +106,7 @@ struct ChatToolsSettingsView: View {
 
             if #available(iOS 26.0, *) {
                 Button {
-                    if let clipboardString = UIPasteboard.general.string {
-                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            exaAPIKey = trimmed
-                            saveKey()
-                        }
-                    }
+                    pasteFromClipboard()
                 } label: {
                     Text("Paste from clipboard")
                         .font(.headline.weight(.medium))
@@ -68,13 +117,7 @@ struct ChatToolsSettingsView: View {
                 .buttonStyle(.plain)
             } else {
                 Button {
-                    if let clipboardString = UIPasteboard.general.string {
-                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmed.isEmpty {
-                            exaAPIKey = trimmed
-                            saveKey()
-                        }
-                    }
+                    pasteFromClipboard()
                 } label: {
                     Text("Paste from clipboard")
                         .font(.headline.weight(.medium))
@@ -172,7 +215,7 @@ struct ChatToolsSettingsView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
-        .navigationTitle("Chat Tools")
+        .navigationTitle("Web Search")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -211,6 +254,16 @@ struct ChatToolsSettingsView: View {
             }
         } message: {
             Text("Are you sure you want to delete the Exa API key?")
+        }
+    }
+
+    private func pasteFromClipboard() {
+        if let clipboardString = UIPasteboard.general.string {
+            let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                exaAPIKey = trimmed
+                saveKey()
+            }
         }
     }
 

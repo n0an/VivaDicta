@@ -123,6 +123,7 @@ final class MultiNoteChatViewModel {
     private let aiService: AIService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
+    private let notesSearchToolCaptureID = UUID()
     /// User message not yet persisted to SwiftData. Re-appended after loadMessages() during send flow.
     private var pendingUserMessage: ChatMessage?
     private var successfulReplyCount = 0
@@ -212,6 +213,7 @@ final class MultiNoteChatViewModel {
         streamingTask = Task {
             do {
                 let result: String
+                let implicitToolCitations: [SmartSearchSourceCitation]
                 let crossNoteContext = await makeCrossNoteSearchContext(
                     for: text,
                     enabled: shouldSearchOtherNotes,
@@ -221,7 +223,13 @@ final class MultiNoteChatViewModel {
                 let promptText = crossNoteContext?.augmentedPrompt ?? text
 
                 if provider == .apple {
-                    result = try await sendAppleFMMessage(promptText)
+                    result = try await sendAppleFMMessage(
+                        promptText,
+                        allowImplicitCrossNoteTool: crossNoteContext == nil
+                    )
+                    implicitToolCitations = NotesSearchToolRuntime.consumeCapturedCitations(
+                        for: notesSearchToolCaptureID
+                    )
                 } else {
                     result = try await sendCloudMessage(
                         originalText: text,
@@ -229,6 +237,7 @@ final class MultiNoteChatViewModel {
                         provider: provider,
                         model: model
                     )
+                    implicitToolCitations = []
                 }
 
                 // Persist user message now that streaming is done
@@ -243,8 +252,14 @@ final class MultiNoteChatViewModel {
                     aiModelName: model,
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
-                assistantMessage.sourceTranscriptionIds = crossNoteContext?.sourceIDs ?? []
-                assistantMessage.sourceCitations = crossNoteContext?.sourceCitations ?? []
+                assistantMessage.sourceTranscriptionIds = mergedSourceIDs(
+                    explicit: crossNoteContext?.sourceIDs ?? [],
+                    implicit: implicitToolCitations
+                )
+                assistantMessage.sourceCitations = mergeSourceCitations(
+                    explicit: crossNoteContext?.sourceCitations ?? [],
+                    implicit: implicitToolCitations
+                )
                 assistantMessage.multiNoteConversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -385,7 +400,7 @@ final class MultiNoteChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        appleFMSession = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+        appleFMSession = LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
 
         // Update SwiftData messages
         let nonSummaryMessages = messages.filter { !$0.isSummary }
@@ -468,10 +483,21 @@ final class MultiNoteChatViewModel {
     }
 
     @available(iOS 26, *)
-    private var appleFMTools: [any Tool] {
+    private func appleFMTools(includeImplicitCrossNoteSearch: Bool = true) -> [any Tool] {
         var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key))
+        }
+        if includeImplicitCrossNoteSearch,
+           CrossNoteSearchToolFeature.isEnabled,
+           SmartSearchFeature.isEnabled {
+            let excludedIDs = Set((conversation.transcriptions ?? []).map(\.id))
+            tools.append(
+                NotesSearchTool(
+                    excludedTranscriptionIDs: excludedIDs,
+                    captureID: notesSearchToolCaptureID
+                )
+            )
         }
         return tools
     }
@@ -482,7 +508,7 @@ final class MultiNoteChatViewModel {
 
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-            let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+            let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
             session.prewarm()
             appleFMSession = session
             logger.logInfo("Multi-note chat - Apple FM session restored and prewarmed")
@@ -497,7 +523,7 @@ final class MultiNoteChatViewModel {
             summary: summary
         )
 
-        let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+        let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
         session.prewarm()
         appleFMSession = session
         logger.logInfo("Multi-note chat - Apple FM session initialized and prewarmed")
@@ -523,10 +549,21 @@ final class MultiNoteChatViewModel {
     // MARK: - Send Helpers
 
     @available(iOS 26, *)
-    private func sendAppleFMMessageImpl(_ text: String) async throws -> String {
-        guard var session = appleFMSession else {
+    private func sendAppleFMMessageImpl(
+        _ text: String,
+        allowImplicitCrossNoteTool: Bool
+    ) async throws -> String {
+        guard let currentSession = appleFMSession else {
             throw EnhancementError.notConfigured
         }
+
+        NotesSearchToolRuntime.beginCapture(for: notesSearchToolCaptureID)
+
+        var session = LanguageModelSession(
+            model: appleFMModel,
+            tools: appleFMTools(includeImplicitCrossNoteSearch: allowImplicitCrossNoteTool),
+            transcript: currentSession.transcript
+        )
 
         // No preemptive compaction for Apple FM - let the runtime decide via
         // exceededContextWindowSize. Our character-based fill estimate is too
@@ -595,7 +632,7 @@ final class MultiNoteChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        return LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+        return LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
     }
 
     @available(iOS 26, *)
@@ -622,9 +659,15 @@ final class MultiNoteChatViewModel {
         return filtered
     }
 
-    private func sendAppleFMMessage(_ text: String) async throws -> String {
+    private func sendAppleFMMessage(
+        _ text: String,
+        allowImplicitCrossNoteTool: Bool
+    ) async throws -> String {
         if #available(iOS 26, *) {
-            return try await sendAppleFMMessageImpl(text)
+            return try await sendAppleFMMessageImpl(
+                text,
+                allowImplicitCrossNoteTool: allowImplicitCrossNoteTool
+            )
         } else {
             throw EnhancementError.notConfigured
         }
@@ -778,6 +821,37 @@ final class MultiNoteChatViewModel {
                     content: $0.content
                 )
             }
+    }
+
+    private func mergedSourceIDs(
+        explicit: [UUID],
+        implicit: [SmartSearchSourceCitation]
+    ) -> [UUID] {
+        Array(Set(explicit + implicit.map(\.transcriptionId))).sorted { $0.uuidString < $1.uuidString }
+    }
+
+    private func mergeSourceCitations(
+        explicit: [SmartSearchSourceCitation],
+        implicit: [SmartSearchSourceCitation]
+    ) -> [SmartSearchSourceCitation] {
+        var merged: [UUID: SmartSearchSourceCitation] = [:]
+
+        for citation in explicit + implicit {
+            if let existing = merged[citation.transcriptionId] {
+                if citation.relevanceScore > existing.relevanceScore {
+                    merged[citation.transcriptionId] = citation
+                }
+            } else {
+                merged[citation.transcriptionId] = citation
+            }
+        }
+
+        return merged.values.sorted { lhs, rhs in
+            if lhs.relevanceScore != rhs.relevanceScore {
+                return lhs.relevanceScore > rhs.relevanceScore
+            }
+            return lhs.transcriptionId.uuidString < rhs.transcriptionId.uuidString
+        }
     }
 
     private func performCompaction() async throws {
