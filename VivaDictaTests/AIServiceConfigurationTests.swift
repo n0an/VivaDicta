@@ -238,6 +238,39 @@ struct AIServiceConfigurationTests {
         #expect(service.currentModeSupportsResponseStreaming == true)
     }
 
+    // MARK: - Apple FM Sampling Profiles
+
+    @Test func appleFMSamplingProfile_extractivePresetsUseExtractive() {
+        let extractivePresetIDs = [
+            "summary",
+            "action_points",
+            "key_points",
+            "takeaways",
+            "mind_map"
+        ]
+
+        for presetID in extractivePresetIDs {
+            #expect(AppleFoundationModelSamplingProfile.profile(for: presetID) == .extractive)
+        }
+    }
+
+    @Test func appleFMSamplingProfile_regularUsesBalanced() {
+        #expect(AppleFoundationModelSamplingProfile.profile(for: "regular") == .balanced)
+    }
+
+    @Test func appleFMSamplingProfile_chatUsesConversational() {
+        #expect(AppleFoundationModelSamplingProfile.profile(for: "chat") == .conversational)
+    }
+
+    @Test func appleFMSamplingProfile_philosophicalUsesCreative() {
+        #expect(AppleFoundationModelSamplingProfile.profile(for: "philosophical") == .creative)
+    }
+
+    @Test func appleFMSamplingProfile_unknownPresetFallsBackToBalanced() {
+        #expect(AppleFoundationModelSamplingProfile.profile(for: "custom_123") == .balanced)
+        #expect(AppleFoundationModelSamplingProfile.profile(for: nil) == .balanced)
+    }
+
     // MARK: - Disable Modes by Provider Tests
 
     @Test func disableAIForModesUsingProvider_onlyAffectsMatchingModes() {
