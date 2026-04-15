@@ -9,6 +9,51 @@ import Foundation
 import FoundationModels
 import os
 
+enum AppleFoundationModelSamplingProfile: Equatable {
+    case extractive
+    case balanced
+    case conversational
+    case creative
+
+    static func profile(for presetID: String?) -> Self {
+        switch presetID {
+        case "summary", "action_points", "key_points", "takeaways", "mind_map":
+            .extractive
+        case "regular", "proofreading", "rewrite":
+            .balanced
+        case "chat", "casual":
+            .conversational
+        case "philosophical", "blog", "instagram", "new_ideas":
+            .creative
+        default:
+            .balanced
+        }
+    }
+
+    @available(iOS 26, *)
+    var generationOptions: GenerationOptions {
+        switch self {
+        case .extractive:
+            GenerationOptions(sampling: .greedy)
+        case .balanced:
+            GenerationOptions(
+                sampling: .random(probabilityThreshold: 0.8),
+                temperature: 0.3
+            )
+        case .conversational:
+            GenerationOptions(
+                sampling: .random(probabilityThreshold: 0.9),
+                temperature: 0.5
+            )
+        case .creative:
+            GenerationOptions(
+                sampling: .random(probabilityThreshold: 0.95),
+                temperature: 0.7
+            )
+        }
+    }
+}
+
 // MARK: - Service
 
 /// Service for AI text enhancement using Apple's on-device Foundation Models.
@@ -24,8 +69,13 @@ final class AppleFoundationModelService {
     /// - Parameters:
     ///   - systemMessage: The system message (same as cloud providers)
     ///   - userMessage: The formatted user message (transcript, optionally wrapped in tags)
+    ///   - samplingProfile: Sampling profile chosen for the current preset goal
     /// - Returns: The enhanced text
-    func enhance(systemMessage: String, userMessage: String) async throws -> String {
+    func enhance(
+        systemMessage: String,
+        userMessage: String,
+        samplingProfile: AppleFoundationModelSamplingProfile = .balanced
+    ) async throws -> String {
         guard AppleFoundationModelAvailability.isAvailable else {
             throw AppleFoundationModelError.notAvailable
         }
@@ -42,8 +92,7 @@ final class AppleFoundationModelService {
         let prompt = Prompt { userMessage }
 
         do {
-            // Use greedy sampling for deterministic, consistent transcript cleaning
-            let options = GenerationOptions(sampling: .greedy)
+            let options = samplingProfile.generationOptions
             let response = try await session.respond(to: prompt, options: options)
             let enhancedText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             let filteredText = AIEnhancementOutputFilter.filter(enhancedText)
@@ -79,11 +128,13 @@ final class AppleFoundationModelService {
     /// - Parameters:
     ///   - systemMessage: The system message (same as cloud providers)
     ///   - userMessage: The formatted user message (transcript, optionally wrapped in tags)
+    ///   - samplingProfile: Sampling profile chosen for the current preset goal
     ///   - onPartialResponse: Called with the latest partial response snapshot.
     /// - Returns: The final enhanced text
     func enhanceStreaming(
         systemMessage: String,
         userMessage: String,
+        samplingProfile: AppleFoundationModelSamplingProfile = .balanced,
         onPartialResponse: @escaping @MainActor (String) -> Void
     ) async throws -> String {
         guard AppleFoundationModelAvailability.isAvailable else {
@@ -102,7 +153,7 @@ final class AppleFoundationModelService {
         let prompt = Prompt { userMessage }
 
         do {
-            let options = GenerationOptions(sampling: .greedy)
+            let options = samplingProfile.generationOptions
             let stream = session.streamResponse(to: prompt, options: options)
 
             for try await partialResponse in stream {
