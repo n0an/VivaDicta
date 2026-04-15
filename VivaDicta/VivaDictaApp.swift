@@ -314,7 +314,7 @@ struct VivaDictaApp: App {
                     }
                     
                     // Start the actual recording
-                    vm.startCaptureAudio()
+                    vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                     
                     // Small delay to ensure recording is fully started
                     try? await Task.sleep(for: .milliseconds(200))
@@ -342,7 +342,7 @@ struct VivaDictaApp: App {
                 if let vm = appState.recordViewModel,
                    vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
                     logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
-                    vm.startCaptureAudio()
+                    vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                 }
                 appState.showKeyboardFlowToast = true
             }
@@ -436,7 +436,7 @@ struct VivaDictaApp: App {
                         if let vm = appState.recordViewModel,
                            vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
                             logger.logInfo("🎙️ Starting recording before showing manual switch toast (no hostId)")
-                            vm.startCaptureAudio()
+                            vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                         }
                         appState.showKeyboardFlowToast = true
                     }
