@@ -38,6 +38,14 @@ struct WhatsNewView: View {
                         .font(.title3.weight(.medium))
                         .fontDesign(.rounded)
                         .foregroundStyle(.secondary)
+
+                    if let tagline = release.tagline {
+                        Text(tagline)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 12)
+                            .padding(.horizontal, 8)
+                    }
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)

@@ -19,6 +19,7 @@ struct WhatsNewRelease: Identifiable {
     let id: String
     let headline: String
     let features: [WhatsNewFeature]
+    var tagline: String?
     var learnMoreURL: URL?
     var learnMoreTitle: String?
 }
@@ -44,18 +45,18 @@ enum WhatsNewCatalog {
                 icon: "bubble.left.and.text.bubble.right.fill",
                 iconColors: [.blue, .cyan],
                 title: "Chat With Your Notes",
-                description: "Ask questions about one note or many, with streaming answers powered by Apple Foundation Model on-device or your favorite cloud AI."
+                description: "Ask questions about one note or many. Surface insights, action items, and key points, or connect ideas across recordings. Powered by Apple Foundation Model on-device or your favorite cloud AI."
             ),
             WhatsNewFeature(
                 icon: "magnifyingglass.circle.fill",
                 iconColors: [.green, .mint],
                 title: "Smart AI Search",
-                description: "Find notes by meaning with fully on-device semantic search, so your data never leaves your device."
+                description: "Find notes by meaning, not just keywords. Ask \"what did I say about the pricing idea?\" and VivaDicta finds it - even without those exact words. Fully on-device, so your data stays private."
             ),
             WhatsNewFeature(
                 icon: "globe.badge.chevron.backward",
                 iconColors: [.indigo, .blue],
-                title: "AI Search Tools",
+                title: "Chat Search Tools",
                 description: "Chat comes with built-in tools: cross-note AI search across your library and live web search, so answers stay grounded in real context."
             ),
             WhatsNewFeature(
@@ -73,7 +74,7 @@ enum WhatsNewCatalog {
             WhatsNewFeature(
                 icon: "square.and.arrow.up",
                 iconColors: [.pink, .orange],
-                title: "Workflow Upgrades",
+                title: "Quality of Life",
                 description: "Export notes to Markdown, append follow-up recordings to existing notes, and hide presets you don't use to keep pickers focused."
             ),
             WhatsNewFeature(
@@ -83,6 +84,7 @@ enum WhatsNewCatalog {
                 description: "Enjoy a more polished iOS 26 interface with Liquid Glass, plus refreshed recording controls on the keyboard and Apple Watch."
             )
         ],
+        tagline: "Dictate anywhere. Now talk to your notes.",
         learnMoreURL: URL(string: "https://vivadicta.com/ios/docs/chats"),
         learnMoreTitle: "Learn more about Chats & Smart Search"
     )
