@@ -25,10 +25,12 @@ final class MultiNoteChatViewModel {
         let augmentedPrompt: String
         let sourceIDs: [UUID]
         let sourceCitations: [SmartSearchSourceCitation]
+        let didActuallySearch: Bool
     }
 
     private struct WebSearchTurnContext {
         let augmentedPrompt: String
+        let didActuallySearch: Bool
     }
 
     private struct CloudSendResult {
@@ -306,8 +308,10 @@ final class MultiNoteChatViewModel {
                     explicit: crossNoteContext?.sourceCitations ?? [],
                     implicit: implicitToolCitations
                 )
-                assistantMessage.didUseCrossNoteSearchTool = crossNoteContext != nil || implicitNoteToolUsed
-                assistantMessage.didUseWebSearchTool = webSearchContext != nil || implicitWebToolUsed
+                assistantMessage.didUseCrossNoteSearchTool =
+                    (crossNoteContext?.didActuallySearch ?? false) || implicitNoteToolUsed
+                assistantMessage.didUseWebSearchTool =
+                    (webSearchContext?.didActuallySearch ?? false) || implicitWebToolUsed
                 assistantMessage.multiNoteConversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -652,18 +656,25 @@ final class MultiNoteChatViewModel {
 
         do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+            appleFMSession = session
             saveAppleFMTranscript()
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Multi-note chat - Apple FM context exceeded, summarizing and retrying")
 
             isCompacting = true
-            session = try await summarizeAndRebuildSession(session, label: "multi-note")
+            session = try await summarizeAndRebuildSession(
+                session,
+                label: "multi-note",
+                includeImplicitCrossNoteSearch: allowImplicitCrossNoteTool,
+                includeImplicitWebSearch: allowImplicitWebTool
+            )
             appleFMSession = session
             compactSwiftDataMessages()
             isCompacting = false
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
+            appleFMSession = session
             saveAppleFMTranscript()
             return result
         } catch let error as LanguageModelSession.GenerationError {
@@ -680,7 +691,12 @@ final class MultiNoteChatViewModel {
 
     /// Extracts conversation from transcript, summarizes it, rebuilds a clean session.
     @available(iOS 26, *)
-    private func summarizeAndRebuildSession(_ session: LanguageModelSession, label: String) async throws -> LanguageModelSession {
+    private func summarizeAndRebuildSession(
+        _ session: LanguageModelSession,
+        label: String,
+        includeImplicitCrossNoteSearch: Bool = false,
+        includeImplicitWebSearch: Bool = true
+    ) async throws -> LanguageModelSession {
         let conversationText = session.transcript.getMessages().map { entry -> String in
             switch entry {
             case .prompt(let p): return "User: \(p.segments.map { "\($0)" }.joined())"
@@ -708,7 +724,14 @@ final class MultiNoteChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        return LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
+        return LanguageModelSession(
+            model: appleFMModel,
+            tools: appleFMTools(
+                includeImplicitCrossNoteSearch: includeImplicitCrossNoteSearch,
+                includeImplicitWebSearch: includeImplicitWebSearch
+            ),
+            transcript: transcript
+        )
     }
 
     @available(iOS 26, *)
@@ -887,7 +910,8 @@ final class MultiNoteChatViewModel {
                     message: "Other-note search was enabled for this turn, but a focused search query could not be prepared."
                 ),
                 sourceIDs: [],
-                sourceCitations: []
+                sourceCitations: [],
+                didActuallySearch: false
             )
         }
 
@@ -901,7 +925,8 @@ final class MultiNoteChatViewModel {
                     message: "Other-note search was enabled for this turn, but no focused search query could be inferred from the notes already in the chat and recent conversation."
                 ),
                 sourceIDs: [],
-                sourceCitations: []
+                sourceCitations: [],
+                didActuallySearch: false
             )
         }
 
@@ -923,7 +948,8 @@ final class MultiNoteChatViewModel {
                     payload: payload
                 ),
                 sourceIDs: payload.sourceIDs,
-                sourceCitations: payload.sourceCitations
+                sourceCitations: payload.sourceCitations,
+                didActuallySearch: true
             )
         case .empty:
             logger.logInfo("Multi-note chat - Cross-note search found no matches for plannedQuery='\(plannedQuery)'")
@@ -934,7 +960,8 @@ final class MultiNoteChatViewModel {
                     payload: payload
                 ),
                 sourceIDs: [],
-                sourceCitations: []
+                sourceCitations: [],
+                didActuallySearch: true
             )
         case .error:
             if let message = payload.message {
@@ -992,7 +1019,8 @@ final class MultiNoteChatViewModel {
                         payload: payload
                     ),
                     sourceIDs: payload.sourceIDs,
-                    sourceCitations: payload.sourceCitations
+                    sourceCitations: payload.sourceCitations,
+                    didActuallySearch: true
                 )
             case .empty:
                 logger.logInfo("Multi-note chat - Cloud implicit cross-note search found no matches for plannedQuery='\(plannedQuery)'")
@@ -1003,7 +1031,8 @@ final class MultiNoteChatViewModel {
                         payload: payload
                     ),
                     sourceIDs: [],
-                    sourceCitations: []
+                    sourceCitations: [],
+                    didActuallySearch: true
                 )
             case .error:
                 if let message = payload.message {
@@ -1041,7 +1070,8 @@ final class MultiNoteChatViewModel {
                 augmentedPrompt: ChatWebSearchContextManager.assemblePlannerUnavailablePrompt(
                     basePrompt: basePrompt,
                     message: "Web search was enabled for this turn, but a focused search query could not be prepared."
-                )
+                ),
+                didActuallySearch: false
             )
         }
 
@@ -1053,7 +1083,8 @@ final class MultiNoteChatViewModel {
                 augmentedPrompt: ChatWebSearchContextManager.assemblePlannerUnavailablePrompt(
                     basePrompt: basePrompt,
                     message: "Web search was enabled for this turn, but no focused web search query could be inferred from the notes already in the chat and recent conversation."
-                )
+                ),
+                didActuallySearch: false
             )
         }
 
@@ -1070,7 +1101,8 @@ final class MultiNoteChatViewModel {
                     basePrompt: basePrompt,
                     plannedQuery: plannedQuery,
                     payload: payload
-                )
+                ),
+                didActuallySearch: true
             )
         case .empty:
             logger.logInfo("Multi-note chat - Web search found no matches for plannedQuery='\(plannedQuery)'")
@@ -1079,7 +1111,8 @@ final class MultiNoteChatViewModel {
                     basePrompt: basePrompt,
                     plannedQuery: plannedQuery,
                     payload: payload
-                )
+                ),
+                didActuallySearch: true
             )
         case .error:
             if let message = payload.message {
@@ -1135,7 +1168,8 @@ final class MultiNoteChatViewModel {
                         basePrompt: basePrompt,
                         plannedQuery: plannedQuery,
                         payload: payload
-                    )
+                    ),
+                    didActuallySearch: true
                 )
             case .empty:
                 logger.logInfo("Multi-note chat - Cloud implicit web search found no matches for plannedQuery='\(plannedQuery)'")
@@ -1144,7 +1178,8 @@ final class MultiNoteChatViewModel {
                         basePrompt: basePrompt,
                         plannedQuery: plannedQuery,
                         payload: payload
-                    )
+                    ),
+                    didActuallySearch: true
                 )
             case .error:
                 if let message = payload.message {
