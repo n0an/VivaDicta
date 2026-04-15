@@ -653,7 +653,7 @@ struct ModeEditView: View {
                             HStack {
                                 Image(systemName: "bubble.left.and.text.bubble.right")
                                     .foregroundStyle(aiEnhancementGradient)
-                                Text("Chat Provider")
+                                Text("Chat AI Provider")
                             }
                         }
                         .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
@@ -672,7 +672,7 @@ struct ModeEditView: View {
                                     HStack {
                                         Image(systemName: "wand.and.sparkles")
                                             .foregroundStyle(aiEnhancementGradient)
-                                        Text("Chat Model")
+                                        Text("Chat AI Model")
                                         Spacer()
                                         Text("Foundation Model")
                                             .foregroundStyle(.secondary)
