@@ -19,7 +19,6 @@ struct RecordingStateView: View {
     @State private var recordingStartDate = Date()
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
             VStack(spacing: 0) {
                 HStack(spacing: 8) {
                     VivaModePicker(
@@ -47,36 +46,45 @@ struct RecordingStateView: View {
                     }
                 }
                 .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
 
                 Text(recordingStartDate, style: .timer)
                     .font(.system(size: 64, weight: .medium, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 20)
 
-                Button(action: {
-                    HapticManager.mediumImpact()
-                    dictationState.requestStopRecording()
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
+                ZStack(alignment: .trailing) {
+                    cancelButton
+                        .padding(.trailing, 16)
+                    
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            HapticManager.mediumImpact()
+                            dictationState.requestStopRecording()
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.white)
 
-                        Text("Stop")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
+                                Text("Stop")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 12)
+                            .glassCapsule(tint: .red, fallback: Color.red)
+                        }
+                        
+                        Spacer()
                     }
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 12)
-                    .glassCapsule(tint: .red, fallback: Color.red)
                 }
+                .padding(.bottom, 4)
             }
 
-            cancelButton
-                .padding(.leading, 16)
-                .padding(.bottom, 8)
-        }
         .onAppear {
             recordingStartDate = Date()
         }
