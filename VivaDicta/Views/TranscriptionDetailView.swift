@@ -1347,7 +1347,7 @@ private struct PresetPickerSheet: View {
                                 onReviewExtractedTasks()
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "tray.full")
+                                    Image(systemName: "checklist")
                                         .frame(width: 20)
                                         .foregroundStyle(.secondary)
 

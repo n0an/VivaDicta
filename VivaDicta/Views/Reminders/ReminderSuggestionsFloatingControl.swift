@@ -26,7 +26,7 @@ struct ReminderSuggestionsFloatingControl: View {
 
     private var labelContent: some View {
         HStack(spacing: 10) {
-            Image(systemName: "tray.full")
+            Image(systemName: "checklist")
                 .imageScale(.medium)
                 .foregroundStyle(.blue)
 
