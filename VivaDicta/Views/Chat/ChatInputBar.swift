@@ -9,18 +9,24 @@ import SwiftUI
 
 /// Text input bar with send/stop button for the chat.
 struct ChatInputBar: View {
+    struct LeadingAction {
+        let systemImage: String
+        let accessibilityLabel: String
+        let isArmed: Bool
+        let isEnabled: Bool
+        let action: () -> Void
+    }
+
     @Binding var text: String
     var isStreaming: Bool
     var isBusy: Bool = false
     var placeholder: String = "Ask about this note..."
-    var secondaryActionTitle: String? = nil
-    var isSecondaryActionArmed: Bool = false
-    var isSecondaryActionEnabled: Bool = true
+    var leadingActions: [LeadingAction] = []
     var onSend: () -> Void
     var onStop: () -> Void
-    var onSecondaryAction: (() -> Void)? = nil
 
     @FocusState private var isFocused: Bool
+    @State private var areLeadingActionsExpanded = false
 
     var body: some View {
         if #available(iOS 26, *) {
@@ -34,13 +40,7 @@ struct ChatInputBar: View {
     private var glassInputBar: some View {
         GlassEffectContainer(spacing: 12) {
             HStack(alignment: .bottom, spacing: 12) {
-                if let secondaryActionTitle, let onSecondaryAction {
-                    secondaryActionIconButton(
-                        accessibilityLabel: secondaryActionTitle,
-                        isArmed: isSecondaryActionArmed,
-                        action: onSecondaryAction
-                    )
-                }
+                leadingActionsView
 
                 TextField(placeholder, text: $text, axis: .vertical)
                     .lineLimit(1...6)
@@ -84,13 +84,7 @@ struct ChatInputBar: View {
 
     private var legacyInputBar: some View {
         HStack(alignment: .bottom, spacing: 8) {
-            if let secondaryActionTitle, let onSecondaryAction {
-                secondaryActionIconButton(
-                    accessibilityLabel: secondaryActionTitle,
-                    isArmed: isSecondaryActionArmed,
-                    action: onSecondaryAction
-                )
-            }
+            leadingActionsView
 
             TextField(placeholder, text: $text, axis: .vertical)
                 .lineLimit(1...6)
@@ -130,35 +124,98 @@ struct ChatInputBar: View {
     }
 
     @ViewBuilder
-    private func secondaryActionIconButton(
-        accessibilityLabel: String,
-        isArmed: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
+    private var leadingActionsView: some View {
+        if leadingActions.count > 1 {
+            if areLeadingActionsExpanded {
+                HStack(spacing: 6) {
+                    ForEach(Array(leadingActions.enumerated()), id: \.offset) { _, leadingAction in
+                        leadingActionIconButton(leadingAction)
+                    }
+                }
+            } else {
+                leadingActionsClusterButton
+            }
+        } else {
+            HStack(spacing: 6) {
+                ForEach(Array(leadingActions.enumerated()), id: \.offset) { _, leadingAction in
+                    leadingActionIconButton(leadingAction)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var leadingActionsClusterButton: some View {
+        let armedAction = leadingActions.first(where: \.isArmed)
+        let iconName = armedAction?.systemImage ?? "ellipsis.circle"
+        let accessibilityLabel = armedAction?.accessibilityLabel ?? "Chat tools"
+
+        Button {
+            areLeadingActionsExpanded.toggle()
+        } label: {
             if #available(iOS 26, *) {
-                Image(systemName: "sparkle.magnifyingglass")
+                Image(systemName: iconName)
                     .font(.headline)
-                    .foregroundStyle(isArmed ? .white : .secondary)
+                    .foregroundStyle(areLeadingActionsExpanded || armedAction != nil ? .white : .secondary)
                     .frame(width: 40, height: 40)
                     .glassEffect(
                         .regular
-                            .tint(isArmed ? Color.accentColor : Color.secondary.opacity(0.25))
+                            .tint(
+                                areLeadingActionsExpanded || armedAction != nil
+                                    ? Color.accentColor
+                                    : Color.secondary.opacity(0.25)
+                            )
                             .interactive(true),
                         in: .circle
                     )
             } else {
-                Image(systemName: "sparkle.magnifyingglass")
+                Image(systemName: iconName)
                     .font(.headline)
-                    .foregroundStyle(isArmed ? .white : .secondary)
+                    .foregroundStyle(areLeadingActionsExpanded || armedAction != nil ? .white : .secondary)
                     .frame(width: 40, height: 40)
-                    .background(isArmed ? Color.accentColor : Color(.systemGray5))
+                    .background(
+                        areLeadingActionsExpanded || armedAction != nil
+                            ? Color.accentColor
+                            : Color(.systemGray5)
+                    )
                     .clipShape(.circle)
             }
         }
         .buttonStyle(.plain)
-        .disabled(!isSecondaryActionEnabled || isStreaming || isBusy)
+        .disabled(isStreaming || isBusy)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(isArmed ? "Enabled" : "Disabled")
+        .accessibilityValue(areLeadingActionsExpanded ? "Expanded" : "Collapsed")
+    }
+
+    @ViewBuilder
+    private func leadingActionIconButton(_ leadingAction: LeadingAction) -> some View {
+        Button {
+            leadingAction.action()
+            areLeadingActionsExpanded = false
+        } label: {
+            if #available(iOS 26, *) {
+                Image(systemName: leadingAction.systemImage)
+                    .font(.headline)
+                    .foregroundStyle(leadingAction.isArmed ? .white : .secondary)
+                    .frame(width: 40, height: 40)
+                    .glassEffect(
+                        .regular
+                            .tint(leadingAction.isArmed ? Color.accentColor : Color.secondary.opacity(0.25))
+                            .interactive(true),
+                        in: .circle
+                    )
+            } else {
+                Image(systemName: leadingAction.systemImage)
+                    .font(.headline)
+                    .foregroundStyle(leadingAction.isArmed ? .white : .secondary)
+                    .frame(width: 40, height: 40)
+                    .background(leadingAction.isArmed ? Color.accentColor : Color(.systemGray5))
+                    .clipShape(.circle)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(!leadingAction.isEnabled || isStreaming || isBusy)
+        .accessibilityLabel(leadingAction.accessibilityLabel)
+        .accessibilityValue(leadingAction.isArmed ? "Enabled" : "Disabled")
     }
 }

@@ -31,6 +31,17 @@ final class ChatViewModel {
         let sourceCitations: [SmartSearchSourceCitation]
     }
 
+    private struct WebSearchTurnContext {
+        let augmentedPrompt: String
+    }
+
+    private struct CloudSendResult {
+        let text: String
+        let implicitToolCitations: [SmartSearchSourceCitation]
+        let implicitNoteToolUsed: Bool
+        let implicitWebToolUsed: Bool
+    }
+
     // MARK: - State
 
     var messages: [ChatMessage] = []
@@ -40,9 +51,14 @@ final class ChatViewModel {
     var errorMessage: String?
     var isCompacting: Bool = false
     var isCrossNoteSearchArmed: Bool = false
+    var isWebSearchArmed: Bool = false
 
     var canSearchOtherNotes: Bool {
         SmartSearchFeature.isEnabled
+    }
+
+    var canSearchWeb: Bool {
+        ExaAPIKeyManager.isConfigured
     }
 
     // MARK: - Provider/Model (from current VivaMode)
@@ -202,7 +218,9 @@ final class ChatViewModel {
         }
 
         let shouldSearchOtherNotes = isCrossNoteSearchArmed && canSearchOtherNotes
+        let shouldSearchWeb = isWebSearchArmed && canSearchWeb
         isCrossNoteSearchArmed = false
+        isWebSearchArmed = false
         inputText = ""
         errorMessage = nil
         conversation.lastInteractionAt = Date()
@@ -234,13 +252,23 @@ final class ChatViewModel {
                     provider: provider,
                     model: model
                 )
-                let promptText = crossNoteContext?.augmentedPrompt ?? text
+                let promptAfterCrossNote = crossNoteContext?.augmentedPrompt ?? text
+                let webSearchContext = await makeWebSearchContext(
+                    for: text,
+                    basePrompt: promptAfterCrossNote,
+                    enabled: shouldSearchWeb,
+                    provider: provider,
+                    model: model
+                )
+                let promptText = webSearchContext?.augmentedPrompt ?? promptAfterCrossNote
+                let allowImplicitTools = !shouldSearchOtherNotes && !shouldSearchWeb
 
                 if provider == .apple {
                     ExaWebSearchToolRuntime.beginCapture(for: webSearchToolCaptureID)
                     result = try await sendAppleFMMessage(
                         promptText,
-                        allowImplicitCrossNoteTool: crossNoteContext == nil
+                        allowImplicitCrossNoteTool: allowImplicitTools,
+                        allowImplicitWebTool: allowImplicitTools
                     )
                     implicitToolCitations = NotesSearchToolRuntime.consumeCapturedCitations(
                         for: notesSearchToolCaptureID
@@ -251,16 +279,22 @@ final class ChatViewModel {
                     implicitWebToolUsed = ExaWebSearchToolRuntime.consumeDidInvoke(
                         for: webSearchToolCaptureID
                     )
+                    logger.logInfo(
+                        "Chat - Apple turn completed responseChars=\(result.count) implicitCrossNoteToolUsed=\(implicitNoteToolUsed) implicitWebToolUsed=\(implicitWebToolUsed)"
+                    )
                 } else {
-                    result = try await sendCloudMessage(
+                    let cloudResult = try await sendCloudMessage(
                         originalText: text,
                         promptText: promptText,
                         provider: provider,
-                        model: model
+                        model: model,
+                        allowImplicitCrossNoteTool: allowImplicitTools,
+                        allowImplicitWebTool: allowImplicitTools
                     )
-                    implicitToolCitations = []
-                    implicitNoteToolUsed = false
-                    implicitWebToolUsed = false
+                    result = cloudResult.text
+                    implicitToolCitations = cloudResult.implicitToolCitations
+                    implicitNoteToolUsed = cloudResult.implicitNoteToolUsed
+                    implicitWebToolUsed = cloudResult.implicitWebToolUsed
                 }
 
                 pendingUserMessage = nil
@@ -283,7 +317,7 @@ final class ChatViewModel {
                     implicit: implicitToolCitations
                 )
                 assistantMessage.didUseCrossNoteSearchTool = crossNoteContext != nil || implicitNoteToolUsed
-                assistantMessage.didUseWebSearchTool = implicitWebToolUsed
+                assistantMessage.didUseWebSearchTool = webSearchContext != nil || implicitWebToolUsed
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -341,6 +375,20 @@ final class ChatViewModel {
             return
         }
         isCrossNoteSearchArmed.toggle()
+        if isCrossNoteSearchArmed {
+            isWebSearchArmed = false
+        }
+    }
+
+    func toggleWebSearchArmed() {
+        guard canSearchWeb else {
+            isWebSearchArmed = false
+            return
+        }
+        isWebSearchArmed.toggle()
+        if isWebSearchArmed {
+            isCrossNoteSearchArmed = false
+        }
     }
 
     // MARK: - Clear Chat
@@ -354,6 +402,7 @@ final class ChatViewModel {
         successfulReplyCount = 0
         hasRequestedReviewForSession = false
         isCrossNoteSearchArmed = false
+        isWebSearchArmed = false
 
         conversation.appleFMTranscriptData = nil
         trySave()
@@ -512,9 +561,12 @@ final class ChatViewModel {
     }
 
     @available(iOS 26, *)
-    private func appleFMTools(includeImplicitCrossNoteSearch: Bool = false) -> [any Tool] {
+    private func appleFMTools(
+        includeImplicitCrossNoteSearch: Bool = false,
+        includeImplicitWebSearch: Bool = true
+    ) -> [any Tool] {
         var tools: [any Tool] = []
-        if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
+        if includeImplicitWebSearch, let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID))
         }
         if includeImplicitCrossNoteSearch,
@@ -579,7 +631,8 @@ final class ChatViewModel {
     @available(iOS 26, *)
     private func sendAppleFMMessageImpl(
         _ text: String,
-        allowImplicitCrossNoteTool: Bool
+        allowImplicitCrossNoteTool: Bool,
+        allowImplicitWebTool: Bool
     ) async throws -> String {
         guard let currentSession = appleFMSession else {
             throw EnhancementError.notConfigured
@@ -589,8 +642,14 @@ final class ChatViewModel {
 
         var session = LanguageModelSession(
             model: appleFMModel,
-            tools: appleFMTools(includeImplicitCrossNoteSearch: allowImplicitCrossNoteTool),
+            tools: appleFMTools(
+                includeImplicitCrossNoteSearch: allowImplicitCrossNoteTool,
+                includeImplicitWebSearch: allowImplicitWebTool
+            ),
             transcript: currentSession.transcript
+        )
+        logger.logInfo(
+            "Chat - Apple turn start promptChars=\(text.count) implicitCrossNoteToolAllowed=\(allowImplicitCrossNoteTool) implicitWebToolAllowed=\(allowImplicitWebTool)"
         )
 
         // No preemptive compaction for Apple FM - let the runtime decide via
@@ -682,11 +741,16 @@ final class ChatViewModel {
         options: GenerationOptions
     ) async throws -> String {
         let stream = session.streamResponse(to: text, options: options)
+        var didLogFirstChunk = false
         for try await partial in stream {
             let content = partial.content
             let previous = streamingText
             if previous.isEmpty, !content.isEmpty {
                 HapticManager.streamingStart()
+                if !didLogFirstChunk {
+                    logger.logInfo("Chat - Apple first response chunk chars=\(content.count)")
+                    didLogFirstChunk = true
+                }
             } else if content.count > previous.count {
                 HapticManager.streamingPulse()
             }
@@ -696,17 +760,20 @@ final class ChatViewModel {
         let result = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
         streamingText = filtered
+        logger.logInfo("Chat - Apple stream collected rawChars=\(result.count) filteredChars=\(filtered.count)")
         return filtered
     }
 
     private func sendAppleFMMessage(
         _ text: String,
-        allowImplicitCrossNoteTool: Bool
+        allowImplicitCrossNoteTool: Bool,
+        allowImplicitWebTool: Bool
     ) async throws -> String {
         if #available(iOS 26, *) {
             return try await sendAppleFMMessageImpl(
                 text,
-                allowImplicitCrossNoteTool: allowImplicitCrossNoteTool
+                allowImplicitCrossNoteTool: allowImplicitCrossNoteTool,
+                allowImplicitWebTool: allowImplicitWebTool
             )
         } else {
             throw EnhancementError.notConfigured
@@ -717,8 +784,10 @@ final class ChatViewModel {
         originalText: String,
         promptText: String,
         provider: AIProvider,
-        model: String
-    ) async throws -> String {
+        model: String,
+        allowImplicitCrossNoteTool: Bool,
+        allowImplicitWebTool: Bool
+    ) async throws -> CloudSendResult {
         if ChatContextManager.shouldAutoCompact(
             noteText: assembledNoteText,
             messages: messages,
@@ -729,29 +798,57 @@ final class ChatViewModel {
             try await performCompaction()
         }
 
-        var chatMessages = messages.dropLast()
-        let outboundUserMessage = ChatMessage(
-            role: "user",
-            content: promptText,
-            estimatedTokenCount: ChatContextManager.estimateTokens(promptText)
-        )
-        var allChatMessages = Array(chatMessages)
-        allChatMessages.append(outboundUserMessage)
-
-        let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
+        let baseChatMessages = cloudChatMessages(for: promptText)
+        let (baseSystemMessage, baseAPIMessages) = ChatContextManager.assembleMessages(
             noteText: assembledNoteText,
-            chatMessages: allChatMessages,
+            chatMessages: baseChatMessages,
             provider: provider,
             model: model
         )
 
-        if promptText != originalText {
+        let implicitCrossNoteContext = await makeImplicitCloudCrossNoteSearchContext(
+            originalText: originalText,
+            allowImplicitCrossNoteTool: allowImplicitCrossNoteTool,
+            provider: provider,
+            model: model,
+            systemMessage: baseSystemMessage,
+            apiMessages: baseAPIMessages
+        )
+
+        let promptAfterImplicitCrossNote = implicitCrossNoteContext?.augmentedPrompt ?? promptText
+        let webDecisionChatMessages = cloudChatMessages(for: promptAfterImplicitCrossNote)
+        let (webDecisionSystemMessage, webDecisionAPIMessages) = ChatContextManager.assembleMessages(
+            noteText: assembledNoteText,
+            chatMessages: webDecisionChatMessages,
+            provider: provider,
+            model: model
+        )
+        let implicitWebContext = await makeImplicitCloudWebSearchContext(
+            originalText: originalText,
+            basePrompt: promptAfterImplicitCrossNote,
+            allowImplicitWebTool: allowImplicitWebTool,
+            provider: provider,
+            model: model,
+            systemMessage: webDecisionSystemMessage,
+            apiMessages: webDecisionAPIMessages
+        )
+
+        let finalPromptText = implicitWebContext?.augmentedPrompt ?? promptAfterImplicitCrossNote
+        let finalChatMessages = cloudChatMessages(for: finalPromptText)
+        let (systemMessage, apiMessages) = ChatContextManager.assembleMessages(
+            noteText: assembledNoteText,
+            chatMessages: finalChatMessages,
+            provider: provider,
+            model: model
+        )
+
+        if finalPromptText != originalText {
             logger.logInfo(
-                "Chat - Sending augmented prompt originalChars=\(originalText.count) augmentedChars=\(promptText.count)"
+                "Chat - Sending augmented prompt originalChars=\(originalText.count) augmentedChars=\(finalPromptText.count)"
             )
         }
 
-        return try await aiService.makeChatStreamingRequest(
+        let text = try await aiService.makeChatStreamingRequest(
             provider: provider,
             model: model,
             systemMessage: systemMessage,
@@ -767,9 +864,30 @@ final class ChatViewModel {
                 self.streamingText = partial
             }
         )
+
+        let implicitToolCitations = implicitCrossNoteContext?.sourceCitations ?? []
+        let implicitNoteToolUsed = implicitCrossNoteContext != nil
+
+        return CloudSendResult(
+            text: text,
+            implicitToolCitations: implicitToolCitations,
+            implicitNoteToolUsed: implicitNoteToolUsed,
+            implicitWebToolUsed: implicitWebContext != nil
+        )
     }
 
     // MARK: - Private Helpers
+
+    private func cloudChatMessages(for promptText: String) -> [ChatMessage] {
+        let outboundUserMessage = ChatMessage(
+            role: "user",
+            content: promptText,
+            estimatedTokenCount: ChatContextManager.estimateTokens(promptText)
+        )
+        var allChatMessages = Array(messages.dropLast())
+        allChatMessages.append(outboundUserMessage)
+        return allChatMessages
+    }
 
     private func makeCrossNoteSearchContext(
         for query: String,
@@ -847,6 +965,219 @@ final class ChatViewModel {
                 errorMessage = message
                 logger.logWarning("Chat - Cross-note search error: \(message)")
             }
+            return nil
+        }
+    }
+
+    private func makeImplicitCloudCrossNoteSearchContext(
+        originalText: String,
+        allowImplicitCrossNoteTool: Bool,
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        apiMessages: [[String: String]]
+    ) async -> CrossNoteSearchTurnContext? {
+        guard allowImplicitCrossNoteTool,
+              CrossNoteSearchToolFeature.isEnabled,
+              SmartSearchFeature.isEnabled else {
+            return nil
+        }
+
+        do {
+            guard let plannedQuery = try await aiService.makeCrossNoteSearchToolDecision(
+                provider: provider,
+                model: model,
+                systemMessage: systemMessage,
+                messages: apiMessages
+            ) else {
+                logger.logInfo("Chat - Cloud implicit cross-note tool not used provider=\(provider.rawValue)")
+                return nil
+            }
+
+            logger.logInfo(
+                "Chat - Cloud implicit cross-note tool provider=\(provider.rawValue) plannedQuery='\(plannedQuery)'"
+            )
+
+            let payload = await NotesSearchToolRuntime.searchNotesPayload(
+                query: plannedQuery,
+                excluding: [transcription.id]
+            )
+
+            switch payload.status {
+            case .success:
+                logger.logInfo(
+                    "Chat - Cloud implicit cross-note search found \(payload.results.count) note matches for plannedQuery='\(plannedQuery)'"
+                )
+                return CrossNoteSearchTurnContext(
+                    augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
+                        query: originalText,
+                        plannedQuery: plannedQuery,
+                        payload: payload
+                    ),
+                    sourceIDs: payload.sourceIDs,
+                    sourceCitations: payload.sourceCitations
+                )
+            case .empty:
+                logger.logInfo("Chat - Cloud implicit cross-note search found no matches for plannedQuery='\(plannedQuery)'")
+                return CrossNoteSearchTurnContext(
+                    augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
+                        query: originalText,
+                        plannedQuery: plannedQuery,
+                        payload: payload
+                    ),
+                    sourceIDs: [],
+                    sourceCitations: []
+                )
+            case .error:
+                if let message = payload.message {
+                    logger.logWarning("Chat - Cloud implicit cross-note search error: \(message)")
+                }
+                return nil
+            }
+        } catch {
+            logger.logWarning(
+                "Chat - Cloud implicit cross-note tool phase failed provider=\(provider.rawValue): \(error.localizedDescription)"
+            )
+            return nil
+        }
+    }
+
+    private func makeWebSearchContext(
+        for query: String,
+        basePrompt: String,
+        enabled: Bool,
+        provider: AIProvider,
+        model: String
+    ) async -> WebSearchTurnContext? {
+        guard enabled, canSearchWeb else { return nil }
+
+        guard let plan = await WebSearchPlanner.makePlan(
+            aiService: aiService,
+            provider: provider,
+            model: model,
+            noteText: assembledNoteText,
+            recentMessages: plannerMessagesForCrossNoteSearch(),
+            latestUserMessage: query
+        ) else {
+            logger.logWarning("Chat - Web planner failed for query='\(query)'")
+            return WebSearchTurnContext(
+                augmentedPrompt: ChatWebSearchContextManager.assemblePlannerUnavailablePrompt(
+                    basePrompt: basePrompt,
+                    message: "Web search was enabled for this turn, but a focused search query could not be prepared."
+                )
+            )
+        }
+
+        guard plan.shouldSearch, let plannedQuery = plan.searchQuery else {
+            logger.logInfo(
+                "Chat - Web planner decided not to search query='\(query)' reason='\(plan.reasoning ?? "")'"
+            )
+            return WebSearchTurnContext(
+                augmentedPrompt: ChatWebSearchContextManager.assemblePlannerUnavailablePrompt(
+                    basePrompt: basePrompt,
+                    message: "Web search was enabled for this turn, but no focused web search query could be inferred from the note and recent chat."
+                )
+            )
+        }
+
+        logger.logInfo("Chat - Web search start originalQuery='\(query)' plannedQuery='\(plannedQuery)'")
+        let payload = await ExaWebSearchToolRuntime.searchPayload(query: plannedQuery)
+
+        switch payload.status {
+        case .success:
+            logger.logInfo(
+                "Chat - Web search found \(payload.results.count) results for plannedQuery='\(plannedQuery)' originalQuery='\(query)'"
+            )
+            return WebSearchTurnContext(
+                augmentedPrompt: ChatWebSearchContextManager.assembleAugmentedPrompt(
+                    basePrompt: basePrompt,
+                    plannedQuery: plannedQuery,
+                    payload: payload
+                )
+            )
+        case .empty:
+            logger.logInfo("Chat - Web search found no matches for plannedQuery='\(plannedQuery)'")
+            return WebSearchTurnContext(
+                augmentedPrompt: ChatWebSearchContextManager.assembleAugmentedPrompt(
+                    basePrompt: basePrompt,
+                    plannedQuery: plannedQuery,
+                    payload: payload
+                )
+            )
+        case .error:
+            if let message = payload.message {
+                errorMessage = message
+                logger.logWarning("Chat - Web search error: \(message)")
+            }
+            return nil
+        }
+    }
+
+    private func makeImplicitCloudWebSearchContext(
+        originalText: String,
+        basePrompt: String,
+        allowImplicitWebTool: Bool,
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        apiMessages: [[String: String]]
+    ) async -> WebSearchTurnContext? {
+        guard allowImplicitWebTool,
+              canSearchWeb else {
+            return nil
+        }
+
+        do {
+            guard let plannedQuery = try await aiService.makeWebSearchToolDecision(
+                provider: provider,
+                model: model,
+                systemMessage: systemMessage,
+                messages: apiMessages
+            ) else {
+                logger.logInfo("Chat - Cloud implicit web tool not used provider=\(provider.rawValue)")
+                return nil
+            }
+
+            logger.logInfo(
+                "Chat - Cloud implicit web tool provider=\(provider.rawValue) plannedQuery='\(plannedQuery)'"
+            )
+
+            logger.logInfo(
+                "Chat - Cloud implicit web search start provider=\(provider.rawValue) originalQuery='\(originalText)' plannedQuery='\(plannedQuery)'"
+            )
+            let payload = await ExaWebSearchToolRuntime.searchPayload(query: plannedQuery)
+
+            switch payload.status {
+            case .success:
+                logger.logInfo(
+                    "Chat - Cloud implicit web search found \(payload.results.count) results for plannedQuery='\(plannedQuery)'"
+                )
+                return WebSearchTurnContext(
+                    augmentedPrompt: ChatWebSearchContextManager.assembleAugmentedPrompt(
+                        basePrompt: basePrompt,
+                        plannedQuery: plannedQuery,
+                        payload: payload
+                    )
+                )
+            case .empty:
+                logger.logInfo("Chat - Cloud implicit web search found no matches for plannedQuery='\(plannedQuery)'")
+                return WebSearchTurnContext(
+                    augmentedPrompt: ChatWebSearchContextManager.assembleAugmentedPrompt(
+                        basePrompt: basePrompt,
+                        plannedQuery: plannedQuery,
+                        payload: payload
+                    )
+                )
+            case .error:
+                if let message = payload.message {
+                    logger.logWarning("Chat - Cloud implicit web search error: \(message)")
+                }
+                return nil
+            }
+        } catch {
+            logger.logWarning(
+                "Chat - Cloud implicit web tool phase failed provider=\(provider.rawValue): \(error.localizedDescription)"
+            )
             return nil
         }
     }

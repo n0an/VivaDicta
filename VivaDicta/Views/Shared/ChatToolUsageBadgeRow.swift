@@ -58,7 +58,7 @@ struct ChatToolUsageBadgeRow: View {
     }
 
     private var badgeRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 0) {
             ForEach(badges) { badge in
                 Image(systemName: badge.icon)
                 .font(.caption.weight(.medium))

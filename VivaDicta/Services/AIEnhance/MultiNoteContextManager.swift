@@ -29,6 +29,8 @@ struct MultiNoteContextManager {
     - Keep responses concise unless the user asks for detail
     - Do not use long em-dashes; use normal hyphens instead
     - ALWAYS answer from the notes already in the conversation first.
+    - If a <WEB_SEARCH_RESULTS> block is present, treat it as supporting context from web search.
+    - If a searchOtherNotes tool is available, use it only when the user asks about other notes beyond the notes already in the conversation.
     - Only use web search when the user explicitly asks to look something up online or asks about current events, news, or real-time information not covered in the notes.
     """
 

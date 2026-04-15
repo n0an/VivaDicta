@@ -72,13 +72,24 @@ struct ChatView: View {
                 text: $viewModel.inputText,
                 isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                 isBusy: viewModel.isCompacting,
-                secondaryActionTitle: isSmartSearchEnabled
-                    ? (viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes")
-                    : nil,
-                isSecondaryActionArmed: viewModel.isCrossNoteSearchArmed,
+                leadingActions: [
+                    viewModel.canSearchWeb ? ChatInputBar.LeadingAction(
+                        systemImage: "globe",
+                        accessibilityLabel: viewModel.isWebSearchArmed ? "Will search the web" : "Search the web",
+                        isArmed: viewModel.isWebSearchArmed,
+                        isEnabled: viewModel.canSearchWeb,
+                        action: { viewModel.toggleWebSearchArmed() }
+                    ) : nil,
+                    isSmartSearchEnabled ? ChatInputBar.LeadingAction(
+                        systemImage: "sparkle.magnifyingglass",
+                        accessibilityLabel: viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes",
+                        isArmed: viewModel.isCrossNoteSearchArmed,
+                        isEnabled: viewModel.canSearchOtherNotes,
+                        action: { viewModel.toggleCrossNoteSearchArmed() }
+                    ) : nil
+                ].compactMap { $0 },
                 onSend: { viewModel.sendMessage() },
-                onStop: { viewModel.cancelStreaming() },
-                onSecondaryAction: { viewModel.toggleCrossNoteSearchArmed() }
+                onStop: { viewModel.cancelStreaming() }
             )
         }
         .navigationTitle("Chat")

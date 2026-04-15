@@ -80,6 +80,8 @@ struct NotesSearchTool: Tool {
             return NotesSearchToolRuntime.formatError("Notes search query cannot be empty.")
         }
 
+        let logger = Logger(category: .chatViewModel)
+        logger.logInfo("Apple FM cross-note tool invoked query='\(query)'")
         await NotesSearchToolRuntime.markInvoked(for: captureID)
         let payload = await NotesSearchToolRuntime.searchNotesPayload(
             query: query,

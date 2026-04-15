@@ -22,7 +22,7 @@ struct ChatToolsSettingsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Automatic search in other notes (Experimental)")
                             .font(.body)
-                        Text("Allow Apple Foundation Models to decide when to search your other notes during chat. Off by default.")
+                        Text("Allow compatible chat models to decide when to search your other notes during chat. Off by default.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -43,7 +43,7 @@ struct ChatToolsSettingsView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Web Search (Exa)")
-                            Text("Configure the Exa API key used for Apple web search.")
+                            Text("Configure the Exa API key used for chat web search.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -77,7 +77,7 @@ private struct ExaWebSearchSettingsView: View {
             Text("Web Search (Exa)")
                 .font(.title2)
 
-            Text("Give Apple Foundation Model the ability to search the web for current information during chat.")
+            Text("Let chat models search the web for current information during chat.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

@@ -29,6 +29,8 @@ struct ChatContextManager {
     - ALWAYS answer from the note text already in the conversation first.
     - If an <OTHER_NOTES_SEARCH_RESULTS> block is present, treat it as supporting context from notes outside the current note.
     - Use other-note results only when they help answer the user's cross-note request.
+    - If a <WEB_SEARCH_RESULTS> block is present, treat it as supporting context from web search.
+    - If a searchOtherNotes tool is available, use it only when the user asks about other notes, prior mentions, or related notes beyond the current note.
     - Only use web search when the user explicitly asks to look something up online or asks about current events, news, or real-time information not covered in the note.
     """
 

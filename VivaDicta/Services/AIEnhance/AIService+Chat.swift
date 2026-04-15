@@ -183,6 +183,74 @@ extension AIService {
         }
     }
 
+    // MARK: - Tool Decision Request
+
+    /// Lets a cloud model decide whether to invoke the implicit cross-note search tool.
+    /// Returns the focused query requested by the model, or nil when the model decides
+    /// not to use the tool for this turn.
+    func makeCrossNoteSearchToolDecision(
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]]
+    ) async throws -> String? {
+        switch provider {
+        case .anthropic:
+            guard let apiKey = provider.apiKey else {
+                throw EnhancementError.notConfigured
+            }
+            return try await makeAnthropicCrossNoteSearchToolDecision(
+                model: model,
+                systemMessage: systemMessage,
+                messages: messages,
+                apiKey: apiKey
+            )
+
+        default:
+            let (url, headers) = try await chatRequestConfig(for: provider, model: model)
+            return try await makeOpenAICrossNoteSearchToolDecision(
+                url: url,
+                model: model,
+                systemMessage: systemMessage,
+                messages: messages,
+                headers: headers
+            )
+        }
+    }
+
+    /// Lets a cloud model decide whether to invoke the implicit web search tool.
+    /// Returns the focused query requested by the model, or nil when the model decides
+    /// not to use the tool for this turn.
+    func makeWebSearchToolDecision(
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]]
+    ) async throws -> String? {
+        switch provider {
+        case .anthropic:
+            guard let apiKey = provider.apiKey else {
+                throw EnhancementError.notConfigured
+            }
+            return try await makeAnthropicWebSearchToolDecision(
+                model: model,
+                systemMessage: systemMessage,
+                messages: messages,
+                apiKey: apiKey
+            )
+
+        default:
+            let (url, headers) = try await chatRequestConfig(for: provider, model: model)
+            return try await makeOpenAIWebSearchToolDecision(
+                url: url,
+                model: model,
+                systemMessage: systemMessage,
+                messages: messages,
+                headers: headers
+            )
+        }
+    }
+
     // MARK: - Private Helpers
 
     private enum ChatStreamingRoute {
@@ -242,6 +310,34 @@ extension AIService {
             }
             return (url, ["Authorization": "Bearer \(apiKey)"])
         }
+    }
+
+    private func crossNoteSearchToolSchemaObject() -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "query": [
+                    "type": "string",
+                    "description": crossNoteSearchToolQueryArgumentDescription
+                ]
+            ],
+            "required": ["query"],
+            "additionalProperties": false
+        ]
+    }
+
+    private func webSearchToolSchemaObject() -> [String: Any] {
+        [
+            "type": "object",
+            "properties": [
+                "query": [
+                    "type": "string",
+                    "description": webSearchToolQueryArgumentDescription
+                ]
+            ],
+            "required": ["query"],
+            "additionalProperties": false
+        ]
     }
 
     // MARK: - OpenAI-Compatible Chat
@@ -389,6 +485,138 @@ extension AIService {
         return AIEnhancementOutputFilter.filter(content.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
+    private func makeOpenAICrossNoteSearchToolDecision(
+        url: URL,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]],
+        headers: [String: String]
+    ) async throws -> String? {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 300
+
+        for (key, value) in headers {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+
+        var body = buildOpenAIChatRequestBody(
+            model: model,
+            systemMessage: systemMessage,
+            messages: messages,
+            stream: false
+        )
+        body["tools"] = [[
+            "type": "function",
+            "function": [
+                "name": crossNoteSearchToolName,
+                "description": crossNoteSearchToolDescription,
+                "parameters": crossNoteSearchToolSchemaObject()
+            ]
+        ]]
+        body["tool_choice"] = "auto"
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        try Task.checkCancellation()
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw EnhancementError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw chatHTTPError(statusCode: httpResponse.statusCode, errorString: errorString, provider: "AI")
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let firstChoice = choices.first,
+              let message = firstChoice["message"] as? [String: Any],
+              let toolCalls = message["tool_calls"] as? [[String: Any]],
+              let toolCall = toolCalls.first,
+              let function = toolCall["function"] as? [String: Any],
+              let name = function["name"] as? String,
+              name == crossNoteSearchToolName,
+              let argumentsString = function["arguments"] as? String,
+              let argumentsData = argumentsString.data(using: .utf8),
+              let arguments = try JSONSerialization.jsonObject(with: argumentsData) as? [String: Any],
+              let query = arguments["query"] as? String else {
+            return nil
+        }
+
+        return normalizedCrossNoteSearchToolQuery(query)
+    }
+
+    private func makeOpenAIWebSearchToolDecision(
+        url: URL,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]],
+        headers: [String: String]
+    ) async throws -> String? {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 300
+
+        for (key, value) in headers {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+
+        var body = buildOpenAIChatRequestBody(
+            model: model,
+            systemMessage: systemMessage,
+            messages: messages,
+            stream: false
+        )
+        body["tools"] = [[
+            "type": "function",
+            "function": [
+                "name": webSearchToolName,
+                "description": webSearchToolDescription,
+                "parameters": webSearchToolSchemaObject()
+            ]
+        ]]
+        body["tool_choice"] = "auto"
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        try Task.checkCancellation()
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw EnhancementError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw chatHTTPError(statusCode: httpResponse.statusCode, errorString: errorString, provider: "AI")
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let firstChoice = choices.first,
+              let message = firstChoice["message"] as? [String: Any],
+              let toolCalls = message["tool_calls"] as? [[String: Any]],
+              let toolCall = toolCalls.first,
+              let function = toolCall["function"] as? [String: Any],
+              let name = function["name"] as? String,
+              name == webSearchToolName,
+              let argumentsString = function["arguments"] as? String,
+              let argumentsData = argumentsString.data(using: .utf8),
+              let arguments = try JSONSerialization.jsonObject(with: argumentsData) as? [String: Any],
+              let query = arguments["query"] as? String else {
+            return nil
+        }
+
+        return normalizedWebSearchToolQuery(query)
+    }
+
     // MARK: - Anthropic Chat
 
     private func makeAnthropicChatStreamingRequest(
@@ -530,7 +758,129 @@ extension AIService {
         return AIEnhancementOutputFilter.filter(text.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
+    private func makeAnthropicCrossNoteSearchToolDecision(
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]],
+        apiKey: String
+    ) async throws -> String? {
+        var request = URLRequest(url: URL(string: AIProvider.anthropic.baseURL)!)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = 300
+
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": 1024,
+            "system": systemMessage,
+            "messages": messages.map { $0 as [String: Any] },
+            "tools": [[
+                "name": crossNoteSearchToolName,
+                "description": crossNoteSearchToolDescription,
+                "input_schema": crossNoteSearchToolSchemaObject()
+            ]]
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        try Task.checkCancellation()
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw EnhancementError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw chatHTTPError(statusCode: httpResponse.statusCode, errorString: errorString, provider: "Anthropic")
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let content = json["content"] as? [[String: Any]],
+              let toolCall = content.first(where: {
+                  ($0["type"] as? String) == "tool_use"
+                      && ($0["name"] as? String) == crossNoteSearchToolName
+              }),
+              let input = toolCall["input"] as? [String: Any],
+              let query = input["query"] as? String else {
+            return nil
+        }
+
+        return normalizedCrossNoteSearchToolQuery(query)
+    }
+
+    private func makeAnthropicWebSearchToolDecision(
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]],
+        apiKey: String
+    ) async throws -> String? {
+        var request = URLRequest(url: URL(string: AIProvider.anthropic.baseURL)!)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.timeoutInterval = 300
+
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": 1024,
+            "system": systemMessage,
+            "messages": messages.map { $0 as [String: Any] },
+            "tools": [[
+                "name": webSearchToolName,
+                "description": webSearchToolDescription,
+                "input_schema": webSearchToolSchemaObject()
+            ]]
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        try Task.checkCancellation()
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw EnhancementError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw chatHTTPError(statusCode: httpResponse.statusCode, errorString: errorString, provider: "Anthropic")
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let content = json["content"] as? [[String: Any]],
+              let toolCall = content.first(where: {
+                  ($0["type"] as? String) == "tool_use"
+                      && ($0["name"] as? String) == webSearchToolName
+              }),
+              let input = toolCall["input"] as? [String: Any],
+              let query = input["query"] as? String else {
+            return nil
+        }
+
+        return normalizedWebSearchToolQuery(query)
+    }
+
     // MARK: - Error Helpers
+
+    private func normalizedCrossNoteSearchToolQuery(_ query: String) -> String? {
+        let normalized = query
+            .replacing(/\s+/, with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalized.isEmpty ? nil : normalized
+    }
+
+    private func normalizedWebSearchToolQuery(_ query: String) -> String? {
+        let normalized = query
+            .replacing(/\s+/, with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalized.isEmpty ? nil : normalized
+    }
 
     private func chatHTTPError(statusCode: Int, errorString: String, provider: String) -> EnhancementError {
         switch statusCode {
