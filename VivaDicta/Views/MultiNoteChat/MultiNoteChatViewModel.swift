@@ -54,7 +54,7 @@ final class MultiNoteChatViewModel {
     }
 
     var canSearchWeb: Bool {
-        ExaAPIKeyManager.isConfigured
+        WebSearchToolFeature.isEnabled && ExaAPIKeyManager.isConfigured
     }
 
     // MARK: - Provider/Model (from current VivaMode)
@@ -551,7 +551,10 @@ final class MultiNoteChatViewModel {
         includeImplicitWebSearch: Bool = true
     ) -> [any Tool] {
         var tools: [any Tool] = []
-        if includeImplicitWebSearch, let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
+        if includeImplicitWebSearch,
+           WebSearchToolFeature.isEnabled,
+           let key = ExaAPIKeyManager.apiKey,
+           !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID))
         }
         if includeImplicitCrossNoteSearch,
@@ -1097,6 +1100,7 @@ final class MultiNoteChatViewModel {
         apiMessages: [[String: String]]
     ) async -> WebSearchTurnContext? {
         guard allowImplicitWebTool,
+              WebSearchToolFeature.isEnabled,
               canSearchWeb else {
             return nil
         }

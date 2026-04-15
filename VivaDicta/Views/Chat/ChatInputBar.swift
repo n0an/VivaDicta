@@ -27,6 +27,9 @@ struct ChatInputBar: View {
 
     @FocusState private var isFocused: Bool
     @State private var areLeadingActionsExpanded = false
+    @Namespace private var leadingActionsGlassNamespace
+
+    private let leadingActionsAnimation = Animation.spring(response: 0.24, dampingFraction: 0.84)
 
     var body: some View {
         if #available(iOS 26, *) {
@@ -123,41 +126,52 @@ struct ChatInputBar: View {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isStreaming && !isBusy
     }
 
+    private func leadingActionGlassID(_ leadingAction: LeadingAction) -> String {
+        "chat-tool-\(leadingAction.systemImage)"
+    }
+
     @ViewBuilder
     private var leadingActionsView: some View {
-        if leadingActions.count > 1 {
-            if areLeadingActionsExpanded {
+        Group {
+            if leadingActions.count > 1 {
+                if areLeadingActionsExpanded {
+                    HStack(spacing: 6) {
+                        ForEach(Array(leadingActions.enumerated()), id: \.offset) { _, leadingAction in
+                            leadingActionIconButton(leadingAction)
+                        }
+                    }
+                } else {
+                    leadingActionsClusterButton
+                }
+            } else {
                 HStack(spacing: 6) {
                     ForEach(Array(leadingActions.enumerated()), id: \.offset) { _, leadingAction in
                         leadingActionIconButton(leadingAction)
                     }
                 }
-            } else {
-                leadingActionsClusterButton
-            }
-        } else {
-            HStack(spacing: 6) {
-                ForEach(Array(leadingActions.enumerated()), id: \.offset) { _, leadingAction in
-                    leadingActionIconButton(leadingAction)
-                }
             }
         }
+        .animation(leadingActionsAnimation, value: areLeadingActionsExpanded)
     }
 
     @ViewBuilder
     private var leadingActionsClusterButton: some View {
         let armedAction = leadingActions.first(where: \.isArmed)
-        let iconName = armedAction?.systemImage ?? "ellipsis.circle"
+        let iconName = armedAction?.systemImage ?? "wrench.and.screwdriver"
         let accessibilityLabel = armedAction?.accessibilityLabel ?? "Chat tools"
+        let clusterGlassID = armedAction.map(leadingActionGlassID) ?? "chat-tools-cluster"
 
         Button {
-            areLeadingActionsExpanded.toggle()
+            withAnimation(leadingActionsAnimation) {
+                areLeadingActionsExpanded.toggle()
+            }
         } label: {
             if #available(iOS 26, *) {
                 Image(systemName: iconName)
                     .font(.headline)
                     .foregroundStyle(areLeadingActionsExpanded || armedAction != nil ? .white : .secondary)
                     .frame(width: 40, height: 40)
+                    .contentTransition(.symbolEffect(.replace))
                     .glassEffect(
                         .regular
                             .tint(
@@ -168,6 +182,7 @@ struct ChatInputBar: View {
                             .interactive(true),
                         in: .circle
                     )
+                    .glassEffectID(clusterGlassID, in: leadingActionsGlassNamespace)
             } else {
                 Image(systemName: iconName)
                     .font(.headline)
@@ -190,8 +205,10 @@ struct ChatInputBar: View {
     @ViewBuilder
     private func leadingActionIconButton(_ leadingAction: LeadingAction) -> some View {
         Button {
-            leadingAction.action()
-            areLeadingActionsExpanded = false
+            withAnimation(leadingActionsAnimation) {
+                leadingAction.action()
+                areLeadingActionsExpanded = false
+            }
         } label: {
             if #available(iOS 26, *) {
                 Image(systemName: leadingAction.systemImage)
@@ -204,6 +221,7 @@ struct ChatInputBar: View {
                             .interactive(true),
                         in: .circle
                     )
+                    .glassEffectID(leadingActionGlassID(leadingAction), in: leadingActionsGlassNamespace)
             } else {
                 Image(systemName: leadingAction.systemImage)
                     .font(.headline)

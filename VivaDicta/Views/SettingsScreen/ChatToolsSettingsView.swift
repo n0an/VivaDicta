@@ -11,6 +11,9 @@ import SwiftUI
 struct ChatToolsSettingsView: View {
     @AppStorage(CrossNoteSearchToolFeature.isEnabledKey)
     private var isImplicitCrossNoteSearchEnabled = false
+    @AppStorage(WebSearchToolFeature.isEnabledKey)
+    private var isImplicitWebSearchEnabled = false
+    @State private var isExaConfigured = ExaAPIKeyManager.isConfigured
 
     @AppStorage(SmartSearchFeature.isEnabledKey)
     private var isSmartSearchEnabled = true
@@ -37,20 +40,37 @@ struct ChatToolsSettingsView: View {
             }
 
             Section("Web Search") {
+                Toggle(isOn: $isImplicitWebSearchEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Web Search (Exa)")
+                            .font(.body)
+                        Text("Allow chat to search the web with Exa. When enabled, the web search button appears in chat and compatible models may also search automatically.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!isExaConfigured)
+
+                if !isExaConfigured {
+                    Text("Requires an Exa API key because web search uses Exa.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 NavigationLink {
                     ExaWebSearchSettingsView()
                 } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Web Search (Exa)")
-                            Text("Configure the Exa API key used for chat web search.")
+                            Text("Configure Exa API Key")
+                            Text("Manage the Exa API key used for chat web search.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
                         Spacer()
 
-                        if ExaAPIKeyManager.isConfigured {
+                        if isExaConfigured {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                                 .font(.caption)
@@ -61,6 +81,9 @@ struct ChatToolsSettingsView: View {
         }
         .navigationTitle("Chat Tools")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            isExaConfigured = ExaAPIKeyManager.isConfigured
+        }
     }
 }
 

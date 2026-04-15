@@ -68,6 +68,7 @@ enum UserDefaultsStorage {
         static let customOpenAIModelName = "customOpenAIModelName"
         static let customOpenAIIsVerified = "customOpenAIIsVerified"
         static let isImplicitCrossNoteSearchEnabled = "isImplicitCrossNoteSearchEnabled"
+        static let isImplicitWebSearchEnabled = "isImplicitWebSearchEnabled"
 
         // First-launch auto-assignment
         static let didAutoAssignCloudTranscription = "didAutoAssignCloudTranscription"

@@ -53,8 +53,6 @@ struct SettingsView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
-    @AppStorage(CrossNoteSearchToolFeature.isEnabledKey)
-    private var isImplicitCrossNoteSearchEnabled = false
     @State private var showRestartAlert = false
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
@@ -229,12 +227,6 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsDestination.chatTools) {
                         HStack {
                             Text("Chat Tools")
-                            Spacer()
-                            if ExaAPIKeyManager.isConfigured || isImplicitCrossNoteSearchEnabled {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            }
                         }
                     }
                 }
