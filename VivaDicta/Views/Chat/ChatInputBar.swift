@@ -183,6 +183,7 @@ struct ChatInputBar: View {
                         in: .circle
                     )
                     .glassEffectID(clusterGlassID, in: leadingActionsGlassNamespace)
+                    .glassEffectTransition(.matchedGeometry)
             } else {
                 Image(systemName: iconName)
                     .font(.headline)
