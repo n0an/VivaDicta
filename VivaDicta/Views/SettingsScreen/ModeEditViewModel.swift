@@ -620,8 +620,22 @@ class ModeEditViewModel {
     }
 
     func updateProvider(_ newProvider: AIProvider?) {
+        let previousProvider = aiProvider
+        let previousModel = aiModel
+        let shouldSyncChatFromAI =
+            isChatEnabled && (
+                (previousProvider == nil && (previousModel == nil || previousModel?.isEmpty == true)) ||
+                (chatProvider == previousProvider && chatModel == previousModel)
+            )
+
         aiProvider = newProvider
         aiModel = defaultModel(for: newProvider)
+
+        if shouldSyncChatFromAI {
+            chatProvider = newProvider
+            chatModel = aiModel
+        }
+
         triggerProviderVerificationIfNeeded(for: newProvider, target: .aiEnhancement)
         logger.logInfo("Updated provider to: \(newProvider?.rawValue ?? "none"), model: \(aiModel ?? "none")")
     }
@@ -641,7 +655,15 @@ class ModeEditViewModel {
     }
 
     func updateModel(_ newModel: String?) {
+        let previousModel = aiModel
         aiModel = newModel
+
+        if isChatEnabled,
+           chatProvider == aiProvider,
+           chatModel == previousModel {
+            chatModel = newModel
+        }
+
         logger.logInfo("Updated model to: \(newModel ?? "none")")
     }
 

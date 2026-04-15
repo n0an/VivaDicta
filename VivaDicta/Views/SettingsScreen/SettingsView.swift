@@ -225,9 +225,7 @@ struct SettingsView: View {
                         HapticManager.selectionChanged()
                     }
                     NavigationLink(value: SettingsDestination.chatTools) {
-                        HStack {
-                            Text("Chat Tools")
-                        }
+                        Text("Web Search (Exa)")
                     }
                 }
 
@@ -776,6 +774,14 @@ private struct ModeInfoRow: View {
         return "Reminders: \(provider.displayName)"
     }
 
+    private var chatSummary: String? {
+        guard mode.isChatEnabled, let provider = mode.chatProvider else { return nil }
+        if let model = mode.chatModel, !model.isEmpty, provider != .apple {
+            return "Chat: \(provider.displayName) - \(model)"
+        }
+        return "Chat: \(provider.displayName)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(mode.name)
@@ -854,6 +860,13 @@ private struct ModeInfoRow: View {
 
             if let reminderExtractorSummary {
                 Label(reminderExtractorSummary, systemImage: "checklist")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.leading, 4)
+            }
+
+            if let chatSummary {
+                Label(chatSummary, systemImage: "bubble.left.and.text.bubble.right")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .padding(.leading, 4)

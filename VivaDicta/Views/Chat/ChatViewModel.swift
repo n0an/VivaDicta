@@ -56,17 +56,21 @@ final class ChatViewModel {
     var isWebSearchArmed: Bool = false
 
     var canSearchOtherNotes: Bool {
+        aiService.selectedMode.isChatEnabled &&
+        aiService.selectedMode.isImplicitCrossNoteSearchEnabled &&
         SmartSearchFeature.isEnabled
     }
 
     var canSearchWeb: Bool {
-        WebSearchToolFeature.isEnabled && ExaAPIKeyManager.isConfigured
+        aiService.selectedMode.isChatEnabled &&
+        aiService.selectedMode.isImplicitWebSearchEnabled &&
+        ExaAPIKeyManager.isConfigured
     }
 
     // MARK: - Provider/Model (from current VivaMode)
 
-    var selectedProvider: AIProvider? { aiService.selectedMode.aiProvider }
-    var selectedModel: String? { aiService.selectedMode.aiModel.isEmpty ? nil : aiService.selectedMode.aiModel }
+    var selectedProvider: AIProvider? { aiService.selectedChatProvider }
+    var selectedModel: String? { aiService.selectedChatModel }
 
     // MARK: - Apple FM Session (type-erased for iOS version compatibility)
 
@@ -571,13 +575,13 @@ final class ChatViewModel {
     ) -> [any Tool] {
         var tools: [any Tool] = []
         if includeImplicitWebSearch,
-           WebSearchToolFeature.isEnabled,
+           aiService.selectedMode.isImplicitWebSearchEnabled,
            let key = ExaAPIKeyManager.apiKey,
            !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID))
         }
         if includeImplicitCrossNoteSearch,
-           CrossNoteSearchToolFeature.isEnabled,
+           aiService.selectedMode.isImplicitCrossNoteSearchEnabled,
            SmartSearchFeature.isEnabled {
             tools.append(
                 NotesSearchTool(
@@ -996,7 +1000,7 @@ final class ChatViewModel {
         apiMessages: [[String: String]]
     ) async -> CrossNoteSearchTurnContext? {
         guard allowImplicitCrossNoteTool,
-              CrossNoteSearchToolFeature.isEnabled,
+              aiService.selectedMode.isImplicitCrossNoteSearchEnabled,
               SmartSearchFeature.isEnabled else {
             return nil
         }
@@ -1147,7 +1151,7 @@ final class ChatViewModel {
         apiMessages: [[String: String]]
     ) async -> WebSearchTurnContext? {
         guard allowImplicitWebTool,
-              WebSearchToolFeature.isEnabled,
+              aiService.selectedMode.isImplicitWebSearchEnabled,
               canSearchWeb else {
             return nil
         }

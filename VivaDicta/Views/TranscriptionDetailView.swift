@@ -84,6 +84,10 @@ struct TranscriptionDetailView: View {
         appState.aiService.isProperlyConfigured()
     }
 
+    private var isChatConfigured: Bool {
+        appState.aiService.isChatProperlyConfigured()
+    }
+
     private var pendingReminderDraftCount: Int {
         transcription.pendingExtractedReminderDraftCount
     }
@@ -233,11 +237,11 @@ struct TranscriptionDetailView: View {
             
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isAIConfigured ? Color.white : .secondary)
+                .foregroundStyle(isChatConfigured ? Color.white : .secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background {
-                    if isAIConfigured {
+                    if isChatConfigured {
                         
                         if colorScheme == .dark {
                             AnimatedMeshGradient2()
@@ -268,12 +272,12 @@ struct TranscriptionDetailView: View {
         } else {
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(isAIConfigured ? .primary : .secondary)
+                .foregroundStyle(isChatConfigured ? .primary : .secondary)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
                 .background {
                     Capsule()
-                        .fill(isAIConfigured ? .blue : Color(.systemGray5))
+                        .fill(isChatConfigured ? .blue : Color(.systemGray5))
                 }
         }
         
@@ -668,7 +672,7 @@ struct TranscriptionDetailView: View {
                 // Button 3: Chat with Note
                 Button {
                     HapticManager.lightImpact()
-                    if isAIConfigured {
+                    if isChatConfigured {
                         if chatViewModel == nil {
                             let conversation = findOrCreateConversation(for: transcription)
                             chatViewModel = ChatViewModel(
@@ -1170,7 +1174,7 @@ private struct ConfigureChatSheet: View {
             Text("Chat Not Available")
                 .font(.title3.bold())
 
-            Text("Set up an AI provider in your mode settings to chat with your notes.")
+            Text("Enable chat and choose a chat AI in your mode settings to chat with your notes.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

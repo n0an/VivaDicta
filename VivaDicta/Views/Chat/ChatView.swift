@@ -30,7 +30,6 @@ struct ChatView: View {
     @State private var showClearConfirmation = false
     @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
 
@@ -80,7 +79,7 @@ struct ChatView: View {
                         isEnabled: viewModel.canSearchWeb,
                         action: { viewModel.toggleWebSearchArmed() }
                     ) : nil,
-                    isSmartSearchEnabled ? ChatInputBar.LeadingAction(
+                    viewModel.canSearchOtherNotes ? ChatInputBar.LeadingAction(
                         systemImage: "sparkle.magnifyingglass",
                         accessibilityLabel: viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes",
                         isArmed: viewModel.isCrossNoteSearchArmed,

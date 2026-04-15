@@ -38,8 +38,8 @@ final class SmartSearchChatViewModel {
 
     // MARK: - Provider/Model (from current VivaMode)
 
-    var selectedProvider: AIProvider? { aiService.selectedMode.aiProvider }
-    var selectedModel: String? { aiService.selectedMode.aiModel.isEmpty ? nil : aiService.selectedMode.aiModel }
+    var selectedProvider: AIProvider? { aiService.selectedChatProvider }
+    var selectedModel: String? { aiService.selectedChatModel }
 
     // MARK: - Apple FM Session (type-erased)
 
@@ -470,6 +470,7 @@ final class SmartSearchChatViewModel {
 
     @available(iOS 26, *)
     private var appleFMTools: [any Tool] {
+        guard aiService.selectedMode.isImplicitWebSearchEnabled else { return [] }
         guard let key = ExaAPIKeyManager.apiKey, !key.isEmpty else { return [] }
         return [ExaWebSearchTool(apiKey: key, captureID: webSearchToolCaptureID)]
     }

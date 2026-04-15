@@ -29,8 +29,8 @@ struct MultiNoteChatsListView: View {
         case smartSearch = "Smart Search"
     }
 
-    private var isAIConfigured: Bool {
-        appState.aiService.isProperlyConfigured()
+    private var isChatConfigured: Bool {
+        appState.aiService.isChatProperlyConfigured()
     }
 
     private var availableTabs: [ChatTab] {
@@ -43,11 +43,11 @@ struct MultiNoteChatsListView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 0) {
-                if !isAIConfigured {
+                if !isChatConfigured {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
-                        Text("Set up an AI provider in mode settings to start new chats.")
+                        Text("Set up chat in mode settings to start new chats.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -93,7 +93,7 @@ struct MultiNoteChatsListView: View {
                         Button("New Chat", systemImage: "plus") {
                             navigationPath.append(NavigationTarget.creation)
                         }
-                        .disabled(!isAIConfigured)
+                        .disabled(!isChatConfigured)
                     }
                 }
             }
@@ -261,7 +261,7 @@ struct MultiNoteChatsListView: View {
                         Label("Start Smart Search", systemImage: "sparkle.magnifyingglass")
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!isAIConfigured)
+                    .disabled(!isChatConfigured)
                 }
             }
         }

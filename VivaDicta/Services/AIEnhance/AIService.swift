@@ -697,6 +697,44 @@ class AIService {
         return true
     }
 
+    public var selectedChatProvider: AIProvider? {
+        guard selectedMode.isChatEnabled else { return nil }
+        return selectedMode.chatProvider
+    }
+
+    public var selectedChatModel: String? {
+        guard selectedMode.isChatEnabled,
+              let model = selectedMode.chatModel,
+              !model.isEmpty else {
+            return nil
+        }
+        return model
+    }
+
+    public func isChatProperlyConfigured() -> Bool {
+        guard selectedMode.isChatEnabled else {
+            logger.logInfo("Chat is disabled for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        guard let provider = selectedChatProvider else {
+            logger.logWarning("No chat provider selected for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        guard selectedChatModel != nil else {
+            logger.logWarning("No chat model selected for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        guard isChatProviderReady(provider) else {
+            logger.logWarning("Chat provider is not ready for mode: \(self.selectedMode.name)")
+            return false
+        }
+
+        return true
+    }
+
     // MARK: - Clipboard Context
 
     /// Captures clipboard content at recording start for use as AI context.
