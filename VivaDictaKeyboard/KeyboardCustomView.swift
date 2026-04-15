@@ -80,7 +80,13 @@ struct KeyboardCustomView: View {
                 } else {
                     switch dictationState.uiState {
                     case .recording:
-                        RecordingStateView(dictationState: dictationState)
+                        RecordingStateView(
+                            dictationState: dictationState,
+                            onBackspace: { controller.textDocumentProxy.deleteBackward() },
+                            onDeleteWord: { deleteWordBeforeCursor() },
+                            onNewline: { controller.textDocumentProxy.insertText("\n") },
+                            onSpace: { controller.textDocumentProxy.insertText(" ") }
+                        )
 
                     case .processing:
                         ProcessingStateView(
