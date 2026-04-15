@@ -796,7 +796,10 @@ struct MainView: View {
         }
 
         // Start recording directly
-        vm.startCaptureAudio(destination: destination)
+        vm.startCaptureAudio(
+            destination: destination,
+            sourceTag: SourceTag.app
+        )
     }
 
     private func handleFileImport(_ result: Result<[URL], any Error>) {
@@ -837,7 +840,8 @@ struct MainView: View {
                 // Start transcription
                 vm.transcribingSpeechTask = vm.transcribeSpeechTask(
                     recordURL: destinationURL,
-                    modelContext: modelContext
+                    modelContext: modelContext,
+                    sourceTag: SourceTag.app
                 )
             } catch {
                 logger.logError("Failed to copy imported file: \(error.localizedDescription)")
