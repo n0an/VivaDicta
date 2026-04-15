@@ -240,8 +240,18 @@ struct AIServiceConfigurationTests {
 
     // MARK: - Apple FM Sampling Profiles
 
-    @Test func appleFMSamplingProfile_summaryUsesExtractive() {
-        #expect(AppleFoundationModelSamplingProfile.profile(for: "summary") == .extractive)
+    @Test func appleFMSamplingProfile_extractivePresetsUseExtractive() {
+        let extractivePresetIDs = [
+            "summary",
+            "action_points",
+            "key_points",
+            "takeaways",
+            "mind_map"
+        ]
+
+        for presetID in extractivePresetIDs {
+            #expect(AppleFoundationModelSamplingProfile.profile(for: presetID) == .extractive)
+        }
     }
 
     @Test func appleFMSamplingProfile_regularUsesBalanced() {

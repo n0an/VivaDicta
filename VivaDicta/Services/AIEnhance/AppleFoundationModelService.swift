@@ -9,7 +9,7 @@ import Foundation
 import FoundationModels
 import os
 
-enum AppleFoundationModelSamplingProfile: String, Equatable {
+enum AppleFoundationModelSamplingProfile: Equatable {
     case extractive
     case balanced
     case conversational
@@ -17,7 +17,7 @@ enum AppleFoundationModelSamplingProfile: String, Equatable {
 
     static func profile(for presetID: String?) -> Self {
         switch presetID {
-        case "summary", "action_points", "key_points":
+        case "summary", "action_points", "key_points", "takeaways", "mind_map":
             .extractive
         case "regular", "proofreading", "rewrite":
             .balanced
