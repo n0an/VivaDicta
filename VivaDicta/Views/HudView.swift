@@ -206,14 +206,14 @@ struct HudViewDark: View {
     var onCancel: (() -> Void)?
 
     var body: some View {
-        HudContentView(
+        return HudContentView(
             statusIcon: statusIcon,
             statusText: statusText,
             detailText: detailText,
             progress: progress,
             onCancel: onCancel
         )
-            .background(
+        .background(
             AnimatedMeshGradient()
                 .mask(
                     RoundedRectangle(cornerRadius: 30)
@@ -229,7 +229,6 @@ struct HudViewDark: View {
                 .blur(radius: 2)
                 .blendMode(.overlay)
         )
-        
         .overlay(
             RoundedRectangle(cornerRadius: 30)
                 .stroke(lineWidth: 1)
@@ -238,8 +237,8 @@ struct HudViewDark: View {
                 .blendMode(.overlay)
         )
         .background(.black)
-        .mask(RoundedRectangle(cornerRadius: 30, style: .continuous))
-        
+        .clipShape(.rect(cornerRadius: 30))
+        .applyHudGlassEffect(cornerRadius: 30, isInteractive: onCancel != nil)
     }
 }
 
@@ -252,14 +251,14 @@ struct HudViewLight: View {
     var onCancel: (() -> Void)?
 
     var body: some View {
-        HudContentView(
+        return HudContentView(
             statusIcon: statusIcon,
             statusText: statusText,
             detailText: detailText,
             progress: progress,
             onCancel: onCancel
         )
-            .background(
+        .background(
             ZStack {
                 AnimatedMeshGradient()
                     .mask(
@@ -300,6 +299,27 @@ struct HudViewLight: View {
         )
         .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 20)
         .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 15)
+        .applyHudGlassEffect(cornerRadius: 16, isInteractive: onCancel != nil)
+    }
+}
+
+private struct HudGlassEffectModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    let isInteractive: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.clear.interactive(isInteractive), in: .rect(cornerRadius: cornerRadius))
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    fileprivate func applyHudGlassEffect(cornerRadius: CGFloat, isInteractive: Bool) -> some View {
+        modifier(HudGlassEffectModifier(cornerRadius: cornerRadius, isInteractive: isInteractive))
     }
 }
 
