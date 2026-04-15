@@ -40,7 +40,7 @@ final class RAGIndexingService {
     private static let previewCharacterLimit = 180
     private static let maxLoggedChunksPerNote = 3
     private static let maxLoggedDiagnosticResults = 5
-    nonisolated(unsafe) private static let semanticSearchThreshold: Float = 0.3
+    nonisolated(unsafe) private static let semanticSearchThreshold: Float = 0.25
     private static let diagnosticThresholds: [Float] = [0.2, 0.0]
     nonisolated(unsafe) private static let indexVersion = "v14_potion_base_32m"
     nonisolated(unsafe) private static let vectorStoreName = "vivadicta-rag-\(indexVersion)"
