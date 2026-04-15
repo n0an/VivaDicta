@@ -30,6 +30,7 @@ struct ChatView: View {
     @State private var showClearConfirmation = false
     @State private var selectedTranscription: Transcription?
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
     @Query(sort: \Transcription.timestamp, order: .reverse)
     private var allTranscriptions: [Transcription]
 
@@ -71,7 +72,9 @@ struct ChatView: View {
                 text: $viewModel.inputText,
                 isStreaming: viewModel.isStreaming || viewModel.isAppleFMResponding,
                 isBusy: viewModel.isCompacting,
-                secondaryActionTitle: viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes",
+                secondaryActionTitle: isSmartSearchEnabled
+                    ? (viewModel.isCrossNoteSearchArmed ? "Will search other notes" : "Search other notes")
+                    : nil,
                 isSecondaryActionArmed: viewModel.isCrossNoteSearchArmed,
                 onSend: { viewModel.sendMessage() },
                 onStop: { viewModel.cancelStreaming() },

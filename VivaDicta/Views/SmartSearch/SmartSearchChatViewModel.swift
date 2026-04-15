@@ -875,7 +875,17 @@ final class SmartSearchChatViewModel {
     }
 
     private func groundedQueryTerms(from query: String) -> Set<String> {
-        SmartSearchLexicalSupport.queryTerms(from: query)
+        let normalized = query
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .unicodeScalars
+            .map { CharacterSet.alphanumerics.contains($0) ? Character($0) : " " }
+        let tokenString = String(normalized)
+        let tokens = tokenString
+            .split(separator: " ")
+            .map(String.init)
+            .filter { $0.count >= 2 }
+            .map { $0.lowercased() }
+        return Set(tokens)
     }
 
     private func isLikelyRussian(_ text: String) -> Bool {

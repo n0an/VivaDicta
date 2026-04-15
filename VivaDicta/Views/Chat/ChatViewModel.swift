@@ -41,6 +41,10 @@ final class ChatViewModel {
     var isCompacting: Bool = false
     var isCrossNoteSearchArmed: Bool = false
 
+    var canSearchOtherNotes: Bool {
+        SmartSearchFeature.isEnabled
+    }
+
     // MARK: - Provider/Model (from current VivaMode)
 
     var selectedProvider: AIProvider? { aiService.selectedMode.aiProvider }
@@ -195,7 +199,7 @@ final class ChatViewModel {
             return
         }
 
-        let shouldSearchOtherNotes = isCrossNoteSearchArmed
+        let shouldSearchOtherNotes = isCrossNoteSearchArmed && canSearchOtherNotes
         isCrossNoteSearchArmed = false
         inputText = ""
         errorMessage = nil
@@ -303,6 +307,10 @@ final class ChatViewModel {
     }
 
     func toggleCrossNoteSearchArmed() {
+        guard canSearchOtherNotes else {
+            isCrossNoteSearchArmed = false
+            return
+        }
         isCrossNoteSearchArmed.toggle()
     }
 
