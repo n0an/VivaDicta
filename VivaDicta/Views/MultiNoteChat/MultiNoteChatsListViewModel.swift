@@ -40,8 +40,11 @@ final class ChatsListViewModel {
             sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
         )
         let all = (try? modelContext.fetch(descriptor)) ?? []
-        // Only show conversations that have messages
-        singleNoteConversations = all.filter { !($0.messages ?? []).isEmpty }
+        // Hide detached conversations so sync-edge or legacy orphan rows do not surface as "Deleted Note".
+        singleNoteConversations = all.filter { conversation in
+            guard conversation.transcription != nil else { return false }
+            return !(conversation.messages ?? []).isEmpty
+        }
     }
 
     func deleteMultiNoteConversation(_ conversation: MultiNoteConversation) {
