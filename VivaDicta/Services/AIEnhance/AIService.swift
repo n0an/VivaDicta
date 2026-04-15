@@ -777,13 +777,15 @@ class AIService {
                 text: text,
                 systemMessage: systemMessage,
                 preFormattedUserMessage: formattedText,
+                appleFMPresetID: preset.id,
                 onPartialResponse: onPartialResult
             )
         } else {
             requestResult = try await makeRequest(
                 text: text,
                 systemMessage: systemMessage,
-                preFormattedUserMessage: formattedText
+                preFormattedUserMessage: formattedText,
+                appleFMPresetID: preset.id
             )
         }
 
@@ -1133,6 +1135,7 @@ class AIService {
         text: String,
         systemMessage: String? = nil,
         preFormattedUserMessage: String? = nil,
+        appleFMPresetID: String? = nil,
         onPartialResponse: @escaping @MainActor (String) -> Void
     ) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider else {
@@ -1152,12 +1155,16 @@ class AIService {
         switch resolvedStreamingRoute(for: aiProvider) {
         case .apple:
             if #available(iOS 26, *) {
+                let samplingProfile = AppleFoundationModelSamplingProfile.profile(
+                    for: appleFMPresetID ?? selectedMode.presetId
+                )
                 logger.logDebug("AI Processing - Using Apple Foundation Model streaming")
                 logger.logDebug("AI Processing - System Message: \(sysMsg)")
                 logger.logDebug("AI Processing - User Message: \(userMsg)")
                 return try await appleFoundationModelService.enhanceStreaming(
                     systemMessage: sysMsg,
                     userMessage: userMsg,
+                    samplingProfile: samplingProfile,
                     onPartialResponse: onPartialResponse
                 )
             } else {
@@ -1321,7 +1328,12 @@ class AIService {
         return result
     }
 
-    private func makeRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
+    private func makeRequest(
+        text: String,
+        systemMessage: String? = nil,
+        preFormattedUserMessage: String? = nil,
+        appleFMPresetID: String? = nil
+    ) async throws -> String {
         guard let aiProvider = self.selectedMode.aiProvider else {
             throw EnhancementError.notConfigured
         }
@@ -1335,12 +1347,19 @@ class AIService {
             if #available(iOS 26, *) {
                 let sysMsg = systemMessage ?? getSystemMessage()
                 let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+                let samplingProfile = AppleFoundationModelSamplingProfile.profile(
+                    for: appleFMPresetID ?? selectedMode.presetId
+                )
                 logger.logDebug("AI Processing - Using Apple Foundation Model")
                 logger.logDebug("AI Processing - System Message: \(sysMsg)")
                 logger.logDebug("AI Processing - User Message: \(userMsg)")
                 lastSystemMessageSent = sysMsg
                 lastUserMessageSent = userMsg
-                return try await appleFoundationModelService.enhance(systemMessage: sysMsg, userMessage: userMsg)
+                return try await appleFoundationModelService.enhance(
+                    systemMessage: sysMsg,
+                    userMessage: userMsg,
+                    samplingProfile: samplingProfile
+                )
             } else {
                 throw EnhancementError.notConfigured
             }
