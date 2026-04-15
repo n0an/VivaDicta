@@ -55,7 +55,98 @@ struct HudView: View {
 
 }
 
+private struct HudStatusSymbolView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let systemName: String
+    let size: CGFloat
+
+    var body: some View {
+        let symbol = Image(systemName: systemName)
+            .font(.system(size: size, weight: .semibold))
+
+        Group {
+            if colorScheme == .dark {
+                symbol
+                    .foregroundStyle(.white)
+            } else {
+                HudLocalMeshGradient()
+                    .frame(width: size + 28, height: size + 28)
+                    .mask { symbol }
+                    .overlay {
+                        Color.black.opacity(0.3)
+                            .mask { symbol }
+                    }
+            }
+        }
+        .frame(width: size + 28, height: size + 28)
+    }
+}
+
+private struct HudLocalMeshGradient: View {
+    @State private var startDate = Date.now
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = Float(timeline.date.timeIntervalSince(startDate)) * 10
+            MeshGradient(width: 3, height: 3, points: [
+                .init(0, 0), .init(0.5, 0), .init(1, 0),
+                [hudSinInRange(-0.8...(-0.2), offset: 0.439, timeScale: 0.342, t: t), hudSinInRange(0.3...0.7, offset: 3.42, timeScale: 0.984, t: t)],
+                [hudSinInRange(0.1...0.8, offset: 0.239, timeScale: 0.084, t: t), hudSinInRange(0.2...0.8, offset: 5.21, timeScale: 0.242, t: t)],
+                [hudSinInRange(1.0...1.5, offset: 0.939, timeScale: 0.084, t: t), hudSinInRange(0.4...0.8, offset: 0.25, timeScale: 0.642, t: t)],
+                [hudSinInRange(-0.8...0.0, offset: 1.439, timeScale: 0.442, t: t), hudSinInRange(1.4...1.9, offset: 3.42, timeScale: 0.984, t: t)],
+                [hudSinInRange(0.3...0.6, offset: 0.339, timeScale: 0.784, t: t), hudSinInRange(1.0...1.2, offset: 1.22, timeScale: 0.772, t: t)],
+                [hudSinInRange(1.0...1.5, offset: 0.939, timeScale: 0.056, t: t), hudSinInRange(1.3...1.7, offset: 0.47, timeScale: 0.342, t: t)]
+            ], colors: [
+                .red, .purple, .indigo,
+                .orange, .white, .blue,
+                .yellow, .black, .mint
+            ])
+        }
+        .background(
+            LinearGradient(
+                colors: [.red, .purple, .indigo, .blue, .mint],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(.rect(cornerRadius: 12))
+    }
+
+    private func hudSinInRange(_ range: ClosedRange<Float>, offset: Float, timeScale: Float, t: Float) -> Float {
+        let amplitude = (range.upperBound - range.lowerBound) / 2
+        let midPoint = (range.upperBound + range.lowerBound) / 2
+        return midPoint + amplitude * sin(timeScale * t + offset)
+    }
+}
+
+private struct HudStatusTextView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let text: String
+
+    var body: some View {
+        let label = Text(text)
+            .font(.system(size: 17, weight: .semibold))
+
+        Group {
+            if colorScheme == .dark {
+                label
+                    .foregroundStyle(.primary)
+            } else {
+                AnimatedMeshGradient()
+                    .mask { label }
+                    .overlay {
+                        Color.black.opacity(0.35)
+                            .mask { label }
+                    }
+            }
+        }
+    }
+}
+
 struct HudContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
 
     var statusIcon: String
     var statusText: String
@@ -74,28 +165,23 @@ struct HudContentView: View {
         VStack(spacing: 12) {
             if #available(iOS 26.0, *) {
                 if isShowing {
-                    Image(systemName: statusIcon)
+                    HudStatusSymbolView(systemName: statusIcon, size: 50)
                         .transition(.asymmetric(insertion: .init(.symbolEffect(.drawOn)), removal: .opacity.combined(with: .scale(scale: 0.7))))
                         .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
-                        .font(.system(size: 50, weight: .semibold))
                 } else {
-                    Image(systemName: statusIcon)
-                        .font(.system(size: 50, weight: .semibold))
+                    HudStatusSymbolView(systemName: statusIcon, size: 50)
                         .opacity(0)
                 }
             } else { // iOS 18 option
-                Image(systemName: statusIcon)
+                HudStatusSymbolView(systemName: statusIcon, size: 50)
                     .contentTransition(.symbolEffect(.replace.magic(fallback: .replace)))
                     .symbolEffect(.bounce.up.byLayer, options: .repeat(.periodic(delay: 0.3)), isActive: isSymbolAnimating)
-                    .font(.system(size: 50, weight: .semibold))
             }
 
             // Processing status label
 
             if isShowingText {
-                Text(statusText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.primary)
+                HudStatusTextView(text: statusText)
                     .transition(
                         .asymmetric(
                             insertion: .move(
@@ -126,7 +212,7 @@ struct HudContentView: View {
 
             if let progress {
                 ProgressView(value: progress)
-                    .tint(.white.opacity(0.85))
+                    .tint(colorScheme == .dark ? .white.opacity(0.85) : .black.opacity(0.5))
                     .frame(width: 180)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
@@ -139,11 +225,16 @@ struct HudContentView: View {
                 } label: {
                     Text("Cancel")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(colorScheme == .dark ? .white.opacity(0.8) : .primary.opacity(0.8))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(.white.opacity(0.2))
-                        .clipShape(Capsule())
+                        .background(colorScheme == .dark ? .white.opacity(0.6) : .black.opacity(0.08), in: .capsule)
+                        .overlay {
+                            if colorScheme == .light {
+                                Capsule()
+                                    .stroke(.black.opacity(0.12), lineWidth: 1)
+                            }
+                        }
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity).combined(with: .scale(0.5)))
             }
@@ -182,7 +273,6 @@ struct HudContentView: View {
             cancelButtonTimer?.invalidate()
             cancelButtonTimer = nil
         }
-        .foregroundStyle(.white)
         .padding()
     }
 
@@ -251,6 +341,27 @@ struct HudViewLight: View {
     var onCancel: (() -> Void)?
 
     var body: some View {
+        let lightBackground = AnimatedMeshGradient2()
+            .mask(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(lineWidth: 30)
+                    .blur(radius: 10)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(lineWidth: 3)
+                    .fill(Color.black.opacity(0.7))
+                    .blur(radius: 2)
+                    .blendMode(.overlay)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(lineWidth: 1)
+                    .fill(Color.black.opacity(1.0))
+                    .blur(radius: 1)
+                    .blendMode(.overlay)
+            )
+
         return HudContentView(
             statusIcon: statusIcon,
             statusText: statusText,
@@ -258,59 +369,28 @@ struct HudViewLight: View {
             progress: progress,
             onCancel: onCancel
         )
-        .background(
-            ZStack {
-                AnimatedMeshGradient()
-                    .mask(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(lineWidth: 16)
-                            .blur(radius: 8)
-                    )
-
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(lineWidth: 3)
-                            .fill(Color.white)
-                            .blur(radius: 2)
-                            .blendMode(.overlay)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(lineWidth: 1)
-                            .fill(Color.white)
-                            .blur(radius: 1)
-                            .blendMode(.overlay)
-                    )
-            }
-        )
-        .background(
-            ZStack {
-                AnimatedMeshGradient()
-                    .frame(width: 400, height: 800)
-                    .opacity(1)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-        )
-        .background(.black)
+        .background(lightBackground)
         .clipShape(.rect(cornerRadius: 16))
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(.primary.opacity(0.5), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 20)
-        .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 15)
+        .shadow(color: .black.opacity(0.45), radius: 6, x: 0, y: 4)
         .applyHudGlassEffect(cornerRadius: 16, isInteractive: onCancel != nil)
     }
 }
 
 private struct HudGlassEffectModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
     let cornerRadius: CGFloat
     let isInteractive: Bool
 
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            content
-                .glassEffect(.clear.interactive(isInteractive), in: .rect(cornerRadius: cornerRadius))
+            if colorScheme == .light {
+                content
+                    .glassEffect(.regular.interactive(isInteractive), in: .rect(cornerRadius: cornerRadius))
+            } else {
+                content
+                    .glassEffect(.clear.interactive(isInteractive), in: .rect(cornerRadius: cornerRadius))
+            }
         } else {
             content
         }
