@@ -36,10 +36,6 @@ struct ReminderSuggestionsFloatingControl: View {
         .font(.subheadline.weight(.semibold))
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .glassCapsule(
-            tint: .blue.opacity(0.18),
-            fallback: .ultraThinMaterial
-        )
         .overlay {
             Capsule()
                 .strokeBorder(
@@ -47,6 +43,11 @@ struct ReminderSuggestionsFloatingControl: View {
                     lineWidth: 1
                 )
         }
+        .glassCapsule(
+            tint: .blue.opacity(0.18),
+            fallback: .ultraThinMaterial
+        )
+        
         .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
     }
 }
