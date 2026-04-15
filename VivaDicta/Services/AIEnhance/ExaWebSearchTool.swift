@@ -107,12 +107,6 @@ enum ExaWebSearchToolRuntime {
             let results = try await ExaSearchClient.search(query: trimmedQuery, apiKey: apiKey)
             logger.logInfo("Web search raw results=\(results.count)")
 
-            for (index, result) in results.prefix(3).enumerated() {
-                logger.logInfo(
-                    "Web search raw[\(index + 1)] title='\(result.title ?? "Untitled")' url='\(result.url)'"
-                )
-            }
-
             if results.isEmpty {
                 return WebSearchPayload(
                     query: trimmedQuery,

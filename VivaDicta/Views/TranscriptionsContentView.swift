@@ -317,11 +317,7 @@ struct TranscriptionsContentView: View {
                 }
 
                 let keywordResults = keywordSearchResults(for: searchTerm)
-                logger.logInfo(
-                    "Notes search query='\(searchTerm)' mode=\(searchMode.rawValue) smartEnabled=\(isSmartSearchEnabled) keywordMatches=\(keywordResults.count)"
-                )
                 guard isSmartSearchEnabled else {
-                    logger.logInfo("Notes search semantic step skipped because Smart Search is disabled")
                     await MainActor.run {
                         filteredTranscriptions = keywordResults
                         smartSearchMatches = []
@@ -331,7 +327,6 @@ struct TranscriptionsContentView: View {
                 }
 
                 guard searchMode != .keyword else {
-                    logger.logInfo("Notes search semantic step skipped because search mode is keyword-only")
                     await MainActor.run {
                         filteredTranscriptions = keywordResults
                         smartSearchMatches = []
@@ -341,7 +336,6 @@ struct TranscriptionsContentView: View {
                 }
 
                 guard shouldRunSemanticSearch(for: searchTerm) else {
-                    logger.logInfo("Notes search semantic step skipped because query is too short for semantic retrieval")
                     await MainActor.run {
                         filteredTranscriptions = keywordResults
                         smartSearchMatches = []
@@ -351,9 +345,6 @@ struct TranscriptionsContentView: View {
                 }
 
                 let smartMatches = await semanticSearchMatches(for: searchTerm)
-                logger.logInfo(
-                    "Notes search semantic step finished query='\(searchTerm)' semanticMatches=\(smartMatches.count)"
-                )
 
                 switch searchMode {
                 case .all:

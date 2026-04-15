@@ -37,7 +37,6 @@ final class RAGIndexingService {
     static let shared = RAGIndexingService()
     private static let previewCharacterLimit = 180
     private static let maxLoggedChunksPerNote = 3
-    private static let maxLoggedDiagnosticResults = 5
     nonisolated(unsafe) private static let semanticSearchThreshold: Float = 0.25
     private static let diagnosticThresholds: [Float] = [0.2, 0.0]
     nonisolated(unsafe) private static let indexVersion = "v14_potion_base_32m"
@@ -558,11 +557,6 @@ final class RAGIndexingService {
         }
 
         searchLogger.logInfo("RAG raw search returned \(results.count) chunk hits for query='\(queryPreview)'")
-        for (index, result) in results.enumerated() {
-            searchLogger.logInfo(
-                "RAG raw[\(index + 1)] chunkId=\(result.id.uuidString) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3)))) preview='\(Self.preview(result.text))'"
-            )
-        }
 
         // Map chunk IDs back to transcription IDs and keep the strongest chunk per note.
         var transcriptionResults: [UUID: RankedChunkCandidate] = [:]
@@ -571,15 +565,12 @@ final class RAGIndexingService {
             let chunkIdString = result.id.uuidString
 
             // Find which transcription owns this chunk
-            guard let (transcriptionIdString, _) = mapping.first(where: { $0.value.contains(chunkIdString) }),
-                  let transcriptionId = UUID(uuidString: transcriptionIdString) else {
+            guard let transcriptionId = mapping
+                .first(where: { $0.value.contains(chunkIdString) })
+                .flatMap({ UUID(uuidString: $0.key) }) else {
                 searchLogger.logWarning("RAG raw[\(index + 1)] chunkId=\(chunkIdString) could not be mapped to a transcription")
                 continue
             }
-
-            searchLogger.logInfo(
-                "RAG map raw[\(index + 1)] chunkId=\(chunkIdString) -> transcriptionId=\(transcriptionIdString) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3))))"
-            )
 
             let candidate = RankedChunkCandidate(
                 transcriptionId: transcriptionId,
@@ -588,9 +579,6 @@ final class RAGIndexingService {
             )
 
             if let existing = transcriptionResults[transcriptionId], existing.semanticScore >= candidate.semanticScore {
-                searchLogger.logDebug(
-                    "RAG dedupe kept existing chunk for transcriptionId=\(transcriptionIdString) existingScore=\(Double(existing.semanticScore).formatted(.number.precision(.fractionLength(3)))) newScore=\(Double(candidate.semanticScore).formatted(.number.precision(.fractionLength(3))))"
-                )
                 continue
             }
 
@@ -609,12 +597,6 @@ final class RAGIndexingService {
                 )
             }
         )
-
-        for (index, result) in finalResults.enumerated() {
-            searchLogger.logInfo(
-                "RAG final[\(index + 1)] transcriptionId=\(result.transcriptionId.uuidString) score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
-            )
-        }
 
         if finalResults.isEmpty {
             searchLogger.logWarning("RAG semantic search returned chunk hits but none could be mapped back to transcriptions")
@@ -721,14 +703,6 @@ final class RAGIndexingService {
                 searchLogger.logInfo(
                     "RAG diagnostic threshold=\(Double(diagnosticThreshold).formatted(.number.precision(.fractionLength(2)))) rawHits=\(diagnosticResults.count) mappedRawHits=\(mappedCount)"
                 )
-
-                for (index, result) in diagnosticResults.prefix(Self.maxLoggedDiagnosticResults).enumerated() {
-                    let chunkIdString = result.id.uuidString
-                    let transcriptionID = mapping.first(where: { $0.value.contains(chunkIdString) })?.key ?? "unmapped"
-                    searchLogger.logInfo(
-                        "RAG diagnostic[\(index + 1)] threshold=\(Double(diagnosticThreshold).formatted(.number.precision(.fractionLength(2)))) chunkId=\(chunkIdString) transcriptionId=\(transcriptionID) score=\(Double(result.score).formatted(.number.precision(.fractionLength(3)))) preview='\(Self.preview(result.text))'"
-                    )
-                }
             } catch {
                 searchLogger.logWarning(
                     "RAG diagnostic threshold=\(Double(diagnosticThreshold).formatted(.number.precision(.fractionLength(2)))) failed: \(error.localizedDescription)"

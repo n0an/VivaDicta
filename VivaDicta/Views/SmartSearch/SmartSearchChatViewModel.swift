@@ -181,9 +181,6 @@ final class SmartSearchChatViewModel {
             }
 
             do {
-                logger.logInfo(
-                    "Smart Search send started query='\(Self.preview(text, limit: 80))' provider=\(provider.rawValue) model=\(model)"
-                )
                 let plannedQuery = await makePlannedSearchQuery(
                     for: text,
                     provider: provider,
@@ -204,7 +201,9 @@ final class SmartSearchChatViewModel {
                         "Smart Search retrieval returned no note context for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(text, limit: 80))'"
                     )
                 } else {
-                    logSearchResults(searchResults, transcriptions: transcriptions, plannedQuery: plannedQuery, originalQuery: text)
+                    logger.logInfo(
+                        "Smart Search retrieval resolved \(searchResults.count) note hits for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(text, limit: 80))'"
+                    )
                 }
 
                 let substantiveQueryTerms = groundedQueryTerms(from: plannedQuery)
@@ -232,13 +231,9 @@ final class SmartSearchChatViewModel {
                     searchResults: searchResults,
                     transcriptions: transcriptions
                 )
-                logger.logInfo(
-                    "Smart Search augmented prompt chars=\(augmentedPrompt.count) preview='\(Self.preview(augmentedPrompt))'"
-                )
 
                 let sourceIds = uniqueSourceIDs(from: searchResults)
                 let sourceCitations = buildSourceCitations(from: searchResults)
-                logger.logInfo("Smart Search assigned source IDs: \(describeSourceIDs(sourceIds, transcriptions: transcriptions))")
 
                 let result: String
                 let didUseWebSearchTool: Bool
@@ -252,10 +247,6 @@ final class SmartSearchChatViewModel {
                     result = try await sendCloudMessage(augmentedPrompt, provider: provider, model: model)
                     didUseWebSearchTool = false
                 }
-
-                logger.logInfo(
-                    "Smart Search response chars=\(result.count) preview='\(Self.preview(result))'"
-                )
 
                 persistSuccessfulTurn(
                     userMessage: userMessage,
@@ -843,46 +834,6 @@ final class SmartSearchChatViewModel {
         } catch {
             logger.logError("Smart Search - Failed to save context: \(error.localizedDescription)")
         }
-    }
-
-    private func logSearchResults(
-        _ searchResults: [RAGSearchResult],
-        transcriptions: [Transcription],
-        plannedQuery: String,
-        originalQuery: String
-    ) {
-        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
-
-        logger.logInfo(
-            "Smart Search retrieval yielded \(searchResults.count) deduped hits across \(transcriptions.count) resolved notes for plannedQuery='\(Self.preview(plannedQuery, limit: 80))' originalQuery='\(Self.preview(originalQuery, limit: 80))'"
-        )
-
-        for (index, result) in searchResults.enumerated() {
-            let title = transcriptionMap[result.transcriptionId]
-                .map { noteTitle(for: $0) } ?? "Missing note"
-            logger.logInfo(
-                "Smart Search hit[\(index + 1)] noteId=\(result.transcriptionId.uuidString) title='\(title)' score=\(Double(result.relevanceScore).formatted(.number.precision(.fractionLength(3)))) excerpt='\(Self.preview(result.chunkText))'"
-            )
-        }
-    }
-
-    private func describeSourceIDs(_ sourceIds: [UUID], transcriptions: [Transcription]) -> String {
-        let transcriptionMap = Dictionary(uniqueKeysWithValues: transcriptions.map { ($0.id, $0) })
-        let summaries = sourceIds.map { id in
-            let title = transcriptionMap[id].map { noteTitle(for: $0) } ?? "Missing note"
-            return "\(id.uuidString):\(title)"
-        }
-        return summaries.isEmpty ? "none" : summaries.joined(separator: " | ")
-    }
-
-    private func noteTitle(for transcription: Transcription) -> String {
-        let firstLine = transcription.text
-            .components(separatedBy: .newlines)
-            .first?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let title = firstLine.map { String($0.prefix(60)) } ?? "Untitled"
-        return title.isEmpty ? "Untitled" : title
     }
 
     private func groundedQueryTerms(from query: String) -> Set<String> {

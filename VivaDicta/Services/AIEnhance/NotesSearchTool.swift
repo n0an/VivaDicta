@@ -160,7 +160,6 @@ enum NotesSearchToolRuntime {
             )
 
             let ragResults = try await RAGIndexingService.shared.search(query: trimmedQuery, topK: maxResults * 2)
-            logger.logInfo("Cross-note search semantic hits=\(ragResults.count)")
 
             guard !ragResults.isEmpty else {
                 logger.logInfo("Cross-note search returned 0 final hits")
@@ -206,15 +205,7 @@ enum NotesSearchToolRuntime {
             }
 
             let results = finalResults
-            let sourceSummary = results
-                .map { result in
-                    result.sources.map { $0.rawValue }.joined(separator: "+")
-                }
-                .joined(separator: ",")
-
-            logger.logInfo(
-                "Cross-note search final hits=\(results.count) sources=\(sourceSummary)"
-            )
+            logger.logInfo("Cross-note search final hits=\(results.count)")
 
             return CrossNoteSearchPayload(
                 query: trimmedQuery,
