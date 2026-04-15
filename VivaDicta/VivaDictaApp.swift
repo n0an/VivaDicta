@@ -62,7 +62,7 @@ struct VivaDictaApp: App {
                 configurations: config
             )
         } catch {
-            print("Error loading ModelContainer; switching to in-memory storage. \(error)")
+            logger.logError("Error loading ModelContainer; switching to in-memory storage. \(error.localizedDescription)")
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             modelContainer = try! ModelContainer(
                 for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, ExtractedReminderDraft.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,

@@ -20,6 +20,7 @@ struct WhatsNewRelease: Identifiable {
     let headline: String
     let features: [WhatsNewFeature]
     var learnMoreURL: URL?
+    var learnMoreTitle: String?
 }
 
 enum WhatsNewCatalog {
@@ -29,10 +30,62 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.0": release_3_0,
         "2.0": release_2_0,
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_0 = WhatsNewRelease(
+        id: "3.0",
+        headline: "What's New in VivaDicta 3.0",
+        features: [
+            WhatsNewFeature(
+                icon: "bubble.left.and.text.bubble.right.fill",
+                iconColors: [.blue, .cyan],
+                title: "Chat With Your Notes",
+                description: "Ask questions about one note or many, with streaming answers powered by Apple Foundation Model on-device or your favorite cloud AI."
+            ),
+            WhatsNewFeature(
+                icon: "magnifyingglass.circle.fill",
+                iconColors: [.green, .mint],
+                title: "Smart AI Search",
+                description: "Find notes by meaning with fully on-device semantic search, so your data never leaves your device."
+            ),
+            WhatsNewFeature(
+                icon: "globe.badge.chevron.backward",
+                iconColors: [.indigo, .blue],
+                title: "AI Search Tools",
+                description: "Chat comes with built-in tools: cross-note AI search across your library and live web search, so answers stay grounded in real context."
+            ),
+            WhatsNewFeature(
+                icon: "person.2.wave.2.fill",
+                iconColors: [.teal, .cyan],
+                title: "Speaker Labels",
+                description: "Get speaker-separated transcripts for conversations, plus real Parakeet progress and stronger handling for long recordings."
+            ),
+            WhatsNewFeature(
+                icon: "checklist.checked",
+                iconColors: [.orange, .yellow],
+                title: "Reminder Suggestions",
+                description: "Turn notes into reminder suggestions, review them, and send approved items straight to Apple Reminders."
+            ),
+            WhatsNewFeature(
+                icon: "square.and.arrow.up",
+                iconColors: [.pink, .orange],
+                title: "Workflow Upgrades",
+                description: "Export notes to Markdown, append follow-up recordings to existing notes, and hide presets you don't use to keep pickers focused."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.purple, .pink],
+                title: "Liquid Glass Design",
+                description: "Enjoy a more polished iOS 26 interface with Liquid Glass, plus refreshed recording controls on the keyboard and Apple Watch."
+            )
+        ],
+        learnMoreURL: URL(string: "https://vivadicta.com/ios/docs/chats"),
+        learnMoreTitle: "Learn more about Chats & Smart Search"
+    )
 
     private static let release_2_2 = WhatsNewRelease(
         id: "2.2",
@@ -69,7 +122,8 @@ enum WhatsNewCatalog {
                 description: "Watch recordings are transcribed in the background - notes are ready when you open the app."
             )
         ],
-        learnMoreURL: URL(string: "https://vivadicta.com/ios/docs/watch-general-usage")
+        learnMoreURL: URL(string: "https://vivadicta.com/ios/docs/watch-general-usage"),
+        learnMoreTitle: "Learn more about VivaDicta Watch app"
     )
 
     private static let release_2_1 = WhatsNewRelease(

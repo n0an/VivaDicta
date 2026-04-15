@@ -56,7 +56,7 @@ struct WhatsNewView: View {
 
                         if let learnMoreURL = release.learnMoreURL {
                             Link(destination: learnMoreURL) {
-                                Label("Learn more about VivaDicta Watch app", systemImage: "book")
+                                Label(release.learnMoreTitle ?? "Learn more", systemImage: "book")
                                     .font(.subheadline.weight(.medium))
                             }
                             .padding(.top, 8)

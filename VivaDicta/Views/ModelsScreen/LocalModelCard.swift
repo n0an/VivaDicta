@@ -7,6 +7,7 @@
 
 import SwiftUI
 import TipKit
+import os
 
 struct LocalModelCard: View {
     let model: any TranscriptionModel
@@ -15,6 +16,8 @@ struct LocalModelCard: View {
     @State private var selectedTab: TranscriptionModelType = .local
     @State private var showDownloadAlert = false
     @State private var showDeleteAlert = false
+
+    private let logger = Logger(category: .modelDownloadManager)
 
     private var isWhisperKit: Bool {
         model is WhisperKitModel
@@ -272,7 +275,7 @@ struct LocalModelCard: View {
                 try await downloadManager.deleteModel(model)
                 HapticManager.heavyImpact()
             } catch {
-                print("Error deleting model: \(error)")
+                logger.logError("Failed to delete model: \(error.localizedDescription)")
             }
         }
     }

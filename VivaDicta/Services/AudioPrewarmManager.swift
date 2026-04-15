@@ -363,6 +363,7 @@ nonisolated private func installInputTapNonisolated(
 /// Thread-safe capture context for audio recording
 nonisolated private final class AudioCaptureContext: @unchecked Sendable {
     private let lock = NSLock()
+    private let logger = Logger(category: .audioPrewarmManager)
     private var _isCapturing = false
     private var _audioFile: AVAudioFile?
     private var _currentAudioLevel: Float = 0.0
@@ -420,7 +421,7 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
             try file.write(from: buffer)
         } catch {
             // Log error but don't crash audio thread
-            print("Failed to write audio buffer: \(error)")
+            logger.logError("Failed to write audio buffer: \(error.localizedDescription)")
         }
     }
 
