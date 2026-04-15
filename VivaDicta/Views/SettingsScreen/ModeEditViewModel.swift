@@ -24,6 +24,11 @@ class ModeEditViewModel {
     var usesSeparateReminderExtractor: Bool = false
     var reminderExtractorProvider: AIProvider?
     var reminderExtractorModel: String?
+    var isChatEnabled: Bool = true
+    var chatProvider: AIProvider?
+    var chatModel: String?
+    var isImplicitCrossNoteSearchEnabled: Bool = true
+    var isImplicitWebSearchEnabled: Bool = false
     var selectedPresetId: String?
     var useClipboardContext: Bool = false
     var isAutoTextFormattingEnabled: Bool = false
@@ -73,7 +78,19 @@ class ModeEditViewModel {
             reminderExtractorReady = false
         }
 
-        return hasName && transcriptionReady && aiEnhancementReady && reminderExtractorReady
+        let chatReady: Bool
+        if !isChatEnabled {
+            chatReady = true
+        } else if let provider = chatProvider,
+                  let model = chatModel,
+                  !model.isEmpty,
+                  isProviderReady(provider) {
+            chatReady = true
+        } else {
+            chatReady = false
+        }
+
+        return hasName && transcriptionReady && aiEnhancementReady && reminderExtractorReady && chatReady
     }
 
     var hasNameError: Bool {
@@ -107,6 +124,7 @@ class ModeEditViewModel {
 
     private static let disableHint = ", or disable AI Processing"
     private static let disableReminderExtractorHint = ", or turn off the separate extractor"
+    private static let disableChatHint = ", or turn off Chat"
 
     var aiEnhancementValidationMessage: String? {
         guard aiEnhanceEnabled else { return nil }
@@ -161,6 +179,33 @@ class ModeEditViewModel {
         return nil
     }
 
+    var hasChatError: Bool {
+        chatValidationMessage != nil
+    }
+
+    var chatValidationMessage: String? {
+        guard isChatEnabled else { return nil }
+        guard let provider = chatProvider else {
+            return "Select a chat provider\(Self.disableChatHint)"
+        }
+        if !isProviderReady(provider) {
+            if provider == .apple {
+                return "\(appleFoundationModelStatusMessage)\(Self.disableChatHint)"
+            }
+            if provider == .ollama {
+                return "Configure Ollama server in AI Providers settings\(Self.disableChatHint)"
+            }
+            if provider == .customOpenAI {
+                return "Configure Custom AI Provider in AI Providers settings\(Self.disableChatHint)"
+            }
+            return "Add API key to continue\(Self.disableChatHint)"
+        }
+        if chatModel == nil || chatModel?.isEmpty == true {
+            return "Select a chat model\(Self.disableChatHint)"
+        }
+        return nil
+    }
+
     init(mode: VivaMode?,
          aiService: AIService,
          presetManager: PresetManager,
@@ -181,6 +226,11 @@ class ModeEditViewModel {
             usesSeparateReminderExtractor = existingMode.reminderExtractorProvider != nil
             reminderExtractorProvider = existingMode.reminderExtractorProvider
             reminderExtractorModel = existingMode.reminderExtractorModel
+            isChatEnabled = existingMode.isChatEnabled
+            chatProvider = existingMode.chatProvider
+            chatModel = existingMode.chatModel
+            isImplicitCrossNoteSearchEnabled = existingMode.isImplicitCrossNoteSearchEnabled
+            isImplicitWebSearchEnabled = existingMode.isImplicitWebSearchEnabled
             selectedPresetId = existingMode.presetId
             useClipboardContext = existingMode.useClipboardContext
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
@@ -189,6 +239,7 @@ class ModeEditViewModel {
             validateLanguageSelection()
             validateAIModelSelection()
             validateReminderExtractorModelSelection()
+            validateChatModelSelection()
             if !aiEnhanceEnabled {
                 setSeparateReminderExtractorEnabled(false)
             }
@@ -196,6 +247,11 @@ class ModeEditViewModel {
             transcriptionProvider = .whisperKit
             transcriptionModel = ""
             transcriptionLanguage = "auto"
+            isChatEnabled = true
+            chatProvider = preferredProviderForSelection()
+            chatModel = defaultModel(for: chatProvider)
+            isImplicitCrossNoteSearchEnabled = true
+            isImplicitWebSearchEnabled = false
         }
     }
 
@@ -222,6 +278,11 @@ class ModeEditViewModel {
             aiModel: aiModel ?? "",
             reminderExtractorProvider: aiEnhanceEnabled && usesSeparateReminderExtractor ? reminderExtractorProvider : nil,
             reminderExtractorModel: aiEnhanceEnabled && usesSeparateReminderExtractor ? reminderExtractorModel : nil,
+            isChatEnabled: isChatEnabled,
+            chatProvider: isChatEnabled ? chatProvider : nil,
+            chatModel: isChatEnabled ? chatModel : nil,
+            isImplicitCrossNoteSearchEnabled: isImplicitCrossNoteSearchEnabled,
+            isImplicitWebSearchEnabled: isImplicitWebSearchEnabled,
             aiEnhanceEnabled: aiEnhanceEnabled,
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
@@ -345,6 +406,35 @@ class ModeEditViewModel {
         }
     }
 
+    private func validateChatModelSelection() {
+        guard let provider = chatProvider else { return }
+
+        if provider == .ollama {
+            let availableModels = aiService.ollamaModels
+            guard let currentModel = chatModel else { return }
+
+            if !availableModels.contains(currentModel) {
+                let oldModel = currentModel
+                if let firstModel = availableModels.first {
+                    chatModel = firstModel
+                    logger.logInfo("Chat Ollama model '\(oldModel)' not available, reset to '\(firstModel)'")
+                } else {
+                    chatModel = nil
+                    logger.logInfo("Chat Ollama model '\(oldModel)' not available and no models found")
+                }
+            }
+        } else if provider == .customOpenAI {
+            let configuredModel = aiService.customOpenAIModelName
+            if configuredModel.isEmpty {
+                chatModel = nil
+                logger.logInfo("Chat Custom OpenAI model not configured")
+            } else if chatModel != configuredModel {
+                chatModel = configuredModel
+                logger.logInfo("Chat Custom OpenAI model updated to configured: '\(configuredModel)'")
+            }
+        }
+    }
+
     // MARK: - Language Settings
     public func isLanguageSelectionAvailable() -> Bool {
         guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
@@ -431,6 +521,7 @@ class ModeEditViewModel {
     private enum ModelSelectionTarget {
         case aiEnhancement
         case reminderExtraction
+        case chat
 
         var logName: String {
             switch self {
@@ -438,6 +529,8 @@ class ModeEditViewModel {
                 "AI"
             case .reminderExtraction:
                 "reminder extractor"
+            case .chat:
+                "chat"
             }
         }
     }
@@ -462,11 +555,43 @@ class ModeEditViewModel {
         }
     }
 
+    func selectFirstChatProviderIfNeeded() {
+        guard chatProvider == nil else { return }
+
+        if let provider = aiProvider,
+           isProviderReady(provider),
+           let model = aiModel,
+           !model.isEmpty {
+            chatProvider = provider
+            chatModel = model
+            logger.logInfo("Auto-selected chat provider from AI processing: \(provider.rawValue)")
+            return
+        }
+
+        if let provider = preferredProviderForSelection() {
+            chatProvider = provider
+            chatModel = defaultModel(for: provider)
+            logger.logInfo("Auto-selected chat provider: \(provider.rawValue)")
+        }
+    }
+
     func setAIEnhancementEnabled(_ isEnabled: Bool) {
         aiEnhanceEnabled = isEnabled
 
         if !isEnabled {
             setSeparateReminderExtractorEnabled(false)
+        }
+    }
+
+    func setChatEnabled(_ isEnabled: Bool) {
+        isChatEnabled = isEnabled
+
+        guard isEnabled else { return }
+
+        if chatProvider == nil {
+            selectFirstChatProviderIfNeeded()
+        } else if chatModel == nil || chatModel?.isEmpty == true {
+            refreshChatModelSelection()
         }
     }
 
@@ -508,6 +633,13 @@ class ModeEditViewModel {
         logger.logInfo("Updated reminder extractor provider to: \(newProvider?.rawValue ?? "none"), model: \(reminderExtractorModel ?? "none")")
     }
 
+    func updateChatProvider(_ newProvider: AIProvider?) {
+        chatProvider = newProvider
+        chatModel = defaultModel(for: newProvider)
+        triggerProviderVerificationIfNeeded(for: newProvider, target: .chat)
+        logger.logInfo("Updated chat provider to: \(newProvider?.rawValue ?? "none"), model: \(chatModel ?? "none")")
+    }
+
     func updateModel(_ newModel: String?) {
         aiModel = newModel
         logger.logInfo("Updated model to: \(newModel ?? "none")")
@@ -516,6 +648,11 @@ class ModeEditViewModel {
     func updateReminderExtractorModel(_ newModel: String?) {
         reminderExtractorModel = newModel
         logger.logInfo("Updated reminder extractor model to: \(newModel ?? "none")")
+    }
+
+    func updateChatModel(_ newModel: String?) {
+        chatModel = newModel
+        logger.logInfo("Updated chat model to: \(newModel ?? "none")")
     }
 
     /// Refreshes the AI model selection based on current provider state
@@ -528,6 +665,11 @@ class ModeEditViewModel {
     func refreshReminderExtractorModelSelection() {
         guard let provider = reminderExtractorProvider else { return }
         refreshModelSelection(for: provider, target: .reminderExtraction)
+    }
+
+    func refreshChatModelSelection() {
+        guard let provider = chatProvider else { return }
+        refreshModelSelection(for: provider, target: .chat)
     }
 
     private func preferredProviderForSelection() -> AIProvider? {
@@ -659,6 +801,8 @@ class ModeEditViewModel {
             aiModel
         case .reminderExtraction:
             reminderExtractorModel
+        case .chat:
+            chatModel
         }
     }
 
@@ -668,6 +812,8 @@ class ModeEditViewModel {
             aiModel = model
         case .reminderExtraction:
             reminderExtractorModel = model
+        case .chat:
+            chatModel = model
         }
     }
 

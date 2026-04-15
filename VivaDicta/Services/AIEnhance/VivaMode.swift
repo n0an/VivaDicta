@@ -67,6 +67,21 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Optional model override used only for reminder suggestion extraction.
     var reminderExtractorModel: String?
 
+    /// Whether chat is enabled for this mode.
+    let isChatEnabled: Bool
+
+    /// The AI provider used for chat in this mode.
+    var chatProvider: AIProvider?
+
+    /// The specific AI model name used for chat in this mode.
+    var chatModel: String?
+
+    /// Whether chat can automatically search other notes in this mode.
+    let isImplicitCrossNoteSearchEnabled: Bool
+
+    /// Whether chat can search the web in this mode.
+    let isImplicitWebSearchEnabled: Bool
+
     /// Whether AI processing is enabled for this mode.
     let aiEnhanceEnabled: Bool
 
@@ -90,6 +105,11 @@ struct VivaMode: Identifiable, Hashable, Codable {
          aiModel: String,
          reminderExtractorProvider: AIProvider? = nil,
          reminderExtractorModel: String? = nil,
+         isChatEnabled: Bool = true,
+         chatProvider: AIProvider? = nil,
+         chatModel: String? = nil,
+         isImplicitCrossNoteSearchEnabled: Bool = true,
+         isImplicitWebSearchEnabled: Bool = false,
          aiEnhanceEnabled: Bool,
          useClipboardContext: Bool = false,
          isAutoTextFormattingEnabled: Bool = false,
@@ -104,6 +124,11 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.aiModel = aiModel
         self.reminderExtractorProvider = reminderExtractorProvider
         self.reminderExtractorModel = reminderExtractorModel
+        self.isChatEnabled = isChatEnabled
+        self.chatProvider = chatProvider
+        self.chatModel = chatModel
+        self.isImplicitCrossNoteSearchEnabled = isImplicitCrossNoteSearchEnabled
+        self.isImplicitWebSearchEnabled = isImplicitWebSearchEnabled
         self.aiEnhanceEnabled = aiEnhanceEnabled
         self.useClipboardContext = useClipboardContext
         self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
@@ -124,7 +149,23 @@ struct VivaMode: Identifiable, Hashable, Codable {
         aiModel = try container.decode(String.self, forKey: .aiModel)
         reminderExtractorProvider = try container.decodeIfPresent(AIProvider.self, forKey: .reminderExtractorProvider)
         reminderExtractorModel = try container.decodeIfPresent(String.self, forKey: .reminderExtractorModel)
+        chatProvider = try container.decodeIfPresent(AIProvider.self, forKey: .chatProvider) ?? aiProvider
+        let decodedChatModel = try container.decodeIfPresent(String.self, forKey: .chatModel)
+        if let decodedChatModel, !decodedChatModel.isEmpty {
+            chatModel = decodedChatModel
+        } else if !aiModel.isEmpty {
+            chatModel = aiModel
+        } else {
+            chatModel = nil
+        }
         aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
+        if container.contains(.isChatEnabled) {
+            isChatEnabled = try container.decode(Bool.self, forKey: .isChatEnabled)
+        } else {
+            isChatEnabled = (chatProvider != nil) && (chatModel?.isEmpty == false)
+        }
+        isImplicitCrossNoteSearchEnabled = try container.decodeIfPresent(Bool.self, forKey: .isImplicitCrossNoteSearchEnabled) ?? true
+        isImplicitWebSearchEnabled = try container.decodeIfPresent(Bool.self, forKey: .isImplicitWebSearchEnabled) ?? false
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
@@ -146,7 +187,9 @@ struct VivaMode: Identifiable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case id, name, transcriptionProvider, transcriptionModel, transcriptionLanguage
         case presetId, userPrompt
-        case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
+        case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel
+        case isChatEnabled, chatProvider, chatModel, isImplicitCrossNoteSearchEnabled, isImplicitWebSearchEnabled
+        case aiEnhanceEnabled
         case useClipboardContext
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
     }
@@ -164,6 +207,11 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(aiModel, forKey: .aiModel)
         try container.encodeIfPresent(reminderExtractorProvider, forKey: .reminderExtractorProvider)
         try container.encodeIfPresent(reminderExtractorModel, forKey: .reminderExtractorModel)
+        try container.encode(isChatEnabled, forKey: .isChatEnabled)
+        try container.encodeIfPresent(chatProvider, forKey: .chatProvider)
+        try container.encodeIfPresent(chatModel, forKey: .chatModel)
+        try container.encode(isImplicitCrossNoteSearchEnabled, forKey: .isImplicitCrossNoteSearchEnabled)
+        try container.encode(isImplicitWebSearchEnabled, forKey: .isImplicitWebSearchEnabled)
         try container.encode(aiEnhanceEnabled, forKey: .aiEnhanceEnabled)
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
         try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)
@@ -182,6 +230,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         transcriptionLanguage: "auto",
         presetId: nil,
         aiModel: "",
+        isChatEnabled: true,
         aiEnhanceEnabled: false)
 }
 

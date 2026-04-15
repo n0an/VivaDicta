@@ -127,6 +127,11 @@ enum PresetMigrationService {
                     aiModel: mode.aiModel,
                     reminderExtractorProvider: mode.reminderExtractorProvider,
                     reminderExtractorModel: mode.reminderExtractorModel,
+                    isChatEnabled: mode.isChatEnabled,
+                    chatProvider: mode.chatProvider,
+                    chatModel: mode.chatModel,
+                    isImplicitCrossNoteSearchEnabled: mode.isImplicitCrossNoteSearchEnabled,
+                    isImplicitWebSearchEnabled: mode.isImplicitWebSearchEnabled,
                     aiEnhanceEnabled: mode.aiEnhanceEnabled
                 )
                 updated = true
@@ -146,6 +151,11 @@ enum PresetMigrationService {
                         aiModel: mode.aiModel,
                         reminderExtractorProvider: mode.reminderExtractorProvider,
                         reminderExtractorModel: mode.reminderExtractorModel,
+                        isChatEnabled: mode.isChatEnabled,
+                        chatProvider: mode.chatProvider,
+                        chatModel: mode.chatModel,
+                        isImplicitCrossNoteSearchEnabled: mode.isImplicitCrossNoteSearchEnabled,
+                        isImplicitWebSearchEnabled: mode.isImplicitWebSearchEnabled,
                         aiEnhanceEnabled: mode.aiEnhanceEnabled
                     )
                     updated = true

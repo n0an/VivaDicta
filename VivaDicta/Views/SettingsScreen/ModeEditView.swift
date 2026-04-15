@@ -10,6 +10,7 @@ import TipKit
 
 struct ModeEditView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(SmartSearchFeature.isEnabledKey) private var isSmartSearchEnabled = true
 
     @Binding var navigationPath: NavigationPath
     
@@ -22,6 +23,7 @@ struct ModeEditView: View {
     @State private var showPresetPicker: Bool = false
     @State private var showAIModelPicker: Bool = false
     @State private var showReminderExtractorModelPicker: Bool = false
+    @State private var showChatModelPicker: Bool = false
     @State private var hasAttemptedSave: Bool = false
     @State private var shakeTrigger: Int = 0
     
@@ -602,6 +604,281 @@ struct ModeEditView: View {
                     viewModel.refreshAIModelSelection()
                 }
 
+                Section(header: chatSectionHeader,
+                        footer: chatSectionFooter) {
+                    Toggle(isOn: Binding(
+                        get: { viewModel.isChatEnabled },
+                        set: { newValue in
+                            viewModel.setChatEnabled(newValue)
+                            HapticManager.selectionChanged()
+                        }
+                    )) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Chat Enabled")
+                                .font(.body)
+                            Text("Use this mode for chatting with notes and multi-note conversations.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .id("chatSection")
+
+                    if viewModel.isChatEnabled {
+                        Picker(selection: $viewModel.chatProvider) {
+                            if viewModel.isAppleFoundationModelAvailable {
+                                Section("On-Device") {
+                                    Label("Apple", systemImage: "apple.intelligence")
+                                        .tag(AIProvider.apple)
+                                }
+                            }
+
+                            Section("Cloud") {
+                                ForEach(AIProvider.cloudProviders) { provider in
+                                    if viewModel.isProviderReady(provider) {
+                                        Text(provider.displayName).tag(provider)
+                                    } else {
+                                        HStack(spacing: 4) {
+                                            Text(provider.displayName)
+                                            if provider == .ollama || provider == .customOpenAI {
+                                                Image(systemName: "gear")
+                                            } else {
+                                                Image(systemName: "key.slash.fill")
+                                            }
+                                        }
+                                        .tag(provider)
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "bubble.left.and.text.bubble.right")
+                                    .foregroundStyle(aiEnhancementGradient)
+                                Text("Chat Provider")
+                            }
+                        }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                        .onChange(of: viewModel.chatProvider) { _, newProvider in
+                            viewModel.updateChatProvider(newProvider)
+                            HapticManager.selectionChanged()
+                        }
+                        .onAppear {
+                            viewModel.refreshConnectedProviders()
+                            viewModel.selectFirstChatProviderIfNeeded()
+                        }
+
+                        if let provider = viewModel.chatProvider {
+                            if viewModel.isProviderReady(provider) {
+                                if provider == .apple {
+                                    HStack {
+                                        Image(systemName: "wand.and.sparkles")
+                                            .foregroundStyle(aiEnhancementGradient)
+                                        Text("Chat Model")
+                                        Spacer()
+                                        Text("Foundation Model")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .customOpenAI {
+                                    HStack {
+                                        Image(systemName: "wand.and.sparkles")
+                                            .foregroundStyle(aiEnhancementGradient)
+                                        Text("Chat Model")
+                                        Spacer()
+                                        Text(viewModel.aiService.customOpenAIModelName)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else {
+                                    Button {
+                                        showChatModelPicker = true
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "wand.and.sparkles")
+                                                .foregroundStyle(aiEnhancementGradient)
+                                            Text("Chat Model")
+                                            Spacer()
+                                            Text(viewModel.chatModel ?? "Select")
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(1)
+                                            Image(systemName: "chevron.up.chevron.down")
+                                                .font(.system(size: 10, weight: .semibold))
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                    }
+                                    .tint(.primary)
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                    .sheet(isPresented: $showChatModelPicker) {
+                                        ModelPickerSheet(
+                                            models: viewModel.aiService.getAvailableModels(for: provider),
+                                            selectedModel: $viewModel.chatModel
+                                        )
+                                        .presentationDetents([.medium, .large])
+                                    }
+                                    .onChange(of: viewModel.chatModel) { _, newModel in
+                                        viewModel.updateChatModel(newModel)
+                                        HapticManager.selectionChanged()
+                                    }
+                                }
+                            } else if provider == .apple {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+                                    Text(viewModel.appleFoundationModelStatusMessage)
+                                        .font(.callout)
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else if provider == .ollama {
+                                NavigationLink {
+                                    OllamaConfigurationView(aiService: viewModel.aiService)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure Ollama")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else if provider == .customOpenAI {
+                                NavigationLink {
+                                    CustomOpenAIConfigurationView(aiService: viewModel.aiService)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure Custom AI Provider")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else if provider == .anthropic {
+                                NavigationLink {
+                                    AnthropicConfigurationView(aiService: viewModel.aiService)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure Anthropic")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else if provider == .openAI {
+                                NavigationLink {
+                                    OpenAIConfigurationView(aiService: viewModel.aiService)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure OpenAI")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else if provider == .gemini {
+                                NavigationLink {
+                                    GeminiConfigurationView(aiService: viewModel.aiService)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Configure Gemini")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else if provider == .copilot {
+                                NavigationLink {
+                                    CopilotConfigurationView(aiService: viewModel.aiService)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "person.badge.key")
+                                            .foregroundStyle(.orange)
+                                        Text("Sign in with GitHub")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            } else {
+                                NavigationLink {
+                                    AddAPIKeyView(
+                                        provider: provider,
+                                        aiService: viewModel.aiService,
+                                        onSave: { savedProvider in
+                                            viewModel.updateChatModel(savedProvider.defaultModel)
+                                        }
+                                    )
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                        Text("Add API Key")
+                                        Spacer()
+                                        Text("Required")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                            }
+                        }
+
+                        Toggle(isOn: $viewModel.isImplicitCrossNoteSearchEnabled) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Automatic Search in Other Notes (Experimental)")
+                                    .font(.body)
+                                Text("Allow compatible chat models to decide when to search your other notes during chat.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .disabled(!isSmartSearchEnabled)
+                        .onChange(of: viewModel.isImplicitCrossNoteSearchEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+
+                        if !isSmartSearchEnabled {
+                            Text("Requires Smart Search to be enabled because other-note search uses the shared RAG index.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Toggle(isOn: $viewModel.isImplicitWebSearchEnabled) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Web Search")
+                                    .font(.body)
+                                Text("Allow chat to search the web when an Exa API key is configured in Settings.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .onChange(of: viewModel.isImplicitWebSearchEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    }
+                }
+                .onAppear {
+                    viewModel.refreshChatModelSelection()
+                }
+
                 if viewModel.aiEnhanceEnabled {
                     Section(header: reminderSuggestionsSectionHeader,
                             footer: reminderExtractorSectionFooter) {
@@ -938,6 +1215,25 @@ struct ModeEditView: View {
         }
     }
 
+    private var chatSectionHeader: some View {
+        HStack(spacing: 4) {
+            Text("Chat")
+            if viewModel.hasChatError {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption2)
+                    .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakeTrigger) { content, value in
+                        content.offset(x: value)
+                    } keyframes: { _ in
+                        SpringKeyframe(8, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(-6, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(4, duration: 0.08, spring: .bouncy)
+                        SpringKeyframe(0, duration: 0.1, spring: .bouncy)
+                    }
+            }
+        }
+    }
+
     @ViewBuilder
     private var nameValidationFooter: some View {
         if hasAttemptedSave && viewModel.hasNameError {
@@ -967,6 +1263,26 @@ struct ModeEditView: View {
         }
     }
 
+    @ViewBuilder
+    private var chatSectionFooter: some View {
+        if let validationMessage = viewModel.chatValidationMessage {
+            Label(validationMessage, systemImage: "info.circle")
+                .foregroundStyle(.orange)
+                .font(.caption)
+                .accessibilityLabel("Required: \(validationMessage)")
+                .keyframeAnimator(initialValue: CGFloat.zero, trigger: shakeTrigger) { content, value in
+                    content.offset(x: value)
+                } keyframes: { _ in
+                    SpringKeyframe(8, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(-6, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(4, duration: 0.08, spring: .bouncy)
+                    SpringKeyframe(0, duration: 0.1, spring: .bouncy)
+                }
+        } else {
+            Text("Choose which AI setup this mode should use for chat. Web search requires a global Exa API key in Settings.")
+        }
+    }
+
     private func handleSaveTapped(scrollProxy: ScrollViewProxy) {
         if viewModel.isValid {
             saveMode()
@@ -982,6 +1298,8 @@ struct ModeEditView: View {
                     scrollProxy.scrollTo("transcriptionSection", anchor: .top)
                 } else if viewModel.hasAIProcessingError {
                     scrollProxy.scrollTo("aiProcessingSection", anchor: .top)
+                } else if viewModel.hasChatError {
+                    scrollProxy.scrollTo("chatSection", anchor: .top)
                 } else if viewModel.hasReminderExtractorError {
                     scrollProxy.scrollTo("reminderExtractorSection", anchor: .top)
                 }
