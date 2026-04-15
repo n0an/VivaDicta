@@ -21,6 +21,12 @@ final class MultiNoteChatViewModel {
     private let logger = Logger(category: .multiNoteChat)
     private let reviewReplyThreshold = 2
 
+    private struct CrossNoteSearchTurnContext {
+        let augmentedPrompt: String
+        let sourceIDs: [UUID]
+        let sourceCitations: [SmartSearchSourceCitation]
+    }
+
     // MARK: - State
 
     var messages: [ChatMessage] = []
@@ -29,6 +35,11 @@ final class MultiNoteChatViewModel {
     var streamingText: String = ""
     var errorMessage: String?
     var isCompacting: Bool = false
+    var isCrossNoteSearchArmed: Bool = false
+
+    var canSearchOtherNotes: Bool {
+        SmartSearchFeature.isEnabled
+    }
 
     // MARK: - Provider/Model (from current VivaMode)
 
@@ -177,6 +188,8 @@ final class MultiNoteChatViewModel {
 
         if isAppleFMResponding { return }
 
+        let shouldSearchOtherNotes = isCrossNoteSearchArmed && canSearchOtherNotes
+        isCrossNoteSearchArmed = false
         inputText = ""
         errorMessage = nil
         conversation.lastInteractionAt = Date()
@@ -199,11 +212,23 @@ final class MultiNoteChatViewModel {
         streamingTask = Task {
             do {
                 let result: String
+                let crossNoteContext = await makeCrossNoteSearchContext(
+                    for: text,
+                    enabled: shouldSearchOtherNotes,
+                    provider: provider,
+                    model: model
+                )
+                let promptText = crossNoteContext?.augmentedPrompt ?? text
 
                 if provider == .apple {
-                    result = try await sendAppleFMMessage(text)
+                    result = try await sendAppleFMMessage(promptText)
                 } else {
-                    result = try await sendCloudMessage(text, provider: provider, model: model)
+                    result = try await sendCloudMessage(
+                        originalText: text,
+                        promptText: promptText,
+                        provider: provider,
+                        model: model
+                    )
                 }
 
                 // Persist user message now that streaming is done
@@ -218,6 +243,8 @@ final class MultiNoteChatViewModel {
                     aiModelName: model,
                     estimatedTokenCount: ChatContextManager.estimateTokens(result)
                 )
+                assistantMessage.sourceTranscriptionIds = crossNoteContext?.sourceIDs ?? []
+                assistantMessage.sourceCitations = crossNoteContext?.sourceCitations ?? []
                 assistantMessage.multiNoteConversation = conversation
                 modelContext.insert(assistantMessage)
                 messages.append(assistantMessage)
@@ -269,6 +296,14 @@ final class MultiNoteChatViewModel {
         streamingTask = nil
     }
 
+    func toggleCrossNoteSearchArmed() {
+        guard canSearchOtherNotes else {
+            isCrossNoteSearchArmed = false
+            return
+        }
+        isCrossNoteSearchArmed.toggle()
+    }
+
     // MARK: - Clear Chat
 
     func clearChat() {
@@ -279,6 +314,7 @@ final class MultiNoteChatViewModel {
         messages.removeAll()
         successfulReplyCount = 0
         hasRequestedReviewForSession = false
+        isCrossNoteSearchArmed = false
 
         conversation.appleFMTranscriptData = nil
         trySave()
@@ -594,7 +630,12 @@ final class MultiNoteChatViewModel {
         }
     }
 
-    private func sendCloudMessage(_ text: String, provider: AIProvider, model: String) async throws -> String {
+    private func sendCloudMessage(
+        originalText: String,
+        promptText: String,
+        provider: AIProvider,
+        model: String
+    ) async throws -> String {
         if MultiNoteContextManager.shouldAutoCompact(
             noteText: assembledNoteText,
             messages: messages,
@@ -605,11 +646,24 @@ final class MultiNoteChatViewModel {
             try await performCompaction()
         }
 
+        var chatMessages = messages.dropLast()
+        let augmentedUserMessage = ChatMessage(
+            role: "user",
+            content: promptText,
+            estimatedTokenCount: ChatContextManager.estimateTokens(promptText)
+        )
+        var allChatMessages = Array(chatMessages)
+        allChatMessages.append(augmentedUserMessage)
+
         let (systemMessage, apiMessages) = MultiNoteContextManager.assembleMessages(
             noteText: assembledNoteText,
-            chatMessages: messages,
+            chatMessages: allChatMessages,
             provider: provider,
             model: model
+        )
+
+        logger.logInfo(
+            "Multi-note chat sending prompt originalChars=\(originalText.count) augmentedChars=\(promptText.count)"
         )
 
         return try await aiService.makeChatStreamingRequest(
@@ -631,6 +685,100 @@ final class MultiNoteChatViewModel {
     }
 
     // MARK: - Private Helpers
+
+    private func makeCrossNoteSearchContext(
+        for query: String,
+        enabled: Bool,
+        provider: AIProvider,
+        model: String
+    ) async -> CrossNoteSearchTurnContext? {
+        guard enabled else { return nil }
+
+        guard let plan = await CrossNoteSearchPlanner.makePlan(
+            aiService: aiService,
+            provider: provider,
+            model: model,
+            noteText: assembledNoteText,
+            recentMessages: plannerMessagesForCrossNoteSearch(),
+            latestUserMessage: query
+        ) else {
+            logger.logWarning("Multi-note chat - Cross-note planner failed for query='\(query)'")
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assemblePlannerUnavailablePrompt(
+                    query: query,
+                    message: "Other-note search was enabled for this turn, but a focused search query could not be prepared."
+                ),
+                sourceIDs: [],
+                sourceCitations: []
+            )
+        }
+
+        guard plan.shouldSearch, let plannedQuery = plan.searchQuery else {
+            logger.logInfo(
+                "Multi-note chat - Cross-note planner decided not to search query='\(query)' reason='\(plan.reasoning ?? "")'"
+            )
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assemblePlannerUnavailablePrompt(
+                    query: query,
+                    message: "Other-note search was enabled for this turn, but no focused search query could be inferred from the notes already in the chat and recent conversation."
+                ),
+                sourceIDs: [],
+                sourceCitations: []
+            )
+        }
+
+        let excludedIDs = Set((conversation.transcriptions ?? []).map(\.id))
+        let payload = await NotesSearchToolRuntime.searchNotesPayload(
+            query: plannedQuery,
+            excluding: excludedIDs
+        )
+
+        switch payload.status {
+        case .success:
+            logger.logInfo(
+                "Multi-note chat - Cross-note search found \(payload.results.count) note matches for plannedQuery='\(plannedQuery)' originalQuery='\(query)'"
+            )
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
+                    query: query,
+                    plannedQuery: plannedQuery,
+                    payload: payload
+                ),
+                sourceIDs: payload.sourceIDs,
+                sourceCitations: payload.sourceCitations
+            )
+        case .empty:
+            logger.logInfo("Multi-note chat - Cross-note search found no matches for plannedQuery='\(plannedQuery)'")
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
+                    query: query,
+                    plannedQuery: plannedQuery,
+                    payload: payload
+                ),
+                sourceIDs: [],
+                sourceCitations: []
+            )
+        case .error:
+            if let message = payload.message {
+                errorMessage = message
+                logger.logWarning("Multi-note chat - Cross-note search error: \(message)")
+            }
+            return nil
+        }
+    }
+
+    private func plannerMessagesForCrossNoteSearch() -> [CrossNoteSearchPlannerMessage] {
+        messages
+            .dropLast()
+            .filter { !$0.isSummary }
+            .suffix(4)
+            .map {
+                CrossNoteSearchPlannerMessage(
+                    role: $0.role,
+                    content: $0.content
+                )
+            }
+    }
 
     private func performCompaction() async throws {
         guard let provider = selectedProvider, let model = selectedModel else { return }

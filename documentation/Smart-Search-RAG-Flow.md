@@ -1,12 +1,16 @@
 # Smart Search RAG Flow
 
-This document summarizes the high-level Smart Search RAG pipeline in VivaDicta.
+This document is the short operational view of Smart Search RAG.
 
-## Architecture
+If you want the broader architecture and rationale, see:
+
+- [Smart-Search-RAG-Architecture.md](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/documentation/Smart-Search-RAG-Architecture.md)
+
+## Turn Flow
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────┐
-│ User sends a message in Smart Search chat                           │
+│ User sends a message in Smart Search                                │
 └──────────────────────────────────┬───────────────────────────────────┘
                                    │
                                    ▼
@@ -14,44 +18,47 @@ This document summarizes the high-level Smart Search RAG pipeline in VivaDicta.
 │ SmartSearchChatViewModel.sendMessage()                              │
 │ - validate provider/model                                           │
 │ - create pending user message                                       │
-│ - choose retrieval size: Apple = 3, Cloud = 5                      │
 └──────────────────────────────────┬───────────────────────────────────┘
                                    │
                                    ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│ RAGIndexingService.search(query, topK)                              │
-│ - ensure local index is ready                                       │
-│ - semantic vector search over note chunks                           │
-│ - threshold = 0.4                                                   │
-│ - over-fetch topK * 2                                               │
-│ - map chunk ids back to note ids                                    │
-│ - keep best chunk per note                                          │
+│ Planner step                                                        │
+│ - input: latest message + up to 4 recent messages                   │
+│ - output: plannedQuery                                              │
 └──────────────────────────────────┬───────────────────────────────────┘
                                    │
-                ┌──────────────────┴──────────────────┐
-                │                                     │
-                ▼                                     ▼
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ RAGIndexingService.search(plannedQuery, topK)                       │
+│ - semantic vector search                                            │
+│ - threshold = 0.25                                                  │
+│ - over-fetch topK * 2                                               │
+│ - keep strongest chunk per note                                     │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                 ┌─────────────────┴──────────────────┐
+                 │                                    │
+                 ▼                                    ▼
 ┌──────────────────────────────┐      ┌────────────────────────────────┐
-│ No retrieval hits            │      │ Retrieval hits found           │
-│ - use raw user question      │      │ - resolve Transcription models │
-│ - no source citations        │      │ - build source citations       │
+│ No note hits                 │      │ Note hits found                │
+│ - maybe deterministic        │      │ - resolve Transcription models │
+│   no-evidence response       │      │ - build source citations       │
 └──────────────┬───────────────┘      └──────────────┬─────────────────┘
                │                                      │
                └──────────────────┬───────────────────┘
                                   ▼
 ┌──────────────────────────────────────────────────────────────────────┐
 │ SmartSearchContextManager.assembleAugmentedPrompt()                 │
+│ - inject focused retrieval query if different                       │
 │ - inject SOURCE blocks                                              │
-│ - each block contains title, date, excerpt                          │
-│ - append USER QUESTION                                              │
-│ - if 0 usable excerpts, return raw query                            │
+│ - append original USER QUESTION                                     │
 └──────────────────────────────────┬───────────────────────────────────┘
                                    │
                                    ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│ LLM request                                                         │
-│ - Cloud: system prompt + message history + latest augmented turn    │
-│ - Apple FM: system prompt in session + latest augmented turn        │
+│ Final answer call                                                   │
+│ - Apple FM main chat session OR                                     │
+│ - cloud streaming request                                           │
 └──────────────────────────────────┬───────────────────────────────────┘
                                    │
                                    ▼
@@ -59,52 +66,85 @@ This document summarizes the high-level Smart Search RAG pipeline in VivaDicta.
 │ Assistant response persisted                                        │
 │ - response text                                                     │
 │ - source note ids                                                   │
-│ - source citations with excerpt + relevance                         │
+│ - source citations with excerpt + score                             │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## What gets indexed
+## Apple vs Cloud
 
-- Smart Search indexes `transcription.text`
-- It does not index `enhancedText`
-- It does not index `TranscriptionVariation`
-- Chunking is semantic with `chunkSize = 500` and `overlap = 15%`
-- Embeddings use `minishlab/potion-base-32M`
-
-## When indexing happens
-
-- On app launch via `indexAllIfNeeded()`
-- When a note is created
-- When a note is appended to or edited
-- When a note is retranscribed
-- When a note is deleted, its chunks are removed from the index
-
-## What gets injected into the LLM
-
-### Smart Search system prompt
-
-This is the exact system prompt used by Smart Search:
+### Apple FM
 
 ```text
-You are a helpful AI assistant with access to the user's voice transcription notes.
-Relevant note excerpts are retrieved automatically for each question and provided in source sections.
-
-Guidelines:
-- Answer questions using the provided note context
-- When referencing a specific note, mention its title or date
-- The provided source sections are excerpts, not always full notes
-- Never mention prompt structure, source numbering, or internal formatting in your answer
-- If the provided notes don't contain enough information to answer, say so clearly in plain natural language
-- You may combine information from multiple notes to form a complete answer
-- Keep responses concise unless the user asks for detail
-- Do not use long em-dashes; use normal hyphens instead
-- Do not fabricate information that isn't in the provided notes
+planner session  ->  local RAG  ->  main Apple chat session
 ```
 
-### The retrieved context is injected as plain text:
+Meaning:
+
+- planner uses a temporary Apple session
+- retrieval is local
+- final answer goes through the persistent Smart Search Apple session
+
+### Cloud
+
+```text
+planner request  ->  local RAG  ->  final streaming chat request
+```
+
+Meaning:
+
+- one non-streaming planner request
+- retrieval is local
+- one final streaming answer request
+
+## Planner Input
+
+Planner input is:
+
+- latest user message
+- up to 4 recent non-summary messages
+
+Planner does not receive fixed note text in Smart Search.
+
+So the context window for planning is effectively:
+
+- current latest message
+- plus up to 4 previous messages
+
+## What RAG Searches
+
+RAG searches:
+
+- `transcription.text`
+- semantically chunked local note content
+
+RAG does not search:
+
+- `enhancedText`
+- variations
+
+Current runtime threshold:
+
+- `0.25`
+
+## What Gets Injected
+
+The final LLM does not receive full notes.
+
+It receives:
+
+- all returned note results
+- one chunk excerpt per note
+- title + date + excerpt
+- original user question
+- optionally the focused retrieval query that was used
+
+Example:
 
 ```text
 Here are relevant excerpts from the user's notes:
+
+Focused retrieval query used for note search:
+apple frameworks iOS macOS
 
 SOURCE 1
 Title: ...
@@ -119,13 +159,28 @@ Excerpt:
 ...
 
 USER QUESTION:
-...
+Do I have notes about similar thoughts?
 ```
 
-Important behavior:
+So the injection rule is:
 
-- Retrieval is performed for every submitted user turn
-- Retrieval happens before the LLM call
-- Only the latest user turn gets fresh retrieved context injected
-- Older chat turns remain as their original text in history
-- If retrieval finds nothing, the raw question is sent without note excerpts
+- all returned note results
+- one chunk per note
+- never full note text
+
+## Empty Retrieval
+
+If retrieval finds nothing:
+
+- Smart Search may return a deterministic no-evidence reply when the planned query is substantive
+- otherwise it can fall back to the raw-question path
+
+## Summary
+
+Smart Search is now:
+
+- planner-first
+- RAG-only
+- chunk-excerpt injection
+- Apple: temporary planner session + persistent chat session
+- cloud: planner request + final chat request

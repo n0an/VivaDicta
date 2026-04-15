@@ -30,7 +30,7 @@ struct ChatCrossNoteContextManager {
             <OTHER_NOTES_SEARCH_RESULTS>
             Focused search query used for other notes: \(plannedQuery)
 
-            The following excerpts come from other notes outside the current note.
+            The following excerpts come from other notes outside the notes already in this chat context.
 
             \(noteBlocks)
             </OTHER_NOTES_SEARCH_RESULTS>
@@ -39,7 +39,7 @@ struct ChatCrossNoteContextManager {
             \(query)
             """
         case .empty:
-            let message = payload.message ?? "No relevant other notes were found outside the current note."
+            let message = payload.message ?? "No relevant other notes were found outside the notes already in this chat context."
             return """
             <OTHER_NOTES_SEARCH_RESULTS>
             Focused search query used for other notes: \(plannedQuery)

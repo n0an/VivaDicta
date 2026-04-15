@@ -1,282 +1,248 @@
-# Cross-Note Search In Normal Chat
+# Cross-Note Search In Chat
 
 ## Overview
 
-VivaDicta supports explicit cross-note retrieval in single-note normal chat.
+VivaDicta supports explicit cross-note retrieval inside normal chat surfaces.
 
-This lets the user stay inside a regular "Chat with Note" conversation and intentionally pull in relevant context from other notes for the next message only.
+Today this is implemented in:
 
-Example intents:
+- single-note chat
+- multi-note chat
 
-- `Did I mention something similar in other notes?`
-- `Have I written about burnout elsewhere?`
-- `Find related notes and compare them with this one.`
+It is not autonomous tool use.
 
-This feature is:
-
-- explicit
-- one-shot
-- app-controlled
-- planner-first
-
-It is not autonomous chat-time tool use.
+The user explicitly enables it for one turn with the search icon in the input row, then the app runs a planner-first retrieval flow before the final answer call.
 
 ## User Experience
 
-In single-note normal chat, the composer shows:
+When Smart Search is enabled, normal chat shows a compact `Search other notes` icon inside the input row.
 
-- `Search other notes`
+Behavior:
 
-This control is shown only when Smart Search is enabled.
+- tap once to arm cross-note search for the next send
+- send the message
+- app performs planning and retrieval before the final answer call
+- armed state resets immediately after the send
 
-If the Smart Search toggle is off, normal chat does not expose cross-note search at all.
+When Smart Search is disabled:
 
-When tapped:
+- the icon is hidden
+- cross-note search cannot be armed
 
-- the action is armed for the next send only
-- the next message runs the cross-note flow before the final answer call
-- the armed state resets immediately after that send
+This is a hard allow:
 
-This is a hard allow.
-
-The user decides whether cross-note search is allowed for the turn.
-
-The model does not get to search other notes on ordinary turns.
+- ordinary chat turns do not search other notes
+- only explicitly armed turns do
 
 ## Scope
 
-Currently implemented in:
+Implemented:
 
 - single-note normal chat
+- multi-note normal chat
 
-Not implemented yet in:
+Not used in:
 
-- multi-note chat
 - Smart Search chat
+
+Smart Search has its own planner-first RAG flow documented separately in the Smart Search RAG docs.
 
 ## Core Idea
 
-The app no longer feeds the raw user message directly into notes search.
+The app does not feed the raw user sentence directly into retrieval.
 
-Instead, the feature uses a two-stage design:
+Instead, the flow is:
 
-1. A small planner model call derives a focused search query from:
-   - the latest user message
-   - recent chat context
-   - the current note
-2. The app runs cross-note retrieval with that focused query.
-3. The final answer model call receives the retrieved results and answers naturally.
+1. Planner derives a focused search query.
+2. Local RAG searches other notes with that planned query.
+3. Retrieved excerpts are injected into the final answer prompt.
+4. The main chat model answers naturally.
 
-This means a message like:
+Example:
 
-- `Did I mention something similar in other notes?`
-
-does not search with that full sentence.
-
-Instead, the planner might derive something like:
-
-- `apple frameworks`
-- `burnout`
-- `business idea`
-
-and retrieval runs with that focused query.
+- user message: `Did I mention something similar in other notes?`
+- planner output: `apple frameworks`
+- retrieval query: `apple frameworks`
 
 ## High-Level Flow
 
 ```text
-┌───────────────────────────────────────────────────────────────┐
-│ User is in single-note normal chat                           │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ User taps "Search other notes"                               │
-│ - one-shot armed state becomes true                          │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ User sends chat message                                      │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ App runs planner step                                        │
-│ - latest user message                                        │
-│ - recent chat turns                                          │
-│ - current note text                                          │
-│ - outputs shouldSearch + focused searchQuery                 │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ App runs cross-note retrieval with planned query             │
-│ - excludes current note                                      │
-│ - semantic RAG over indexed chunks                           │
-│ - no lexical fallback layer                                  │
-│ - no SwiftData keyword scan                                  │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ App builds augmented prompt                                  │
-│ - inserts OTHER_NOTES_SEARCH_RESULTS block                   │
-│ - includes focused search query used                         │
-│ - appends USER QUESTION                                      │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ App sends final prompt to selected model                     │
-│ - Apple FM or cloud provider                                 │
-└──────────────────────────────┬────────────────────────────────┘
-                               │
-                               ▼
-┌───────────────────────────────────────────────────────────────┐
-│ Assistant response is saved with citations                   │
-│ - source note ids                                            │
-│ - excerpt-level citations                                    │
-└───────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│ User is in single-note or multi-note normal chat                    │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ User taps Search other notes icon                                   │
+│ - one-shot armed state becomes true                                 │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ User sends message                                                  │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Planner step                                                        │
+│ - latest user message                                               │
+│ - up to 4 recent non-summary messages                               │
+│ - current note context already in this chat                         │
+│ - output: shouldSearch + plannedQuery                               │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Cross-note retrieval                                                │
+│ - local RAG search only                                             │
+│ - query = plannedQuery                                              │
+│ - exclude note(s) already in this chat                              │
+│ - keep up to 4 note results                                         │
+│ - one chunk excerpt per note                                        │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ App builds augmented prompt                                         │
+│ - OTHER_NOTES_SEARCH_RESULTS block                                  │
+│ - focused search query used                                         │
+│ - note title/date/excerpt blocks                                    │
+│ - original user question appended                                   │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Final answer call                                                   │
+│ - Apple FM main chat session OR                                     │
+│ - cloud streaming chat request                                      │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Assistant response persisted                                        │
+│ - response text                                                     │
+│ - source note ids                                                   │
+│ - excerpt-level citations                                           │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Step 1 - Search Planning
+## Planner Input
 
-### Purpose
+Cross-note search planning receives more than just the latest user sentence.
 
-The planner exists so retrieval does not depend on the raw wording of the user message.
-
-Its job is to infer the real search topic.
-
-### Inputs
-
-The planner receives:
+Planner inputs:
 
 - latest user message
 - up to 4 recent non-summary chat messages
-- current note text
+- current note context already in the chat
 
-### Output
+That means the planner window is:
 
-The planner returns structured data:
+- current message
+- plus up to 4 previous messages
+
+Not the entire chat history.
+
+### Single-Note Chat
+
+`current note context` means the full current note text:
+
+- `assembledNoteText`
+- which is `transcription.text`
+
+### Multi-Note Chat
+
+`current note context` means the full assembled multi-note context:
+
+- `assembledNoteText`
+- which is `conversation.noteContext`
+- this contains the selected notes already included in that multi-note chat
+
+## Planner Payload Shape
+
+The planner payload is plain text with labeled sections:
+
+```text
+LATEST USER MESSAGE:
+...
+
+RECENT CHAT:
+User: ...
+Assistant: ...
+
+CURRENT NOTE:
+...
+```
+
+For multi-note chat, `CURRENT NOTE` is actually the assembled context for all notes already in the conversation.
+
+## Planner Output
+
+The planner returns structured JSON-like data:
 
 ```json
 {
   "shouldSearch": true,
   "searchQuery": "apple frameworks",
-  "reasoning": "The user is asking whether the topic of the current note appears in other notes."
+  "reasoning": "The user is asking whether the topic of the current chat appears in other notes."
 }
 ```
 
-### Planner Rules
+Normalization after planning:
 
-The planner prompt instructs the model to:
+- trim whitespace
+- collapse repeated whitespace
+- remove line breaks and tabs
+- cap to 80 characters
+- if empty after normalization, search is treated as disabled
 
-- infer the real search topic from latest message + recent chat + current note
-- produce a short focused query
-- remove framing such as `did I mention`, `other notes`, `similar`, `search`, `find`, `elsewhere`
-- prefer concrete entities, projects, concepts, people, or phrases from the note
-- keep the query concise
-- return only JSON
-
-### Provider Behavior
-
-The planner is aligned across Apple and cloud chat, but the implementation differs slightly:
-
-- Apple Foundation Models:
-  - uses structured generation with `LanguageModelSession.respond(generating:)`
-- cloud providers:
-  - uses a non-streaming chat request
-  - planner prompt asks for JSON only
-  - app decodes the JSON result
-
-### Normalization
-
-After the planner responds, the app normalizes the planned query:
-
-- trims whitespace
-- collapses repeated whitespace
-- removes line breaks and tabs
-- caps query length to 80 characters
-- if the query becomes empty, search is treated as disabled
-
-### Failure Behavior
-
-If the planner fails, or decides that no focused query can be inferred:
-
-- the app does not run notes retrieval
-- the final prompt still includes an explanatory `OTHER_NOTES_SEARCH_RESULTS` block
-- the assistant can answer naturally, but without other-note evidence
-
-## Step 2 - Cross-Note Retrieval
+## Retrieval
 
 Cross-note retrieval is implemented in `NotesSearchToolRuntime.searchNotesPayload(...)`.
 
-This is app-controlled retrieval. It does not call an LLM.
+Important points:
 
-### Data Source
+- retrieval is local and app-controlled
+- retrieval is RAG-only
+- there is no keyword fallback
+- there is no SwiftData keyword predicate search
+- there is no search over `enhancedText`
+- there is no search over `TranscriptionVariation`
 
-The retrieval layer is intentionally simple:
+The app calls:
 
-- semantic RAG search through the local note index
+- `RAGIndexingService.shared.search(query: plannedQuery, topK: 8)`
 
-It does not add:
+Then it:
 
-- lexical/original-text fallback matching
-- SwiftData keyword predicates
-- `enhancedText` search
-- `TranscriptionVariation.text` search
+- filters out notes already in the current chat context
+- resolves note ids back to `Transcription`
+- keeps up to 4 results
 
-This keeps cross-note search aligned with Smart Search and avoids a second custom retrieval stack in normal chat.
+## What Gets Injected
 
-### 2.1 Semantic Search
+The final model does not receive full notes from cross-note retrieval.
 
-If Smart Search is enabled, the app calls:
+It receives:
 
-- `RAGIndexingService.shared.search(query:topK:)`
+- up to 4 note results
+- one excerpt per note
+- each excerpt derived from the matched RAG chunk
 
-This searches the local vector index over semantically chunked note text and returns chunk-level matches that are already mapped back to note IDs.
+So the injection model is:
 
-### 2.2 Note Resolution
+- all returned note results are included
+- each note contributes one chunk excerpt
+- not multiple chunks per note
+- not full note text
 
-RAG returns note identifiers plus chunk excerpts and semantic relevance scores.
-
-The app then:
-
-- excludes the current note
-- resolves matched note IDs back to `Transcription` records
-- keeps the RAG ordering
-- takes up to `4` results
-
-Each final note hit carries:
-
-- note identity
-- title
-- formatted date
-- excerpt from the matched chunk
-- source type
-- semantic relevance score
-
-## Step 3 - Result Ordering
-
-Cross-note search now uses the ordering already produced by RAG.
-
-That means:
-
-- no secondary lexical ranking formula
-- no dual-source boost
-- no app-side merge score
-
-This is intentionally simpler and easier to reason about.
-
-## Step 5 - Prompt Injection
-
-The final chat model call receives an augmented prompt block like:
+Injected shape:
 
 ```text
 <OTHER_NOTES_SEARCH_RESULTS>
 Focused search query used for other notes: apple frameworks
 
-The following excerpts come from other notes outside the current note.
+The following excerpts come from other notes outside the notes already in this chat context.
 
 OTHER NOTE 1
 Title: ...
@@ -295,120 +261,133 @@ USER QUESTION:
 Did I mention something similar in other notes?
 ```
 
-If no matches are found:
+## Apple vs Cloud Execution Model
+
+The planner and the final answer call are intentionally separated.
+
+### Apple FM
+
+Apple uses two different `LanguageModelSession` objects:
 
 ```text
-<OTHER_NOTES_SEARCH_RESULTS>
-Focused search query used for other notes: apple frameworks
-
-No matching notes found outside the note or notes already in the conversation.
-</OTHER_NOTES_SEARCH_RESULTS>
-
-USER QUESTION:
-Did I mention something similar in other notes?
+┌──────────────────────────────────────────────────────────────────────┐
+│ Apple FM cross-note turn                                            │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Temporary planner session                                           │
+│ - derive plannedQuery                                               │
+│ - no transcript persistence into main chat                          │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Local RAG search                                                    │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Persistent main Apple chat session                                  │
+│ - receives final augmented prompt                                   │
+│ - continues normal conversation transcript                          │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-If planning fails or no focused query is inferred:
+So for Apple:
+
+- planner uses a separate temporary session
+- final answer uses the persistent main chat session
+- search itself is local, not an Apple session
+
+### Cloud Providers
+
+Cloud providers do not have a persistent provider-side session in our app code.
+
+Instead, a cross-note turn is:
 
 ```text
-<OTHER_NOTES_SEARCH_RESULTS>
-Other-note search was enabled for this turn, but no focused search query could be inferred from the note and recent chat.
-</OTHER_NOTES_SEARCH_RESULTS>
-
-USER QUESTION:
-...
+┌──────────────────────────────────────────────────────────────────────┐
+│ Cloud cross-note turn                                               │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Planner request                                                     │
+│ - non-streaming makeChatRequest(...)                                │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Local RAG search                                                    │
+└──────────────────────────────────┬───────────────────────────────────┘
+                                   │
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│ Final chat request                                                  │
+│ - streaming makeChatStreamingRequest(...)                           │
+│ - full conversation continuity comes from sent messages             │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-If retrieval itself fails:
+So for cloud:
 
-- the app falls back to the original user message without cross-note augmentation
+- no persistent model session
+- one planner request
+- one final answer request
+- local RAG in between
 
-## Important Behavior
+## Single-Note vs Multi-Note Exclusions
 
-- Retrieval happens before the final answer request is sent to the model
-- Cross-note retrieval is app-controlled, not autonomous tool use
-- The current note is excluded from results
-- The feature is one-shot and resets after send
-- The final answer model never receives raw retrieval internals like ranking formulas
-- The raw user message is not used directly as the retrieval query
-- Cross-note search is available only when Smart Search is enabled
+Single-note chat excludes:
 
-## Model Support
+- the one current note in that conversation
 
-This feature works with all providers that already support single-note normal chat, because retrieval happens in app code and the planner step is also app-controlled.
+Multi-note chat excludes:
 
-In practice, that includes:
+- all notes already included in that multi-note conversation
 
-- Apple Foundation Models
-- Anthropic
-- OpenAI
-- Gemini
-- Groq
-- Mistral
-- OpenRouter
-- Grok
-- Cerebras
-- Cohere
-- Z.AI
-- Kimi
-- Vercel AI Gateway
-- HuggingFace
-- GitHub Copilot
-- Ollama
-- custom OpenAI-compatible endpoints
+This prevents the feature from “finding” notes that are already in scope for the current chat.
 
-## Why This Is Explicit Instead Of Autonomous
+## Failure and Empty Cases
 
-VivaDicta still contains a parked Apple FM `NotesSearchTool`, but normal chat does not currently rely on that tool path.
+Planner failure:
 
-Reason:
+- no search runs
+- final prompt includes a planner-unavailable message block
 
-- autonomous tool behavior was too eager for ordinary current-note questions
-- that degraded answer quality
+Planner decides no search:
 
-The current design is safer and more predictable:
+- no search runs
+- final prompt includes a no-query-inferred message block
 
-- user explicitly enables other-note search for the turn
-- a planner derives the focused query
-- the app performs retrieval
-- the final answer model reasons over the retrieved results
+Search returns zero notes:
 
-The current design is also intentionally simple:
+- final prompt includes an explicit empty-result block
+- the final model still answers naturally, but without other-note evidence
 
-- planner-first
-- RAG-only retrieval
-- no separate lexical retrieval layer in normal chat
+Smart Search disabled:
 
-## Citations
+- icon is hidden from normal chat
+- cross-note search cannot be armed
+- runtime search API returns an error if somehow invoked anyway
 
-Assistant messages created from cross-note search store:
+## What This Is Not
 
-- `sourceTranscriptionIds`
-- `sourceCitations`
+Current cross-note search is not:
 
-The normal chat UI reuses the existing citation-pill display to show and open matched notes.
+- automatic model-initiated tool use
+- Apple FM tool calling in the live chat path
+- hybrid semantic + keyword merge
+- full-note injection
+
+The old tool type still exists in code as a parked Apple FM tool, but the active chat runtime path is planner-first + local RAG + final answer prompt injection.
 
 ## Key Files
 
-Core files for this feature:
-
+- [VivaDicta/Views/Chat/ChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/Chat/ChatViewModel.swift)
+- [VivaDicta/Views/MultiNoteChat/MultiNoteChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/MultiNoteChat/MultiNoteChatViewModel.swift)
 - [VivaDicta/Services/AIEnhance/CrossNoteSearchPlanner.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Services/AIEnhance/CrossNoteSearchPlanner.swift)
 - [VivaDicta/Services/AIEnhance/NotesSearchTool.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Services/AIEnhance/NotesSearchTool.swift)
 - [VivaDicta/Services/AIEnhance/ChatCrossNoteContextManager.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Services/AIEnhance/ChatCrossNoteContextManager.swift)
-- [VivaDicta/Services/AIEnhance/ChatContextManager.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Services/AIEnhance/ChatContextManager.swift)
-- [VivaDicta/Views/Chat/ChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/Chat/ChatViewModel.swift)
-- [VivaDicta/Views/Chat/ChatView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/Chat/ChatView.swift)
-- [VivaDicta/Views/Chat/ChatInputBar.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/Chat/ChatInputBar.swift)
 - [VivaDicta/Services/RAG/RAGIndexingService.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Services/RAG/RAGIndexingService.swift)
-
-## Future Direction
-
-Likely future additions:
-
-- multi-note chat support
-- planner quality tuning based on real conversations
-- optional provider-gated autonomous search experiments for stronger models
-- a future per-mode toggle such as:
-  - `Automatic search in other notes (Experimental)`
-
-Those are not part of the current MVP.

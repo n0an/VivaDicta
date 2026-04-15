@@ -33,45 +33,43 @@ struct ChatInputBar: View {
     @available(iOS 26, *)
     private var glassInputBar: some View {
         GlassEffectContainer(spacing: 12) {
-            VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .bottom, spacing: 12) {
                 if let secondaryActionTitle, let onSecondaryAction {
-                    secondaryActionButton(
-                        title: secondaryActionTitle,
+                    secondaryActionIconButton(
+                        accessibilityLabel: secondaryActionTitle,
                         isArmed: isSecondaryActionArmed,
                         action: onSecondaryAction
                     )
                 }
 
-                HStack(alignment: .bottom, spacing: 12) {
-                    TextField(placeholder, text: $text, axis: .vertical)
-                        .lineLimit(1...6)
-                        .textFieldStyle(.plain)
-                        .focused($isFocused)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+                TextField(placeholder, text: $text, axis: .vertical)
+                    .lineLimit(1...6)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .glassEffect(.regular, in: .rect(cornerRadius: 20))
 
-                    Button {
-                        if isStreaming {
-                            onStop()
-                        } else {
-                            onSend()
-                        }
-                    } label: {
-                        Image(systemName: isStreaming ? "stop.fill" : "arrow.up")
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                Button {
+                    if isStreaming {
+                        onStop()
+                    } else {
+                        onSend()
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!canSend && !isStreaming)
-                    .padding(8)
-                    .glassEffect(
-                        .regular
-                            .tint(canSend || isStreaming ? Color.accentColor : .secondary)
-                            .interactive(true),
-                        in: .circle
-                    )
+                } label: {
+                    Image(systemName: isStreaming ? "stop.fill" : "arrow.up")
+                        .font(.headline)
+                        .foregroundStyle(.white)
                 }
+                .buttonStyle(.plain)
+                .disabled(!canSend && !isStreaming)
+                .padding(8)
+                .glassEffect(
+                    .regular
+                        .tint(canSend || isStreaming ? Color.accentColor : .secondary)
+                        .interactive(true),
+                    in: .circle
+                )
             }
         }
         .padding(.horizontal, 12)
@@ -85,39 +83,37 @@ struct ChatInputBar: View {
     }
 
     private var legacyInputBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .bottom, spacing: 8) {
             if let secondaryActionTitle, let onSecondaryAction {
-                secondaryActionButton(
-                    title: secondaryActionTitle,
+                secondaryActionIconButton(
+                    accessibilityLabel: secondaryActionTitle,
                     isArmed: isSecondaryActionArmed,
                     action: onSecondaryAction
                 )
             }
 
-            HStack(alignment: .bottom, spacing: 8) {
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .lineLimit(1...6)
-                    .textFieldStyle(.plain)
-                    .focused($isFocused)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .clipShape(.rect(cornerRadius: 20))
+            TextField(placeholder, text: $text, axis: .vertical)
+                .lineLimit(1...6)
+                .textFieldStyle(.plain)
+                .focused($isFocused)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(.systemGray6))
+                .clipShape(.rect(cornerRadius: 20))
 
-                Button {
-                    if isStreaming {
-                        onStop()
-                    } else {
-                        onSend()
-                    }
-                } label: {
-                    Image(systemName: isStreaming ? "stop.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(canSend || isStreaming ? Color.accentColor : .secondary)
+            Button {
+                if isStreaming {
+                    onStop()
+                } else {
+                    onSend()
                 }
-                .buttonStyle(.plain)
-                .disabled(!canSend && !isStreaming)
+            } label: {
+                Image(systemName: isStreaming ? "stop.circle.fill" : "arrow.up.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(canSend || isStreaming ? Color.accentColor : .secondary)
             }
+            .buttonStyle(.plain)
+            .disabled(!canSend && !isStreaming)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -134,23 +130,35 @@ struct ChatInputBar: View {
     }
 
     @ViewBuilder
-    private func secondaryActionButton(
-        title: String,
+    private func secondaryActionIconButton(
+        accessibilityLabel: String,
         isArmed: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label(title, systemImage: "sparkle.magnifyingglass")
-                .font(.caption)
-                .foregroundStyle(isArmed ? .blue : .secondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .glassCapsule(
-                    tint: isArmed ? Color.blue.opacity(0.25) : nil,
-                    fallback: isArmed ? Color.blue.opacity(0.12) : Color(.systemGray5)
-                )
+            if #available(iOS 26, *) {
+                Image(systemName: "sparkle.magnifyingglass")
+                    .font(.headline)
+                    .foregroundStyle(isArmed ? .white : .secondary)
+                    .frame(width: 40, height: 40)
+                    .glassEffect(
+                        .regular
+                            .tint(isArmed ? Color.accentColor : Color.secondary.opacity(0.25))
+                            .interactive(true),
+                        in: .circle
+                    )
+            } else {
+                Image(systemName: "sparkle.magnifyingglass")
+                    .font(.headline)
+                    .foregroundStyle(isArmed ? .white : .secondary)
+                    .frame(width: 40, height: 40)
+                    .background(isArmed ? Color.accentColor : Color(.systemGray5))
+                    .clipShape(.circle)
+            }
         }
         .buttonStyle(.plain)
         .disabled(!isSecondaryActionEnabled || isStreaming || isBusy)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isArmed ? "Enabled" : "Disabled")
     }
 }
