@@ -154,6 +154,15 @@ struct TranscriptionsContentView: View {
             performDebouncedSearch(with: newValue)
         }
         .onChange(of: allTranscriptions) { oldValue, newValue in
+            let shouldResetTagFilter = NotesFilterResetPolicy.shouldResetToAllAfterDeletion(
+                hasActiveFilter: hasActiveTagFilter,
+                isSearching: !searchText.isEmpty,
+                oldTranscriptionCount: oldValue.count,
+                newTranscriptionCount: newValue.count,
+                previousFilteredCount: filterTranscriptionsByActiveTags(oldValue).count,
+                remainingFilteredCount: filterTranscriptionsByActiveTags(newValue).count
+            )
+
             // Detect newly inserted transcriptions
             if newValue.count > previousTranscriptionCount {
                 // Find the newly added transcription(s)
@@ -181,6 +190,12 @@ struct TranscriptionsContentView: View {
             } else {
                 performDebouncedSearch(with: searchText)
             }
+
+            if shouldResetTagFilter {
+                selectedSourceTags.removeAll()
+                selectedUserTagIds.removeAll()
+            }
+
             syncDisplayedIDs()
         }
         .onChange(of: filteredTranscriptions) {

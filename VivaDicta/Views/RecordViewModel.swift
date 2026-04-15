@@ -122,6 +122,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     // Pending transcription data for saving when enhancement is cancelled
     private var pendingTranscription: PendingTranscriptionData?
     private var activeRecordingDestination: RecordingDestination = .newNote
+    private var activeSourceTag: String = SourceTag.app
 
     var captureURL: URL {
         FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
@@ -177,13 +178,18 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     ///
     /// If a keyboard prewarm session is active, uses the prewarmed audio engine.
     /// Otherwise, configures and starts a standard AVAudioRecorder.
-    func startCaptureAudio(destination: RecordingDestination = .newNote) {
+    func startCaptureAudio(
+        destination: RecordingDestination = .newNote,
+        sourceTag: String = SourceTag.app
+    ) {
         Task { @MainActor in
             // Guard against duplicate starts
             guard recordingState != .recording else {
                 logger.logInfo("📱 Already recording, ignoring duplicate start request")
                 return
             }
+
+            activeSourceTag = sourceTag
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
@@ -290,7 +296,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     func stopCaptureAudio(modelContext: ModelContext) {
         HapticManager.mediumImpact()
         let destination = activeRecordingDestination
+        let sourceTag = activeSourceTag
         activeRecordingDestination = .newNote
+        activeSourceTag = SourceTag.app
 
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
@@ -313,6 +321,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     transcribingSpeechTask = transcribeSpeechTask(
                         recordURL: finalURL,
                         modelContext: modelContext,
+                        sourceTag: sourceTag,
                         destination: destination
                     )
                 } catch {
@@ -332,6 +341,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 transcribingSpeechTask = transcribeSpeechTask(
                     recordURL: finalURL,
                     modelContext: modelContext,
+                    sourceTag: sourceTag,
                     destination: destination
                 )
             } catch {
@@ -493,7 +503,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 var enhancedText: String? = nil
                 var promptName: String? = nil
                 var enhancementDur: TimeInterval? = nil
-                let resolvedSourceTag = sourceTag ?? (prewarmManager.isSessionActive ? SourceTag.keyboard : SourceTag.app)
+                let resolvedSourceTag = sourceTag ?? SourceTag.app
                 let shouldEnhance = destination == .newNote && aiService.isProperlyConfigured()
 
                 // Check if AI Processing is properly configured
@@ -661,6 +671,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcribingSpeechTask = nil
         pendingTranscription = nil
         activeRecordingDestination = .newNote
+        activeSourceTag = SourceTag.app
 
         // Stop real capture if still recording
         if prewarmManager.isSessionActive && prewarmManager.audioEngine?.isRunning == true {
@@ -983,7 +994,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     self.appState?.transcriptionManager.setCurrentMode(selectedMode)
                 }
 
-                self.startCaptureAudio()
+                self.startCaptureAudio(sourceTag: SourceTag.keyboard)
             }
         }
 
