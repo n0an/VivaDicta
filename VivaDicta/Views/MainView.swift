@@ -111,6 +111,7 @@ struct MainView: View {
                 ) { filter in
                     savedNotesFilter = filter
                 }
+                .navigationTransition(.zoom(sourceID: "NotesFilterSheetTransition", in: sheetTransitions))
             }
     }
 
@@ -192,6 +193,7 @@ struct MainView: View {
         }
         .fullScreenCover(isPresented: $showMultiNoteChats) {
             MultiNoteChatsListView()
+                .navigationTransition(.zoom(sourceID: "ChatsSheetTransition", in: sheetTransitions))
         }
         .fullScreenCover(isPresented: Binding(
             get: { selectionChatViewModel != nil },
@@ -418,6 +420,7 @@ struct MainView: View {
                           : "line.3.horizontal.decrease.circle")
                 }
                 .accessibilityLabel(savedNotesFilter.isActive ? "Edit Active Notes Filter" : "Filter Notes")
+                .matchedTransitionSource(id: "NotesFilterSheetTransition", in: sheetTransitions)
             }
 
             if #available(iOS 26.0, *) {

@@ -75,6 +75,7 @@ struct MainFloatingActionButtonsView: View {
         .foregroundStyle(.white)
         .padding(14)
         .background(chatsButtonBackground)
+        .matchedTransitionSource(id: "ChatsSheetTransition", in: sheetTransitions)
     }
 
     @ViewBuilder
