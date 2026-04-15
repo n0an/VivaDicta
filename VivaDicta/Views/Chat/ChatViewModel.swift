@@ -221,7 +221,9 @@ final class ChatViewModel {
                 let result: String
                 let crossNoteContext = await makeCrossNoteSearchContext(
                     for: text,
-                    enabled: shouldSearchOtherNotes
+                    enabled: shouldSearchOtherNotes,
+                    provider: provider,
+                    model: model
                 )
                 let promptText = crossNoteContext?.augmentedPrompt ?? text
 
@@ -387,7 +389,7 @@ final class ChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        appleFMSession = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+        appleFMSession = LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
 
         // Update SwiftData messages
         let nonSummaryMessages = messages.filter { !$0.isSummary }
@@ -473,7 +475,7 @@ final class ChatViewModel {
     }
 
     @available(iOS 26, *)
-    private var appleFMTools: [any Tool] {
+    private func appleFMTools() -> [any Tool] {
         var tools: [any Tool] = []
         if let key = ExaAPIKeyManager.apiKey, !key.isEmpty {
             tools.append(ExaWebSearchTool(apiKey: key))
@@ -487,7 +489,7 @@ final class ChatViewModel {
 
         if let data = conversation.appleFMTranscriptData,
            let transcript = try? JSONDecoder().decode(Transcript.self, from: data) {
-            let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+            let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
             session.prewarm()
             appleFMSession = session
             logger.logInfo("Chat - Apple FM session restored and prewarmed")
@@ -502,7 +504,7 @@ final class ChatViewModel {
             summary: summary
         )
 
-        let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+        let session = LanguageModelSession(model: appleFMModel, tools: appleFMTools(), transcript: transcript)
         session.prewarm()
         appleFMSession = session
         logger.logInfo("Chat - Apple FM session initialized and prewarmed")
@@ -515,8 +517,8 @@ final class ChatViewModel {
     }
 
     @available(iOS 26, *)
-    private func saveAppleFMTranscript() {
-        guard let session = appleFMSession else { return }
+    private func saveAppleFMTranscript(from session: LanguageModelSession? = nil) {
+        guard let session = session ?? appleFMSession else { return }
         do {
             let data = try JSONEncoder().encode(session.transcript)
             conversation.appleFMTranscriptData = data
@@ -544,19 +546,24 @@ final class ChatViewModel {
 
         do {
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
-            saveAppleFMTranscript()
+            appleFMSession = session
+            saveAppleFMTranscript(from: session)
             return result
         } catch LanguageModelSession.GenerationError.exceededContextWindowSize {
             logger.logWarning("Chat - Apple FM context exceeded, summarizing and retrying")
 
             isCompacting = true
-            session = try await summarizeAndRebuildSession(session, label: "single-note")
+            session = try await summarizeAndRebuildSession(
+                session,
+                label: "single-note"
+            )
             appleFMSession = session
             compactSwiftDataMessages()
             isCompacting = false
 
             let result = try await streamAppleFMResponse(session: session, text: text, options: options)
-            saveAppleFMTranscript()
+            appleFMSession = session
+            saveAppleFMTranscript(from: session)
             return result
         } catch let error as LanguageModelSession.GenerationError {
             switch error {
@@ -572,7 +579,10 @@ final class ChatViewModel {
 
     /// Extracts conversation from transcript, summarizes it, rebuilds a clean session.
     @available(iOS 26, *)
-    private func summarizeAndRebuildSession(_ session: LanguageModelSession, label: String) async throws -> LanguageModelSession {
+    private func summarizeAndRebuildSession(
+        _ session: LanguageModelSession,
+        label: String
+    ) async throws -> LanguageModelSession {
         let conversationText = session.transcript.getMessages().map { entry -> String in
             switch entry {
             case .prompt(let p): return "User: \(p.segments.map { "\($0)" }.joined())"
@@ -600,7 +610,11 @@ final class ChatViewModel {
             notePrompt: appleFMNotePrompt,
             summary: summary
         )
-        return LanguageModelSession(model: appleFMModel, tools: appleFMTools, transcript: transcript)
+        return LanguageModelSession(
+            model: appleFMModel,
+            tools: appleFMTools(),
+            transcript: transcript
+        )
     }
 
     @available(iOS 26, *)
@@ -695,33 +709,70 @@ final class ChatViewModel {
 
     private func makeCrossNoteSearchContext(
         for query: String,
-        enabled: Bool
+        enabled: Bool,
+        provider: AIProvider,
+        model: String
     ) async -> CrossNoteSearchTurnContext? {
         guard enabled else { return nil }
 
+        guard let plan = await CrossNoteSearchPlanner.makePlan(
+            aiService: aiService,
+            provider: provider,
+            model: model,
+            noteText: assembledNoteText,
+            recentMessages: plannerMessagesForCrossNoteSearch(),
+            latestUserMessage: query
+        ) else {
+            logger.logWarning("Chat - Cross-note planner failed for query='\(query)'")
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assemblePlannerUnavailablePrompt(
+                    query: query,
+                    message: "Other-note search was enabled for this turn, but a focused search query could not be prepared."
+                ),
+                sourceIDs: [],
+                sourceCitations: []
+            )
+        }
+
+        guard plan.shouldSearch, let plannedQuery = plan.searchQuery else {
+            logger.logInfo(
+                "Chat - Cross-note planner decided not to search query='\(query)' reason='\(plan.reasoning ?? "")'"
+            )
+            return CrossNoteSearchTurnContext(
+                augmentedPrompt: ChatCrossNoteContextManager.assemblePlannerUnavailablePrompt(
+                    query: query,
+                    message: "Other-note search was enabled for this turn, but no focused search query could be inferred from the note and recent chat."
+                ),
+                sourceIDs: [],
+                sourceCitations: []
+            )
+        }
+
         let payload = await NotesSearchToolRuntime.searchNotesPayload(
-            query: query,
+            query: plannedQuery,
             excluding: [transcription.id]
         )
 
         switch payload.status {
         case .success:
             logger.logInfo(
-                "Chat - Cross-note search found \(payload.results.count) note matches for query='\(query)'"
+                "Chat - Cross-note search found \(payload.results.count) note matches for plannedQuery='\(plannedQuery)' originalQuery='\(query)'"
             )
             return CrossNoteSearchTurnContext(
                 augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
                     query: query,
+                    plannedQuery: plannedQuery,
                     payload: payload
                 ),
                 sourceIDs: payload.sourceIDs,
                 sourceCitations: payload.sourceCitations
             )
         case .empty:
-            logger.logInfo("Chat - Cross-note search found no matches for query='\(query)'")
+            logger.logInfo("Chat - Cross-note search found no matches for plannedQuery='\(plannedQuery)'")
             return CrossNoteSearchTurnContext(
                 augmentedPrompt: ChatCrossNoteContextManager.assembleAugmentedPrompt(
                     query: query,
+                    plannedQuery: plannedQuery,
                     payload: payload
                 ),
                 sourceIDs: [],
@@ -734,6 +785,19 @@ final class ChatViewModel {
             }
             return nil
         }
+    }
+
+    private func plannerMessagesForCrossNoteSearch() -> [CrossNoteSearchPlannerMessage] {
+        messages
+            .dropLast()
+            .filter { !$0.isSummary }
+            .suffix(4)
+            .map {
+                CrossNoteSearchPlannerMessage(
+                    role: $0.role,
+                    content: $0.content
+                )
+            }
     }
 
     private func performCompaction() async throws {

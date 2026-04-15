@@ -436,7 +436,12 @@ struct TranscriptionsContentView: View {
             .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
             .map(String.init)
 
-        return tokens.contains { $0.count >= 4 }
+        if tokens.contains(where: { $0.count >= 4 }) {
+            return true
+        }
+
+        let combinedTokenLength = tokens.reduce(0) { $0 + $1.count }
+        return tokens.count >= 2 && combinedTokenLength >= 6
     }
 
     private func semanticSearchMatches(for searchTerm: String) async -> [SemanticSearchMatch] {

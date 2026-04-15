@@ -105,6 +105,16 @@ enum NotesSearchToolRuntime {
         var excerpt: String
         var sources: Set<CrossNoteSearchMatchSource>
         var semanticScore: Float?
+        var lexicalScore: Double
+        var exactPhraseMatch: Bool
+        var tokenCoverage: Double
+    }
+
+    private struct LexicalSignal {
+        let excerpt: String
+        let lexicalScore: Double
+        let exactPhraseMatch: Bool
+        let tokenCoverage: Double
     }
 
     static func beginCapture(for captureID: UUID) {
@@ -156,7 +166,7 @@ enum NotesSearchToolRuntime {
                 )
             )
             logger.logInfo("Cross-note search loaded allNotes=\(allNotes.count)")
-            let noteMap = Dictionary(uniqueKeysWithValues: allNotes.map { ($0.id, $0) })
+            let noteMap: [UUID: Transcription] = Dictionary(uniqueKeysWithValues: allNotes.map { ($0.id, $0) })
 
             var hitsByID: [UUID: NoteSearchHit] = [:]
 
@@ -171,26 +181,31 @@ enum NotesSearchToolRuntime {
                         transcription: transcription,
                         excerpt: excerptPreview(result.chunkText),
                         sources: [.semantic],
-                        semanticScore: result.relevanceScore
+                        semanticScore: result.relevanceScore,
+                        lexicalScore: 0,
+                        exactPhraseMatch: false,
+                        tokenCoverage: 0
                     )
                 }
             } else {
                 logger.logInfo("Cross-note search semantic step skipped because Smart Search is disabled")
             }
 
-            let keywordMatches = try keywordMatches(
+            let lexicalMatches = lexicalMatches(
                 query: trimmedQuery,
-                modelContext: modelContext,
                 allNotes: allNotes
             )
-            logger.logInfo("Cross-note search keyword hits=\(keywordMatches.count)")
+            logger.logInfo("Cross-note search keyword hits=\(lexicalMatches.count)")
 
-            for transcription in keywordMatches where !excludedIDs.contains(transcription.id) {
-                let keywordExcerpt = keywordExcerpt(for: transcription, query: trimmedQuery)
+            for (transcription, lexicalSignal) in lexicalMatches where !excludedIDs.contains(transcription.id) {
+                let keywordExcerpt = lexicalSignal.excerpt
 
                 if var existing = hitsByID[transcription.id] {
                     existing.sources.insert(.keyword)
-                    if existing.semanticScore == nil {
+                    existing.lexicalScore = max(existing.lexicalScore, lexicalSignal.lexicalScore)
+                    existing.exactPhraseMatch = existing.exactPhraseMatch || lexicalSignal.exactPhraseMatch
+                    existing.tokenCoverage = max(existing.tokenCoverage, lexicalSignal.tokenCoverage)
+                    if lexicalSignal.exactPhraseMatch || existing.semanticScore == nil {
                         existing.excerpt = keywordExcerpt
                     }
                     hitsByID[transcription.id] = existing
@@ -199,13 +214,25 @@ enum NotesSearchToolRuntime {
                         transcription: transcription,
                         excerpt: keywordExcerpt,
                         sources: [.keyword],
-                        semanticScore: nil
+                        semanticScore: nil,
+                        lexicalScore: lexicalSignal.lexicalScore,
+                        exactPhraseMatch: lexicalSignal.exactPhraseMatch,
+                        tokenCoverage: lexicalSignal.tokenCoverage
                     )
                 }
             }
 
+            let newestTimestamp = allNotes.map(\.timestamp).max() ?? .distantPast
+            let oldestTimestamp = allNotes.map(\.timestamp).min() ?? newestTimestamp
             let finalHits = hitsByID.values
-                .sorted(by: isPreferred(_:over:))
+                .sorted { lhs, rhs in
+                    isPreferred(
+                        lhs,
+                        over: rhs,
+                        newestTimestamp: newestTimestamp,
+                        oldestTimestamp: oldestTimestamp
+                    )
+                }
                 .prefix(maxResults)
 
             guard !finalHits.isEmpty else {
@@ -293,52 +320,89 @@ enum NotesSearchToolRuntime {
         ])
     }
 
-    private static func keywordMatches(
+    private static func lexicalMatches(
         query: String,
-        modelContext: ModelContext,
         allNotes: [Transcription]
-    ) throws -> [Transcription] {
-        var directDescriptor = FetchDescriptor<Transcription>(
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
-        directDescriptor.predicate = #Predicate<Transcription> { transcription in
-            transcription.text.localizedStandardContains(query) ||
-                (transcription.enhancedText?.localizedStandardContains(query) ?? false)
+    ) -> [(Transcription, LexicalSignal)] {
+        let queryTerms = lexicalQueryTerms(from: query)
+
+        return allNotes.compactMap { transcription in
+            lexicalSignal(for: transcription, query: query, queryTerms: queryTerms)
+                .map { (transcription, $0) }
         }
-
-        let directMatches = try modelContext.fetch(directDescriptor)
-
-        let variationDescriptor = FetchDescriptor<TranscriptionVariation>(
-            predicate: #Predicate { $0.text.localizedStandardContains(query) }
-        )
-        let variationMatches = try modelContext.fetch(variationDescriptor)
-
-        let directIDs = Set(directMatches.map(\.id))
-        let variationIDs = Set(variationMatches.compactMap { $0.transcription?.id })
-        let additionalIDs = variationIDs.subtracting(directIDs)
-
-        let additionalMatches = allNotes.filter { additionalIDs.contains($0.id) }
-        return (directMatches + additionalMatches)
-            .sorted { $0.timestamp > $1.timestamp }
+        .sorted { lhs, rhs in
+            if lhs.1.lexicalScore != rhs.1.lexicalScore {
+                return lhs.1.lexicalScore > rhs.1.lexicalScore
+            }
+            return lhs.0.timestamp > rhs.0.timestamp
+        }
     }
 
-    private static func keywordExcerpt(for transcription: Transcription, query: String) -> String {
-        if let excerpt = matchingExcerpt(in: transcription.text, query: query) {
-            return excerpt
+    private static func lexicalSignal(
+        for transcription: Transcription,
+        query: String,
+        queryTerms: Set<String>
+    ) -> LexicalSignal? {
+        let originalText = transcription.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !originalText.isEmpty else { return nil }
+
+        let exactPhraseMatch = matchingExcerpt(in: originalText, query: query) != nil
+        let noteTerms = SmartSearchLexicalSupport.tokenSet(from: originalText)
+        let overlapTerms = queryTerms.intersection(noteTerms)
+
+        guard exactPhraseMatch || !overlapTerms.isEmpty else {
+            return nil
         }
 
-        if let enhancedText = transcription.enhancedText,
-           let excerpt = matchingExcerpt(in: enhancedText, query: query) {
-            return excerpt
+        let tokenCoverage: Double
+        if queryTerms.isEmpty {
+            tokenCoverage = exactPhraseMatch ? 1.0 : 0.0
+        } else {
+            tokenCoverage = Double(overlapTerms.count) / Double(queryTerms.count)
         }
 
-        for variation in (transcription.variations ?? []).sorted(by: { $0.createdAt > $1.createdAt }) {
-            if let excerpt = matchingExcerpt(in: variation.text, query: query) {
-                return excerpt
+        let exactPhraseScore = exactPhraseMatch ? 1.0 : 0.0
+        let lexicalScore = (0.60 * exactPhraseScore) + (0.40 * tokenCoverage)
+        let excerpt = bestLexicalExcerpt(
+            in: originalText,
+            query: query,
+            overlapTerms: overlapTerms
+        )
+
+        return LexicalSignal(
+            excerpt: excerpt,
+            lexicalScore: lexicalScore,
+            exactPhraseMatch: exactPhraseMatch,
+            tokenCoverage: tokenCoverage
+        )
+    }
+
+    private static func lexicalQueryTerms(from query: String) -> Set<String> {
+        return SmartSearchLexicalSupport.tokenSet(from: query)
+            .filter { $0.count >= 2 }
+    }
+
+    private static func bestLexicalExcerpt(
+        in text: String,
+        query: String,
+        overlapTerms: Set<String>
+    ) -> String {
+        if let phraseExcerpt = matchingExcerpt(in: text, query: query) {
+            return phraseExcerpt
+        }
+
+        for term in overlapTerms.sorted(by: { lhs, rhs in
+            if lhs.count != rhs.count {
+                return lhs.count > rhs.count
+            }
+            return lhs < rhs
+        }) {
+            if let termExcerpt = matchingExcerpt(in: text, query: term) {
+                return termExcerpt
             }
         }
 
-        return excerptPreview(transcription.text)
+        return excerptPreview(text)
     }
 
     private static func matchingExcerpt(in text: String, query: String) -> String? {
@@ -393,18 +457,62 @@ enum NotesSearchToolRuntime {
         capturedCitationsByID[captureID] = captured
     }
 
-    private static func isPreferred(_ lhs: NoteSearchHit, over rhs: NoteSearchHit) -> Bool {
-        switch (lhs.semanticScore, rhs.semanticScore) {
-        case (_?, _?) where lhs.sources.contains(.keyword) != rhs.sources.contains(.keyword):
-            return lhs.sources.contains(.keyword)
-        case let (left?, right?) where left != right:
-            return left > right
-        case (_?, nil):
-            return true
-        case (nil, _?):
-            return false
-        default:
+    private static func isPreferred(
+        _ lhs: NoteSearchHit,
+        over rhs: NoteSearchHit,
+        newestTimestamp: Date,
+        oldestTimestamp: Date
+    ) -> Bool {
+        let leftScore = rankingScore(
+            for: lhs,
+            newestTimestamp: newestTimestamp,
+            oldestTimestamp: oldestTimestamp
+        )
+        let rightScore = rankingScore(
+            for: rhs,
+            newestTimestamp: newestTimestamp,
+            oldestTimestamp: oldestTimestamp
+        )
+
+        if leftScore != rightScore {
+            return leftScore > rightScore
+        }
+
+        if lhs.transcription.timestamp != rhs.transcription.timestamp {
             return lhs.transcription.timestamp > rhs.transcription.timestamp
         }
+
+        return lhs.transcription.id.uuidString < rhs.transcription.id.uuidString
+    }
+
+    private static func rankingScore(
+        for hit: NoteSearchHit,
+        newestTimestamp: Date,
+        oldestTimestamp: Date
+    ) -> Double {
+        let semanticScore = Double(hit.semanticScore ?? 0)
+        let lexicalScore = hit.lexicalScore
+        let dualSourceBoost = hit.sources.contains(.semantic) && hit.sources.contains(.keyword) ? 1.0 : 0.0
+        let recencyBoost = normalizedRecency(
+            for: hit.transcription.timestamp,
+            newestTimestamp: newestTimestamp,
+            oldestTimestamp: oldestTimestamp
+        )
+
+        return (0.72 * semanticScore) +
+            (0.20 * lexicalScore) +
+            (0.06 * dualSourceBoost) +
+            (0.02 * recencyBoost)
+    }
+
+    private static func normalizedRecency(
+        for timestamp: Date,
+        newestTimestamp: Date,
+        oldestTimestamp: Date
+    ) -> Double {
+        let span = newestTimestamp.timeIntervalSince(oldestTimestamp)
+        guard span > 0 else { return 0.5 }
+        let offset = timestamp.timeIntervalSince(oldestTimestamp)
+        return max(0, min(offset / span, 1))
     }
 }

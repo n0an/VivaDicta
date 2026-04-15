@@ -10,6 +10,7 @@ import Foundation
 struct ChatCrossNoteContextManager {
     static func assembleAugmentedPrompt(
         query: String,
+        plannedQuery: String,
         payload: CrossNoteSearchPayload
     ) -> String {
         switch payload.status {
@@ -27,6 +28,8 @@ struct ChatCrossNoteContextManager {
 
             return """
             <OTHER_NOTES_SEARCH_RESULTS>
+            Focused search query used for other notes: \(plannedQuery)
+
             The following excerpts come from other notes outside the current note.
 
             \(noteBlocks)
@@ -39,6 +42,8 @@ struct ChatCrossNoteContextManager {
             let message = payload.message ?? "No relevant other notes were found outside the current note."
             return """
             <OTHER_NOTES_SEARCH_RESULTS>
+            Focused search query used for other notes: \(plannedQuery)
+
             \(message)
             </OTHER_NOTES_SEARCH_RESULTS>
 
@@ -48,5 +53,19 @@ struct ChatCrossNoteContextManager {
         case .error:
             return query
         }
+    }
+
+    static func assemblePlannerUnavailablePrompt(
+        query: String,
+        message: String
+    ) -> String {
+        """
+        <OTHER_NOTES_SEARCH_RESULTS>
+        \(message)
+        </OTHER_NOTES_SEARCH_RESULTS>
+
+        USER QUESTION:
+        \(query)
+        """
     }
 }
