@@ -84,18 +84,6 @@ struct TranscriptionDetailView: View {
         appState.aiService.isProperlyConfigured()
     }
 
-    private var pendingReminderDrafts: [ExtractedReminderDraft] {
-        transcription.pendingExtractedReminderDrafts
-    }
-
-    private var reviewableReminderDrafts: [ExtractedReminderDraft] {
-        transcription.activeExtractedReminderDrafts
-    }
-
-    private var reviewableReminderDraftCount: Int {
-        transcription.activeExtractedReminderDraftCount
-    }
-
     private var pendingReminderDraftCount: Int {
         transcription.pendingExtractedReminderDraftCount
     }
@@ -371,14 +359,27 @@ struct TranscriptionDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
+            if pendingReminderDraftCount > 0 {
+                HStack {
+                    Spacer()
+
+                    ReminderSuggestionsFloatingControl(
+                        pendingReminderDraftCount: pendingReminderDraftCount,
+                        onReviewReminderSuggestions: {
+                            HapticManager.lightImpact()
+                            showExtractedRemindersSheet = true
+                        }
+                    )
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 TranscriptionTagChipsView(
                     transcription: transcription,
-                    reviewReminderCount: reviewableReminderDraftCount,
-                    pendingReminderCount: pendingReminderDraftCount,
-                    onReviewReminderSuggestions: reviewableReminderDraftCount > 0 ? {
-                        showExtractedRemindersSheet = true
-                    } : nil,
                     showTagPicker: $showTagPicker
                 )
                 .padding(.horizontal)
@@ -401,10 +402,10 @@ struct TranscriptionDetailView: View {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
-                onReviewExtractedTasks: reviewableReminderDrafts.isEmpty ? nil : {
+                onReviewExtractedTasks: pendingReminderDraftCount > 0 ? {
                     showPresetPicker = false
                     showExtractedRemindersSheet = true
-                },
+                } : nil,
                 onExtractTasks: canExtractReminderSuggestions ? {
                     showPresetPicker = false
                     extractReminderSuggestions()
@@ -1339,7 +1340,7 @@ private struct PresetPickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                if let onExtractTasks {
+                if filter == .system, let onExtractTasks {
                     Section("Smart Actions") {
                         if let onReviewExtractedTasks {
                             Button {
@@ -1407,7 +1408,7 @@ private struct PresetPickerSheet: View {
                 }
                 .listSectionSpacing(0)
 
-                if typeFilteredPresets.isEmpty, onExtractTasks == nil {
+                if typeFilteredPresets.isEmpty {
                     ContentUnavailableView {
                         Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
                     } description: {
