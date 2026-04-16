@@ -161,8 +161,6 @@ struct VivaDictaApp: App {
                         // Migrate API keys from UserDefaults to Keychain for iCloud sync (one-time)
                         APIKeyMigrationService.shared.migrateIfNeeded()
 
-                        // Migrate enhanced text to variations (one-time)
-                        VariationMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
 
                         if SmartSearchFeature.isEnabled {
                             // Index all transcriptions for RAG Smart Search

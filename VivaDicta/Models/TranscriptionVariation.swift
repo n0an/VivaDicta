@@ -15,8 +15,7 @@ import SwiftData
 /// associated with a single ``Transcription`` via a one-to-many relationship.
 ///
 /// The initial AI processing variation uses the mode's active preset (typically "regular")
-/// and is created automatically during transcription. Legacy `enhancedText` is migrated
-/// to a "regular" variation by ``VariationMigrationService``.
+/// and is created automatically during transcription.
 @Model
 final class TranscriptionVariation {
     var id: UUID = UUID()
