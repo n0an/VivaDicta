@@ -28,7 +28,7 @@
 
 > Started as "I don't want to pay for WisprFlow." Ended up building something more flexible — on-device transcription, 20+ AI providers, on-device RAG with chat, OAuth sign-in, CLI agent bridge, and full control over your voice-to-text pipeline.
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Model for free, fully on-device AI. Its key feature is a system-wide AI voice keyboard that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also rewrite existing text in any app — select text, apply an AI preset, and get the result in place. Chat with your notes - ask questions about one note or many, or use Smart Search to find notes by meaning with on-device semantic search. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 11 transcription providers, 20+ AI providers, and syncs across devices (iOS/iPadOS/macOS/watchOS) via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Model for free, fully on-device AI. Its key feature is a system-wide AI voice keyboard that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also rewrite existing text in any app — select text, apply an AI preset, and get the result in place. Chat with your notes - ask questions about one note or many, powered by on-device RAG pipeline. Smart Search finds notes by meaning with on-device semantic search. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 11 transcription providers, 20+ AI providers, and syncs across devices (iOS/iPadOS/macOS/watchOS) via CloudKit.
 
 ## Screenshots
 
@@ -52,33 +52,33 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 ## Features
 
 **Transcription**
-- On-device: WhisperKit (OpenAI Whisper), Parakeet (NVIDIA) — professional-grade models running entirely on your device
-- Cloud: OpenAI, Groq, Cohere, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, or any OpenAI-compatible endpoint
+- **On-device** - WhisperKit (OpenAI Whisper), Parakeet (NVIDIA) - professional-grade models running entirely on your device
+- **Cloud** - OpenAI, Groq, Cohere, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, or any OpenAI-compatible endpoint
 - 100+ languages with automatic detection
-- Diarization - speaker-separated transcripts for meetings, interviews, and group conversations
+- **Diarization** - speaker-separated transcripts for meetings, interviews, and group conversations
 - Filler word removal, paragraph formatting, custom word replacements
 
 **AI Presets**
 - 40+ built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate
-- AI Assistant - ask questions, fact-check, explain, reformat, or give instructions by voice
-- Auto-Translation - speak in one language, get output in another
-- Each result saved as a variation — compare different AI outputs side by side
+- **AI Assistant** - ask questions, fact-check, explain, reformat, or give instructions by voice
+- **Auto-Translation** - speak in one language, get output in another
+- Each result saved as a **variation** - compare different AI outputs side by side
 - Create custom presets with full prompt control, mark favorites for quick access
 
 **Chat & RAG**
-- Single-note chat - ask questions about any transcription, extract action items, summarize
-- Multi-note chat - select multiple notes, find common themes, compare ideas across recordings
-- Smart Search Chat - ask a question in plain language, the AI searches your library semantically, reads relevant notes, and answers with source citations
-- Chat tools - cross-note semantic search and web search, with results injected into LLM context as tool calls
-- Fully on-device RAG pipeline: chunking, vector embedding, similarity search via LumoKit/VecturaKit - no server, no cloud, your data never leaves your device
-- Smart Search bar - semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
-- Citation-backed answers with tappable source references
-- Reminder Suggestions - AI extracts actionable items from notes, review and send to Apple Reminders
-- All chat modes work with Apple Foundation Model on-device (free, private) or any cloud AI provider
+- **Single-note chat** - ask questions about any transcription, extract action items, summarize
+- **Multi-note chat** - select multiple notes, find common themes, compare ideas across recordings
+- **Smart Search Chat** - ask a question in plain language, the AI searches your library semantically, reads relevant notes, and answers with source citations
+- **Chat tools** - cross-note semantic search and web search, with results injected into LLM context as tool calls
+- **Fully on-device RAG pipeline** - chunking, vector embedding, similarity search via LumoKit/VecturaKit - no server, no cloud, your data never leaves your device
+- **Smart Search bar** - semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
+- **Citation-backed answers** with tappable source references
+- **Reminder Suggestions** - AI extracts actionable items from notes, review and send to Apple Reminders
+- All chat modes work with **Apple Foundation Model** on-device (free, private) or any cloud AI provider
 
 **AI Providers**
 - 20+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, GitHub Copilot, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
-- OAuth sign-in for ChatGPT, Gemini, and GitHub Copilot - use your existing subscription, no API keys needed
+- **OAuth sign-in** for ChatGPT, Gemini, and GitHub Copilot - use your existing subscription, no API keys needed
 - Bring your own AI via any OpenAI-compatible API endpoint
 
 **VivAgents — CLI Agent Bridge**
@@ -89,16 +89,16 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 **VivaModes**
 - Configurable profiles combining transcription provider, AI provider, model, preset, and language
 - Each mode remembers its settings — switch contexts with one tap
-- Clipboard context — AI uses copied text as context when processing your dictation (e.g., copy a message, then dictate your reply)
+- **Clipboard context** - AI uses copied text as context when processing your dictation (e.g., copy a message, then dictate your reply)
 
 **Custom AI Voice Keyboard**
 <p>
 <img src="assets/readme/keyboard.png" width="220" alt="Custom AI voice Keyboard">
 </p>
 
-- System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
+- **System-wide voice keyboard** - dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
 - Full transcription + AI processing pipeline right from the keyboard
-- AI text processing in any app - select existing text in any app and rewrite, summarize, translate, or apply any preset without leaving it. The keyboard reads the text, sends it to the main app for AI processing via IPC, and replaces it in place
+- **AI text processing in any app** - select existing text in any app and rewrite, summarize, translate, or apply any preset without leaving it. The keyboard reads the text, sends it to the main app for AI processing via IPC, and replaces it in place
 - Swipe to switch between modes without leaving the app you're typing in
 
 **Personalization**
@@ -107,11 +107,11 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Audio recordings saved alongside transcriptions
 
 **Apple Watch App**
-- Record voice notes directly on Apple Watch — audio transfers to iPhone via WatchConnectivity
-- Background transcription — notes are processed before you open the iPhone app
-- Watch face complications for one-tap recording
-- Control Center button and Action Button support for start/stop toggle
-- Viva Mode picker — switch modes right on the watch
+- Record voice notes directly on Apple Watch - audio transfers to iPhone via WatchConnectivity
+- **Background transcription** - notes are processed before you open the iPhone app
+- **Watch face complications** for one-tap recording
+- **Control Center** button and **Action Button** support for start/stop toggle
+- **Viva Mode picker** - switch modes right on the watch
 
 **Sync & Extensions**
 - iCloud sync across iPhone, iPad, and Mac — transcriptions, presets, custom dictionary, and API keys
