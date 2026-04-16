@@ -256,6 +256,8 @@ VivaDicta/
 ## Documentation
 
 - **[Documentation](documentation/README.md)** - recording pipeline, transcription system, AI processing, RAG & chat, text pipeline, preset system, AppGroupCoordinator, review request architecture
+- **[RAG Architecture](documentation/Smart-Search-RAG-Architecture.md)** - on-device vector indexing, semantic search, and retrieval pipeline
+- **[Chat Architecture](documentation/Chat-Architecture.md)** - single-note, multi-note, Smart Search Chat, and tool system
 - **[Text Processing Pipeline](documentation/text-processing-pipeline.md)** - 7-stage pipeline from raw audio to formatted text
 - **[DocC Reference](https://n0an.github.io/VivaDicta/)** - generated DocC documentation
 - **[Website Docs](https://vivadicta.com/ios/docs)** - user-facing guides with screenshots
