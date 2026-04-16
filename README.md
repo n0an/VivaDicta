@@ -5,7 +5,7 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  iOS & watchOS voice-to-text app with AI voice keyboard, on-device RAG, and chat with your notes — dictate into any app, powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 20+ AI providers
+  iOS & watchOS voice-to-text app with AI voice keyboard, on-device RAG, and chat with your notes - powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 20+ AI providers
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
