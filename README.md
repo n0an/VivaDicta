@@ -255,9 +255,10 @@ VivaDicta/
 
 ## Documentation
 
-- **[Documentation](documentation/README.md)** — recording pipeline, transcription system, AI processing, text pipeline, preset system, AppGroupCoordinator
-- **[Text Processing Pipeline](documentation/text-processing-pipeline.md)** — 7-stage pipeline from raw audio to formatted text
-- **[DocC Reference](https://n0an.github.io/VivaDicta/)** — generated DocC documentation
+- **[Documentation](documentation/README.md)** - recording pipeline, transcription system, AI processing, RAG & chat, text pipeline, preset system, AppGroupCoordinator, review request architecture
+- **[Text Processing Pipeline](documentation/text-processing-pipeline.md)** - 7-stage pipeline from raw audio to formatted text
+- **[DocC Reference](https://n0an.github.io/VivaDicta/)** - generated DocC documentation
+- **[Website Docs](https://vivadicta.com/ios/docs)** - user-facing guides with screenshots
 
 ## Contributing
 
