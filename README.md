@@ -98,7 +98,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 - System-wide voice keyboard — dictate into Messages, WhatsApp, Email, Notion, Slack, or any app
 - Full transcription + AI processing pipeline right from the keyboard
-- **AI text processing in any app** — select existing text in any app and rewrite, summarize, translate, or apply any preset without leaving it. The keyboard reads the text, sends it to the main app for AI processing via IPC, and replaces it in place
+- AI text processing in any app - select existing text in any app and rewrite, summarize, translate, or apply any preset without leaving it. The keyboard reads the text, sends it to the main app for AI processing via IPC, and replaces it in place
 - Swipe to switch between modes without leaving the app you're typing in
 
 **Personalization**
