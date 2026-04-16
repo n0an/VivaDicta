@@ -65,13 +65,14 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Create custom presets with full prompt control, mark favorites for quick access
 
 **Chat & RAG**
-- **Single-note chat** — ask questions about any transcription, extract action items, summarize
-- **Multi-note chat** — select multiple notes, find common themes, compare ideas across recordings
-- **Smart Search Chat** — ask a question in plain language, the AI searches your library semantically, reads relevant notes, and answers with source citations
-- **Chat tools** — cross-note semantic search and web search, with results injected into LLM context as tool calls
-- On-device RAG pipeline: chunking, vector embedding, similarity search via LumoKit/VecturaKit — no server required
-- **Smart Search bar** — semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
+- Single-note chat - ask questions about any transcription, extract action items, summarize
+- Multi-note chat - select multiple notes, find common themes, compare ideas across recordings
+- Smart Search Chat - ask a question in plain language, the AI searches your library semantically, reads relevant notes, and answers with source citations
+- Chat tools - cross-note semantic search and web search, with results injected into LLM context as tool calls
+- Fully on-device RAG pipeline: chunking, vector embedding, similarity search via LumoKit/VecturaKit - no server, no cloud, your data never leaves your device
+- Smart Search bar - semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
 - Citation-backed answers with tappable source references
+- All chat modes work with Apple Foundation Model on-device (free, private) or any cloud AI provider
 
 **Diarization & Reminders**
 - **Speaker Labels** — speaker-separated transcripts for meetings, interviews, and group conversations
