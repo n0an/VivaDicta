@@ -55,6 +55,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - On-device: WhisperKit (OpenAI Whisper), Parakeet (NVIDIA) — professional-grade models running entirely on your device
 - Cloud: OpenAI, Groq, Cohere, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, or any OpenAI-compatible endpoint
 - 100+ languages with automatic detection
+- Diarization - speaker-separated transcripts for meetings, interviews, and group conversations
 - Filler word removal, paragraph formatting, custom word replacements
 
 **AI Presets**
@@ -72,11 +73,8 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Fully on-device RAG pipeline: chunking, vector embedding, similarity search via LumoKit/VecturaKit - no server, no cloud, your data never leaves your device
 - Smart Search bar - semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
 - Citation-backed answers with tappable source references
+- Reminder Suggestions - AI extracts actionable items from notes, review and send to Apple Reminders
 - All chat modes work with Apple Foundation Model on-device (free, private) or any cloud AI provider
-
-**Diarization & Reminders**
-- **Speaker Labels** — speaker-separated transcripts for meetings, interviews, and group conversations
-- **Reminder Suggestions** — AI extracts actionable items from notes, review and send to Apple Reminders
 
 **AI Providers**
 - 20+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, GitHub Copilot, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
