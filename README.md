@@ -5,7 +5,7 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  iOS & watchOS voice-to-text app with AI voice keyboard, on-device RAG, and chat with your notes - powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 20+ AI providers
+  iOS & watchOS voice-to-text app with AI voice keyboard, on-device RAG, and chat with your notes - powered by Apple Foundation Model, WhisperKit, NVIDIA Parakeet, and 20+ AI providers
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
@@ -28,7 +28,7 @@
 
 > Started as "I don't want to pay for WisprFlow." Ended up building something more flexible — on-device transcription, 20+ AI providers, on-device RAG with chat, OAuth sign-in, CLI agent bridge, and full control over your voice-to-text pipeline.
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Models for free, fully on-device AI. Its key feature is a system-wide AI voice keyboard that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also rewrite existing text in any app — select text, apply an AI preset, and get the result in place. Chat with your notes - ask questions about one note or many, or use Smart Search to find notes by meaning with on-device semantic search. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 11 transcription providers, 20+ AI providers, and syncs across devices (iOS/iPadOS/macOS/watchOS) via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Model for free, fully on-device AI. Its key feature is a system-wide AI voice keyboard that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also rewrite existing text in any app — select text, apply an AI preset, and get the result in place. Chat with your notes - ask questions about one note or many, or use Smart Search to find notes by meaning with on-device semantic search. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 11 transcription providers, 20+ AI providers, and syncs across devices (iOS/iPadOS/macOS/watchOS) via CloudKit.
 
 ## Screenshots
 
@@ -123,7 +123,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 ## Key Technical Highlights
 
 - On-device RAG pipeline - chunked vector indexing, semantic search, and LLM synthesis via LumoKit/VecturaKit
-- Apple Foundation Models for free, private on-device AI processing
+- Apple Foundation Model for free, private on-device AI processing
 - On-device STT via WhisperKit and NVIDIA Parakeet (CoreML / Apple Neural Engine)
 - Swift 6 with strict concurrency
 - SwiftUI + Liquid Glass
