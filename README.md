@@ -59,8 +59,8 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 **AI Presets**
 - 40+ built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate
-- **AI Assistant** — ask questions, fact-check, explain, reformat, or give instructions by voice
-- **Auto-Translation** — speak in one language, get output in another
+- AI Assistant - ask questions, fact-check, explain, reformat, or give instructions by voice
+- Auto-Translation - speak in one language, get output in another
 - Each result saved as a variation — compare different AI outputs side by side
 - Create custom presets with full prompt control, mark favorites for quick access
 
