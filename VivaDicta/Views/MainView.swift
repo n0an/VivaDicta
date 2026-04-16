@@ -962,7 +962,7 @@ private struct ExportedShareFile: Identifiable {
     let url: URL
 }
 
-#if DEBUG || QA
+#if DEBUG
 #Preview(traits: .transcriptionsMockData) {
     MainView()
         .environment(AppState())

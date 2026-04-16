@@ -140,7 +140,7 @@ extension View {
     }
 }
 
-#if DEBUG || QA
+#if DEBUG
 #Preview {
     RecordingSheetView()
         .environment(AppState())

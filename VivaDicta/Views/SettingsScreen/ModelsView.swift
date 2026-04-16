@@ -177,7 +177,7 @@ struct ModelsView: View {
     }
 }
 
-#if DEBUG || QA
+#if DEBUG
 #Preview {
     NavigationStack {
         ModelsView()

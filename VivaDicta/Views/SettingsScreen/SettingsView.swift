@@ -710,7 +710,7 @@ iOS Version: \(systemVersion)
     }
 }
 
-#if DEBUG || QA
+#if DEBUG
 #Preview {
     SettingsView()
         .environment(AppState())

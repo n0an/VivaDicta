@@ -1566,7 +1566,7 @@ private struct TextEditSheet: View {
     }
 }
 
-#if DEBUG || QA
+#if DEBUG
 #Preview {
     TranscriptionDetailView(transcription: Transcription.mockData[0])
         .environment(AppState())

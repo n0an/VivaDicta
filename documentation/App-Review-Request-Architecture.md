@@ -11,13 +11,6 @@ The current design goal is:
 - keep the actual StoreKit prompt presentation in one place
 - support success signals from both the main app and extensions
 
-This document covers:
-
-- the current shipped review request flow
-- where review requests are triggered today
-- why app start is still part of the system
-- how chats and Smart Search should feed the system in the future
-
 ## Core Component
 
 Primary file:
@@ -68,44 +61,11 @@ Why this exists:
 - it gives the app a safe foreground moment to present the StoreKit prompt
 - it supports users who primarily use the keyboard extension and only occasionally open the main app
 
-### Successful transcription flow
-
-File:
-- [VivaDicta/Views/RecordViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/RecordViewModel.swift)
-
-Review requests are attempted after:
-
-- successful transcription and save
-- successful save when enhancement is cancelled but the transcription is still persisted
-
-This is one of the strongest current success signals because it reflects core product value.
-
-### Successful retranscription
-
-File:
-- [VivaDicta/Views/TranscriptionDetailView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionDetailView.swift)
-
-Review requests are attempted after:
-
-- successful retranscribe of an existing note
-
-### Successful AI variation generation
-
-File:
-- [VivaDicta/Views/TranscriptionDetailView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionDetailView.swift)
-
-Review requests are attempted after:
-
-- successful generation of a new AI variation
-- successful regeneration of an existing variation
-
-This captures value from AI enhancement, not just transcription.
-
-## Keyboard Extension Deferred Flow
+### Keyboard extension deferred flow
 
 Files:
+- [VivaDicta/Views/MainView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/MainView.swift)
 - [VivaDicta/Shared/AppGroupCoordinator.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Shared/AppGroupCoordinator.swift)
-- [documentation/AppGroupCoordinator-Architecture.md](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/documentation/AppGroupCoordinator-Architecture.md)
 
 The keyboard extension cannot reliably present the review prompt itself, so VivaDicta uses a deferred handoff:
 
@@ -114,136 +74,95 @@ The keyboard extension cannot reliably present the review prompt itself, so Viva
 3. main app consumes that flag on a later launch
 4. main app calls `RateAppManager.requestReviewIfAppropriate()`
 
-Why this is important:
+### Successful transcription
 
-- keyboard-heavy users may get most of the product value outside the main app
-- the main app still provides the safest and most predictable presentation moment
+File:
+- [VivaDicta/Views/RecordViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/RecordViewModel.swift)
 
-## Current Architecture Summary
+Review requests are attempted after:
 
-Today the system is best understood as:
+- successful transcription and save (line ~623)
+- successful save when enhancement completes (line ~783)
 
-- one central review prompt manager
-- several positive outcome triggers
-- one deferred delivery path for keyboard success
-- one app-start fallback to present in a safe foreground moment
+This is one of the strongest success signals because it reflects core product value.
 
-High-level flow:
+### Successful retranscription
 
-```text
-Positive product outcome
-    ->
-Feature calls RateAppManager
-    ->
-RateAppManager checks launch/install/cooldown gates
-    ->
-If eligible, request StoreKit review in active scene
-```
+File:
+- [VivaDicta/Views/TranscriptionDetailView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionDetailView.swift)
 
-## Why Chats Are Not Yet Part Of The Current System
+Review requests are attempted after:
 
-Chats are implemented, but this surface is not yet treated as a review trigger source in the current shipped system.
+- successful retranscribe of an existing note (line ~857)
 
-That is intentional for now because:
+### Successful AI variation generation
 
-- chat UX is still evolving
-- chat success is harder to define than transcription success
-- weak triggers inside chat would risk noisy prompts
+File:
+- [VivaDicta/Views/TranscriptionDetailView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionDetailView.swift)
 
-Examples of bad chat triggers:
+Review requests are attempted after:
 
-- opening a chat
-- sending the first message
-- greeting-only interactions
-- failed responses
-- no-evidence Smart Search answers
+- successful generation or regeneration of an AI variation (line ~1078)
 
-## Recommended Future Direction For Chats And Smart Search
+### Single-note chat session
 
-The recommended architecture is:
+File:
+- [VivaDicta/Views/Chat/ChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/Chat/ChatViewModel.swift)
 
-- chats and Smart Search should not call StoreKit directly
-- they should emit positive events into the same centralized system
-- `RateAppManager` should decide whether enough value has been demonstrated to ask for a review
+Uses a session-based threshold:
 
-This means evolving from simple direct trigger calls to a lightweight event-driven model.
+- counts successful AI replies per session
+- requests review after `reviewReplyThreshold` (currently 3) successful replies
+- only requests once per session (`hasRequestedReviewForSession` flag)
+- counters reset when chat is cleared
 
-### Good future positive events
+### Multi-note chat session
 
-These are the strongest candidates:
+File:
+- [VivaDicta/Views/MultiNoteChat/MultiNoteChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/MultiNoteChat/MultiNoteChatViewModel.swift)
 
-- `smartSearchBarResultOpened`
-  - user searched in `Smart` or `All`
-  - semantic results existed
-  - user opened a note from the Smart results section
+Same session-based pattern as single-note chat:
 
-- `smartSearchChatAnswerWithSources`
-  - Smart Search answer succeeded
-  - answer had citations
-  - answer was not an error and not a no-evidence fallback
+- threshold is `reviewReplyThreshold` (currently 2, lower than single-note because multi-note queries tend to be more complex and demonstrate higher engagement)
+- only requests once per session
+- counters reset when chat is cleared
 
-- `smartSearchCitationTap`
-  - user tapped a citation chip and opened the source note
+### Smart Search chat - answer with sources
 
-- `singleNoteChatSessionSuccess`
-  - several successful turns
-  - no error-heavy session
+File:
+- [VivaDicta/Views/SmartSearch/SmartSearchChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/SmartSearch/SmartSearchChatViewModel.swift)
 
-- `multiNoteChatSessionSuccess`
-  - several successful turns across multiple notes
-  - especially strong when the answer is clearly synthetic and useful
+Review requested after a Smart Search answer that includes source citations (line ~350). Answers without citations (no-evidence fallback) are not treated as positive signals.
 
-### Events that should not count
+### Smart Search chat - citation tap
 
-- chat opened
-- first message sent
-- empty Smart Search results
-- no-evidence fallback
-- cancelled or failed requests
-- generic greetings
+File:
+- [VivaDicta/Views/SmartSearch/SmartSearchChatView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/SmartSearch/SmartSearchChatView.swift)
 
-## Recommended Delivery Strategy
+Review requested when the user taps a citation pill to navigate to the source transcription (line ~231). This indicates the user found the Smart Search result useful enough to explore the source.
 
-Even after chats and Smart Search begin generating positive events, the actual StoreKit prompt should still be shown only at calm moments.
+### Semantic search result opened
 
-Good delivery moments:
+File:
+- [VivaDicta/Views/TranscriptionsContentView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionsContentView.swift)
 
-- app start after a recent positive event
-- leaving a successful chat session
-- after returning from a Smart Search result or citation tap
+Review requested when the user opens a transcription from search results that included a semantic score (line ~844). This captures the moment a user finds a relevant note through semantic search.
 
-Bad delivery moments:
+## Trigger Summary
 
-- while a response is streaming
-- while the keyboard is visible
-- in the middle of a chat exchange
-- immediately after an error or weak result
-
-## Suggested Next Evolution
-
-The most likely future improvement is to add a small event-scoring layer to `RateAppManager`.
-
-Conceptually:
-
-```text
-positive event recorded
-    ->
-recent event score increases
-    ->
-RateAppManager checks:
-    - install age
-    - launch history
-    - cooldown
-    - score threshold
-    ->
-StoreKit review request if eligible
-```
-
-Benefits:
-
-- lets different surfaces contribute value without each owning prompt logic
-- makes Smart Search and chats additive rather than spammy
-- keeps review policy centralized and tunable
+| # | Trigger | File | Signal type |
+|---|---------|------|-------------|
+| 1 | App start | MainView | Fallback with transcription count gate |
+| 2 | Keyboard deferred | MainView + AppGroupCoordinator | First keyboard success, deferred to main app |
+| 3 | Transcription saved | RecordViewModel | Core value - transcription complete |
+| 4 | Enhanced transcription saved | RecordViewModel | Core value - transcription + AI complete |
+| 5 | Retranscription | TranscriptionDetailView | User re-processed existing note |
+| 6 | AI variation generated | TranscriptionDetailView | AI enhancement value |
+| 7 | Single-note chat | ChatViewModel | 3+ successful replies in session |
+| 8 | Multi-note chat | MultiNoteChatViewModel | 2+ successful replies in session |
+| 9 | Smart Search answer with sources | SmartSearchChatViewModel | Answer had citations |
+| 10 | Smart Search citation tap | SmartSearchChatView | User opened source note from citation |
+| 11 | Semantic search result opened | TranscriptionsContentView | User opened note from semantic results |
 
 ## Files To Read First
 
@@ -253,5 +172,9 @@ If you need to change the review request system, start here:
 2. [VivaDicta/Views/MainView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/MainView.swift)
 3. [VivaDicta/Views/RecordViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/RecordViewModel.swift)
 4. [VivaDicta/Views/TranscriptionDetailView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionDetailView.swift)
-5. [VivaDicta/Shared/AppGroupCoordinator.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Shared/AppGroupCoordinator.swift)
-6. [documentation/AppGroupCoordinator-Architecture.md](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/documentation/AppGroupCoordinator-Architecture.md)
+5. [VivaDicta/Views/Chat/ChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/Chat/ChatViewModel.swift)
+6. [VivaDicta/Views/MultiNoteChat/MultiNoteChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/MultiNoteChat/MultiNoteChatViewModel.swift)
+7. [VivaDicta/Views/SmartSearch/SmartSearchChatViewModel.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/SmartSearch/SmartSearchChatViewModel.swift)
+8. [VivaDicta/Views/SmartSearch/SmartSearchChatView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/SmartSearch/SmartSearchChatView.swift)
+9. [VivaDicta/Views/TranscriptionsContentView.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Views/TranscriptionsContentView.swift)
+10. [VivaDicta/Shared/AppGroupCoordinator.swift](/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/VivaDicta/VivaDicta/Shared/AppGroupCoordinator.swift)

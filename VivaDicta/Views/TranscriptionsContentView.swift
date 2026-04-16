@@ -890,7 +890,7 @@ private struct TranscriptionNavigationRow: View {
     }
 }
 
-#if DEBUG || QA
+#if DEBUG
 #Preview(traits: .transcriptionsMockDataMany) {
     @Previewable @State var searchText = ""
     @Previewable @State var isSelectionMode = false
