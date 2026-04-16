@@ -5,7 +5,7 @@
 <h1 align="center">VivaDicta</h1>
 
 <p align="center">
-  iOS & watchOS voice-to-text app with AI voice keyboard — dictate into any app, powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 15+ AI providers
+  iOS & watchOS voice-to-text app with AI voice keyboard, on-device RAG, and chat with your notes — dictate into any app, powered by Apple Foundation Models, WhisperKit, NVIDIA Parakeet, and 20+ AI providers
   <br>
   <a href="https://vivadicta.com/ios">Website</a> &bull;
   <a href="https://apps.apple.com/app/id6758147238">App Store</a> &bull;
@@ -26,9 +26,9 @@
   <img src="assets/hero-v2.png" alt="VivaDicta — Dictate Anywhere You Type">
 </p>
 
-> Started as "I don't want to pay for WisprFlow." Ended up building something more flexible — on-device transcription, 15+ AI providers, OAuth sign-in, CLI agent bridge, and full control over your voice-to-text pipeline.
+> Started as "I don't want to pay for WisprFlow." Ended up building something more flexible — on-device transcription, 20+ AI providers, on-device RAG with chat, OAuth sign-in, CLI agent bridge, and full control over your voice-to-text pipeline.
 
-VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Models for free, fully on-device AI. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also **rewrite existing text in any app** — select text, apply an AI preset, and get the result in place. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 10+ transcription providers, 15+ AI providers, and syncs across devices (iOS/iPadOS/macOS) via CloudKit.
+VivaDicta records speech, transcribes it using on-device or cloud models, and optionally processes the text through an AI provider — including Apple Foundation Models for free, fully on-device AI. Its key feature is a **system-wide AI voice keyboard** that lets you dictate and AI-process text directly into any app — Messages, WhatsApp, Slack, email, or anything else. The keyboard can also **rewrite existing text in any app** — select text, apply an AI preset, and get the result in place. **Chat with your notes** — ask questions about one note or many, or use **Smart Search** to find notes by meaning with on-device semantic search. Sign in with your ChatGPT, Gemini, or GitHub Copilot account via OAuth, or route AI through CLI agents on your Mac with VivAgents. Supports 11 transcription providers, 20+ AI providers, and syncs across devices (iOS/iPadOS/macOS/watchOS) via CloudKit.
 
 ## Screenshots
 
@@ -58,14 +58,27 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Filler word removal, paragraph formatting, custom word replacements
 
 **AI Presets**
-- 43 built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate (11 languages)
+- 40+ built-in presets across categories: Rewrite, Style, Communication, Summarize, Social Media, Writing, Learn & Study, Translate (11 languages)
 - **AI Assistant** — ask questions, fact-check, explain, reformat, or give instructions by voice
 - **Auto-Translation** — speak in one language, get output in another
 - Each result saved as a variation — compare different AI outputs side by side
 - Create custom presets with full prompt control, mark favorites for quick access
 
+**Chat & RAG**
+- **Single-note chat** — ask questions about any transcription, extract action items, summarize
+- **Multi-note chat** — select multiple notes, find common themes, compare ideas across recordings
+- **Smart Search Chat** — ask a question in plain language, the AI searches your library semantically, reads relevant notes, and answers with source citations
+- **Cross-note search** — from any single-note chat, search across your entire library for related content
+- On-device RAG pipeline: chunking, vector embedding, similarity search via LumoKit/VecturaKit — no server required
+- **Smart Search bar** — semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
+- Citation-backed answers with tappable source references
+
+**Diarization & Reminders**
+- **Speaker Labels** — speaker-separated transcripts for meetings, interviews, and group conversations
+- **Reminder Suggestions** — AI extracts actionable items from notes, review and send to Apple Reminders
+
 **AI Providers**
-- 15+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, GitHub Copilot, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
+- 20+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, GitHub Copilot, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
 - **OAuth sign-in** for ChatGPT, Gemini, and GitHub Copilot — use your existing subscription, no API keys needed
 - Bring your own AI via any OpenAI-compatible API endpoint
 
@@ -109,6 +122,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 ## Key Technical Highlights
 
+- On-device RAG pipeline - chunked vector indexing, semantic search, and LLM synthesis via LumoKit/VecturaKit
 - Apple Foundation Models for free, private on-device AI processing
 - On-device STT via WhisperKit and NVIDIA Parakeet (CoreML / Apple Neural Engine)
 - Swift 6 with strict concurrency
@@ -128,11 +142,15 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 ```mermaid
 graph LR
     R[Recording] --> T[Transcription] --> AI[AI Processing] --> S[Storage]
+    S --> RAG[RAG Index]
+    RAG --> Chat[Chat & Search]
 
     R -.- R1[AVAudioRecorder<br/>AVAudioEngine]
     T -.- T1[WhisperKit · Parakeet<br/>Cloud STT providers]
-    AI -.- AI1[AIService<br/>17 providers]
+    AI -.- AI1[AIService<br/>20+ providers]
     S -.- S1[SwiftData<br/>+ CloudKit]
+    RAG -.- RAG1[LumoKit/VecturaKit<br/>on-device vectors]
+    Chat -.- Chat1[Single · Multi · Smart Search]
 ```
 
 Main app ↔ extensions IPC via `AppGroupCoordinator` (Darwin Notifications + Shared UserDefaults):
@@ -159,6 +177,17 @@ graph LR
     WR -->|sendMessage<br/>wake ping| PC
 ```
 
+On-device RAG pipeline:
+
+```mermaid
+graph LR
+    N[Notes] -->|chunk + embed| VI[Vector Index<br/>LumoKit/VecturaKit]
+    Q[User Query] -->|embed| VS[Vector Search]
+    VI --> VS
+    VS -->|top-k chunks| LLM[LLM Synthesis<br/>Apple FM / Cloud AI]
+    LLM --> A[Answer + Citations]
+```
+
 Core components:
 
 | Component | Role |
@@ -168,8 +197,12 @@ Core components:
 | `WatchAppCoordinator` | Darwin notifications between watch app and watch widget extension (Control Center, Action Button) |
 | `RecordViewModel` | Recording lifecycle, dual audio paths (normal + keyboard prewarm) |
 | `TranscriptionManager` | Routes to on-device or cloud STT, post-processing pipeline |
-| `AIService` | AI text processing, 15+ providers, OAuth, VivAgents, mode/API key management |
+| `AIService` | AI text processing, 20+ providers, OAuth, VivAgents, mode/API key management |
 | `PresetManager` | Built-in + custom presets, CloudKit sync |
+| `RAGIndexingService` | On-device vector indexing, chunking, semantic search via LumoKit/VecturaKit |
+| `SmartSearchChatViewModel` | Smart Search Chat - semantic retrieval + LLM synthesis with source citations |
+| `ChatViewModel` | Single-note chat with cross-note search capability |
+| `MultiNoteChatViewModel` | Multi-note chat with theme extraction and comparison |
 | `AudioPrewarmManager` | Continuous audio engine for keyboard extension low-latency recording |
 
 See the [documentation](documentation/README.md) for detailed diagrams and flows.
@@ -207,6 +240,7 @@ VivaDicta/
 │   ├── Models/             # SwiftData models (Transcription, Preset, etc.)
 │   ├── Services/           # Core services
 │   │   ├── AIEnhance/      # AIService, providers, prompts
+│   │   ├── RAG/            # RAGIndexingService, vector search, chunking
 │   │   └── Transcription/  # TranscriptionManager, STT providers
 │   ├── Shared/             # AppGroupCoordinator, shared utilities
 │   └── VivaDicta.docc/     # DocC documentation catalog
