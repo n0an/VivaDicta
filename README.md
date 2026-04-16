@@ -68,7 +68,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - **Single-note chat** — ask questions about any transcription, extract action items, summarize
 - **Multi-note chat** — select multiple notes, find common themes, compare ideas across recordings
 - **Smart Search Chat** — ask a question in plain language, the AI searches your library semantically, reads relevant notes, and answers with source citations
-- **Cross-note search** — from any single-note chat, search across your entire library for related content
+- **Chat tools** — cross-note semantic search and web search, with results injected into LLM context as tool calls
 - On-device RAG pipeline: chunking, vector embedding, similarity search via LumoKit/VecturaKit — no server required
 - **Smart Search bar** — semantic search across all notes by meaning, not just keywords. On-device vector matching with relevance scores
 - Citation-backed answers with tappable source references
