@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import SwiftData
+import TipKit
 import os
 
 /// View model for RAG-powered Smart Search conversations.
@@ -158,6 +159,8 @@ final class SmartSearchChatViewModel {
 
         inputText = ""
         errorMessage = nil
+
+        Task { await SmartSearchDiscoveryTip.smartSearchPerformedEvent.donate() }
 
         let userMessage = ChatMessage(
             role: "user",

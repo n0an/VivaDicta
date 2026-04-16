@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct MainFloatingActionButtonsView: View {
     @Environment(\.isSearching) private var isSearching
@@ -76,6 +77,7 @@ struct MainFloatingActionButtonsView: View {
         .padding(14)
         .background(chatsButtonBackground)
         .matchedTransitionSource(id: "ChatsSheetTransition", in: sheetTransitions)
+        .popoverTip(ChatsDiscoveryTip())
     }
 
     @ViewBuilder

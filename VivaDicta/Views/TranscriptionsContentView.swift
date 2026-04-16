@@ -8,6 +8,7 @@
 import os
 import SwiftData
 import SwiftUI
+import TipKit
 
 private enum TranscriptionSearchMode: String {
     case all
@@ -79,6 +80,12 @@ struct TranscriptionsContentView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
+                if searchText.isEmpty, isSmartSearchEnabled, !allTranscriptions.isEmpty {
+                    TipView(SmartSearchDiscoveryTip())
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                }
+
                 TranscriptionSearchControlsView(
                     hasTranscriptions: !allTranscriptions.isEmpty,
                     availableSourceTags: availableSourceTags,
@@ -212,6 +219,9 @@ struct TranscriptionsContentView: View {
             selectedUserTagIds = newValue.userTagIds
         }
         .onChange(of: searchMode) {
+            if searchMode == .smart {
+                Task { await SmartSearchDiscoveryTip.smartSearchPerformedEvent.donate() }
+            }
             if !searchText.isEmpty {
                 performDebouncedSearch(with: searchText)
             }

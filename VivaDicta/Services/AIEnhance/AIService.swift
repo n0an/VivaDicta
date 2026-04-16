@@ -794,6 +794,7 @@ class AIService {
             result = TextFormatter.format(result)
         }
         let duration = Date().timeIntervalSince(startTime)
+        Task { await AIVariationsDiscoveryTip.variationGeneratedEvent.donate() }
         return (result, duration)
     }
 

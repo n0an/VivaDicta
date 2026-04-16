@@ -175,6 +175,7 @@ struct MainView: View {
                 onShowChats: {
                     HapticManager.lightImpact()
                     showMultiNoteChats = true
+                    Task { await ChatsDiscoveryTip.chatsOpenedEvent.donate() }
                 },
                 onStartRecording: startRecording
             )

@@ -10,6 +10,7 @@ import SwiftData
 import AVFoundation
 import CoreMedia
 import os
+import TipKit
 
 /// Processes audio files received from Apple Watch in the background.
 ///
@@ -134,6 +135,7 @@ final class WatchAudioProcessor {
             }
 
             try context.save()
+            Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
             logger.logInfo("⌚ [DONE] Watch audio processed and saved: \(audioURL.lastPathComponent)")
 
         } catch {

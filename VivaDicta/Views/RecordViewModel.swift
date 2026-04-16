@@ -11,6 +11,7 @@ import AVFoundation
 @preconcurrency import AVFAudio
 import SwiftData
 import os
+import TipKit
 
 enum RecordingDestination: Equatable {
     case newNote
@@ -745,6 +746,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 do {
                     try pending.modelContext.save()
                     logger.logInfo("📱 Saved transcription without enhancement")
+                    Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
                     scheduleAutomaticReminderExtractionIfNeeded(
                         for: transcription,
                         modelContext: pending.modelContext
@@ -846,6 +848,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
 
         try modelContext.save()
+
+        Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
 
         let transcriptionEntity = transcription.entity
         Task.detached {

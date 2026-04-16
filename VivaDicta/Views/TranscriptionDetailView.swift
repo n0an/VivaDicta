@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CoreSpotlight
+import TipKit
 
 struct TranscriptionDetailView: View {
     var transcription: Transcription
@@ -493,6 +494,9 @@ struct TranscriptionDetailView: View {
                 selectedChipId = "original"
             }
 
+            AIVariationsDiscoveryTip.isAIConfigured = isAIConfigured
+            SingleNoteChatDiscoveryTip.isAIConfigured = isAIConfigured
+
             let activity = appState.userActivity(for: transcription)
             activity.becomeCurrent()
 
@@ -662,6 +666,7 @@ struct TranscriptionDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(generatingPresetId != nil)
+                .popoverTip(AIVariationsDiscoveryTip())
 
                 Spacer()
                 
@@ -679,6 +684,7 @@ struct TranscriptionDetailView: View {
                             )
                         }
                         showChat = true
+                        Task { await SingleNoteChatDiscoveryTip.singleNoteChatOpenedEvent.donate() }
                     } else {
                         showConfigureChat = true
                     }
@@ -686,6 +692,7 @@ struct TranscriptionDetailView: View {
                     chatButtonLabel
                 }
                 .buttonStyle(.plain)
+                .popoverTip(SingleNoteChatDiscoveryTip())
                 
                 Spacer()
 
