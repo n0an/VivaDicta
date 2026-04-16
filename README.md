@@ -78,7 +78,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 **AI Providers**
 - 20+ providers: Apple Foundation Model (on-device, free), Anthropic, OpenAI, Gemini, GitHub Copilot, Groq, Mistral, Cerebras, Grok, OpenRouter, Vercel AI Gateway, HuggingFace, Ollama, and more
-- **OAuth sign-in** for ChatGPT, Gemini, and GitHub Copilot — use your existing subscription, no API keys needed
+- OAuth sign-in for ChatGPT, Gemini, and GitHub Copilot - use your existing subscription, no API keys needed
 - Bring your own AI via any OpenAI-compatible API endpoint
 
 **VivAgents — CLI Agent Bridge**
