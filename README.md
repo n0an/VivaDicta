@@ -53,7 +53,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 
 **Transcription**
 - On-device: WhisperKit (OpenAI Whisper), Parakeet (NVIDIA) — professional-grade models running entirely on your device
-- Cloud: OpenAI, Groq, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, or any OpenAI-compatible endpoint
+- Cloud: OpenAI, Groq, Cohere, Deepgram, ElevenLabs, Gemini, Mistral, Soniox, or any OpenAI-compatible endpoint
 - 100+ languages with automatic detection
 - Filler word removal, paragraph formatting, custom word replacements
 
