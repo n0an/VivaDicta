@@ -132,7 +132,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - 7-stage text processing pipeline with customizable transforms
 - App Intents — Siri and Shortcuts integration
 - CoreSpotlight — indexed transcriptions for iOS spotlight search
-- OAuth 2.0 with PKCE via local server bridge (NWListener) for ChatGPT, Gemini, and GitHub Copilot
+- OAuth for ChatGPT, Gemini, and GitHub Copilot
 - VivAgents client for routing AI through CLI agents on Mac/remote server
 - iCloud Keychain for secure cross-device API key sync
 
