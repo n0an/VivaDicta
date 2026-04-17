@@ -4,7 +4,6 @@
 
 | Document | Description |
 |----------|-------------|
-| [Smart Search RAG](Smart-Search-RAG-Architecture.md) | Chunk-based local retrieval for Smart Search, prompt injection, citations, retrieval behavior, current embedder setup |
 | [Recording & Audio Pipeline](Recording-Audio-Pipeline-Architecture.md) | AVAudioRecorder setup, audio session management, file handling |
 | [Transcription System](Transcription-System-Architecture.md) | On-device (WhisperKit/Parakeet) and cloud transcription routing |
 | [AI Processing](AI-Processing-Architecture.md) | Multi-provider AI text processing, prompt building, mode/preset routing |
@@ -13,9 +12,30 @@
 | [Preset System](Preset-System-Architecture.md) | Built-in and custom presets, preset catalog, sync with CloudKit |
 | [Data Persistence & CloudKit Sync](Data-Persistence-CloudKit-Architecture.md) | SwiftData models, CloudKit container, cross-device sync |
 | [Tags System](Tags-System-Architecture.md) | Source tags, user tags, filtering logic, tag management |
-| [Chat Architecture](Chat-Architecture.md) | Single-note and multi-note chat, context management, compaction |
-| [Apple FM Chat Integration](Apple-FM-Chat-Integration.md) | Apple Foundation Models session lifecycle, synthesized transcripts, reactive compaction |
 | [App Review Requests](App-Review-Request-Architecture.md) | StoreKit review request gating, trigger points, keyboard deferred flow, and future chat/Smart Search direction |
+
+## Chats
+
+Conversational surfaces on top of notes. See [Chats/](Chats/).
+
+| Document | Description |
+|----------|-------------|
+| [Chat Architecture](Chats/Chat-Architecture.md) | Single-note and multi-note chat, context management, compaction |
+| [Apple FM Chat Integration](Chats/Apple-FM-Chat-Integration.md) | Apple Foundation Models session lifecycle, synthesized transcripts, reactive compaction |
+| [Cross-Note Search](Chats/Cross-Note-Search.md) | Explicit (armed) and implicit (Apple FM tool / cloud tool-decision) cross-note retrieval, planner, RAG, prompt injection |
+| [Smart Chat](Chats/Smart-Chat.md) | Smart Search chat flow: planner, per-turn RAG retrieval, augmented prompt, Apple FM vs cloud execution |
+| [Web Search](Chats/Web-Search.md) | Exa-backed web search: explicit arming, implicit Apple FM tool / cloud tool-decision, prompt injection |
+
+## RAG
+
+Retrieval-augmented generation stack and surfaces that consume it. See [RAG/](RAG/).
+
+| Document | Description |
+|----------|-------------|
+| [Smart Search RAG Architecture](RAG/Smart-Search-RAG-Architecture.md) | Chunk-based local retrieval, embedder and chunking setup, prompt injection, retrieval behavior |
+| [Smart Search RAG Flow](RAG/Smart-Search-RAG-Flow.md) | Short operational view of a Smart Search turn end-to-end |
+| [Search Bar RAG](RAG/Search-Bar-RAG.md) | Main notes list search bar: All / Keyword / Smart modes, gating, score pills, tag filtering |
+| [Tool Provider Support](RAG/Tool-Provider-Support.md) | Provider matrix for chat, cross-note search, web search, Smart Search note RAG |
 
 ## Extensions & Integrations
 
