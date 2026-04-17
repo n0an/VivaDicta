@@ -233,6 +233,7 @@ struct SettingsView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+                            .tint(.primary)
                             Text("Applied to AI-enhanced output when it's in Chinese.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
