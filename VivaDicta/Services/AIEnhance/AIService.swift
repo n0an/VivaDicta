@@ -830,11 +830,13 @@ class AIService {
             customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
         }
 
+        let scriptSuffix = resolvedChineseScriptSuffix()
+
         let systemMessage: String
         if preset.useSystemTemplate {
-            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
+            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection + scriptSuffix
         } else {
-            systemMessage = preset.promptInstructions + customVocabularySection
+            systemMessage = preset.promptInstructions + customVocabularySection + scriptSuffix
         }
 
         let userMessage: String
@@ -1669,6 +1671,16 @@ class AIService {
     
     // MARK: - System Message (Cloud Providers)
 
+    /// Returns the Chinese script hint that should be appended to system messages,
+    /// or an empty string. The preference is only honored while the user has an
+    /// active Chinese signal (same condition that surfaces the Settings picker).
+    /// This keeps stored preferences in sync with the user's visible controls - no
+    /// ghost suffix when the picker is hidden.
+    private func resolvedChineseScriptSuffix() -> String {
+        guard ChineseScriptPreferenceStore.shouldShowSetting(modes: modes) else { return "" }
+        return ChineseScriptPreferenceStore.current.systemMessageSuffix ?? ""
+    }
+
     private func getSystemMessage() -> String {
         var customVocabularySection = ""
         let customVocabularyWords = CustomVocabulary.getTerms()
@@ -1692,7 +1704,8 @@ class AIService {
         let promptInstructions = preset?.promptInstructions ?? ""
         let useSystemTemplate = preset?.useSystemTemplate ?? true
 
-        let contextSections = customVocabularySection + clipboardContextSection
+        let scriptSuffix = resolvedChineseScriptSuffix()
+        let contextSections = customVocabularySection + clipboardContextSection + scriptSuffix
 
         if useSystemTemplate {
             return PromptsTemplates.systemPrompt(with: promptInstructions) + contextSections
