@@ -830,11 +830,13 @@ class AIService {
             customVocabularySection = "\n\n<CUSTOM_VOCABULARY>Important Vocabulary: \(vocabularyString)\n</CUSTOM_VOCABULARY>"
         }
 
+        let scriptSuffix = ChineseScriptPreferenceStore.current.systemMessageSuffix ?? ""
+
         let systemMessage: String
         if preset.useSystemTemplate {
-            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection
+            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection + scriptSuffix
         } else {
-            systemMessage = preset.promptInstructions + customVocabularySection
+            systemMessage = preset.promptInstructions + customVocabularySection + scriptSuffix
         }
 
         let userMessage: String
@@ -1692,7 +1694,8 @@ class AIService {
         let promptInstructions = preset?.promptInstructions ?? ""
         let useSystemTemplate = preset?.useSystemTemplate ?? true
 
-        let contextSections = customVocabularySection + clipboardContextSection
+        let scriptSuffix = ChineseScriptPreferenceStore.current.systemMessageSuffix ?? ""
+        let contextSections = customVocabularySection + clipboardContextSection + scriptSuffix
 
         if useSystemTemplate {
             return PromptsTemplates.systemPrompt(with: promptInstructions) + contextSections
