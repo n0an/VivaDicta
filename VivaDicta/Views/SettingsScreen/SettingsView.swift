@@ -25,7 +25,7 @@ struct SettingsView: View {
     private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
     private var isAutoReminderExtractionEnabled = false
-    @State private var chineseScriptPreference: ChineseScriptPreference = ChineseScriptPreferenceStore.current
+    @AppStorage("preferredChineseScript") private var chineseScriptPreference: ChineseScriptPreference = .auto
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
     private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -232,12 +232,12 @@ struct SettingsView: View {
                                     Text(option.displayName).tag(option)
                                 }
                             }
+                            .pickerStyle(.menu)
                             Text("Applied to AI-enhanced output when it's in Chinese.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        .onChange(of: chineseScriptPreference) { _, newValue in
-                            ChineseScriptPreferenceStore.current = newValue
+                        .onChange(of: chineseScriptPreference) { _, _ in
                             HapticManager.selectionChanged()
                         }
                     }
