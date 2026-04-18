@@ -43,16 +43,12 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
             // Another session is already mid-flight. Returning its result would
             // violate the intent's "starts recording ... and returns the note" contract.
             throw RecordAndReturnIntentError.alreadyInProgress
-        case .error:
-            // Drain the stale error message from the previous session before we
-            // start a new one - otherwise the poll loop's first tick would see
-            // `.error` and throw the old message as if it just happened.
-            _ = coordinator.getAndConsumeTranscriptionErrorMessage()
-            coordinator.requestStartRecordingFromControl()
-        case .idle, .completed:
-            // `.completed` is a stale leftover from a previous in-app session
-            // (the main-app path never resets it; only the keyboard consumer does).
-            // Treat it as idle and kick off a new recording.
+        case .idle, .completed, .error:
+            // `.completed` / `.error` are stale leftovers from a previous in-app
+            // session (the main-app path never resets them; only the keyboard
+            // consumer does). The poll loop only reacts to terminal states once
+            // it has observed an active session this run, so it's safe to leave
+            // the stale status alone here and kick off a new recording.
             coordinator.requestStartRecordingFromControl()
         }
 
@@ -82,18 +78,22 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
 
             let status = coordinator.transcriptionStatus
 
-            if status == .error {
-                let message = coordinator.getAndConsumeTranscriptionErrorMessage()
-                    ?? String(localized: "Transcription failed.")
-                throw RecordAndReturnIntentError.failed(message)
-            }
-
             // The main app never writes `.recording` to `transcriptionStatus`;
             // it flips `isRecording` on the coordinator instead and only mutates
             // the status when transcription begins. Check both so cancels during
             // the recording phase itself still unblock the poll loop.
             if coordinator.isRecording || status == .transcribing || status == .enhancing {
                 sawActiveSession = true
+            }
+
+            // Only treat `.error` as a failure once we've observed an active
+            // session this run - otherwise stale `.error` from a previous
+            // in-app failure would fire on the first poll tick before the main
+            // app has processed the Darwin start-request notification.
+            if sawActiveSession && status == .error {
+                let message = coordinator.getAndConsumeTranscriptionErrorMessage()
+                    ?? String(localized: "Transcription failed.")
+                throw RecordAndReturnIntentError.failed(message)
             }
 
             if sawActiveSession,

@@ -256,6 +256,12 @@ public final class AppGroupCoordinator {
     func updateAudioLevel(_ level: CGFloat) {
         let clamped = max(0, min(1, level))
         sharedDefaults?.set(Double(clamped), forKey: UserDefaultsKeys.audioLevel)
+        // Refresh the recording timestamp while audio is flowing so the 30s
+        // staleness check in `isRecording` doesn't trip during long main-app
+        // recordings (nothing else refreshes it until Stop fires the status
+        // transition). Readers that depend on `isRecording` - widget, live
+        // activity, keyboard, the record-and-return intent - all benefit.
+        sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.audioLevelUpdated)
     }
 
