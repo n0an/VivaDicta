@@ -40,7 +40,6 @@ struct MainView: View {
     @State private var showFileErrorAlert = false
     @State private var fileErrorMessage = ""
     @State private var savedNotesFilter = SavedNotesFilterStorage.load()
-    @State private var exportItem: MarkdownExportItem?
     @State private var exportItems: [MarkdownExportItem] = []
     @State private var zipShareFile: ExportedShareFile?
     @State private var isPreparingZipShare = false
@@ -225,16 +224,6 @@ struct MainView: View {
             allowsMultipleSelection: false
         ) { result in
             handleFileImport(result)
-        }
-        .fileExporter(
-            isPresented: singleExportSheetBinding,
-            item: exportItem,
-            contentTypes: [MarkdownExportItem.contentType],
-            defaultFilename: exportItem?.filename
-        ) { result in
-            handleSingleExportCompletion(result)
-        } onCancellation: {
-            clearExportState()
         }
         .fileExporter(
             isPresented: multipleExportSheetBinding,
@@ -587,17 +576,6 @@ struct MainView: View {
         !displayedTranscriptionIDs.isEmpty && displayedTranscriptionIDs.isSubset(of: selectedTranscriptionIDs)
     }
 
-    private var singleExportSheetBinding: Binding<Bool> {
-        Binding(
-            get: { exportItem != nil },
-            set: { isPresented in
-                if !isPresented {
-                    clearExportState()
-                }
-            }
-        )
-    }
-
     private var multipleExportSheetBinding: Binding<Bool> {
         Binding(
             get: { !exportItems.isEmpty },
@@ -689,11 +667,7 @@ struct MainView: View {
 
         clearExportState()
 
-        if selected.count == 1, let transcription = selected.first {
-            exportItem = TranscriptionMarkdownExportService.item(for: transcription)
-        } else {
-            exportItems = TranscriptionMarkdownExportService.items(for: selected)
-        }
+        exportItems = TranscriptionMarkdownExportService.items(for: selected)
     }
 
     private func prepareZipShare() {
@@ -719,17 +693,6 @@ struct MainView: View {
         }
     }
 
-    private func handleSingleExportCompletion(_ result: Result<URL, any Error>) {
-        switch result {
-        case .success:
-            HapticManager.success()
-        case .failure(let error):
-            presentExportErrorIfNeeded(error)
-        }
-
-        clearExportState()
-    }
-
     private func handleMultipleExportCompletion(_ result: Result<[URL], any Error>) {
         switch result {
         case .success:
@@ -750,7 +713,6 @@ struct MainView: View {
     }
 
     private func clearExportState() {
-        exportItem = nil
         exportItems = []
     }
 

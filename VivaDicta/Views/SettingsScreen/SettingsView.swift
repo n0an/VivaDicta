@@ -54,6 +54,8 @@ struct SettingsView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
+    @AppStorage(MarkdownExportContent.userDefaultsKey)
+    private var markdownExportContent: MarkdownExportContent = .default
     @State private var showRestartAlert = false
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
@@ -362,6 +364,26 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                }
+
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Picker("Markdown Export", selection: $markdownExportContent) {
+                            ForEach(MarkdownExportContent.allCases) { option in
+                                Text(option.displayName).tag(option)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(.primary)
+                        Text("Choose what to include when exporting notes as Markdown.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .onChange(of: markdownExportContent) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+                } header: {
+                    Text("Export")
                 }
 
                 Section("Storage") {
