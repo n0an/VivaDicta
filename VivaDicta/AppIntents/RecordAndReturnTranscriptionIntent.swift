@@ -28,9 +28,17 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
     func perform() async throws -> some IntentResult & ReturnsValue<TranscriptionEntity> & ProvidesDialog {
         let coordinator = AppGroupCoordinator.shared
         let startTime = Date()
-        let previousLatestId = try? dataController.transcriptions(limit: 1).first?.id
+        let previousLatestId = try dataController.transcriptions(limit: 1).first?.id
 
-        if !coordinator.isRecording && coordinator.transcriptionStatus == .idle {
+        switch coordinator.transcriptionStatus {
+        case .recording, .transcribing, .enhancing:
+            // Another session is already mid-flight. Returning its result would
+            // violate the intent's "starts recording ... and returns the note" contract.
+            throw RecordAndReturnIntentError.alreadyInProgress
+        case .idle, .completed, .error:
+            // `.completed` / `.error` are stale leftovers from a previous in-app session
+            // (the main-app path never resets them; only the keyboard consumer does).
+            // Treat them as idle and kick off a new recording.
             coordinator.requestStartRecordingFromControl()
         }
 
@@ -53,21 +61,37 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
         coordinator: AppGroupCoordinator
     ) async throws -> TranscriptionEntity {
         let deadline = Date().addingTimeInterval(Self.maxWaitSeconds)
+        var sawActiveSession = false
 
         while Date() < deadline {
             try Task.checkCancellation()
 
-            if coordinator.transcriptionStatus == .error {
+            let status = coordinator.transcriptionStatus
+
+            if status == .error {
                 let message = coordinator.getAndConsumeTranscriptionErrorMessage()
                     ?? String(localized: "Transcription failed.")
                 throw RecordAndReturnIntentError.failed(message)
             }
 
+            if status == .recording || status == .transcribing || status == .enhancing {
+                sawActiveSession = true
+            }
+
             if let latest = try dataController.transcriptions(limit: 1).first,
                latest.id != previousLatestId,
                latest.timestamp > startTime,
-               coordinator.transcriptionStatus == .completed || coordinator.transcriptionStatus == .idle {
+               // `.idle` is accepted alongside `.completed` because the keyboard
+               // consumer can race ahead and reset status to `.idle` between the
+               // save and our poll tick. Don't "tighten" this to `.completed` only.
+               status == .completed || status == .idle {
                 return latest.entity
+            }
+
+            // If we've observed an active session and it dropped back to `.idle`
+            // without producing a new row, the user cancelled.
+            if sawActiveSession && status == .idle {
+                throw RecordAndReturnIntentError.cancelled
             }
 
             try await Task.sleep(for: .milliseconds(500))
@@ -80,6 +104,8 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
 enum RecordAndReturnIntentError: Error, CustomLocalizedStringResourceConvertible {
     case failed(String)
     case timedOut
+    case cancelled
+    case alreadyInProgress
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
@@ -87,6 +113,10 @@ enum RecordAndReturnIntentError: Error, CustomLocalizedStringResourceConvertible
             "Recording failed: \(message)"
         case .timedOut:
             "Timed out waiting for the recording to finish."
+        case .cancelled:
+            "Recording was cancelled."
+        case .alreadyInProgress:
+            "A recording is already in progress in VivaDicta. Stop it first, then try again."
         }
     }
 }
