@@ -70,5 +70,27 @@ final class ShortcutsProvider: AppShortcutsProvider {
             shortTitle: "Open a note",
             systemImageName: "document.viewfinder"
         )
+
+        AppShortcut(
+            intent: GetLatestTranscriptionIntent(),
+            phrases: [
+                "Get latest note from \(.applicationName)",
+                "Latest note in \(.applicationName)",
+                "My most recent note in \(.applicationName)"
+            ],
+            shortTitle: "Get Latest Note",
+            systemImageName: "text.quote"
+        )
+
+        AppShortcut(
+            intent: RecordAndReturnTranscriptionIntent(),
+            phrases: [
+                "Record and get note from \(.applicationName)",
+                "Dictate a note with \(.applicationName)",
+                "Record and transcribe in \(.applicationName)"
+            ],
+            shortTitle: "Record and Get Note",
+            systemImageName: "waveform.badge.plus"
+        )
     }
 }
