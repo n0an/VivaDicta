@@ -10,7 +10,6 @@
 import Foundation
 import AVFoundation
 import os
-@preconcurrency import AVFAudio
 
 @Observable
 final class AudioPrewarmManager {

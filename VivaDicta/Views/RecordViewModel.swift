@@ -8,7 +8,6 @@
 import SwiftUI
 import Foundation
 import AVFoundation
-@preconcurrency import AVFAudio
 import SwiftData
 import os
 import TipKit
