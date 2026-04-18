@@ -87,7 +87,7 @@ final class MultiNoteChatViewModel {
     var contextFillRatio: Double = 0
 
     func updateContextFillRatio() {
-        guard let provider = selectedProvider, let model = selectedModel else {
+        guard let provider = selectedProvider, selectedModel != nil else {
             contextFillRatio = 0
             return
         }
@@ -95,12 +95,7 @@ final class MultiNoteChatViewModel {
         if provider == .apple {
             Task { await updateAppleFMFillRatio() }
         } else {
-            contextFillRatio = MultiNoteContextManager.fillRatio(
-                noteText: assembledNoteText,
-                messages: messages,
-                provider: provider,
-                model: model
-            )
+            contextFillRatio = 0
         }
     }
 
@@ -788,16 +783,6 @@ final class MultiNoteChatViewModel {
         allowImplicitCrossNoteTool: Bool,
         allowImplicitWebTool: Bool
     ) async throws -> CloudSendResult {
-        if MultiNoteContextManager.shouldAutoCompact(
-            noteText: assembledNoteText,
-            messages: messages,
-            provider: provider,
-            model: model
-        ) {
-            logger.logInfo("Multi-note chat - Auto-compacting context")
-            try await performCompaction()
-        }
-
         let baseChatMessages = cloudChatMessages(for: promptText)
         let (baseSystemMessage, baseAPIMessages) = MultiNoteContextManager.assembleMessages(
             noteText: assembledNoteText,

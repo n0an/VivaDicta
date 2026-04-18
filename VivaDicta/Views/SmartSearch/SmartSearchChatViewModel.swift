@@ -65,7 +65,7 @@ final class SmartSearchChatViewModel {
     var contextFillRatio: Double = 0
 
     func updateContextFillRatio() {
-        guard let provider = selectedProvider, let model = selectedModel else {
+        guard let provider = selectedProvider, selectedModel != nil else {
             contextFillRatio = 0
             return
         }
@@ -73,11 +73,7 @@ final class SmartSearchChatViewModel {
         if provider == .apple {
             Task { await updateAppleFMFillRatio() }
         } else {
-            contextFillRatio = SmartSearchContextManager.fillRatio(
-                messages: messages,
-                provider: provider,
-                model: model
-            )
+            contextFillRatio = 0
         }
     }
 
@@ -619,15 +615,6 @@ final class SmartSearchChatViewModel {
     }
 
     private func sendCloudMessage(_ augmentedPrompt: String, provider: AIProvider, model: String) async throws -> String {
-        if SmartSearchContextManager.shouldAutoCompact(
-            messages: messages,
-            provider: provider,
-            model: model
-        ) {
-            logger.logInfo("Smart Search - Auto-compacting context")
-            try await performCompaction()
-        }
-
         // Build messages with augmented prompt as the latest user message
         var chatMessages = messages.dropLast() // Exclude the pending user message
         let augmentedUserMessage = ChatMessage(

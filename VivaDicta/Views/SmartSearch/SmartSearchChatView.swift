@@ -366,13 +366,15 @@ struct SmartSearchChatView: View {
 
                 let ratio = viewModel.contextFillRatio
                 let percentage = Int(ratio * 100)
-                Text("\(percentage)%")
-                    .font(.caption2)
-                    .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background((ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1))
-                    .clipShape(.capsule)
+                if ratio > 0 {
+                    Text("\(percentage)%")
+                        .font(.caption2)
+                        .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background((ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1))
+                        .clipShape(.capsule)
+                }
             }
             .padding(.horizontal)
             .padding(.vertical, 8)

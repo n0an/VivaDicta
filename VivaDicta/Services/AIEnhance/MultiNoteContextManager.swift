@@ -70,15 +70,6 @@ struct MultiNoteContextManager {
         return min(Double(total) / Double(limit), 1.0)
     }
 
-    static func shouldAutoCompact(
-        noteText: String,
-        messages: [ChatMessage],
-        provider: AIProvider,
-        model: String
-    ) -> Bool {
-        fillRatio(noteText: noteText, messages: messages, provider: provider, model: model) > 0.7
-    }
-
     // MARK: - Message Assembly
 
     /// Builds the messages array for cloud AI API calls.
