@@ -14,6 +14,7 @@ enum MarkdownExportContent: String, CaseIterable, Identifiable, Sendable {
     case lastVariationOnly
 
     nonisolated static let `default`: MarkdownExportContent = .allVariations
+    nonisolated static let userDefaultsKey = "markdownExportContent"
 
     var id: String { rawValue }
 
@@ -28,7 +29,7 @@ enum MarkdownExportContent: String, CaseIterable, Identifiable, Sendable {
 
     nonisolated static var current: MarkdownExportContent {
         guard
-            let raw = UserDefaults.standard.string(forKey: "markdownExportContent"),
+            let raw = UserDefaults.standard.string(forKey: Self.userDefaultsKey),
             let value = MarkdownExportContent(rawValue: raw)
         else {
             return .default

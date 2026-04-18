@@ -25,20 +25,12 @@ enum TranscriptionMarkdownExportService {
         let createdAt: Date
     }
 
-    @MainActor static func item(for transcription: Transcription) -> MarkdownExportItem {
-        item(forSnapshot: snapshot(for: transcription))
-    }
-
     @MainActor static func items(for transcriptions: [Transcription]) -> [MarkdownExportItem] {
         items(forSnapshots: snapshots(for: transcriptions))
     }
 
     @MainActor static func snapshots(for transcriptions: [Transcription]) -> [Snapshot] {
         transcriptions.map(snapshot(for:))
-    }
-
-    nonisolated static func item(forSnapshot snapshot: Snapshot) -> MarkdownExportItem {
-        markdownItem(for: snapshot, filename: markdownFilename(for: snapshot))
     }
 
     nonisolated static func items(forSnapshots snapshots: [Snapshot]) -> [MarkdownExportItem] {

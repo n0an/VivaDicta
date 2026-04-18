@@ -54,7 +54,7 @@ struct SettingsView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
-    @AppStorage(UserDefaultsStorage.Keys.markdownExportContent)
+    @AppStorage(MarkdownExportContent.userDefaultsKey)
     private var markdownExportContent: MarkdownExportContent = .default
     @State private var showRestartAlert = false
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
