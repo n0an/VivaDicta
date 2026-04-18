@@ -38,6 +38,9 @@ struct TranscriptionDetailView: View {
     @State private var showTagPicker: Bool = false
     @State private var showChat: Bool = false
     @State private var chatViewModel: ChatViewModel?
+    @State private var exportItems: [MarkdownExportItem] = []
+    @State private var showExportErrorAlert: Bool = false
+    @State private var exportErrorMessage: String = ""
 
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
@@ -579,6 +582,48 @@ struct TranscriptionDetailView: View {
         } message: {
             Text(enhancementErrorMessage)
         }
+        .fileExporter(
+            isPresented: exportSheetBinding,
+            items: exportItems,
+            contentTypes: [MarkdownExportItem.contentType]
+        ) { result in
+            handleMarkdownExportCompletion(result)
+        } onCancellation: {
+            exportItems = []
+        }
+        .alert("Export Failed", isPresented: $showExportErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportErrorMessage)
+        }
+    }
+
+    private var exportSheetBinding: Binding<Bool> {
+        Binding(
+            get: { !exportItems.isEmpty },
+            set: { isPresented in
+                if !isPresented {
+                    exportItems = []
+                }
+            }
+        )
+    }
+
+    private func exportTranscriptionAsMarkdown() {
+        exportItems = TranscriptionMarkdownExportService.items(for: [transcription])
+    }
+
+    private func handleMarkdownExportCompletion(_ result: Result<[URL], any Error>) {
+        switch result {
+        case .success:
+            HapticManager.success()
+        case .failure(let error):
+            if !(error is CancellationError) {
+                exportErrorMessage = error.localizedDescription
+                showExportErrorAlert = true
+            }
+        }
+        exportItems = []
     }
 
     private var textContentView: some View {
@@ -777,6 +822,15 @@ struct TranscriptionDetailView: View {
                     ) {
                         Label("Audio Recording", systemImage: "waveform")
                     }
+                }
+            }
+
+            Section("Export") {
+                Button {
+                    HapticManager.lightImpact()
+                    exportTranscriptionAsMarkdown()
+                } label: {
+                    Label("Export as Markdown", systemImage: "doc.text")
                 }
             }
         } label: {
