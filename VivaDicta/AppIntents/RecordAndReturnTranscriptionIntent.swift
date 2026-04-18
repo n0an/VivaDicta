@@ -72,6 +72,7 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
     ) async throws -> TranscriptionEntity {
         let deadline = Date().addingTimeInterval(Self.maxWaitSeconds)
         var sawActiveSession = false
+        var consecutiveIdleTicks = 0
 
         while Date() < deadline {
             try Task.checkCancellation()
@@ -111,9 +112,19 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
             }
 
             // If we've observed an active session and it dropped back to `.idle`
-            // without producing a new row, the user cancelled.
-            if sawActiveSession && status == .idle {
-                throw RecordAndReturnIntentError.cancelled
+            // without producing a new row, the user cancelled. Debounce across a
+            // few consecutive ticks: when the user taps Stop in-app, the main
+            // app synchronously flips `isRecording = false` and only then kicks
+            // off an async task that writes `.transcribing` to status - so for
+            // one to two poll ticks we legitimately observe `!isRecording &&
+            // status == .idle`. Real cancels persist indefinitely.
+            if sawActiveSession && !coordinator.isRecording && status == .idle {
+                consecutiveIdleTicks += 1
+                if consecutiveIdleTicks >= 6 {
+                    throw RecordAndReturnIntentError.cancelled
+                }
+            } else {
+                consecutiveIdleTicks = 0
             }
 
             try await Task.sleep(for: .milliseconds(500))
