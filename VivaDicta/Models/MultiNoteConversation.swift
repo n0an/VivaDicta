@@ -29,6 +29,11 @@ final class MultiNoteConversation {
     /// Number of source notes included at creation time.
     var sourceNoteCount: Int = 0
 
+    /// True when this conversation was created from the "All Notes" shortcut,
+    /// which auto-picks the most recent notes that fit the provider's budget.
+    /// False for regular multi-note chats where the user hand-picked notes.
+    var isAllNotes: Bool = false
+
     /// Chat messages in this conversation.
     @Relationship(deleteRule: .cascade)
     var messages: [ChatMessage]? = []

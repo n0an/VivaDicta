@@ -26,6 +26,7 @@ struct MultiNoteChatsListView: View {
     enum ChatTab: String, CaseIterable {
         case multiNote = "Multi-Note"
         case singleNote = "Single-Note"
+        case allNotes = "All Notes"
         case smartSearch = "Smart Search"
     }
 
@@ -34,10 +35,11 @@ struct MultiNoteChatsListView: View {
     }
 
     private var availableTabs: [ChatTab] {
+        var tabs: [ChatTab] = [.multiNote, .singleNote, .allNotes]
         if isSmartSearchEnabled {
-            return ChatTab.allCases
+            tabs.append(.smartSearch)
         }
-        return [.multiNote, .singleNote]
+        return tabs
     }
 
     var body: some View {
@@ -72,6 +74,8 @@ struct MultiNoteChatsListView: View {
                         multiNoteContent
                     case .singleNote:
                         singleNoteContent
+                    case .allNotes:
+                        allNotesContent
                     case .smartSearch:
                         smartSearchContent
                     }
@@ -96,6 +100,14 @@ struct MultiNoteChatsListView: View {
                         .disabled(!isAIConfigured)
                     }
                 }
+                if selectedTab == .allNotes {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("New Chat", systemImage: "plus") {
+                            startNewAllNotesChat()
+                        }
+                        .disabled(!isAIConfigured)
+                    }
+                }
             }
             .navigationDestination(for: NavigationTarget.self) { target in
                 switch target {
@@ -106,7 +118,8 @@ struct MultiNoteChatsListView: View {
                         navigationPath.append(NavigationTarget.multiNoteChat(conversation.id))
                     }
                 case .multiNoteChat(let conversationId):
-                    if let conversation = viewModel?.multiNoteConversations.first(where: { $0.id == conversationId }) {
+                    if let conversation = viewModel?.multiNoteConversations.first(where: { $0.id == conversationId })
+                        ?? viewModel?.allNotesConversations.first(where: { $0.id == conversationId }) {
                         MultiNoteChatView(
                             viewModel: multiNoteChatVM(for: conversation)
                         )
@@ -236,6 +249,46 @@ struct MultiNoteChatsListView: View {
                 )
             }
         }
+    }
+
+    // MARK: - All Notes Content
+
+    private var allNotesContent: some View {
+        Group {
+            if let viewModel, !viewModel.allNotesConversations.isEmpty {
+                List {
+                    ForEach(viewModel.allNotesConversations, id: \.id) { conversation in
+                        Button {
+                            navigationPath.append(NavigationTarget.multiNoteChat(conversation.id))
+                        } label: {
+                            multiNoteRow(conversation)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            let conversation = viewModel.allNotesConversations[index]
+                            cachedMultiNoteVMs.removeValue(forKey: conversation.id)
+                            viewModel.deleteMultiNoteConversation(conversation)
+                        }
+                    }
+                }
+            } else {
+                ContentUnavailableView(
+                    "No All-Notes Chats",
+                    systemImage: "bubble.left.and.bubble.right.fill",
+                    description: Text("Start a chat that automatically includes your most recent notes.")
+                )
+            }
+        }
+    }
+
+    private func startNewAllNotesChat() {
+        guard let viewModel else { return }
+        guard let conversation = viewModel.createAllNotesConversation(aiService: appState.aiService) else {
+            return
+        }
+        navigationPath.append(NavigationTarget.multiNoteChat(conversation.id))
     }
 
     // MARK: - Smart Search Content
