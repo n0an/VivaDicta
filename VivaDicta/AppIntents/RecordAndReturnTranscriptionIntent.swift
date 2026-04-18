@@ -34,7 +34,7 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
         // main app flips `isRecording` instead). Guard against that case too
         // so starting this intent mid-recording doesn't silently latch onto
         // the existing session and return its note.
-        if coordinator.isRecording {
+        if coordinator.isRecordingRaw {
             throw RecordAndReturnIntentError.alreadyInProgress
         }
 
@@ -83,7 +83,7 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
             // it flips `isRecording` on the coordinator instead and only mutates
             // the status when transcription begins. Check both so cancels during
             // the recording phase itself still unblock the poll loop.
-            if coordinator.isRecording || status == .transcribing || status == .enhancing {
+            if coordinator.isRecordingRaw || status == .transcribing || status == .enhancing {
                 sawActiveSession = true
             }
 
@@ -118,7 +118,7 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
             // off an async task that writes `.transcribing` to status - so for
             // one to two poll ticks we legitimately observe `!isRecording &&
             // status == .idle`. Real cancels persist indefinitely.
-            if sawActiveSession && !coordinator.isRecording && status == .idle {
+            if sawActiveSession && !coordinator.isRecordingRaw && status == .idle {
                 consecutiveIdleTicks += 1
                 if consecutiveIdleTicks >= 6 {
                     throw RecordAndReturnIntentError.cancelled

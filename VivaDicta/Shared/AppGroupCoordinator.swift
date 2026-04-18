@@ -243,6 +243,15 @@ public final class AppGroupCoordinator {
         return storedState
     }
 
+    /// Raw `isRecording` flag without the 30-second staleness check.
+    /// Use when you need the stored value as-is - e.g. from a polling loop
+    /// where the getter's side-effect of clearing the flag mid-recording
+    /// would corrupt state. Only the default `isRecording` getter (with
+    /// its crash-recovery semantics) should be used by UI-level callers.
+    var isRecordingRaw: Bool {
+        sharedDefaults?.bool(forKey: UserDefaultsKeys.isRecording) ?? false
+    }
+
     // MARK: - Public Interface for Main App
 
     func updateRecordingState(_ isRecording: Bool) {
@@ -256,12 +265,6 @@ public final class AppGroupCoordinator {
     func updateAudioLevel(_ level: CGFloat) {
         let clamped = max(0, min(1, level))
         sharedDefaults?.set(Double(clamped), forKey: UserDefaultsKeys.audioLevel)
-        // Refresh the recording timestamp while audio is flowing so the 30s
-        // staleness check in `isRecording` doesn't trip during long main-app
-        // recordings (nothing else refreshes it until Stop fires the status
-        // transition). Readers that depend on `isRecording` - widget, live
-        // activity, keyboard, the record-and-return intent - all benefit.
-        sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.audioLevelUpdated)
     }
 
