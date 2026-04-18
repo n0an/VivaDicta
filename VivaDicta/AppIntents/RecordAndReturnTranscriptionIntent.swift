@@ -30,6 +30,14 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
         let startTime = Date()
         let previousLatestId = try dataController.transcriptions(limit: 1).first?.id
 
+        // `transcriptionStatus` stays `.idle` during the recording phase (the
+        // main app flips `isRecording` instead). Guard against that case too
+        // so starting this intent mid-recording doesn't silently latch onto
+        // the existing session and return its note.
+        if coordinator.isRecording {
+            throw RecordAndReturnIntentError.alreadyInProgress
+        }
+
         switch coordinator.transcriptionStatus {
         case .recording, .transcribing, .enhancing:
             // Another session is already mid-flight. Returning its result would
@@ -88,13 +96,17 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
                 sawActiveSession = true
             }
 
-            if let latest = try dataController.transcriptions(limit: 1).first,
+            if sawActiveSession,
+               let latest = try dataController.transcriptions(limit: 1).first,
                latest.id != previousLatestId,
                latest.timestamp > startTime,
                // `.idle` is accepted alongside `.completed` because the keyboard
                // consumer can race ahead and reset status to `.idle` between the
                // save and our poll tick. Don't "tighten" this to `.completed` only.
                status == .completed || status == .idle {
+                // `sawActiveSession` is required so a CloudKit-synced row from
+                // another device (VivaDictaMac) during the wait can't satisfy
+                // `timestamp > startTime` and be returned as this intent's result.
                 return latest.entity
             }
 
