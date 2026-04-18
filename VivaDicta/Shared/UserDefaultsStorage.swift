@@ -79,5 +79,8 @@ enum UserDefaultsStorage {
         // Notes filter
         static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
         static let savedNotesFilterUserTagIds = "savedNotesFilterUserTagIds"
+
+        // Export
+        static let markdownExportContent = "markdownExportContent"
     }
 }

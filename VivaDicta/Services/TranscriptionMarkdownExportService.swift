@@ -103,16 +103,42 @@ enum TranscriptionMarkdownExportService {
             lines.append("")
         }
 
-        lines.append("## Original")
-        lines.append("")
-        lines.append(snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines))
-        lines.append("")
+        let sorted = sortedVariations(for: snapshot)
+        let lastVariation = sorted.last
 
-        for variation in sortedVariations(for: snapshot) {
+        func appendOriginal() {
+            lines.append("## Original")
+            lines.append("")
+            lines.append(snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines))
+            lines.append("")
+        }
+
+        func appendVariation(_ variation: VariationSnapshot) {
             lines.append("## \(variation.title)")
             lines.append("")
             lines.append(variation.text.trimmingCharacters(in: .whitespacesAndNewlines))
             lines.append("")
+        }
+
+        switch MarkdownExportContent.current {
+        case .allVariations:
+            appendOriginal()
+            for variation in sorted {
+                appendVariation(variation)
+            }
+        case .originalOnly:
+            appendOriginal()
+        case .originalAndLastVariation:
+            appendOriginal()
+            if let lastVariation {
+                appendVariation(lastVariation)
+            }
+        case .lastVariationOnly:
+            if let lastVariation {
+                appendVariation(lastVariation)
+            } else {
+                appendOriginal()
+            }
         }
 
         return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
