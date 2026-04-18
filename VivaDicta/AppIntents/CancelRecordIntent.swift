@@ -13,6 +13,8 @@ struct CancelRecordIntent: AppIntent {
         "Cancels the current VivaDicta recording without saving a transcription."
     )
 
+    static let openAppWhenRun: Bool = true
+
     func perform() async throws -> some IntentResult {
         await MainActor.run {
             AppGroupCoordinator.shared.requestCancelRecording()

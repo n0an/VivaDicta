@@ -35,10 +35,16 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
             // Another session is already mid-flight. Returning its result would
             // violate the intent's "starts recording ... and returns the note" contract.
             throw RecordAndReturnIntentError.alreadyInProgress
-        case .idle, .completed, .error:
-            // `.completed` / `.error` are stale leftovers from a previous in-app session
-            // (the main-app path never resets them; only the keyboard consumer does).
-            // Treat them as idle and kick off a new recording.
+        case .error:
+            // Drain the stale error message from the previous session before we
+            // start a new one - otherwise the poll loop's first tick would see
+            // `.error` and throw the old message as if it just happened.
+            _ = coordinator.getAndConsumeTranscriptionErrorMessage()
+            coordinator.requestStartRecordingFromControl()
+        case .idle, .completed:
+            // `.completed` is a stale leftover from a previous in-app session
+            // (the main-app path never resets it; only the keyboard consumer does).
+            // Treat it as idle and kick off a new recording.
             coordinator.requestStartRecordingFromControl()
         }
 
@@ -74,7 +80,11 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
                 throw RecordAndReturnIntentError.failed(message)
             }
 
-            if status == .recording || status == .transcribing || status == .enhancing {
+            // The main app never writes `.recording` to `transcriptionStatus`;
+            // it flips `isRecording` on the coordinator instead and only mutates
+            // the status when transcription begins. Check both so cancels during
+            // the recording phase itself still unblock the poll loop.
+            if coordinator.isRecording || status == .transcribing || status == .enhancing {
                 sawActiveSession = true
             }
 

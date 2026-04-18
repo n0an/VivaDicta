@@ -13,6 +13,8 @@ struct StopRecordIntent: AppIntent {
         "Stops the current VivaDicta recording and begins transcription."
     )
 
+    static let openAppWhenRun: Bool = true
+
     func perform() async throws -> some IntentResult {
         await MainActor.run {
             AppGroupCoordinator.shared.requestStopRecording()
