@@ -90,10 +90,11 @@ final class ChatViewModel {
 
     var contextFillRatio: Double = 0
 
-    /// Updates the context fill ratio. Uses real token count for Apple FM on iOS 26.4+,
-    /// falls back to character-based estimation for cloud providers and older iOS.
+    /// Updates the context fill ratio. Only tracked for Apple Foundation Models,
+    /// where the on-device context is known and actionable. Cloud providers rely
+    /// on the server to enforce their own limits.
     func updateContextFillRatio() {
-        guard let provider = selectedProvider, let model = selectedModel else {
+        guard let provider = selectedProvider, selectedModel != nil else {
             contextFillRatio = 0
             return
         }
@@ -101,12 +102,7 @@ final class ChatViewModel {
         if provider == .apple {
             Task { await updateAppleFMFillRatio() }
         } else {
-            contextFillRatio = ChatContextManager.fillRatio(
-                noteText: assembledNoteText,
-                messages: messages,
-                provider: provider,
-                model: model
-            )
+            contextFillRatio = 0
         }
     }
 
@@ -802,16 +798,6 @@ final class ChatViewModel {
         allowImplicitCrossNoteTool: Bool,
         allowImplicitWebTool: Bool
     ) async throws -> CloudSendResult {
-        if ChatContextManager.shouldAutoCompact(
-            noteText: assembledNoteText,
-            messages: messages,
-            provider: provider,
-            model: model
-        ) {
-            logger.logInfo("Chat - Auto-compacting context")
-            try await performCompaction()
-        }
-
         let baseChatMessages = cloudChatMessages(for: promptText)
         let (baseSystemMessage, baseAPIMessages) = ChatContextManager.assembleMessages(
             noteText: assembledNoteText,

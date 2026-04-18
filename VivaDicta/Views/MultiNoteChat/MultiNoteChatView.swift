@@ -294,15 +294,17 @@ struct MultiNoteChatView: View {
                     .glassCapsule(fallback: Color.secondary.opacity(0.1))
             }
 
-            Text("\(percentage)%")
-                .font(.caption2)
-                .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .glassCapsule(
-                    tint: ratio > 0.7 ? Color.orange.opacity(0.35) : nil,
-                    fallback: (ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1)
-                )
+            if ratio > 0 {
+                Text("\(percentage)%")
+                    .font(.caption2)
+                    .foregroundStyle(ratio > 0.7 ? .orange : .secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .glassCapsule(
+                        tint: ratio > 0.7 ? Color.orange.opacity(0.35) : nil,
+                        fallback: (ratio > 0.7 ? Color.orange : Color.secondary).opacity(0.1)
+                    )
+            }
         }
     }
 

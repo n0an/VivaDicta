@@ -69,50 +69,23 @@ struct ChatContextManager {
 
     // MARK: - Context Limits
 
-    /// Known context window sizes per provider/model prefix.
-    /// Returns token limit for the given provider and model.
+    /// Context window in tokens for the given provider and model.
+    ///
+    /// Only Apple Foundation Models has a real, knowable, and actionable limit:
+    /// the model runs on-device and we must pre-flight budget before sending.
+    /// For every cloud provider the window varies by model and evolves faster
+    /// than our hardcoded table can track, and the server already enforces its
+    /// own limit and returns a clean error if we overshoot. Returning `.max`
+    /// disables preemptive trimming and auto-compaction for cloud.
     static func contextLimit(for provider: AIProvider, model: String) -> Int {
-        let modelLower = model.lowercased()
-
         switch provider {
         case .apple:
             if #available(iOS 26, *) {
                 return SystemLanguageModel.default.contextSize
             }
             return 4_096
-
-        case .anthropic:
-            return 200_000
-
-        case .openAI:
-            return 128_000
-
-        case .gemini:
-            if modelLower.contains("2.5") || modelLower.contains("3.") {
-                return 1_000_000
-            }
-            return 128_000
-
-        case .groq:
-            if modelLower.contains("llama-4") {
-                return 128_000
-            }
-            return 8_192
-
-        case .mistral:
-            return 128_000
-
-        case .grok:
-            return 128_000
-
-        case .ollama:
-            return 4_096
-
-        case .openRouter, .vercelAIGateway, .huggingFace:
-            return 32_000
-
         default:
-            return 8_000
+            return .max
         }
     }
 
@@ -134,16 +107,6 @@ struct ChatContextManager {
         let total = systemTokens + noteTokens + messageTokens
 
         return min(Double(total) / Double(limit), 1.0)
-    }
-
-    /// Whether auto-compaction should trigger (fill > 70%).
-    static func shouldAutoCompact(
-        noteText: String,
-        messages: [ChatMessage],
-        provider: AIProvider,
-        model: String
-    ) -> Bool {
-        fillRatio(noteText: noteText, messages: messages, provider: provider, model: model) > 0.7
     }
 
     // MARK: - Message Assembly
