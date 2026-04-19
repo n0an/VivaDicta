@@ -92,8 +92,29 @@ struct VivaDictaAskRecordWidgetEntryView: View {
         }
         .padding(20)
         .containerBackground(for: .widget) {
-            
-//            colorScheme == .dark ? Color.black : Color.white
+            backgroundGradient
+        }
+    }
+    
+    private var backgroundGradient: LinearGradient {
+        if colorScheme == .dark {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.06, blue: 0.12),
+                    Color(red: 0.18, green: 0.12, blue: 0.28)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            LinearGradient(
+                colors: [
+                    .white,
+                    Color(red: 0.88, green: 0.85, blue: 0.95)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
 
