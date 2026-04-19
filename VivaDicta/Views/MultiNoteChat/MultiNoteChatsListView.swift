@@ -169,15 +169,11 @@ struct MultiNoteChatsListView: View {
         if viewModel == nil {
             viewModel = ChatsListViewModel(modelContext: modelContext)
         }
+        navigationPath = NavigationPath()
         switch route.kind {
-        case .multiNote:
-            selectedTab = .multiNote
-            navigationPath.append(NavigationTarget.multiNoteChat(route.id))
-        case .allNotes:
-            selectedTab = .allNotes
+        case .multiNote, .allNotes:
             navigationPath.append(NavigationTarget.multiNoteChat(route.id))
         case .singleNote:
-            selectedTab = .singleNote
             navigationPath.append(NavigationTarget.singleNoteChat(route.id))
         }
         appState.pendingChatRoute = nil

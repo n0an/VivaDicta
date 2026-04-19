@@ -642,10 +642,9 @@ struct VivaDictaApp: App {
         multiDescriptor.fetchLimit = 1
         let latestMulti = (try? modelContext.fetch(multiDescriptor))?.first
 
-        var singleDescriptor = FetchDescriptor<ChatConversation>(
+        let singleDescriptor = FetchDescriptor<ChatConversation>(
             sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
         )
-        singleDescriptor.fetchLimit = 20
         let latestSingle = (try? modelContext.fetch(singleDescriptor))?.first { conversation in
             conversation.transcription != nil && !(conversation.messages ?? []).isEmpty
         }
