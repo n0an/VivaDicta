@@ -606,13 +606,25 @@ struct VivaDictaApp: App {
     }
     
     func updateShortcutItems() {
+        let searchAction = UIApplicationShortcutItem(
+            type: QuickActionType.search.rawValue,
+            localizedTitle: "Search",
+            localizedSubtitle: "Find notes instantly",
+            icon: UIApplicationShortcutIcon(systemImageName: "magnifyingglass"),
+            userInfo: [:])
+        let askAIAction = UIApplicationShortcutItem(
+            type: QuickActionType.askAI.rawValue,
+            localizedTitle: "Ask AI",
+            localizedSubtitle: "Chat with your notes",
+            icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.and.bubble.right.fill"),
+            userInfo: [:])
         let recordAction = UIApplicationShortcutItem(
             type: QuickActionType.startRecord.rawValue,
-            localizedTitle: "Start recording",
+            localizedTitle: "Record",
             localizedSubtitle: "Turn your voice into text",
             icon: UIApplicationShortcutIcon(systemImageName: "microphone.circle.fill"),
             userInfo: [:])
-        UIApplication.shared.shortcutItems = [recordAction]
+        UIApplication.shared.shortcutItems = [searchAction, askAIAction, recordAction]
     }
     
     @MainActor
@@ -634,4 +646,6 @@ struct VivaDictaApp: App {
 
 enum QuickActionType: String {
     case startRecord
+    case search
+    case askAI
 }

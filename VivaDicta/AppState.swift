@@ -89,6 +89,12 @@ class AppState {
     /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
 
+    /// Requests that the main list's search field be focused (from a quick action).
+    var shouldFocusSearch: Bool = false
+
+    /// Requests that the Ask AI / chats screen be presented (from a quick action).
+    var shouldShowChats: Bool = false
+
     /// Describes what the next recording should do after transcription finishes.
     var pendingRecordingDestination: RecordingDestination = .newNote
 
