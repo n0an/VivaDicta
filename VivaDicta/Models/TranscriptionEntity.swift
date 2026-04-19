@@ -162,10 +162,10 @@ struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery, EntityStringQuery
 
     @MainActor
     func entities(matching string: String) async throws -> [TranscriptionEntity] {
-        let query = string
-        return try dataController.transcriptionEntities(matching: #Predicate { transcription in
-            transcription.text.localizedStandardContains(query) ||
-            (transcription.enhancedText?.localizedStandardContains(query) ?? false)
-        })
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        // localizedStandardContains("") is true for every row, so a blank query would
+        // return the entire table - undo the 100-item cap that allEntities() enforces.
+        guard !trimmed.isEmpty else { return [] }
+        return try dataController.transcriptionEntities(searching: trimmed, limit: 100)
     }
 }

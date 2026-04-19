@@ -112,4 +112,21 @@ class DataController {
         let transcriptionsDescriptor = FetchDescriptor<Transcription>(predicate: predicate)
         return try modelContext.fetchCount(transcriptionsDescriptor)
     }
+
+    /// Searches transcriptions whose original text or AI-enhanced text matches the query.
+    ///
+    /// Callers should guard against empty queries before calling - `localizedStandardContains("")`
+    /// is true for every row, which would return the entire table.
+    func transcriptionEntities(
+        searching query: String,
+        limit: Int? = nil
+    ) throws -> [TranscriptionEntity] {
+        try transcriptionEntities(
+            matching: #Predicate { transcription in
+                transcription.text.localizedStandardContains(query) ||
+                (transcription.enhancedText?.localizedStandardContains(query) ?? false)
+            },
+            limit: limit
+        )
+    }
 }

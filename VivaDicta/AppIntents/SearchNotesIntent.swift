@@ -24,23 +24,34 @@ struct SearchNotesIntent: AppIntent {
 
     @Dependency var dataController: DataController
 
+    /// Cap at 200 so a broad query (e.g. "the") doesn't hand thousands of entities to
+    /// a downstream `Repeat with Each` - both slow and destructive for actions like
+    /// "Append to Obsidian" that mutate external state per iteration.
+    private static let maxMatches = 200
+
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<[TranscriptionEntity]> & ProvidesDialog {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmed.isEmpty else {
-            return .result(value: [], dialog: "Please provide a search query.")
+            throw SearchNotesQueryEmptyError()
         }
 
-        let matches = try dataController.transcriptionEntities(matching: #Predicate { transcription in
-            transcription.text.localizedStandardContains(trimmed) ||
-            (transcription.enhancedText?.localizedStandardContains(trimmed) ?? false)
-        })
+        let matches = try dataController.transcriptionEntities(
+            searching: trimmed,
+            limit: Self.maxMatches
+        )
 
         let dialog = AttributedString(
             localized: "Found ^[\(matches.count) note](inflect: true) matching \"\(trimmed)\"."
         )
 
         return .result(value: matches, dialog: "\(dialog)")
+    }
+}
+
+struct SearchNotesQueryEmptyError: Error, CustomLocalizedStringResourceConvertible {
+    var localizedStringResource: LocalizedStringResource {
+        "Please provide a search query."
     }
 }
