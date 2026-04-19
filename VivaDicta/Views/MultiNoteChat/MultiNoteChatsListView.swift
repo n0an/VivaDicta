@@ -18,7 +18,7 @@ struct MultiNoteChatsListView: View {
 
     @State private var viewModel: ChatsListViewModel?
     @State private var navigationPath = NavigationPath()
-    @State private var selectedTab: ChatTab = .multiNote
+    @AppStorage("chatsLastSelectedTab") private var selectedTab: ChatTab = .multiNote
     @State private var cachedMultiNoteVMs: [UUID: MultiNoteChatViewModel] = [:]
     @State private var cachedSingleNoteVMs: [UUID: ChatViewModel] = [:]
     @State private var cachedSmartSearchVM: SmartSearchChatViewModel?
