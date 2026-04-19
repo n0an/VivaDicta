@@ -48,7 +48,17 @@ struct VivaDictaQuickActionsWidgetEntryView: View {
         }
     }
 
-    private var darkPillBackground: Color {
+    private var recordForeground: Color {
+        if !isFullColor {
+            .white
+        } else if colorScheme == .dark {
+            .white
+        } else {
+            .black
+        }
+    }
+
+    private var recordFallbackBackground: Color {
         if !isFullColor {
             .clear
         } else if colorScheme == .dark {
@@ -111,13 +121,21 @@ struct VivaDictaQuickActionsWidgetEntryView: View {
             Image(systemName: "record.circle.fill")
                 .font(.title3)
                 .foregroundStyle(.red)
+                .widgetAccentable()
             Text("Record")
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(recordForeground)
                 .widgetAccentable()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(darkPillBackground, in: .rect(cornerRadius: 22))
+        .background {
+            if isFullColor {
+                WidgetRecordPillBackground(cornerRadius: 22, colorScheme: colorScheme)
+            } else {
+                recordFallbackBackground
+            }
+        }
+        .clipShape(.rect(cornerRadius: 22))
     }
 
     private var askPill: some View {
