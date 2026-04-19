@@ -265,6 +265,12 @@ struct VivaDictaApp: App {
                 OnboardingView {
                     HapticManager.celebration()
                     hasCompletedOnboarding = true
+                    // Discard any App Intent action that arrived during onboarding -
+                    // the user never saw the main UI, so firing it once MainView
+                    // appears would be surprising. See PendingAppIntentAction.
+#if !os(macOS)
+                    PendingAppIntentAction.shared.clear()
+#endif
                     // Stamp latest release ID so What's New doesn't show for fresh installs
                     let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
                     if let release = WhatsNewCatalog.release(for: currentVersion) {

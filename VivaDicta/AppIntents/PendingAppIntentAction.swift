@@ -18,11 +18,15 @@ final class PendingAppIntentAction {
         case askAI
     }
 
-    var pending: Action?
+    private(set) var pending: Action?
 
     func enqueue(_ action: Action) {
         pending = action
         drain()
+    }
+
+    func clear() {
+        pending = nil
     }
 
     func drain() {

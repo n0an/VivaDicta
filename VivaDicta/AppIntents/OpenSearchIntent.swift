@@ -19,9 +19,7 @@ struct OpenSearchIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
 #if !os(macOS)
-        await MainActor.run {
-            PendingAppIntentAction.shared.enqueue(.search)
-        }
+        await PendingAppIntentAction.shared.enqueue(.search)
 #endif
         return .result()
     }
