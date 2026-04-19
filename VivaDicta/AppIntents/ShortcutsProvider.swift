@@ -40,8 +40,7 @@ final class ShortcutsProvider: AppShortcutsProvider {
             phrases: [
                 "Search in \(.applicationName)",
                 "Search notes in \(.applicationName)",
-                "Find notes in \(.applicationName)",
-                "Find a note in \(.applicationName)",
+                "Open \(.applicationName) search",
                 "Search my \(.applicationName) notes"
             ],
             shortTitle: LocalizedStringResource("Search"),
@@ -73,16 +72,16 @@ final class ShortcutsProvider: AppShortcutsProvider {
         )
 
         AppShortcut(
-            intent: RecordAndReturnTranscriptionIntent(),
+            intent: SearchNotesIntent(),
             phrases: [
-                "Record and get note from \(.applicationName)",
-                "Dictate a note with \(.applicationName)",
-                "Record and transcribe in \(.applicationName)"
+                "Find notes in \(.applicationName)",
+                "Find a note in \(.applicationName)",
+                "Look up a note in \(.applicationName)"
             ],
-            shortTitle: "Record and Get Note",
-            systemImageName: "waveform.badge.plus"
+            shortTitle: "Find Notes",
+            systemImageName: "text.magnifyingglass"
         )
-
+        
         AppShortcut(
             intent: CountRecentTranscriptionsIntent(),
             phrases: [

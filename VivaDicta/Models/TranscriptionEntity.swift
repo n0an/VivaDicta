@@ -144,7 +144,7 @@ struct TranscriptionEntity: IndexedEntity {
     }
 }
 
-struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
+struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery, EntityStringQuery {
     @Dependency var dataController: DataController
 
     @MainActor
@@ -158,5 +158,14 @@ struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
         try dataController.transcriptionEntities(matching: #Predicate {
             identifiers.contains($0.id)
         })
+    }
+
+    @MainActor
+    func entities(matching string: String) async throws -> [TranscriptionEntity] {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        // localizedStandardContains("") is true for every row, so a blank query would
+        // return the entire table - undo the 100-item cap that allEntities() enforces.
+        guard !trimmed.isEmpty else { return [] }
+        return try dataController.transcriptionEntities(searching: trimmed, limit: 100)
     }
 }
