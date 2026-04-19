@@ -24,9 +24,9 @@ struct MultiNoteChatsListView: View {
     @State private var cachedSmartSearchVM: SmartSearchChatViewModel?
 
     enum ChatTab: String, CaseIterable {
+        case allNotes = "Recent Notes"
         case multiNote = "Multi-Note"
         case singleNote = "Single-Note"
-        case allNotes = "All Notes"
         case smartSearch = "Smart Search"
     }
 
@@ -35,7 +35,7 @@ struct MultiNoteChatsListView: View {
     }
 
     private var availableTabs: [ChatTab] {
-        var tabs: [ChatTab] = [.multiNote, .singleNote, .allNotes]
+        var tabs: [ChatTab] = [.allNotes, .multiNote, .singleNote]
         if isSmartSearchEnabled {
             tabs.append(.smartSearch)
         }
@@ -275,7 +275,7 @@ struct MultiNoteChatsListView: View {
                 }
             } else {
                 ContentUnavailableView(
-                    "No All-Notes Chats",
+                    "No Recent Notes Chats",
                     systemImage: "bubble.left.and.bubble.right.fill",
                     description: Text("Start a chat that automatically includes your most recent notes.")
                 )

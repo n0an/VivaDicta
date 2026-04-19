@@ -60,8 +60,13 @@ struct MultiNoteContextManager {
         let limit = ChatContextManager.contextLimit(for: provider, model: model)
         let systemTokens = ChatContextManager.estimateTokens(systemPrompt)
         let responseReserve = min(4_096, limit / 4)
+        // Cap to avoid Int overflow in the headroom math - every cloud provider
+        // returns .max from contextLimit, and multiplying near-Int.max traps.
+        // 10M tokens is far above any real model context (Gemini 2.5 Pro ~2M).
+        let maxReasonableBudget = 10_000_000
+        let rawBudget = min(limit - systemTokens - responseReserve, maxReasonableBudget)
         // Leave ~30% of the budget for the conversation itself.
-        let packBudget = max(0, limit - systemTokens - responseReserve) * 7 / 10
+        let packBudget = max(0, rawBudget) * 7 / 10
 
         var selected: [Transcription] = []
         var usedTokens = 0

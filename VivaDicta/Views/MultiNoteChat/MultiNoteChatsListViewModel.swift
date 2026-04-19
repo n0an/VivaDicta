@@ -90,8 +90,8 @@ final class ChatsListViewModel {
         let conversation = MultiNoteConversation()
         conversation.isAllNotes = true
         conversation.title = selected.count == totalCount
-            ? "All Notes (\(selected.count))"
-            : "All Notes - \(selected.count) of \(totalCount) recent"
+            ? "Recent Notes (\(selected.count))"
+            : "Recent Notes - \(selected.count) of \(totalCount)"
         conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
         conversation.sourceNoteCount = selected.count
         conversation.transcriptions = selected
