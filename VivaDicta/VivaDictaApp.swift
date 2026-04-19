@@ -118,8 +118,10 @@ struct VivaDictaApp: App {
         AppGroupCoordinator.shared.resetSessionStateOnAppLaunch()
         
         ShortcutsProvider.updateAppShortcutParameters()
-        IntentDonationManager.shared.donate(intent: ToggleRecordIntent())
-        
+//        IntentDonationManager.shared.donate(intent: ToggleRecordIntent())
+//        IntentDonationManager.shared.donate(intent: OpenSearchIntent())
+//        IntentDonationManager.shared.donate(intent: OpenAskAIIntent())
+
         // TODO: - It's not working, keeping for reference. It was presumed to work with ToggleKeyboardFlowIntent.
         // Set up handler for keyboard session activation from intent
         AppGroupCoordinator.shared.onKeyboardSessionActivated = {
