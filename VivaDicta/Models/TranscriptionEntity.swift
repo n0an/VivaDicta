@@ -144,7 +144,7 @@ struct TranscriptionEntity: IndexedEntity {
     }
 }
 
-struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
+struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery, EntityStringQuery {
     @Dependency var dataController: DataController
 
     @MainActor
@@ -157,6 +157,15 @@ struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
     func entities(for identifiers: [UUID]) async throws -> [TranscriptionEntity] {
         try dataController.transcriptionEntities(matching: #Predicate {
             identifiers.contains($0.id)
+        })
+    }
+
+    @MainActor
+    func entities(matching string: String) async throws -> [TranscriptionEntity] {
+        let query = string
+        return try dataController.transcriptionEntities(matching: #Predicate { transcription in
+            transcription.text.localizedStandardContains(query) ||
+            (transcription.enhancedText?.localizedStandardContains(query) ?? false)
         })
     }
 }

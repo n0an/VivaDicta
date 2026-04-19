@@ -40,8 +40,7 @@ final class ShortcutsProvider: AppShortcutsProvider {
             phrases: [
                 "Search in \(.applicationName)",
                 "Search notes in \(.applicationName)",
-                "Find notes in \(.applicationName)",
-                "Find a note in \(.applicationName)",
+                "Open \(.applicationName) search",
                 "Search my \(.applicationName) notes"
             ],
             shortTitle: LocalizedStringResource("Search"),
@@ -70,6 +69,17 @@ final class ShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Get Latest Note",
             systemImageName: "text.quote"
+        )
+
+        AppShortcut(
+            intent: SearchNotesIntent(),
+            phrases: [
+                "Find notes in \(.applicationName)",
+                "Find a note in \(.applicationName)",
+                "Look up a note in \(.applicationName)"
+            ],
+            shortTitle: "Find Notes",
+            systemImageName: "text.magnifyingglass"
         )
 
         AppShortcut(
