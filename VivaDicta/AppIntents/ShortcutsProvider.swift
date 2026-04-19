@@ -34,7 +34,55 @@ final class ShortcutsProvider: AppShortcutsProvider {
             shortTitle: LocalizedStringResource("Record Note"),
             systemImageName: "microphone.circle.fill"
         )
-        
+
+        AppShortcut(
+            intent: OpenSearchIntent(),
+            phrases: [
+                "Search in \(.applicationName)",
+                "Search notes in \(.applicationName)",
+                "Find notes in \(.applicationName)",
+                "Find a note in \(.applicationName)",
+                "Search my \(.applicationName) notes"
+            ],
+            shortTitle: LocalizedStringResource("Search"),
+            systemImageName: "magnifyingglass"
+        )
+
+        AppShortcut(
+            intent: OpenAskAIIntent(),
+            phrases: [
+                "Ask AI in \(.applicationName)",
+                "Ask the AI in \(.applicationName)",
+                "Open \(.applicationName) chats",
+                "Ask \(.applicationName) AI",
+                "Ask AI about my \(.applicationName) notes"
+            ],
+            shortTitle: LocalizedStringResource("Ask AI"),
+            systemImageName: "bubble.left.and.bubble.right.fill"
+        )
+
+        AppShortcut(
+            intent: GetLatestTranscriptionIntent(),
+            phrases: [
+                "Get latest note from \(.applicationName)",
+                "Latest note in \(.applicationName)",
+                "My most recent note in \(.applicationName)"
+            ],
+            shortTitle: "Get Latest Note",
+            systemImageName: "text.quote"
+        )
+
+        AppShortcut(
+            intent: RecordAndReturnTranscriptionIntent(),
+            phrases: [
+                "Record and get note from \(.applicationName)",
+                "Dictate a note with \(.applicationName)",
+                "Record and transcribe in \(.applicationName)"
+            ],
+            shortTitle: "Record and Get Note",
+            systemImageName: "waveform.badge.plus"
+        )
+
         AppShortcut(
             intent: CountRecentTranscriptionsIntent(),
             phrases: [
@@ -69,28 +117,6 @@ final class ShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Open a note",
             systemImageName: "document.viewfinder"
-        )
-
-        AppShortcut(
-            intent: GetLatestTranscriptionIntent(),
-            phrases: [
-                "Get latest note from \(.applicationName)",
-                "Latest note in \(.applicationName)",
-                "My most recent note in \(.applicationName)"
-            ],
-            shortTitle: "Get Latest Note",
-            systemImageName: "text.quote"
-        )
-
-        AppShortcut(
-            intent: RecordAndReturnTranscriptionIntent(),
-            phrases: [
-                "Record and get note from \(.applicationName)",
-                "Dictate a note with \(.applicationName)",
-                "Record and transcribe in \(.applicationName)"
-            ],
-            shortTitle: "Record and Get Note",
-            systemImageName: "waveform.badge.plus"
         )
     }
 }

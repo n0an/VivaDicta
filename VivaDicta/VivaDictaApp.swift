@@ -153,6 +153,7 @@ struct VivaDictaApp: App {
                         // Set the AppState reference for quick actions
 #if !os(macOS)
                         SceneDelegate.appState = appState
+                        PendingAppIntentAction.shared.drain()
 #endif
 
                         // Migrate dictionary data from UserDefaults to SwiftData (one-time)
