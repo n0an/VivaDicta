@@ -12,7 +12,10 @@ import SwiftData
 @Observable
 @MainActor
 final class ChatsListViewModel {
+    /// User-picked multi-note conversations (isAllNotes == false).
     var multiNoteConversations: [MultiNoteConversation] = []
+    /// Conversations created from the "All Notes" shortcut (isAllNotes == true).
+    var allNotesConversations: [MultiNoteConversation] = []
     var singleNoteConversations: [ChatConversation] = []
     var smartSearchConversation: SmartSearchConversation?
     private let modelContext: ModelContext
@@ -32,7 +35,9 @@ final class ChatsListViewModel {
         let descriptor = FetchDescriptor<MultiNoteConversation>(
             sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
         )
-        multiNoteConversations = (try? modelContext.fetch(descriptor)) ?? []
+        let all = (try? modelContext.fetch(descriptor)) ?? []
+        multiNoteConversations = all.filter { !$0.isAllNotes }
+        allNotesConversations = all.filter { $0.isAllNotes }
     }
 
     func loadSingleNote() {
@@ -51,6 +56,50 @@ final class ChatsListViewModel {
         modelContext.delete(conversation)
         try? modelContext.save()
         loadMultiNote()
+    }
+
+    /// Creates an "All Notes" conversation pre-populated with the most recent
+    /// notes that fit the current provider/model budget.
+    ///
+    /// Returns nil if the user has no notes yet.
+    func createAllNotesConversation(
+        aiService: AIService,
+        targetCount: Int = MultiNoteContextManager.allNotesDefaultTargetCount
+    ) -> MultiNoteConversation? {
+        let provider = aiService.selectedMode.aiProvider ?? .apple
+        let model = aiService.selectedMode.aiModel
+
+        var fetchDescriptor = FetchDescriptor<Transcription>(
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        fetchDescriptor.fetchLimit = targetCount
+        let recentNotes = (try? modelContext.fetch(fetchDescriptor)) ?? []
+
+        guard !recentNotes.isEmpty else { return nil }
+
+        let selected = MultiNoteContextManager.selectRecentNotesForAllNotesPack(
+            from: recentNotes,
+            provider: provider,
+            model: model,
+            targetCount: targetCount
+        )
+        guard !selected.isEmpty else { return nil }
+
+        let totalCount = (try? modelContext.fetchCount(FetchDescriptor<Transcription>())) ?? selected.count
+
+        let conversation = MultiNoteConversation()
+        conversation.isAllNotes = true
+        conversation.title = selected.count == totalCount
+            ? "Recent Notes (\(selected.count))"
+            : "Recent Notes - \(selected.count) of \(totalCount)"
+        conversation.noteContext = MultiNoteContextManager.assembleNoteText(from: selected)
+        conversation.sourceNoteCount = selected.count
+        conversation.transcriptions = selected
+        modelContext.insert(conversation)
+        try? modelContext.save()
+
+        loadMultiNote()
+        return conversation
     }
 
     func deleteSingleNoteConversation(_ conversation: ChatConversation) {

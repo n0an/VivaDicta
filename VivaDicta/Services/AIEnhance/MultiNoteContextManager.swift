@@ -34,6 +34,54 @@ struct MultiNoteContextManager {
     - Only use web search when the user explicitly asks to look something up online or asks about current events, news, or real-time information not covered in the notes.
     """
 
+    // MARK: - All Notes Pack Selection
+
+    /// Default target count for the "All Notes" chat shortcut.
+    static let allNotesDefaultTargetCount = 20
+
+    /// Picks the most recent notes for an "All Notes" chat, stopping when either
+    /// the count cap or the provider's token budget is reached.
+    ///
+    /// Cloud providers return `.max` from `ChatContextManager.contextLimit`, so
+    /// the count cap is what bounds them. Apple FM has a real budget, so the
+    /// token cap will usually hit first and the chat will include fewer notes.
+    ///
+    /// Notes are expected to be sorted newest-first. At least one note is always
+    /// returned if `notes` is non-empty, even if that note alone exceeds the
+    /// estimated budget - matches existing single-note-too-large behavior.
+    static func selectRecentNotesForAllNotesPack(
+        from notes: [Transcription],
+        provider: AIProvider,
+        model: String,
+        targetCount: Int = allNotesDefaultTargetCount
+    ) -> [Transcription] {
+        guard !notes.isEmpty else { return [] }
+
+        let limit = ChatContextManager.contextLimit(for: provider, model: model)
+        let systemTokens = ChatContextManager.estimateTokens(systemPrompt)
+        let responseReserve = min(4_096, limit / 4)
+        // Cap to avoid Int overflow in the headroom math - every cloud provider
+        // returns .max from contextLimit, and multiplying near-Int.max traps.
+        // 10M tokens is far above any real model context (Gemini 2.5 Pro ~2M).
+        let maxReasonableBudget = 10_000_000
+        let rawBudget = min(limit - systemTokens - responseReserve, maxReasonableBudget)
+        // Leave ~30% of the budget for the conversation itself.
+        let packBudget = max(0, rawBudget) * 7 / 10
+
+        var selected: [Transcription] = []
+        var usedTokens = 0
+        let wrapperOverhead = 50
+
+        for note in notes.prefix(targetCount) {
+            let tokens = ChatContextManager.estimateTokens(note.text) + wrapperOverhead
+            if !selected.isEmpty, usedTokens + tokens > packBudget { break }
+            selected.append(note)
+            usedTokens += tokens
+        }
+
+        return selected
+    }
+
     // MARK: - Note Assembly (used at creation time)
 
     /// Wraps multiple transcriptions in XML tags for AI disambiguation.
