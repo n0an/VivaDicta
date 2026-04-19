@@ -81,18 +81,7 @@ final class ShortcutsProvider: AppShortcutsProvider {
             shortTitle: "Find Notes",
             systemImageName: "text.magnifyingglass"
         )
-
-        AppShortcut(
-            intent: RecordAndReturnTranscriptionIntent(),
-            phrases: [
-                "Record and get note from \(.applicationName)",
-                "Dictate a note with \(.applicationName)",
-                "Record and transcribe in \(.applicationName)"
-            ],
-            shortTitle: "Record and Get Note",
-            systemImageName: "waveform.badge.plus"
-        )
-
+        
         AppShortcut(
             intent: CountRecentTranscriptionsIntent(),
             phrases: [
