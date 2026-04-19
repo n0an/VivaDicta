@@ -19,8 +19,7 @@ struct AskRecordWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AskRecordWidgetEntry>) -> Void) {
         let entry = AskRecordWidgetEntry(date: Date())
-        let reloadDate = Calendar.current.date(byAdding: .hour, value: 24, to: entry.date)!
-        completion(Timeline(entries: [entry], policy: .after(reloadDate)))
+        completion(Timeline(entries: [entry], policy: .never))
     }
 }
 
@@ -123,9 +122,11 @@ struct VivaDictaAskRecordWidgetEntryView: View {
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.title3)
                 .foregroundStyle(askForeground)
+                .widgetAccentable()
             Text("Ask AI")
                 .font(.headline)
                 .foregroundStyle(askForeground)
+                .widgetAccentable()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(askBackground, in: .rect(cornerRadius: 18))

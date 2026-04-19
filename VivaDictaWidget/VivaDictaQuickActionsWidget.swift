@@ -19,8 +19,7 @@ struct QuickActionsWidgetProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsWidgetEntry>) -> Void) {
         let entry = QuickActionsWidgetEntry(date: Date())
-        let reloadDate = Calendar.current.date(byAdding: .hour, value: 24, to: entry.date)!
-        completion(Timeline(entries: [entry], policy: .after(reloadDate)))
+        completion(Timeline(entries: [entry], policy: .never))
     }
 }
 
