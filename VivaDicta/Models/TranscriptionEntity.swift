@@ -147,13 +147,15 @@ struct TranscriptionEntity: IndexedEntity {
 struct TranscriptionEntityDefaultQuery: EnumerableEntityQuery {
     @Dependency var dataController: DataController
 
+    @MainActor
     func allEntities() async throws -> [TranscriptionEntity] {
         // Limit to 100 most recent transcriptions for performance
-        try await dataController.transcriptionEntities(limit: 100)
+        try dataController.transcriptionEntities(limit: 100)
     }
 
+    @MainActor
     func entities(for identifiers: [UUID]) async throws -> [TranscriptionEntity] {
-        try await dataController.transcriptionEntities(matching: #Predicate {
+        try dataController.transcriptionEntities(matching: #Predicate {
             identifiers.contains($0.id)
         })
     }

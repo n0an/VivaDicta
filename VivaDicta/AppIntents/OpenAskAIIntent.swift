@@ -19,9 +19,7 @@ struct OpenAskAIIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
 #if !os(macOS)
-        await MainActor.run {
-            PendingAppIntentAction.shared.enqueue(.askAI)
-        }
+        await PendingAppIntentAction.shared.enqueue(.askAI)
 #endif
         return .result()
     }
