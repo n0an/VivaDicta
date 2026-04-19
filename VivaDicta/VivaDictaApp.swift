@@ -493,6 +493,10 @@ struct VivaDictaApp: App {
             logger.logInfo("📱 Recognized as widget Ask AI request")
 
             appState.shouldShowChats = true
+        } else if url.absoluteString == "openSearchFromWidget" {
+            logger.logInfo("📱 Recognized as widget Search request")
+
+            appState.shouldFocusSearch = true
         } else if url.absoluteString.starts(with: "vivadicta://transcribe-shared") {
             logger.logInfo("📱 Recognized as share extension transcription request")
 

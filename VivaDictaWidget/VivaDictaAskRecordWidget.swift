@@ -49,7 +49,13 @@ struct VivaDictaAskRecordWidgetEntryView: View {
     }
 
     private var recordBackground: Color {
-        isFullColor ? .black : .clear
+        if !isFullColor {
+            .clear
+        } else if colorScheme == .dark {
+            Color(red: 0.32, green: 0.06, blue: 0.08)
+        } else {
+            .black
+        }
     }
 
     private var askForeground: Color {

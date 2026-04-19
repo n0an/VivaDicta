@@ -13,6 +13,7 @@ struct VivaDictaWidgetBundle: WidgetBundle {
     var body: some Widget {
         VivaDictaIconWidget()
         VivaDictaAskRecordWidget()
+        VivaDictaQuickActionsWidget()
         VivaDictaWidgetControl()
         VivaDictaLiveActivity()
     }
