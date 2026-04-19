@@ -99,6 +99,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             appState.shouldShowChats = true
         case QuickActionType.needHelp.rawValue:
             appState.shouldShowHelpDocs = true
+        case "continueChat":
+            // Compat: users upgrading from the previous build still have the old
+            // Continue chat shortcut cached by iOS until updateShortcutItems()
+            // runs on next background. Route the stale tap to chats so it isn't
+            // a silent noop. Safe to remove after one release cycle.
+            appState.shouldShowChats = true
         default:
             break
         }
