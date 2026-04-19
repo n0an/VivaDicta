@@ -10,7 +10,7 @@ import AppIntents
 struct CountRecentTranscriptionsIntent: AppIntent {
     static let title: LocalizedStringResource = "Count Recent Notes"
     static let description = IntentDescription(
-        "Counts notes recorded in the last 30 days.",
+        "Counts notes recorded in the last month.",
         categoryName: "Notes",
         searchKeywords: ["count", "recent", "notes", "stats"],
         resultValueName: "Recent Notes Count"
