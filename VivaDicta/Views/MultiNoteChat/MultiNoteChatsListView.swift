@@ -138,6 +138,10 @@ struct MultiNoteChatsListView: View {
                 if viewModel == nil {
                     viewModel = ChatsListViewModel(modelContext: modelContext)
                 }
+                consumePendingChatRouteIfNeeded()
+            }
+            .onChange(of: appState.pendingChatRoute) { _, _ in
+                consumePendingChatRouteIfNeeded()
             }
             .onChange(of: navigationPath.count) {
                 if navigationPath.isEmpty {
@@ -158,6 +162,21 @@ struct MultiNoteChatsListView: View {
         case creation
         case multiNoteChat(UUID)
         case singleNoteChat(UUID)
+    }
+
+    private func consumePendingChatRouteIfNeeded() {
+        guard let route = appState.pendingChatRoute else { return }
+        if viewModel == nil {
+            viewModel = ChatsListViewModel(modelContext: modelContext)
+        }
+        navigationPath = NavigationPath()
+        switch route.kind {
+        case .multiNote, .allNotes:
+            navigationPath.append(NavigationTarget.multiNoteChat(route.id))
+        case .singleNote:
+            navigationPath.append(NavigationTarget.singleNoteChat(route.id))
+        }
+        appState.pendingChatRoute = nil
     }
 
     // MARK: - ViewModel Caching

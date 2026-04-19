@@ -606,13 +606,94 @@ struct VivaDictaApp: App {
     }
     
     func updateShortcutItems() {
-        let recordAction = UIApplicationShortcutItem(
+        var items: [UIApplicationShortcutItem] = []
+
+        if let continueAction = mostRecentChatShortcut(modelContext: modelContainer.mainContext) {
+            items.append(continueAction)
+        }
+
+        items.append(UIApplicationShortcutItem(
+            type: QuickActionType.search.rawValue,
+            localizedTitle: "Search",
+            localizedSubtitle: "Find notes instantly",
+            icon: UIApplicationShortcutIcon(systemImageName: "magnifyingglass"),
+            userInfo: [:]))
+        items.append(UIApplicationShortcutItem(
+            type: QuickActionType.askAI.rawValue,
+            localizedTitle: "Ask AI",
+            localizedSubtitle: "Chat with your notes",
+            icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.and.bubble.right.fill"),
+            userInfo: [:]))
+        items.append(UIApplicationShortcutItem(
             type: QuickActionType.startRecord.rawValue,
-            localizedTitle: "Start recording",
+            localizedTitle: "Record",
             localizedSubtitle: "Turn your voice into text",
             icon: UIApplicationShortcutIcon(systemImageName: "microphone.circle.fill"),
-            userInfo: [:])
-        UIApplication.shared.shortcutItems = [recordAction]
+            userInfo: [:]))
+
+        UIApplication.shared.shortcutItems = items
+    }
+
+    @MainActor
+    private func mostRecentChatShortcut(modelContext: ModelContext) -> UIApplicationShortcutItem? {
+        var multiDescriptor = FetchDescriptor<MultiNoteConversation>(
+            sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
+        )
+        multiDescriptor.fetchLimit = 1
+        let latestMulti = (try? modelContext.fetch(multiDescriptor))?.first
+
+        let singleDescriptor = FetchDescriptor<ChatConversation>(
+            sortBy: [SortDescriptor(\.lastInteractionAt, order: .reverse)]
+        )
+        let latestSingle = (try? modelContext.fetch(singleDescriptor))?.first { conversation in
+            conversation.transcription != nil && !(conversation.messages ?? []).isEmpty
+        }
+
+        switch (latestMulti, latestSingle) {
+        case (let multi?, let single?):
+            return multi.lastInteractionAt >= single.lastInteractionAt
+                ? continueChatItem(for: multi)
+                : continueChatItem(for: single)
+        case (let multi?, nil):
+            return continueChatItem(for: multi)
+        case (nil, let single?):
+            return continueChatItem(for: single)
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    private func continueChatItem(for conversation: MultiNoteConversation) -> UIApplicationShortcutItem {
+        let subtitle = conversation.title.isEmpty ? "Untitled chat" : conversation.title
+        let kind: PendingChatKind = conversation.isAllNotes ? .allNotes : .multiNote
+        return UIApplicationShortcutItem(
+            type: QuickActionType.continueChat.rawValue,
+            localizedTitle: "Continue chat",
+            localizedSubtitle: subtitle,
+            icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.fill"),
+            userInfo: [
+                "chatID": conversation.id.uuidString as NSString,
+                "chatKind": kind.rawValue as NSString
+            ])
+    }
+
+    private func continueChatItem(for conversation: ChatConversation) -> UIApplicationShortcutItem {
+        let snippet: String
+        if let transcription = conversation.transcription {
+            let trimmed = transcription.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            snippet = trimmed.isEmpty ? "Note chat" : String(trimmed.prefix(60))
+        } else {
+            snippet = "Note chat"
+        }
+        return UIApplicationShortcutItem(
+            type: QuickActionType.continueChat.rawValue,
+            localizedTitle: "Continue chat",
+            localizedSubtitle: snippet,
+            icon: UIApplicationShortcutIcon(systemImageName: "bubble.left.fill"),
+            userInfo: [
+                "chatID": conversation.id.uuidString as NSString,
+                "chatKind": PendingChatKind.singleNote.rawValue as NSString
+            ])
     }
     
     @MainActor
@@ -634,4 +715,7 @@ struct VivaDictaApp: App {
 
 enum QuickActionType: String {
     case startRecord
+    case search
+    case askAI
+    case continueChat
 }

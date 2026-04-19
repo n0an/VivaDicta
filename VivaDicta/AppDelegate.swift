@@ -88,13 +88,33 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func handleShortcutItem(_ shortcutItem: UIApplicationShortcutItem) {
-        if shortcutItem.type == QuickActionType.startRecord.rawValue {
-            // Trigger recording through AppState
-            if let appState = SceneDelegate.appState {
-                // Set flag to trigger recording when the app finishes launching
-                appState.shouldStartRecording = true
+        guard let appState = SceneDelegate.appState else { return }
+
+        switch shortcutItem.type {
+        case QuickActionType.startRecord.rawValue:
+            appState.shouldStartRecording = true
+        case QuickActionType.search.rawValue:
+            appState.shouldFocusSearch = true
+        case QuickActionType.askAI.rawValue:
+            appState.shouldShowChats = true
+        case QuickActionType.continueChat.rawValue:
+            if let route = pendingChatRoute(from: shortcutItem) {
+                appState.pendingChatRoute = route
+                appState.shouldShowChats = true
             }
+        default:
+            break
         }
+    }
+
+    private func pendingChatRoute(from shortcutItem: UIApplicationShortcutItem) -> PendingChatRoute? {
+        guard
+            let idString = shortcutItem.userInfo?["chatID"] as? String,
+            let id = UUID(uuidString: idString),
+            let kindString = shortcutItem.userInfo?["chatKind"] as? String,
+            let kind = PendingChatKind(rawValue: kindString)
+        else { return nil }
+        return PendingChatRoute(id: id, kind: kind)
     }
 }
 

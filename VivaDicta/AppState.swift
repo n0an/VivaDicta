@@ -89,6 +89,15 @@ class AppState {
     /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
 
+    /// Requests that the main list's search field be focused (from a quick action).
+    var shouldFocusSearch: Bool = false
+
+    /// Requests that the Ask AI / chats screen be presented (from a quick action).
+    var shouldShowChats: Bool = false
+
+    /// Deep-link target for the Chats screen when a quick action requests a specific conversation.
+    var pendingChatRoute: PendingChatRoute?
+
     /// Describes what the next recording should do after transcription finishes.
     var pendingRecordingDestination: RecordingDestination = .newNote
 
@@ -384,6 +393,19 @@ class AppState {
 
         return activity
     }
+}
+
+/// Identifies the kind of chat a "Continue chat" quick action should open.
+enum PendingChatKind: String {
+    case multiNote
+    case allNotes
+    case singleNote
+}
+
+/// Deep-link descriptor for resuming a specific chat from a Home Screen quick action.
+struct PendingChatRoute: Equatable {
+    let id: UUID
+    let kind: PendingChatKind
 }
 
 #if DEBUG

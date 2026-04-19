@@ -23,6 +23,7 @@ struct MainView: View {
     @State private var showingNotesFilter = false
     @State private var showingFileImport = false
     @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
 
     // Selection mode state
     @State private var isSelectionMode = false
@@ -129,6 +130,27 @@ struct MainView: View {
                     appState.shouldStartRecording = false
                 }
             }
+            .onChange(of: appState.shouldFocusSearch) { _, newValue in
+                if newValue {
+                    showingSettings = false
+                    showingRecordingSheet = false
+                    showMultiNoteChats = false
+                    router.popToRoot()
+                    isSearchFocused = true
+                    appState.shouldFocusSearch = false
+                }
+            }
+            .onChange(of: appState.shouldShowChats) { _, newValue in
+                if newValue {
+                    showingSettings = false
+                    showingRecordingSheet = false
+                    router.popToRoot()
+                    HapticManager.lightImpact()
+                    showMultiNoteChats = true
+                    Task { await ChatsDiscoveryTip.chatsOpenedEvent.donate() }
+                    appState.shouldShowChats = false
+                }
+            }
             .onChange(of: appState.shouldNavigateToModels) { _, newValue in
                 if newValue { showingSettings = true }
             }
@@ -180,6 +202,7 @@ struct MainView: View {
             )
         )
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search notes")
+        .searchFocused($isSearchFocused)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { trailingToolbarContent }
         .toolbar { principalToolbarContent }
