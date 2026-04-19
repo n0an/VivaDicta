@@ -97,24 +97,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             appState.shouldFocusSearch = true
         case QuickActionType.askAI.rawValue:
             appState.shouldShowChats = true
-        case QuickActionType.continueChat.rawValue:
-            if let route = pendingChatRoute(from: shortcutItem) {
-                appState.pendingChatRoute = route
-                appState.shouldShowChats = true
-            }
+        case QuickActionType.needHelp.rawValue:
+            appState.shouldShowHelpDocs = true
+        case "continueChat":
+            // Compat: users upgrading from the previous build still have the old
+            // Continue chat shortcut cached by iOS until updateShortcutItems()
+            // runs on next background. Route the stale tap to chats so it isn't
+            // a silent noop. Safe to remove after one release cycle.
+            appState.shouldShowChats = true
         default:
             break
         }
-    }
-
-    private func pendingChatRoute(from shortcutItem: UIApplicationShortcutItem) -> PendingChatRoute? {
-        guard
-            let idString = shortcutItem.userInfo?["chatID"] as? String,
-            let id = UUID(uuidString: idString),
-            let kindString = shortcutItem.userInfo?["chatKind"] as? String,
-            let kind = PendingChatKind(rawValue: kindString)
-        else { return nil }
-        return PendingChatRoute(id: id, kind: kind)
     }
 }
 

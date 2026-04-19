@@ -24,6 +24,9 @@ struct MainView: View {
     @State private var showingFileImport = false
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
+    @State private var showingHelpDocs = false
+
+    private let helpDocsURL = URL(string: "https://vivadicta.com/ios/docs")!
 
     // Selection mode state
     @State private var isSelectionMode = false
@@ -113,6 +116,10 @@ struct MainView: View {
                 }
                 .navigationTransition(.zoom(sourceID: "NotesFilterSheetTransition", in: sheetTransitions))
             }
+            .sheet(isPresented: $showingHelpDocs) {
+                SafariView(url: helpDocsURL)
+                    .ignoresSafeArea()
+            }
     }
 
     @ViewBuilder
@@ -149,6 +156,16 @@ struct MainView: View {
                     showMultiNoteChats = true
                     Task { await ChatsDiscoveryTip.chatsOpenedEvent.donate() }
                     appState.shouldShowChats = false
+                }
+            }
+            .onChange(of: appState.shouldShowHelpDocs) { _, newValue in
+                if newValue {
+                    showingSettings = false
+                    showingRecordingSheet = false
+                    showMultiNoteChats = false
+                    router.popToRoot()
+                    showingHelpDocs = true
+                    appState.shouldShowHelpDocs = false
                 }
             }
             .onChange(of: appState.shouldNavigateToModels) { _, newValue in

@@ -95,8 +95,8 @@ class AppState {
     /// Requests that the Ask AI / chats screen be presented (from a quick action).
     var shouldShowChats: Bool = false
 
-    /// Deep-link target for the Chats screen when a quick action requests a specific conversation.
-    var pendingChatRoute: PendingChatRoute?
+    /// Requests the in-app documentation browser (from the Need help? quick action).
+    var shouldShowHelpDocs: Bool = false
 
     /// Describes what the next recording should do after transcription finishes.
     var pendingRecordingDestination: RecordingDestination = .newNote
@@ -393,19 +393,6 @@ class AppState {
 
         return activity
     }
-}
-
-/// Identifies the kind of chat a "Continue chat" quick action should open.
-enum PendingChatKind: String {
-    case multiNote
-    case allNotes
-    case singleNote
-}
-
-/// Deep-link descriptor for resuming a specific chat from a Home Screen quick action.
-struct PendingChatRoute: Equatable {
-    let id: UUID
-    let kind: PendingChatKind
 }
 
 #if DEBUG
