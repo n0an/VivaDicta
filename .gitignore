@@ -48,6 +48,8 @@ fastlane/.env
 
 # Code coverage
 *.xccoverage
+*.profraw
+*.profdata
 
 # Asset catalog compiler cache
 *.assetcatalog
