@@ -73,6 +73,14 @@ final class CopilotOAuthManager: Sendable {
         let pollInterval = max(interval, 5)
         let maxAttempts = expiresIn / pollInterval
 
+        // Keep polling alive for ~30s while Safari is foregrounded for the device-code prompt.
+        let bgTaskId = BackgroundTaskService.shared?.beginBackgroundTask(name: "CopilotOAuthPoll") {}
+        defer {
+            if let bgTaskId {
+                BackgroundTaskService.shared?.endBackgroundTask(bgTaskId)
+            }
+        }
+
         for attempt in 0..<maxAttempts {
             if attempt > 0 {
                 try await Task.sleep(for: .seconds(pollInterval))
@@ -87,7 +95,14 @@ final class CopilotOAuthManager: Sendable {
             request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             request.httpBody = "client_id=\(clientId)&device_code=\(deviceCode)&grant_type=urn:ietf:params:oauth:grant-type:device_code".data(using: .utf8)
 
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let data: Data
+            do {
+                data = try await URLSession.shared.data(for: request).0
+            } catch let urlError as URLError where urlError.code != .cancelled {
+                // Transient network error (e.g. -1005 after backgrounding); retry on next tick.
+                logger.logInfo("Poll network error \(urlError.code.rawValue), retrying")
+                continue
+            }
 
             guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 continue
