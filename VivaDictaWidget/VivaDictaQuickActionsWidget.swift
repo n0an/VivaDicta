@@ -43,7 +43,7 @@ struct VivaDictaQuickActionsWidgetEntryView: View {
         } else if colorScheme == .dark {
             Color(white: 0.18)
         } else {
-            Color(white: 0.92)
+            Color(white: 0.84)
         }
     }
 
