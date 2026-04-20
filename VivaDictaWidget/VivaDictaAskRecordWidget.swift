@@ -10,34 +10,28 @@ import SwiftUI
 
 struct AskRecordWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> AskRecordWidgetEntry {
-        AskRecordWidgetEntry(date: Date())
+        AskRecordWidgetEntry(date: Date(), t: 0)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (AskRecordWidgetEntry) -> Void) {
-        completion(AskRecordWidgetEntry(date: Date()))
+        completion(AskRecordWidgetEntry(date: Date(), t: 0))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AskRecordWidgetEntry>) -> Void) {
         let now = Date()
         let entries = (0..<24).compactMap { hourOffset in
             Calendar.current.date(byAdding: .hour, value: hourOffset, to: now)
-                .map { AskRecordWidgetEntry(date: $0) }
+                .map { AskRecordWidgetEntry(date: $0, t: Float(hourOffset)) }
         }
-        let reloadDate = Calendar.current.date(byAdding: .hour, value: 24, to: now) ?? now
+        let reloadDate = now.addingTimeInterval(24 * 3600)
         completion(Timeline(entries: entries, policy: .after(reloadDate)))
     }
 }
 
 struct AskRecordWidgetEntry: TimelineEntry {
     let date: Date
-
-    /// Mesh-gradient time parameter: advances by 1 per hour, cycles through 0..24 across the day.
-    var t: Float {
-        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
-        let hours = Float(components.hour ?? 0)
-        let minutes = Float(components.minute ?? 0)
-        return hours + minutes / 60
-    }
+    /// Mesh-gradient time parameter: monotonic hour-offset from timeline boot, so the mesh drifts without snapping at midnight.
+    let t: Float
 }
 
 struct VivaDictaAskRecordWidgetEntryView: View {
@@ -185,8 +179,8 @@ struct VivaDictaAskRecordWidget: Widget {
 #Preview(as: .systemSmall) {
     VivaDictaAskRecordWidget()
 } timeline: {
-    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 0, minute: 0, second: 0, of: .now)!)
-    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 6, minute: 0, second: 0, of: .now)!)
-    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now)!)
-    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: .now)!)
+    AskRecordWidgetEntry(date: .now, t: 0)
+    AskRecordWidgetEntry(date: .now, t: 6)
+    AskRecordWidgetEntry(date: .now, t: 12)
+    AskRecordWidgetEntry(date: .now, t: 18)
 }
