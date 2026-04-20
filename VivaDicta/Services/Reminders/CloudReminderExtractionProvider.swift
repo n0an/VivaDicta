@@ -250,7 +250,7 @@ final class CloudReminderExtractionProvider {
             }
             return (url, [:])
         case .customOpenAI:
-            let endpointURL = aiService.customOpenAIEndpointURL
+            let endpointURL = aiService.customOpenAIRequestURL
             guard !endpointURL.isEmpty,
                   let url = URL(string: endpointURL) else {
                 throw ReminderExtractionError.providerUnavailable("Custom AI endpoint URL is not configured.")

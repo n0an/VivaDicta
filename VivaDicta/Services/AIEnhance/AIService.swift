@@ -100,6 +100,19 @@ class AIService {
         }
     }
 
+    /// Custom OpenAI endpoint URL normalized for making requests.
+    /// Users sometimes paste OpenAI-style base URLs like `http://host:port/v1` into the
+    /// Custom provider field; those need `/chat/completions` appended. URLs that already
+    /// include `/chat/completions` or use a non-OpenAI shape pass through unchanged.
+    public var customOpenAIRequestURL: String {
+        let raw = customOpenAIEndpointURL.trimmingCharacters(in: .whitespaces)
+        guard !raw.isEmpty else { return "" }
+        let trimmed = raw.hasSuffix("/") ? String(raw.dropLast()) : raw
+        if trimmed.contains("/chat/completions") { return trimmed }
+        if trimmed.hasSuffix("/v1") { return trimmed + "/chat/completions" }
+        return trimmed
+    }
+
     /// Custom OpenAI model name (configurable)
     /// Stored property so @Observable can track changes for UI updates
     public var customOpenAIModelName: String = "" {
@@ -1283,7 +1296,7 @@ class AIService {
                 onPartialResponse: onPartialResponse
             )
         case .customOpenAI:
-            let endpointURL = customOpenAIEndpointURL
+            let endpointURL = customOpenAIRequestURL
             let modelName = customOpenAIModelName
 
             guard !endpointURL.isEmpty else {
@@ -1933,7 +1946,7 @@ class AIService {
 
     /// Makes an enhancement request to the custom OpenAI-compatible endpoint
     private func makeCustomOpenAIRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
-        let endpointURL = customOpenAIEndpointURL
+        let endpointURL = customOpenAIRequestURL
         let modelName = customOpenAIModelName
 
         guard !endpointURL.isEmpty else {
@@ -2036,7 +2049,7 @@ class AIService {
 
     /// Verifies Custom OpenAI setup and returns status message
     public func verifyCustomOpenAISetup() async -> (success: Bool, message: String) {
-        let endpointURL = customOpenAIEndpointURL
+        let endpointURL = customOpenAIRequestURL
         let modelName = customOpenAIModelName
 
         // Check URL is configured
@@ -2060,7 +2073,7 @@ class AIService {
 
     /// Tests the Custom OpenAI endpoint with a minimal request and returns detailed status
     private func testCustomOpenAIEndpoint() async -> (success: Bool, message: String) {
-        let endpointURL = customOpenAIEndpointURL
+        let endpointURL = customOpenAIRequestURL
         let modelName = customOpenAIModelName
 
         logger.logNotice("🔧 Custom AI Test - URL: '\(endpointURL)'")
