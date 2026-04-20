@@ -7,17 +7,19 @@
 
 import SwiftUI
 
-/// Static mesh-gradient pill that mirrors the main screen mic button's
-/// AnimatedMeshGradient background. Widgets can't animate, so the mesh
-/// uses a fixed `t` value instead of a TimelineView.
+/// Mesh-gradient pill that mirrors the main screen mic button's
+/// AnimatedMeshGradient background. Widgets can't run TimelineView,
+/// so `t` is driven by the widget's timeline entry — the background
+/// shifts subtly across the day as entries refresh hourly.
 struct WidgetRecordPillBackground: View {
     let cornerRadius: CGFloat
     let colorScheme: ColorScheme
+    let t: Float
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius)
 
-        let gradient = StaticWidgetMeshGradient(colors: meshColors)
+        let gradient = StaticWidgetMeshGradient(colors: meshColors, t: t)
             .mask(
                 shape
                     .stroke(lineWidth: 26)
@@ -84,7 +86,7 @@ struct WidgetRecordPillBackground: View {
 
 private struct StaticWidgetMeshGradient: View {
     let colors: [Color]
-    let t: Float = 3.5
+    let t: Float
 
     var body: some View {
         MeshGradient(width: 3, height: 3, points: [

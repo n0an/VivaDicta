@@ -10,21 +10,28 @@ import SwiftUI
 
 struct QuickActionsWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> QuickActionsWidgetEntry {
-        QuickActionsWidgetEntry(date: Date())
+        QuickActionsWidgetEntry(date: Date(), t: 0)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (QuickActionsWidgetEntry) -> Void) {
-        completion(QuickActionsWidgetEntry(date: Date()))
+        completion(QuickActionsWidgetEntry(date: Date(), t: 0))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsWidgetEntry>) -> Void) {
-        let entry = QuickActionsWidgetEntry(date: Date())
-        completion(Timeline(entries: [entry], policy: .never))
+        let now = Date()
+        let entries = (0..<24).compactMap { hourOffset in
+            Calendar.current.date(byAdding: .hour, value: hourOffset, to: now)
+                .map { QuickActionsWidgetEntry(date: $0, t: Float(hourOffset)) }
+        }
+        let reloadDate = now.addingTimeInterval(24 * 3600)
+        completion(Timeline(entries: entries, policy: .after(reloadDate)))
     }
 }
 
 struct QuickActionsWidgetEntry: TimelineEntry {
     let date: Date
+    /// Mesh-gradient time parameter: monotonic hour-offset from timeline boot, so the mesh drifts without snapping at midnight.
+    let t: Float
 }
 
 struct VivaDictaQuickActionsWidgetEntryView: View {
@@ -151,7 +158,7 @@ struct VivaDictaQuickActionsWidgetEntryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if isFullColor {
-                WidgetRecordPillBackground(cornerRadius: 22, colorScheme: colorScheme)
+                WidgetRecordPillBackground(cornerRadius: 22, colorScheme: colorScheme, t: entry.t)
             } else {
                 recordFallbackBackground
             }
@@ -192,5 +199,8 @@ struct VivaDictaQuickActionsWidget: Widget {
 #Preview(as: .systemMedium) {
     VivaDictaQuickActionsWidget()
 } timeline: {
-    QuickActionsWidgetEntry(date: .now)
+    QuickActionsWidgetEntry(date: .now, t: 0)
+    QuickActionsWidgetEntry(date: .now, t: 6)
+    QuickActionsWidgetEntry(date: .now, t: 12)
+    QuickActionsWidgetEntry(date: .now, t: 18)
 }
