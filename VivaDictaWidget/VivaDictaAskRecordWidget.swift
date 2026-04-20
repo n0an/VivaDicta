@@ -18,13 +18,26 @@ struct AskRecordWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AskRecordWidgetEntry>) -> Void) {
-        let entry = AskRecordWidgetEntry(date: Date())
-        completion(Timeline(entries: [entry], policy: .never))
+        let now = Date()
+        let entries = (0..<24).compactMap { hourOffset in
+            Calendar.current.date(byAdding: .hour, value: hourOffset, to: now)
+                .map { AskRecordWidgetEntry(date: $0) }
+        }
+        let reloadDate = Calendar.current.date(byAdding: .hour, value: 24, to: now) ?? now
+        completion(Timeline(entries: entries, policy: .after(reloadDate)))
     }
 }
 
 struct AskRecordWidgetEntry: TimelineEntry {
     let date: Date
+
+    /// Mesh-gradient time parameter: advances by 1 per hour, cycles through 0..24 across the day.
+    var t: Float {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let hours = Float(components.hour ?? 0)
+        let minutes = Float(components.minute ?? 0)
+        return hours + minutes / 60
+    }
 }
 
 struct VivaDictaAskRecordWidgetEntryView: View {
@@ -146,7 +159,7 @@ struct VivaDictaAskRecordWidgetEntryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if isFullColor {
-                WidgetRecordPillBackground(cornerRadius: 18, colorScheme: colorScheme)
+                WidgetRecordPillBackground(cornerRadius: 18, colorScheme: colorScheme, t: entry.t)
             } else {
                 recordFallbackBackground
             }
@@ -172,5 +185,8 @@ struct VivaDictaAskRecordWidget: Widget {
 #Preview(as: .systemSmall) {
     VivaDictaAskRecordWidget()
 } timeline: {
-    AskRecordWidgetEntry(date: .now)
+    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 0, minute: 0, second: 0, of: .now)!)
+    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 6, minute: 0, second: 0, of: .now)!)
+    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now)!)
+    AskRecordWidgetEntry(date: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: .now)!)
 }

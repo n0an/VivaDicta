@@ -18,13 +18,26 @@ struct QuickActionsWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsWidgetEntry>) -> Void) {
-        let entry = QuickActionsWidgetEntry(date: Date())
-        completion(Timeline(entries: [entry], policy: .never))
+        let now = Date()
+        let entries = (0..<24).compactMap { hourOffset in
+            Calendar.current.date(byAdding: .hour, value: hourOffset, to: now)
+                .map { QuickActionsWidgetEntry(date: $0) }
+        }
+        let reloadDate = Calendar.current.date(byAdding: .hour, value: 24, to: now) ?? now
+        completion(Timeline(entries: entries, policy: .after(reloadDate)))
     }
 }
 
 struct QuickActionsWidgetEntry: TimelineEntry {
     let date: Date
+
+    /// Mesh-gradient time parameter: advances by 1 per hour, cycles through 0..24 across the day.
+    var t: Float {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let hours = Float(components.hour ?? 0)
+        let minutes = Float(components.minute ?? 0)
+        return hours + minutes / 60
+    }
 }
 
 struct VivaDictaQuickActionsWidgetEntryView: View {
@@ -151,7 +164,7 @@ struct VivaDictaQuickActionsWidgetEntryView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if isFullColor {
-                WidgetRecordPillBackground(cornerRadius: 22, colorScheme: colorScheme)
+                WidgetRecordPillBackground(cornerRadius: 22, colorScheme: colorScheme, t: entry.t)
             } else {
                 recordFallbackBackground
             }
@@ -192,5 +205,8 @@ struct VivaDictaQuickActionsWidget: Widget {
 #Preview(as: .systemMedium) {
     VivaDictaQuickActionsWidget()
 } timeline: {
-    QuickActionsWidgetEntry(date: .now)
+    QuickActionsWidgetEntry(date: Calendar.current.date(bySettingHour: 0, minute: 0, second: 0, of: .now)!)
+    QuickActionsWidgetEntry(date: Calendar.current.date(bySettingHour: 6, minute: 0, second: 0, of: .now)!)
+    QuickActionsWidgetEntry(date: Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now)!)
+    QuickActionsWidgetEntry(date: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: .now)!)
 }
