@@ -391,56 +391,52 @@ enum GeminiAPIClient {
         }
 
         var aggregatedText = ""
-        var bufferedDataLines: [String] = []
         var eventCount = 0
         var firstEventLogged = false
         var lastEventPayload: String?
 
+        // Cloud Code Assist streams each SSE event as one complete JSON object
+        // on its own `data:` line, without always emitting the blank-line
+        // separators SSE uses to demarcate events. Observed on
+        // gemini-3-flash-preview: many `data:` lines arrive back-to-back with
+        // no blanks, each a self-contained JSON delta. Parsing each line
+        // immediately (rather than buffering until a blank line) handles both
+        // the well-separated and the no-blank-line cases, and also gives
+        // proper token-by-token streaming in the UI.
         for try await line in bytes.lines {
             try Task.checkCancellation()
 
-            if line.hasPrefix("data: ") {
-                bufferedDataLines.append(String(line.dropFirst(6)))
-                continue
-            }
+            guard line.hasPrefix("data: ") else { continue }
 
-            guard line.isEmpty else {
-                continue
-            }
+            let payload = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !payload.isEmpty else { continue }
 
-            if !bufferedDataLines.isEmpty {
-                eventCount += 1
-                let payload = bufferedDataLines.joined(separator: "\n")
-                if !firstEventLogged {
-                    logger.logInfo("Gemini OAuth chat: first SSE event: \(payload.prefix(500))")
-                    firstEventLogged = true
-                }
-                lastEventPayload = payload
-            }
-
-            aggregatedText = try await processStreamChunk(
-                bufferedDataLines,
-                currentAggregatedText: aggregatedText,
-                onPartialResult: onPartialResponse
-            )
-            bufferedDataLines.removeAll(keepingCapacity: true)
-        }
-
-        if !bufferedDataLines.isEmpty {
             eventCount += 1
-            let payload = bufferedDataLines.joined(separator: "\n")
             if !firstEventLogged {
                 logger.logInfo("Gemini OAuth chat: first SSE event: \(payload.prefix(500))")
                 firstEventLogged = true
             }
             lastEventPayload = payload
-        }
 
-        aggregatedText = try await processStreamChunk(
-            bufferedDataLines,
-            currentAggregatedText: aggregatedText,
-            onPartialResult: onPartialResponse
-        )
+            guard let data = payload.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                continue
+            }
+
+            if let error = json["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw EnhancementError.customError(message)
+            }
+
+            if let chunkText = streamingText(from: json) {
+                if chunkText.hasPrefix(aggregatedText) {
+                    aggregatedText = chunkText
+                } else {
+                    aggregatedText += chunkText
+                }
+                await onPartialResponse(aggregatedText)
+            }
+        }
 
         guard !aggregatedText.isEmpty else {
             logger.logError("Gemini OAuth chat: empty aggregated text after \(eventCount) event(s). Last event: \(lastEventPayload?.prefix(1000) ?? "none")")
