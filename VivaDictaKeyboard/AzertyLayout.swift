@@ -68,28 +68,38 @@ enum AzertyLayout {
 
     /// Replaces the character items in `row` with new character items for `chars`.
     /// Non-character items (shift, backspace, etc.) stay in place.
+    ///
+    /// The case of each existing `.character(c)` is mirrored onto the replacement
+    /// so AZERTY follows the standard layout's shift state. KeyboardKit's standard
+    /// layout rebuilds character actions as `.character("A")` or `.character("a")`
+    /// based on `KeyboardContext.keyboardCase`; if we always emitted lowercase,
+    /// shifted AZERTY buttons would display and insert lowercase letters.
     private static func rewriteLetters(
         in row: [KeyboardLayout.Item],
         to chars: [String]
     ) -> [KeyboardLayout.Item] {
-        let charIndices = row.indices.filter { index in
-            if case .character = row[index].action { return true }
-            return false
+        var charIndices: [Int] = []
+        var isUppercaseInRow = false
+        for (index, item) in row.enumerated() {
+            guard case .character(let existing) = item.action else { continue }
+            charIndices.append(index)
+            if !isUppercaseInRow, existing.first?.isUppercase == true {
+                isUppercaseInRow = true
+            }
         }
 
         guard let templateIndex = charIndices.first else { return row }
         let template = row[templateIndex]
 
         var result = row
-        // Remove existing character items from the end so earlier indices stay valid.
         for index in charIndices.reversed() {
             result.remove(at: index)
         }
 
-        // Insert new character items at the position the first char occupied.
         for (offset, char) in chars.enumerated() {
+            let cased = isUppercaseInRow ? char.uppercased() : char
             let item = KeyboardLayout.Item(
-                action: .character(char),
+                action: .character(cased),
                 size: template.size,
                 alignment: template.alignment,
                 edgeInsets: template.edgeInsets

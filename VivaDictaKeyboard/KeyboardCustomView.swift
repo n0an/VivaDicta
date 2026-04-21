@@ -12,10 +12,16 @@ struct KeyboardCustomView: View {
 
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
+    @ObservedObject private var keyboardContext: KeyboardContext
     @State private var processingStage: ProcessingStage = .waitingToStart
     @State private var showFullAccessPrompt = false
 
     let controller: KeyboardInputViewController
+
+    init(controller: KeyboardInputViewController) {
+        self.controller = controller
+        self._keyboardContext = ObservedObject(wrappedValue: controller.state.keyboardContext)
+    }
 
     private var hasFullAccess: Bool {
         controller.hasFullAccess
@@ -25,9 +31,24 @@ struct KeyboardCustomView: View {
         controller as? KeyboardViewController
     }
 
-    private var currentLayout: KeyboardLayout {
-        let base = KeyboardLayout.standard(for: controller.state.keyboardContext)
-        return base.applying(AppGroupCoordinator.shared.keyboardLayoutStyle)
+    /// Resolves the keyboard layout for the current rendering pass.
+    ///
+    /// For QWERTY we return `nil` so `KeyboardView` regenerates the layout
+    /// internally on every context change - this preserves the dynamic shift
+    /// action (`KeyboardAction.shift` encodes the *current* case in its
+    /// associated value, so a frozen layout breaks shift cycling).
+    ///
+    /// For AZERTY we rebuild the layout each render. Reading `keyboardContext`
+    /// via `@ObservedObject` forces the view to re-render when the case
+    /// changes, which in turn produces a fresh `.standard(for:)` layout with
+    /// the correct shift action for the new case.
+    private var currentLayout: KeyboardLayout? {
+        switch AppGroupCoordinator.shared.keyboardLayoutStyle {
+        case .qwerty:
+            nil
+        case .azerty:
+            AzertyLayout.rewrite(KeyboardLayout.standard(for: keyboardContext))
+        }
     }
 
     var body: some View {
