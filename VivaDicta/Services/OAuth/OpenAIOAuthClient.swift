@@ -103,10 +103,16 @@ enum OpenAIOAuthClient {
             timeout: 300
         )
 
-        return try await streamResponsesText(
+        let raw = try await streamResponsesText(
             request: request,
             onPartialResult: onPartialResponse
         )
+
+        let filtered = AIEnhancementOutputFilter.filter(raw)
+        if filtered != raw {
+            await onPartialResponse(filtered)
+        }
+        return filtered
     }
 
     /// Multi-turn non-streaming chat. Implemented by buffering the streaming helper.
