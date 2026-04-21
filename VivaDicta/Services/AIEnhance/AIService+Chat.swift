@@ -129,11 +129,34 @@ extension AIService {
                 onPartialResponse: onPartialResponse
             )
 
-        case nil:
-            // Check if this is an OAuth-only provider without chat support
-            if provider == .openAI && isOpenAISignedIn && provider.apiKey == nil {
-                throw EnhancementError.customError("Chat is not yet supported with OpenAI OAuth. Please add an OpenAI API key to use chat.")
+        case .openAIOAuth:
+            do {
+                let oauthProvider = OpenAIOAuthProvider()
+                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                let resolvedModel = OpenAIOAuthClient.resolveModel(model)
+                return try await OpenAIOAuthClient.chatStreaming(
+                    systemMessage: systemMessage,
+                    messages: messages,
+                    model: resolvedModel,
+                    accessToken: token,
+                    accountId: accountId,
+                    onPartialResponse: onPartialResponse
+                )
+            } catch let error as OAuthError {
+                if let apiKey = provider.apiKey {
+                    return try await makeOpenAIChatStreamingRequest(
+                        url: URL(string: provider.baseURL)!,
+                        model: model,
+                        systemMessage: systemMessage,
+                        messages: messages,
+                        headers: ["Authorization": "Bearer \(apiKey)"],
+                        onPartialResponse: onPartialResponse
+                    )
+                }
+                throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
             }
+
+        case nil:
             if provider == .gemini && isGeminiSignedIn && provider.apiKey == nil {
                 throw EnhancementError.customError("Chat is not yet supported with Gemini OAuth. Please add a Gemini API key to use chat.")
             }
@@ -169,6 +192,32 @@ extension AIService {
                 messages: messages,
                 apiKey: apiKey
             )
+
+        case .openAI where isOpenAISignedIn:
+            do {
+                let oauthProvider = OpenAIOAuthProvider()
+                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                let resolvedModel = OpenAIOAuthClient.resolveModel(model)
+                return try await OpenAIOAuthClient.chat(
+                    systemMessage: systemMessage,
+                    messages: messages,
+                    model: resolvedModel,
+                    accessToken: token,
+                    accountId: accountId
+                )
+            } catch let error as OAuthError {
+                if let apiKey = provider.apiKey {
+                    let (url, headers) = (URL(string: provider.baseURL)!, ["Authorization": "Bearer \(apiKey)"])
+                    return try await makeOpenAIChatNonStreamingRequest(
+                        url: url,
+                        model: model,
+                        systemMessage: systemMessage,
+                        messages: messages,
+                        headers: headers
+                    )
+                }
+                throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
+            }
 
         default:
             // OpenAI-compatible for all other providers
@@ -254,7 +303,7 @@ extension AIService {
     // MARK: - Private Helpers
 
     private enum ChatStreamingRoute {
-        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI
+        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI, openAIOAuth
     }
 
     private func chatStreamingRoute(for provider: AIProvider, model: String) -> ChatStreamingRoute? {
@@ -267,6 +316,14 @@ extension AIService {
             return .customOpenAI
         case .copilot:
             return isCopilotSignedIn ? .copilot : nil
+        case .openAI:
+            if isOpenAISignedIn {
+                return .openAIOAuth
+            }
+            if provider.supportsResponseStreaming(model: model), provider.apiKey != nil {
+                return .openAICompatibleCloud
+            }
+            return nil
         default:
             return provider.supportsResponseStreaming(model: model) && provider.apiKey != nil
                 ? .openAICompatibleCloud
