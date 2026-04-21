@@ -25,6 +25,11 @@ struct KeyboardCustomView: View {
         controller as? KeyboardViewController
     }
 
+    private var currentLayout: KeyboardLayout {
+        let base = KeyboardLayout.standard(for: controller.state.keyboardContext)
+        return base.applying(AppGroupCoordinator.shared.keyboardLayoutStyle)
+    }
+
     var body: some View {
         ZStack {
             // Main keyboard content - fades out when full access prompt is shown
@@ -120,7 +125,7 @@ struct KeyboardCustomView: View {
                         // Show normal keyboard for idle and ready states
                         VStack(spacing: 0) {
                             KeyboardView(
-    //                            state: controller.state,
+                                layout: currentLayout,
                                 services: controller.services,
                                 buttonContent: { $0.view },
                                 buttonView: { $0.view },
@@ -139,6 +144,12 @@ struct KeyboardCustomView: View {
                                     .environment(self.dictationState)
                                 }
                             )
+                            .keyboardCalloutActions { params in
+                                switch AppGroupCoordinator.shared.keyboardLayoutStyle {
+                                case .azerty: AzertyCallouts.actionsBuilder(params)
+                                case .qwerty: params.standardActions()
+                                }
+                            }
                         }
                     }
                 }

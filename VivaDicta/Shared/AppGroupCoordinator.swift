@@ -64,6 +64,7 @@ public final class AppGroupCoordinator {
     public static let kIsSpeakerDiarizationEnabled = "isSpeakerDiarizationEnabled"
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
+    public static let kKeyboardLayoutStyle = "keyboardLayoutStyle"
     
     public static let isHapticsEnabled = "isHapticsEnabled"
 
@@ -583,6 +584,22 @@ public final class AppGroupCoordinator {
         }
         set {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsKeyboardSoundFeedbackEnabled)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// Selected letter layout for the VivaDicta keyboard.
+    /// Defaults to `.qwerty` if not set.
+    public var keyboardLayoutStyle: KeyboardLayoutStyle {
+        get {
+            guard let raw = sharedDefaults?.string(forKey: AppGroupCoordinator.kKeyboardLayoutStyle),
+                  let style = KeyboardLayoutStyle(rawValue: raw) else {
+                return .qwerty
+            }
+            return style
+        }
+        set {
+            sharedDefaults?.set(newValue.rawValue, forKey: AppGroupCoordinator.kKeyboardLayoutStyle)
             sharedDefaults?.synchronize()
         }
     }
