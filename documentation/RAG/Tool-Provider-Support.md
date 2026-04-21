@@ -102,7 +102,7 @@ Relevant code:
 | Ollama | Yes | Yes | Yes | Yes | Yes | No | Routed through local OpenAI-compatible chat path. |
 | Custom OpenAI | Yes | Yes | Yes | Yes | Yes | No | Routed through custom OpenAI-compatible endpoint. |
 | OpenAI OAuth only | Yes | Yes (planner) | Yes (planner) | No | Yes | No | Routed through Codex Responses backend. Implicit tool-calling deferred. |
-| Gemini OAuth only | No | No | No | No | No | No | Chat is explicitly blocked today. |
+| Gemini OAuth only | Yes | Yes (planner) | Yes (planner) | No | Yes | No | Routed through Cloud Code Assist backend. Implicit tool-calling deferred. |
 
 ## Providers Not Covered By Chat Tools
 
@@ -136,16 +136,18 @@ Apple has the richest tool integration:
 
 ### 3. OAuth is different from API key support
 
-OpenAI OAuth-only chat routes through the Codex Responses backend (`chatgpt.com/backend-api/codex/responses`) with a structured `input` body, not the standard Chat Completions `messages` body. Planner-based tool paths that call `makeChatRequest(...)` work because planners decode JSON from a plain text response. Implicit tool calling during normal chat (the `tools` + `tool_choice: "auto"` path) is not yet implemented for OAuth and is deferred.
+OpenAI OAuth-only chat routes through the Codex Responses backend (`chatgpt.com/backend-api/codex/responses`) with a structured `input` body, not the standard Chat Completions `messages` body.
 
-Gemini OAuth-only chat is still blocked in the transport layer.
+Gemini OAuth-only chat routes through the Cloud Code Assist backend (`cloudcode-pa.googleapis.com/v1internal:streamGenerateContent`) with Gemini-native `contents` + `systemInstruction`, not the OpenAI-compatible shim.
+
+Planner-based tool paths that call `makeChatRequest(...)` work on both because planners decode JSON from a plain text response. Implicit tool calling during normal chat (the `tools` + `tool_choice: "auto"` path) is not yet implemented for either OAuth path and is deferred.
 
 That means:
 
 - OpenAI API key chat tools: supported
 - OpenAI OAuth-only chat tools: planner-based tools supported, implicit chat tool-calling not yet supported
 - Gemini API key chat tools: supported
-- Gemini OAuth-only chat tools: not supported
+- Gemini OAuth-only chat tools: planner-based tools supported, implicit chat tool-calling not yet supported
 
 ## Key Source Files
 

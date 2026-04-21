@@ -155,10 +155,33 @@ extension AIService {
                 throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
             }
 
-        case nil:
-            if provider == .gemini && isGeminiSignedIn && provider.apiKey == nil {
-                throw EnhancementError.customError("Chat is not yet supported with Gemini OAuth. Please add a Gemini API key to use chat.")
+        case .geminiOAuth:
+            do {
+                let oauthProvider = GeminiOAuthProvider()
+                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                return try await GeminiAPIClient.chatStreaming(
+                    systemMessage: systemMessage,
+                    messages: messages,
+                    model: model,
+                    accessToken: token,
+                    projectId: projectId,
+                    onPartialResponse: onPartialResponse
+                )
+            } catch let error as OAuthError {
+                if let apiKey = provider.apiKey {
+                    return try await makeOpenAIChatStreamingRequest(
+                        url: URL(string: provider.baseURL)!,
+                        model: model,
+                        systemMessage: systemMessage,
+                        messages: messages,
+                        headers: ["Authorization": "Bearer \(apiKey)"],
+                        onPartialResponse: onPartialResponse
+                    )
+                }
+                throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
             }
+
+        case nil:
             // Fallback to non-streaming
             let result = try await makeChatRequest(
                 provider: provider,
@@ -215,6 +238,31 @@ extension AIService {
                     )
                 }
                 throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
+            }
+
+        case .gemini where isGeminiSignedIn:
+            do {
+                let oauthProvider = GeminiOAuthProvider()
+                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                return try await GeminiAPIClient.chat(
+                    systemMessage: systemMessage,
+                    messages: messages,
+                    model: model,
+                    accessToken: token,
+                    projectId: projectId
+                )
+            } catch let error as OAuthError {
+                if let apiKey = provider.apiKey {
+                    let (url, headers) = (URL(string: provider.baseURL)!, ["Authorization": "Bearer \(apiKey)"])
+                    return try await makeOpenAIChatNonStreamingRequest(
+                        url: url,
+                        model: model,
+                        systemMessage: systemMessage,
+                        messages: messages,
+                        headers: headers
+                    )
+                }
+                throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
             }
 
         default:
@@ -301,7 +349,7 @@ extension AIService {
     // MARK: - Private Helpers
 
     private enum ChatStreamingRoute {
-        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI, openAIOAuth
+        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI, openAIOAuth, geminiOAuth
     }
 
     private func chatStreamingRoute(for provider: AIProvider, model: String) -> ChatStreamingRoute? {
@@ -317,6 +365,14 @@ extension AIService {
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
+            }
+            if provider.supportsResponseStreaming(model: model), provider.apiKey != nil {
+                return .openAICompatibleCloud
+            }
+            return nil
+        case .gemini:
+            if isGeminiSignedIn {
+                return .geminiOAuth
             }
             if provider.supportsResponseStreaming(model: model), provider.apiKey != nil {
                 return .openAICompatibleCloud
