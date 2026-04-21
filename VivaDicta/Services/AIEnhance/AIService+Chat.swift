@@ -133,11 +133,10 @@ extension AIService {
             do {
                 let oauthProvider = OpenAIOAuthProvider()
                 let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
-                let resolvedModel = OpenAIOAuthClient.resolveModel(model)
                 return try await OpenAIOAuthClient.chatStreaming(
                     systemMessage: systemMessage,
                     messages: messages,
-                    model: resolvedModel,
+                    model: model,
                     accessToken: token,
                     accountId: accountId,
                     onPartialResponse: onPartialResponse
@@ -197,11 +196,10 @@ extension AIService {
             do {
                 let oauthProvider = OpenAIOAuthProvider()
                 let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
-                let resolvedModel = OpenAIOAuthClient.resolveModel(model)
                 return try await OpenAIOAuthClient.chat(
                     systemMessage: systemMessage,
                     messages: messages,
-                    model: resolvedModel,
+                    model: model,
                     accessToken: token,
                     accountId: accountId
                 )

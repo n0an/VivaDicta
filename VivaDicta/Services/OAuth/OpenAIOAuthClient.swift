@@ -202,7 +202,20 @@ enum OpenAIOAuthClient {
             for try await byte in bytes { errorData.append(byte) }
             let errorBody = String(data: errorData, encoding: .utf8) ?? "Unknown error"
             logger.logError("OpenAI API error: HTTP \(httpResponse.statusCode) - \(errorBody)")
-            throw OAuthError.tokenExchangeFailed("HTTP \(httpResponse.statusCode): \(errorBody)")
+            // Only auth failures should trigger the API-key fallback in callers.
+            // Rate limits and server errors are transient - surface them directly
+            // so the user sees a meaningful message and their API key quota is
+            // not silently burned on unrelated backend blips.
+            switch httpResponse.statusCode {
+            case 401, 403:
+                throw OAuthError.tokenExchangeFailed("HTTP \(httpResponse.statusCode): \(errorBody)")
+            case 429:
+                throw EnhancementError.rateLimitExceeded
+            case 500...599:
+                throw EnhancementError.serverError
+            default:
+                throw EnhancementError.customError("OpenAI error (HTTP \(httpResponse.statusCode)): \(errorBody)")
+            }
         }
 
         var result = ""
