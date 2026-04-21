@@ -101,16 +101,19 @@ class AIService {
     }
 
     /// Custom OpenAI endpoint URL normalized for making requests.
-    /// Users sometimes paste OpenAI-style base URLs like `http://host:port/v1` into the
-    /// Custom provider field; those need `/chat/completions` appended. URLs that already
-    /// include `/chat/completions` or use a non-OpenAI shape pass through unchanged.
+    /// Users sometimes paste OpenAI-style base URLs into the Custom provider field;
+    /// this normalizes common shapes so requests reach `/chat/completions`:
+    /// - pass through if `/chat/completions` is already present
+    /// - append `/chat/completions` when the URL ends with `/v1`
+    /// - otherwise append `/v1/chat/completions` (for bare hosts like
+    ///   `https://api.openai.com` or `http://localhost:1234`)
     public var customOpenAIRequestURL: String {
         let raw = customOpenAIEndpointURL.trimmingCharacters(in: .whitespaces)
         guard !raw.isEmpty else { return "" }
         let trimmed = raw.hasSuffix("/") ? String(raw.dropLast()) : raw
         if trimmed.contains("/chat/completions") { return trimmed }
         if trimmed.hasSuffix("/v1") { return trimmed + "/chat/completions" }
-        return trimmed
+        return trimmed + "/v1/chat/completions"
     }
 
     /// Custom OpenAI model name (configurable)
