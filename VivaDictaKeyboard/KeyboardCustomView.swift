@@ -42,12 +42,20 @@ struct KeyboardCustomView: View {
     /// via `@ObservedObject` forces the view to re-render when the case
     /// changes, which in turn produces a fresh `.standard(for:)` layout with
     /// the correct shift action for the new case.
+    ///
+    /// The rewrite is only applied to the alphabetic keyboard - the numeric
+    /// (`123`) and symbolic (`#+=`) layouts also have 3 rows of `.character`
+    /// items, so rewriting them would turn digits/symbols into AZERTY letters
+    /// and break number/punctuation input entirely.
     private var currentLayout: KeyboardLayout? {
         switch AppGroupCoordinator.shared.keyboardLayoutStyle {
         case .qwerty:
-            nil
+            return nil
         case .azerty:
-            AzertyLayout.rewrite(KeyboardLayout.standard(for: keyboardContext))
+            let base = KeyboardLayout.standard(for: keyboardContext)
+            return keyboardContext.keyboardType == .alphabetic
+                ? AzertyLayout.rewrite(base)
+                : base
         }
     }
 
