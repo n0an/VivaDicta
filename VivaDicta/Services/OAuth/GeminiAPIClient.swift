@@ -392,6 +392,9 @@ enum GeminiAPIClient {
 
         var aggregatedText = ""
         var bufferedDataLines: [String] = []
+        var eventCount = 0
+        var firstEventLogged = false
+        var lastEventPayload: String?
 
         for try await line in bytes.lines {
             try Task.checkCancellation()
@@ -405,12 +408,32 @@ enum GeminiAPIClient {
                 continue
             }
 
+            if !bufferedDataLines.isEmpty {
+                eventCount += 1
+                let payload = bufferedDataLines.joined(separator: "\n")
+                if !firstEventLogged {
+                    logger.logInfo("Gemini OAuth chat: first SSE event: \(payload.prefix(500))")
+                    firstEventLogged = true
+                }
+                lastEventPayload = payload
+            }
+
             aggregatedText = try await processStreamChunk(
                 bufferedDataLines,
                 currentAggregatedText: aggregatedText,
                 onPartialResult: onPartialResponse
             )
             bufferedDataLines.removeAll(keepingCapacity: true)
+        }
+
+        if !bufferedDataLines.isEmpty {
+            eventCount += 1
+            let payload = bufferedDataLines.joined(separator: "\n")
+            if !firstEventLogged {
+                logger.logInfo("Gemini OAuth chat: first SSE event: \(payload.prefix(500))")
+                firstEventLogged = true
+            }
+            lastEventPayload = payload
         }
 
         aggregatedText = try await processStreamChunk(
@@ -420,6 +443,7 @@ enum GeminiAPIClient {
         )
 
         guard !aggregatedText.isEmpty else {
+            logger.logError("Gemini OAuth chat: empty aggregated text after \(eventCount) event(s). Last event: \(lastEventPayload?.prefix(1000) ?? "none")")
             throw OAuthError.invalidResponse
         }
 
