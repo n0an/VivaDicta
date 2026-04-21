@@ -12,10 +12,16 @@ struct KeyboardCustomView: View {
 
     @Environment(KeyboardDictationState.self) var dictationState
     @Environment(\.openURL) private var openURL
+    @ObservedObject private var keyboardContext: KeyboardContext
     @State private var processingStage: ProcessingStage = .waitingToStart
     @State private var showFullAccessPrompt = false
 
     let controller: KeyboardInputViewController
+
+    init(controller: KeyboardInputViewController) {
+        self.controller = controller
+        self._keyboardContext = ObservedObject(wrappedValue: controller.state.keyboardContext)
+    }
 
     private var hasFullAccess: Bool {
         controller.hasFullAccess
@@ -23,6 +29,34 @@ struct KeyboardCustomView: View {
 
     private var keyboardVC: KeyboardViewController? {
         controller as? KeyboardViewController
+    }
+
+    /// Resolves the keyboard layout for the current rendering pass.
+    ///
+    /// For QWERTY we return `nil` so `KeyboardView` regenerates the layout
+    /// internally on every context change - this preserves the dynamic shift
+    /// action (`KeyboardAction.shift` encodes the *current* case in its
+    /// associated value, so a frozen layout breaks shift cycling).
+    ///
+    /// For AZERTY we rebuild the layout each render. Reading `keyboardContext`
+    /// via `@ObservedObject` forces the view to re-render when the case
+    /// changes, which in turn produces a fresh `.standard(for:)` layout with
+    /// the correct shift action for the new case.
+    ///
+    /// The rewrite is only applied to the alphabetic keyboard - the numeric
+    /// (`123`) and symbolic (`#+=`) layouts also have 3 rows of `.character`
+    /// items, so rewriting them would turn digits/symbols into AZERTY letters
+    /// and break number/punctuation input entirely.
+    private var currentLayout: KeyboardLayout? {
+        switch AppGroupCoordinator.shared.keyboardLayoutStyle {
+        case .qwerty:
+            return nil
+        case .azerty:
+            let base = KeyboardLayout.standard(for: keyboardContext)
+            return keyboardContext.keyboardType == .alphabetic
+                ? AzertyLayout.rewrite(base)
+                : base
+        }
     }
 
     var body: some View {
@@ -120,7 +154,7 @@ struct KeyboardCustomView: View {
                         // Show normal keyboard for idle and ready states
                         VStack(spacing: 0) {
                             KeyboardView(
-    //                            state: controller.state,
+                                layout: currentLayout,
                                 services: controller.services,
                                 buttonContent: { $0.view },
                                 buttonView: { $0.view },
@@ -139,6 +173,12 @@ struct KeyboardCustomView: View {
                                     .environment(self.dictationState)
                                 }
                             )
+                            .keyboardCalloutActions { params in
+                                switch AppGroupCoordinator.shared.keyboardLayoutStyle {
+                                case .azerty: AzertyCallouts.actionsBuilder(params)
+                                case .qwerty: params.standardActions()
+                                }
+                            }
                         }
                     }
                 }
