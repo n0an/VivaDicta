@@ -297,4 +297,198 @@ enum GeminiAPIClient {
         let text = parts.compactMap { $0["text"] as? String }.joined()
         return text.isEmpty ? nil : text
     }
+
+    // MARK: - Multi-turn chat
+
+    /// Multi-turn streaming chat over the Cloud Code Assist backend.
+    ///
+    /// - Parameter messages: conversation turns as `[{"role": "user"|"assistant", "content": "..."}]`.
+    ///   System entries are ignored; the system prompt goes into `systemInstruction`.
+    ///   The `assistant` role is translated to Gemini's `model` role.
+    static func chatStreaming(
+        systemMessage: String,
+        messages: [[String: String]],
+        model: String,
+        accessToken: String,
+        projectId: String?,
+        onPartialResponse: @escaping @MainActor (String) -> Void
+    ) async throws -> String {
+        guard let url = URL(string: streamingEndpoint) else {
+            throw OAuthError.invalidResponse
+        }
+
+        let effectiveModel = resolveModel(model)
+        let contents = buildChatContents(messages: messages)
+        logger.logInfo(
+            "Gemini OAuth chat: model='\(effectiveModel)' turns=\(contents.count) instructionsChars=\(systemMessage.count) projectId=\(projectId ?? "none")"
+        )
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.addValue("google-cloud-sdk vscode_cloudshelleditor/0.1", forHTTPHeaderField: "User-Agent")
+        request.addValue("gl-node/22.17.0", forHTTPHeaderField: "X-Goog-Api-Client")
+        request.timeoutInterval = 300
+
+        var requestBody: [String: Any] = [
+            "model": effectiveModel,
+            "userAgent": "vivadicta",
+            "request": [
+                "contents": contents,
+                "systemInstruction": [
+                    "parts": [["text": systemMessage]]
+                ],
+                "generationConfig": [
+                    "maxOutputTokens": 8192
+                ]
+            ]
+        ]
+
+        if let projectId {
+            requestBody["project"] = projectId
+        }
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+
+        try Task.checkCancellation()
+
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OAuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+            let errorBody = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+            logger.logError("Gemini OAuth chat error: HTTP \(httpResponse.statusCode) - \(errorBody)")
+
+            // Only auth failures should trigger the API-key fallback in callers.
+            // Rate limits and server errors are transient - surface them directly
+            // so the user sees a meaningful message and their API key quota is
+            // not silently burned on unrelated backend blips.
+            switch httpResponse.statusCode {
+            case 401, 403:
+                throw OAuthError.tokenExchangeFailed("HTTP \(httpResponse.statusCode): \(errorBody)")
+            case 429:
+                if let errorData = errorBody.data(using: .utf8),
+                   let errorJson = try? JSONSerialization.jsonObject(with: errorData) as? [String: Any],
+                   let error = errorJson["error"] as? [String: Any],
+                   let message = error["message"] as? String {
+                    throw EnhancementError.customError("Gemini rate limit reached. \(message)")
+                }
+                throw EnhancementError.rateLimitExceeded
+            case 500...599:
+                throw EnhancementError.serverError
+            default:
+                throw EnhancementError.customError("Gemini error (HTTP \(httpResponse.statusCode)): \(errorBody)")
+            }
+        }
+
+        var aggregatedText = ""
+        var eventCount = 0
+        var firstEventLogged = false
+        var lastEventPayload: String?
+
+        // Cloud Code Assist streams each SSE event as one complete JSON object
+        // on its own `data:` line, without always emitting the blank-line
+        // separators SSE uses to demarcate events. Observed on
+        // gemini-3-flash-preview: many `data:` lines arrive back-to-back with
+        // no blanks, each a self-contained JSON delta. Parsing each line
+        // immediately (rather than buffering until a blank line) handles both
+        // the well-separated and the no-blank-line cases, and also gives
+        // proper token-by-token streaming in the UI.
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+
+            guard line.hasPrefix("data: ") else { continue }
+
+            let payload = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !payload.isEmpty else { continue }
+
+            eventCount += 1
+            if !firstEventLogged {
+                logger.logInfo("Gemini OAuth chat: first SSE event: \(payload.prefix(500))")
+                firstEventLogged = true
+            }
+            lastEventPayload = payload
+
+            guard let data = payload.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                continue
+            }
+
+            if let error = json["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                throw EnhancementError.customError(message)
+            }
+
+            if let chunkText = streamingText(from: json) {
+                if chunkText.hasPrefix(aggregatedText) {
+                    aggregatedText = chunkText
+                } else {
+                    aggregatedText += chunkText
+                }
+                await onPartialResponse(aggregatedText)
+            }
+        }
+
+        guard !aggregatedText.isEmpty else {
+            logger.logError("Gemini OAuth chat: empty aggregated text after \(eventCount) event(s). Last event: \(lastEventPayload?.prefix(1000) ?? "none")")
+            throw OAuthError.invalidResponse
+        }
+
+        let trimmed = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filtered = AIEnhancementOutputFilter.filter(trimmed)
+        if filtered != aggregatedText {
+            await onPartialResponse(filtered)
+        }
+        return filtered
+    }
+
+    /// Multi-turn non-streaming chat. Implemented by buffering the streaming helper.
+    static func chat(
+        systemMessage: String,
+        messages: [[String: String]],
+        model: String,
+        accessToken: String,
+        projectId: String?
+    ) async throws -> String {
+        try await chatStreaming(
+            systemMessage: systemMessage,
+            messages: messages,
+            model: model,
+            accessToken: accessToken,
+            projectId: projectId,
+            onPartialResponse: { _ in }
+        )
+    }
+
+    /// Converts a flat `[{role, content}]` chat list into Gemini `contents` items.
+    /// System entries are dropped - the system prompt must be sent as `systemInstruction`.
+    /// Gemini uses `"model"` for the assistant role (not `"assistant"`).
+    private static func buildChatContents(messages: [[String: String]]) -> [[String: Any]] {
+        var items: [[String: Any]] = []
+        for message in messages {
+            guard let role = message["role"],
+                  let content = message["content"],
+                  !content.isEmpty,
+                  role != "system" else {
+                continue
+            }
+
+            let geminiRole = (role == "assistant") ? "model" : role
+
+            items.append([
+                "role": geminiRole,
+                "parts": [["text": content]]
+            ])
+        }
+        return items
+    }
 }
