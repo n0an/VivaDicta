@@ -111,17 +111,6 @@ enum AzertyLayout {
     }
 }
 
-extension KeyboardLayout {
-    /// Returns the layout rewritten to AZERTY if `style` is `.azerty`,
-    /// otherwise returns the layout unchanged.
-    func applying(_ style: KeyboardLayoutStyle) -> KeyboardLayout {
-        switch style {
-        case .qwerty: self
-        case .azerty: AzertyLayout.rewrite(self)
-        }
-    }
-}
-
 /// Long-press callout alternates for French AZERTY.
 ///
 /// KeyboardKit Pro ships per-locale callouts (`Callouts.Actions.french`); these
@@ -154,7 +143,7 @@ enum AzertyCallouts {
     private static let byCharacter: [String: String] = [
         "a": "àâæ",
         "c": "ç",
-        "e": "éèêëę",
+        "e": "éèêë",
         "i": "îïì",
         "n": "ñ",
         "o": "ôœö",
