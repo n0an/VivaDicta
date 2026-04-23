@@ -31,11 +31,62 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.1": release_3_1,
         "3.0": release_3_0,
         "2.0": release_2_0,
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_1 = WhatsNewRelease(
+        id: "3.1",
+        headline: "What's New in VivaDicta 3.1",
+        features: [
+            WhatsNewFeature(
+                icon: "keyboard.fill",
+                iconColors: [.pink, .orange],
+                title: "AZERTY Keyboard",
+                description: "New French AZERTY layout with proper callouts and accented characters. Enable in Settings > Keyboard."
+            ),
+            WhatsNewFeature(
+                icon: "rectangle.3.group.fill",
+                iconColors: [.orange, .pink],
+                title: "Home Screen Widgets",
+                description: "New Ask & Record and Quick Actions widgets put recording, chat, and search one tap away from your home screen."
+            ),
+            WhatsNewFeature(
+                icon: "app.badge.checkmark.fill",
+                iconColors: [.green, .mint],
+                title: "Shortcuts & Spotlight",
+                description: "New Start, Stop, Cancel, and Record-and-return shortcut actions, plus a Find Notes action and Spotlight integration for Search and Ask AI."
+            ),
+            WhatsNewFeature(
+                icon: "bubble.left.and.bubble.right.fill",
+                iconColors: [.blue, .cyan],
+                title: "All Notes Chat",
+                description: "Chat across your entire library without picking individual notes. Ask broad questions and get grounded answers."
+            ),
+            WhatsNewFeature(
+                icon: "person.badge.key.fill",
+                iconColors: [.purple, .pink],
+                title: "Chat with AI Accounts",
+                description: "Chat now works with OpenAI and Gemini sign-in - no API key needed."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.up.doc.fill",
+                iconColors: [.indigo, .blue],
+                title: "Markdown Export",
+                description: "Export single notes as Markdown from the share menu, with a content setting to control what's included."
+            ),
+            WhatsNewFeature(
+                icon: "hand.tap.fill",
+                iconColors: [.teal, .cyan],
+                title: "Quick Actions",
+                description: "Long-press the app icon for instant Search, Ask AI, and Need help shortcuts."
+            ),
+        ],
+        tagline: "Notes and AI, always one tap away."
+    )
 
     private static let release_3_0 = WhatsNewRelease(
         id: "3.0",
