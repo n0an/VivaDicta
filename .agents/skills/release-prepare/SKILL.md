@@ -30,12 +30,26 @@ git checkout -b release/X.Y.Z
 
 ### Step 2 — Bump version numbers
 
-Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` across ALL targets:
-- VivaDicta (main app) — Debug, Release, Profile configurations
+Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` across ALL 10 targets × 3 configs (**Debug, QA, Release**) = 30 entries each:
+- VivaDicta (main app)
 - VivaDictaKeyboard
 - VivaDictaWidget
 - ShareExtension
 - ActionExtension
+- VivaDictaTests
+- VivaDictaWatch Watch App
+- VivaDictaWatch Watch AppTests
+- VivaDictaWatch Watch AppUITests
+- VivaDictaWatchWidgetExtension
+
+Fastest approach - global sed replace catches all 30 entries in one shot:
+```bash
+grep -cE "MARKETING_VERSION = {OLD}" VivaDicta.xcodeproj/project.pbxproj  # should print 30
+sed -i '' 's/MARKETING_VERSION = {OLD};/MARKETING_VERSION = {NEW};/g' VivaDicta.xcodeproj/project.pbxproj
+sed -i '' 's/CURRENT_PROJECT_VERSION = {OLD_BUILD};/CURRENT_PROJECT_VERSION = {NEW_BUILD};/g' VivaDicta.xcodeproj/project.pbxproj
+# verify
+grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION" VivaDicta.xcodeproj/project.pbxproj | sort -u  # should show only 2 unique lines
+```
 
 Convention: `CURRENT_PROJECT_VERSION` is a **monotonic counter**, independent of `MARKETING_VERSION`. Bump it by `+1` for every new build uploaded to TestFlight/App Store Connect, regardless of whether the marketing version changed. Apple only requires the build number to be strictly greater than any previously uploaded build for the same marketing version, so a plain incrementing integer is the simplest correct approach.
 
@@ -72,7 +86,10 @@ Write App Store release notes and save to Obsidian vault at:
 
 **IMPORTANT**: App Store What's New (release notes) limit is **4,000 characters**. Always verify the character count.
 
-**ASO strategy**: All localizations use the same English text — no translations. Different localizations exist for keyword targeting only. This applies to description, what's new, keywords, and subtitle.
+**ASO strategy** (important, easy to misread):
+- `description` + `whatsNew` → **identical English text in all 10 locales** (no translation)
+- `keywords` → **unique per locale** (this is the ASO hack - different keyword sets target different search markets)
+- `marketingUrl` + `supportUrl` → same across locales
 
 Source features from:
 - Obsidian vault: `Projects/VivaDicta/feature-changelog.md`
@@ -93,14 +110,51 @@ Previous descriptions are stored at: `Projects/VivaDicta/description/`
 
 If updating, save the new version as `description-X.Y.Z.md` in the same directory.
 
-### Step 7 — Update feature changelog
+### Step 7 — Generate ASC metadata directory for the new version
+
+Create `metadata/version/X.Y.Z/*.json` for all 10 locales, ready to push to App Store Connect via `asc`. The directory is gitignored - ASC is source of truth, this is just the staging payload.
+
+Seed from the previous version, overwrite `description` and `whatsNew` with the new English text, keep per-locale `keywords`/`marketingUrl`/`supportUrl` untouched:
+
+```bash
+mkdir -p metadata/version/{NEW}
+python3 << 'PYEOF'
+import json
+locales = ['ar-SA','en-US','es-MX','fr-FR','ko','pt-BR','ru','vi','zh-Hans','zh-Hant']
+with open("/Users/antonnovoselov/Documents/Vault/Projects/VivaDicta/description/description-{NEW}.md") as f:
+    new_desc = f.read().rstrip('\n') + '\n'
+with open("/Users/antonnovoselov/Documents/Vault/Projects/VivaDicta/what's new/whats-new-{NEW}.md") as f:
+    new_wn = f.read().rstrip('\n') + '\n'
+for loc in locales:
+    with open(f'metadata/version/{PREV}/{loc}.json') as f:
+        d = json.load(f)
+    d['description'] = new_desc
+    d['whatsNew'] = new_wn
+    with open(f'metadata/version/{NEW}/{loc}.json', 'w') as f:
+        json.dump(d, f, indent=2, ensure_ascii=False)
+PYEOF
+```
+
+Push happens during submission (see Step 10):
+```bash
+asc metadata push --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
+asc submit preflight --app 6758147238 --version X.Y.Z --platform IOS   # expect 9/9 pass
+```
+
+### Step 8 — Update feature changelog
 
 Move shipped features from "Unreleased" to "Released" section in:
 `Projects/VivaDicta/feature-changelog.md` (Obsidian vault)
 
-### Step 8 — CloudKit schema deployment
+### Step 9 — CloudKit schema deployment
 
-If this release added or modified any SwiftData `@Model` classes that sync via CloudKit (new models, new fields, new relationships), deploy the schema to Production **before** submitting the build:
+First, detect whether any SwiftData `@Model` classes changed since the last release tag:
+
+```bash
+git diff v{PREV}..HEAD -- 'VivaDicta/Models/*.swift' | grep -E "^\+.*(@Model|^\+\s+(var|let) )" | head -20
+```
+
+If new fields / relationships / models appear, deploy the CloudKit schema to Production **before** submitting the build:
 
 1. Run the app from Xcode to auto-create the schema in Development
 2. Go to https://icloud.developer.apple.com → container `iCloud.com.antonnovoselov.VivaDicta`
@@ -112,16 +166,21 @@ If no SwiftData models changed, skip this step.
 
 See `Projects/VivaDicta/CloudKit Schema Deployment.md` in the Obsidian vault for full details.
 
-### Step 9 — Final checklist
+### Step 10 — Final checklist
+
+Known-answer ASC questions (don't re-ask these):
+- **Export compliance / encryption**: always "No - app does not use non-exempt encryption". The app doesn't ship its own encryption; any HTTPS usage is covered by the standard exemption.
 
 Before handing off to `asc-release-flow`:
-- [ ] Version and build number bumped across all targets
+- [ ] Version and build number bumped across all 10 targets (30 pbxproj entries)
 - [ ] What's New in-app screen content added
 - [ ] No debug triggers left in code (forced What's New, test flags, etc.)
 - [ ] Project builds with no errors
-- [ ] App Store release notes prepared
+- [ ] App Store release notes prepared (vault + `whats-new-X.Y.Z.md`)
 - [ ] App Store description updated if needed (under 4,000 chars)
+- [ ] `metadata/version/X.Y.Z/*.json` generated for all 10 locales
 - [ ] Feature changelog updated
 - [ ] CloudKit schema deployed if SwiftData models changed
-- [ ] Review Notes cleaned up (remove any rejection-specific notes from previous submissions, keep only testing instructions)
+- [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
+- [ ] After build upload: `asc metadata push` + `asc submit preflight` passes 9/9 (App Privacy advisory is expected)
