@@ -146,6 +146,20 @@ asc submit preflight --app 6758147238 --version X.Y.Z --platform IOS   # expect 
 Move shipped features from "Unreleased" to "Released" section in:
 `Projects/VivaDicta/feature-changelog.md` (Obsidian vault)
 
+Also add a new `### vX.Y.Z (YYYY-MM-DD)` section with feature groupings and PR numbers (see earlier entries for format).
+
+### Step 8.5 — Update iOS website changelog
+
+Add a new version section to the website's public iOS changelog at:
+`/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/vivadicta_website/app/ios/changelog/page.tsx`
+
+Insert the new section **above** the previous version (the changelog shows newest first) and add an `<hr className="my-12 border-border" />` separator between them. Pattern-match the existing entries:
+- `<h2>` with version string + `<span>` with absolute date
+- Intro paragraph (tagline + one-sentence summary, may link to docs)
+- For each feature group: `<p>` with group title + `<ul>` of 1-4 bullet points
+
+Keep copy aligned with the in-app What's New and App Store release notes so messaging stays consistent across surfaces. Commit and push in the website repo (separate from the iOS app repo).
+
 ### Step 9 — CloudKit schema deployment
 
 First, detect whether any SwiftData `@Model` classes changed since the last release tag:
@@ -179,7 +193,8 @@ Before handing off to `asc-release-flow`:
 - [ ] App Store release notes prepared (vault + `whats-new-X.Y.Z.md`)
 - [ ] App Store description updated if needed (under 4,000 chars)
 - [ ] `metadata/version/X.Y.Z/*.json` generated for all 10 locales
-- [ ] Feature changelog updated
+- [ ] Feature changelog updated (Obsidian vault)
+- [ ] iOS website changelog updated (`vivadicta_website/app/ios/changelog/page.tsx` + push)
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
