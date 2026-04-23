@@ -37,7 +37,15 @@ Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` ac
 - ShareExtension
 - ActionExtension
 
-Convention: build number is `XYZN` where `XYZ` are the three version digits and `N` is the submission attempt (1-9). First submission attempt always uses `1`. Increment `N` if a build is rejected and resubmitted (e.g., 2.2.1 → 2211, rejected → 2212). Examples: 2.1.0 → 2101, 2.2.0 → 2201, 2.2.1 → 2211.
+Convention: `CURRENT_PROJECT_VERSION` is a **monotonic counter**, independent of `MARKETING_VERSION`. Bump it by `+1` for every new build uploaded to TestFlight/App Store Connect, regardless of whether the marketing version changed. Apple only requires the build number to be strictly greater than any previously uploaded build for the same marketing version, so a plain incrementing integer is the simplest correct approach.
+
+Before editing, check the current value:
+```
+grep -E "CURRENT_PROJECT_VERSION" VivaDicta.xcodeproj/project.pbxproj | head -1
+```
+Then use `current + 1` as the new value across all targets.
+
+> **Legacy note**: earlier releases up through `3.0.0` used a packed `XYZN` scheme (e.g. `1.1.0 → 1101`, `3.0.0 → 3001`), which is why the counter currently sits at a value like `3001`-ish. That scheme is abandoned because it caps each segment at 9. Going forward, just `+1` from the last build number - do NOT try to re-pack based on the marketing version.
 
 ### Step 3 — Code sweep
 
