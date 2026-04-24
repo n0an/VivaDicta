@@ -950,8 +950,11 @@ struct ModeEditView: View {
         Text("Obsidian")
     }
 
+    @ViewBuilder
     private var obsidianSectionFooter: some View {
-        Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
+        if viewModel.obsidianEnabled {
+            Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
+        }
     }
 
     private var reminderSuggestionsSectionHeader: some View {
