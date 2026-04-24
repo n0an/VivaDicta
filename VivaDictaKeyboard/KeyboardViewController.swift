@@ -34,12 +34,15 @@ class KeyboardViewController: KeyboardInputViewController {
             ClipboardManager.copyToClipboard(finalText)
         }
 
-        let mode = dictationState.vivaModeManager.selectedVivaMode
-        if mode.obsidianEnabled,
-           let output = ObsidianURLBuilder.build(text: finalText, mode: mode, presetName: nil) {
-            ClipboardManager.copyToClipboard(output.clipboardText)
-            logger.logInfo("⌨️ Obsidian: queueing \(output.url.absoluteString)")
-            dictationState.pendingObsidianURL = output.url
+        // If the main app delegated an Obsidian open (because the
+        // transcription originated from the keyboard and `UIPasteboard`
+        // writes from a backgrounded main app are unreliable), run it here:
+        // write the clipboard from this foregrounded-host context and let
+        // KeyboardCustomView open the URL via SwiftUI's openURL.
+        if let handoff = AppGroupCoordinator.shared.consumePendingObsidianHandoff() {
+            ClipboardManager.copyToClipboard(handoff.clipboardText)
+            logger.logInfo("⌨️ Obsidian: opening delegated \(handoff.url.absoluteString)")
+            dictationState.pendingObsidianURL = handoff.url
         }
     }
     

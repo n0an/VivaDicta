@@ -93,6 +93,15 @@ public final class AppGroupCoordinator {
         static let textProcessingPresetId = "textProcessingPresetId"
         static let textProcessingResult = "textProcessingResult"
         static let textProcessingErrorMessage = "textProcessingErrorMessage"
+
+        // Obsidian hand-off: main app publishes when the current transcription
+        // was triggered by the keyboard and needs the keyboard extension to
+        // open `obsidian://...` on its behalf. The keyboard owns the clipboard
+        // write (it runs in the foregrounded host; background `UIPasteboard`
+        // writes from the main app are unreliable and can return stale
+        // Universal Clipboard content to Obsidian).
+        static let pendingObsidianURL = "pendingObsidianURL"
+        static let pendingObsidianClipboard = "pendingObsidianClipboard"
     }
 
     nonisolated private enum NotificationNames {
@@ -444,6 +453,29 @@ public final class AppGroupCoordinator {
         updateTranscriptionStatus(.completed)
         postDarwinNotification(NotificationNames.transcriptionCompleted)
         logger.logError("📝 Shared transcribed text: \(text.prefix(50))...")
+    }
+
+    /// Publishes an Obsidian URL and the clipboard payload Obsidian should
+    /// read when the URL opens. Used only when the transcription originates
+    /// from the keyboard extension, so the extension can open the URL and
+    /// write the clipboard from a foregrounded host-app context.
+    func setPendingObsidianHandoff(url: URL, clipboardText: String) {
+        sharedDefaults?.set(url.absoluteString, forKey: UserDefaultsKeys.pendingObsidianURL)
+        sharedDefaults?.set(clipboardText, forKey: UserDefaultsKeys.pendingObsidianClipboard)
+    }
+
+    /// Consumes a pending Obsidian hand-off, clearing both keys. Returns nil
+    /// if the main app did not delegate on this transcription (e.g. a main-app
+    /// recording where the main app opened `obsidian://` directly).
+    func consumePendingObsidianHandoff() -> (url: URL, clipboardText: String)? {
+        guard let defaults = sharedDefaults,
+              let raw = defaults.string(forKey: UserDefaultsKeys.pendingObsidianURL),
+              let url = URL(string: raw)
+        else { return nil }
+        let clipboardText = defaults.string(forKey: UserDefaultsKeys.pendingObsidianClipboard) ?? ""
+        defaults.removeObject(forKey: UserDefaultsKeys.pendingObsidianURL)
+        defaults.removeObject(forKey: UserDefaultsKeys.pendingObsidianClipboard)
+        return (url, clipboardText)
     }
 
     /// Retrieves and clears the shared transcribed text.

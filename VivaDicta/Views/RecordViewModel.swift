@@ -600,6 +600,17 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     textToShare = transcribedText
                 }
 
+                // Auto-copy to clipboard if enabled
+                if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
+                    ClipboardManager.copyToClipboard(textToShare)
+                }
+
+                // Must run BEFORE shareTranscribedText: if source is .keyboard we
+                // publish to the App Group, and the keyboard extension consumes
+                // that payload inside handleTranscription (which fires from the
+                // Darwin notification shareTranscribedText posts).
+                self.openObsidianIfEnabled(text: textToShare, presetName: promptName, sourceTag: resolvedSourceTag)
+
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
                 // Cache for keyboard "Recent Notes" feature
@@ -608,13 +619,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     text: savedTranscription.enhancedText ?? savedTranscription.text,
                     timestamp: savedTranscription.timestamp
                 )
-
-                // Auto-copy to clipboard if enabled
-                if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
-                    ClipboardManager.copyToClipboard(textToShare)
-                }
-
-                self.openObsidianIfEnabled(text: textToShare, presetName: promptName)
 
                 HapticManager.heartbeat()
                 self.recordingState = .idle
@@ -765,6 +769,19 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Index for RAG Smart Search
                     Task { await RAGIndexingService.shared.indexTranscription(transcription) }
 
+                    // Auto-copy to clipboard if enabled
+                    if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
+                        ClipboardManager.copyToClipboard(pending.text)
+                    }
+
+                    // Must run BEFORE shareTranscribedText - see rationale in
+                    // the enhanced-text path above.
+                    self.openObsidianIfEnabled(
+                        text: pending.text,
+                        presetName: nil,
+                        sourceTag: pending.sourceTag ?? SourceTag.app
+                    )
+
                     // Share with keyboard
                     AppGroupCoordinator.shared.shareTranscribedText(pending.text)
 
@@ -774,13 +791,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         text: pending.text,
                         timestamp: transcription.timestamp
                     )
-
-                    // Auto-copy to clipboard if enabled
-                    if UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled) {
-                        ClipboardManager.copyToClipboard(pending.text)
-                    }
-
-                    self.openObsidianIfEnabled(text: pending.text, presetName: nil)
 
                     // Request app rating after successful transcription
                     RateAppManager.requestReviewIfAppropriate()
@@ -806,19 +816,40 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
 
-    /// If the active mode has Obsidian append enabled, copy the final text to
-    /// the clipboard and open `obsidian://new?...&clipboard&append=true` so
-    /// Obsidian appends it to the configured note.
-    private func openObsidianIfEnabled(text: String, presetName: String?) {
+    /// If the active mode has Obsidian save enabled, arrange for
+    /// `obsidian://new?...&clipboard&append=true` to open with the correct
+    /// clipboard payload.
+    ///
+    /// Branches on the source tag rather than `UIApplication.applicationState`:
+    /// - `.app` (main-app recording): main app is foregrounded, so it writes
+    ///   the clipboard and calls `UIApplication.shared.open` directly.
+    /// - `.keyboard` (keyboard-triggered, including Hot Mic): main app
+    ///   publishes URL + clipboard text to the App Group and does NOT touch
+    ///   the clipboard. The keyboard extension consumes both in
+    ///   `handleTranscription`, writes the clipboard from its (foregrounded
+    ///   host) context, and opens the URL via SwiftUI's `openURL`.
+    ///   Background `UIPasteboard` writes from the main app are unreliable
+    ///   and would otherwise leak stale Universal Clipboard content into
+    ///   Obsidian.
+    ///
+    /// Callers must invoke this BEFORE `shareTranscribedText`, because the
+    /// latter posts a Darwin notification that wakes the keyboard's
+    /// `handleTranscription` - which needs the App Group payload in place.
+    private func openObsidianIfEnabled(text: String, presetName: String?, sourceTag: String) {
         let mode = aiService.selectedMode
         guard mode.obsidianEnabled else { return }
         guard let output = ObsidianURLBuilder.build(text: text, mode: mode, presetName: presetName) else {
             logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
             return
         }
-        ClipboardManager.copyToClipboard(output.clipboardText)
-        logger.logInfo("📱 Obsidian: opening \(output.url.absoluteString)")
-        UIApplication.shared.open(output.url)
+        if sourceTag == SourceTag.keyboard {
+            logger.logInfo("📱 Obsidian: delegating to keyboard \(output.url.absoluteString)")
+            AppGroupCoordinator.shared.setPendingObsidianHandoff(url: output.url, clipboardText: output.clipboardText)
+        } else {
+            logger.logInfo("📱 Obsidian: opening directly \(output.url.absoluteString)")
+            ClipboardManager.copyToClipboard(output.clipboardText)
+            UIApplication.shared.open(output.url)
+        }
     }
 
     private func saveNewTranscription(
