@@ -29,6 +29,11 @@ class ModeEditViewModel {
     var isAutoTextFormattingEnabled: Bool = false
     var isSmartInsertEnabled: Bool = false
 
+    var obsidianEnabled: Bool = false
+    var obsidianVault: String = ""
+    var obsidianNoteTemplate: String = "{date}"
+    var obsidianLinePrefix: String = "- {time} "
+
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
     let presetManager: PresetManager
@@ -185,6 +190,10 @@ class ModeEditViewModel {
             useClipboardContext = existingMode.useClipboardContext
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
             isSmartInsertEnabled = existingMode.isSmartInsertEnabled
+            obsidianEnabled = existingMode.obsidianEnabled
+            obsidianVault = existingMode.obsidianVault
+            obsidianNoteTemplate = existingMode.obsidianNoteTemplate
+            obsidianLinePrefix = existingMode.obsidianLinePrefix
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -225,7 +234,11 @@ class ModeEditViewModel {
             aiEnhanceEnabled: aiEnhanceEnabled,
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
-            isSmartInsertEnabled: isSmartInsertEnabled
+            isSmartInsertEnabled: isSmartInsertEnabled,
+            obsidianEnabled: obsidianEnabled,
+            obsidianVault: obsidianVault.trimmingCharacters(in: .whitespacesAndNewlines),
+            obsidianNoteTemplate: obsidianNoteTemplate.trimmingCharacters(in: .whitespacesAndNewlines),
+            obsidianLinePrefix: obsidianLinePrefix
         )
     }
 

@@ -64,6 +64,12 @@ final class KeyboardDictationState {
     // Callback called when transcription text is ready to be pasted to user's input field. Called by KeyboardViewController
     var onTranscriptionReady: ((String) -> Void)?
 
+    /// Set by `KeyboardViewController` when a transcription completes in a mode
+    /// with Obsidian append enabled. `KeyboardCustomView` observes this and
+    /// fires `openURL` via the SwiftUI environment (the only API that can open
+    /// URLs from a keyboard extension), then clears it back to nil.
+    var pendingObsidianURL: URL?
+
     // MARK: - Auto-dismiss
     private var errorDismissTask: Task<Void, Never>?
 

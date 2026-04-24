@@ -756,10 +756,55 @@ struct ModeEditView: View {
                 }
             }
 
+            Section(header: obsidianSectionHeader,
+                    footer: obsidianSectionFooter) {
+                Toggle(isOn: $viewModel.obsidianEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Append to Obsidian")
+                            .font(.body)
+                        Text("After each transcription, open Obsidian and append the text to a note.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onChange(of: viewModel.obsidianEnabled) { _, _ in
+                    HapticManager.selectionChanged()
+                }
+
+                if viewModel.obsidianEnabled {
+                    HStack {
+                        Text("Vault")
+                        Spacer()
+                        TextField("Default", text: $viewModel.obsidianVault)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+
+                    HStack {
+                        Text("Note name")
+                        Spacer()
+                        TextField("{date}", text: $viewModel.obsidianNoteTemplate)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+
+                    HStack {
+                        Text("Line prefix")
+                        Spacer()
+                        TextField("- {time} ", text: $viewModel.obsidianLinePrefix)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+                }
+            }
+
             if viewModel.isEditing {
                 if viewModel.isValid {
                     Section {
-                        
+
                         Button {
                             duplicateMode()
                         } label: {
@@ -917,6 +962,14 @@ struct ModeEditView: View {
                     }
             }
         }
+    }
+
+    private var obsidianSectionHeader: some View {
+        Text("Obsidian")
+    }
+
+    private var obsidianSectionFooter: some View {
+        Text("Placeholders: {date}, {yyyy}, {MM}, {dd}, {preset}, {mode} for the note name; {time}, {HH}, {mm} for the line prefix. The clipboard will be overwritten each time.")
     }
 
     private var reminderSuggestionsSectionHeader: some View {

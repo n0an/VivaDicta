@@ -196,6 +196,11 @@ struct KeyboardCustomView: View {
                 .zIndex(1)
             }
         }
+        .onChange(of: dictationState.pendingObsidianURL) { _, newURL in
+            guard let url = newURL else { return }
+            openURL(url)
+            dictationState.pendingObsidianURL = nil
+        }
     }
 
     private func deleteWordBeforeCursor() {

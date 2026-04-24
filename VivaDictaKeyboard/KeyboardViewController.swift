@@ -33,6 +33,14 @@ class KeyboardViewController: KeyboardInputViewController {
         if AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled {
             ClipboardManager.copyToClipboard(finalText)
         }
+
+        let mode = dictationState.vivaModeManager.selectedVivaMode
+        if mode.obsidianEnabled,
+           let output = ObsidianURLBuilder.build(text: finalText, mode: mode, presetName: nil) {
+            ClipboardManager.copyToClipboard(output.clipboardText)
+            logger.logInfo("⌨️ Obsidian: queueing \(output.url.absoluteString)")
+            dictationState.pendingObsidianURL = output.url
+        }
     }
     
     
@@ -233,12 +241,35 @@ struct VivaDictaKeyboardToolbarView: View {
 
             Spacer()
 
+            // TEMP: Obsidian URL-open test button (remove after probe)
+            Button(action: testObsidianURLOpen) {
+                Image(systemName: "flask.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.purple)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel("Test Obsidian")
+            .padding(.trailing, 12)
+
             // Always show MicButton - it handles notReady state by opening main app
             KeyboardMicButton(onTapAction: handleMic)
         }
         .padding(.horizontal, 16)
         .padding(.top, 6)
         .padding(.bottom, 8)
+    }
+
+    // TEMP: probe whether the keyboard extension can open arbitrary external
+    // URL schemes via SwiftUI's openURL. Remove once the answer is known.
+    private func testObsidianURLOpen() {
+        HapticManager.lightImpact()
+        let timestamp = Date().formatted(.iso8601)
+        let testText = "vd-keyboard-test \(timestamp)"
+        UIPasteboard.general.string = testText
+        controller?.logger.logInfo("🧪 Obsidian probe: pasteboard=\(testText)")
+        guard let url = URL(string: "obsidian://new?file=VD-Test&clipboard&append=true") else { return }
+        controller?.logger.logInfo("🧪 Obsidian probe: opening \(url.absoluteString)")
+        openURL(url)
     }
 
     private func handleMic() {

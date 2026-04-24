@@ -335,6 +335,7 @@
 				Shared/AppGroupCoordinator.swift,
 				Shared/KeyboardLayoutStyle.swift,
 				Shared/MicButton.swift,
+				Shared/ObsidianURLBuilder.swift,
 				Shared/RecentNotesCache.swift,
 				Shared/RecordingState.swift,
 				Shared/RippleEffect.metal,

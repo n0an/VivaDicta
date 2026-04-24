@@ -614,6 +614,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     ClipboardManager.copyToClipboard(textToShare)
                 }
 
+                self.openObsidianIfEnabled(text: textToShare, presetName: promptName)
+
                 HapticManager.heartbeat()
                 self.recordingState = .idle
                 self.aiService.clearCapturedClipboard()
@@ -778,6 +780,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         ClipboardManager.copyToClipboard(pending.text)
                     }
 
+                    self.openObsidianIfEnabled(text: pending.text, presetName: nil)
+
                     // Request app rating after successful transcription
                     RateAppManager.requestReviewIfAppropriate()
                 } catch {
@@ -800,6 +804,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             // For other states, just use regular cancel (which also reschedules timeout)
             cancelTranscribe()
         }
+    }
+
+    /// If the active mode has Obsidian append enabled, copy the final text to
+    /// the clipboard and open `obsidian://new?...&clipboard&append=true` so
+    /// Obsidian appends it to the configured note.
+    private func openObsidianIfEnabled(text: String, presetName: String?) {
+        let mode = aiService.selectedMode
+        guard mode.obsidianEnabled else { return }
+        guard let output = ObsidianURLBuilder.build(text: text, mode: mode, presetName: presetName) else {
+            logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
+            return
+        }
+        ClipboardManager.copyToClipboard(output.clipboardText)
+        logger.logInfo("📱 Obsidian: opening \(output.url.absoluteString)")
+        UIApplication.shared.open(output.url)
     }
 
     private func saveNewTranscription(
