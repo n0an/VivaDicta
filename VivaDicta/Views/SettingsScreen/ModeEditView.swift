@@ -760,9 +760,9 @@ struct ModeEditView: View {
                     footer: obsidianSectionFooter) {
                 Toggle(isOn: $viewModel.obsidianEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Append to Obsidian")
+                        Text("Save to Obsidian")
                             .font(.body)
-                        Text("After each transcription, open Obsidian and append the text to a note.")
+                        Text("After each transcription, open Obsidian and save the text as a note.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
