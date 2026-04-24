@@ -79,6 +79,12 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Whether smart insert (auto-adjust spacing and capitalization) is applied when inserting text via keyboard.
     let isSmartInsertEnabled: Bool
 
+    /// Whether to append the transcription to an Obsidian note after completion.
+    var obsidianEnabled: Bool
+
+    /// Template for the Obsidian note filename. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}.
+    var obsidianNoteTemplate: String
+
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
          name: String,
@@ -93,7 +99,9 @@ struct VivaMode: Identifiable, Hashable, Codable {
          aiEnhanceEnabled: Bool,
          useClipboardContext: Bool = false,
          isAutoTextFormattingEnabled: Bool = false,
-         isSmartInsertEnabled: Bool = false) {
+         isSmartInsertEnabled: Bool = false,
+         obsidianEnabled: Bool = false,
+         obsidianNoteTemplate: String = "VD {date} {HH}-{mm}-{ss}") {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -108,6 +116,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.useClipboardContext = useClipboardContext
         self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
         self.isSmartInsertEnabled = isSmartInsertEnabled
+        self.obsidianEnabled = obsidianEnabled
+        self.obsidianNoteTemplate = obsidianNoteTemplate
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -128,6 +138,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
+        obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? false
+        obsidianNoteTemplate = try container.decodeIfPresent(String.self, forKey: .obsidianNoteTemplate) ?? "VD {date} {HH}-{mm}-{ss}"
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -149,6 +161,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
         case useClipboardContext
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
+        case obsidianEnabled, obsidianNoteTemplate
     }
 
     /// Encodes using the new format only (presetId).
@@ -168,6 +181,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
         try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)
         try container.encode(isSmartInsertEnabled, forKey: .isSmartInsertEnabled)
+        try container.encode(obsidianEnabled, forKey: .obsidianEnabled)
+        try container.encode(obsidianNoteTemplate, forKey: .obsidianNoteTemplate)
     }
 
     /// The default mode used when no custom mode is configured.

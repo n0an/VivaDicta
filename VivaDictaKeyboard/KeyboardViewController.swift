@@ -33,6 +33,14 @@ class KeyboardViewController: KeyboardInputViewController {
         if AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled {
             ClipboardManager.copyToClipboard(finalText)
         }
+
+        let mode = dictationState.vivaModeManager.selectedVivaMode
+        if mode.obsidianEnabled,
+           let output = ObsidianURLBuilder.build(text: finalText, mode: mode, presetName: nil) {
+            ClipboardManager.copyToClipboard(output.clipboardText)
+            logger.logInfo("⌨️ Obsidian: queueing \(output.url.absoluteString)")
+            dictationState.pendingObsidianURL = output.url
+        }
     }
     
     

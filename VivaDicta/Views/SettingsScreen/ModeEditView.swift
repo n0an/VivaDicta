@@ -756,10 +756,37 @@ struct ModeEditView: View {
                 }
             }
 
+            Section(header: obsidianSectionHeader,
+                    footer: obsidianSectionFooter) {
+                Toggle(isOn: $viewModel.obsidianEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Append to Obsidian")
+                            .font(.body)
+                        Text("After each transcription, open Obsidian and append the text to a note.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onChange(of: viewModel.obsidianEnabled) { _, _ in
+                    HapticManager.selectionChanged()
+                }
+
+                if viewModel.obsidianEnabled {
+                    HStack {
+                        Text("Note name")
+                        Spacer()
+                        TextField("VD {date} {HH}-{mm}-{ss}", text: $viewModel.obsidianNoteTemplate)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+                }
+            }
+
             if viewModel.isEditing {
                 if viewModel.isValid {
                     Section {
-                        
+
                         Button {
                             duplicateMode()
                         } label: {
@@ -916,6 +943,17 @@ struct ModeEditView: View {
                         SpringKeyframe(0, duration: 0.1, spring: .bouncy)
                     }
             }
+        }
+    }
+
+    private var obsidianSectionHeader: some View {
+        Text("Obsidian")
+    }
+
+    @ViewBuilder
+    private var obsidianSectionFooter: some View {
+        if viewModel.obsidianEnabled {
+            Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
         }
     }
 
