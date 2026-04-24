@@ -773,27 +773,9 @@ struct ModeEditView: View {
 
                 if viewModel.obsidianEnabled {
                     HStack {
-                        Text("Vault")
-                        Spacer()
-                        TextField("Default", text: $viewModel.obsidianVault)
-                            .multilineTextAlignment(.trailing)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                    }
-
-                    HStack {
                         Text("Note name")
                         Spacer()
                         TextField("VD {date} {HH}-{mm}-{ss}", text: $viewModel.obsidianNoteTemplate)
-                            .multilineTextAlignment(.trailing)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                    }
-
-                    HStack {
-                        Text("Line prefix")
-                        Spacer()
-                        TextField("Optional", text: $viewModel.obsidianLinePrefix)
                             .multilineTextAlignment(.trailing)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
@@ -969,7 +951,7 @@ struct ModeEditView: View {
     }
 
     private var obsidianSectionFooter: some View {
-        Text("A new Obsidian note is created for each transcription. Use {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode} in the note name or line prefix. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
+        Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
     }
 
     private var reminderSuggestionsSectionHeader: some View {

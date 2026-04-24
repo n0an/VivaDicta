@@ -30,9 +30,7 @@ class ModeEditViewModel {
     var isSmartInsertEnabled: Bool = false
 
     var obsidianEnabled: Bool = false
-    var obsidianVault: String = ""
     var obsidianNoteTemplate: String = "VD {date} {HH}-{mm}-{ss}"
-    var obsidianLinePrefix: String = ""
 
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
@@ -191,9 +189,7 @@ class ModeEditViewModel {
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
             isSmartInsertEnabled = existingMode.isSmartInsertEnabled
             obsidianEnabled = existingMode.obsidianEnabled
-            obsidianVault = existingMode.obsidianVault
             obsidianNoteTemplate = existingMode.obsidianNoteTemplate
-            obsidianLinePrefix = existingMode.obsidianLinePrefix
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -236,9 +232,7 @@ class ModeEditViewModel {
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
             isSmartInsertEnabled: isSmartInsertEnabled,
             obsidianEnabled: obsidianEnabled,
-            obsidianVault: obsidianVault.trimmingCharacters(in: .whitespacesAndNewlines),
-            obsidianNoteTemplate: obsidianNoteTemplate.trimmingCharacters(in: .whitespacesAndNewlines),
-            obsidianLinePrefix: obsidianLinePrefix
+            obsidianNoteTemplate: obsidianNoteTemplate.trimmingCharacters(in: .whitespacesAndNewlines)
         )
     }
 

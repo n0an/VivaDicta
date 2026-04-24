@@ -82,14 +82,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Whether to append the transcription to an Obsidian note after completion.
     var obsidianEnabled: Bool
 
-    /// Optional Obsidian vault name. Empty = use last-opened vault.
-    var obsidianVault: String
-
-    /// Template for the Obsidian note filename. Placeholders: {date}, {yyyy}, {MM}, {dd}, {preset}, {mode}.
+    /// Template for the Obsidian note filename. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}.
     var obsidianNoteTemplate: String
-
-    /// Prefix prepended to each appended line. Placeholders: {time}, {date}, {preset}.
-    var obsidianLinePrefix: String
 
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
@@ -107,9 +101,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
          isAutoTextFormattingEnabled: Bool = false,
          isSmartInsertEnabled: Bool = false,
          obsidianEnabled: Bool = false,
-         obsidianVault: String = "",
-         obsidianNoteTemplate: String = "VD {date} {HH}-{mm}-{ss}",
-         obsidianLinePrefix: String = "") {
+         obsidianNoteTemplate: String = "VD {date} {HH}-{mm}-{ss}") {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -125,9 +117,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
         self.isSmartInsertEnabled = isSmartInsertEnabled
         self.obsidianEnabled = obsidianEnabled
-        self.obsidianVault = obsidianVault
         self.obsidianNoteTemplate = obsidianNoteTemplate
-        self.obsidianLinePrefix = obsidianLinePrefix
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -149,9 +139,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
         obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? false
-        obsidianVault = try container.decodeIfPresent(String.self, forKey: .obsidianVault) ?? ""
         obsidianNoteTemplate = try container.decodeIfPresent(String.self, forKey: .obsidianNoteTemplate) ?? "VD {date} {HH}-{mm}-{ss}"
-        obsidianLinePrefix = try container.decodeIfPresent(String.self, forKey: .obsidianLinePrefix) ?? ""
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -173,7 +161,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
         case useClipboardContext
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
-        case obsidianEnabled, obsidianVault, obsidianNoteTemplate, obsidianLinePrefix
+        case obsidianEnabled, obsidianNoteTemplate
     }
 
     /// Encodes using the new format only (presetId).
@@ -194,9 +182,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)
         try container.encode(isSmartInsertEnabled, forKey: .isSmartInsertEnabled)
         try container.encode(obsidianEnabled, forKey: .obsidianEnabled)
-        try container.encode(obsidianVault, forKey: .obsidianVault)
         try container.encode(obsidianNoteTemplate, forKey: .obsidianNoteTemplate)
-        try container.encode(obsidianLinePrefix, forKey: .obsidianLinePrefix)
     }
 
     /// The default mode used when no custom mode is configured.

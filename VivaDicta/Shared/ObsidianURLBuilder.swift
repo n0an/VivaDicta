@@ -13,9 +13,9 @@ import Foundation
 enum ObsidianURLBuilder {
 
     struct Output {
-        /// Text to place on the pasteboard before opening Obsidian. Includes
-        /// the line prefix + trailing newline so repeated appends stack as
-        /// separate lines.
+        /// Text to place on the pasteboard before opening Obsidian. Trailing
+        /// newline ensures that if the user configures a repeating note name
+        /// (e.g. `{date}`), repeated appends stack as separate lines.
         let clipboardText: String
 
         /// The fully-formed `obsidian://new?...` URL.
@@ -38,31 +38,19 @@ enum ObsidianURLBuilder {
         let noteName = expand(template: mode.obsidianNoteTemplate,
                               date: date,
                               presetName: presetName,
-                              modeName: mode.name,
-                              includeTime: false)
+                              modeName: mode.name)
         guard !noteName.isEmpty else { return nil }
 
-        let prefix = expand(template: mode.obsidianLinePrefix,
-                            date: date,
-                            presetName: presetName,
-                            modeName: mode.name,
-                            includeTime: true)
-
-        let clipboardText = prefix + text + "\n"
+        let clipboardText = text + "\n"
 
         var components = URLComponents()
         components.scheme = "obsidian"
         components.host = "new"
-        var items: [URLQueryItem] = [
+        components.queryItems = [
             URLQueryItem(name: "file", value: noteName),
             URLQueryItem(name: "clipboard", value: nil),
             URLQueryItem(name: "append", value: "true")
         ]
-        let vault = mode.obsidianVault.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !vault.isEmpty {
-            items.append(URLQueryItem(name: "vault", value: vault))
-        }
-        components.queryItems = items
 
         guard let url = components.url else { return nil }
         return Output(clipboardText: clipboardText, url: url)
@@ -71,8 +59,7 @@ enum ObsidianURLBuilder {
     private static func expand(template: String,
                                date: Date,
                                presetName: String?,
-                               modeName: String,
-                               includeTime: Bool) -> String {
+                               modeName: String) -> String {
         var result = template
         let calendar = Calendar.current
         let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
@@ -90,9 +77,6 @@ enum ObsidianURLBuilder {
         result = result.replacing("{HH}", with: hour)
         result = result.replacing("{mm}", with: minute)
         result = result.replacing("{ss}", with: second)
-        if includeTime {
-            result = result.replacing("{time}", with: "\(hour):\(minute)")
-        }
         result = result.replacing("{preset}", with: presetName ?? "")
         result = result.replacing("{mode}", with: modeName)
         return result
