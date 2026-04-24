@@ -60,16 +60,20 @@ enum ObsidianURLBuilder {
                                date: Date,
                                presetName: String?,
                                modeName: String) -> String {
-        var result = template
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
-        let year = String(format: "%04d", components.year ?? 0)
-        let month = String(format: "%02d", components.month ?? 0)
-        let day = String(format: "%02d", components.day ?? 0)
-        let hour = String(format: "%02d", components.hour ?? 0)
-        let minute = String(format: "%02d", components.minute ?? 0)
-        let second = String(format: "%02d", components.second ?? 0)
+        // Force Gregorian so `{date}` is always YYYY-MM-DD regardless of the
+        // user's iOS calendar setting (Buddhist, Hebrew, etc. would otherwise
+        // shift the year value).
+        let gregorian = Calendar(identifier: .gregorian)
+        let components = gregorian.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        let year = (components.year ?? 0).formatted(.number.grouping(.never).precision(.integerLength(4...)))
+        let twoDigits = IntegerFormatStyle<Int>.number.grouping(.never).precision(.integerLength(2...))
+        let month = (components.month ?? 0).formatted(twoDigits)
+        let day = (components.day ?? 0).formatted(twoDigits)
+        let hour = (components.hour ?? 0).formatted(twoDigits)
+        let minute = (components.minute ?? 0).formatted(twoDigits)
+        let second = (components.second ?? 0).formatted(twoDigits)
 
+        var result = template
         result = result.replacing("{date}", with: "\(year)-\(month)-\(day)")
         result = result.replacing("{yyyy}", with: year)
         result = result.replacing("{MM}", with: month)
