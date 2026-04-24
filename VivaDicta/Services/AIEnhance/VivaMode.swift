@@ -108,8 +108,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
          isSmartInsertEnabled: Bool = false,
          obsidianEnabled: Bool = false,
          obsidianVault: String = "",
-         obsidianNoteTemplate: String = "{date}",
-         obsidianLinePrefix: String = "- {time} ") {
+         obsidianNoteTemplate: String = "VD {date} {HH}-{mm}-{ss}",
+         obsidianLinePrefix: String = "") {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -150,8 +150,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
         obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? false
         obsidianVault = try container.decodeIfPresent(String.self, forKey: .obsidianVault) ?? ""
-        obsidianNoteTemplate = try container.decodeIfPresent(String.self, forKey: .obsidianNoteTemplate) ?? "{date}"
-        obsidianLinePrefix = try container.decodeIfPresent(String.self, forKey: .obsidianLinePrefix) ?? "- {time} "
+        obsidianNoteTemplate = try container.decodeIfPresent(String.self, forKey: .obsidianNoteTemplate) ?? "VD {date} {HH}-{mm}-{ss}"
+        obsidianLinePrefix = try container.decodeIfPresent(String.self, forKey: .obsidianLinePrefix) ?? ""
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {

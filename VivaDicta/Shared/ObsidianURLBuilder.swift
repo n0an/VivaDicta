@@ -75,21 +75,23 @@ enum ObsidianURLBuilder {
                                includeTime: Bool) -> String {
         var result = template
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         let year = String(format: "%04d", components.year ?? 0)
         let month = String(format: "%02d", components.month ?? 0)
         let day = String(format: "%02d", components.day ?? 0)
         let hour = String(format: "%02d", components.hour ?? 0)
         let minute = String(format: "%02d", components.minute ?? 0)
+        let second = String(format: "%02d", components.second ?? 0)
 
         result = result.replacing("{date}", with: "\(year)-\(month)-\(day)")
         result = result.replacing("{yyyy}", with: year)
         result = result.replacing("{MM}", with: month)
         result = result.replacing("{dd}", with: day)
+        result = result.replacing("{HH}", with: hour)
+        result = result.replacing("{mm}", with: minute)
+        result = result.replacing("{ss}", with: second)
         if includeTime {
             result = result.replacing("{time}", with: "\(hour):\(minute)")
-            result = result.replacing("{HH}", with: hour)
-            result = result.replacing("{mm}", with: minute)
         }
         result = result.replacing("{preset}", with: presetName ?? "")
         result = result.replacing("{mode}", with: modeName)

@@ -31,8 +31,8 @@ class ModeEditViewModel {
 
     var obsidianEnabled: Bool = false
     var obsidianVault: String = ""
-    var obsidianNoteTemplate: String = "{date}"
-    var obsidianLinePrefix: String = "- {time} "
+    var obsidianNoteTemplate: String = "VD {date} {HH}-{mm}-{ss}"
+    var obsidianLinePrefix: String = ""
 
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager

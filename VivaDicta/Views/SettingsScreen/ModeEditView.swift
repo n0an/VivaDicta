@@ -784,7 +784,7 @@ struct ModeEditView: View {
                     HStack {
                         Text("Note name")
                         Spacer()
-                        TextField("{date}", text: $viewModel.obsidianNoteTemplate)
+                        TextField("VD {date} {HH}-{mm}-{ss}", text: $viewModel.obsidianNoteTemplate)
                             .multilineTextAlignment(.trailing)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
@@ -793,7 +793,7 @@ struct ModeEditView: View {
                     HStack {
                         Text("Line prefix")
                         Spacer()
-                        TextField("- {time} ", text: $viewModel.obsidianLinePrefix)
+                        TextField("Optional", text: $viewModel.obsidianLinePrefix)
                             .multilineTextAlignment(.trailing)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
@@ -969,7 +969,7 @@ struct ModeEditView: View {
     }
 
     private var obsidianSectionFooter: some View {
-        Text("Placeholders: {date}, {yyyy}, {MM}, {dd}, {preset}, {mode} for the note name; {time}, {HH}, {mm} for the line prefix. The clipboard will be overwritten each time.")
+        Text("A new Obsidian note is created for each transcription. Use {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode} in the note name or line prefix. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
     }
 
     private var reminderSuggestionsSectionHeader: some View {
