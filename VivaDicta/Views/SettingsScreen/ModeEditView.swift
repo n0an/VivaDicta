@@ -24,6 +24,9 @@ struct ModeEditView: View {
     @State private var showReminderExtractorModelPicker: Bool = false
     @State private var hasAttemptedSave: Bool = false
     @State private var shakeTrigger: Int = 0
+
+    @AppStorage(UserDefaultsStorage.Keys.isObsidianGloballyEnabled)
+    private var isObsidianGloballyEnabled = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
 
@@ -756,29 +759,19 @@ struct ModeEditView: View {
                 }
             }
 
-            Section(header: obsidianSectionHeader,
-                    footer: obsidianSectionFooter) {
-                Toggle(isOn: $viewModel.obsidianEnabled) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Save to Obsidian")
-                            .font(.body)
-                        Text("After each transcription, open Obsidian and save the text as a note.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+            if isObsidianGloballyEnabled {
+                Section(header: obsidianSectionHeader) {
+                    Toggle(isOn: $viewModel.obsidianEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Save to Obsidian")
+                                .font(.body)
+                            Text("Save this mode's transcriptions to Obsidian. Configure the global integration in Settings → Integrations.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                }
-                .onChange(of: viewModel.obsidianEnabled) { _, _ in
-                    HapticManager.selectionChanged()
-                }
-
-                if viewModel.obsidianEnabled {
-                    HStack {
-                        Text("Note name")
-                        Spacer()
-                        TextField("VD {date} {HH}-{mm}-{ss}", text: $viewModel.obsidianNoteTemplate)
-                            .multilineTextAlignment(.trailing)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
+                    .onChange(of: viewModel.obsidianEnabled) { _, _ in
+                        HapticManager.selectionChanged()
                     }
                 }
             }
@@ -948,13 +941,6 @@ struct ModeEditView: View {
 
     private var obsidianSectionHeader: some View {
         Text("Obsidian")
-    }
-
-    @ViewBuilder
-    private var obsidianSectionFooter: some View {
-        if viewModel.obsidianEnabled {
-            Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. The clipboard is overwritten each time.")
-        }
     }
 
     private var reminderSuggestionsSectionHeader: some View {

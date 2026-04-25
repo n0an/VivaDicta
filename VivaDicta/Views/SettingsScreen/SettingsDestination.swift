@@ -24,4 +24,7 @@ enum SettingsDestination: Hashable {
 
     // Smart Search
     case smartSearch
+
+    // Integrations
+    case integrations
 }

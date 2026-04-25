@@ -836,9 +836,12 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     /// latter posts a Darwin notification that wakes the keyboard's
     /// `handleTranscription` - which needs the App Group payload in place.
     private func openObsidianIfEnabled(text: String, presetName: String?, sourceTag: String) {
+        guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isObsidianGloballyEnabled) else { return }
         let mode = aiService.selectedMode
         guard mode.obsidianEnabled else { return }
-        guard let output = ObsidianURLBuilder.build(text: text, mode: mode, presetName: presetName) else {
+        let template = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate)
+            ?? UserDefaultsStorage.defaultObsidianNoteTemplate
+        guard let output = ObsidianURLBuilder.build(text: text, template: template, modeName: mode.name, presetName: presetName) else {
             logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
             return
         }

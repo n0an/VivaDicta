@@ -79,5 +79,13 @@ enum UserDefaultsStorage {
         // Notes filter
         static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
         static let savedNotesFilterUserTagIds = "savedNotesFilterUserTagIds"
+
+        // Integrations - Obsidian
+        static let isObsidianGloballyEnabled = "isObsidianGloballyEnabled"
+        static let obsidianNoteTemplate = "obsidianNoteTemplate"
     }
+
+    // MARK: - Integrations defaults
+
+    static let defaultObsidianNoteTemplate = "VD {date} {HH}-{mm}-{ss}"
 }
