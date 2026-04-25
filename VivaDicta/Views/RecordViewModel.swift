@@ -839,8 +839,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isObsidianGloballyEnabled) else { return }
         let mode = aiService.selectedMode
         guard mode.obsidianEnabled else { return }
-        let template = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate)
-            ?? UserDefaultsStorage.defaultObsidianNoteTemplate
+        // Trim and fall back to the default if the user cleared the field -
+        // an empty note name would silently fail to build a URL.
+        let trimmedTemplate = (UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
         guard let output = ObsidianURLBuilder.build(text: text, template: template, modeName: mode.name, presetName: presetName) else {
             logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
             return
