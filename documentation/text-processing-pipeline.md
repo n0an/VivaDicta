@@ -160,7 +160,7 @@ Cleans AI model output before storing.
 1. **Remove thinking tags with content:** Strips `<thinking>...</thinking>`, `<think>...</think>`, `<reasoning>...</reasoning>` (chain-of-thought artifacts). Uses dotall mode for multiline.
 2. **Unwrap outer XML tags:** If the entire output is wrapped in XML tags (e.g., `<TRANSCRIPTION>text</TRANSCRIPTION>`), iteratively unwraps keeping only inner content.
 
-**Called from:** Every AI response path (Anthropic, OpenAI, Groq, Mistral, Ollama, Custom OpenAI, Apple Foundation Model).
+**Called from:** Every AI response path (Anthropic, OpenAI, Groq, Mistral, Ollama, Custom OpenAI, Apple Foundation Models).
 
 **Always active** -- not configurable.
 
