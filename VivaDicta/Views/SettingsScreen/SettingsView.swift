@@ -514,6 +514,16 @@ struct SettingsView: View {
                     Text("Requires app restart to take effect.")
                 }
 
+                Section("Integrations") {
+                    NavigationLink(value: SettingsDestination.integrations) {
+                        HStack {
+                            Image(systemName: "puzzlepiece.extension")
+                                .foregroundStyle(.purple)
+                            Text("Integrations")
+                        }
+                    }
+                }
+
                 Section("Support") {
                     Link(destination: URL(string: "https://vivadicta.com/ios/docs")!) {
                         HStack {
@@ -606,6 +616,8 @@ struct SettingsView: View {
                     ChatToolsSettingsView()
                 case .smartSearch:
                     SmartSearchSettingsView()
+                case .integrations:
+                    IntegrationsView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in

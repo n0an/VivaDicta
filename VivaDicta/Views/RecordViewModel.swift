@@ -836,9 +836,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
     /// latter posts a Darwin notification that wakes the keyboard's
     /// `handleTranscription` - which needs the App Group payload in place.
     private func openObsidianIfEnabled(text: String, presetName: String?, sourceTag: String) {
+        guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isObsidianGloballyEnabled) else { return }
         let mode = aiService.selectedMode
         guard mode.obsidianEnabled else { return }
-        guard let output = ObsidianURLBuilder.build(text: text, mode: mode, presetName: presetName) else {
+        // Trim and fall back to the default if the user cleared the field -
+        // an empty note name would silently fail to build a URL.
+        let trimmedTemplate = (UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
+        guard let output = ObsidianURLBuilder.build(text: text, template: template, modeName: mode.name, presetName: presetName) else {
             logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
             return
         }

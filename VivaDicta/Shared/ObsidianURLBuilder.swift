@@ -26,19 +26,22 @@ enum ObsidianURLBuilder {
     ///
     /// - Parameters:
     ///   - text: The final transcription text (enhanced if AI ran, else raw).
-    ///   - mode: The active `VivaMode` carrying the Obsidian configuration.
+    ///   - template: Note-name template carrying placeholders like `{date}`.
+    ///     Stored globally in Settings → Integrations.
+    ///   - modeName: Human-readable mode name for the `{mode}` placeholder.
     ///   - presetName: Human-readable preset name for the `{preset}` placeholder.
     ///   - date: The moment the transcription completed. Parameterised for testability.
     /// - Returns: `nil` if the resulting note name is empty or the URL cannot
     ///   be constructed. Callers should treat `nil` as a no-op.
     static func build(text: String,
-                      mode: VivaMode,
+                      template: String,
+                      modeName: String,
                       presetName: String?,
                       date: Date = Date()) -> Output? {
-        let noteName = expand(template: mode.obsidianNoteTemplate,
+        let noteName = expand(template: template,
                               date: date,
                               presetName: presetName,
-                              modeName: mode.name)
+                              modeName: modeName)
         guard !noteName.isEmpty else { return nil }
 
         let clipboardText = text + "\n"
