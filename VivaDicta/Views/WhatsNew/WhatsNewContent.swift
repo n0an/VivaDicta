@@ -84,6 +84,12 @@ enum WhatsNewCatalog {
                 title: "Quick Actions",
                 description: "Long-press the app icon for instant Search, Ask AI, and Need help shortcuts."
             ),
+            WhatsNewFeature(
+                icon: "brain.head.profile",
+                iconColors: [.purple, .indigo],
+                title: "Latest AI Models",
+                description: "Added support for OpenAI GPT-5.5 and Anthropic Claude Opus 4.7 - now the default models for their providers."
+            ),
         ],
         tagline: "Notes and AI, always one tap away."
     )

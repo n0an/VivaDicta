@@ -285,7 +285,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .anthropic:
             return "claude-sonnet-4-6"
         case .openAI:
-            return "gpt-5.4"
+            return "gpt-5.5"
         case .grok:
             return "grok-4.20-beta"
         case .zai:
@@ -380,6 +380,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .anthropic:
             return [
+                "claude-opus-4-7",
                 "claude-opus-4-6",
                 "claude-sonnet-4-6",
                 "claude-opus-4-5",
@@ -388,6 +389,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .openAI:
             return [
+                "gpt-5.5",
                 "gpt-5.4",
                 "gpt-5.4-mini",
                 "gpt-5.4-nano",
