@@ -359,6 +359,12 @@ final class RAGIndexingService {
             let totalChunks = try await _documentCount()
             logger.logInfo("Indexing complete: \(indexed) indexed, \(skipped) skipped, \(orphanedIds.count) orphans removed, \(totalChunks) total chunks")
             await logIndexSnapshot(reason: "bulk-index-complete", using: logger)
+            AnalyticsService.track(.ragIndexingCompleted(
+                indexedCount: indexed,
+                skippedCount: skipped,
+                totalChunks: totalChunks,
+                isFirstRun: isFirstRun
+            ))
         } catch {
             logger.logError("Bulk indexing failed: \(error.localizedDescription)")
         }
@@ -553,6 +559,11 @@ final class RAGIndexingService {
                 baseThreshold: threshold,
                 mapping: mapping
             )
+            AnalyticsService.track(.smartSearchQueryExecuted(
+                queryLength: query.count,
+                topK: topK,
+                resultCount: 0
+            ))
             return []
         }
 
@@ -603,6 +614,11 @@ final class RAGIndexingService {
             await logIndexSnapshot(reason: "search-unmapped-raw-hits", using: searchLogger)
         }
         searchLogger.logInfo("Search '\(query.prefix(50))': \(finalResults.count) transcriptions matched")
+        AnalyticsService.track(.smartSearchQueryExecuted(
+            queryLength: query.count,
+            topK: topK,
+            resultCount: finalResults.count
+        ))
         return finalResults
     }
 

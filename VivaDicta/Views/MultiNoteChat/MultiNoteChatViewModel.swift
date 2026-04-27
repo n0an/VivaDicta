@@ -222,6 +222,23 @@ final class MultiNoteChatViewModel {
         pendingUserMessage = userMessage
         messages.append(userMessage)
 
+        let chatType: AnalyticsEvent.ChatType = conversation.isAllNotes ? .allNotes : .multiNote
+        let turnCount = messages.filter { $0.role == "user" }.count
+        if turnCount == 1 {
+            AnalyticsService.track(.chatConversationStarted(
+                chatType: chatType,
+                provider: provider.rawValue,
+                model: model,
+                noteCount: conversation.sourceNoteCount
+            ))
+        }
+        AnalyticsService.track(.chatMessageSent(
+            chatType: chatType,
+            provider: provider.rawValue,
+            model: model,
+            turnCount: turnCount
+        ))
+
         isStreaming = true
         streamingText = ""
         HapticManager.prepareStreaming()
