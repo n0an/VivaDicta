@@ -142,6 +142,7 @@ final class MultiNoteChatViewModel {
     private var pendingUserMessage: ChatMessage?
     private var successfulReplyCount = 0
     private var hasRequestedReviewForSession = false
+    private var hasLoggedConversationStart = false
 
     var assembledNoteText: String {
         conversation.noteContext
@@ -155,6 +156,7 @@ final class MultiNoteChatViewModel {
         self.modelContext = modelContext
 
         loadMessages()
+        hasLoggedConversationStart = messages.contains { $0.role == "user" }
         noteExceedsAppleFMContext = Self.estimateNoteExceedsAppleFM(
             noteText: assembledNoteText,
             systemPrompt: MultiNoteContextManager.systemPrompt
@@ -224,13 +226,14 @@ final class MultiNoteChatViewModel {
 
         let chatType: AnalyticsEvent.ChatType = conversation.isAllNotes ? .allNotes : .multiNote
         let turnCount = messages.filter { $0.role == "user" }.count
-        if turnCount == 1 {
+        if !hasLoggedConversationStart {
             AnalyticsService.track(.chatConversationStarted(
                 chatType: chatType,
                 provider: provider.rawValue,
                 model: model,
                 noteCount: conversation.sourceNoteCount
             ))
+            hasLoggedConversationStart = true
         }
         AnalyticsService.track(.chatMessageSent(
             chatType: chatType,

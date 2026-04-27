@@ -150,6 +150,7 @@ final class ChatViewModel {
     private let webSearchToolCaptureID = UUID()
     private var successfulReplyCount = 0
     private var hasRequestedReviewForSession = false
+    private var hasLoggedConversationStart = false
 
     /// The note text for this conversation.
     var assembledNoteText: String {
@@ -165,6 +166,7 @@ final class ChatViewModel {
         self.modelContext = modelContext
 
         loadMessages()
+        hasLoggedConversationStart = messages.contains { $0.role == "user" }
         noteExceedsAppleFMContext = Self.estimateNoteExceedsAppleFM(
             noteText: assembledNoteText,
             systemPrompt: ChatContextManager.chatSystemPrompt
@@ -235,13 +237,14 @@ final class ChatViewModel {
         messages.append(userMessage)
 
         let turnCount = messages.filter { $0.role == "user" }.count
-        if turnCount == 1 {
+        if !hasLoggedConversationStart {
             AnalyticsService.track(.chatConversationStarted(
                 chatType: .singleNote,
                 provider: provider.rawValue,
                 model: model,
                 noteCount: nil
             ))
+            hasLoggedConversationStart = true
         }
         AnalyticsService.track(.chatMessageSent(
             chatType: .singleNote,
