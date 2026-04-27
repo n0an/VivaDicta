@@ -51,6 +51,21 @@ enum AnalyticsEvent {
     )
 
     case watchRecordingReceived(durationSeconds: Double?, hasModeId: Bool)
+
+    case transcriptionCompleted(
+        engine: String,
+        isOnDevice: Bool,
+        durationSeconds: Double,
+        outputLength: Int
+    )
+    case variationGenerated(
+        presetId: String,
+        isBuiltInPreset: Bool,
+        provider: String,
+        model: String,
+        durationSeconds: Double,
+        outputLength: Int
+    )
 }
 
 extension AnalyticsEvent {
@@ -68,6 +83,8 @@ extension AnalyticsEvent {
         case .smartSearchQueryExecuted: "smart_search_query_executed"
         case .ragIndexingCompleted: "rag_indexing_completed"
         case .watchRecordingReceived: "watch_recording_received"
+        case .transcriptionCompleted: "transcription_completed"
+        case .variationGenerated: "variation_generated"
         }
     }
 
@@ -126,6 +143,24 @@ extension AnalyticsEvent {
                 params["duration_seconds"] = durationSeconds
             }
             return params
+
+        case .transcriptionCompleted(let engine, let isOnDevice, let durationSeconds, let outputLength):
+            return [
+                "engine": engine,
+                "is_on_device": isOnDevice,
+                "duration_seconds": durationSeconds,
+                "output_length": outputLength
+            ]
+
+        case .variationGenerated(let presetId, let isBuiltInPreset, let provider, let model, let durationSeconds, let outputLength):
+            return [
+                "preset_id": presetId,
+                "is_built_in_preset": isBuiltInPreset,
+                "provider": provider,
+                "model": model,
+                "duration_seconds": durationSeconds,
+                "output_length": outputLength
+            ]
         }
     }
 }

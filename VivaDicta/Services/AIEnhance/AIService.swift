@@ -811,6 +811,16 @@ class AIService {
         }
         let duration = Date().timeIntervalSince(startTime)
         Task { await AIVariationsDiscoveryTip.variationGeneratedEvent.donate() }
+
+        AnalyticsService.track(.variationGenerated(
+            presetId: preset.isBuiltIn ? preset.id : "custom",
+            isBuiltInPreset: preset.isBuiltIn,
+            provider: selectedMode.aiProvider?.rawValue ?? "unknown",
+            model: selectedMode.aiModel,
+            durationSeconds: duration,
+            outputLength: result.count
+        ))
+
         return (result, duration)
     }
 
