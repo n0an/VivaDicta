@@ -71,6 +71,9 @@ public enum LogCategory: String {
     // MARK: - Watch Connectivity
     case watchConnectivity = "WatchConnectivity"
 
+    // MARK: - Analytics
+    case analytics = "Analytics"
+
     // MARK: - Background Tasks
     case backgroundTask = "BackgroundTask"
 

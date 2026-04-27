@@ -12,7 +12,6 @@ import AppIntents
 import CoreSpotlight
 import ActivityKit
 import TipKit
-import FirebaseAnalytics
 
 @main
 struct VivaDictaApp: App {
@@ -276,7 +275,7 @@ struct VivaDictaApp: App {
                     if let release = WhatsNewCatalog.release(for: currentVersion) {
                         UserDefaultsStorage.appPrivate.set(release.id, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
                     }
-                    Analytics.logEvent("onboarding_completed", parameters: nil)
+                    AnalyticsService.track(.onboardingCompleted)
                 }
             }
         }
@@ -377,9 +376,7 @@ struct VivaDictaApp: App {
             if !knownNoSchemeHosts.contains(hostId) {
                 // Log unrecognized host app to Firebase Analytics
                 // This helps track which apps users are trying to use but we don't have URL schemes for yet
-                Analytics.logEvent("unrecognized_host_app", parameters: [
-                    "bundle_id": hostId
-                ])
+                AnalyticsService.track(.unrecognizedHostApp(bundleId: hostId))
             }
         }
     }
@@ -419,9 +416,7 @@ struct VivaDictaApp: App {
                     let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
 
                     // Log keyboard session start to Firebase Analytics
-                    Analytics.logEvent("keyboard_session_started", parameters: [
-                        "host_bundle_id": hostId ?? "unknown"
-                    ])
+                    AnalyticsService.track(.keyboardSessionStarted(hostBundleId: hostId))
 
                     // Activate keyboard session to notify keyboard that hot mic is ready
                     let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout

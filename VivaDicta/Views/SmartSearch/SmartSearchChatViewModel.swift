@@ -110,6 +110,7 @@ final class SmartSearchChatViewModel {
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
     private let webSearchToolCaptureID = UUID()
+    private var hasLoggedConversationStart = false
 
     // MARK: - Init
 
@@ -119,6 +120,7 @@ final class SmartSearchChatViewModel {
         self.modelContext = modelContext
 
         loadMessages()
+        hasLoggedConversationStart = messages.contains { $0.role == "user" }
 
         if selectedProvider == .apple {
             initializeAppleFMSession()
@@ -165,6 +167,23 @@ final class SmartSearchChatViewModel {
         )
         pendingUserMessage = userMessage
         messages.append(userMessage)
+
+        let turnCount = messages.filter { $0.role == "user" }.count
+        if !hasLoggedConversationStart {
+            AnalyticsService.track(.chatConversationStarted(
+                chatType: .smartSearch,
+                provider: provider.rawValue,
+                model: model,
+                noteCount: nil
+            ))
+            hasLoggedConversationStart = true
+        }
+        AnalyticsService.track(.chatMessageSent(
+            chatType: .smartSearch,
+            provider: provider.rawValue,
+            model: model,
+            turnCount: turnCount
+        ))
 
         isStreaming = true
         streamingText = ""

@@ -191,6 +191,7 @@ class TranscriptionManager {
             throw TranscriptionError.transcriptionFailed
         }
 
+        let startTime = Date()
         let transcriptionResult: TranscriptionServiceResult
         switch model.provider {
         case .parakeet:
@@ -216,6 +217,13 @@ class TranscriptionManager {
         if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isReplacementsEnabled) as? Bool ?? true {
             result = ReplacementsService.applyReplacements(to: result)
         }
+
+        AnalyticsService.track(.transcriptionCompleted(
+            engine: model.provider.rawValue,
+            isOnDevice: TranscriptionModelProvider.localProviders.contains(model.provider),
+            durationSeconds: Date().timeIntervalSince(startTime),
+            outputLength: result.count
+        ))
 
         return result
     }
