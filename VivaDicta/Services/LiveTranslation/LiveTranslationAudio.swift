@@ -14,15 +14,21 @@ final class LiveTranslationAudio {
     static let captureSampleRate: Double = 16000
     static let playbackSampleRate: Double = SonioxRealtimeTTSClient.outputSampleRate
 
-    /// Playback rate for the TTS audio. Russian/translated text often runs
-    /// longer than the source speech; speeding up modestly keeps the queue
-    /// from growing during long sessions without sounding chipmunked.
-    static let playbackRate: Float = 1.15
-
     private let logger = Logger(category: .liveTranslationAudio)
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
     private let varispeedNode = AVAudioUnitVarispeed()
+    private let bufferQueue = PlaybackBufferQueue()
+
+    /// Playback rate applied via AVAudioUnitVarispeed. Russian/translated text
+    /// usually runs longer than the source, so we play back faster than 1.0
+    /// to keep the buffer queue from growing. Adjustable live; takes effect
+    /// immediately whether the engine is running or not.
+    var playbackRate: Float = LiveTranslationPreferences.defaultTTSRate {
+        didSet {
+            varispeedNode.rate = playbackRate
+        }
+    }
 
     private var captureContinuation: AsyncStream<Data>.Continuation?
     private var isStarted = false
@@ -78,6 +84,7 @@ final class LiveTranslationAudio {
         captureContinuation?.finish()
         captureContinuation = nil
         tapInstaller = nil
+        bufferQueue.reset()
 
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
@@ -89,10 +96,22 @@ final class LiveTranslationAudio {
     func enqueuePlayback(_ data: Data) {
         guard isStarted else { return }
         guard let buffer = makePlaybackBuffer(from: data) else { return }
-        playerNode.scheduleBuffer(buffer, completionHandler: nil)
-        // After long silences the engine may suspend the player node implicitly.
-        // Re-arm it whenever new audio arrives.
-        if !playerNode.isPlaying {
+
+        let duration = TimeInterval(buffer.frameLength) / playbackFormat.sampleRate
+
+        let playerNode = self.playerNode
+        playerNode.scheduleBuffer(buffer) { [weak bufferQueue, weak playerNode] in
+            // Completion handler runs on a non-main audio thread.
+            // PlaybackBufferQueue is lock-protected; AVAudioPlayerNode play/pause
+            // is safe to call from any thread.
+            guard let bufferQueue, let playerNode else { return }
+            if bufferQueue.didCompleteBuffer(duration: duration) {
+                playerNode.pause()
+            }
+        }
+
+        let shouldResume = bufferQueue.didQueueBuffer(duration: duration)
+        if shouldResume || (!playerNode.isPlaying && bufferQueue.canStartFresh()) {
             playerNode.play()
         }
     }
@@ -148,7 +167,7 @@ final class LiveTranslationAudio {
 
         engine.attach(playerNode)
         engine.attach(varispeedNode)
-        varispeedNode.rate = Self.playbackRate
+        varispeedNode.rate = playbackRate
         engine.connect(playerNode, to: varispeedNode, format: playbackFormat)
         engine.connect(varispeedNode, to: engine.mainMixerNode, format: playbackFormat)
 
@@ -206,6 +225,70 @@ final class LiveTranslationAudio {
         }
 
         return buffer
+    }
+}
+
+/// Tracks how much TTS audio is currently scheduled on the player node and
+/// gates playback so that we accumulate enough buffer before resuming after
+/// starvation. Without this, faster playback rates drain the queue almost as
+/// quickly as audio arrives, producing rapid stutter. With a refill threshold
+/// we trade rapid micro-gaps for rarer, longer pauses that sound smoother.
+nonisolated private final class PlaybackBufferQueue: @unchecked Sendable {
+    private let lock = NSLock()
+    private var queuedDuration: TimeInterval = 0
+    private var isStarved = true
+    private var hasEverStarted = false
+
+    /// Buffer that must be queued before playback resumes after the queue
+    /// has emptied. Higher values produce fewer, longer gaps. Tuned to ~1s
+    /// so a single Russian phrase can usually play continuously.
+    private let refillThreshold: TimeInterval = 1.0
+
+    /// Threshold below which the queue is considered empty.
+    private let lowWaterMark: TimeInterval = 0.05
+
+    /// Returns `true` if the caller should resume playback.
+    nonisolated func didQueueBuffer(duration: TimeInterval) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        queuedDuration += duration
+
+        if isStarved && queuedDuration >= refillThreshold {
+            isStarved = false
+            hasEverStarted = true
+            return true
+        }
+        return false
+    }
+
+    /// Returns `true` if the caller should pause playback (queue starved).
+    nonisolated func didCompleteBuffer(duration: TimeInterval) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        queuedDuration -= duration
+        if queuedDuration < 0 { queuedDuration = 0 }
+
+        if !isStarved && queuedDuration <= lowWaterMark {
+            isStarved = true
+            return true
+        }
+        return false
+    }
+
+    /// Allows kick-starting playback the very first time without crossing the
+    /// refill threshold (so the listener doesn't wait too long for first audio).
+    nonisolated func canStartFresh() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return !hasEverStarted && queuedDuration > 0
+    }
+
+    nonisolated func reset() {
+        lock.lock()
+        defer { lock.unlock() }
+        queuedDuration = 0
+        isStarved = true
+        hasEverStarted = false
     }
 }
 

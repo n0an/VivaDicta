@@ -124,17 +124,45 @@ struct LiveTranslationView: View {
     }
 
     private var ttsBar: some View {
-        HStack {
-            Image(systemName: service.config.ttsEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                .foregroundStyle(service.config.ttsEnabled ? .indigo : .secondary)
-            Toggle("Speak translation", isOn: Binding(
-                get: { service.config.ttsEnabled },
-                set: { service.config.ttsEnabled = $0 }
-            ))
-            .labelsHidden()
-            Text("Speak translation")
-                .font(.subheadline)
-            Spacer()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: service.config.ttsEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    .foregroundStyle(service.config.ttsEnabled ? .indigo : .secondary)
+                Toggle("Speak translation", isOn: Binding(
+                    get: { service.config.ttsEnabled },
+                    set: { service.config.ttsEnabled = $0 }
+                ))
+                .labelsHidden()
+                Text("Speak translation")
+                    .font(.subheadline)
+                Spacer()
+            }
+
+            if service.config.ttsEnabled {
+                HStack(spacing: 12) {
+                    Image(systemName: "tortoise.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    Slider(
+                        value: Binding(
+                            get: { Double(service.config.ttsRate) },
+                            set: { service.config.ttsRate = Float($0) }
+                        ),
+                        in: Double(LiveTranslationPreferences.minTTSRate)...Double(LiveTranslationPreferences.maxTTSRate),
+                        step: 0.05
+                    )
+                    Image(systemName: "hare.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    HStack(spacing: 0) {
+                        Text(Double(service.config.ttsRate), format: .number.precision(.fractionLength(2)))
+                        Text("x")
+                    }
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, alignment: .trailing)
+                }
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 10)

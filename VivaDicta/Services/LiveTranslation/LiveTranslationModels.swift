@@ -84,13 +84,64 @@ struct LiveTranslationConfig: Sendable {
     var targetLanguage: LiveTranslationLanguage
     var ttsEnabled: Bool
     var ttsVoice: String
+    var ttsRate: Float
 
-    static let `default` = LiveTranslationConfig(
-        sourceLanguage: .spanish,
-        targetLanguage: .russian,
-        ttsEnabled: true,
-        ttsVoice: "Adrian"
-    )
+    static var stored: LiveTranslationConfig {
+        LiveTranslationConfig(
+            sourceLanguage: LiveTranslationPreferences.sourceLanguage,
+            targetLanguage: LiveTranslationPreferences.targetLanguage,
+            ttsEnabled: LiveTranslationPreferences.ttsEnabled,
+            ttsVoice: "Adrian",
+            ttsRate: LiveTranslationPreferences.ttsRate
+        )
+    }
+}
+
+enum LiveTranslationPreferences {
+    static let minTTSRate: Float = 1.0
+    static let maxTTSRate: Float = 2.0
+    static let defaultTTSRate: Float = 1.15
+
+    static var sourceLanguage: LiveTranslationLanguage {
+        get {
+            let raw = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.liveTranslationSourceLanguage) ?? ""
+            return LiveTranslationLanguage(rawValue: raw) ?? .english
+        }
+        set {
+            UserDefaultsStorage.appPrivate.set(newValue.rawValue, forKey: UserDefaultsStorage.Keys.liveTranslationSourceLanguage)
+        }
+    }
+
+    static var targetLanguage: LiveTranslationLanguage {
+        get {
+            let raw = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.liveTranslationTargetLanguage) ?? ""
+            return LiveTranslationLanguage(rawValue: raw) ?? .english
+        }
+        set {
+            UserDefaultsStorage.appPrivate.set(newValue.rawValue, forKey: UserDefaultsStorage.Keys.liveTranslationTargetLanguage)
+        }
+    }
+
+    static var ttsEnabled: Bool {
+        get {
+            UserDefaultsStorage.appPrivate.object(forKey: UserDefaultsStorage.Keys.liveTranslationTTSEnabled) as? Bool ?? true
+        }
+        set {
+            UserDefaultsStorage.appPrivate.set(newValue, forKey: UserDefaultsStorage.Keys.liveTranslationTTSEnabled)
+        }
+    }
+
+    static var ttsRate: Float {
+        get {
+            let stored = UserDefaultsStorage.appPrivate.object(forKey: UserDefaultsStorage.Keys.liveTranslationTTSRate) as? Double
+            let value = Float(stored ?? Double(defaultTTSRate))
+            return min(max(value, minTTSRate), maxTTSRate)
+        }
+        set {
+            let clamped = min(max(newValue, minTTSRate), maxTTSRate)
+            UserDefaultsStorage.appPrivate.set(Double(clamped), forKey: UserDefaultsStorage.Keys.liveTranslationTTSRate)
+        }
+    }
 }
 
 enum LiveTranslationError: LocalizedError {

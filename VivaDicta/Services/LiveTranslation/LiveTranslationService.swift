@@ -16,18 +16,27 @@ final class LiveTranslationService {
     private(set) var originalTokens: [LiveTranslationToken] = []
     private(set) var translatedTokens: [LiveTranslationToken] = []
 
-    var config = LiveTranslationConfig.default {
+    var config: LiveTranslationConfig = .stored {
         didSet {
+            persistConfig(oldValue: oldValue)
             if oldValue.ttsEnabled != config.ttsEnabled, status == .running {
                 handleTTSToggle()
+            }
+            if oldValue.ttsRate != config.ttsRate {
+                audio.playbackRate = config.ttsRate
             }
         }
     }
 
     private let logger = Logger(category: .liveTranslationService)
-    private let audio = LiveTranslationAudio()
+    private let audio: LiveTranslationAudio
     private let sttClient = SonioxRealtimeSTTClient()
     private var ttsClient: SonioxRealtimeTTSClient?
+
+    init() {
+        audio = LiveTranslationAudio()
+        audio.playbackRate = LiveTranslationPreferences.ttsRate
+    }
 
     private var sttTask: Task<Void, Never>?
     private var ttsTask: Task<Void, Never>?
@@ -245,6 +254,21 @@ final class LiveTranslationService {
                     continuation.resume(returning: granted)
                 }
             }
+        }
+    }
+
+    private func persistConfig(oldValue: LiveTranslationConfig) {
+        if oldValue.sourceLanguage != config.sourceLanguage {
+            LiveTranslationPreferences.sourceLanguage = config.sourceLanguage
+        }
+        if oldValue.targetLanguage != config.targetLanguage {
+            LiveTranslationPreferences.targetLanguage = config.targetLanguage
+        }
+        if oldValue.ttsEnabled != config.ttsEnabled {
+            LiveTranslationPreferences.ttsEnabled = config.ttsEnabled
+        }
+        if oldValue.ttsRate != config.ttsRate {
+            LiveTranslationPreferences.ttsRate = config.ttsRate
         }
     }
 
