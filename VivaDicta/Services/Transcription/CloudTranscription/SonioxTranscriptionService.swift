@@ -16,16 +16,26 @@ struct SonioxTranscriptionService {
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let config = try getAPIConfig(for: model)
+        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
 
         let fileId = try await uploadFile(audioURL: audioURL, apiKey: config.apiKey)
-        let transcriptionId = try await createTranscription(fileId: fileId, apiKey: config.apiKey, modelName: model.name)
+        let transcriptionId = try await createTranscription(
+            fileId: fileId,
+            apiKey: config.apiKey,
+            modelName: model.name,
+            diarizationEnabled: diarizationEnabled
+        )
         try await pollTranscriptionStatus(id: transcriptionId, apiKey: config.apiKey)
-        let transcript = try await fetchTranscript(id: transcriptionId, apiKey: config.apiKey)
+        let result = try await fetchTranscript(
+            id: transcriptionId,
+            apiKey: config.apiKey,
+            diarizationEnabled: diarizationEnabled
+        )
 
-        guard !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CloudTranscriptionError.noTranscriptionReturned
         }
-        return .plain(transcript)
+        return result
     }
 
     // MARK: - Private Methods
@@ -46,6 +56,7 @@ struct SonioxTranscriptionService {
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
+        request.timeoutInterval = NetworkRetry.defaultTimeout
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
         let boundary = "Boundary-\(UUID().uuidString)"
@@ -74,20 +85,27 @@ struct SonioxTranscriptionService {
         }
     }
 
-    private func createTranscription(fileId: String, apiKey: String, modelName: String) async throws -> String {
+    private func createTranscription(
+        fileId: String,
+        apiKey: String,
+        modelName: String,
+        diarizationEnabled: Bool
+    ) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/transcriptions") else {
             throw CloudTranscriptionError.dataEncodingError
         }
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
+        request.timeoutInterval = NetworkRetry.defaultTimeout
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         var payload: [String: Any] = [
             "file_id": fileId,
             "model": modelName,
-            "enable_speaker_diarization": false
+            "enable_speaker_diarization": diarizationEnabled,
+            "enable_language_identification": true
         ]
 
         // Add custom vocabulary terms if available
@@ -97,10 +115,12 @@ struct SonioxTranscriptionService {
             logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms")
         }
 
-        // Add language hints if not auto-detect
+        // Add language hints if not auto-detect. When the user has explicitly picked a language,
+        // enable strict mode so the model won't drift into other languages on noisy/short audio.
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             payload["language_hints"] = [selectedLanguage]
+            payload["language_hints_strict"] = true
         }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
@@ -137,6 +157,7 @@ struct SonioxTranscriptionService {
         while true {
             var request = URLRequest(url: baseURL)
             request.httpMethod = "GET"
+            request.timeoutInterval = NetworkRetry.defaultTimeout
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -174,13 +195,18 @@ struct SonioxTranscriptionService {
         }
     }
 
-    private func fetchTranscript(id: String, apiKey: String) async throws -> String {
+    private func fetchTranscript(
+        id: String,
+        apiKey: String,
+        diarizationEnabled: Bool
+    ) async throws -> TranscriptionServiceResult {
         guard let apiURL = URL(string: "\(apiBase)/transcriptions/\(id)/transcript") else {
             throw CloudTranscriptionError.dataEncodingError
         }
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "GET"
+        request.timeoutInterval = NetworkRetry.defaultTimeout
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -195,17 +221,52 @@ struct SonioxTranscriptionService {
             throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
         }
 
-        // Try JSON decode first
         if let decoded = try? JSONDecoder().decode(TranscriptResponse.self, from: data) {
-            return decoded.text
+            if diarizationEnabled,
+               let diarizedText = makeSpeakerAttributedText(from: decoded.tokens) {
+                return .speakerAttributed(diarizedText)
+            }
+            return .plain(decoded.text)
         }
 
-        // Fall back to raw string
         if let asString = String(data: data, encoding: .utf8), !asString.isEmpty {
-            return asString
+            return .plain(asString)
         }
 
         throw CloudTranscriptionError.noTranscriptionReturned
+    }
+
+    private func makeSpeakerAttributedText(from tokens: [TranscriptResponse.Token]?) -> String? {
+        guard let tokens, !tokens.isEmpty else {
+            return nil
+        }
+
+        var turns: [SpeakerTurn] = []
+        var currentSpeaker: String?
+        var currentText = ""
+
+        for token in tokens {
+            let tokenSpeaker = token.speaker
+            if turns.isEmpty && currentText.isEmpty {
+                currentSpeaker = tokenSpeaker
+                currentText = token.text
+                continue
+            }
+
+            if tokenSpeaker == currentSpeaker || tokenSpeaker == nil {
+                currentText += token.text
+            } else {
+                turns.append(SpeakerTurn(speakerID: currentSpeaker, text: currentText))
+                currentSpeaker = tokenSpeaker
+                currentText = token.text
+            }
+        }
+
+        if !currentText.isEmpty {
+            turns.append(SpeakerTurn(speakerID: currentSpeaker, text: currentText))
+        }
+
+        return SpeakerDiarizationFormatter.format(turns)
     }
 
     private func createMultipartBody(fileURL: URL, boundary: String) throws -> Data {
@@ -246,5 +307,11 @@ struct SonioxTranscriptionService {
 
     private struct TranscriptResponse: Decodable {
         let text: String
+        let tokens: [Token]?
+
+        struct Token: Decodable {
+            let text: String
+            let speaker: String?
+        }
     }
 }
