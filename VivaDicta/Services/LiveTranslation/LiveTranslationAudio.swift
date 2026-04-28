@@ -91,16 +91,39 @@ final class LiveTranslationAudio {
     private func configureSession() throws {
         let session = AVAudioSession.sharedInstance()
         do {
+            // Do NOT include .defaultToSpeaker — it overrides A2DP routing and
+            // forces output to the iPhone speaker even when AirPods are paired,
+            // which causes mic feedback.
             try session.setCategory(
                 .playAndRecord,
                 mode: .spokenAudio,
-                options: [.allowBluetoothA2DP, .defaultToSpeaker, .duckOthers]
+                options: [.allowBluetoothA2DP, .duckOthers]
             )
             try session.setPreferredSampleRate(48000)
             try session.setPreferredIOBufferDuration(0.02)
             try session.setActive(true, options: [])
+            try session.overrideOutputAudioPort(.none)
         } catch {
             throw LiveTranslationError.audioSessionFailure(error.localizedDescription)
+        }
+    }
+
+    static var isHeadphonesRouteActive: Bool {
+        let route = AVAudioSession.sharedInstance().currentRoute
+        return route.outputs.contains { output in
+            switch output.portType {
+            case .headphones,
+                 .bluetoothA2DP,
+                 .bluetoothLE,
+                 .bluetoothHFP,
+                 .airPlay,
+                 .usbAudio,
+                 .carAudio,
+                 .lineOut:
+                return true
+            default:
+                return false
+            }
         }
     }
 

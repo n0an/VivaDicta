@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.04.28
 //
 
+import AVFoundation
 import SwiftData
 import SwiftUI
 
@@ -14,16 +15,23 @@ struct LiveTranslationView: View {
 
     @State private var service = LiveTranslationService()
     @State private var savedSnapshot: SavedSnapshot?
+    @State private var headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 languageBar
                 Divider()
+                if !headphonesConnected && service.config.ttsEnabled {
+                    headphonesHint
+                }
                 transcriptColumns
                 Divider()
                 ttsBar
                 actionBar
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
+                headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
             }
             .navigationTitle("Live Translation")
             .navigationBarTitleDisplayMode(.inline)
@@ -83,6 +91,20 @@ struct LiveTranslationView: View {
         .padding(.horizontal)
         .padding(.vertical, 12)
         .disabled(isRunning)
+    }
+
+    private var headphonesHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "airpods")
+                .foregroundStyle(.orange)
+            Text("Use headphones to prevent feedback into the mic")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.1))
     }
 
     private var transcriptColumns: some View {
