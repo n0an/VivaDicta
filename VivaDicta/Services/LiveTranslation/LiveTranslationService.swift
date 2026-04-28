@@ -45,6 +45,13 @@ final class LiveTranslationService {
     private var sttFailureRetries: Int = 0
     private let maxSTTFailureRetries: Int = 3
 
+    /// Same bounded retry state for TTS reconnect. Without this a persistent
+    /// TTS failure (e.g., voice not supported for target language) loops the
+    /// reopen path on MainActor and can starve SwiftUI updates - which is
+    /// what was hanging the Save and Stop buttons in practice.
+    private var ttsFailureRetries: Int = 0
+    private let maxTTSFailureRetries: Int = 3
+
     /// Source/target language captured at session start. `combineSnapshot`
     /// uses these so save-as-note labels never reflect a picker change made
     /// after Stop and before tapping Save.
@@ -67,6 +74,7 @@ final class LiveTranslationService {
         originalTokens.removeAll()
         translatedTokens.removeAll()
         sttFailureRetries = 0
+        ttsFailureRetries = 0
         sessionSourceLanguage = config.sourceLanguage
         sessionTargetLanguage = config.targetLanguage
 
@@ -116,7 +124,12 @@ final class LiveTranslationService {
             await closeTTSStream()
         }
 
-        status = .running
+        // Only transition to .running if the user (or a failure) didn't move
+        // us elsewhere while we were suspended on the awaits above. Otherwise
+        // we'd revive a session that's already been torn down by stop()/fail().
+        if status == .starting {
+            status = .running
+        }
     }
 
     private func startSTT(apiKey: String) {
@@ -211,28 +224,52 @@ final class LiveTranslationService {
     private func handleTTSEvent(_ event: SonioxRealtimeTTSClient.Event) async {
         switch event {
         case .audio(let data):
+            // Successful audio receipt = healthy connection; reset budget.
+            ttsFailureRetries = 0
             audio.enqueuePlayback(data)
         case .finished:
-            // Soniox auto-terminates a TTS stream after some duration. If we're
-            // still in a running session and TTS is still enabled, transparently
-            // reopen the stream so playback continues.
+            // Graceful close (Soniox auto-terminates after ~2 minutes). Reopen
+            // without consuming the failure budget.
             guard status == .running, config.ttsEnabled else { return }
             logger.logInfo("TTS stream ended mid-session - reconnecting")
             await reopenTTSStream()
         case .failed(let message):
-            logger.logError("TTS stream failed: \(message)")
-            guard status == .running, config.ttsEnabled else { return }
-            logger.logInfo("TTS stream failed mid-session - reconnecting")
-            await reopenTTSStream()
+            await handleTTSFailure(message: message)
         }
     }
 
+    private func handleTTSFailure(message: String) async {
+        guard status == .running, config.ttsEnabled else {
+            logger.logError("TTS stream failed (not running): \(message)")
+            return
+        }
+
+        ttsFailureRetries += 1
+        if ttsFailureRetries > maxTTSFailureRetries {
+            logger.logError("TTS failed \(ttsFailureRetries) times - giving up: \(message)")
+            // Tear down TTS only; keep STT/transcript running so the user
+            // still sees text even though playback is gone.
+            await closeTTSStream()
+            return
+        }
+
+        let backoffSeconds = pow(2.0, Double(ttsFailureRetries - 1))
+        logger.logInfo("TTS failed mid-session - reconnect attempt \(ttsFailureRetries)/\(maxTTSFailureRetries) in \(backoffSeconds)s: \(message)")
+
+        try? await Task.sleep(for: .seconds(backoffSeconds))
+        guard status == .running, config.ttsEnabled else { return }
+        await reopenTTSStream()
+    }
+
     private func reopenTTSStream() async {
+        // Don't self-cancel ttsTask here; the OLD task's stream is finished
+        // by disconnect() below and its for-await loop exits naturally on
+        // the next iteration. openTTSStream will overwrite the ttsTask
+        // reference with the new task.
         await ttsClient?.disconnect()
         ttsClient = nil
-        ttsTask?.cancel()
-        ttsTask = nil
 
+        guard status == .running, config.ttsEnabled else { return }
         guard let apiKey = KeychainService.shared.getString(forKey: "sonioxAPIKey"),
               !apiKey.isEmpty else { return }
         await openTTSStream(apiKey: apiKey)
@@ -324,7 +361,12 @@ final class LiveTranslationService {
             forName: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance(),
             queue: .main
-        ) { notification in
+        ) { [weak self] notification in
+            // Outer [weak self] is necessary even though the inner Task uses
+            // [weak self]: otherwise the inner reference makes the outer
+            // closure capture self strongly, creating a retain cycle with
+            // interruptionObserver.
+            guard self != nil else { return }
             guard let info = notification.userInfo,
                   let typeRaw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: typeRaw) else {

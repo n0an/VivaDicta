@@ -33,6 +33,12 @@ final class LiveTranslationAudio {
     private var captureContinuation: AsyncStream<Data>.Continuation?
     private var isStarted = false
     private var tapInstaller: TapInstaller?
+    /// Tracks whether configureSession() activated AVAudioSession so partial
+    /// startup failures still deactivate it on cleanup.
+    private var sessionActivated = false
+    /// Tracks whether the input tap was actually installed (separate from
+    /// `tapInstaller != nil` because the install runs on a global queue).
+    private var tapInstalled = false
 
     private let captureFormat: AVAudioFormat = {
         AVAudioFormat(
@@ -81,32 +87,51 @@ final class LiveTranslationAudio {
     func start() async throws {
         guard !isStarted else { return }
 
-        try configureSession()
-        try await configureEngine()
-        try engine.start()
-        playerNode.play()
-        isStarted = true
+        // If any step throws, call stop() to clean up anything we already
+        // activated (session, tap, etc.). stop() is idempotent and safe to
+        // call before isStarted flips to true.
+        do {
+            try configureSession()
+            try await configureEngine()
+            try engine.start()
+            playerNode.play()
+            isStarted = true
+        } catch {
+            stop()
+            throw error
+        }
     }
 
+    /// Idempotent: safe to call regardless of how far start() got. Each step
+    /// is guarded by its own `did-start` flag so a partial-start failure
+    /// still tears down the audio session and tap.
     func stop() {
-        guard isStarted else { return }
         isStarted = false
 
         playerNode.stop()
-        engine.inputNode.removeTap(onBus: 0)
+
+        if tapInstalled {
+            engine.inputNode.removeTap(onBus: 0)
+            tapInstalled = false
+        }
+
         engine.stop()
         // Do NOT call engine.reset(); it detaches nodes and the next start()
         // would crash on re-attach. Stopping the engine alone is enough to
         // release CPU/audio hardware.
+
         captureContinuation?.finish()
         captureContinuation = nil
         tapInstaller = nil
         bufferQueue.reset()
 
-        do {
-            try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
-        } catch {
-            logger.logWarning("Audio session deactivate failed: \(error.localizedDescription)")
+        if sessionActivated {
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+            } catch {
+                logger.logWarning("Audio session deactivate failed: \(error.localizedDescription)")
+            }
+            sessionActivated = false
         }
     }
 
@@ -149,6 +174,7 @@ final class LiveTranslationAudio {
             try session.setPreferredSampleRate(48000)
             try session.setPreferredIOBufferDuration(0.02)
             try session.setActive(true, options: [])
+            sessionActivated = true
             try session.overrideOutputAudioPort(.none)
         } catch {
             throw LiveTranslationError.audioSessionFailure(error.localizedDescription)
@@ -216,6 +242,7 @@ final class LiveTranslationAudio {
                 resume.resume()
             }
         }
+        tapInstalled = true
 
         engine.prepare()
     }
