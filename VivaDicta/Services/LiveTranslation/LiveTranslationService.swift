@@ -39,6 +39,18 @@ final class LiveTranslationService {
     private var interruptionObserver: NSObjectProtocol?
     private var apiKeyCache: String?
 
+    /// Bounded retry state for STT reconnect on `.failed` events. Prevents a
+    /// busy reconnect loop when the failure is persistent (revoked key, quota,
+    /// malformed config). Reset on successful token receipt or graceful close.
+    private var sttFailureRetries: Int = 0
+    private let maxSTTFailureRetries: Int = 3
+
+    /// Source/target language captured at session start. `combineSnapshot`
+    /// uses these so save-as-note labels never reflect a picker change made
+    /// after Stop and before tapping Save.
+    private(set) var sessionSourceLanguage: LiveTranslationLanguage = .english
+    private(set) var sessionTargetLanguage: LiveTranslationLanguage = .english
+
     init() {
         audio = LiveTranslationAudio()
         audio.playbackRate = LiveTranslationPreferences.ttsRate
@@ -54,6 +66,9 @@ final class LiveTranslationService {
         status = .starting
         originalTokens.removeAll()
         translatedTokens.removeAll()
+        sttFailureRetries = 0
+        sessionSourceLanguage = config.sourceLanguage
+        sessionTargetLanguage = config.targetLanguage
 
         guard let apiKey = KeychainService.shared.getString(forKey: "sonioxAPIKey"),
               !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -90,6 +105,17 @@ final class LiveTranslationService {
         }
 
         observeInterruptions()
+
+        // Reconcile TTS toggle changes that happened mid-startup. The didSet
+        // observer ignores changes while status == .starting (because the
+        // start() flow hasn't yet reached the openTTSStream call); apply the
+        // current desired state here once setup is otherwise complete.
+        if config.ttsEnabled, ttsClient == nil {
+            await openTTSStream(apiKey: apiKey)
+        } else if !config.ttsEnabled, ttsClient != nil {
+            await closeTTSStream()
+        }
+
         status = .running
     }
 
@@ -121,10 +147,15 @@ final class LiveTranslationService {
         status = .idle
     }
 
-    func transcriptSnapshot() -> (original: String, translation: String) {
+    func transcriptSnapshot() -> (
+        sourceLanguage: LiveTranslationLanguage,
+        original: String,
+        targetLanguage: LiveTranslationLanguage,
+        translation: String
+    ) {
         let original = renderText(from: originalTokens)
         let translation = renderText(from: translatedTokens)
-        return (original, translation)
+        return (sessionSourceLanguage, original, sessionTargetLanguage, translation)
     }
 
     // MARK: - Private
@@ -132,6 +163,10 @@ final class LiveTranslationService {
     private func handleSTTEvent(_ event: SonioxRealtimeSTTClient.Event) async {
         switch event {
         case .token(let token):
+            // Successful token receipt means the connection is healthy; reset
+            // the failure retry counter so future transient blips have a fresh
+            // budget.
+            sttFailureRetries = 0
             appendToken(token)
             // Only forward FINAL translation tokens to TTS. Soniox revises
             // interim tokens; speaking them produces duplicated/garbled audio.
@@ -139,21 +174,38 @@ final class LiveTranslationService {
                 await ttsClient?.sendText(token.text)
             }
         case .finished:
-            // STT stream ended (idle timeout or server-side close). Reopen if
-            // we're still running, mirroring TTS reconnect behaviour.
+            // Graceful close (idle timeout or server-side rotation). Reconnect
+            // without consuming the failure budget — these aren't errors.
             guard status == .running, let apiKey = apiKeyCache else { return }
             logger.logInfo("STT stream ended mid-session - reconnecting")
             startSTT(apiKey: apiKey)
         case .failed(let message):
-            // Only treat as fatal when not running; transient network blips
-            // mid-session reconnect transparently.
-            if status == .running, let apiKey = apiKeyCache {
-                logger.logInfo("STT stream failed mid-session - reconnecting: \(message)")
-                startSTT(apiKey: apiKey)
-            } else {
-                await fail(LiveTranslationError.webSocketFailure(message))
-            }
+            await handleSTTFailure(message: message)
         }
+    }
+
+    private func handleSTTFailure(message: String) async {
+        guard status == .running, let apiKey = apiKeyCache else {
+            await fail(LiveTranslationError.webSocketFailure(message))
+            return
+        }
+
+        sttFailureRetries += 1
+        if sttFailureRetries > maxSTTFailureRetries {
+            logger.logError("STT failed \(sttFailureRetries) times - giving up: \(message)")
+            await fail(LiveTranslationError.webSocketFailure(message))
+            return
+        }
+
+        // Exponential-ish backoff: 1s, 2s, 4s. Caps the worst-case spin rate
+        // so a persistent failure (revoked key, server outage) doesn't hammer
+        // Soniox or burn the device battery.
+        let backoffSeconds = pow(2.0, Double(sttFailureRetries - 1))
+        logger.logInfo("STT failed mid-session - reconnect attempt \(sttFailureRetries)/\(maxSTTFailureRetries) in \(backoffSeconds)s: \(message)")
+
+        try? await Task.sleep(for: .seconds(backoffSeconds))
+        guard status == .running else { return }
+        startSTT(apiKey: apiKey)
     }
 
     private func handleTTSEvent(_ event: SonioxRealtimeTTSClient.Event) async {
@@ -230,12 +282,16 @@ final class LiveTranslationService {
                       !apiKey.isEmpty else { return }
                 await self.openTTSStream(apiKey: apiKey)
             } else {
-                await self.ttsClient?.disconnect()
-                self.ttsClient = nil
-                self.ttsTask?.cancel()
-                self.ttsTask = nil
+                await self.closeTTSStream()
             }
         }
+    }
+
+    private func closeTTSStream() async {
+        await ttsClient?.disconnect()
+        ttsClient = nil
+        ttsTask?.cancel()
+        ttsTask = nil
     }
 
     private func teardown() async {
@@ -268,9 +324,8 @@ final class LiveTranslationService {
             forName: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance(),
             queue: .main
-        ) { [weak self] notification in
-            guard self != nil,
-                  let info = notification.userInfo,
+        ) { notification in
+            guard let info = notification.userInfo,
                   let typeRaw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
                   let type = AVAudioSession.InterruptionType(rawValue: typeRaw) else {
                 return

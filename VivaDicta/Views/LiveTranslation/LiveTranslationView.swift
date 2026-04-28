@@ -297,16 +297,17 @@ struct LiveTranslationView: View {
         savedSnapshot = SavedSnapshot()
     }
 
-    private func combineSnapshot(_ snapshot: (original: String, translation: String)) -> String {
-        let sourceName = service.config.sourceLanguage.displayName
-        let targetName = service.config.targetLanguage.displayName
-
+    private func combineSnapshot(
+        _ snapshot: (sourceLanguage: LiveTranslationLanguage, original: String, targetLanguage: LiveTranslationLanguage, translation: String)
+    ) -> String {
+        // Use the snapshot's session-time languages, not service.config.* —
+        // the user can change pickers between Stop and Save.
         var sections: [String] = []
         if !snapshot.original.isEmpty {
-            sections.append("\(sourceName):\n\(snapshot.original)")
+            sections.append("\(snapshot.sourceLanguage.displayName):\n\(snapshot.original)")
         }
         if !snapshot.translation.isEmpty {
-            sections.append("\(targetName):\n\(snapshot.translation)")
+            sections.append("\(snapshot.targetLanguage.displayName):\n\(snapshot.translation)")
         }
         return sections.joined(separator: "\n\n")
     }
