@@ -20,6 +20,7 @@ struct MainView: View {
 
     @State private var showingRecordingSheet = false
     @State private var showingSettings = false
+    @State private var showingLiveTranslation = false
     @State private var showingNotesFilter = false
     @State private var showingFileImport = false
     @State private var searchText = ""
@@ -230,6 +231,10 @@ struct MainView: View {
             SettingsView()
                 .interactiveDismissDisabled(true)
                 .navigationTransition(.zoom(sourceID: "SettingsSheetTransition", in: sheetTransitions))
+        }
+        .fullScreenCover(isPresented: $showingLiveTranslation) {
+            LiveTranslationView()
+                .navigationTransition(.zoom(sourceID: "LiveTranslationSheetTransition", in: sheetTransitions))
         }
         .fullScreenCover(isPresented: $showMultiNoteChats) {
             MultiNoteChatsListView()
@@ -451,6 +456,21 @@ struct MainView: View {
                 }
                 .accessibilityLabel(savedNotesFilter.isActive ? "Edit Active Notes Filter" : "Filter Notes")
                 .matchedTransitionSource(id: "NotesFilterSheetTransition", in: sheetTransitions)
+            }
+
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    HapticManager.lightImpact()
+                    showingLiveTranslation = true
+                } label: {
+                    Image(systemName: "globe.americas.fill")
+                }
+                .accessibilityLabel("Live Translation")
+                .matchedTransitionSource(id: "LiveTranslationSheetTransition", in: sheetTransitions)
             }
 
             if #available(iOS 26.0, *) {
