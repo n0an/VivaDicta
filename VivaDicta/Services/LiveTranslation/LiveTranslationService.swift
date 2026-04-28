@@ -33,14 +33,20 @@ final class LiveTranslationService {
     private let sttClient = SonioxRealtimeSTTClient()
     private var ttsClient: SonioxRealtimeTTSClient?
 
+    private var sttTask: Task<Void, Never>?
+    private var ttsTask: Task<Void, Never>?
+    private var captureTask: Task<Void, Never>?
+    private var interruptionObserver: NSObjectProtocol?
+    private var apiKeyCache: String?
+
     init() {
         audio = LiveTranslationAudio()
         audio.playbackRate = LiveTranslationPreferences.ttsRate
     }
 
-    private var sttTask: Task<Void, Never>?
-    private var ttsTask: Task<Void, Never>?
-    private var captureTask: Task<Void, Never>?
+    func clearFailureIfNeeded() {
+        if case .failed = status { status = .idle }
+    }
 
     func start() async {
         guard status == .idle || isFailed(status) else { return }
@@ -54,6 +60,7 @@ final class LiveTranslationService {
             await fail(LiveTranslationError.missingAPIKey)
             return
         }
+        apiKeyCache = apiKey
 
         guard await requestMicrophonePermission() else {
             await fail(LiveTranslationError.microphonePermissionDenied)
@@ -69,13 +76,7 @@ final class LiveTranslationService {
             return
         }
 
-        let vocabularyTerms = CustomVocabulary.getTerms()
-        let sttStream = await sttClient.connect(
-            apiKey: apiKey,
-            sourceLanguage: config.sourceLanguage,
-            targetLanguage: config.targetLanguage,
-            vocabularyTerms: vocabularyTerms
-        )
+        startSTT(apiKey: apiKey)
 
         if config.ttsEnabled {
             await openTTSStream(apiKey: apiKey)
@@ -88,14 +89,29 @@ final class LiveTranslationService {
             }
         }
 
+        observeInterruptions()
+        status = .running
+    }
+
+    private func startSTT(apiKey: String) {
+        let vocabularyTerms = CustomVocabulary.getTerms()
+        let sourceLang = config.sourceLanguage
+        let targetLang = config.targetLanguage
+        let sttClient = self.sttClient
+
+        sttTask?.cancel()
         sttTask = Task { [weak self] in
-            for await event in sttStream {
+            let stream = await sttClient.connect(
+                apiKey: apiKey,
+                sourceLanguage: sourceLang,
+                targetLanguage: targetLang,
+                vocabularyTerms: vocabularyTerms
+            )
+            for await event in stream {
                 guard let self else { return }
                 await self.handleSTTEvent(event)
             }
         }
-
-        status = .running
     }
 
     func stop() async {
@@ -117,13 +133,26 @@ final class LiveTranslationService {
         switch event {
         case .token(let token):
             appendToken(token)
-            if token.kind == .translation, !token.text.isEmpty {
+            // Only forward FINAL translation tokens to TTS. Soniox revises
+            // interim tokens; speaking them produces duplicated/garbled audio.
+            if token.kind == .translation, token.isFinal, !token.text.isEmpty {
                 await ttsClient?.sendText(token.text)
             }
         case .finished:
-            break
+            // STT stream ended (idle timeout or server-side close). Reopen if
+            // we're still running, mirroring TTS reconnect behaviour.
+            guard status == .running, let apiKey = apiKeyCache else { return }
+            logger.logInfo("STT stream ended mid-session - reconnecting")
+            startSTT(apiKey: apiKey)
         case .failed(let message):
-            await fail(LiveTranslationError.webSocketFailure(message))
+            // Only treat as fatal when not running; transient network blips
+            // mid-session reconnect transparently.
+            if status == .running, let apiKey = apiKeyCache {
+                logger.logInfo("STT stream failed mid-session - reconnecting: \(message)")
+                startSTT(apiKey: apiKey)
+            } else {
+                await fail(LiveTranslationError.webSocketFailure(message))
+            }
         }
     }
 
@@ -167,17 +196,14 @@ final class LiveTranslationService {
     }
 
     private func mergeToken(_ token: LiveTranslationToken, into list: inout [LiveTranslationToken]) {
-        if let last = list.last, last.isFinal == false {
-            if token.isFinal {
-                list.removeLast()
-                list.append(token)
-            } else {
-                list.removeLast()
-                list.append(token)
-            }
-        } else {
-            list.append(token)
+        // If the trailing token is non-final, replace it with the incoming
+        // token (whether final or not). Soniox emits interim tokens that get
+        // superseded; this keeps the rendered text from doubling. Multi-token
+        // interim tails are not perfectly preserved - acceptable trade-off.
+        if let last = list.last, !last.isFinal {
+            list.removeLast()
         }
+        list.append(token)
     }
 
     private func openTTSStream(apiKey: String) async {
@@ -213,6 +239,11 @@ final class LiveTranslationService {
     }
 
     private func teardown() async {
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+            self.interruptionObserver = nil
+        }
+
         captureTask?.cancel()
         captureTask = nil
         sttTask?.cancel()
@@ -224,8 +255,45 @@ final class LiveTranslationService {
         await sttClient.disconnect()
         await ttsClient?.disconnect()
         ttsClient = nil
+        apiKeyCache = nil
 
         audio.stop()
+    }
+
+    private func observeInterruptions() {
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+        }
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            guard self != nil,
+                  let info = notification.userInfo,
+                  let typeRaw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeRaw) else {
+                return
+            }
+            Task { @MainActor [weak self] in
+                await self?.handleInterruption(type: type)
+            }
+        }
+    }
+
+    private func handleInterruption(type: AVAudioSession.InterruptionType) async {
+        switch type {
+        case .began:
+            logger.logInfo("Audio session interrupted - stopping live translation")
+            await fail(LiveTranslationError.audioSessionFailure("Interrupted by another app"))
+        case .ended:
+            // We don't auto-resume; user must restart explicitly. Resuming a
+            // mid-translation session after interruption produces inconsistent
+            // STT context anyway.
+            break
+        @unknown default:
+            break
+        }
     }
 
     private func fail(_ error: Error) async {
@@ -246,15 +314,7 @@ final class LiveTranslationService {
     }
 
     private func requestMicrophonePermission() async -> Bool {
-        if #available(iOS 17, *) {
-            return await AVAudioApplication.requestRecordPermission()
-        } else {
-            return await withCheckedContinuation { continuation in
-                AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                    continuation.resume(returning: granted)
-                }
-            }
-        }
+        await AVAudioApplication.requestRecordPermission()
     }
 
     private func persistConfig(oldValue: LiveTranslationConfig) {

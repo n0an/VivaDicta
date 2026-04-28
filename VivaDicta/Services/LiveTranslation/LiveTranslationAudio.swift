@@ -52,8 +52,23 @@ final class LiveTranslationAudio {
         )!
     }()
 
+    init() {
+        // Attach + connect once per lifetime. Repeated start/stop cycles must NOT
+        // re-attach nodes; AVAudioEngine throws on duplicate attach. The graph
+        // stays intact across stop()/start(); we only stop/start the engine and
+        // re-install the input tap.
+        engine.attach(playerNode)
+        engine.attach(varispeedNode)
+        varispeedNode.rate = playbackRate
+        engine.connect(playerNode, to: varispeedNode, format: playbackFormat)
+        engine.connect(varispeedNode, to: engine.mainMixerNode, format: playbackFormat)
+    }
+
     func makeCaptureStream() -> AsyncStream<Data> {
-        AsyncStream<Data> { continuation in
+        // Bound the buffer so a slow STT WS doesn't pile up audio in memory.
+        // 50 chunks at ~20ms each ≈ 1 second of headroom; older chunks are
+        // dropped under backpressure rather than growing latency unboundedly.
+        AsyncStream<Data>(bufferingPolicy: .bufferingNewest(50)) { continuation in
             captureContinuation = continuation
             continuation.onTermination = { @Sendable [weak self] _ in
                 Task { @MainActor [weak self] in
@@ -80,7 +95,9 @@ final class LiveTranslationAudio {
         playerNode.stop()
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        engine.reset()
+        // Do NOT call engine.reset(); it detaches nodes and the next start()
+        // would crash on re-attach. Stopping the engine alone is enough to
+        // release CPU/audio hardware.
         captureContinuation?.finish()
         captureContinuation = nil
         tapInstaller = nil
@@ -165,11 +182,10 @@ final class LiveTranslationAudio {
             throw LiveTranslationError.audioEngineFailure("invalid input format")
         }
 
-        engine.attach(playerNode)
-        engine.attach(varispeedNode)
+        // Apply the latest preferred rate every start() in case it was changed
+        // while idle. The output graph itself stays attached for the lifetime
+        // of this object (set up in init).
         varispeedNode.rate = playbackRate
-        engine.connect(playerNode, to: varispeedNode, format: playbackFormat)
-        engine.connect(varispeedNode, to: engine.mainMixerNode, format: playbackFormat)
 
         guard let continuation = captureContinuation else {
             throw LiveTranslationError.audioEngineFailure("capture stream not initialized")

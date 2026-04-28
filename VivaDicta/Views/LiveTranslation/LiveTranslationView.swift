@@ -256,8 +256,13 @@ struct LiveTranslationView: View {
                 }
                 return nil
             },
-            set: { _ in
-                Task { await service.stop() }
+            set: { newValue in
+                // Clear the .failed status on dismissal; otherwise the getter
+                // keeps returning a fresh FailureAlert and the alert reappears
+                // immediately, trapping the user in a loop.
+                if newValue == nil {
+                    service.clearFailureIfNeeded()
+                }
             }
         )
     }
@@ -273,9 +278,14 @@ struct LiveTranslationView: View {
         let snapshot = service.transcriptSnapshot()
         guard !snapshot.original.isEmpty || !snapshot.translation.isEmpty else { return }
 
+        // Combine source + translation into the `text` field with section
+        // headings; leave `enhancedText` nil so Spotlight, list previews,
+        // search, and the dual-write Variation pipeline aren't confused
+        // (`enhancedText` is the AI-output cache and must not hold raw MT).
+        let combined = combineSnapshot(snapshot)
+
         let transcription = Transcription(
-            text: snapshot.original.isEmpty ? snapshot.translation : snapshot.original,
-            enhancedText: snapshot.translation.isEmpty ? nil : snapshot.translation,
+            text: combined,
             audioDuration: 0,
             transcriptionModelName: "stt-rt-v4",
             transcriptionProviderName: TranscriptionModelProvider.soniox.rawValue,
@@ -285,6 +295,20 @@ struct LiveTranslationView: View {
         modelContext.insert(transcription)
         try? modelContext.save()
         savedSnapshot = SavedSnapshot()
+    }
+
+    private func combineSnapshot(_ snapshot: (original: String, translation: String)) -> String {
+        let sourceName = service.config.sourceLanguage.displayName
+        let targetName = service.config.targetLanguage.displayName
+
+        var sections: [String] = []
+        if !snapshot.original.isEmpty {
+            sections.append("\(sourceName):\n\(snapshot.original)")
+        }
+        if !snapshot.translation.isEmpty {
+            sections.append("\(targetName):\n\(snapshot.translation)")
+        }
+        return sections.joined(separator: "\n\n")
     }
 
     private struct FailureAlert: Identifiable {
