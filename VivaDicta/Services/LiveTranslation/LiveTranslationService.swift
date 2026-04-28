@@ -123,10 +123,29 @@ final class LiveTranslationService {
         case .audio(let data):
             audio.enqueuePlayback(data)
         case .finished:
-            break
+            // Soniox auto-terminates a TTS stream after some duration. If we're
+            // still in a running session and TTS is still enabled, transparently
+            // reopen the stream so playback continues.
+            guard status == .running, config.ttsEnabled else { return }
+            logger.logInfo("TTS stream ended mid-session - reconnecting")
+            await reopenTTSStream()
         case .failed(let message):
             logger.logError("TTS stream failed: \(message)")
+            guard status == .running, config.ttsEnabled else { return }
+            logger.logInfo("TTS stream failed mid-session - reconnecting")
+            await reopenTTSStream()
         }
+    }
+
+    private func reopenTTSStream() async {
+        await ttsClient?.disconnect()
+        ttsClient = nil
+        ttsTask?.cancel()
+        ttsTask = nil
+
+        guard let apiKey = KeychainService.shared.getString(forKey: "sonioxAPIKey"),
+              !apiKey.isEmpty else { return }
+        await openTTSStream(apiKey: apiKey)
     }
 
     private func appendToken(_ token: LiveTranslationToken) {

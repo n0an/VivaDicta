@@ -14,9 +14,15 @@ final class LiveTranslationAudio {
     static let captureSampleRate: Double = 16000
     static let playbackSampleRate: Double = SonioxRealtimeTTSClient.outputSampleRate
 
+    /// Playback rate for the TTS audio. Russian/translated text often runs
+    /// longer than the source speech; speeding up modestly keeps the queue
+    /// from growing during long sessions without sounding chipmunked.
+    static let playbackRate: Float = 1.15
+
     private let logger = Logger(category: .liveTranslationAudio)
     private let engine = AVAudioEngine()
     private let playerNode = AVAudioPlayerNode()
+    private let varispeedNode = AVAudioUnitVarispeed()
 
     private var captureContinuation: AsyncStream<Data>.Continuation?
     private var isStarted = false
@@ -84,6 +90,11 @@ final class LiveTranslationAudio {
         guard isStarted else { return }
         guard let buffer = makePlaybackBuffer(from: data) else { return }
         playerNode.scheduleBuffer(buffer, completionHandler: nil)
+        // After long silences the engine may suspend the player node implicitly.
+        // Re-arm it whenever new audio arrives.
+        if !playerNode.isPlaying {
+            playerNode.play()
+        }
     }
 
     // MARK: - Private
@@ -136,7 +147,10 @@ final class LiveTranslationAudio {
         }
 
         engine.attach(playerNode)
-        engine.connect(playerNode, to: engine.mainMixerNode, format: playbackFormat)
+        engine.attach(varispeedNode)
+        varispeedNode.rate = Self.playbackRate
+        engine.connect(playerNode, to: varispeedNode, format: playbackFormat)
+        engine.connect(varispeedNode, to: engine.mainMixerNode, format: playbackFormat)
 
         guard let continuation = captureContinuation else {
             throw LiveTranslationError.audioEngineFailure("capture stream not initialized")
