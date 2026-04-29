@@ -212,6 +212,19 @@ struct ModeEditView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+
+                    if viewModel.isTranslationTargetSelectionAvailable() {
+                        Picker("Translate to", selection: $viewModel.translationTargetLanguage) {
+                            Text("Off").tag("")
+                            Divider()
+                            ForEach(viewModel.getTranslationTargetLanguages(), id: \.key) { key, value in
+                                Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
+                            }
+                        }
+                        .onChange(of: viewModel.translationTargetLanguage) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    }
                 } else {
                     if viewModel.transcriptionProvider == .parakeet ||
                         viewModel.transcriptionProvider == .whisperKit {

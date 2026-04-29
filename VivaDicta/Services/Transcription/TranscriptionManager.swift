@@ -89,6 +89,17 @@ class TranscriptionManager {
         }
     }
 
+    /// Target language for inline translation during transcription (Soniox).
+    /// Empty string means no translation.
+    var translationTargetLanguage: String {
+        get {
+            UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
+        }
+        set {
+            UserDefaultsStorage.shared.set(newValue, forKey: AppGroupCoordinator.kTranslationTargetLanguageKey)
+        }
+    }
+
     // WhisperKit performance metrics
     var whisperKitPrewarmDuration: TimeInterval {
         whisperKitTranscriptionService.lastPrewarmDuration
@@ -117,6 +128,7 @@ class TranscriptionManager {
     private func applyModeLanguage(_ mode: VivaMode) {
         let language = mode.transcriptionLanguage ?? "auto"
         updateLanguage(language)
+        translationTargetLanguage = mode.translationTargetLanguage ?? ""
     }
 
     /// Refreshes the list of available cloud models and notifies observers.
