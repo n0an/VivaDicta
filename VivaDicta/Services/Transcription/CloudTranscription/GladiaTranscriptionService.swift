@@ -108,7 +108,6 @@ struct GladiaTranscriptionService {
             "diarization": diarizationEnabled
         ]
 
-        // Language hints / auto-detect.
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             payload["language_config"] = [
@@ -122,7 +121,15 @@ struct GladiaTranscriptionService {
             ]
         }
 
-        // Inline translation.
+        let vocabularyTerms = CustomVocabulary.getTerms()
+        if !vocabularyTerms.isEmpty {
+            payload["custom_vocabulary"] = true
+            payload["custom_vocabulary_config"] = [
+                "vocabulary": vocabularyTerms
+            ]
+            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms to Gladia request")
+        }
+
         if !translationTarget.isEmpty {
             payload["translation"] = true
             payload["translation_config"] = [
@@ -225,10 +232,17 @@ struct GladiaTranscriptionService {
             throw CloudTranscriptionError.noTranscriptionReturned
         }
 
-        // When translation is enabled, prefer the translated transcript and utterances.
-        if translationEnabled,
-           let translation = result.translation,
-           let firstResult = translation.results?.first {
+        if translationEnabled {
+            // When translation was requested, returning the original-language transcript
+            // would silently misrepresent the result. If the translation block is missing,
+            // marked unsuccessful, or empty, treat it as a transcription failure.
+            guard let translation = result.translation,
+                  translation.success != false,
+                  let firstResult = translation.results?.first else {
+                logger.logError("Gladia translation requested but missing or unsuccessful in response")
+                throw CloudTranscriptionError.noTranscriptionReturned
+            }
+
             if diarizationEnabled,
                let diarizedText = makeSpeakerAttributedText(from: firstResult.utterances) {
                 return .speakerAttributed(diarizedText)
@@ -236,7 +250,6 @@ struct GladiaTranscriptionService {
             return .plain(firstResult.full_transcript)
         }
 
-        // Fall back to the original transcription.
         if diarizationEnabled,
            let diarizedText = makeSpeakerAttributedText(from: result.transcription.utterances) {
             return .speakerAttributed(diarizedText)
