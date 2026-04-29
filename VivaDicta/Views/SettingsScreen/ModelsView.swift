@@ -91,6 +91,9 @@ struct ModelsView: View {
                 })
             .navigationTransition(.zoom(sourceID: model.id, in: zoomNamespace))
         })
+        .onAppear {
+            consumePendingCloudTranscriptionProvider()
+        }
         .sheet(isPresented: $showCustomModelConfiguration) {
             AddCustomTranscriptionModelView(onSave: {
                 handleCustomModelSaved()
@@ -149,6 +152,22 @@ struct ModelsView: View {
 
         appState.transcriptionManager.updateCloudModels()
         cloudModelToConfigure = nil
+    }
+
+    /// If another screen requested deep-linking into a specific cloud
+    /// transcription provider's API key entry (e.g., Live Translation's
+    /// missing-key empty state), consume that request here: switch to the
+    /// cloud tab and trigger the configuration sheet for the matching model.
+    private func consumePendingCloudTranscriptionProvider() {
+        guard let provider = appState.pendingCloudTranscriptionProvider else { return }
+        appState.pendingCloudTranscriptionProvider = nil
+
+        modelType = .cloud
+        let cloudModels = appState.transcriptionManager.allAvailableModels
+            .compactMap { $0 as? CloudModel }
+        if let match = cloudModels.first(where: { $0.provider == provider }) {
+            cloudModelToConfigure = match
+        }
     }
 
     func handleAPIKeyDeletion(for model: CloudModel) {

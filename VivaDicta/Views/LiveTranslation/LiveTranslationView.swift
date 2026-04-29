@@ -12,24 +12,28 @@ import SwiftUI
 struct LiveTranslationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
 
     @State private var service = LiveTranslationService()
     @State private var savedSnapshot: SavedSnapshot?
     @State private var saveError: SaveErrorAlert?
     @State private var headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
+    @State private var hasSonioxKey: Bool = false
+
+    private static let sonioxConsoleURL = URL(string: "https://console.soniox.com/", encodingInvalidCharacters: false)
+        ?? URL(string: "https://soniox.com")!
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                languageBar
-                Divider()
-                if !headphonesConnected && service.config.ttsEnabled {
-                    headphonesHint
+            Group {
+                if hasSonioxKey {
+                    sessionContent
+                } else {
+                    missingKeyEmptyState
                 }
-                transcriptColumns
-                Divider()
-                ttsBar
-                actionBar
+            }
+            .onAppear {
+                hasSonioxKey = checkSonioxKey()
             }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
                 headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
@@ -71,6 +75,68 @@ struct LiveTranslationView: View {
         }
     }
 
+    @ViewBuilder
+    private var sessionContent: some View {
+        VStack(spacing: 0) {
+            languageBar
+            Divider()
+            transcriptColumns
+            Divider()
+            ttsBar
+            actionBar
+        }
+    }
+
+    private var missingKeyEmptyState: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "key.horizontal.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(.indigo)
+
+            VStack(spacing: 8) {
+                Text("Soniox API key required")
+                    .font(.title2.weight(.semibold))
+                Text("Live Translation uses Soniox for real-time speech recognition and translation. Add your API key in Settings to get started.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            VStack(spacing: 12) {
+                Button {
+                    appState.pendingCloudTranscriptionProvider = .soniox
+                    dismiss()
+                } label: {
+                    Label("Open Settings", systemImage: "gearshape")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.indigo)
+                .controlSize(.large)
+
+                Link(destination: Self.sonioxConsoleURL) {
+                    Label("Get a Soniox key", systemImage: "safari")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+            .padding(.horizontal)
+
+            Spacer()
+        }
+    }
+
+    private func checkSonioxKey() -> Bool {
+        guard let key = KeychainService.shared.getString(forKey: "sonioxAPIKey") else {
+            return false
+        }
+        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     // MARK: - Subviews
 
     private var languageBar: some View {
@@ -102,17 +168,14 @@ struct LiveTranslationView: View {
     }
 
     private var headphonesHint: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "airpods")
-                .foregroundStyle(.orange)
-            Text("Use headphones to prevent feedback into the mic")
+        HStack(spacing: 6) {
+            Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+            Text("Use headphones for clearer audio, or hold your iPhone near your ear")
+                .font(.caption)
             Spacer()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.orange.opacity(0.1))
+        .foregroundStyle(.secondary)
     }
 
     private var transcriptColumns: some View {
@@ -169,6 +232,10 @@ struct LiveTranslationView: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .frame(width: 44, alignment: .trailing)
+                }
+
+                if !headphonesConnected {
+                    headphonesHint
                 }
             }
         }

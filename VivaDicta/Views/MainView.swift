@@ -125,6 +125,22 @@ struct MainView: View {
 
     @ViewBuilder
     private var contentNavigationView: some View {
+        contentNavigationViewBase
+            .onChange(of: appState.pendingCloudTranscriptionProvider) { _, newValue in
+                if newValue != nil { showingSettings = true }
+            }
+            .overlay(alignment: .top) {
+                if appState.showKeyboardFlowToast {
+                    KeyboardFlowToast()
+                        .padding(.top, 60)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(duration: 0.4, bounce: 0.2), value: appState.showKeyboardFlowToast)
+    }
+
+    @ViewBuilder
+    private var contentNavigationViewBase: some View {
         rootNavigationStack
             .overlay { recordingOverlay }
             .overlay { hudOverlay }
@@ -189,14 +205,6 @@ struct MainView: View {
                     handleOpenedAudioTranscription()
                 }
             }
-            .overlay(alignment: .top) {
-                if appState.showKeyboardFlowToast {
-                    KeyboardFlowToast()
-                        .padding(.top, 60)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-            }
-            .animation(.spring(duration: 0.4, bounce: 0.2), value: appState.showKeyboardFlowToast)
     }
 
     // MARK: - Main Content View

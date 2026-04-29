@@ -663,6 +663,12 @@ struct SettingsView: View {
                 appState.shouldNavigateToModeSettings = false
                 navigationPath.append(appState.aiService.selectedMode)
             }
+            if appState.pendingCloudTranscriptionProvider != nil {
+                // Don't clear the flag here; ModelsView reads it on appear
+                // and uses it to switch to the cloud tab + open the matching
+                // CloudModelConfigurationView. Clearing happens there.
+                navigationPath.append(SettingsDestination.transcriptionModels)
+            }
         }
         .safeAreaInset(edge: .bottom) {
             if navigationPath.isEmpty {
