@@ -22,6 +22,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case deepgram
     case mistral
     case soniox
+    case gladia
     case cohere
     case zai
     case kimi
@@ -51,6 +52,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Gemini"
         case .soniox:
             "Soniox"
+        case .gladia:
+            "Gladia"
         case .cohere:
             "Cohere"
         case .anthropic:
@@ -107,6 +110,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "deepgram"
         case .soniox:
             "soniox"
+        case .gladia:
+            "gladia"
         case .cohere:
             "cohere-color"
         case .vercelAIGateway:
@@ -163,6 +168,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .elevenLabs: URL(string: "https://elevenlabs.io/speech-synthesis")
         case .deepgram: URL(string: "https://console.deepgram.com/api-keys")
         case .soniox: URL(string: "https://console.soniox.com/")
+        case .gladia: URL(string: "https://app.gladia.io/api-keys")
         case .openRouter: URL(string: "https://openrouter.ai/keys")
         case .cerebras: URL(string: "https://cloud.cerebras.ai/")
         case .grok: URL(string: "https://console.x.ai/")
@@ -254,6 +260,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.mistral.ai/v1/chat/completions"
         case .soniox:
             return "https://api.soniox.com/v1"
+        case .gladia:
+            return "https://api.gladia.io/v2"
         case .cohere:
             return "https://api.cohere.com/v2"
         case .vercelAIGateway:
@@ -302,6 +310,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "openai/gpt-oss-120b"
         case .soniox:
             return "stt-async-v4"
+        case .gladia:
+            return "solaria-1"
         case .cohere:
             return "cohere-transcribe-03-2026"
         case .vercelAIGateway:
@@ -340,6 +350,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .deepgram: "deepgramAPIKey"
         case .mistral: "mistralAPIKey"
         case .soniox: "sonioxAPIKey"
+        case .gladia: "gladiaAPIKey"
         case .cohere: "cohereAPIKey"
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
@@ -439,6 +450,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .soniox:
             return []
+        case .gladia:
+            return [] // Transcription-only provider, no chat models
         case .cohere:
             return [] // Transcription-only provider, no chat models
         case .openRouter:
