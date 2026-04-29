@@ -440,11 +440,13 @@ class ModeEditViewModel {
         return isTranscriptionProviderConfigured(transcriptionProvider)
     }
 
-    /// Translation target languages, alphabetical, excluding "auto".
-    public func getTranslationTargetLanguages() -> [(key: String, value: String)] {
-        TranscriptionModelProvider.allLanguages
-            .filter { $0.key != "auto" }
-            .sorted { $0.value < $1.value }
+    /// Translation targets are the active model's supported languages (sans "auto"),
+    /// split into the user's preferred locales + the rest, sorted alphabetically.
+    public func getGroupedTranslationTargetLanguages() -> GroupedLanguages {
+        let grouped = getGroupedLanguages()
+        let recommended = grouped.recommended.filter { $0.key != "auto" }
+        let other = grouped.other.filter { $0.key != "auto" }
+        return GroupedLanguages(recommended: recommended, other: other)
     }
 
     private func getUserPreferredLanguageCodes() -> [String] {

@@ -214,11 +214,22 @@ struct ModeEditView: View {
                     }
 
                     if viewModel.isTranslationTargetSelectionAvailable() {
+                        let translationGroups = viewModel.getGroupedTranslationTargetLanguages()
                         Picker("Translate to", selection: $viewModel.translationTargetLanguage) {
                             Text("Off").tag("")
-                            Divider()
-                            ForEach(viewModel.getTranslationTargetLanguages(), id: \.key) { key, value in
-                                Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
+
+                            if !translationGroups.recommended.isEmpty {
+                                Divider()
+                                ForEach(translationGroups.recommended, id: \.key) { key, value in
+                                    Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
+                                }
+                            }
+
+                            if !translationGroups.other.isEmpty {
+                                Divider()
+                                ForEach(translationGroups.other, id: \.key) { key, value in
+                                    Text(TranscriptionModelProvider.languageWithFlag(key, name: value)).tag(key)
+                                }
                             }
                         }
                         .onChange(of: viewModel.translationTargetLanguage) { _, _ in
