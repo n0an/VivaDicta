@@ -55,13 +55,13 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     
     static let cloudProviders: [TranscriptionModelProvider] = [
         .groq,
-        .cohere,
-        .mistral,
-        .gemini,
-        .deepgram,
-        .openAI,
-        .elevenLabs,
         .soniox,
+        .mistral,
+        .deepgram,
+        .cohere,
+        .elevenLabs,
+        .gemini,
+        .openAI,
         .customTranscription]
     
     var cloudTranscriptionModelsNames: [String] {
@@ -163,16 +163,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
-                name: "cohere-transcribe-03-2026",
-                displayName: "Cohere Transcribe",
-                description: "Best-in-class accuracy (5.4 WER) across 14 languages. Free trial tier with rate limits, no credit card required",
-                provider: .cohere,
+                name: "stt-async-v4",
+                displayName: "Soniox (stt-async-v4)",
+                description: "Soniox asynchronous transcription model v4 with human-parity accuracy across 60+ languages. Powers Live Translation - super-fast real-time speech-to-speech, ideal for lectures and workshops.",
+                provider: .soniox,
                 recommended: true,
-                speed: 0.85,
-                accuracy: 0.98,
-                cost: 0.1,
+                speed: 0.8,
+                accuracy: 0.97,
+                cost: 0.25,
                 supportManyLanguages: true,
-                supportedLanguages: cohereLanguages
+                supportedLanguages: allLanguages
             ),
 
             CloudModel(
@@ -187,7 +187,93 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
+
+            CloudModel(
+                name: "nova-3-multilingual",
+                displayName: "Nova 3 Multi-language",
+                description: "First AI model with real-time switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
+                provider: .deepgram,
+                recommended: true,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.75,  // $0.0052/min - New signups get $200 free credits (~38,460 mins)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "nova-3",
+                displayName: "Nova 3",
+                description: "Latest generation model with improved accuracy and speed for English transcription. New signups get $200 free credits (~46,511 mins)",
+                provider: .deepgram,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+
+            CloudModel(
+                name: "nova-3-medical",
+                displayName: "Nova 3 Medical",
+                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise. New signups get $200 free credits (~25,974 mins)",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.97,
+                cost: 1.0,  // $0.0077/min - New signups get $200 free credits (~25,974 mins)
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+            ),
+
+            CloudModel(
+                name: "nova-2",
+                displayName: "Nova 2",
+                description: "Industry-leading low-latency model optimized for real-time streaming applications. New signups get $200 free credits (~46,511 mins)",
+                provider: .deepgram,
+                speed: 0.9,
+                accuracy: 0.93,
+                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "cohere-transcribe-03-2026",
+                displayName: "Cohere Transcribe",
+                description: "Best-in-class accuracy (5.4 WER) across 14 languages. Free trial tier with rate limits, no credit card required",
+                provider: .cohere,
+                speed: 0.85,
+                accuracy: 0.98,
+                cost: 0.1,
+                supportManyLanguages: true,
+                supportedLanguages: cohereLanguages
+            ),
+
+            CloudModel(
+                name: "scribe_v2",
+                displayName: "Scribe v2",
+                description: "Enhanced accuracy model supporting 92+ languages with improved accent handling. Free tier: ~150 mins/month",
+                provider: .elevenLabs,
+                speed: 0.75,
+                accuracy: 1.0,
+                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "scribe_v1",
+                displayName: "Scribe v1",
+                description: "Industry-leading accuracy with excellent accent handling for batch transcription. Free tier: ~150 mins/month",
+                provider: .elevenLabs,
+                speed: 0.7,
+                accuracy: 1.0,
+                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            // Gemini Models
             CloudModel(
                 name: "gemini-3-pro-preview",
                 displayName: "Gemini 3 Pro",
@@ -210,8 +296,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
-            // Gemini Models
             CloudModel(
                 name: "gemini-2.5-pro",
                 displayName: "Gemini 2.5 Pro",
@@ -234,79 +318,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
-            
-            CloudModel(
-                name: "nova-3-multilingual",
-                displayName: "Nova 3 Multi-language",
-                description: "First AI model with real-time switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
-                provider: .deepgram,
-                speed: 0.95,
-                accuracy: 0.95,
-                cost: 0.75,  // $0.0052/min - New signups get $200 free credits (~38,460 mins)
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
-            CloudModel(
-                name: "nova-3",
-                displayName: "Nova 3",
-                description: "Latest generation model with improved accuracy and speed for English transcription. New signups get $200 free credits (~46,511 mins)",
-                provider: .deepgram,
-                speed: 0.95,
-                accuracy: 0.95,
-                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
-                supportManyLanguages: false,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
-            ),
-            
-            CloudModel(
-                name: "nova-3-medical",
-                displayName: "Nova 3 Medical",
-                description: "HIPAA-compliant clinical model with 3.44% WER and medical terminology expertise. New signups get $200 free credits (~25,974 mins)",
-                provider: .deepgram,
-                speed: 0.9,
-                accuracy: 0.97,
-                cost: 1.0,  // $0.0077/min - New signups get $200 free credits (~25,974 mins)
-                supportManyLanguages: false,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
-            ),
-            
-            CloudModel(
-                name: "nova-2",
-                displayName: "Nova 2",
-                description: "Industry-leading low-latency model optimized for real-time streaming applications. New signups get $200 free credits (~46,511 mins)",
-                provider: .deepgram,
-                speed: 0.9,
-                accuracy: 0.93,
-                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
-            CloudModel(
-                name: "scribe_v2",
-                displayName: "Scribe v2",
-                description: "Enhanced accuracy model supporting 92+ languages with improved accent handling. Free tier: ~150 mins/month",
-                provider: .elevenLabs,
-                speed: 0.75,
-                accuracy: 1.0,
-                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
-            CloudModel(
-                name: "scribe_v1",
-                displayName: "Scribe v1",
-                description: "Industry-leading accuracy with excellent accent handling for batch transcription. Free tier: ~150 mins/month",
-                provider: .elevenLabs,
-                speed: 0.7,
-                accuracy: 1.0,
-                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
+
             CloudModel(
                 name: "gpt-4o-transcribe",
                 displayName: "GPT-4o Transcribe",
@@ -337,18 +349,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 speed: 0.7,
                 accuracy: 0.93,
                 cost: 0.9,  // $0.006/min
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-            
-            CloudModel(
-                name: "stt-async-v4",
-                displayName: "Soniox (stt-async-v4)",
-                description: "Soniox asynchronous transcription model v4 with human-parity accuracy across 60+ languages.",
-                provider: .soniox,
-                speed: 0.8,
-                accuracy: 0.97,
-                cost: 0.25,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             )
