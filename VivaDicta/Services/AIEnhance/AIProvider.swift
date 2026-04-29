@@ -106,7 +106,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .deepgram:
             "deepgram"
         case .soniox:
-            nil
+            "soniox"
         case .cohere:
             "cohere-color"
         case .vercelAIGateway:
