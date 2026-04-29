@@ -177,6 +177,13 @@ actor SonioxRealtimeSTTClient {
     private func emitToken(from json: [String: Any]) {
         guard let text = json["text"] as? String, !text.isEmpty else { return }
 
+        // Soniox emits angle-bracketed marker tokens like "<end>" for endpoint
+        // detection (we enable it for better token finalisation latency).
+        // They're control signals, not visible transcript text - drop them.
+        if text.hasPrefix("<") && text.hasSuffix(">") {
+            return
+        }
+
         let isFinal = json["is_final"] as? Bool ?? false
         let translationStatus = (json["translation_status"] as? String)?.lowercased() ?? "original"
         let kind: LiveTranslationToken.Kind = translationStatus == "translation" ? .translation : .original
