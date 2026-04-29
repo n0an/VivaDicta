@@ -86,6 +86,10 @@ class AppState {
     /// Triggers navigation to the current mode's settings screen.
     var shouldNavigateToModeSettings: Bool = false
 
+    /// Triggers Settings → AI Providers → <provider> deep link, used by
+    /// "missing API key" empty states (e.g. Live Translation needs Soniox).
+    var shouldNavigateToAIProviderKey: AIProvider? = nil
+
     /// Triggers the start of a new recording.
     var shouldStartRecording: Bool = false
 

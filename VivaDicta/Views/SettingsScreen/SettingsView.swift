@@ -663,6 +663,11 @@ struct SettingsView: View {
                 appState.shouldNavigateToModeSettings = false
                 navigationPath.append(appState.aiService.selectedMode)
             }
+            if let provider = appState.shouldNavigateToAIProviderKey {
+                appState.shouldNavigateToAIProviderKey = nil
+                navigationPath.append(SettingsDestination.aiProviders)
+                navigationPath.append(provider)
+            }
         }
         .safeAreaInset(edge: .bottom) {
             if navigationPath.isEmpty {

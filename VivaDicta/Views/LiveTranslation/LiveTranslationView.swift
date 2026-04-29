@@ -20,7 +20,8 @@ struct LiveTranslationView: View {
     @State private var headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
     @State private var hasSonioxKey: Bool = false
 
-    private static let sonioxConsoleURL = URL(string: "https://console.soniox.com/")!
+    private static let sonioxConsoleURL = URL(string: "https://console.soniox.com/", encodingInvalidCharacters: false)
+        ?? URL(string: "https://soniox.com")!
 
     var body: some View {
         NavigationStack {
@@ -106,7 +107,7 @@ struct LiveTranslationView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    appState.shouldNavigateToModels = true
+                    appState.shouldNavigateToAIProviderKey = .soniox
                     dismiss()
                 } label: {
                     Label("Open Settings", systemImage: "gearshape")
@@ -170,7 +171,7 @@ struct LiveTranslationView: View {
         HStack(spacing: 6) {
             Image(systemName: "info.circle")
                 .font(.caption)
-            Text("Use headphones, or hold your iPhone to your ear, to hear the translation")
+            Text("Use headphones for clearer audio, or hold your iPhone near your ear")
                 .font(.caption)
             Spacer()
         }
