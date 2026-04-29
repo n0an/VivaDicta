@@ -223,20 +223,23 @@ struct LiveTranslationView: View {
         let preferredSet = Set(preferred)
         let rest = LiveTranslationLanguage.alphabetical.filter { !preferredSet.contains($0) }
 
+        // Picker nested inside Menu: the outer Menu keeps the custom chip
+        // label (title caption, capsule background, chevron-down), while the
+        // inner Picker drives selection state - iOS draws the checkmark in
+        // its own column so flags + names stay aligned across rows.
         return Menu {
-            // User-preferred languages first (matches the mode-settings pattern).
-            if !preferred.isEmpty {
-                Section {
-                    ForEach(preferred) { language in
-                        languageMenuItem(language: language, selection: selection)
+            Picker("Language", selection: selection) {
+                if !preferred.isEmpty {
+                    Section {
+                        ForEach(preferred) { language in
+                            Text(language.displayNameWithFlag).tag(language)
+                        }
                     }
                 }
-            }
-            // Rest alphabetically. Section gives an automatic divider between
-            // groups in iOS 17+ menus.
-            Section {
-                ForEach(rest) { language in
-                    languageMenuItem(language: language, selection: selection)
+                Section {
+                    ForEach(rest) { language in
+                        Text(language.displayNameWithFlag).tag(language)
+                    }
                 }
             }
         } label: {
@@ -252,18 +255,6 @@ struct LiveTranslationView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(.fill.tertiary, in: .capsule)
-        }
-    }
-
-    private func languageMenuItem(language: LiveTranslationLanguage, selection: Binding<LiveTranslationLanguage>) -> some View {
-        Button {
-            selection.wrappedValue = language
-        } label: {
-            if language == selection.wrappedValue {
-                Label(language.displayNameWithFlag, systemImage: "checkmark")
-            } else {
-                Text(language.displayNameWithFlag)
-            }
         }
     }
 

@@ -99,11 +99,18 @@ final class LiveTranslationService {
             return
         }
 
+        // After every suspension point we re-check status. If a concurrent
+        // fail() (e.g. STT WS rejected the config and emitted .failed) tore
+        // the session down, we must not create more orphan resources.
+        guard status == .starting else { return }
+
         startSTT(apiKey: apiKey)
 
         if config.ttsEnabled {
             await openTTSStream(apiKey: apiKey)
         }
+
+        guard status == .starting else { return }
 
         captureTask = Task { [weak self] in
             for await chunk in captureStream {
@@ -312,6 +319,11 @@ final class LiveTranslationService {
     }
 
     private func handleTTSToggle() {
+        // A manual toggle is a fresh user intent — give it a fresh retry
+        // budget so a previous run that hit the TTS retry cap doesn't make
+        // the very next failure give up immediately.
+        ttsFailureRetries = 0
+
         Task { [weak self] in
             guard let self else { return }
             if self.config.ttsEnabled {
