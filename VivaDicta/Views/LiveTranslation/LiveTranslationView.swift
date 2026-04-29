@@ -229,17 +229,12 @@ struct LiveTranslationView: View {
         // its own column so flags + names stay aligned across rows.
         return Menu {
             Picker("Language", selection: selection) {
-                if !preferred.isEmpty {
-                    Section {
-                        ForEach(preferred) { language in
-                            Text(language.displayNameWithFlag).tag(language)
-                        }
-                    }
+                ForEach(preferred) { language in
+                    Text(language.displayNameWithFlag).tag(language)
                 }
-                Section {
-                    ForEach(rest) { language in
-                        Text(language.displayNameWithFlag).tag(language)
-                    }
+
+                ForEach(rest) { language in
+                    Text(language.displayNameWithFlag).tag(language)
                 }
             }
         } label: {
