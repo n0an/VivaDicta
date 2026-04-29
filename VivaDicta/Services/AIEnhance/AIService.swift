@@ -2317,6 +2317,8 @@ class AIService {
             return await verifyMistralAPIKey(key)
         case .soniox:
             return await verifySonioxAPIKey(key)
+        case .gladia:
+            return await verifyGladiaAPIKey(key)
         case .cohere:
             return await verifyCohereAPIKey(key)
         case .cerebras:
@@ -2535,6 +2537,29 @@ class AIService {
             return httpResponse.statusCode == 200
         } catch {
             logger.logError("Soniox API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func verifyGladiaAPIKey(_ key: String) async -> Bool {
+        // Listing pre-recorded jobs is the cheapest auth check that doesn't burn credits.
+        guard let url = URL(string: "https://api.gladia.io/v2/pre-recorded?limit=1") else {
+            return false
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue(key, forHTTPHeaderField: "x-gladia-key")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+
+            return httpResponse.statusCode == 200
+        } catch {
+            logger.logError("Gladia API key verification failed: \(error.localizedDescription)")
             return false
         }
     }

@@ -37,6 +37,7 @@ public enum LogCategory: String {
     case geminiService = "GeminiService"
     case mistralTranscriptionService = "MistralTranscriptionService"
     case sonioxTranscriptionService = "SonioxTranscriptionService"
+    case gladiaTranscriptionService = "GladiaTranscriptionService"
     case cohereTranscriptionService = "CohereTranscriptionService"
     case customTranscriptionService = "CustomTranscriptionService"
 

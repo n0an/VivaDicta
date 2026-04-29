@@ -17,6 +17,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case mistral
     case gemini
     case soniox
+    case gladia
     case cohere
     case customTranscription
     
@@ -42,6 +43,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Gemini"
         case .soniox:
             "Soniox"
+        case .gladia:
+            "Gladia"
         case .cohere:
             "Cohere"
         case .customTranscription:
@@ -56,6 +59,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static let cloudProviders: [TranscriptionModelProvider] = [
         .groq,
         .soniox,
+        .gladia,
         .mistral,
         .deepgram,
         .cohere,
@@ -104,6 +108,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-4o-mini-transcribe"
         case .soniox: "stt-async-v4"
+        case .gladia: "solaria-1"
         case .cohere: "cohere-transcribe-03-2026"
         default: nil
         }
@@ -137,6 +142,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .gemini
         case .soniox:
             return .soniox
+        case .gladia:
+            return .gladia
         case .cohere:
             return .cohere
         default:
@@ -173,6 +180,19 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 cost: 0.25,
                 supportManyLanguages: true,
                 supportedLanguages: sonioxLanguages
+            ),
+
+            CloudModel(
+                name: "solaria-1",
+                displayName: "Gladia Solaria",
+                description: "Gladia's Solaria model with 100+ languages, built-in inline translation and speaker diarization in a single API call. New accounts get free credits.",
+                provider: .gladia,
+                recommended: true,
+                speed: 0.85,
+                accuracy: 0.96,
+                cost: 0.6,
+                supportManyLanguages: true,
+                supportedLanguages: gladiaLanguages
             ),
 
             CloudModel(
@@ -364,6 +384,10 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         let codes = ["en", "fr", "de", "it", "es", "pt", "el", "nl", "pl", "zh", "ja", "ko", "vi", "ar"]
         return allLanguages.filter { codes.contains($0.key) }
     }()
+
+    /// Gladia supports the full Whisper-style language set plus a handful of extras.
+    /// Translation targets are the same set; auto-detect is also supported.
+    static let gladiaLanguages: [String: String] = allLanguages
 
     /// Soniox stt-async-v4 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.
