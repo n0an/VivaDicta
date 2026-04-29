@@ -97,7 +97,7 @@ final class LiveTranslationAudio {
             playerNode.play()
             isStarted = true
         } catch {
-            stop()
+            await stop()
             throw error
         }
     }
@@ -105,34 +105,39 @@ final class LiveTranslationAudio {
     /// Idempotent: safe to call regardless of how far start() got. Each step
     /// is guarded by its own `did-start` flag so a partial-start failure
     /// still tears down the audio session and tap.
-    func stop() {
+    ///
+    /// The hardware teardown runs off MainActor via Task.detached: AVAudioEngine
+    /// stop, removeTap, and AVAudioSession.setActive can each take a noticeable
+    /// moment in some scenarios (especially after route changes), and if they
+    /// run on MainActor SwiftUI freezes for the duration - which is what was
+    /// reproducing as "Stop button hangs the app forever". Yielding MainActor
+    /// keeps the UI responsive while the engine cleans up.
+    func stop() async {
+        guard isStarted || tapInstalled || sessionActivated else { return }
+
+        let needsTap = tapInstalled
+        let needsSessionDeactivate = sessionActivated
+
         isStarted = false
-
-        playerNode.stop()
-
-        if tapInstalled {
-            engine.inputNode.removeTap(onBus: 0)
-            tapInstalled = false
-        }
-
-        engine.stop()
-        // Do NOT call engine.reset(); it detaches nodes and the next start()
-        // would crash on re-attach. Stopping the engine alone is enough to
-        // release CPU/audio hardware.
+        tapInstalled = false
+        sessionActivated = false
 
         captureContinuation?.finish()
         captureContinuation = nil
         tapInstaller = nil
         bufferQueue.reset()
 
-        if sessionActivated {
-            do {
-                try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
-            } catch {
-                logger.logWarning("Audio session deactivate failed: \(error.localizedDescription)")
-            }
-            sessionActivated = false
-        }
+        let context = AudioTeardownContext(
+            engine: engine,
+            playerNode: playerNode,
+            removeTap: needsTap,
+            deactivateSession: needsSessionDeactivate,
+            logger: logger
+        )
+
+        await Task.detached(priority: .userInitiated) {
+            context.perform()
+        }.value
     }
 
     func enqueuePlayback(_ data: Data) {
@@ -350,6 +355,62 @@ nonisolated private final class PlaybackBufferQueue: @unchecked Sendable {
         queuedDuration = 0
         isStarved = true
         hasEverStarted = false
+    }
+}
+
+/// Hardware-side teardown of the AVAudioEngine + AVAudioSession. Wrapped in a
+/// `@unchecked Sendable` class so we can run it on a detached Task without
+/// MainActor isolation. AVAudioEngine, AVAudioPlayerNode, and AVAudioSession
+/// are all documented as thread-safe for these operations - the wrapper just
+/// satisfies Swift 6's strict concurrency checking.
+///
+/// Each step logs entry/exit so the device console pinpoints which call stalls
+/// if the hang ever resurfaces. We deliberately do NOT pass
+/// `.notifyOthersOnDeactivation` - it triggers synchronous notifications to
+/// other apps that have been observed to take seconds in some iOS scenarios.
+nonisolated private final class AudioTeardownContext: @unchecked Sendable {
+    private let engine: AVAudioEngine
+    private let playerNode: AVAudioPlayerNode
+    private let removeTap: Bool
+    private let deactivateSession: Bool
+    private let logger: Logger
+
+    nonisolated init(
+        engine: AVAudioEngine,
+        playerNode: AVAudioPlayerNode,
+        removeTap: Bool,
+        deactivateSession: Bool,
+        logger: Logger
+    ) {
+        self.engine = engine
+        self.playerNode = playerNode
+        self.removeTap = removeTap
+        self.deactivateSession = deactivateSession
+        self.logger = logger
+    }
+
+    nonisolated func perform() {
+        logger.logInfo("Audio teardown: stopping player node")
+        playerNode.stop()
+
+        if removeTap {
+            logger.logInfo("Audio teardown: removing input tap")
+            engine.inputNode.removeTap(onBus: 0)
+        }
+
+        logger.logInfo("Audio teardown: stopping engine")
+        engine.stop()
+
+        if deactivateSession {
+            logger.logInfo("Audio teardown: deactivating session")
+            do {
+                try AVAudioSession.sharedInstance().setActive(false)
+            } catch {
+                logger.logWarning("Audio session deactivate failed: \(error.localizedDescription)")
+            }
+        }
+
+        logger.logInfo("Audio teardown: complete")
     }
 }
 
