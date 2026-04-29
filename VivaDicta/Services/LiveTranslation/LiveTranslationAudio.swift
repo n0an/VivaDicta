@@ -137,6 +137,15 @@ final class LiveTranslationAudio {
 
     func enqueuePlayback(_ data: Data) {
         guard isStarted else { return }
+
+        // Defense against the AirPods-disconnect-mid-session feedback loop.
+        // If the audio route is no longer headphones, the iPhone speaker would
+        // blast TTS audio into the mic which STT then re-captures - producing
+        // a runaway loop. Drop the buffer; the View's headphones banner
+        // already explains why no audio is playing. When headphones reconnect,
+        // future buffers schedule normally.
+        guard Self.isHeadphonesRouteActive else { return }
+
         guard let buffer = makePlaybackBuffer(from: data) else { return }
 
         let duration = TimeInterval(buffer.frameLength) / playbackFormat.sampleRate

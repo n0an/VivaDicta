@@ -232,6 +232,8 @@ struct LiveTranslationView: View {
                 ForEach(preferred) { language in
                     Text(language.displayNameWithFlag).tag(language)
                 }
+                
+                
 
                 ForEach(rest) { language in
                     Text(language.displayNameWithFlag).tag(language)

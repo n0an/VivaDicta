@@ -182,15 +182,15 @@ final class LiveTranslationService {
 
     private func handleSTTEvent(_ event: SonioxRealtimeSTTClient.Event) async {
         switch event {
-        case .token(let token):
+        case .tokens(let batch):
             // Successful token receipt means the connection is healthy; reset
             // the failure retry counter so future transient blips have a fresh
             // budget.
             sttFailureRetries = 0
-            appendToken(token)
+            appendTokens(batch)
             // Only forward FINAL translation tokens to TTS. Soniox revises
             // interim tokens; speaking them produces duplicated/garbled audio.
-            if token.kind == .translation, token.isFinal, !token.text.isEmpty {
+            for token in batch where token.kind == .translation && token.isFinal && !token.text.isEmpty {
                 await ttsClient?.sendText(token.text)
             }
         case .finished:
@@ -282,24 +282,33 @@ final class LiveTranslationService {
         await openTTSStream(apiKey: apiKey)
     }
 
-    private func appendToken(_ token: LiveTranslationToken) {
-        switch token.kind {
-        case .original:
-            mergeToken(token, into: &originalTokens)
-        case .translation:
-            mergeToken(token, into: &translatedTokens)
+    private func appendTokens(_ batch: [LiveTranslationToken]) {
+        // Split the batch by stream (original vs translation) and merge each
+        // into its respective list. We split first so a response that updates
+        // only one side doesn't disturb the other side's non-final tail.
+        var originalBatch: [LiveTranslationToken] = []
+        var translationBatch: [LiveTranslationToken] = []
+        for token in batch {
+            switch token.kind {
+            case .original: originalBatch.append(token)
+            case .translation: translationBatch.append(token)
+            }
         }
+        mergeBatch(originalBatch, into: &originalTokens)
+        mergeBatch(translationBatch, into: &translatedTokens)
     }
 
-    private func mergeToken(_ token: LiveTranslationToken, into list: inout [LiveTranslationToken]) {
-        // If the trailing token is non-final, replace it with the incoming
-        // token (whether final or not). Soniox emits interim tokens that get
-        // superseded; this keeps the rendered text from doubling. Multi-token
-        // interim tails are not perfectly preserved - acceptable trade-off.
-        if let last = list.last, !last.isFinal {
+    private func mergeBatch(_ batch: [LiveTranslationToken], into list: inout [LiveTranslationToken]) {
+        guard !batch.isEmpty else { return }
+        // Per Soniox protocol: non-final tokens in each response are a full
+        // replacement set, so drop ALL trailing non-finals before appending
+        // the new batch (which may itself contain finals followed by a new
+        // non-final tail). Final tokens already in the list are committed
+        // forever and stay put.
+        while let last = list.last, !last.isFinal {
             list.removeLast()
         }
-        list.append(token)
+        list.append(contentsOf: batch)
     }
 
     private func openTTSStream(apiKey: String) async {

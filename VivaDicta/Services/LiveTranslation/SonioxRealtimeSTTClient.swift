@@ -10,7 +10,12 @@ import os
 
 actor SonioxRealtimeSTTClient {
     enum Event: Sendable {
-        case token(LiveTranslationToken)
+        /// All tokens from a single Soniox server response, in order. Per the
+        /// Soniox protocol the non-final tokens in each response are a *full
+        /// replacement set* - any non-final from the previous response is
+        /// superseded. The service must drop trailing non-finals before
+        /// appending this batch to keep interim text in sync.
+        case tokens([LiveTranslationToken])
         case finished
         case failed(String)
     }
@@ -105,8 +110,12 @@ actor SonioxRealtimeSTTClient {
             "audio_format": "pcm_s16le",
             "sample_rate": 16000,
             "num_channels": 1,
+            // Soft hint only - do NOT set language_hints_strict here. Lecturers
+            // routinely code-switch into English for technical terms, names, and
+            // slide titles; strict mode forces those into the source language's
+            // phonetics and produces garbled transcripts. Keep enable_language_identification
+            // on so each token still carries its detected language.
             "language_hints": [sourceLanguage.rawValue],
-            "language_hints_strict": true,
             "enable_language_identification": true,
             "enable_endpoint_detection": true,
             "translation": [
@@ -161,9 +170,15 @@ actor SonioxRealtimeSTTClient {
             return
         }
 
-        if let tokens = json["tokens"] as? [[String: Any]] {
-            for tokenJson in tokens {
-                emitToken(from: tokenJson)
+        if let tokenJsonList = json["tokens"] as? [[String: Any]] {
+            var batch: [LiveTranslationToken] = []
+            for tokenJson in tokenJsonList {
+                if let token = makeToken(from: tokenJson) {
+                    batch.append(token)
+                }
+            }
+            if !batch.isEmpty {
+                continuation?.yield(.tokens(batch))
             }
         }
 
@@ -174,27 +189,26 @@ actor SonioxRealtimeSTTClient {
         }
     }
 
-    private func emitToken(from json: [String: Any]) {
-        guard let text = json["text"] as? String, !text.isEmpty else { return }
+    private func makeToken(from json: [String: Any]) -> LiveTranslationToken? {
+        guard let text = json["text"] as? String, !text.isEmpty else { return nil }
 
         // Soniox emits angle-bracketed marker tokens like "<end>" for endpoint
         // detection (we enable it for better token finalisation latency).
         // They're control signals, not visible transcript text - drop them.
         if text.hasPrefix("<") && text.hasSuffix(">") {
-            return
+            return nil
         }
 
         let isFinal = json["is_final"] as? Bool ?? false
         let translationStatus = (json["translation_status"] as? String)?.lowercased() ?? "original"
         let kind: LiveTranslationToken.Kind = translationStatus == "translation" ? .translation : .original
 
-        let token = LiveTranslationToken(
+        return LiveTranslationToken(
             id: UUID(),
             text: text,
             isFinal: isFinal,
             kind: kind
         )
-        continuation?.yield(.token(token))
     }
 
     private func emitFailure(_ message: String) {
