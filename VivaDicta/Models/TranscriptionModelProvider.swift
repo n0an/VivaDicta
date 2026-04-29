@@ -18,6 +18,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case gemini
     case soniox
     case gladia
+    case speechmatics
     case cohere
     case customTranscription
     
@@ -45,6 +46,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Soniox"
         case .gladia:
             "Gladia"
+        case .speechmatics:
+            "Speechmatics"
         case .cohere:
             "Cohere"
         case .customTranscription:
@@ -60,6 +63,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         .groq,
         .soniox,
         .gladia,
+        .speechmatics,
         .mistral,
         .deepgram,
         .cohere,
@@ -109,6 +113,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .openAI: "gpt-4o-mini-transcribe"
         case .soniox: "stt-async-v4"
         case .gladia: "solaria-1"
+        case .speechmatics: "speechmatics-batch-v2"
         case .cohere: "cohere-transcribe-03-2026"
         default: nil
         }
@@ -144,6 +149,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .soniox
         case .gladia:
             return .gladia
+        case .speechmatics:
+            return .speechmatics
         case .cohere:
             return .cohere
         default:
@@ -193,6 +200,19 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 cost: 0.6,
                 supportManyLanguages: true,
                 supportedLanguages: gladiaLanguages
+            ),
+
+            CloudModel(
+                name: "speechmatics-batch-v2",
+                displayName: "Speechmatics Enhanced",
+                description: "Speechmatics batch transcription with industry-leading accuracy on European languages, speaker diarization and built-in translation across 50+ languages.",
+                provider: .speechmatics,
+                recommended: true,
+                speed: 0.7,
+                accuracy: 0.97,
+                cost: 0.7,
+                supportManyLanguages: true,
+                supportedLanguages: speechmaticsLanguages
             ),
 
             CloudModel(
@@ -388,6 +408,22 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// Gladia supports the full Whisper-style language set plus a handful of extras.
     /// Translation targets are the same set; auto-detect is also supported.
     static let gladiaLanguages: [String: String] = allLanguages
+
+    /// Speechmatics batch supports ~50 languages plus auto-detect.
+    /// Note: Speechmatics uses `cmn` for Mandarin where we use `zh`; the service
+    /// rewrites the code at request time so users still see "Chinese" in the picker.
+    static let speechmaticsLanguages: [String: String] = {
+        let codes: Set<String> = [
+            "auto",
+            "ar", "ba", "eu", "be", "bn", "bg", "yue", "ca", "zh", "hr",
+            "cs", "da", "nl", "en", "et", "fi", "fr", "gl", "de", "el",
+            "he", "hi", "hu", "id", "it", "ja", "ko", "lv", "lt", "ms",
+            "mt", "mr", "mn", "no", "fa", "pl", "pt", "ro", "ru", "sk",
+            "sl", "es", "sw", "sv", "ta", "th", "tr", "uk", "ur", "vi",
+            "cy",
+        ]
+        return allLanguages.filter { codes.contains($0.key) }
+    }()
 
     /// Soniox stt-async-v4 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.

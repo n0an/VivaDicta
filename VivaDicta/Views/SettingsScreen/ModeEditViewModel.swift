@@ -435,10 +435,14 @@ class ModeEditViewModel {
     // MARK: - Translation Settings
 
     /// Translation target picker is offered for cloud providers that fold
-    /// translation into the transcription request (Soniox, Gladia).
+    /// translation into the transcription request (Soniox, Gladia, Speechmatics).
     public func isTranslationTargetSelectionAvailable() -> Bool {
-        guard transcriptionProvider == .soniox || transcriptionProvider == .gladia else { return false }
-        return isTranscriptionProviderConfigured(transcriptionProvider)
+        switch transcriptionProvider {
+        case .soniox, .gladia, .speechmatics:
+            return isTranscriptionProviderConfigured(transcriptionProvider)
+        default:
+            return false
+        }
     }
 
     /// Translation targets are the active model's supported languages (sans "auto"),
