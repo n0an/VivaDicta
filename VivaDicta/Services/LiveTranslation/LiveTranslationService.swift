@@ -353,11 +353,13 @@ final class LiveTranslationService {
     }
 
     private func teardown() async {
+        logger.logInfo("teardown: removing interruption observer")
         if let interruptionObserver {
             NotificationCenter.default.removeObserver(interruptionObserver)
             self.interruptionObserver = nil
         }
 
+        logger.logInfo("teardown: cancelling tasks")
         captureTask?.cancel()
         captureTask = nil
         sttTask?.cancel()
@@ -365,13 +367,18 @@ final class LiveTranslationService {
         ttsTask?.cancel()
         ttsTask = nil
 
+        logger.logInfo("teardown: finalizing STT")
         await sttClient.finalizeAudio()
+        logger.logInfo("teardown: disconnecting STT")
         await sttClient.disconnect()
+        logger.logInfo("teardown: disconnecting TTS")
         await ttsClient?.disconnect()
         ttsClient = nil
         apiKeyCache = nil
 
-        audio.stop()
+        logger.logInfo("teardown: stopping audio")
+        await audio.stop()
+        logger.logInfo("teardown: complete")
     }
 
     private func observeInterruptions() {
