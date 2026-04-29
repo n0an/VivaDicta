@@ -52,6 +52,10 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The language for transcription, or "auto" for automatic detection.
     let transcriptionLanguage: String?
 
+    /// Target language for inline translation during transcription (Soniox only).
+    /// `nil` or empty means no translation; otherwise a 2-letter language code (e.g. "en").
+    let translationTargetLanguage: String?
+
     /// ID of the preset for AI processing, if any.
     let presetId: String?
 
@@ -90,6 +94,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
          transcriptionProvider: TranscriptionModelProvider,
          transcriptionModel: String,
          transcriptionLanguage: String? = nil,
+         translationTargetLanguage: String? = nil,
          presetId: String? = nil,
          aiProvider: AIProvider? = nil,
          aiModel: String,
@@ -105,6 +110,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.transcriptionProvider = transcriptionProvider
         self.transcriptionModel = transcriptionModel
         self.transcriptionLanguage = transcriptionLanguage
+        self.translationTargetLanguage = translationTargetLanguage
         self.presetId = presetId
         self.aiProvider = aiProvider
         self.aiModel = aiModel
@@ -127,6 +133,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         transcriptionProvider = try container.decode(TranscriptionModelProvider.self, forKey: .transcriptionProvider)
         transcriptionModel = try container.decode(String.self, forKey: .transcriptionModel)
         transcriptionLanguage = try container.decodeIfPresent(String.self, forKey: .transcriptionLanguage)
+        translationTargetLanguage = try container.decodeIfPresent(String.self, forKey: .translationTargetLanguage)
         aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
         aiModel = try container.decode(String.self, forKey: .aiModel)
         reminderExtractorProvider = try container.decodeIfPresent(AIProvider.self, forKey: .reminderExtractorProvider)
@@ -153,6 +160,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case id, name, transcriptionProvider, transcriptionModel, transcriptionLanguage
+        case translationTargetLanguage
         case presetId, userPrompt
         case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
         case useClipboardContext
@@ -168,6 +176,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(transcriptionProvider, forKey: .transcriptionProvider)
         try container.encode(transcriptionModel, forKey: .transcriptionModel)
         try container.encodeIfPresent(transcriptionLanguage, forKey: .transcriptionLanguage)
+        try container.encodeIfPresent(translationTargetLanguage, forKey: .translationTargetLanguage)
         try container.encodeIfPresent(presetId, forKey: .presetId)
         try container.encodeIfPresent(aiProvider, forKey: .aiProvider)
         try container.encode(aiModel, forKey: .aiModel)

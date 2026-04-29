@@ -17,6 +17,8 @@ class ModeEditViewModel {
     var transcriptionProvider: TranscriptionModelProvider = .whisperKit
     var transcriptionModel: String = ""
     var transcriptionLanguage: String = "auto"
+    /// Empty string means no translation. Otherwise a 2-letter language code.
+    var translationTargetLanguage: String = ""
 
     var aiEnhanceEnabled: Bool = false
     var aiProvider: AIProvider?
@@ -177,6 +179,7 @@ class ModeEditViewModel {
             transcriptionProvider = existingMode.transcriptionProvider
             transcriptionModel = existingMode.transcriptionModel
             transcriptionLanguage = existingMode.transcriptionLanguage ?? "auto"
+            translationTargetLanguage = existingMode.translationTargetLanguage ?? ""
             aiEnhanceEnabled = existingMode.aiEnhanceEnabled
             aiProvider = existingMode.aiProvider
             aiModel = existingMode.aiModel
@@ -214,12 +217,18 @@ class ModeEditViewModel {
 
         logger.logInfo("Saving mode with name: '\(trimmedName)'")
 
+        let savedTranslationTarget: String? = {
+            guard isTranslationTargetSelectionAvailable() else { return nil }
+            return translationTargetLanguage.isEmpty ? nil : translationTargetLanguage
+        }()
+
         return VivaMode(
             id: modeId,
             name: trimmedName,
             transcriptionProvider: transcriptionProvider,
             transcriptionModel: transcriptionModel,
             transcriptionLanguage: transcriptionLanguage,
+            translationTargetLanguage: savedTranslationTarget,
             presetId: aiEnhanceEnabled ? selectedPresetId : nil,
             aiProvider: aiEnhanceEnabled ? aiProvider : nil,
             aiModel: aiModel ?? "",
@@ -420,6 +429,23 @@ class ModeEditViewModel {
             .filter { $0.key != "auto" }
             .sorted { $0.value < $1.value }
 
+        return GroupedLanguages(recommended: recommended, other: other)
+    }
+
+    // MARK: - Translation Settings
+
+    /// Translation target picker is only offered for Soniox cloud transcription.
+    public func isTranslationTargetSelectionAvailable() -> Bool {
+        guard transcriptionProvider == .soniox else { return false }
+        return isTranscriptionProviderConfigured(transcriptionProvider)
+    }
+
+    /// Translation targets are the active model's supported languages (sans "auto"),
+    /// split into the user's preferred locales + the rest, sorted alphabetically.
+    public func getGroupedTranslationTargetLanguages() -> GroupedLanguages {
+        let grouped = getGroupedLanguages()
+        let recommended = grouped.recommended.filter { $0.key != "auto" }
+        let other = grouped.other.filter { $0.key != "auto" }
         return GroupedLanguages(recommended: recommended, other: other)
     }
 

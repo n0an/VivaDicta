@@ -17,19 +17,23 @@ struct SonioxTranscriptionService {
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let config = try getAPIConfig(for: model)
         let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
+        let translationTarget = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
+        let translationEnabled = !translationTarget.isEmpty
 
         let fileId = try await uploadFile(audioURL: audioURL, apiKey: config.apiKey)
         let transcriptionId = try await createTranscription(
             fileId: fileId,
             apiKey: config.apiKey,
             modelName: model.name,
-            diarizationEnabled: diarizationEnabled
+            diarizationEnabled: diarizationEnabled,
+            translationTarget: translationTarget
         )
         try await pollTranscriptionStatus(id: transcriptionId, apiKey: config.apiKey)
         let result = try await fetchTranscript(
             id: transcriptionId,
             apiKey: config.apiKey,
-            diarizationEnabled: diarizationEnabled
+            diarizationEnabled: diarizationEnabled,
+            translationEnabled: translationEnabled
         )
 
         guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -89,7 +93,8 @@ struct SonioxTranscriptionService {
         fileId: String,
         apiKey: String,
         modelName: String,
-        diarizationEnabled: Bool
+        diarizationEnabled: Bool,
+        translationTarget: String
     ) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/transcriptions") else {
             throw CloudTranscriptionError.dataEncodingError
@@ -121,6 +126,16 @@ struct SonioxTranscriptionService {
         if selectedLanguage != "auto", !selectedLanguage.isEmpty {
             payload["language_hints"] = [selectedLanguage]
             payload["language_hints_strict"] = true
+        }
+
+        // Optional inline translation - if a target language is configured for the active
+        // mode, ask Soniox to translate transcribed text into that language.
+        if !translationTarget.isEmpty {
+            payload["translation"] = [
+                "type": "one_way",
+                "target_language": translationTarget
+            ]
+            logger.logInfo("Soniox translation enabled, target: \(translationTarget)")
         }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
@@ -198,7 +213,8 @@ struct SonioxTranscriptionService {
     private func fetchTranscript(
         id: String,
         apiKey: String,
-        diarizationEnabled: Bool
+        diarizationEnabled: Bool,
+        translationEnabled: Bool
     ) async throws -> TranscriptionServiceResult {
         guard let apiURL = URL(string: "\(apiBase)/transcriptions/\(id)/transcript") else {
             throw CloudTranscriptionError.dataEncodingError
@@ -222,9 +238,21 @@ struct SonioxTranscriptionService {
         }
 
         if let decoded = try? JSONDecoder().decode(TranscriptResponse.self, from: data) {
+            // For translation, Soniox interleaves original + translated tokens in `text`
+            // and tags each token with translation_status ("original" / "translation").
+            // Keep only translated tokens for the user-visible result.
+            let effectiveTokens = translationEnabled
+                ? (decoded.tokens?.filter { $0.translationStatus == "translation" })
+                : decoded.tokens
+
             if diarizationEnabled,
-               let diarizedText = makeSpeakerAttributedText(from: decoded.tokens) {
+               let diarizedText = makeSpeakerAttributedText(from: effectiveTokens) {
                 return .speakerAttributed(diarizedText)
+            }
+
+            if translationEnabled {
+                let translatedText = (effectiveTokens ?? []).map(\.text).joined()
+                return .plain(translatedText)
             }
             return .plain(decoded.text)
         }
@@ -312,6 +340,13 @@ struct SonioxTranscriptionService {
         struct Token: Decodable {
             let text: String
             let speaker: String?
+            let language: String?
+            let translationStatus: String?
+
+            enum CodingKeys: String, CodingKey {
+                case text, speaker, language
+                case translationStatus = "translation_status"
+            }
         }
     }
 }
