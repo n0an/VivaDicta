@@ -57,6 +57,35 @@ enum LiveTranslationLanguage: String, CaseIterable, Identifiable, Sendable {
         case .thai: "Thai"
         }
     }
+
+    var displayNameWithFlag: String {
+        TranscriptionModelProvider.languageWithFlag(rawValue, name: displayName)
+    }
+
+    /// Languages alphabetically sorted by display name. Use this for the
+    /// "rest" section of the picker.
+    static var alphabetical: [LiveTranslationLanguage] {
+        allCases.sorted { $0.displayName < $1.displayName }
+    }
+
+    /// User's preferred languages from `Locale.preferredLanguages`, intersected
+    /// with what we support, in order of preference. Used to surface the most
+    /// likely picks at the top of the picker.
+    static var userPreferred: [LiveTranslationLanguage] {
+        var seen: Set<LiveTranslationLanguage> = []
+        var ordered: [LiveTranslationLanguage] = []
+        for identifier in Locale.preferredLanguages {
+            let locale = Locale(identifier: identifier)
+            guard let code = locale.language.languageCode?.identifier,
+                  let lang = LiveTranslationLanguage(rawValue: code),
+                  !seen.contains(lang) else {
+                continue
+            }
+            seen.insert(lang)
+            ordered.append(lang)
+        }
+        return ordered
+    }
 }
 
 enum LiveTranslationStatus: Equatable, Sendable {

@@ -15,6 +15,7 @@ struct LiveTranslationView: View {
 
     @State private var service = LiveTranslationService()
     @State private var savedSnapshot: SavedSnapshot?
+    @State private var saveError: SaveErrorAlert?
     @State private var headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
 
     var body: some View {
@@ -59,6 +60,13 @@ struct LiveTranslationView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("The transcript was saved as a note.")
+            }
+            .alert(item: $saveError) { error in
+                Alert(
+                    title: Text("Couldn't Save Note"),
+                    message: Text(error.message),
+                    dismissButton: .default(Text("OK"))
+                )
             }
         }
     }
@@ -211,16 +219,24 @@ struct LiveTranslationView: View {
     // MARK: - Helpers
 
     private func languageMenu(title: String, selection: Binding<LiveTranslationLanguage>) -> some View {
-        Menu {
-            ForEach(LiveTranslationLanguage.allCases) { language in
-                Button {
-                    selection.wrappedValue = language
-                } label: {
-                    if language == selection.wrappedValue {
-                        Label(language.displayName, systemImage: "checkmark")
-                    } else {
-                        Text(language.displayName)
+        let preferred = LiveTranslationLanguage.userPreferred
+        let preferredSet = Set(preferred)
+        let rest = LiveTranslationLanguage.alphabetical.filter { !preferredSet.contains($0) }
+
+        return Menu {
+            // User-preferred languages first (matches the mode-settings pattern).
+            if !preferred.isEmpty {
+                Section {
+                    ForEach(preferred) { language in
+                        languageMenuItem(language: language, selection: selection)
                     }
+                }
+            }
+            // Rest alphabetically. Section gives an automatic divider between
+            // groups in iOS 17+ menus.
+            Section {
+                ForEach(rest) { language in
+                    languageMenuItem(language: language, selection: selection)
                 }
             }
         } label: {
@@ -228,7 +244,7 @@ struct LiveTranslationView: View {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(selection.wrappedValue.displayName)
+                Text(selection.wrappedValue.displayNameWithFlag)
                     .font(.subheadline.weight(.medium))
                 Image(systemName: "chevron.down")
                     .font(.caption2)
@@ -236,6 +252,18 @@ struct LiveTranslationView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(.fill.tertiary, in: .capsule)
+        }
+    }
+
+    private func languageMenuItem(language: LiveTranslationLanguage, selection: Binding<LiveTranslationLanguage>) -> some View {
+        Button {
+            selection.wrappedValue = language
+        } label: {
+            if language == selection.wrappedValue {
+                Label(language.displayNameWithFlag, systemImage: "checkmark")
+            } else {
+                Text(language.displayNameWithFlag)
+            }
         }
     }
 
@@ -293,8 +321,18 @@ struct LiveTranslationView: View {
         )
 
         modelContext.insert(transcription)
-        try? modelContext.save()
-        savedSnapshot = SavedSnapshot()
+
+        do {
+            try modelContext.save()
+            savedSnapshot = SavedSnapshot()
+        } catch {
+            // Roll the insert out of the context so the same Transcription
+            // instance isn't dangling in memory and won't auto-save next
+            // time the context flushes. Keep the in-memory transcript so
+            // the user can retry.
+            modelContext.delete(transcription)
+            saveError = SaveErrorAlert(message: error.localizedDescription)
+        }
     }
 
     private func combineSnapshot(
@@ -319,6 +357,11 @@ struct LiveTranslationView: View {
 
     private struct SavedSnapshot {
         let id = UUID()
+    }
+
+    private struct SaveErrorAlert: Identifiable {
+        let id = UUID()
+        let message: String
     }
 }
 
