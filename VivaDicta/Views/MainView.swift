@@ -126,7 +126,7 @@ struct MainView: View {
     @ViewBuilder
     private var contentNavigationView: some View {
         contentNavigationViewBase
-            .onChange(of: appState.shouldNavigateToAIProviderKey) { _, newValue in
+            .onChange(of: appState.pendingCloudTranscriptionProvider) { _, newValue in
                 if newValue != nil { showingSettings = true }
             }
             .overlay(alignment: .top) {

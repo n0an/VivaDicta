@@ -107,7 +107,7 @@ struct LiveTranslationView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    appState.shouldNavigateToAIProviderKey = .soniox
+                    appState.pendingCloudTranscriptionProvider = .soniox
                     dismiss()
                 } label: {
                     Label("Open Settings", systemImage: "gearshape")
