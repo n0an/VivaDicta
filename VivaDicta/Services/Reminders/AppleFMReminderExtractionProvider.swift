@@ -17,7 +17,8 @@ final class AppleFMReminderExtractionProvider {
     func extract(
         noteText: String,
         now: Date,
-        timeZone: TimeZone
+        timeZone: TimeZone,
+        language: String?
     ) async throws -> ReminderDraftsResponse {
         guard AppleFoundationModelAvailability.isAvailable else {
             throw ReminderExtractionError.appleFoundationModelUnavailable
@@ -33,7 +34,7 @@ final class AppleFMReminderExtractionProvider {
         let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
         let session = LanguageModelSession(
             model: model,
-            instructions: systemPrompt(now: now, timeZone: timeZone)
+            instructions: systemPrompt(now: now, timeZone: timeZone, language: language)
         )
 
         do {
@@ -41,7 +42,7 @@ final class AppleFMReminderExtractionProvider {
                 generating: ReminderDraftsResponseSchema.self,
                 options: GenerationOptions(sampling: .greedy)
             ) {
-                userPrompt(noteText: trimmedText, now: now, timeZone: timeZone)
+                userPrompt(noteText: trimmedText, now: now, timeZone: timeZone, language: language)
             }
 
             logger.logNotice("Reminder extraction - Apple Foundation Models request completed")
@@ -63,29 +64,37 @@ final class AppleFMReminderExtractionProvider {
         }
     }
 
-    private func systemPrompt(now: Date, timeZone: TimeZone) -> String {
-        """
+    private func systemPrompt(now: Date, timeZone: TimeZone, language: String?) -> String {
+        let languageHint = language.map {
+            "\nSource note language: \($0). Write title, notes, and rawDueDatePhrase in this language."
+        } ?? ""
+        return """
         You extract reminder suggestions from transcription notes.
         Return structured reminder drafts for user review before importing to Apple Reminders.
         Use only the current note as the source of truth.
         Do not invent tasks or deadlines.
+        Always preserve the source-note language in the human-readable fields (title, notes, rawDueDatePhrase). Do not translate to another language. Field names and enum values stay in English.
 
         Current absolute date and time: \(now.ISO8601Format())
-        Current time zone identifier: \(timeZone.identifier)
+        Current time zone identifier: \(timeZone.identifier)\(languageHint)
         """
     }
 
     @PromptBuilder
-    private func userPrompt(noteText: String, now: Date, timeZone: TimeZone) -> Prompt {
+    private func userPrompt(noteText: String, now: Date, timeZone: TimeZone, language: String?) -> Prompt {
+        let languageHint = language.map {
+            "Source note language: \($0). Write title, notes, and rawDueDatePhrase in this language.\n\n"
+        } ?? ""
         """
         Extract reminder suggestions from this note.
 
         Current absolute date and time: \(now.ISO8601Format())
         Current time zone: \(timeZone.identifier)
 
-        Rules:
+        \(languageHint)Rules:
         - Extract only genuine reminder-worthy actions, next steps, or commitments that the user is likely to want in Apple Reminders.
         - Use a concise, actionable title grounded in the note text.
+        - Always write `title`, `notes`, and `rawDueDatePhrase` in the same language as the Note. If the Note is in German, write them in German; if Russian, in Russian; if French, in French. Never translate to English or any other language. Field names and enum values (priority: none|low|medium|high) stay in English.
         - Do not create a reminder whose title is only a date, time, weekday, or scheduling phrase.
         - A due phrase belongs in dueDateString, dueTimeString, and rawDueDatePhrase, not in the title.
         - If the note includes a resolvable day, date, or time such as 'tomorrow noon', 'Saturday at 10 a.m.', 'next Thursday at 14:00', or 'April 20 at 3 PM', calculate the exact due date and time using the current date and time zone.
@@ -97,7 +106,7 @@ final class AppleFMReminderExtractionProvider {
         - Return at most one reminder per actionable task.
         - If the note contains no reminder-worthy task, return an empty reminders array.
 
-        Examples of good extraction:
+        Examples of good extraction (English shown for format only - your output language must match the Note):
         \(fewShotExamples(now: now, timeZone: timeZone))
 
         Note:

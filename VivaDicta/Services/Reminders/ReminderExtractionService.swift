@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NaturalLanguage
 import SwiftData
 import os
 
@@ -69,12 +70,14 @@ final class ReminderExtractionService {
             throw ReminderExtractionError.noExtractorAvailable
         }
 
-        logger.logInfo(
-            "Reminder extraction - Start noteId=\(transcription.id.uuidString) backend=\(backendDescription(backend)) text='\(preview(transcription.text))'"
-        )
-
         let now = Date()
         let timeZone = TimeZone.current
+        let language = detectLanguageHint(from: transcription.text)
+
+        logger.logInfo(
+            "Reminder extraction - Start noteId=\(transcription.id.uuidString) backend=\(backendDescription(backend)) language=\(language ?? "unknown") text='\(preview(transcription.text))'"
+        )
+
         let response: ReminderDraftsResponse
 
         switch backend {
@@ -85,7 +88,8 @@ final class ReminderExtractionService {
             response = try await AppleFMReminderExtractionProvider().extract(
                 noteText: transcription.text,
                 now: now,
-                timeZone: timeZone
+                timeZone: timeZone,
+                language: language
             )
         case .cloud(let provider, let model):
             response = try await CloudReminderExtractionProvider(aiService: aiService).extract(
@@ -93,7 +97,8 @@ final class ReminderExtractionService {
                 provider: provider,
                 model: model,
                 now: now,
-                timeZone: timeZone
+                timeZone: timeZone,
+                language: language
             )
         }
 
@@ -446,5 +451,21 @@ final class ReminderExtractionService {
             return normalized
         }
         return String(normalized.prefix(limit)) + "..."
+    }
+
+    private func detectLanguageHint(from text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 12 else { return nil }
+
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(trimmed)
+        guard let language = recognizer.dominantLanguage else { return nil }
+
+        let code = language.rawValue
+        if let englishName = Locale(identifier: "en").localizedString(forLanguageCode: code),
+           !englishName.isEmpty {
+            return "\(englishName) (\(code))"
+        }
+        return code
     }
 }
