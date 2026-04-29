@@ -139,12 +139,11 @@ final class LiveTranslationAudio {
         guard isStarted else { return }
 
         // Defense against the AirPods-disconnect-mid-session feedback loop.
-        // If the audio route is no longer headphones, the iPhone speaker would
-        // blast TTS audio into the mic which STT then re-captures - producing
-        // a runaway loop. Drop the buffer; the View's headphones banner
-        // already explains why no audio is playing. When headphones reconnect,
-        // future buffers schedule normally.
-        guard Self.isHeadphonesRouteActive else { return }
+        // We block playback ONLY when the active route is the iPhone's loud
+        // bottom speaker - that's the route that blasts TTS into the mic and
+        // creates a runaway loop. Earpiece (phone-held-to-ear), headphones,
+        // AirPods, AirPlay, car audio are all safe and let TTS through.
+        guard !Self.isLoudSpeakerOutput else { return }
 
         guard let buffer = makePlaybackBuffer(from: data) else { return }
 
@@ -207,6 +206,16 @@ final class LiveTranslationAudio {
                 return false
             }
         }
+    }
+
+    /// True when the current output route is the iPhone's loud bottom speaker.
+    /// This is the only route where playing TTS audio creates a feedback loop
+    /// into the mic - the earpiece (held to the ear) is quiet enough that the
+    /// mic doesn't pick it up meaningfully, and external routes (headphones,
+    /// AirPods, AirPlay, car audio) are all safe by design.
+    static var isLoudSpeakerOutput: Bool {
+        let route = AVAudioSession.sharedInstance().currentRoute
+        return route.outputs.contains { $0.portType == .builtInSpeaker }
     }
 
     private func configureEngine() async throws {
