@@ -207,6 +207,10 @@ struct LiveTranslationView: View {
                 Text("Speak translation")
                     .font(.subheadline)
                 Spacer()
+
+                if service.config.ttsEnabled {
+                    voiceMenu
+                }
             }
 
             if service.config.ttsEnabled {
@@ -284,6 +288,35 @@ struct LiveTranslationView: View {
     }
 
     // MARK: - Helpers
+
+    private var voiceMenu: some View {
+        // Soniox tts-rt voices are multilingual, so this is a pure timbre
+        // pick - no need to gate by source/target language.
+        Menu {
+            Picker("Voice", selection: Binding(
+                get: { LiveTranslationVoice(rawValue: service.config.ttsVoice) ?? .default },
+                set: { service.config.ttsVoice = $0.rawValue }
+            )) {
+                ForEach(LiveTranslationVoice.allCases) { voice in
+                    Text(voice.displayName).tag(voice)
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "person.wave.2.fill")
+                    .font(.caption)
+                Text(service.config.ttsVoice)
+                    .font(.caption.weight(.medium))
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.fill.tertiary, in: .capsule)
+            .foregroundStyle(.primary)
+        }
+        .disabled(isRunning)
+    }
 
     private func languageMenu(title: String, selection: Binding<LiveTranslationLanguage>) -> some View {
         let preferred = LiveTranslationLanguage.userPreferred

@@ -455,6 +455,10 @@ final class LiveTranslationService {
         if oldValue.ttsRate != config.ttsRate {
             LiveTranslationPreferences.ttsRate = config.ttsRate
         }
+        if oldValue.ttsVoice != config.ttsVoice,
+           let voice = LiveTranslationVoice(rawValue: config.ttsVoice) {
+            LiveTranslationPreferences.ttsVoice = voice
+        }
     }
 
     private func renderText(from tokens: [LiveTranslationToken]) -> String {

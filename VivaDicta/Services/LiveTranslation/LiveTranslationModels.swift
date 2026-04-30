@@ -8,53 +8,135 @@
 import Foundation
 
 enum LiveTranslationLanguage: String, CaseIterable, Identifiable, Sendable {
-    case english = "en"
-    case spanish = "es"
-    case russian = "ru"
-    case ukrainian = "uk"
-    case french = "fr"
-    case german = "de"
-    case italian = "it"
-    case portuguese = "pt"
-    case dutch = "nl"
-    case polish = "pl"
-    case czech = "cs"
-    case turkish = "tr"
+    // Source list: Soniox real-time STT + translation supported languages.
+    // https://soniox.com/docs/stt/concepts/supported-languages
+    // The same 60-language list is also covered by tts-rt-v1-preview's
+    // multilingual voices, so any of these can be used as source or target.
+    case afrikaans = "af"
+    case albanian = "sq"
     case arabic = "ar"
+    case azerbaijani = "az"
+    case basque = "eu"
+    case belarusian = "be"
+    case bengali = "bn"
+    case bosnian = "bs"
+    case bulgarian = "bg"
+    case catalan = "ca"
+    case chinese = "zh"
+    case croatian = "hr"
+    case czech = "cs"
+    case danish = "da"
+    case dutch = "nl"
+    case english = "en"
+    case estonian = "et"
+    case finnish = "fi"
+    case french = "fr"
+    case galician = "gl"
+    case german = "de"
+    case greek = "el"
+    case gujarati = "gu"
     case hebrew = "he"
     case hindi = "hi"
-    case chinese = "zh"
-    case japanese = "ja"
-    case korean = "ko"
+    case hungarian = "hu"
     case indonesian = "id"
-    case vietnamese = "vi"
+    case italian = "it"
+    case japanese = "ja"
+    case kannada = "kn"
+    case kazakh = "kk"
+    case korean = "ko"
+    case latvian = "lv"
+    case lithuanian = "lt"
+    case macedonian = "mk"
+    case malay = "ms"
+    case malayalam = "ml"
+    case marathi = "mr"
+    case norwegian = "no"
+    case persian = "fa"
+    case polish = "pl"
+    case portuguese = "pt"
+    case punjabi = "pa"
+    case romanian = "ro"
+    case russian = "ru"
+    case serbian = "sr"
+    case slovak = "sk"
+    case slovenian = "sl"
+    case spanish = "es"
+    case swahili = "sw"
+    case swedish = "sv"
+    case tagalog = "tl"
+    case tamil = "ta"
+    case telugu = "te"
     case thai = "th"
+    case turkish = "tr"
+    case ukrainian = "uk"
+    case urdu = "ur"
+    case vietnamese = "vi"
+    case welsh = "cy"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .english: "English"
-        case .spanish: "Spanish"
-        case .russian: "Russian"
-        case .ukrainian: "Ukrainian"
-        case .french: "French"
-        case .german: "German"
-        case .italian: "Italian"
-        case .portuguese: "Portuguese"
-        case .dutch: "Dutch"
-        case .polish: "Polish"
-        case .czech: "Czech"
-        case .turkish: "Turkish"
+        case .afrikaans: "Afrikaans"
+        case .albanian: "Albanian"
         case .arabic: "Arabic"
+        case .azerbaijani: "Azerbaijani"
+        case .basque: "Basque"
+        case .belarusian: "Belarusian"
+        case .bengali: "Bengali"
+        case .bosnian: "Bosnian"
+        case .bulgarian: "Bulgarian"
+        case .catalan: "Catalan"
+        case .chinese: "Chinese"
+        case .croatian: "Croatian"
+        case .czech: "Czech"
+        case .danish: "Danish"
+        case .dutch: "Dutch"
+        case .english: "English"
+        case .estonian: "Estonian"
+        case .finnish: "Finnish"
+        case .french: "French"
+        case .galician: "Galician"
+        case .german: "German"
+        case .greek: "Greek"
+        case .gujarati: "Gujarati"
         case .hebrew: "Hebrew"
         case .hindi: "Hindi"
-        case .chinese: "Chinese"
-        case .japanese: "Japanese"
-        case .korean: "Korean"
+        case .hungarian: "Hungarian"
         case .indonesian: "Indonesian"
-        case .vietnamese: "Vietnamese"
+        case .italian: "Italian"
+        case .japanese: "Japanese"
+        case .kannada: "Kannada"
+        case .kazakh: "Kazakh"
+        case .korean: "Korean"
+        case .latvian: "Latvian"
+        case .lithuanian: "Lithuanian"
+        case .macedonian: "Macedonian"
+        case .malay: "Malay"
+        case .malayalam: "Malayalam"
+        case .marathi: "Marathi"
+        case .norwegian: "Norwegian"
+        case .persian: "Persian"
+        case .polish: "Polish"
+        case .portuguese: "Portuguese"
+        case .punjabi: "Punjabi"
+        case .romanian: "Romanian"
+        case .russian: "Russian"
+        case .serbian: "Serbian"
+        case .slovak: "Slovak"
+        case .slovenian: "Slovenian"
+        case .spanish: "Spanish"
+        case .swahili: "Swahili"
+        case .swedish: "Swedish"
+        case .tagalog: "Tagalog"
+        case .tamil: "Tamil"
+        case .telugu: "Telugu"
         case .thai: "Thai"
+        case .turkish: "Turkish"
+        case .ukrainian: "Ukrainian"
+        case .urdu: "Urdu"
+        case .vietnamese: "Vietnamese"
+        case .welsh: "Welsh"
         }
     }
 
@@ -86,6 +168,30 @@ enum LiveTranslationLanguage: String, CaseIterable, Identifiable, Sendable {
         }
         return ordered
     }
+}
+
+/// Soniox `tts-rt-v1-preview` multilingual voices. Every voice can speak
+/// every supported source/target language, so this is purely a timbre choice.
+/// https://soniox.com/docs/tts/concepts/voices
+enum LiveTranslationVoice: String, CaseIterable, Identifiable, Sendable {
+    case adrian = "Adrian"
+    case maya = "Maya"
+    case daniel = "Daniel"
+    case noah = "Noah"
+    case nina = "Nina"
+    case emma = "Emma"
+    case jack = "Jack"
+    case claire = "Claire"
+    case grace = "Grace"
+    case owen = "Owen"
+    case mina = "Mina"
+    case kenji = "Kenji"
+
+    var id: String { rawValue }
+
+    var displayName: String { rawValue }
+
+    static let `default`: LiveTranslationVoice = .adrian
 }
 
 enum LiveTranslationStatus: Equatable, Sendable {
@@ -120,7 +226,7 @@ struct LiveTranslationConfig: Sendable {
             sourceLanguage: LiveTranslationPreferences.sourceLanguage,
             targetLanguage: LiveTranslationPreferences.targetLanguage,
             ttsEnabled: LiveTranslationPreferences.ttsEnabled,
-            ttsVoice: "Adrian",
+            ttsVoice: LiveTranslationPreferences.ttsVoice.rawValue,
             ttsRate: LiveTranslationPreferences.ttsRate
         )
     }
@@ -169,6 +275,16 @@ enum LiveTranslationPreferences {
         set {
             let clamped = min(max(newValue, minTTSRate), maxTTSRate)
             UserDefaultsStorage.appPrivate.set(Double(clamped), forKey: UserDefaultsStorage.Keys.liveTranslationTTSRate)
+        }
+    }
+
+    static var ttsVoice: LiveTranslationVoice {
+        get {
+            let raw = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.liveTranslationTTSVoice) ?? ""
+            return LiveTranslationVoice(rawValue: raw) ?? .default
+        }
+        set {
+            UserDefaultsStorage.appPrivate.set(newValue.rawValue, forKey: UserDefaultsStorage.Keys.liveTranslationTTSVoice)
         }
     }
 }

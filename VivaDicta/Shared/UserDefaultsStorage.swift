@@ -89,6 +89,7 @@ enum UserDefaultsStorage {
         static let liveTranslationTargetLanguage = "liveTranslation.targetLanguage"
         static let liveTranslationTTSEnabled = "liveTranslation.ttsEnabled"
         static let liveTranslationTTSRate = "liveTranslation.ttsRate"
+        static let liveTranslationTTSVoice = "liveTranslation.ttsVoice"
     }
 
     // MARK: - Integrations defaults
