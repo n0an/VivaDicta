@@ -75,6 +75,7 @@ class CloudTranscriptionService: TranscriptionService {
     private lazy var mistralService = MistralTranscriptionService()
     private lazy var sonioxService = SonioxTranscriptionService()
     private lazy var gladiaService = GladiaTranscriptionService()
+    private lazy var speechmaticsService = SpeechmaticsTranscriptionService()
     private lazy var cohereService = CohereTranscriptionService()
     private lazy var customService = CustomTranscriptionService()
 
@@ -98,6 +99,8 @@ class CloudTranscriptionService: TranscriptionService {
             result = try await sonioxService.transcribe(audioURL: audioURL, model: model)
         case .gladia:
             result = try await gladiaService.transcribe(audioURL: audioURL, model: model)
+        case .speechmatics:
+            result = try await speechmaticsService.transcribe(audioURL: audioURL, model: model)
         case .cohere:
             result = try await cohereService.transcribe(audioURL: audioURL, model: model)
         case .customTranscription:

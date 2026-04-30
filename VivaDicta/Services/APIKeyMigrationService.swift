@@ -29,7 +29,7 @@ final class APIKeyMigrationService: Sendable {
         let providersToMigrate: [AIProvider] = [
             .cerebras, .groq, .gemini, .anthropic, .openAI,
             .openRouter, .grok, .elevenLabs, .deepgram,
-            .mistral, .soniox, .gladia, .vercelAIGateway, .huggingFace,
+            .mistral, .soniox, .gladia, .speechmatics, .vercelAIGateway, .huggingFace,
             .customOpenAI
         ]
 

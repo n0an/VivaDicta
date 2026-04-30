@@ -2319,6 +2319,8 @@ class AIService {
             return await verifySonioxAPIKey(key)
         case .gladia:
             return await verifyGladiaAPIKey(key)
+        case .speechmatics:
+            return await verifySpeechmaticsAPIKey(key)
         case .cohere:
             return await verifyCohereAPIKey(key)
         case .cerebras:
@@ -2560,6 +2562,28 @@ class AIService {
             return httpResponse.statusCode == 200
         } catch {
             logger.logError("Gladia API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    private func verifySpeechmaticsAPIKey(_ key: String) async -> Bool {
+        guard let url = URL(string: "https://asr.api.speechmatics.com/v2/jobs?limit=1") else {
+            return false
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+
+            return httpResponse.statusCode == 200
+        } catch {
+            logger.logError("Speechmatics API key verification failed: \(error.localizedDescription)")
             return false
         }
     }

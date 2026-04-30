@@ -52,7 +52,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// The language for transcription, or "auto" for automatic detection.
     let transcriptionLanguage: String?
 
-    /// Target language for inline translation during transcription (Soniox, Gladia).
+    /// Target language for inline translation during transcription (Soniox, Gladia, Speechmatics).
     /// `nil` or empty means no translation; otherwise a 2-letter language code (e.g. "en").
     let translationTargetLanguage: String?
 
