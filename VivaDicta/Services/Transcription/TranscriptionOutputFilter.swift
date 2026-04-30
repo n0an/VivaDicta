@@ -32,7 +32,7 @@ struct TranscriptionOutputFilter {
         "ru": ["ээ", "эээ", "ээээ", "э-э", "э-э-э", "эм", "эмм", "ыы", "ыыы"],
         "es": ["ehm", "ehmm", "eee", "eeh"],
         "de": ["äh", "ähm", "ähh", "ähhh", "ähmm", "öh", "öhm"],
-        "fr": ["euh", "euhh", "euhhh", "euhm", "heu", "heuu", "bah"]
+        "fr": ["euh", "euhh", "euhhh", "euhm", "heu", "heuu"]
     ]
 
     /// Returns true if the text contains meaningful content for a transcription.
