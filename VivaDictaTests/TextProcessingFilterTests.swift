@@ -121,6 +121,93 @@ struct TranscriptionOutputFilterTests {
 
         #expect(result == input)
     }
+
+    // MARK: - filter Tests — Multilingual Fillers
+
+    @Test func filter_universalFillers_strippedRegardlessOfLanguage() {
+        // "uh", "um", "hmm" should be removed for any language.
+        let inputRu = "Это um важное hmm сообщение для теста."
+        let result = TranscriptionOutputFilter.filter(inputRu, language: "ru")
+
+        #expect(!result.contains("um"))
+        #expect(!result.contains("hmm"))
+    }
+
+    @Test func filter_russianFillers_removedWhenLanguageIsRussian() {
+        let input = "Я думаю ээ что нам ыыы нужно идти."
+        let result = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(!result.contains("ээ"))
+        #expect(!result.contains("ыыы"))
+        #expect(result.contains("Я думаю"))
+        #expect(result.contains("нужно идти"))
+    }
+
+    @Test func filter_russianHyphenatedFillers_removedWhenLanguageIsRussian() {
+        let input = "Я э-э думаю что э-э-э нам нужно идти."
+        let result = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(!result.contains("э-э"))
+        #expect(result.contains("Я"))
+        #expect(result.contains("думаю"))
+        #expect(result.contains("нужно идти"))
+    }
+
+    @Test func filter_germanFillers_removedWhenLanguageIsGerman() {
+        let input = "Ich denke äh dass wir ähm gehen sollten."
+        let result = TranscriptionOutputFilter.filter(input, language: "de")
+
+        #expect(!result.contains("äh"))
+        #expect(!result.contains("ähm"))
+        #expect(result.contains("Ich denke"))
+        #expect(result.contains("gehen sollten"))
+    }
+
+    @Test func filter_frenchFillers_removedWhenLanguageIsFrench() {
+        let input = "Je pense euh qu'on devrait heu y aller."
+        let result = TranscriptionOutputFilter.filter(input, language: "fr")
+
+        #expect(!result.contains("euh"))
+        #expect(!result.contains("heu"))
+        #expect(result.contains("Je pense"))
+        #expect(result.contains("y aller"))
+    }
+
+    @Test func filter_spanishFillers_removedWhenLanguageIsSpanish() {
+        let input = "Yo creo ehm que deberíamos eee ir."
+        let result = TranscriptionOutputFilter.filter(input, language: "es")
+
+        #expect(!result.contains("ehm"))
+        #expect(!result.contains("eee"))
+        #expect(result.contains("Yo creo"))
+        #expect(result.contains("deberíamos"))
+    }
+
+    @Test func filter_germanFillers_notRemovedWhenLanguageIsRussian() {
+        // German "äh" should NOT be stripped when language is Russian
+        // (it's not in the Russian filler list).
+        let input = "äh test"
+        let result = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(result.contains("äh"))
+    }
+
+    @Test func filter_englishFallback_whenLanguageUnknown() {
+        // "auto" with text too short for confident detection → English fallback,
+        // so English-specific fillers (eh) should still be stripped.
+        let input = "Well, eh, ok."
+        let result = TranscriptionOutputFilter.filter(input, language: "auto")
+
+        #expect(!result.contains("eh"))
+    }
+
+    @Test func filter_explicitLanguageWithRegionSuffix_resolvesToBase() {
+        // "en-US" should be treated as "en".
+        let input = "I think eh we should go."
+        let result = TranscriptionOutputFilter.filter(input, language: "en-US")
+
+        #expect(!result.contains(" eh "))
+    }
 }
 
 // MARK: - AI Processing Output Filter Tests

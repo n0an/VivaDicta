@@ -218,7 +218,10 @@ class TranscriptionManager {
             transcriptionResult = try await cloudTranscriptionService.transcribe(audioURL: audioURL, model: model)
         }
 
-        var result = TranscriptionOutputFilter.filter(transcriptionResult.text)
+        var result = TranscriptionOutputFilter.filter(
+            transcriptionResult.text,
+            language: currentMode.transcriptionLanguage
+        )
 
         // Apply text formatting if enabled for current mode
         if currentMode.isAutoTextFormattingEnabled && transcriptionResult.isSpeakerAttributed == false {
