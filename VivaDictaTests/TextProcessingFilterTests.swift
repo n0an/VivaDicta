@@ -143,6 +143,16 @@ struct TranscriptionOutputFilterTests {
         #expect(result.contains("нужно идти"))
     }
 
+    @Test func filter_russianHyphenatedFillers_removedWhenLanguageIsRussian() {
+        let input = "Я э-э думаю что э-э-э нам нужно идти."
+        let result = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(!result.contains("э-э"))
+        #expect(result.contains("Я"))
+        #expect(result.contains("думаю"))
+        #expect(result.contains("нужно идти"))
+    }
+
     @Test func filter_germanFillers_removedWhenLanguageIsGerman() {
         let input = "Ich denke äh dass wir ähm gehen sollten."
         let result = TranscriptionOutputFilter.filter(input, language: "de")

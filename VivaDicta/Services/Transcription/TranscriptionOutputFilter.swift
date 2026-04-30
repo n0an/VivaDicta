@@ -29,7 +29,7 @@ struct TranscriptionOutputFilter {
     /// (either explicitly via the mode or detected with high confidence).
     private static let fillersByLanguage: [String: [String]] = [
         "en": ["ah", "eh", "ehh", "ha"],
-        "ru": ["ээ", "эээ", "ээээ", "эм", "эмм", "ыы", "ыыы"],
+        "ru": ["ээ", "эээ", "ээээ", "э-э", "э-э-э", "эм", "эмм", "ыы", "ыыы"],
         "es": ["ehm", "ehmm", "eee", "eeh"],
         "de": ["äh", "ähm", "ähh", "ähhh", "ähmm", "öh", "öhm"],
         "fr": ["euh", "euhh", "euhhh", "euhm", "heu", "heuu", "bah"]
