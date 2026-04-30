@@ -244,23 +244,44 @@ struct SpeechmaticsTranscriptionService {
         return .plain(buildPlainTranscript(from: decoded.results))
     }
 
+    /// Speechmatics tokens carry `attaches_to ∈ {previous, next, both, none}`
+    /// to control spacing. Honoring it correctly handles opening quotes and
+    /// parens (`attaches_to: "next"`) and em-dashes (`attaches_to: "both"`),
+    /// not just trailing punctuation.
+    private struct AttachmentRule {
+        let toPrevious: Bool
+        let toNext: Bool
+    }
+
+    private func attachmentRule(for item: TranscriptResponse.ResultItem) -> AttachmentRule {
+        let isPunctuation = item.type == "punctuation"
+        // Default punctuation to "previous" if Speechmatics omits the field.
+        let attachesTo = item.attaches_to ?? (isPunctuation ? "previous" : "")
+        return AttachmentRule(
+            toPrevious: attachesTo == "previous" || attachesTo == "both",
+            toNext: attachesTo == "next" || attachesTo == "both"
+        )
+    }
+
     /// Speechmatics returns one item per word/punctuation in `results[]`.
-    /// Concatenate words; punctuation tokens carry `attaches_to: "previous"`
-    /// so we glue them onto the prior word without an extra space.
+    /// Walks the list deciding whether each token needs a leading space based
+    /// on its own `attaches_to: "previous"|"both"` and the prior token's
+    /// `attaches_to: "next"|"both"`.
     private func buildPlainTranscript(from results: [TranscriptResponse.ResultItem]?) -> String {
         guard let results, !results.isEmpty else { return "" }
 
         var output = ""
+        var skipSpaceBeforeNext = false
+
         for item in results {
             guard let content = item.alternatives?.first?.content else { continue }
-            if item.type == "punctuation" || item.attaches_to == "previous" {
-                output += content
-            } else {
-                if !output.isEmpty {
-                    output += " "
-                }
-                output += content
+            let rule = attachmentRule(for: item)
+
+            if !output.isEmpty && !skipSpaceBeforeNext && !rule.toPrevious {
+                output += " "
             }
+            output += content
+            skipSpaceBeforeNext = rule.toNext
         }
         return output
     }
@@ -271,31 +292,34 @@ struct SpeechmaticsTranscriptionService {
         var turns: [SpeakerTurn] = []
         var currentSpeaker: String?
         var currentText = ""
+        var skipSpaceBeforeNext = false
 
         for item in results {
             guard let alt = item.alternatives?.first,
                   let content = alt.content else { continue }
             let speaker = alt.speaker
+            let rule = attachmentRule(for: item)
 
-            let isPunctuation = item.type == "punctuation" || item.attaches_to == "previous"
+            let sameSpeaker = (speaker == currentSpeaker || speaker == nil)
 
             if currentText.isEmpty && turns.isEmpty {
                 currentSpeaker = speaker
                 currentText = content
+                skipSpaceBeforeNext = rule.toNext
                 continue
             }
 
-            if speaker == currentSpeaker || speaker == nil {
-                if isPunctuation {
-                    currentText += content
-                } else {
-                    currentText += " " + content
+            if sameSpeaker {
+                if !skipSpaceBeforeNext && !rule.toPrevious {
+                    currentText += " "
                 }
+                currentText += content
             } else {
                 turns.append(SpeakerTurn(speakerID: currentSpeaker, text: currentText))
                 currentSpeaker = speaker
                 currentText = content
             }
+            skipSpaceBeforeNext = rule.toNext
         }
 
         if !currentText.isEmpty {
