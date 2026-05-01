@@ -572,6 +572,19 @@ struct SettingsView: View {
                         }
                     }
 
+                    Link(destination: URL(string: "https://github.com/n0an/VivaDicta")!) {
+                        HStack {
+                            Image(systemName: "star.bubble.fill")
+                                .foregroundStyle(.indigo)
+                            Text("Star on GitHub")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
                     ShareLink(item: URL(string: "https://apps.apple.com/app/id6758147238")!) {
                         HStack {
                             Image(systemName: "square.and.arrow.up")
