@@ -329,6 +329,19 @@ struct ModeEditView: View {
                     .onChange(of: viewModel.isSmartInsertEnabled) { _, _ in
                         HapticManager.selectionChanged()
                     }
+
+                    Toggle(isOn: $viewModel.isStripTrailingPeriodEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Trim Trailing Period")
+                                .font(.body)
+                            Text("Strips trailing \".\" or \"...\" so casual messages don't read as cold. \"!\" and \"?\" are kept.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: viewModel.isStripTrailingPeriodEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
                 }
 
                 Section(header: aiProcessingSectionHeader,

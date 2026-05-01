@@ -105,6 +105,22 @@ struct TranscriptionOutputFilter {
         return filteredText
     }
 
+    /// Strips any number of trailing periods from the transcript so casual
+    /// messages like "Okay." or "Wait..." don't read as cold or trailing-off
+    /// in chat contexts. Mirrors Python's `text.strip().rstrip('.')`.
+    ///
+    /// Question marks and exclamation marks are kept - they carry their own
+    /// meaning and removing them would change tone, not soften it.
+    static func stripTrailingPeriod(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.hasSuffix(".") else { return text }
+        var stripped = Substring(trimmed)
+        while stripped.last == "." {
+            stripped = stripped.dropLast()
+        }
+        return String(stripped)
+    }
+
     /// Resolves the language code used to pick the filler set.
     ///
     /// Order of preference:

@@ -83,6 +83,10 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Whether smart insert (auto-adjust spacing and capitalization) is applied when inserting text via keyboard.
     let isSmartInsertEnabled: Bool
 
+    /// Whether to strip a single trailing period from the final transcript so casual messages
+    /// like "Okay." don't read as cold/passive-aggressive in chat contexts.
+    let isStripTrailingPeriodEnabled: Bool
+
     /// Whether this mode opts in to saving transcriptions to Obsidian.
     /// Only effective when the global Obsidian integration is enabled in
     /// Settings → Integrations.
@@ -104,6 +108,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
          useClipboardContext: Bool = false,
          isAutoTextFormattingEnabled: Bool = false,
          isSmartInsertEnabled: Bool = false,
+         isStripTrailingPeriodEnabled: Bool = false,
          obsidianEnabled: Bool = true) {
         self.id = id
         self.name = name
@@ -120,6 +125,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.useClipboardContext = useClipboardContext
         self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
         self.isSmartInsertEnabled = isSmartInsertEnabled
+        self.isStripTrailingPeriodEnabled = isStripTrailingPeriodEnabled
         self.obsidianEnabled = obsidianEnabled
     }
 
@@ -142,6 +148,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
+        isStripTrailingPeriodEnabled = try container.decodeIfPresent(Bool.self, forKey: .isStripTrailingPeriodEnabled) ?? false
         obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? true
 
         // Try new format first
@@ -165,6 +172,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
         case useClipboardContext
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
+        case isStripTrailingPeriodEnabled
         case obsidianEnabled
     }
 
@@ -186,6 +194,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
         try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)
         try container.encode(isSmartInsertEnabled, forKey: .isSmartInsertEnabled)
+        try container.encode(isStripTrailingPeriodEnabled, forKey: .isStripTrailingPeriodEnabled)
         try container.encode(obsidianEnabled, forKey: .obsidianEnabled)
     }
 
