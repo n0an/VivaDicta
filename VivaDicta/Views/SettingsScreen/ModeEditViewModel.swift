@@ -30,6 +30,7 @@ class ModeEditViewModel {
     var useClipboardContext: Bool = false
     var isAutoTextFormattingEnabled: Bool = false
     var isSmartInsertEnabled: Bool = false
+    var isStripTrailingPeriodEnabled: Bool = false
 
     var obsidianEnabled: Bool = true
 
@@ -190,6 +191,7 @@ class ModeEditViewModel {
             useClipboardContext = existingMode.useClipboardContext
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
             isSmartInsertEnabled = existingMode.isSmartInsertEnabled
+            isStripTrailingPeriodEnabled = existingMode.isStripTrailingPeriodEnabled
             obsidianEnabled = existingMode.obsidianEnabled
 
             validateLanguageSelection()
@@ -238,6 +240,7 @@ class ModeEditViewModel {
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
             isSmartInsertEnabled: isSmartInsertEnabled,
+            isStripTrailingPeriodEnabled: isStripTrailingPeriodEnabled,
             obsidianEnabled: obsidianEnabled
         )
     }

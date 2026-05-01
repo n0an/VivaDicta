@@ -105,6 +105,26 @@ struct TranscriptionOutputFilter {
         return filteredText
     }
 
+    /// Strips any number of trailing periods from the transcript so casual
+    /// messages like "Okay." or "Wait..." don't read as cold or trailing-off
+    /// in chat contexts.
+    ///
+    /// Only the tail is touched: leading and internal whitespace are preserved,
+    /// internal periods (acronyms, mid-sentence) are kept, and "?" / "!" carry
+    /// their own meaning so they pass through unchanged.
+    static func stripTrailingPeriods(_ text: String) -> String {
+        var view = Substring(text)
+        // Skip past any trailing whitespace so "Okay.   " is still recognized.
+        while let last = view.last, last.isWhitespace {
+            view = view.dropLast()
+        }
+        guard view.last == "." else { return text }
+        while view.last == "." {
+            view = view.dropLast()
+        }
+        return String(view)
+    }
+
     /// Resolves the language code used to pick the filler set.
     ///
     /// Order of preference:
