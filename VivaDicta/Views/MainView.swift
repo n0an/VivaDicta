@@ -474,11 +474,13 @@ struct MainView: View {
                 Button {
                     HapticManager.lightImpact()
                     showingLiveTranslation = true
+                    Task { await LiveTranslationDiscoveryTip.liveTranslationOpenedEvent.donate() }
                 } label: {
                     Image(systemName: "globe.americas.fill")
                 }
                 .accessibilityLabel("Live Translation")
                 .matchedTransitionSource(id: "LiveTranslationSheetTransition", in: sheetTransitions)
+                .popoverTip(LiveTranslationDiscoveryTip())
             }
 
             if #available(iOS 26.0, *) {
