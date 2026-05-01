@@ -574,8 +574,11 @@ struct SettingsView: View {
 
                     Link(destination: URL(string: "https://github.com/n0an/VivaDicta")!) {
                         HStack {
-                            Image(systemName: "star.bubble.fill")
-                                .foregroundStyle(.indigo)
+                            Image("github")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .tint(.primary)
                             Text("Star on GitHub")
                                 .foregroundStyle(.primary)
                             Spacer()
