@@ -334,7 +334,7 @@ struct ModeEditView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Trim Trailing Period")
                                 .font(.body)
-                            Text("Strips trailing \".\" or \"...\" so casual messages don't read as cold. \"!\" and \"?\" are kept.")
+                            Text("Strips trailing \".\" or \"...\"")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
