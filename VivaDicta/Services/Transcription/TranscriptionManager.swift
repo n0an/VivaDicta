@@ -233,11 +233,11 @@ class TranscriptionManager {
             result = ReplacementsService.applyReplacements(to: result)
         }
 
-        // Strip trailing period if the active mode opts in. Runs last so it
+        // Strip trailing periods if the active mode opts in. Runs last so it
         // operates on the final user-visible text, after replacements may have
         // adjusted the tail.
         if currentMode.isStripTrailingPeriodEnabled {
-            result = TranscriptionOutputFilter.stripTrailingPeriod(result)
+            result = TranscriptionOutputFilter.stripTrailingPeriods(result)
         }
 
         AnalyticsService.track(.transcriptionCompleted(

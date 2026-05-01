@@ -212,49 +212,55 @@ struct TranscriptionOutputFilterTests {
     // MARK: - stripTrailingPeriod Tests
 
     @Test func stripTrailingPeriod_singleSentence_removesPeriod() {
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("Okay.") == "Okay")
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("Sure.") == "Sure")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("Okay.") == "Okay")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("Sure.") == "Sure")
     }
 
     @Test func stripTrailingPeriod_multipleSentences_removesOnlyTrailing() {
         #expect(
-            TranscriptionOutputFilter.stripTrailingPeriod("Sure. I'll be there.")
+            TranscriptionOutputFilter.stripTrailingPeriods("Sure. I'll be there.")
             == "Sure. I'll be there"
         )
     }
 
     @Test func stripTrailingPeriod_ellipsis_strippedToo() {
         // Per the user spec (Peter Szemraj): rstrip('.') eats trailing ellipses too.
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("Wait...") == "Wait")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("Wait...") == "Wait")
     }
 
     @Test func stripTrailingPeriod_questionMark_unchanged() {
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("What?") == "What?")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("What?") == "What?")
     }
 
     @Test func stripTrailingPeriod_exclamation_unchanged() {
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("Yes!") == "Yes!")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("Yes!") == "Yes!")
     }
 
     @Test func stripTrailingPeriod_noTrailingPeriod_unchanged() {
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("Okay") == "Okay")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("Okay") == "Okay")
     }
 
     @Test func stripTrailingPeriod_emptyString_unchanged() {
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("") == "")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("") == "")
     }
 
     @Test func stripTrailingPeriod_trailingWhitespaceAfterPeriod_stillStrips() {
         // "Okay.   " - trim runs first inside the helper, so the period is still recognized.
-        #expect(TranscriptionOutputFilter.stripTrailingPeriod("Okay.   ") == "Okay")
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("Okay.   ") == "Okay")
     }
 
     @Test func stripTrailingPeriod_internalPeriods_untouched() {
         // Periods that aren't at the very end (acronyms, mid-sentence) stay put.
         #expect(
-            TranscriptionOutputFilter.stripTrailingPeriod("J.R.R. Tolkien")
+            TranscriptionOutputFilter.stripTrailingPeriods("J.R.R. Tolkien")
             == "J.R.R. Tolkien"
         )
+    }
+
+    @Test func stripTrailingPeriod_leadingWhitespace_preserved() {
+        // Function only touches the tail - leading whitespace passes through
+        // even though the rest of the pipeline normally trims it.
+        #expect(TranscriptionOutputFilter.stripTrailingPeriods("  Okay.") == "  Okay")
     }
 }
 
