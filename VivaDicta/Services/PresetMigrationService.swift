@@ -127,7 +127,12 @@ enum PresetMigrationService {
                     aiModel: mode.aiModel,
                     reminderExtractorProvider: mode.reminderExtractorProvider,
                     reminderExtractorModel: mode.reminderExtractorModel,
-                    aiEnhanceEnabled: mode.aiEnhanceEnabled
+                    aiEnhanceEnabled: mode.aiEnhanceEnabled,
+                    useClipboardContext: mode.useClipboardContext,
+                    isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled,
+                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
+                    obsidianEnabled: mode.obsidianEnabled
                 )
                 updated = true
                 logger.logInfo("Normalized mode '\(mode.name)' presetId: '\(presetId)' → '\(builtInId)'")
@@ -146,7 +151,12 @@ enum PresetMigrationService {
                         aiModel: mode.aiModel,
                         reminderExtractorProvider: mode.reminderExtractorProvider,
                         reminderExtractorModel: mode.reminderExtractorModel,
-                        aiEnhanceEnabled: mode.aiEnhanceEnabled
+                        aiEnhanceEnabled: mode.aiEnhanceEnabled,
+                        useClipboardContext: mode.useClipboardContext,
+                        isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
+                        isSmartInsertEnabled: mode.isSmartInsertEnabled,
+                        isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
+                        obsidianEnabled: mode.obsidianEnabled
                     )
                     updated = true
                     logger.logInfo("Normalized mode '\(mode.name)' presetId: '\(presetId)' → '\(mappedId)'")
