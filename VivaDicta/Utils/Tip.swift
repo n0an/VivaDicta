@@ -274,6 +274,55 @@ struct AIVariationsDiscoveryTip: Tip {
     }
 }
 
+// MARK: - 3.2 Feature Discovery Tips
+
+struct LiveTranslationDiscoveryTip: Tip {
+    /// Reuses the existing transcription donation so the tip waits until the
+    /// user has actually engaged with the app before nudging them toward a
+    /// new feature.
+    static let liveTranslationOpenedEvent = Event(id: "liveTranslationOpened")
+
+    var title: Text {
+        Text("Live Translation")
+            .foregroundStyle(discoveryMeshGradient())
+    }
+
+    var message: Text? {
+        Text("Speak in one language, hear it back in another in near real time. 60+ languages, plug in headphones.")
+    }
+
+    var image: Image? {
+        Image(systemName: "globe.americas.fill")
+    }
+
+    var rules: [Rule] {
+        // Only after the user has done a few transcriptions - so we don't
+        // bombard fresh installs with a tip about a side feature.
+        #Rule(ChatsDiscoveryTip.transcriptionCreatedEvent) { event in
+            event.donations.count >= 3
+        }
+        // Don't keep nagging once the user has actually opened Live Translation.
+        #Rule(Self.liveTranslationOpenedEvent) { event in
+            event.donations.count == 0
+        }
+    }
+}
+
+struct NativeTranslationTip: Tip {
+    var title: Text {
+        Text("One-step translation")
+            .foregroundStyle(discoveryMeshGradient())
+    }
+
+    var message: Text? {
+        Text("This provider translates while it transcribes. Pick a target and your transcription comes back already translated - no extra AI processing step.")
+    }
+
+    var image: Image? {
+        Image(systemName: "text.bubble.fill")
+    }
+}
+
 struct SingleNoteChatDiscoveryTip: Tip {
     static let singleNoteChatOpenedEvent = Event(id: "singleNoteChatOpened")
 

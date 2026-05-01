@@ -31,12 +31,71 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.2": release_3_2,
         "3.1": release_3_1,
         "3.0": release_3_0,
         "2.0": release_2_0,
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_2 = WhatsNewRelease(
+        id: "3.2",
+        headline: "What's New in VivaDicta 3.2",
+        features: [
+            WhatsNewFeature(
+                icon: "globe.americas.fill",
+                iconColors: [.indigo, .cyan],
+                title: "Live Translation",
+                description: "Your own personal interpreter. Speak in one language and hear it in another in near real time. Plug in headphones, pick from 60+ languages, and adjust playback speed."
+            ),
+            WhatsNewFeature(
+                icon: "text.bubble.fill",
+                iconColors: [.purple, .indigo],
+                title: "Translate While You Transcribe",
+                description: "With Soniox, Gladia, or Speechmatics selected, pick a target language in the new \"Translate to\" picker. Your transcription comes back already translated, no extra AI step needed."
+            ),
+            WhatsNewFeature(
+                icon: "waveform.badge.plus",
+                iconColors: [.green, .mint],
+                title: "Two New Cloud Transcription Providers",
+                description: "Gladia Solaria (100+ languages, speaker labels, inline translation) and Speechmatics Enhanced (top accuracy on European languages, with translation built in)."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.up.forward.app.fill",
+                iconColors: [.purple, .indigo],
+                title: "Save to Obsidian Automatically",
+                description: "Turn on Append to Obsidian in any mode and each transcription opens Obsidian with a new note. One note per transcription with timestamped filenames, or pile them into a daily note."
+            ),
+            WhatsNewFeature(
+                icon: "checklist",
+                iconColors: [.orange, .yellow],
+                title: "Reminders in Original Language",
+                description: "Extract Reminders now keeps the language of your note. German notes produce German reminders, Russian notes produce Russian reminders, instead of occasionally being translated to English."
+            ),
+            WhatsNewFeature(
+                icon: "text.badge.minus",
+                iconColors: [.orange, .pink],
+                title: "Trim Trailing Period",
+                description: "New per-mode toggle that strips a trailing \".\" or \"...\" from the final transcript. Helpful for casual messages where \"Okay.\" can read as cold. \"!\" and \"?\" are kept."
+            ),
+            WhatsNewFeature(
+                icon: "character.book.closed.fill",
+                iconColors: [.teal, .green],
+                title: "Multilingual Filler Filtering",
+                description: "Filler words like \"uh\", \"um\", and \"hmm\" are now also stripped in Russian (ээ, э-э, эм), Spanish (ehm), German (äh, ähm), and French (euh)."
+            ),
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.pink, .purple],
+                title: "Latest AI Models",
+                description: "Added Anthropic Claude Opus 4.7 and OpenAI GPT-5.5 (now the default for OpenAI)."
+            ),
+        ],
+        tagline: "Speak any language. Hear it back in another.",
+        learnMoreURL: URL(string: "https://vivadicta.com/ios/docs/live-translation"),
+        learnMoreTitle: "Learn more about Live Translation"
+    )
 
     private static let release_3_1 = WhatsNewRelease(
         id: "3.1",

@@ -235,6 +235,7 @@ struct ModeEditView: View {
                         .onChange(of: viewModel.translationTargetLanguage) { _, _ in
                             HapticManager.selectionChanged()
                         }
+                        .popoverTip(NativeTranslationTip())
                     }
                 } else {
                     if viewModel.transcriptionProvider == .parakeet ||

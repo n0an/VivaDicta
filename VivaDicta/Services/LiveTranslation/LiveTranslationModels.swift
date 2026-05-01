@@ -310,4 +310,17 @@ enum LiveTranslationError: LocalizedError {
             "Audio error: \(message)"
         }
     }
+
+    /// Stable, low-cardinality category for analytics. Do not include the
+    /// localized message - we want consistent buckets across releases and
+    /// locales, not human-readable text.
+    var analyticsCategory: String {
+        switch self {
+        case .missingAPIKey: "missing_api_key"
+        case .microphonePermissionDenied: "mic_permission_denied"
+        case .audioSessionFailure: "audio_session_failure"
+        case .webSocketFailure: "websocket_failure"
+        case .audioEngineFailure: "audio_engine_failure"
+        }
+    }
 }

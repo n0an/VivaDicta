@@ -160,6 +160,26 @@ Insert the new section **above** the previous version (the changelog shows newes
 
 Keep copy aligned with the in-app What's New and App Store release notes so messaging stays consistent across surfaces. Commit and push in the website repo (separate from the iOS app repo).
 
+### Step 8.6 — Draft LinkedIn announcement post
+
+Prepare a launch post for the **VivaDicta company page** on LinkedIn (not Anton's personal feed - the voice is announcement-style, not first-person story).
+
+Save to `llmtemp/linkedin-X.Y.Z-<slug>.md` in the iOS app repo. Include:
+
+1. **Primary draft** - ready to paste. Lead with a one-line release announcement, one paragraph framing the headline feature, then a tight bullet list (4-6 items) of other release highlights, then a link.
+2. **Spartan alternate** - bullets only, no narrative paragraph. Mirrors the Summit AI Notes template (line 1 = announcement, then bullets, "and more.", link).
+3. **2-3 alternate hook lines** - so the user can swap if the marquee feels wrong.
+4. **Posting notes** - media suggestion, recommended post window (Tue/Wed/Thu, 9-11am), instruction to pin the App Store link as the first comment.
+
+Style rules (also in `~/.claude/skills/linkedin-post-style/SKILL.md`):
+- Company-page voice: no "I", no personal-story narrative, no "thrilled to announce" filler.
+- Short paragraphs (1-2 sentences), line breaks over dense blocks.
+- Normal dashes, never em-dashes.
+- The link in the body should be the **website changelog** (`https://vivadicta.com/ios/changelog`), not the App Store URL. Pin the App Store URL as the first comment instead - this gives commenters two routes (deep-context page in body, one-click install in comment).
+- For the marquee feature, use a tagline that reads as **what the experience feels like**, not what it historically was. Avoid hyperbolic "only [elite group] had this" framing - LinkedIn's tech-literate audience will dunk on overstatement, especially for capabilities competitors have shipped (real-time translation, on-device AI, etc.).
+
+Publishing happens **after** the App Store build is approved and live, so users hitting the post can install immediately. The draft is prepared during release prep so it's ready to go when approval lands.
+
 ### Step 9 — CloudKit schema deployment
 
 First, detect whether any SwiftData `@Model` classes changed since the last release tag:
@@ -195,6 +215,7 @@ Before handing off to `asc-release-flow`:
 - [ ] `metadata/version/X.Y.Z/*.json` generated for all 10 locales
 - [ ] Feature changelog updated (Obsidian vault)
 - [ ] iOS website changelog updated (`vivadicta_website/app/ios/changelog/page.tsx` + push)
+- [ ] LinkedIn announcement drafted (`llmtemp/linkedin-X.Y.Z-<slug>.md`) - publish after App Store approval lands
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
