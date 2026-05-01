@@ -301,7 +301,8 @@ class AIService {
             useClipboardContext: mode.useClipboardContext,
 
             isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
-            isSmartInsertEnabled: mode.isSmartInsertEnabled
+            isSmartInsertEnabled: mode.isSmartInsertEnabled,
+            isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled
         )
 
         addMode(duplicatedMode)
@@ -369,9 +370,10 @@ class AIService {
                     reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-        
+
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
-                    isSmartInsertEnabled: mode.isSmartInsertEnabled
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled,
+                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
@@ -397,9 +399,10 @@ class AIService {
                     reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-        
+
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
-                    isSmartInsertEnabled: mode.isSmartInsertEnabled
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled,
+                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
@@ -425,9 +428,10 @@ class AIService {
                     reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-        
+
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
-                    isSmartInsertEnabled: mode.isSmartInsertEnabled
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled,
+                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
@@ -521,7 +525,8 @@ class AIService {
                 aiEnhanceEnabled: defaultMode.aiEnhanceEnabled,
                 useClipboardContext: defaultMode.useClipboardContext,
                 isAutoTextFormattingEnabled: defaultMode.isAutoTextFormattingEnabled,
-                isSmartInsertEnabled: defaultMode.isSmartInsertEnabled
+                isSmartInsertEnabled: defaultMode.isSmartInsertEnabled,
+                isStripTrailingPeriodEnabled: defaultMode.isStripTrailingPeriodEnabled
             )
 
             // Update the mode
@@ -2213,9 +2218,10 @@ class AIService {
                     reminderExtractorModel: mode.reminderExtractorModel,
                     aiEnhanceEnabled: false,
                     useClipboardContext: mode.useClipboardContext,
-        
+
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
-                    isSmartInsertEnabled: mode.isSmartInsertEnabled
+                    isSmartInsertEnabled: mode.isSmartInsertEnabled,
+                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }
