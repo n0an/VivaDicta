@@ -844,7 +844,8 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         let trimmedTemplate = (UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
-        guard let output = ObsidianURLBuilder.build(text: text, template: template, modeName: mode.name, presetName: presetName) else {
+        let folder = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianFolder)
+        guard let output = ObsidianURLBuilder.build(text: text, template: template, folder: folder, modeName: mode.name, presetName: presetName) else {
             logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
             return
         }

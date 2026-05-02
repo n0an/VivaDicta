@@ -83,6 +83,7 @@ enum UserDefaultsStorage {
         // Integrations - Obsidian
         static let isObsidianGloballyEnabled = "isObsidianGloballyEnabled"
         static let obsidianNoteTemplate = "obsidianNoteTemplate"
+        static let obsidianFolder = "obsidianFolder"
 
         // Live Translation
         static let liveTranslationSourceLanguage = "liveTranslation.sourceLanguage"

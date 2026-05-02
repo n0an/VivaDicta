@@ -28,6 +28,9 @@ enum ObsidianURLBuilder {
     ///   - text: The final transcription text (enhanced if AI ran, else raw).
     ///   - template: Note-name template carrying placeholders like `{date}`.
     ///     Stored globally in Settings → Integrations.
+    ///   - folder: Optional vault-relative folder (e.g. `daily` or `Inbox/voice`).
+    ///     Trailing/leading slashes are trimmed; `..` segments are rejected.
+    ///     `obsidian://new` auto-creates the folder hierarchy if it doesn't exist.
     ///   - modeName: Human-readable mode name for the `{mode}` placeholder.
     ///   - presetName: Human-readable preset name for the `{preset}` placeholder.
     ///   - date: The moment the transcription completed. Parameterised for testability.
@@ -35,6 +38,7 @@ enum ObsidianURLBuilder {
     ///   be constructed. Callers should treat `nil` as a no-op.
     static func build(text: String,
                       template: String,
+                      folder: String? = nil,
                       modeName: String,
                       presetName: String?,
                       date: Date = Date()) -> Output? {
@@ -44,19 +48,46 @@ enum ObsidianURLBuilder {
                               modeName: modeName)
         guard !noteName.isEmpty else { return nil }
 
+        let filePath: String
+        if let sanitized = sanitizeFolder(folder), !sanitized.isEmpty {
+            filePath = "\(sanitized)/\(noteName)"
+        } else {
+            filePath = noteName
+        }
+
         let clipboardText = text + "\n"
 
         var components = URLComponents()
         components.scheme = "obsidian"
         components.host = "new"
         components.queryItems = [
-            URLQueryItem(name: "file", value: noteName),
+            URLQueryItem(name: "file", value: filePath),
             URLQueryItem(name: "clipboard", value: nil),
             URLQueryItem(name: "append", value: "true")
         ]
 
         guard let url = components.url else { return nil }
         return Output(clipboardText: clipboardText, url: url)
+    }
+
+    /// Normalize a user-entered folder string for use as a vault-relative path.
+    /// Returns `nil` for empty input, paths containing `..` segments, or paths
+    /// that collapse to just slashes after trimming.
+    static func sanitizeFolder(_ folder: String?) -> String? {
+        guard let folder, !folder.isEmpty else { return nil }
+        let trimmed = folder.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        // Strip leading and trailing slashes so the user can paste either
+        // `daily` or `/daily/` and get the same result.
+        var path = trimmed
+        while path.hasPrefix("/") { path.removeFirst() }
+        while path.hasSuffix("/") { path.removeLast() }
+        guard !path.isEmpty else { return nil }
+        // Reject `..` traversal in any segment - the integration is meant to
+        // write inside the vault, not above it.
+        let segments = path.split(separator: "/", omittingEmptySubsequences: true)
+        guard !segments.contains(where: { $0 == ".." }) else { return nil }
+        return segments.joined(separator: "/")
     }
 
     private static func expand(template: String,

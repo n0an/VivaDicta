@@ -18,6 +18,9 @@ struct IntegrationsView: View {
     @AppStorage(UserDefaultsStorage.Keys.obsidianNoteTemplate)
     private var obsidianNoteTemplate = UserDefaultsStorage.defaultObsidianNoteTemplate
 
+    @AppStorage(UserDefaultsStorage.Keys.obsidianFolder)
+    private var obsidianFolder = ""
+
     var body: some View {
         Form {
             Section(header: Text("Obsidian"),
@@ -37,6 +40,15 @@ struct IntegrationsView: View {
 
                 if isObsidianGloballyEnabled {
                     HStack {
+                        Text("Folder")
+                        Spacer()
+                        TextField("Vault root", text: $obsidianFolder)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+
+                    HStack {
                         Text("Note name")
                         Spacer()
                         TextField(UserDefaultsStorage.defaultObsidianNoteTemplate, text: $obsidianNoteTemplate)
@@ -54,7 +66,7 @@ struct IntegrationsView: View {
     @ViewBuilder
     private var obsidianFooter: some View {
         if isObsidianGloballyEnabled {
-            Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. Per-mode opt-out is available in each mode's settings. The clipboard is overwritten each time.")
+            Text("Folder is optional - leave blank to save to the vault root, or use names like \"daily\" or \"Inbox/voice\" (Obsidian creates folders that don't exist). Note name placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To append to a single daily note, set the name to {date}. Per-mode opt-out is available in each mode's settings. The clipboard is overwritten each time.")
         }
     }
 }
