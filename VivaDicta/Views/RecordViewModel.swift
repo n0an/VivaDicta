@@ -611,6 +611,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 // Darwin notification shareTranscribedText posts).
                 self.openObsidianIfEnabled(text: textToShare, presetName: promptName, sourceTag: resolvedSourceTag)
 
+                FolderExportService.saveIfEnabled(
+                    transcription: savedTranscription,
+                    mode: aiService.selectedMode
+                )
+
                 AppGroupCoordinator.shared.shareTranscribedText(textToShare)
 
                 // Cache for keyboard "Recent Notes" feature
@@ -780,6 +785,11 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         text: pending.text,
                         presetName: nil,
                         sourceTag: pending.sourceTag ?? SourceTag.app
+                    )
+
+                    FolderExportService.saveIfEnabled(
+                        transcription: transcription,
+                        mode: aiService.selectedMode
                     )
 
                     // Share with keyboard

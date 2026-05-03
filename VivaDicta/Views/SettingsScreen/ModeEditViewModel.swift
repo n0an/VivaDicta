@@ -33,6 +33,7 @@ class ModeEditViewModel {
     var isStripTrailingPeriodEnabled: Bool = false
 
     var obsidianEnabled: Bool = true
+    var folderExportEnabled: Bool = true
 
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
@@ -193,6 +194,7 @@ class ModeEditViewModel {
             isSmartInsertEnabled = existingMode.isSmartInsertEnabled
             isStripTrailingPeriodEnabled = existingMode.isStripTrailingPeriodEnabled
             obsidianEnabled = existingMode.obsidianEnabled
+            folderExportEnabled = existingMode.folderExportEnabled
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -241,7 +243,8 @@ class ModeEditViewModel {
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
             isSmartInsertEnabled: isSmartInsertEnabled,
             isStripTrailingPeriodEnabled: isStripTrailingPeriodEnabled,
-            obsidianEnabled: obsidianEnabled
+            obsidianEnabled: obsidianEnabled,
+            folderExportEnabled: folderExportEnabled
         )
     }
 

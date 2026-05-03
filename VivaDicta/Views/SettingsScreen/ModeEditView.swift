@@ -27,6 +27,9 @@ struct ModeEditView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.isObsidianGloballyEnabled)
     private var isObsidianGloballyEnabled = false
+
+    @AppStorage(UserDefaultsStorage.Keys.isFolderExportGloballyEnabled)
+    private var isFolderExportGloballyEnabled = false
     
     let selectAIEnhacementTip = SelectAIEnhacementTip()
 
@@ -814,6 +817,23 @@ struct ModeEditView: View {
                 }
             }
 
+            if isFolderExportGloballyEnabled {
+                Section(header: folderExportSectionHeader) {
+                    Toggle(isOn: $viewModel.folderExportEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Save markdown file")
+                                .font(.body)
+                            Text("Save this mode's transcriptions as a .md file in the folder picked in Settings → Integrations.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: viewModel.folderExportEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+                }
+            }
+
             if viewModel.isEditing {
                 if viewModel.isValid {
                     Section {
@@ -979,6 +999,10 @@ struct ModeEditView: View {
 
     private var obsidianSectionHeader: some View {
         Text("Obsidian")
+    }
+
+    private var folderExportSectionHeader: some View {
+        Text("Save to Folder")
     }
 
     private var reminderSuggestionsSectionHeader: some View {
