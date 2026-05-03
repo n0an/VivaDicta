@@ -22,7 +22,7 @@ struct IntegrationsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isFolderExportGloballyEnabled)
     private var isFolderExportGloballyEnabled = false
 
-    @AppStorage(UserDefaultsStorage.Keys.folderExportDisplayName)
+    @AppStorage(UserDefaultsStorage.SharedKeys.folderExportDisplayName, store: UserDefaultsStorage.shared)
     private var folderExportDisplayName: String = ""
 
     @State private var isFolderPickerPresented = false
@@ -143,7 +143,7 @@ struct IntegrationsView: View {
     @ViewBuilder
     private var folderExportFooter: some View {
         if isFolderExportGloballyEnabled {
-            Text("One markdown file per transcription, named VivaDicta-YYYY-MM-DD_HHmmss.md. Pick any folder, including an iCloud Drive Obsidian vault. Per-mode opt-out is available in each mode's settings. Saving from the keyboard requires Full Access.")
+            Text("One markdown file per transcription, named VivaDicta-YYYY-MM-DD_HHmmss.md. Pick any folder, including an Obsidian vault. Once you pick a folder, every mode silently writes a file - opt out per-mode in each mode's settings.")
         }
     }
 }

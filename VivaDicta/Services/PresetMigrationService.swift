@@ -157,7 +157,8 @@ enum PresetMigrationService {
                         isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                         isSmartInsertEnabled: mode.isSmartInsertEnabled,
                         isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
-                        obsidianEnabled: mode.obsidianEnabled
+                        obsidianEnabled: mode.obsidianEnabled,
+                        folderExportEnabled: mode.folderExportEnabled
                     )
                     updated = true
                     logger.logInfo("Normalized mode '\(mode.name)' presetId: '\(presetId)' → '\(mappedId)'")

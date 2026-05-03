@@ -25,26 +25,25 @@ enum FolderExportService {
     /// The picker URL must already be security-scoped (caller is responsible
     /// for `startAccessingSecurityScopedResource()` around bookmark creation).
     static func storeBookmark(for url: URL) throws {
+        // iOS does not support `.withSecurityScope` (macOS-only). Picker URLs
+        // from `UIDocumentPickerViewController` are inherently security-scoped,
+        // and the default-options bookmark preserves that on iOS.
         let data = try url.bookmarkData(
             options: [],
             includingResourceValuesForKeys: nil,
             relativeTo: nil
         )
         UserDefaultsStorage.shared.set(data, forKey: UserDefaultsStorage.SharedKeys.folderExportBookmark)
-        UserDefaultsStorage.appPrivate.set(url.lastPathComponent, forKey: UserDefaultsStorage.Keys.folderExportDisplayName)
+        UserDefaultsStorage.shared.set(url.lastPathComponent, forKey: UserDefaultsStorage.SharedKeys.folderExportDisplayName)
     }
 
     static func clearBookmark() {
         UserDefaultsStorage.shared.removeObject(forKey: UserDefaultsStorage.SharedKeys.folderExportBookmark)
-        UserDefaultsStorage.appPrivate.removeObject(forKey: UserDefaultsStorage.Keys.folderExportDisplayName)
-    }
-
-    static var hasBookmark: Bool {
-        UserDefaultsStorage.shared.data(forKey: UserDefaultsStorage.SharedKeys.folderExportBookmark) != nil
+        UserDefaultsStorage.shared.removeObject(forKey: UserDefaultsStorage.SharedKeys.folderExportDisplayName)
     }
 
     static var displayName: String? {
-        UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.folderExportDisplayName)
+        UserDefaultsStorage.shared.string(forKey: UserDefaultsStorage.SharedKeys.folderExportDisplayName)
     }
 
     // MARK: - Saving
@@ -57,7 +56,7 @@ enum FolderExportService {
         guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isFolderExportGloballyEnabled) else { return }
         guard mode.folderExportEnabled else { return }
         guard let bookmark = UserDefaultsStorage.shared.data(forKey: UserDefaultsStorage.SharedKeys.folderExportBookmark) else {
-            logger.logError("📁 Folder export enabled but no bookmark stored - user must re-pick the folder")
+            logger.logInfo("📁 Folder export enabled but no folder picked yet - skipping")
             return
         }
 
@@ -91,12 +90,14 @@ enum FolderExportService {
         }
 
         if isStale {
-            logger.logError("📁 Folder export: bookmark is stale - user must re-pick the folder")
+            logger.logError("📁 Folder export: bookmark is stale - clearing so the user re-picks")
+            await MainActor.run { Self.clearBookmark() }
             return
         }
 
         guard folderURL.startAccessingSecurityScopedResource() else {
-            logger.logError("📁 Folder export: failed to start accessing security-scoped resource at \(folderURL.path)")
+            logger.logError("📁 Folder export: cannot access \(folderURL.path) - clearing bookmark so the user re-picks")
+            await MainActor.run { Self.clearBookmark() }
             return
         }
         defer { folderURL.stopAccessingSecurityScopedResource() }
