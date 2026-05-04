@@ -303,7 +303,8 @@ class AIService {
             isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
             isSmartInsertEnabled: mode.isSmartInsertEnabled,
             isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
-            obsidianEnabled: mode.obsidianEnabled
+            obsidianEnabled: mode.obsidianEnabled,
+            folderExportEnabled: mode.folderExportEnabled
         )
 
         addMode(duplicatedMode)
@@ -375,7 +376,8 @@ class AIService {
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
-                    obsidianEnabled: mode.obsidianEnabled
+                    obsidianEnabled: mode.obsidianEnabled,
+                    folderExportEnabled: mode.folderExportEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
@@ -405,7 +407,8 @@ class AIService {
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
-                    obsidianEnabled: mode.obsidianEnabled
+                    obsidianEnabled: mode.obsidianEnabled,
+                    folderExportEnabled: mode.folderExportEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
@@ -435,7 +438,8 @@ class AIService {
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
-                    obsidianEnabled: mode.obsidianEnabled
+                    obsidianEnabled: mode.obsidianEnabled,
+                    folderExportEnabled: mode.folderExportEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
@@ -531,7 +535,8 @@ class AIService {
                 isAutoTextFormattingEnabled: defaultMode.isAutoTextFormattingEnabled,
                 isSmartInsertEnabled: defaultMode.isSmartInsertEnabled,
                 isStripTrailingPeriodEnabled: defaultMode.isStripTrailingPeriodEnabled,
-                obsidianEnabled: defaultMode.obsidianEnabled
+                obsidianEnabled: defaultMode.obsidianEnabled,
+                folderExportEnabled: defaultMode.folderExportEnabled
             )
 
             // Update the mode
@@ -2227,7 +2232,8 @@ class AIService {
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
-                    obsidianEnabled: mode.obsidianEnabled
+                    obsidianEnabled: mode.obsidianEnabled,
+                    folderExportEnabled: mode.folderExportEnabled
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }

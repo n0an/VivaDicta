@@ -26,6 +26,14 @@ enum UserDefaultsStorage {
     enum SharedKeys {
         static let presets = "Presets_v1"
         static let hiddenPresetIDs = "HiddenPresetIDs_v1"
+
+        /// Security-scoped bookmark Data for the user-picked folder export destination.
+        /// Lives in the App Group so the keyboard extension can resolve it.
+        static let folderExportBookmark = "folderExportBookmark"
+
+        /// Display name of the folder picked for export. Shared so the keyboard
+        /// extension can also read it (kept symmetric with the bookmark Data).
+        static let folderExportDisplayName = "folderExportDisplayName"
     }
 
     // MARK: - App-Private Keys
@@ -83,6 +91,9 @@ enum UserDefaultsStorage {
         // Integrations - Obsidian
         static let isObsidianGloballyEnabled = "isObsidianGloballyEnabled"
         static let obsidianNoteTemplate = "obsidianNoteTemplate"
+
+        // Integrations - Folder export (silent markdown save to user-picked folder)
+        static let isFolderExportGloballyEnabled = "isFolderExportGloballyEnabled"
 
         // Live Translation
         static let liveTranslationSourceLanguage = "liveTranslation.sourceLanguage"

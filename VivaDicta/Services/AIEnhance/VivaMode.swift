@@ -92,6 +92,11 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Settings → Integrations.
     var obsidianEnabled: Bool
 
+    /// Whether this mode opts in to silently saving each transcription as a
+    /// markdown file in the user-picked folder. Only effective when the
+    /// global folder-export integration is enabled in Settings → Integrations.
+    var folderExportEnabled: Bool
+
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
          name: String,
@@ -109,7 +114,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
          isAutoTextFormattingEnabled: Bool = false,
          isSmartInsertEnabled: Bool = false,
          isStripTrailingPeriodEnabled: Bool = false,
-         obsidianEnabled: Bool = true) {
+         obsidianEnabled: Bool = true,
+         folderExportEnabled: Bool = true) {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -127,6 +133,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.isSmartInsertEnabled = isSmartInsertEnabled
         self.isStripTrailingPeriodEnabled = isStripTrailingPeriodEnabled
         self.obsidianEnabled = obsidianEnabled
+        self.folderExportEnabled = folderExportEnabled
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -150,6 +157,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
         isStripTrailingPeriodEnabled = try container.decodeIfPresent(Bool.self, forKey: .isStripTrailingPeriodEnabled) ?? false
         obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? true
+        folderExportEnabled = try container.decodeIfPresent(Bool.self, forKey: .folderExportEnabled) ?? true
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -174,6 +182,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
         case isStripTrailingPeriodEnabled
         case obsidianEnabled
+        case folderExportEnabled
     }
 
     /// Encodes using the new format only (presetId).
@@ -196,6 +205,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(isSmartInsertEnabled, forKey: .isSmartInsertEnabled)
         try container.encode(isStripTrailingPeriodEnabled, forKey: .isStripTrailingPeriodEnabled)
         try container.encode(obsidianEnabled, forKey: .obsidianEnabled)
+        try container.encode(folderExportEnabled, forKey: .folderExportEnabled)
     }
 
     /// The default mode used when no custom mode is configured.
