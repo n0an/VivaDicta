@@ -15,6 +15,15 @@ struct KeyboardCustomView: View {
     @ObservedObject private var keyboardContext: KeyboardContext
     @State private var processingStage: ProcessingStage = .waitingToStart
     @State private var showFullAccessPrompt = false
+    /// Mirrors `AppGroupCoordinator.shared.isCurrentlyRussian` so that taps on
+    /// the EN/RU toggle key invalidate the view (UserDefaults writes don't
+    /// trigger SwiftUI updates by themselves). Updated by the
+    /// `.vivaDictaLanguageToggled` notification.
+    @State private var isCurrentlyRussian = AppGroupCoordinator.shared.isCurrentlyRussian
+    /// Mirrors `AppGroupCoordinator.shared.isRussianLayoutEnabled`. Refreshed on
+    /// `onAppear` so changes made in Settings while the keyboard was offscreen
+    /// are picked up the next time the keyboard becomes active.
+    @State private var isRussianLayoutEnabled = AppGroupCoordinator.shared.isRussianLayoutEnabled
 
     let controller: KeyboardInputViewController
 
@@ -31,32 +40,73 @@ struct KeyboardCustomView: View {
         controller as? KeyboardViewController
     }
 
+    /// Whether the keyboard should currently render the Russian letter rows.
+    /// True only when the user has the Russian layout enabled AND has tapped
+    /// the EN/RU toggle to switch to Russian.
+    private var useRussianLayout: Bool {
+        isRussianLayoutEnabled && isCurrentlyRussian
+    }
+
     /// Resolves the keyboard layout for the current rendering pass.
     ///
-    /// For QWERTY we return `nil` so `KeyboardView` regenerates the layout
-    /// internally on every context change - this preserves the dynamic shift
-    /// action (`KeyboardAction.shift` encodes the *current* case in its
-    /// associated value, so a frozen layout breaks shift cycling).
+    /// Layout selection:
+    /// - QWERTY (Latin) without Russian enabled: return `nil` so `KeyboardView`
+    ///   regenerates the standard layout internally on every context change.
+    ///   This preserves the dynamic shift action (`KeyboardAction.shift`
+    ///   encodes the current case in its associated value, so a frozen layout
+    ///   breaks shift cycling).
+    /// - AZERTY (Latin): rewrite letter rows on every render. Reading
+    ///   `keyboardContext` via `@ObservedObject` forces re-render when the
+    ///   case changes, which gives us a fresh `.standard(for:)` layout with
+    ///   the correct shift action.
+    /// - Russian (when EN/RU toggle is on the Russian side): rewrite to ЙЦУКЕН.
     ///
-    /// For AZERTY we rebuild the layout each render. Reading `keyboardContext`
-    /// via `@ObservedObject` forces the view to re-render when the case
-    /// changes, which in turn produces a fresh `.standard(for:)` layout with
-    /// the correct shift action for the new case.
+    /// Letter-row rewrites are only applied to `.alphabetic`. The numeric
+    /// (`123`) and symbolic (`#+=`) layouts also contain `.character` items
+    /// (digits, punctuation), so rewriting them would corrupt those inputs.
     ///
-    /// The rewrite is only applied to the alphabetic keyboard - the numeric
-    /// (`123`) and symbolic (`#+=`) layouts also have 3 rows of `.character`
-    /// items, so rewriting them would turn digits/symbols into AZERTY letters
-    /// and break number/punctuation input entirely.
+    /// The EN/RU toggle key is only injected when `isRussianLayoutEnabled` is
+    /// `true` - English-only users see no UI changes.
     private var currentLayout: KeyboardLayout? {
-        switch AppGroupCoordinator.shared.keyboardLayoutStyle {
-        case .qwerty:
+        // When Russian is disabled and the user is on QWERTY, return nil so
+        // KeyboardKit handles everything natively (cheapest path).
+        if !isRussianLayoutEnabled, AppGroupCoordinator.shared.keyboardLayoutStyle == .qwerty {
             return nil
-        case .azerty:
-            let base = KeyboardLayout.standard(for: keyboardContext)
-            return keyboardContext.keyboardType == .alphabetic
-                ? AzertyLayout.rewrite(base)
-                : base
         }
+
+        let base = KeyboardLayout.standard(for: keyboardContext)
+        guard keyboardContext.keyboardType == .alphabetic else {
+            return base
+        }
+
+        var result: KeyboardLayout
+        if useRussianLayout {
+            result = RussianLayout.rewrite(base)
+        } else {
+            switch AppGroupCoordinator.shared.keyboardLayoutStyle {
+            case .qwerty: result = base
+            case .azerty: result = AzertyLayout.rewrite(base)
+            }
+        }
+
+        if isRussianLayoutEnabled {
+            injectLanguageToggle(into: &result)
+        }
+        return result
+    }
+
+    /// Inserts a `.custom("vd-lang-toggle")` item into the bottom row,
+    /// immediately to the left of space. We anchor on `.space` rather than
+    /// `.nextKeyboard` because iOS 18+ system custom keyboards often render
+    /// the globe outside KeyboardKit's row (as a system-level input switcher),
+    /// which would make `.nextKeyboard` absent and the insertion silently fail.
+    ///
+    /// `.percentage(0.1)` keeps the key narrow (10% of total keyboard width,
+    /// roughly globe-key sized) so the space bar keeps most of the row.
+    private func injectLanguageToggle(into layout: inout KeyboardLayout) {
+        let action = KeyboardAction.custom(named: vivaDictaLanguageToggleActionName)
+        let item = layout.createIdealItem(for: action, width: .percentage(0.1))
+        layout.itemRows.insert(item, before: .space)
     }
 
     var body: some View {
@@ -156,7 +206,16 @@ struct KeyboardCustomView: View {
                             KeyboardView(
                                 layout: currentLayout,
                                 services: controller.services,
-                                buttonContent: { $0.view },
+                                buttonContent: { params in
+                                    if case .custom(let name) = params.item.action,
+                                       name == vivaDictaLanguageToggleActionName {
+                                        Text(useRussianLayout ? "EN" : "RU")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                    } else {
+                                        params.view
+                                    }
+                                },
                                 buttonView: { $0.view },
                                 collapsedView: { $0.view },
                                 emojiKeyboard: { $0.view },
@@ -174,9 +233,12 @@ struct KeyboardCustomView: View {
                                 }
                             )
                             .keyboardCalloutActions { params in
+                                if useRussianLayout {
+                                    return RussianCallouts.actionsBuilder(params)
+                                }
                                 switch AppGroupCoordinator.shared.keyboardLayoutStyle {
-                                case .azerty: AzertyCallouts.actionsBuilder(params)
-                                case .qwerty: params.standardActions()
+                                case .azerty: return AzertyCallouts.actionsBuilder(params)
+                                case .qwerty: return params.standardActions()
                                 }
                             }
                         }
@@ -201,7 +263,16 @@ struct KeyboardCustomView: View {
             openURL(url)
             dictationState.pendingObsidianURL = nil
         }
+        .onAppear {
+            // Settings may have been changed while the keyboard was offscreen.
+            isRussianLayoutEnabled = AppGroupCoordinator.shared.isRussianLayoutEnabled
+            isCurrentlyRussian = AppGroupCoordinator.shared.isCurrentlyRussian
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .vivaDictaLanguageToggled)) { _ in
+            isCurrentlyRussian = AppGroupCoordinator.shared.isCurrentlyRussian
+        }
     }
+
 
     private func deleteWordBeforeCursor() {
         let proxy = controller.textDocumentProxy

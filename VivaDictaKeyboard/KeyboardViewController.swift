@@ -72,9 +72,14 @@ class KeyboardViewController: KeyboardInputViewController {
             self?.logger.logInfo("Keyboard setup result: \(String(describing: result))")
         }
 
+        // Replace the standard action handler with our subclass that intercepts
+        // the EN/RU language toggle key. Must run after `setup(for:)`, since
+        // `setup` is what installs the default services.
+        services.actionHandler = VivaDictaActionHandler(controller: self)
+
         // Configure haptic feedback based on user preference
         state.feedbackContext.settings.isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
-        
+
         // Configure sound feedback based on user preference
         state.feedbackContext.settings.isAudioFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
     }

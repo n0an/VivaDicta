@@ -37,6 +37,7 @@ struct SettingsView: View {
     @State private var isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
     @State private var isSoundFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
     @State private var keyboardLayoutStyle: KeyboardLayoutStyle = AppGroupCoordinator.shared.keyboardLayoutStyle
+    @State private var isRussianLayoutEnabled = AppGroupCoordinator.shared.isRussianLayoutEnabled
 
     @AppStorage(UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
     private var isAutoAudioCleanupEnabled = false
@@ -307,6 +308,20 @@ struct SettingsView: View {
                     .onChange(of: keyboardLayoutStyle) { _, newValue in
                         HapticManager.selectionChanged()
                         AppGroupCoordinator.shared.keyboardLayoutStyle = newValue
+                    }
+
+                    Toggle(isOn: $isRussianLayoutEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Russian (ЙЦУКЕН)")
+                                .font(.body)
+                            Text("Adds an EN/RU key next to space")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isRussianLayoutEnabled) { _, newValue in
+                        HapticManager.selectionChanged()
+                        AppGroupCoordinator.shared.isRussianLayoutEnabled = newValue
                     }
 
                     VStack(alignment: .leading, spacing: 8) {

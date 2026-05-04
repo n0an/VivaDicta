@@ -66,7 +66,9 @@ public final class AppGroupCoordinator {
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
     public static let kKeyboardLayoutStyle = "keyboardLayoutStyle"
-    
+    public static let kIsRussianLayoutEnabled = "isRussianLayoutEnabled"
+    public static let kIsCurrentlyRussian = "isCurrentlyRussian"
+
     public static let isHapticsEnabled = "isHapticsEnabled"
 
     // Keyboard success tracking (for deferred rating request in main app)
@@ -633,6 +635,37 @@ public final class AppGroupCoordinator {
         }
         set {
             sharedDefaults?.set(newValue.rawValue, forKey: AppGroupCoordinator.kKeyboardLayoutStyle)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// Whether the user has opted in to the Russian (ЙЦУКЕН) layout.
+    /// When `true`, the keyboard renders an EN/RU toggle key next to space.
+    /// Defaults to `false`.
+    public var isRussianLayoutEnabled: Bool {
+        get {
+            sharedDefaults?.bool(forKey: AppGroupCoordinator.kIsRussianLayoutEnabled) ?? false
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsRussianLayoutEnabled)
+            // When the feature is disabled, drop any sticky Russian state so the
+            // next keyboard session starts on the Latin side.
+            if !newValue {
+                sharedDefaults?.set(false, forKey: AppGroupCoordinator.kIsCurrentlyRussian)
+            }
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// Transient: which side of the EN/RU toggle the keyboard is currently on.
+    /// Persisted in shared defaults so it survives keyboard extension reloads.
+    /// Only meaningful when `isRussianLayoutEnabled` is `true`.
+    public var isCurrentlyRussian: Bool {
+        get {
+            sharedDefaults?.bool(forKey: AppGroupCoordinator.kIsCurrentlyRussian) ?? false
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsCurrentlyRussian)
             sharedDefaults?.synchronize()
         }
     }
