@@ -57,7 +57,37 @@ enum RussianLayout {
             )
         }
 
+        // Match Apple's iOS Russian keyboard: in row 2 (the shift/letters/backspace
+        // row), shift and backspace are the same width as a letter key, so the row
+        // has 11 equal-width items (shift + 9 letters + backspace), aligning with
+        // the 11-letter rows above. KeyboardKit's standard QWERTY layout sizes
+        // shift/backspace at ~1.5x input width, which would squeeze the 9 letters.
+        if let bottomLetterRowIndex = letterRowIndices.last {
+            result.itemRows[bottomLetterRowIndex] = resizingShiftAndBackspace(
+                in: result.itemRows[bottomLetterRowIndex],
+                width: .input
+            )
+        }
+
         return result
+    }
+
+    /// Returns `row` with any shift or backspace items resized to `width`,
+    /// preserving alignment and edge insets.
+    private static func resizingShiftAndBackspace(
+        in row: [KeyboardLayout.Item],
+        width: KeyboardLayout.ItemWidth
+    ) -> [KeyboardLayout.Item] {
+        row.map { item in
+            switch item.action {
+            case .shift, .backspace:
+                var resized = item
+                resized.size.width = width
+                return resized
+            default:
+                return item
+            }
+        }
     }
 
     private static func rowHasCharacters(_ row: [KeyboardLayout.Item]) -> Bool {
