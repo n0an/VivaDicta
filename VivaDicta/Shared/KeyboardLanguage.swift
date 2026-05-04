@@ -57,4 +57,40 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
         case .russian: "ЙЦУКЕН"
         }
     }
+
+    /// BCP-47 language codes that should map to this `KeyboardLanguage` when
+    /// inspecting the user's iOS preferred-languages list. Multiple codes are
+    /// listed where dialects are common (e.g. en, en-US, en-GB all map to
+    /// English).
+    private var matchingLanguageCodes: Set<String> {
+        switch self {
+        case .english: ["en"]
+        case .french: ["fr"]
+        case .german: ["de"]
+        case .spanish: ["es"]
+        case .russian: ["ru"]
+        }
+    }
+
+    /// Inspects `Locale.preferredLanguages` (the user's iOS-level language
+    /// preference list, set in iOS Settings -> General -> Language & Region)
+    /// and returns the subset of `KeyboardLanguage` cases that match.
+    ///
+    /// Used during the one-shot onboarding migration to pre-check toggles for
+    /// languages the user is likely to want. After that first run the user's
+    /// explicit choices take precedence.
+    public static func preferredFromSystem() -> Set<KeyboardLanguage> {
+        var result: Set<KeyboardLanguage> = []
+        for tag in Locale.preferredLanguages {
+            // Locale(identifier:).language.languageCode gives the primary
+            // language code without region (e.g. "en-US" -> "en").
+            guard let code = Locale(identifier: tag).language.languageCode?.identifier else { continue }
+            for language in KeyboardLanguage.allCases {
+                if language.matchingLanguageCodes.contains(code) {
+                    result.insert(language)
+                }
+            }
+        }
+        return result
+    }
 }

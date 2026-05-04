@@ -690,10 +690,18 @@ public final class AppGroupCoordinator {
 
     /// One-shot migration from the old layout-style/Russian-toggle pair to the
     /// new enabled-languages set. Idempotent via a marker key.
-    /// - `keyboardLayoutStyle == "azerty"` -> include `.french`
-    /// - `isRussianLayoutEnabled == true`   -> include `.russian`
-    /// - `isCurrentlyRussian == true`       -> set current to `.russian`
-    /// English is always seeded as the baseline.
+    ///
+    /// Seeding sources, all unioned together:
+    /// - English (always - the baseline fallback).
+    /// - Legacy `keyboardLayoutStyle == "azerty"` -> `.french` (existing testers).
+    /// - Legacy `isRussianLayoutEnabled == true`   -> `.russian` (existing testers).
+    /// - `KeyboardLanguage.preferredFromSystem()` -> auto-enable any language
+    ///   the user has set in iOS Settings -> General -> Language & Region.
+    ///   This is the "just works on first launch" hint - user can toggle off
+    ///   anything they don't want.
+    ///
+    /// Current language: `.russian` if the legacy toggle was on Russian and
+    /// Russian is in the enabled set, otherwise `.english`.
     private func ensureLanguageSettingsMigrated() {
         guard let defaults = sharedDefaults,
               !defaults.bool(forKey: AppGroupCoordinator.kDidMigrateLanguageSettings) else {
@@ -707,6 +715,7 @@ public final class AppGroupCoordinator {
         if defaults.bool(forKey: AppGroupCoordinator.kLegacyIsRussianLayoutEnabled) {
             enabled.insert(.russian)
         }
+        enabled.formUnion(KeyboardLanguage.preferredFromSystem())
 
         let current: KeyboardLanguage
         if defaults.bool(forKey: AppGroupCoordinator.kLegacyIsCurrentlyRussian), enabled.contains(.russian) {
