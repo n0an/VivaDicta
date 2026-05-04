@@ -15,15 +15,15 @@ struct KeyboardCustomView: View {
     @ObservedObject private var keyboardContext: KeyboardContext
     @State private var processingStage: ProcessingStage = .waitingToStart
     @State private var showFullAccessPrompt = false
-    /// Mirrors `AppGroupCoordinator.shared.isCurrentlyRussian` so that taps on
-    /// the EN/RU toggle key invalidate the view (UserDefaults writes don't
+    /// Mirrors `AppGroupCoordinator.shared.currentKeyboardLanguage` so taps on
+    /// the language cycle key invalidate the view (UserDefaults writes don't
     /// trigger SwiftUI updates by themselves). Updated by the
     /// `.vivaDictaLanguageToggled` notification.
-    @State private var isCurrentlyRussian = AppGroupCoordinator.shared.isCurrentlyRussian
-    /// Mirrors `AppGroupCoordinator.shared.isRussianLayoutEnabled`. Refreshed on
-    /// `onAppear` so changes made in Settings while the keyboard was offscreen
-    /// are picked up the next time the keyboard becomes active.
-    @State private var isRussianLayoutEnabled = AppGroupCoordinator.shared.isRussianLayoutEnabled
+    @State private var currentLanguage = AppGroupCoordinator.shared.currentKeyboardLanguage
+    /// Mirrors `AppGroupCoordinator.shared.enabledKeyboardLanguages`. Refreshed
+    /// on `onAppear` so changes made in Settings while the keyboard was
+    /// offscreen are picked up the next time the keyboard becomes active.
+    @State private var enabledLanguages = AppGroupCoordinator.shared.enabledKeyboardLanguages
 
     let controller: KeyboardInputViewController
 
@@ -40,37 +40,35 @@ struct KeyboardCustomView: View {
         controller as? KeyboardViewController
     }
 
-    /// Whether the keyboard should currently render the Russian letter rows.
-    /// True only when the user has the Russian layout enabled AND has tapped
-    /// the EN/RU toggle to switch to Russian.
-    private var useRussianLayout: Bool {
-        isRussianLayoutEnabled && isCurrentlyRussian
+    /// Whether the in-keyboard language cycle key should be visible.
+    /// We don't render it for monolingual users (1 enabled language) since
+    /// there's nothing to cycle to.
+    private var shouldShowLanguageToggle: Bool {
+        enabledLanguages.count >= 2
     }
 
     /// Resolves the keyboard layout for the current rendering pass.
     ///
-    /// Layout selection:
-    /// - QWERTY (Latin) without Russian enabled: return `nil` so `KeyboardView`
-    ///   regenerates the standard layout internally on every context change.
-    ///   This preserves the dynamic shift action (`KeyboardAction.shift`
-    ///   encodes the current case in its associated value, so a frozen layout
-    ///   breaks shift cycling).
-    /// - AZERTY (Latin): rewrite letter rows on every render. Reading
-    ///   `keyboardContext` via `@ObservedObject` forces re-render when the
-    ///   case changes, which gives us a fresh `.standard(for:)` layout with
-    ///   the correct shift action.
-    /// - Russian (when EN/RU toggle is on the Russian side): rewrite to ЙЦУКЕН.
+    /// Layout selection per `currentLanguage`:
+    /// - English: standard QWERTY (no rewrite needed).
+    /// - French: AZERTY rewrite.
+    /// - German: QWERTZ rewrite.
+    /// - Spanish: QWERTY + ñ rewrite.
+    /// - Russian: ЙЦУКЕН rewrite.
+    ///
+    /// Returns `nil` (delegate to KeyboardKit's built-in layout) when the user
+    /// is on English AND only English is enabled. This preserves the dynamic
+    /// shift action (`KeyboardAction.shift` encodes the current case in its
+    /// associated value, so a frozen layout breaks shift cycling) for the
+    /// monolingual English path - the cheapest, most-tested code path.
     ///
     /// Letter-row rewrites are only applied to `.alphabetic`. The numeric
     /// (`123`) and symbolic (`#+=`) layouts also contain `.character` items
     /// (digits, punctuation), so rewriting them would corrupt those inputs.
     ///
-    /// The EN/RU toggle key is only injected when `isRussianLayoutEnabled` is
-    /// `true` - English-only users see no UI changes.
+    /// The language toggle key is injected only when 2+ languages are enabled.
     private var currentLayout: KeyboardLayout? {
-        // When Russian is disabled and the user is on QWERTY, return nil so
-        // KeyboardKit handles everything natively (cheapest path).
-        if !isRussianLayoutEnabled, AppGroupCoordinator.shared.keyboardLayoutStyle == .qwerty {
+        if currentLanguage == .english, !shouldShowLanguageToggle {
             return nil
         }
 
@@ -80,16 +78,15 @@ struct KeyboardCustomView: View {
         }
 
         var result: KeyboardLayout
-        if useRussianLayout {
-            result = RussianLayout.rewrite(base)
-        } else {
-            switch AppGroupCoordinator.shared.keyboardLayoutStyle {
-            case .qwerty: result = base
-            case .azerty: result = AzertyLayout.rewrite(base)
-            }
+        switch currentLanguage {
+        case .english: result = base
+        case .french: result = AzertyLayout.rewrite(base)
+        case .german: result = GermanLayout.rewrite(base)
+        case .spanish: result = SpanishLayout.rewrite(base)
+        case .russian: result = RussianLayout.rewrite(base)
         }
 
-        if isRussianLayoutEnabled {
+        if shouldShowLanguageToggle {
             injectLanguageToggle(into: &result)
         }
         return result
@@ -209,7 +206,7 @@ struct KeyboardCustomView: View {
                                 buttonContent: { params in
                                     if case .custom(let name) = params.item.action,
                                        name == vivaDictaLanguageToggleActionName {
-                                        Text(useRussianLayout ? "EN" : "RU")
+                                        Text(currentLanguage.code)
                                             .font(.system(size: 14, weight: .medium))
                                             .foregroundStyle(.primary)
                                     } else {
@@ -233,12 +230,12 @@ struct KeyboardCustomView: View {
                                 }
                             )
                             .keyboardCalloutActions { params in
-                                if useRussianLayout {
-                                    return RussianCallouts.actionsBuilder(params)
-                                }
-                                switch AppGroupCoordinator.shared.keyboardLayoutStyle {
-                                case .azerty: return AzertyCallouts.actionsBuilder(params)
-                                case .qwerty: return params.standardActions()
+                                switch currentLanguage {
+                                case .english: return params.standardActions()
+                                case .french: return AzertyCallouts.actionsBuilder(params)
+                                case .german: return GermanCallouts.actionsBuilder(params)
+                                case .spanish: return SpanishCallouts.actionsBuilder(params)
+                                case .russian: return RussianCallouts.actionsBuilder(params)
                                 }
                             }
                         }
@@ -265,11 +262,11 @@ struct KeyboardCustomView: View {
         }
         .onAppear {
             // Settings may have been changed while the keyboard was offscreen.
-            isRussianLayoutEnabled = AppGroupCoordinator.shared.isRussianLayoutEnabled
-            isCurrentlyRussian = AppGroupCoordinator.shared.isCurrentlyRussian
+            enabledLanguages = AppGroupCoordinator.shared.enabledKeyboardLanguages
+            currentLanguage = AppGroupCoordinator.shared.currentKeyboardLanguage
         }
         .onReceive(NotificationCenter.default.publisher(for: .vivaDictaLanguageToggled)) { _ in
-            isCurrentlyRussian = AppGroupCoordinator.shared.isCurrentlyRussian
+            currentLanguage = AppGroupCoordinator.shared.currentKeyboardLanguage
         }
     }
 
