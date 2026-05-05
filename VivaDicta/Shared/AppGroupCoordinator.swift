@@ -65,8 +65,14 @@ public final class AppGroupCoordinator {
     public static let kIsSpeakerDiarizationEnabled = "isSpeakerDiarizationEnabled"
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
-    public static let kKeyboardLayoutStyle = "keyboardLayoutStyle"
-    
+    public static let kEnabledKeyboardLanguages = "enabledKeyboardLanguages"
+    public static let kCurrentKeyboardLanguage = "currentKeyboardLanguage"
+    private static let kDidMigrateLanguageSettings = "didMigrateLanguageSettings_v1"
+    // Legacy keys, kept here only so the migration code can read and clear them.
+    private static let kLegacyKeyboardLayoutStyle = "keyboardLayoutStyle"
+    private static let kLegacyIsRussianLayoutEnabled = "isRussianLayoutEnabled"
+    private static let kLegacyIsCurrentlyRussian = "isCurrentlyRussian"
+
     public static let isHapticsEnabled = "isHapticsEnabled"
 
     // Keyboard success tracking (for deferred rating request in main app)
@@ -621,20 +627,128 @@ public final class AppGroupCoordinator {
         }
     }
 
-    /// Selected letter layout for the VivaDicta keyboard.
-    /// Defaults to `.qwerty` if not set.
-    public var keyboardLayoutStyle: KeyboardLayoutStyle {
+    /// The set of languages the user has enabled for the custom keyboard.
+    ///
+    /// English is the implicit floor: if the persisted set is empty (first run,
+    /// corrupted defaults, or the user tries to disable everything), this
+    /// returns `[.english]`. The setter coerces an empty new value back to
+    /// English for the same reason.
+    ///
+    /// Stored as a comma-separated list of raw values in shared UserDefaults.
+    public var enabledKeyboardLanguages: Set<KeyboardLanguage> {
         get {
-            guard let raw = sharedDefaults?.string(forKey: AppGroupCoordinator.kKeyboardLayoutStyle),
-                  let style = KeyboardLayoutStyle(rawValue: raw) else {
-                return .qwerty
+            ensureLanguageSettingsMigrated()
+            guard let raw = sharedDefaults?.string(forKey: AppGroupCoordinator.kEnabledKeyboardLanguages),
+                  !raw.isEmpty else {
+                return [.english]
             }
-            return style
+            let langs = raw
+                .split(separator: ",")
+                .compactMap { KeyboardLanguage(rawValue: String($0)) }
+            return langs.isEmpty ? [.english] : Set(langs)
         }
         set {
-            sharedDefaults?.set(newValue.rawValue, forKey: AppGroupCoordinator.kKeyboardLayoutStyle)
+            // Run migration before persisting so a write that beats any read
+            // (e.g. a future code path that calls the setter first) cannot leave
+            // the marker unset and have the next getter overwrite the user's
+            // value with the legacy-derived seed.
+            ensureLanguageSettingsMigrated()
+            let safe = newValue.isEmpty ? Set([KeyboardLanguage.english]) : newValue
+            // Serialize in canonical (allCases) order for deterministic storage.
+            let raw = KeyboardLanguage.allCases
+                .filter { safe.contains($0) }
+                .map(\.rawValue)
+                .joined(separator: ",")
+            sharedDefaults?.set(raw, forKey: AppGroupCoordinator.kEnabledKeyboardLanguages)
+            // If the currently active language was just disabled, snap to the
+            // first enabled language so the keyboard never points at a missing one.
+            if let current = sharedDefaults?.string(forKey: AppGroupCoordinator.kCurrentKeyboardLanguage),
+               let lang = KeyboardLanguage(rawValue: current),
+               !safe.contains(lang) {
+                let fallback = KeyboardLanguage.allCases.first(where: { safe.contains($0) }) ?? .english
+                sharedDefaults?.set(fallback.rawValue, forKey: AppGroupCoordinator.kCurrentKeyboardLanguage)
+            }
             sharedDefaults?.synchronize()
         }
+    }
+
+    /// The language the keyboard is currently typing in.
+    ///
+    /// Always one of `enabledKeyboardLanguages`; the getter clamps to the first
+    /// enabled language if the persisted value is missing or no longer enabled.
+    public var currentKeyboardLanguage: KeyboardLanguage {
+        get {
+            ensureLanguageSettingsMigrated()
+            let enabled = enabledKeyboardLanguages
+            guard let raw = sharedDefaults?.string(forKey: AppGroupCoordinator.kCurrentKeyboardLanguage),
+                  let lang = KeyboardLanguage(rawValue: raw),
+                  enabled.contains(lang) else {
+                return KeyboardLanguage.allCases.first(where: { enabled.contains($0) }) ?? .english
+            }
+            return lang
+        }
+        set {
+            ensureLanguageSettingsMigrated()
+            sharedDefaults?.set(newValue.rawValue, forKey: AppGroupCoordinator.kCurrentKeyboardLanguage)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// One-shot migration from the old layout-style/Russian-toggle pair to the
+    /// new enabled-languages set. Idempotent via a marker key.
+    ///
+    /// Seeding sources, all unioned together:
+    /// - English (always - the baseline fallback).
+    /// - Legacy `keyboardLayoutStyle == "azerty"` -> `.french` (existing testers).
+    /// - Legacy `isRussianLayoutEnabled == true`   -> `.russian` (existing testers).
+    /// - `KeyboardLanguage.preferredFromSystem()` -> auto-enable any language
+    ///   the user has set in iOS Settings -> General -> Language & Region.
+    ///   This is the "just works on first launch" hint - user can toggle off
+    ///   anything they don't want.
+    ///
+    /// Current language: `.russian` if the legacy toggle was on Russian and
+    /// Russian is in the enabled set, otherwise `.english`.
+    private func ensureLanguageSettingsMigrated() {
+        guard let defaults = sharedDefaults,
+              !defaults.bool(forKey: AppGroupCoordinator.kDidMigrateLanguageSettings) else {
+            return
+        }
+
+        var enabled: Set<KeyboardLanguage> = [.english]
+        if defaults.string(forKey: AppGroupCoordinator.kLegacyKeyboardLayoutStyle) == "azerty" {
+            enabled.insert(.french)
+        }
+        if defaults.bool(forKey: AppGroupCoordinator.kLegacyIsRussianLayoutEnabled) {
+            enabled.insert(.russian)
+        }
+        enabled.formUnion(KeyboardLanguage.preferredFromSystem())
+
+        // Carry forward whichever language the user was actively typing in on
+        // 3.2.0/3.2.x: Russian if the toggle was on Russian, otherwise French if
+        // they had AZERTY selected (since AZERTY = French and that picker was
+        // their active layout). Otherwise default to English.
+        let current: KeyboardLanguage
+        if defaults.bool(forKey: AppGroupCoordinator.kLegacyIsCurrentlyRussian), enabled.contains(.russian) {
+            current = .russian
+        } else if defaults.string(forKey: AppGroupCoordinator.kLegacyKeyboardLayoutStyle) == "azerty",
+                  enabled.contains(.french) {
+            current = .french
+        } else {
+            current = .english
+        }
+
+        let rawEnabled = KeyboardLanguage.allCases
+            .filter { enabled.contains($0) }
+            .map(\.rawValue)
+            .joined(separator: ",")
+        defaults.set(rawEnabled, forKey: AppGroupCoordinator.kEnabledKeyboardLanguages)
+        defaults.set(current.rawValue, forKey: AppGroupCoordinator.kCurrentKeyboardLanguage)
+
+        defaults.removeObject(forKey: AppGroupCoordinator.kLegacyKeyboardLayoutStyle)
+        defaults.removeObject(forKey: AppGroupCoordinator.kLegacyIsRussianLayoutEnabled)
+        defaults.removeObject(forKey: AppGroupCoordinator.kLegacyIsCurrentlyRussian)
+        defaults.set(true, forKey: AppGroupCoordinator.kDidMigrateLanguageSettings)
+        defaults.synchronize()
     }
 
     // MARK: - Share Extension Audio Handling

@@ -15,6 +15,15 @@ struct KeyboardCustomView: View {
     @ObservedObject private var keyboardContext: KeyboardContext
     @State private var processingStage: ProcessingStage = .waitingToStart
     @State private var showFullAccessPrompt = false
+    /// Mirrors `AppGroupCoordinator.shared.currentKeyboardLanguage` so taps on
+    /// the language cycle key invalidate the view (UserDefaults writes don't
+    /// trigger SwiftUI updates by themselves). Updated by the
+    /// `.vivaDictaLanguageToggled` notification.
+    @State private var currentLanguage = AppGroupCoordinator.shared.currentKeyboardLanguage
+    /// Mirrors `AppGroupCoordinator.shared.enabledKeyboardLanguages`. Refreshed
+    /// on `onAppear` so changes made in Settings while the keyboard was
+    /// offscreen are picked up the next time the keyboard becomes active.
+    @State private var enabledLanguages = AppGroupCoordinator.shared.enabledKeyboardLanguages
 
     let controller: KeyboardInputViewController
 
@@ -31,32 +40,70 @@ struct KeyboardCustomView: View {
         controller as? KeyboardViewController
     }
 
+    /// Whether the in-keyboard language cycle key should be visible.
+    /// We don't render it for monolingual users (1 enabled language) since
+    /// there's nothing to cycle to.
+    private var shouldShowLanguageToggle: Bool {
+        enabledLanguages.count >= 2
+    }
+
     /// Resolves the keyboard layout for the current rendering pass.
     ///
-    /// For QWERTY we return `nil` so `KeyboardView` regenerates the layout
-    /// internally on every context change - this preserves the dynamic shift
-    /// action (`KeyboardAction.shift` encodes the *current* case in its
-    /// associated value, so a frozen layout breaks shift cycling).
+    /// Layout selection per `currentLanguage`:
+    /// - English: standard QWERTY (no rewrite needed).
+    /// - French: AZERTY rewrite.
+    /// - German: QWERTZ rewrite.
+    /// - Spanish: QWERTY + ñ rewrite.
+    /// - Russian: ЙЦУКЕН rewrite.
     ///
-    /// For AZERTY we rebuild the layout each render. Reading `keyboardContext`
-    /// via `@ObservedObject` forces the view to re-render when the case
-    /// changes, which in turn produces a fresh `.standard(for:)` layout with
-    /// the correct shift action for the new case.
+    /// Returns `nil` (delegate to KeyboardKit's built-in layout) when the user
+    /// is on English AND only English is enabled. This preserves the dynamic
+    /// shift action (`KeyboardAction.shift` encodes the current case in its
+    /// associated value, so a frozen layout breaks shift cycling) for the
+    /// monolingual English path - the cheapest, most-tested code path.
     ///
-    /// The rewrite is only applied to the alphabetic keyboard - the numeric
-    /// (`123`) and symbolic (`#+=`) layouts also have 3 rows of `.character`
-    /// items, so rewriting them would turn digits/symbols into AZERTY letters
-    /// and break number/punctuation input entirely.
+    /// Letter-row rewrites are only applied to `.alphabetic`. The numeric
+    /// (`123`) and symbolic (`#+=`) layouts also contain `.character` items
+    /// (digits, punctuation), so rewriting them would corrupt those inputs.
+    ///
+    /// The language toggle key is injected only when 2+ languages are enabled.
     private var currentLayout: KeyboardLayout? {
-        switch AppGroupCoordinator.shared.keyboardLayoutStyle {
-        case .qwerty:
+        if currentLanguage == .english, !shouldShowLanguageToggle {
             return nil
-        case .azerty:
-            let base = KeyboardLayout.standard(for: keyboardContext)
-            return keyboardContext.keyboardType == .alphabetic
-                ? AzertyLayout.rewrite(base)
-                : base
         }
+
+        let base = KeyboardLayout.standard(for: keyboardContext)
+        guard keyboardContext.keyboardType == .alphabetic else {
+            return base
+        }
+
+        var result: KeyboardLayout
+        switch currentLanguage {
+        case .english: result = base
+        case .french: result = AzertyLayout.rewrite(base)
+        case .german: result = GermanLayout.rewrite(base)
+        case .spanish: result = SpanishLayout.rewrite(base)
+        case .russian: result = RussianLayout.rewrite(base)
+        }
+
+        if shouldShowLanguageToggle {
+            injectLanguageToggle(into: &result)
+        }
+        return result
+    }
+
+    /// Inserts a `.custom("vd-lang-toggle")` item into the bottom row,
+    /// immediately to the left of space. We anchor on `.space` rather than
+    /// `.nextKeyboard` because iOS 18+ system custom keyboards often render
+    /// the globe outside KeyboardKit's row (as a system-level input switcher),
+    /// which would make `.nextKeyboard` absent and the insertion silently fail.
+    ///
+    /// `.percentage(0.1)` keeps the key narrow (10% of total keyboard width,
+    /// roughly globe-key sized) so the space bar keeps most of the row.
+    private func injectLanguageToggle(into layout: inout KeyboardLayout) {
+        let action = KeyboardAction.custom(named: vivaDictaLanguageToggleActionName)
+        let item = layout.createIdealItem(for: action, width: .percentage(0.1))
+        layout.itemRows.insert(item, before: .space)
     }
 
     var body: some View {
@@ -156,7 +203,16 @@ struct KeyboardCustomView: View {
                             KeyboardView(
                                 layout: currentLayout,
                                 services: controller.services,
-                                buttonContent: { $0.view },
+                                buttonContent: { params in
+                                    if case .custom(let name) = params.item.action,
+                                       name == vivaDictaLanguageToggleActionName {
+                                        Text(currentLanguage.code)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                    } else {
+                                        params.view
+                                    }
+                                },
                                 buttonView: { $0.view },
                                 collapsedView: { $0.view },
                                 emojiKeyboard: { $0.view },
@@ -174,9 +230,12 @@ struct KeyboardCustomView: View {
                                 }
                             )
                             .keyboardCalloutActions { params in
-                                switch AppGroupCoordinator.shared.keyboardLayoutStyle {
-                                case .azerty: AzertyCallouts.actionsBuilder(params)
-                                case .qwerty: params.standardActions()
+                                switch currentLanguage {
+                                case .english: return params.standardActions()
+                                case .french: return AzertyCallouts.actionsBuilder(params)
+                                case .german: return GermanCallouts.actionsBuilder(params)
+                                case .spanish: return SpanishCallouts.actionsBuilder(params)
+                                case .russian: return RussianCallouts.actionsBuilder(params)
                                 }
                             }
                         }
@@ -201,7 +260,16 @@ struct KeyboardCustomView: View {
             openURL(url)
             dictationState.pendingObsidianURL = nil
         }
+        .onAppear {
+            // Settings may have been changed while the keyboard was offscreen.
+            enabledLanguages = AppGroupCoordinator.shared.enabledKeyboardLanguages
+            currentLanguage = AppGroupCoordinator.shared.currentKeyboardLanguage
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .vivaDictaLanguageToggled)) { _ in
+            currentLanguage = AppGroupCoordinator.shared.currentKeyboardLanguage
+        }
     }
+
 
     private func deleteWordBeforeCursor() {
         let proxy = controller.textDocumentProxy

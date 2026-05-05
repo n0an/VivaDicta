@@ -36,7 +36,7 @@ struct SettingsView: View {
     @State private var isKeepInClipboardEnabled = AppGroupCoordinator.shared.isKeepTranscriptInClipboardEnabled
     @State private var isHapticFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardHapticFeedbackEnabled
     @State private var isSoundFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
-    @State private var keyboardLayoutStyle: KeyboardLayoutStyle = AppGroupCoordinator.shared.keyboardLayoutStyle
+    @State private var enabledKeyboardLanguages: Set<KeyboardLanguage> = AppGroupCoordinator.shared.enabledKeyboardLanguages
 
     @AppStorage(UserDefaultsStorage.Keys.isAutoAudioCleanupEnabled)
     private var isAutoAudioCleanupEnabled = false
@@ -297,17 +297,7 @@ struct SettingsView: View {
                         AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled = newValue
                     }
 
-                    Picker("Layout", selection: $keyboardLayoutStyle) {
-                        ForEach(KeyboardLayoutStyle.allCases, id: \.self) { style in
-                            Text(style.displayName).tag(style)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
-                    .onChange(of: keyboardLayoutStyle) { _, newValue in
-                        HapticManager.selectionChanged()
-                        AppGroupCoordinator.shared.keyboardLayoutStyle = newValue
-                    }
+                    KeyboardLanguagesSettingsView(enabledLanguages: $enabledKeyboardLanguages)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Picker("Session Timeout", selection: $audioSessionTimeout) {
