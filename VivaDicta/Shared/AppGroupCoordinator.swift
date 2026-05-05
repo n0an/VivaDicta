@@ -648,6 +648,11 @@ public final class AppGroupCoordinator {
             return langs.isEmpty ? [.english] : Set(langs)
         }
         set {
+            // Run migration before persisting so a write that beats any read
+            // (e.g. a future code path that calls the setter first) cannot leave
+            // the marker unset and have the next getter overwrite the user's
+            // value with the legacy-derived seed.
+            ensureLanguageSettingsMigrated()
             let safe = newValue.isEmpty ? Set([KeyboardLanguage.english]) : newValue
             // Serialize in canonical (allCases) order for deterministic storage.
             let raw = KeyboardLanguage.allCases
@@ -683,6 +688,7 @@ public final class AppGroupCoordinator {
             return lang
         }
         set {
+            ensureLanguageSettingsMigrated()
             sharedDefaults?.set(newValue.rawValue, forKey: AppGroupCoordinator.kCurrentKeyboardLanguage)
             sharedDefaults?.synchronize()
         }
@@ -717,9 +723,16 @@ public final class AppGroupCoordinator {
         }
         enabled.formUnion(KeyboardLanguage.preferredFromSystem())
 
+        // Carry forward whichever language the user was actively typing in on
+        // 3.2.0/3.2.x: Russian if the toggle was on Russian, otherwise French if
+        // they had AZERTY selected (since AZERTY = French and that picker was
+        // their active layout). Otherwise default to English.
         let current: KeyboardLanguage
         if defaults.bool(forKey: AppGroupCoordinator.kLegacyIsCurrentlyRussian), enabled.contains(.russian) {
             current = .russian
+        } else if defaults.string(forKey: AppGroupCoordinator.kLegacyKeyboardLayoutStyle) == "azerty",
+                  enabled.contains(.french) {
+            current = .french
         } else {
             current = .english
         }

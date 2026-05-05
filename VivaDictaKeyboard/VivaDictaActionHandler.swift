@@ -11,10 +11,11 @@ import KeyboardKit
 /// Custom action name for the in-keyboard language cycle key.
 /// Using a constant prevents typos between the layout injection site and the
 /// action handler that intercepts the release gesture.
-/// `nonisolated(unsafe)` because the value is an immutable string literal,
-/// referenced from both the main-actor view code and the nonisolated action
-/// handler override.
-nonisolated(unsafe) let vivaDictaLanguageToggleActionName = "vd-lang-toggle"
+/// `nonisolated` (without `(unsafe)`) is correct: file-scope `let`s default to
+/// `@MainActor` under Swift 6 strict concurrency, but this string literal is
+/// `Sendable` and read from both the main-actor view and the nonisolated
+/// action handler override, so we explicitly opt out of the actor.
+nonisolated let vivaDictaLanguageToggleActionName = "vd-lang-toggle"
 
 /// Notification posted when the user taps the language cycle key.
 /// `KeyboardCustomView` listens for this to invalidate its cached layout state.
