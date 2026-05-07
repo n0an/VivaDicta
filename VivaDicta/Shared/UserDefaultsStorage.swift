@@ -84,6 +84,9 @@ enum UserDefaultsStorage {
         // What's New
         static let lastSeenWhatsNewVersion = "lastSeenWhatsNewVersion"
 
+        // Recording sheet visualization
+        static let isASCIIOrbEnabled = "isASCIIOrbEnabled"
+
         // Notes filter
         static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
         static let savedNotesFilterUserTagIds = "savedNotesFilterUserTagIds"

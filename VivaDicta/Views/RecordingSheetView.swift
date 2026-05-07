@@ -13,6 +13,9 @@ struct RecordingSheetView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(AppState.self) var appState
 
+    @AppStorage(UserDefaultsStorage.Keys.isASCIIOrbEnabled)
+    private var isASCIIOrbEnabled: Bool = true
+
     @State private var recordingStartDate = Date()
 
     private var vm: RecordViewModel {
@@ -24,8 +27,14 @@ struct RecordingSheetView: View {
 
         ZStack(alignment: .center) {
             
-            ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)
-                .accessibilityHidden(true)
+            Group {
+                if isASCIIOrbEnabled {
+                    ASCIIOrbView(audioPower: $appState.recordViewModel.audioPower)
+                } else {
+                    ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)
+                }
+            }
+            .accessibilityHidden(true)
             
             Text(recordingStartDate, style: .timer)
                 .font(.system(size: 32, weight: .medium, design: .rounded))
