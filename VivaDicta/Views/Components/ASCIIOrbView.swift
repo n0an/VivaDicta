@@ -15,7 +15,7 @@ import SwiftUI
 struct ASCIIOrbView: View {
     @Binding var audioPower: Double
 
-    private let gridSize: Int = 50
+    private let gridSize: Int = 40
 
     /// Ramp from light to dense. ~12 stops give a smooth shaded sphere
     /// without noticeable banding at this grid size.
@@ -63,7 +63,15 @@ struct ASCIIOrbView: View {
 
         let halfDim = dim / 2
         let orbRadius = halfDim * (0.78 + power * 0.10)
-        let orbRadiusSquared = orbRadius * orbRadius
+
+        // Hard cull beyond the silhouette band. Cells in [edgeStart, edgeEnd]
+        // get a soft, noise-perturbed alpha so the orb's edge feels fluid
+        // instead of stamped at a perfect circle.
+        let edgeStart = 0.80
+        let edgeEnd = 1.15
+        let edgeBand = edgeEnd - edgeStart
+        let outerCullRadius = orbRadius * edgeEnd
+        let outerCullSquared = outerCullRadius * outerCullRadius
 
         // Resolve each ramp glyph once per frame, then mutate `shading` per cell.
         let font = Font.system(size: cellSize * 1.10, weight: .medium, design: .monospaced)
@@ -93,16 +101,30 @@ struct ASCIIOrbView: View {
             for col in 0..<gridSize {
                 let cx = (Double(col) + 0.5) * cellSize - halfDim
                 let r2 = cx * cx + cy * cy
-                if r2 > orbRadiusSquared { continue }
+                if r2 > outerCullSquared { continue }
 
-                // Project cell onto unit sphere.
+                // Project cell onto sphere. r2Norm can exceed 1 in the soft
+                // edge halo - clamp so nz stays real but reads as "at silhouette".
                 let nx = cx / orbRadius
                 let ny = cy / orbRadius
                 let r2Norm = nx * nx + ny * ny
-                let nz2 = 1 - r2Norm
-                if nz2 < 0 { continue }
+                let nz2 = max(0.0, 1 - r2Norm)
                 let nz = nz2.squareRoot()
                 let rNorm = r2Norm.squareRoot()
+
+                // Soft, noise-perturbed silhouette. Low-freq slow-evolving
+                // noise pushes the effective radius in/out so the edge wobbles
+                // organically, then smoothstep produces a gentle alpha falloff.
+                let edgeNoise = Self.valueNoise3D(nx * 3.2, ny * 3.2, time * 0.45)
+                let effRNorm = rNorm + (edgeNoise - 0.5) * 0.16
+
+                var edgeAlpha = 1.0
+                if effRNorm > edgeStart {
+                    if effRNorm > edgeEnd { continue }
+                    let t = (effRNorm - edgeStart) / edgeBand
+                    let st = t * t * (3 - 2 * t)
+                    edgeAlpha = 1 - st
+                }
 
                 // Head-on lighting: bright at center, dim toward edge. With the
                 // light direction along +z, Lambertian diffuse simplifies to nz.
@@ -135,6 +157,7 @@ struct ASCIIOrbView: View {
                 let rim = rimBase * rimBase
 
                 var lightness = diffuse * 0.40 + noise * 0.50 + rim * 0.10
+                lightness *= edgeAlpha
                 if lightness < 0 { lightness = 0 } else if lightness > 1 { lightness = 1 }
                 lightness = pow(lightness, 0.85)
                 lightness *= densityBoost
