@@ -68,7 +68,7 @@ struct SettingsView: View {
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isASCIIOrbEnabled)
-    private var isASCIIOrbEnabled: Bool = false
+    private var isASCIIOrbEnabled: Bool = true
 
     @State private var showAddMode = false
     @State private var showMailCompose = false
@@ -381,7 +381,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("ASCII Recording Orb")
                                 .font(.body)
-                            Text("Replace the particle visualization on the recording sheet with a live audio-reactive ASCII orb")
+                            Text("Show the recording sheet with an audio-reactive ASCII orb. Turn off to use the original particle visualization.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

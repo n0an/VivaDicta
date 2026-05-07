@@ -14,7 +14,7 @@ struct RecordingSheetView: View {
     @Environment(AppState.self) var appState
 
     @AppStorage(UserDefaultsStorage.Keys.isASCIIOrbEnabled)
-    private var isASCIIOrbEnabled: Bool = false
+    private var isASCIIOrbEnabled: Bool = true
 
     @State private var recordingStartDate = Date()
 
