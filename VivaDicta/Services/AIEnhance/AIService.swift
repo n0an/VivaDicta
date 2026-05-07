@@ -2341,6 +2341,8 @@ class AIService {
             return await verifySpeechmaticsAPIKey(key)
         case .cohere:
             return await verifyCohereAPIKey(key)
+        case .cartesia:
+            return await verifyCartesiaAPIKey(key)
         case .cerebras:
             return await verifyCerebrasAPIKey(key)
         case .vercelAIGateway:
@@ -2622,6 +2624,31 @@ class AIService {
             return httpResponse.statusCode == 200
         } catch {
             logger.logError("Cohere API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Cartesia has no public list/me endpoint, so we hit the STT endpoint with
+    /// no body. A bad key returns 401 before validation; a valid key returns
+    /// 400 (missing file) or similar - we treat any non-401 response as proof
+    /// the key is recognized.
+    private func verifyCartesiaAPIKey(_ key: String) async -> Bool {
+        let url = URL(string: "https://api.cartesia.ai/stt")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.addValue("2026-03-01", forHTTPHeaderField: "Cartesia-Version")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+
+            return httpResponse.statusCode != 401 && httpResponse.statusCode != 403
+        } catch {
+            logger.logError("Cartesia API key verification failed: \(error.localizedDescription)")
             return false
         }
     }

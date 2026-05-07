@@ -77,6 +77,7 @@ class CloudTranscriptionService: TranscriptionService {
     private lazy var gladiaService = GladiaTranscriptionService()
     private lazy var speechmaticsService = SpeechmaticsTranscriptionService()
     private lazy var cohereService = CohereTranscriptionService()
+    private lazy var cartesiaService = CartesiaTranscriptionService()
     private lazy var customService = CustomTranscriptionService()
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
@@ -103,6 +104,8 @@ class CloudTranscriptionService: TranscriptionService {
             result = try await speechmaticsService.transcribe(audioURL: audioURL, model: model)
         case .cohere:
             result = try await cohereService.transcribe(audioURL: audioURL, model: model)
+        case .cartesia:
+            result = try await cartesiaService.transcribe(audioURL: audioURL, model: model)
         case .customTranscription:
             guard let customModel = model as? CustomTranscriptionModel else {
                 throw CloudTranscriptionError.unsupportedProvider

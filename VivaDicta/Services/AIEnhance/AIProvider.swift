@@ -25,6 +25,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case gladia
     case speechmatics
     case cohere
+    case cartesia
     case zai
     case kimi
     case vercelAIGateway
@@ -59,6 +60,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Speechmatics"
         case .cohere:
             "Cohere"
+        case .cartesia:
+            "Cartesia"
         case .anthropic:
             "Anthropic"
         case .openRouter:
@@ -119,6 +122,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "speechmatics"
         case .cohere:
             "cohere-color"
+        case .cartesia:
+            "cartesia"
         case .vercelAIGateway:
             "vercel"
         case .huggingFace:
@@ -183,6 +188,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .zai: URL(string: "https://open.z.ai/")
         case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
         case .cohere: URL(string: "https://dashboard.cohere.com/api-keys")
+        case .cartesia: URL(string: "https://play.cartesia.ai/")
         default: nil
         }
     }
@@ -272,6 +278,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://asr.api.speechmatics.com/v2"
         case .cohere:
             return "https://api.cohere.com/v2"
+        case .cartesia:
+            return "https://api.cartesia.ai"
         case .vercelAIGateway:
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
         case .huggingFace:
@@ -324,6 +332,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "speechmatics-batch-v2"
         case .cohere:
             return "cohere-transcribe-03-2026"
+        case .cartesia:
+            return "ink-whisper"
         case .vercelAIGateway:
             // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
             // (e.g., "claude-sonnet-4.6") unlike direct Anthropic API which uses hyphens
@@ -363,6 +373,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .gladia: "gladiaAPIKey"
         case .speechmatics: "speechmaticsAPIKey"
         case .cohere: "cohereAPIKey"
+        case .cartesia: "cartesiaAPIKey"
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
@@ -466,6 +477,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .speechmatics:
             return [] // Transcription-only provider, no chat models
         case .cohere:
+            return [] // Transcription-only provider, no chat models
+        case .cartesia:
             return [] // Transcription-only provider, no chat models
         case .openRouter:
             return []
