@@ -20,6 +20,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case gladia
     case speechmatics
     case cohere
+    case cartesia
     case customTranscription
     
     var id: Self { self }
@@ -50,6 +51,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Speechmatics"
         case .cohere:
             "Cohere"
+        case .cartesia:
+            "Cartesia"
         case .customTranscription:
             "Custom"
         }
@@ -67,6 +70,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         .mistral,
         .deepgram,
         .cohere,
+        .cartesia,
         .elevenLabs,
         .gemini,
         .openAI,
@@ -115,6 +119,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .gladia: "solaria-1"
         case .speechmatics: "speechmatics-batch-v2"
         case .cohere: "cohere-transcribe-03-2026"
+        case .cartesia: "ink-whisper"
         default: nil
         }
     }
@@ -153,6 +158,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .speechmatics
         case .cohere:
             return .cohere
+        case .cartesia:
+            return .cartesia
         default:
             return nil
         }
@@ -290,6 +297,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
+                name: "ink-whisper",
+                displayName: "Cartesia Ink Whisper",
+                description: "Cartesia's batch Speech-to-Text with arbitrary-length audio support, word-level timestamps, and 100+ languages. Free credits on signup.",
+                provider: .cartesia,
+                speed: 0.9,
+                accuracy: 0.95,
+                cost: 0.4,  // Placeholder - Cartesia bills per credit, not per minute
+                supportManyLanguages: true,
+                supportedLanguages: cartesiaLanguages
+            ),
+
+            CloudModel(
                 name: "scribe_v2",
                 displayName: "Scribe v2",
                 description: "Enhanced accuracy model supporting 92+ languages with improved accent handling. Free tier: ~150 mins/month",
@@ -399,9 +418,28 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         supportManyLanguages ? allLanguages : ["en": "English"]
     }
 
-    /// Cohere supports 14 languages. No auto-detect — language must be specified.
+    /// Cohere supports 14 languages. No auto-detect - language must be specified.
     static let cohereLanguages: [String: String] = {
         let codes = ["en", "fr", "de", "it", "es", "pt", "el", "nl", "pl", "zh", "ja", "ko", "vi", "ar"]
+        return allLanguages.filter { codes.contains($0.key) }
+    }()
+
+    /// Cartesia ink-whisper supports 104 languages via Whisper. No auto-detect -
+    /// the API defaults to "en" if omitted, so the service falls back to "en" when
+    /// the user has selected "auto".
+    static let cartesiaLanguages: [String: String] = {
+        let codes: Set<String> = [
+            "en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr",
+            "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi",
+            "he", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no",
+            "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk",
+            "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk",
+            "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw",
+            "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc",
+            "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo",
+            "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl",
+            "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su", "yue",
+        ]
         return allLanguages.filter { codes.contains($0.key) }
     }()
 

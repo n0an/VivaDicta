@@ -2341,6 +2341,8 @@ class AIService {
             return await verifySpeechmaticsAPIKey(key)
         case .cohere:
             return await verifyCohereAPIKey(key)
+        case .cartesia:
+            return await verifyCartesiaAPIKey(key)
         case .cerebras:
             return await verifyCerebrasAPIKey(key)
         case .vercelAIGateway:
@@ -2622,6 +2624,33 @@ class AIService {
             return httpResponse.statusCode == 200
         } catch {
             logger.logError("Cohere API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Probes the documented `GET /voices` endpoint. A valid standard
+    /// `sk_car_...` key returns 200; an invalid or revoked key returns 401/403.
+    /// Other statuses (5xx, network errors) fail closed so a Cloudflare blip
+    /// doesn't mark a bad key as valid.
+    private func verifyCartesiaAPIKey(_ key: String) async -> Bool {
+        guard let url = URL(string: "https://api.cartesia.ai/voices") else {
+            return false
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.addValue(CartesiaTranscriptionService.cartesiaVersion, forHTTPHeaderField: "Cartesia-Version")
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return false
+            }
+
+            return httpResponse.statusCode == 200
+        } catch {
+            logger.logError("Cartesia API key verification failed: \(error.localizedDescription)")
             return false
         }
     }

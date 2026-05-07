@@ -40,6 +40,7 @@ public enum LogCategory: String {
     case gladiaTranscriptionService = "GladiaTranscriptionService"
     case speechmaticsTranscriptionService = "SpeechmaticsTranscriptionService"
     case cohereTranscriptionService = "CohereTranscriptionService"
+    case cartesiaTranscriptionService = "CartesiaTranscriptionService"
     case customTranscriptionService = "CustomTranscriptionService"
 
     // MARK: - Services - Live Translation
