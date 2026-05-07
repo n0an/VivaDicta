@@ -4,11 +4,12 @@ import Foundation
 import os
 
 struct CartesiaTranscriptionService {
-    private let logger = Logger(category: .cartesiaTranscriptionService)
-
     /// Cartesia requires a date-formatted version header. Bumping this is a
-    /// deliberate API-version pin; check the changelog before changing.
-    private let cartesiaVersion = "2026-03-01"
+    /// deliberate API-version pin; check the changelog before changing. Single
+    /// source of truth - referenced from both transcribe and key-verify paths.
+    static let cartesiaVersion = "2026-03-01"
+
+    private let logger = Logger(category: .cartesiaTranscriptionService)
 
     func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
         let text = try await NetworkRetry.withRetry(logger: logger) {
@@ -25,7 +26,7 @@ struct CartesiaTranscriptionService {
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue(cartesiaVersion, forHTTPHeaderField: "Cartesia-Version")
+        request.setValue(Self.cartesiaVersion, forHTTPHeaderField: "Cartesia-Version")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
         let body = try createRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)

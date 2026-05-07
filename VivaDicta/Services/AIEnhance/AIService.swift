@@ -2628,16 +2628,18 @@ class AIService {
         }
     }
 
-    /// Cartesia has no public list/me endpoint, so we hit the STT endpoint with
-    /// no body. A bad key returns 401 before validation; a valid key returns
-    /// 400 (missing file) or similar - we treat any non-401 response as proof
-    /// the key is recognized.
+    /// Probes the documented `GET /voices` endpoint. A valid standard
+    /// `sk_car_...` key returns 200; an invalid or revoked key returns 401/403.
+    /// Other statuses (5xx, network errors) fail closed so a Cloudflare blip
+    /// doesn't mark a bad key as valid.
     private func verifyCartesiaAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: "https://api.cartesia.ai/stt")!
+        guard let url = URL(string: "https://api.cartesia.ai/voices") else {
+            return false
+        }
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = "GET"
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        request.addValue("2026-03-01", forHTTPHeaderField: "Cartesia-Version")
+        request.addValue(CartesiaTranscriptionService.cartesiaVersion, forHTTPHeaderField: "Cartesia-Version")
 
         do {
             let (_, response) = try await URLSession.shared.data(for: request)
@@ -2646,7 +2648,7 @@ class AIService {
                 return false
             }
 
-            return httpResponse.statusCode != 401 && httpResponse.statusCode != 403
+            return httpResponse.statusCode == 200
         } catch {
             logger.logError("Cartesia API key verification failed: \(error.localizedDescription)")
             return false

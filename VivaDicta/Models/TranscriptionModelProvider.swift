@@ -303,7 +303,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 provider: .cartesia,
                 speed: 0.9,
                 accuracy: 0.95,
-                cost: 0.4,
+                cost: 0.4,  // Placeholder - Cartesia bills per credit, not per minute
                 supportManyLanguages: true,
                 supportedLanguages: cartesiaLanguages
             ),

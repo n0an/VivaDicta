@@ -188,7 +188,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .zai: URL(string: "https://open.z.ai/")
         case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
         case .cohere: URL(string: "https://dashboard.cohere.com/api-keys")
-        case .cartesia: URL(string: "https://play.cartesia.ai/")
+        case .cartesia: URL(string: "https://play.cartesia.ai/keys")
         default: nil
         }
     }
