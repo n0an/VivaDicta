@@ -633,22 +633,24 @@ class AIService {
     /// - A prompt with instructions is selected
     ///
     /// - Returns: `true` if enhancement can proceed, `false` otherwise.
-    public func isProperlyConfigured() -> Bool {
+    public func isProperlyConfigured(for modeOverride: VivaMode? = nil, requirePreset: Bool = true) -> Bool {
+        let mode = modeOverride ?? selectedMode
+
         // Check if AI processing is enabled
-        guard selectedMode.aiEnhanceEnabled else {
-            logger.logInfo("AI processing is disabled for mode: \(self.selectedMode.name)")
+        guard mode.aiEnhanceEnabled else {
+            logger.logInfo("AI processing is disabled for mode: \(mode.name)")
             return false
         }
 
         // Check if AI provider is selected
-        guard let aiProvider = selectedMode.aiProvider else {
-            logger.logWarning("No AI provider selected for mode: \(self.selectedMode.name)")
+        guard let aiProvider = mode.aiProvider else {
+            logger.logWarning("No AI provider selected for mode: \(mode.name)")
             return false
         }
 
         // Check if AI model is selected (not empty)
-        guard !selectedMode.aiModel.isEmpty else {
-            logger.logWarning("No AI model selected for mode: \(self.selectedMode.name)")
+        guard !mode.aiModel.isEmpty else {
+            logger.logWarning("No AI model selected for mode: \(mode.name)")
             return false
         }
 
@@ -661,7 +663,7 @@ class AIService {
         } else if aiProvider == .ollama {
             // Ollama doesn't need API key, just needs model selected
             // Connection will be verified at enhancement time
-            guard !selectedMode.aiModel.isEmpty else {
+            guard !mode.aiModel.isEmpty else {
                 logger.logWarning("No Ollama model selected")
                 return false
             }
@@ -691,15 +693,17 @@ class AIService {
             }
         }
 
-        // Check if a preset is selected and has content
-        guard let presetId = selectedMode.presetId,
-              let preset = presetManager?.preset(for: presetId),
-              !preset.promptInstructions.isEmpty else {
-            logger.logWarning("No preset selected or preset is empty for mode: \(self.selectedMode.name)")
-            return false
+        if requirePreset {
+            // Check if a preset is selected and has content
+            guard let presetId = mode.presetId,
+                  let preset = presetManager?.preset(for: presetId),
+                  !preset.promptInstructions.isEmpty else {
+                logger.logWarning("No preset selected or preset is empty for mode: \(mode.name)")
+                return false
+            }
         }
 
-        logger.logInfo("AI processing is properly configured for mode: \(self.selectedMode.name)")
+        logger.logInfo("AI processing is properly configured for mode: \(mode.name)")
         return true
     }
 

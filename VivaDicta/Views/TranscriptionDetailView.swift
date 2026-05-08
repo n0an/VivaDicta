@@ -90,9 +90,7 @@ struct TranscriptionDetailView: View {
 
     private var hasAnyAIEnabledMode: Bool {
         appState.aiService.modes.contains { mode in
-            mode.aiEnhanceEnabled
-                && mode.aiProvider != nil
-                && !mode.aiModel.isEmpty
+            appState.aiService.isProperlyConfigured(for: mode, requirePreset: false)
         }
     }
 
@@ -416,9 +414,7 @@ struct TranscriptionDetailView: View {
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
                 activeMode: appState.aiService.selectedMode,
                 availableModes: appState.aiService.modes.filter { mode in
-                    mode.aiEnhanceEnabled
-                        && mode.aiProvider != nil
-                        && !mode.aiModel.isEmpty
+                    appState.aiService.isProperlyConfigured(for: mode, requirePreset: false)
                 },
                 activeModeIsAIConfigured: isAIConfigured,
                 onOpenSettings: {
@@ -1401,7 +1397,6 @@ private struct PresetPickerSheet: View {
 
     private var hasOverrideOptions: Bool {
         availableModes.contains { $0.id != activeMode.id }
-            || (availableModes.count >= 1 && !activeModeIsAIConfigured)
     }
 
     private var typeFilteredPresets: [Preset] {
@@ -1496,32 +1491,10 @@ private struct PresetPickerSheet: View {
     private var presetList: some View {
         List {
             if filter == .system, let onExtractTasks {
-                    Section("Smart Actions") {
-                        if let onReviewExtractedTasks {
-                            Button {
-                                onReviewExtractedTasks()
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "checklist")
-                                        .frame(width: 20)
-                                        .foregroundStyle(.secondary)
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Review Reminder Suggestions")
-                                            .font(.body)
-                                        Text("Open the reminder suggestions already extracted from this note.")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Spacer()
-                                }
-                            }
-                            .tint(.primary)
-                        }
-
+                Section("Smart Actions") {
+                    if let onReviewExtractedTasks {
                         Button {
-                            onExtractTasks()
+                            onReviewExtractedTasks()
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "checklist")
@@ -1529,9 +1502,9 @@ private struct PresetPickerSheet: View {
                                     .foregroundStyle(.secondary)
 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Extract Tasks to Reminders")
+                                    Text("Review Reminder Suggestions")
                                         .font(.body)
-                                    Text("Find reminder suggestions in this note and review them before importing to Apple Reminders.")
+                                    Text("Open the reminder suggestions already extracted from this note.")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -1541,66 +1514,88 @@ private struct PresetPickerSheet: View {
                         }
                         .tint(.primary)
                     }
-                }
 
-                Section {
-                    Picker("Filter", selection: $filter) {
-                        ForEach(PresetFilter.allCases) { filter in
-                            Text(filter.title).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
+                    Button {
+                        onExtractTasks()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checklist")
+                                .frame(width: 20)
+                                .foregroundStyle(.secondary)
 
-                    CategoryChipsView(
-                        categories: allCategories,
-                        selectedCategory: $selectedCategory,
-                        showFavorites: presetManager.hasVisibleFavorites
-                    )
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                }
-                .listSectionSpacing(0)
-
-                if typeFilteredPresets.isEmpty {
-                    ContentUnavailableView {
-                        Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
-                    } description: {
-                        Text(searchText.isEmpty
-                             ? "Unhide presets in AI Presets to show them here."
-                             : "Try a different search or filter.")
-                    }
-                } else {
-                    if selectedCategory == nil {
-                        let favorites = typeFilteredPresets.filter(\.isFavorite)
-                        if !favorites.isEmpty {
-                            Section("Favorites") {
-                                ForEach(favorites) { preset in
-                                    presetRow(preset)
-                                }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Extract Tasks to Reminders")
+                                    .font(.body)
+                                Text("Find reminder suggestions in this note and review them before importing to Apple Reminders.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+
+                            Spacer()
                         }
                     }
+                    .tint(.primary)
+                }
+            }
 
-                    ForEach(filteredCategories, id: \.self) { category in
-                        Section(category) {
-                            ForEach(filteredPresets.filter { $0.category == category }) { preset in
+            Section {
+                Picker("Filter", selection: $filter) {
+                    ForEach(PresetFilter.allCases) { filter in
+                        Text(filter.title).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+
+                CategoryChipsView(
+                    categories: allCategories,
+                    selectedCategory: $selectedCategory,
+                    showFavorites: presetManager.hasVisibleFavorites
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+            .listSectionSpacing(0)
+
+            if typeFilteredPresets.isEmpty {
+                ContentUnavailableView {
+                    Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
+                } description: {
+                    Text(searchText.isEmpty
+                         ? "Unhide presets in AI Presets to show them here."
+                         : "Try a different search or filter.")
+                }
+            } else {
+                if selectedCategory == nil {
+                    let favorites = typeFilteredPresets.filter(\.isFavorite)
+                    if !favorites.isEmpty {
+                        Section("Favorites") {
+                            ForEach(favorites) { preset in
                                 presetRow(preset)
                             }
                         }
                     }
                 }
-            }
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search presets")
-            .onChange(of: filter) { _, _ in
-                selectedCategory = nil
-            }
-            .onChange(of: presetManager.hasVisibleFavorites) {
-                if !presetManager.hasVisibleFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
-                    selectedCategory = nil
+
+                ForEach(filteredCategories, id: \.self) { category in
+                    Section(category) {
+                        ForEach(filteredPresets.filter { $0.category == category }) { preset in
+                            presetRow(preset)
+                        }
+                    }
                 }
             }
+        }
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search presets")
+        .onChange(of: filter) { _, _ in
+            selectedCategory = nil
+        }
+        .onChange(of: presetManager.hasVisibleFavorites) {
+            if !presetManager.hasVisibleFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
+                selectedCategory = nil
+            }
+        }
     }
 
     private var modeOverrideMenu: some View {
@@ -1640,7 +1635,7 @@ private struct PresetPickerSheet: View {
             .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill(overrideModeId == nil ? Color(.systemGray5) : Color.accentColor.opacity(0.18))
+                    .fill(overrideModeId == nil ? Color(uiColor: .systemGray5) : Color.accentColor.opacity(0.18))
             )
             .foregroundStyle(overrideModeId == nil ? Color.primary : Color.accentColor)
             .frame(maxWidth: 160)
