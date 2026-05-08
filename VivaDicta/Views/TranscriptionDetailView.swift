@@ -758,7 +758,7 @@ struct TranscriptionDetailView: View {
 
                 // Button 4: Edit / Append
                 Menu {
-                    Button("Edit Selected Text", systemImage: "pencil") {
+                    Button("Edit Text", systemImage: "pencil") {
                         HapticManager.lightImpact()
                         showTextEditor = true
                     }
