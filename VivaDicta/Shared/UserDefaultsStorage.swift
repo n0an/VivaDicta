@@ -87,6 +87,9 @@ enum UserDefaultsStorage {
         // Recording sheet visualization
         static let isASCIIOrbEnabled = "isASCIIOrbEnabled"
 
+        // Advanced settings
+        static let appendWithVoiceStyle = "appendWithVoiceStyle"
+
         // Notes filter
         static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
         static let savedNotesFilterUserTagIds = "savedNotesFilterUserTagIds"
