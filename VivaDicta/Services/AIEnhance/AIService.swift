@@ -733,13 +733,18 @@ class AIService {
 
     /// Returns true when the current mode can produce incremental text updates.
     public var currentModeSupportsResponseStreaming: Bool {
-        guard selectedMode.aiEnhanceEnabled,
-              let aiProvider = selectedMode.aiProvider,
-              !selectedMode.aiModel.isEmpty else {
+        supportsResponseStreaming(for: selectedMode)
+    }
+
+    /// Returns true when the supplied mode can produce incremental text updates.
+    public func supportsResponseStreaming(for mode: VivaMode) -> Bool {
+        guard mode.aiEnhanceEnabled,
+              let aiProvider = mode.aiProvider,
+              !mode.aiModel.isEmpty else {
             return false
         }
 
-        return resolvedStreamingRoute(for: aiProvider) != nil
+        return resolvedStreamingRoute(for: aiProvider, mode: mode) != nil
     }
 
     // MARK: - Enhance methods
@@ -765,7 +770,7 @@ class AIService {
         }
 
         do {
-            var result = try await makeRequest(text: text)
+            var result = try await makeRequest(text: text, mode: selectedMode)
             let isAssistantPreset = selectedMode.presetId == "assistant"
             if isAssistantPreset, selectedMode.isAutoTextFormattingEnabled {
                 result = TextFormatter.format(result)
@@ -789,13 +794,18 @@ class AIService {
     /// - Parameters:
     ///   - text: The original transcription text to process.
     ///   - preset: The preset containing the prompt instructions.
+    ///   - modeOverride: Optional mode whose AI provider/model is used for this single
+    ///     request instead of the currently selected mode. The override does not
+    ///     persist or change `selectedMode`.
     /// - Returns: A tuple of the generated text and processing duration.
     public func generateVariation(
         text: String,
         preset: Preset,
+        modeOverride: VivaMode? = nil,
         onPartialResult: (@MainActor (String) -> Void)? = nil
     ) async throws -> (String, TimeInterval) {
         let startTime = Date()
+        let mode = modeOverride ?? selectedMode
 
         let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset)
 
@@ -803,9 +813,10 @@ class AIService {
         lastUserMessageSent = formattedText
 
         let requestResult: String
-        if let onPartialResult, currentModeSupportsResponseStreaming {
+        if let onPartialResult, supportsResponseStreaming(for: mode) {
             requestResult = try await makeStreamingRequest(
                 text: text,
+                mode: mode,
                 systemMessage: systemMessage,
                 preFormattedUserMessage: formattedText,
                 appleFMPresetID: preset.id,
@@ -814,6 +825,7 @@ class AIService {
         } else {
             requestResult = try await makeRequest(
                 text: text,
+                mode: mode,
                 systemMessage: systemMessage,
                 preFormattedUserMessage: formattedText,
                 appleFMPresetID: preset.id
@@ -821,7 +833,7 @@ class AIService {
         }
 
         var result = requestResult
-        if preset.id == "assistant", selectedMode.isAutoTextFormattingEnabled {
+        if preset.id == "assistant", mode.isAutoTextFormattingEnabled {
             result = TextFormatter.format(result)
         }
         let duration = Date().timeIntervalSince(startTime)
@@ -830,8 +842,8 @@ class AIService {
         AnalyticsService.track(.variationGenerated(
             presetId: preset.isBuiltIn ? preset.id : "custom",
             isBuiltInPreset: preset.isBuiltIn,
-            provider: selectedMode.aiProvider?.rawValue ?? "unknown",
-            model: selectedMode.aiModel,
+            provider: mode.aiProvider?.rawValue ?? "unknown",
+            model: mode.aiModel,
             durationSeconds: duration,
             outputLength: result.count
         ))
@@ -890,7 +902,7 @@ class AIService {
         return (systemMessage, userMessage)
     }
 
-    private func resolvedStreamingRoute(for aiProvider: AIProvider) -> StreamingRoute? {
+    private func resolvedStreamingRoute(for aiProvider: AIProvider, mode: VivaMode) -> StreamingRoute? {
         switch aiProvider {
         case .apple:
             return .apple
@@ -902,7 +914,7 @@ class AIService {
                let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
                 return nil
             }
-            return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
+            return aiProvider.supportsResponseStreaming(model: mode.aiModel) ? .openAICompatibleCloud : nil
         case .gemini:
             if isGeminiSignedIn {
                 return .geminiOAuth
@@ -911,7 +923,7 @@ class AIService {
                let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
                 return nil
             }
-            return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
+            return aiProvider.supportsResponseStreaming(model: mode.aiModel) ? .openAICompatibleCloud : nil
         case .anthropic:
             if VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive,
                let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
@@ -925,7 +937,7 @@ class AIService {
         case .customOpenAI:
             return .customOpenAI
         default:
-            return aiProvider.supportsResponseStreaming(model: selectedMode.aiModel) ? .openAICompatibleCloud : nil
+            return aiProvider.supportsResponseStreaming(model: mode.aiModel) ? .openAICompatibleCloud : nil
         }
     }
 
@@ -1087,6 +1099,7 @@ class AIService {
         systemMessage: String,
         userMessage: String,
         apiKey: String,
+        model: String,
         onPartialResponse: @escaping @MainActor (String) -> Void
     ) async throws -> String {
         var request = URLRequest(url: URL(string: AIProvider.anthropic.baseURL)!)
@@ -1098,7 +1111,7 @@ class AIService {
         request.timeoutInterval = baseTimeout
 
         let requestBody: [String: Any] = [
-            "model": selectedMode.aiModel,
+            "model": model,
             "max_tokens": 8192,
             "system": systemMessage,
             "messages": [
@@ -1177,12 +1190,13 @@ class AIService {
 
     private func makeStreamingRequest(
         text: String,
+        mode: VivaMode,
         systemMessage: String? = nil,
         preFormattedUserMessage: String? = nil,
         appleFMPresetID: String? = nil,
         onPartialResponse: @escaping @MainActor (String) -> Void
     ) async throws -> String {
-        guard let aiProvider = self.selectedMode.aiProvider else {
+        guard let aiProvider = mode.aiProvider else {
             throw EnhancementError.notConfigured
         }
 
@@ -1196,11 +1210,11 @@ class AIService {
         lastSystemMessageSent = sysMsg
         lastUserMessageSent = userMsg
 
-        switch resolvedStreamingRoute(for: aiProvider) {
+        switch resolvedStreamingRoute(for: aiProvider, mode: mode) {
         case .apple:
             if #available(iOS 26, *) {
                 let samplingProfile = AppleFoundationModelSamplingProfile.profile(
-                    for: appleFMPresetID ?? selectedMode.presetId
+                    for: appleFMPresetID ?? mode.presetId
                 )
                 logger.logDebug("AI Processing - Using Apple Foundation Model streaming")
                 logger.logDebug("AI Processing - System Message: \(sysMsg)")
@@ -1220,17 +1234,18 @@ class AIService {
             }
 
             logger.logDebug("AI Processing - Using Anthropic streaming")
-            logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+            logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
             return try await makeAnthropicStreamingRequest(
                 systemMessage: sysMsg,
                 userMessage: userMsg,
                 apiKey: apiKey,
+                model: mode.aiModel,
                 onPartialResponse: onPartialResponse
             )
         case .copilot:
             let token = try await CopilotOAuthManager.shared.validCopilotToken()
-            let model = selectedMode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : selectedMode.aiModel
+            let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
             let result = try await CopilotAPIClient.enhanceStreaming(
                 text: userMsg,
                 systemPrompt: sysMsg,
@@ -1243,7 +1258,7 @@ class AIService {
             do {
                 let provider = GeminiOAuthProvider()
                 let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
-                let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
+                let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
                 let result = try await GeminiAPIClient.enhanceStreaming(
                     text: userMsg,
                     systemPrompt: sysMsg,
@@ -1267,7 +1282,7 @@ class AIService {
             do {
                 let provider = OpenAIOAuthProvider()
                 let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
-                let model = selectedMode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : selectedMode.aiModel
+                let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
                 let result = try await OpenAIOAuthClient.enhance(
                     text: userMsg,
                     systemPrompt: sysMsg,
@@ -1291,11 +1306,11 @@ class AIService {
             }
 
             logger.logDebug("AI Processing - Using \(aiProvider.displayName) streaming")
-            logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+            logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
             return try await makeOpenAICompatibleStreamingRequest(
                 url: URL(string: aiProvider.baseURL)!,
-                modelName: selectedMode.aiModel,
+                modelName: mode.aiModel,
                 systemMessage: sysMsg,
                 userMessage: userMsg,
                 headers: ["Authorization": "Bearer \(apiKey)"],
@@ -1310,17 +1325,17 @@ class AIService {
             }
 
             logger.logDebug("AI Processing - Using Ollama streaming at \(serverURL)")
-            logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+            logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
             return try await makeOpenAICompatibleStreamingRequest(
                 url: url,
-                modelName: selectedMode.aiModel,
+                modelName: mode.aiModel,
                 systemMessage: sysMsg,
                 userMessage: userMsg,
                 headers: [:],
                 timeout: 120,
                 errorPrefix: "Ollama error",
-                notFoundMessage: "Model '\(self.selectedMode.aiModel)' not found. Run 'ollama pull \(self.selectedMode.aiModel)' on your Mac/server to download it.",
+                notFoundMessage: "Model '\(mode.aiModel)' not found. Run 'ollama pull \(mode.aiModel)' on your Mac/server to download it.",
                 onPartialResponse: onPartialResponse
             )
         case .customOpenAI:
@@ -1365,6 +1380,7 @@ class AIService {
 
         let result = try await makeRequest(
             text: text,
+            mode: mode,
             systemMessage: systemMessage,
             preFormattedUserMessage: preFormattedUserMessage
         )
@@ -1374,11 +1390,12 @@ class AIService {
 
     private func makeRequest(
         text: String,
+        mode: VivaMode,
         systemMessage: String? = nil,
         preFormattedUserMessage: String? = nil,
         appleFMPresetID: String? = nil
     ) async throws -> String {
-        guard let aiProvider = self.selectedMode.aiProvider else {
+        guard let aiProvider = mode.aiProvider else {
             throw EnhancementError.notConfigured
         }
 
@@ -1386,13 +1403,13 @@ class AIService {
             return ""
         }
 
-        // Handle Apple Foundation Model (on-device) — same prompt as cloud providers
+        // Handle Apple Foundation Model (on-device) - same prompt as cloud providers
         if aiProvider == .apple {
             if #available(iOS 26, *) {
                 let sysMsg = systemMessage ?? getSystemMessage()
                 let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
                 let samplingProfile = AppleFoundationModelSamplingProfile.profile(
-                    for: appleFMPresetID ?? selectedMode.presetId
+                    for: appleFMPresetID ?? mode.presetId
                 )
                 logger.logDebug("AI Processing - Using Apple Foundation Model")
                 logger.logDebug("AI Processing - System Message: \(sysMsg)")
@@ -1411,7 +1428,7 @@ class AIService {
 
         // Handle Ollama (local server)
         if aiProvider == .ollama {
-            return try await makeOllamaRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: preFormattedUserMessage)
+            return try await makeOllamaRequest(text: text, mode: mode, systemMessage: systemMessage, preFormattedUserMessage: preFormattedUserMessage)
         }
 
         // Handle Custom OpenAI (user-configured endpoint)
@@ -1433,7 +1450,7 @@ class AIService {
                 let result = try await VivAgentsClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
-                    model: selectedMode.aiModel
+                    model: mode.aiModel
                 )
                 let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
                 return filteredResult
@@ -1457,7 +1474,7 @@ class AIService {
             do {
                 let provider = OpenAIOAuthProvider()
                 let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
-                let model = selectedMode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : selectedMode.aiModel
+                let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
                 let result = try await OpenAIOAuthClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
@@ -1483,7 +1500,7 @@ class AIService {
             do {
                 let provider = GeminiOAuthProvider()
                 let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
-                let model = selectedMode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : selectedMode.aiModel
+                let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
                 let result = try await GeminiAPIClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
@@ -1493,7 +1510,7 @@ class AIService {
                 )
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as EnhancementError {
-                // Rate limit etc. — don't fall through, surface directly
+                // Rate limit etc. - don't fall through, surface directly
                 throw error
             } catch let error as OAuthError {
                 // If OAuth fails, fall through to CLI or API key
@@ -1515,7 +1532,7 @@ class AIService {
                 let result = try await VivAgentsClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
-                    model: selectedMode.aiModel,
+                    model: mode.aiModel,
                     provider: "codex"
                 )
                 let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -1539,7 +1556,7 @@ class AIService {
                 let result = try await VivAgentsClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
-                    model: selectedMode.aiModel,
+                    model: mode.aiModel,
                     provider: "gemini"
                 )
                 let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -1559,7 +1576,7 @@ class AIService {
             lastUserMessageSent = formattedText
             do {
                 let token = try await CopilotOAuthManager.shared.validCopilotToken()
-                let model = selectedMode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : selectedMode.aiModel
+                let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
                 let result = try await CopilotAPIClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
@@ -1589,7 +1606,7 @@ class AIService {
         switch aiProvider {
         case .anthropic:
             let requestBody: [String: Any] = [
-                "model": selectedMode.aiModel,
+                "model": mode.aiModel,
                 "max_tokens": 8192,
                 "system": resolvedSystemMessage,
                 "messages": [
@@ -1657,7 +1674,7 @@ class AIService {
             request.timeoutInterval = baseTimeout
 
             let requestBody = buildOpenAICompatibleRequestBody(
-                modelName: selectedMode.aiModel,
+                modelName: mode.aiModel,
                 systemMessage: resolvedSystemMessage,
                 userMessage: formattedText,
                 stream: false
@@ -1761,7 +1778,7 @@ class AIService {
     // MARK: - Ollama Methods
 
     /// Makes an enhancement request to the local Ollama server
-    private func makeOllamaRequest(text: String, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
+    private func makeOllamaRequest(text: String, mode: VivaMode, systemMessage: String? = nil, preFormattedUserMessage: String? = nil) async throws -> String {
         let serverURL = ollamaServerURL
         guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {
             throw EnhancementError.customError("Invalid Ollama server URL: \(serverURL)")
@@ -1775,7 +1792,7 @@ class AIService {
         lastUserMessageSent = formattedText
 
         logger.logDebug("AI Processing - Using Ollama at \(serverURL)")
-        logger.logDebug("AI Processing - Model: \(self.selectedMode.aiModel)")
+        logger.logDebug("AI Processing - Model: \(mode.aiModel)")
         logger.logDebug("AI Processing - System Message: \(systemMessage)")
         logger.logDebug("AI Processing - User Message: \(formattedText)")
 
@@ -1786,7 +1803,7 @@ class AIService {
         request.timeoutInterval = 120 // Longer timeout for local inference
 
         let finalRequestBody = buildOpenAICompatibleRequestBody(
-            modelName: selectedMode.aiModel,
+            modelName: mode.aiModel,
             systemMessage: systemMessage,
             userMessage: formattedText,
             stream: false
@@ -1819,7 +1836,7 @@ class AIService {
                 return filteredText
 
             case 404:
-                throw EnhancementError.customError("Model '\(self.selectedMode.aiModel)' not found. Run 'ollama pull \(self.selectedMode.aiModel)' on your Mac/server to download it.")
+                throw EnhancementError.customError("Model '\(mode.aiModel)' not found. Run 'ollama pull \(mode.aiModel)' on your Mac/server to download it.")
 
             case 500...599:
                 throw EnhancementError.serverError
