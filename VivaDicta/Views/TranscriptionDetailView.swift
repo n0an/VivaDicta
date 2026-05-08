@@ -88,6 +88,12 @@ struct TranscriptionDetailView: View {
         appState.aiService.isProperlyConfigured()
     }
 
+    private var hasAnyAIEnabledMode: Bool {
+        appState.aiService.modes.contains { mode in
+            appState.aiService.isProperlyConfigured(for: mode, requirePreset: false)
+        }
+    }
+
     private var pendingReminderDraftCount: Int {
         transcription.pendingExtractedReminderDraftCount
     }
@@ -406,6 +412,15 @@ struct TranscriptionDetailView: View {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
                 existingVariationIds: Set(sortedVariations.map(\.presetId)),
+                activeMode: appState.aiService.selectedMode,
+                availableModes: appState.aiService.modes.filter { mode in
+                    appState.aiService.isProperlyConfigured(for: mode, requirePreset: false)
+                },
+                activeModeIsAIConfigured: isAIConfigured,
+                onOpenSettings: {
+                    showPresetPicker = false
+                    appState.shouldNavigateToModeSettings = true
+                },
                 onReviewExtractedTasks: pendingReminderDraftCount > 0 ? {
                     showPresetPicker = false
                     showExtractedRemindersSheet = true
@@ -414,9 +429,9 @@ struct TranscriptionDetailView: View {
                     showPresetPicker = false
                     extractReminderSuggestions()
                 } : nil,
-                onSelect: { preset in
+                onSelect: { preset, modeOverride in
                     showPresetPicker = false
-                    generateVariation(preset: preset)
+                    generateVariation(preset: preset, modeOverride: modeOverride)
                 }
             )
             .presentationDetents([.medium, .large])
@@ -701,7 +716,7 @@ struct TranscriptionDetailView: View {
                 // Button 2: AI Presets picker
                 Button {
                     HapticManager.lightImpact()
-                    if isAIConfigured {
+                    if isAIConfigured || hasAnyAIEnabledMode {
                         showPresetPicker = true
                     } else {
                         showConfigureAI = true
@@ -995,7 +1010,7 @@ struct TranscriptionDetailView: View {
 
     private var addVariationButton: some View {
         Button {
-            if isAIConfigured {
+            if isAIConfigured || hasAnyAIEnabledMode {
                 showPresetPicker = true
             } else {
                 showConfigureAI = true
@@ -1049,8 +1064,9 @@ struct TranscriptionDetailView: View {
         }
     }
 
-    private func generateVariation(preset: Preset) {
-        let shouldStreamResponse = appState.aiService.currentModeSupportsResponseStreaming
+    private func generateVariation(preset: Preset, modeOverride: VivaMode? = nil) {
+        let mode = modeOverride ?? appState.aiService.selectedMode
+        let shouldStreamResponse = appState.aiService.supportsResponseStreaming(for: mode)
         generatingPresetId = preset.id
         streamingVariationPresetId = shouldStreamResponse ? preset.id : nil
         streamingVariationText = ""
@@ -1072,6 +1088,7 @@ struct TranscriptionDetailView: View {
                     (resultText, duration) = try await appState.aiService.generateVariation(
                         text: transcription.text,
                         preset: preset,
+                        modeOverride: modeOverride,
                         onPartialResult: { partialText in
                             let previousText = streamingVariationText
                             if previousText.isEmpty, partialText.isEmpty == false {
@@ -1085,7 +1102,8 @@ struct TranscriptionDetailView: View {
                 } else {
                     (resultText, duration) = try await appState.aiService.generateVariation(
                         text: transcription.text,
-                        preset: preset
+                        preset: preset,
+                        modeOverride: modeOverride
                     )
                 }
 
@@ -1093,8 +1111,8 @@ struct TranscriptionDetailView: View {
                 if let existing = sortedVariations.first(where: { $0.presetId == preset.id }) {
                     existing.text = resultText
                     existing.createdAt = Date()
-                    existing.aiModelName = appState.aiService.selectedMode.aiModel
-                    existing.aiProviderName = appState.aiService.selectedMode.aiProvider?.displayName
+                    existing.aiModelName = mode.aiModel
+                    existing.aiProviderName = mode.aiProvider?.displayName
                     existing.processingDuration = duration
                     existing.aiRequestSystemMessage = appState.aiService.lastSystemMessageSent
                     existing.aiRequestUserMessage = appState.aiService.lastUserMessageSent
@@ -1103,8 +1121,8 @@ struct TranscriptionDetailView: View {
                         presetId: preset.id,
                         presetDisplayName: preset.name,
                         text: resultText,
-                        aiModelName: appState.aiService.selectedMode.aiModel,
-                        aiProviderName: appState.aiService.selectedMode.aiProvider?.displayName,
+                        aiModelName: mode.aiModel,
+                        aiProviderName: mode.aiProvider?.displayName,
                         processingDuration: duration,
                         aiRequestSystemMessage: appState.aiService.lastSystemMessageSent,
                         aiRequestUserMessage: appState.aiService.lastUserMessageSent
@@ -1351,13 +1369,35 @@ private struct MetaInfoSheet: View {
 private struct PresetPickerSheet: View {
     let presetManager: PresetManager
     let existingVariationIds: Set<String>
+    let activeMode: VivaMode
+    let availableModes: [VivaMode]
+    let activeModeIsAIConfigured: Bool
+    let onOpenSettings: () -> Void
     let onReviewExtractedTasks: (() -> Void)?
     let onExtractTasks: (() -> Void)?
-    let onSelect: (Preset) -> Void
+    let onSelect: (Preset, VivaMode?) -> Void
 
     @State private var filter: PresetFilter = .all
     @State private var selectedCategory: String?
     @State private var searchText = ""
+    @State private var overrideModeId: UUID?
+
+    private var overrideMode: VivaMode? {
+        guard let overrideModeId else { return nil }
+        return availableModes.first { $0.id == overrideModeId }
+    }
+
+    private var effectiveModeName: String {
+        overrideMode?.name ?? activeMode.name
+    }
+
+    private var canShowPresets: Bool {
+        activeModeIsAIConfigured || overrideMode != nil
+    }
+
+    private var hasOverrideOptions: Bool {
+        availableModes.contains { $0.id != activeMode.id }
+    }
 
     private var typeFilteredPresets: [Preset] {
         let byType: [Preset] = switch filter {
@@ -1400,34 +1440,61 @@ private struct PresetPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                if filter == .system, let onExtractTasks {
-                    Section("Smart Actions") {
-                        if let onReviewExtractedTasks {
-                            Button {
-                                onReviewExtractedTasks()
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "checklist")
-                                        .frame(width: 20)
-                                        .foregroundStyle(.secondary)
+            Group {
+                if canShowPresets {
+                    presetList
+                } else {
+                    notConfiguredView
+                }
+            }
+            .navigationTitle("AI Actions")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if hasOverrideOptions {
+                    ToolbarItem(placement: .topBarLeading) {
+                        modeOverrideMenu
+                    }
+                }
+            }
+        }
+    }
 
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Review Reminder Suggestions")
-                                            .font(.body)
-                                        Text("Open the reminder suggestions already extracted from this note.")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
+    private var notConfiguredView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
 
-                                    Spacer()
-                                }
-                            }
-                            .tint(.primary)
-                        }
+            Text("AI Processing Not Configured")
+                .font(.title3.bold())
 
+            Text("Set up an AI provider in your mode settings to use AI text processing.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Button {
+                onOpenSettings()
+            } label: {
+                Text("Open Mode Settings")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 40)
+        }
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var presetList: some View {
+        List {
+            if filter == .system, let onExtractTasks {
+                Section("Smart Actions") {
+                    if let onReviewExtractedTasks {
                         Button {
-                            onExtractTasks()
+                            onReviewExtractedTasks()
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "checklist")
@@ -1435,9 +1502,9 @@ private struct PresetPickerSheet: View {
                                     .foregroundStyle(.secondary)
 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Extract Tasks to Reminders")
+                                    Text("Review Reminder Suggestions")
                                         .font(.body)
-                                    Text("Find reminder suggestions in this note and review them before importing to Apple Reminders.")
+                                    Text("Open the reminder suggestions already extracted from this note.")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -1447,75 +1514,140 @@ private struct PresetPickerSheet: View {
                         }
                         .tint(.primary)
                     }
-                }
 
-                Section {
-                    Picker("Filter", selection: $filter) {
-                        ForEach(PresetFilter.allCases) { filter in
-                            Text(filter.title).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
+                    Button {
+                        onExtractTasks()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checklist")
+                                .frame(width: 20)
+                                .foregroundStyle(.secondary)
 
-                    CategoryChipsView(
-                        categories: allCategories,
-                        selectedCategory: $selectedCategory,
-                        showFavorites: presetManager.hasVisibleFavorites
-                    )
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                }
-                .listSectionSpacing(0)
-
-                if typeFilteredPresets.isEmpty {
-                    ContentUnavailableView {
-                        Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
-                    } description: {
-                        Text(searchText.isEmpty
-                             ? "Unhide presets in AI Presets to show them here."
-                             : "Try a different search or filter.")
-                    }
-                } else {
-                    if selectedCategory == nil {
-                        let favorites = typeFilteredPresets.filter(\.isFavorite)
-                        if !favorites.isEmpty {
-                            Section("Favorites") {
-                                ForEach(favorites) { preset in
-                                    presetRow(preset)
-                                }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Extract Tasks to Reminders")
+                                    .font(.body)
+                                Text("Find reminder suggestions in this note and review them before importing to Apple Reminders.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+
+                            Spacer()
                         }
                     }
+                    .tint(.primary)
+                }
+            }
 
-                    ForEach(filteredCategories, id: \.self) { category in
-                        Section(category) {
-                            ForEach(filteredPresets.filter { $0.category == category }) { preset in
+            Section {
+                Picker("Filter", selection: $filter) {
+                    ForEach(PresetFilter.allCases) { filter in
+                        Text(filter.title).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+
+                CategoryChipsView(
+                    categories: allCategories,
+                    selectedCategory: $selectedCategory,
+                    showFavorites: presetManager.hasVisibleFavorites
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+            .listSectionSpacing(0)
+
+            if typeFilteredPresets.isEmpty {
+                ContentUnavailableView {
+                    Label(searchText.isEmpty ? "No Visible Presets" : "No Presets Found", systemImage: "eye.slash")
+                } description: {
+                    Text(searchText.isEmpty
+                         ? "Unhide presets in AI Presets to show them here."
+                         : "Try a different search or filter.")
+                }
+            } else {
+                if selectedCategory == nil {
+                    let favorites = typeFilteredPresets.filter(\.isFavorite)
+                    if !favorites.isEmpty {
+                        Section("Favorites") {
+                            ForEach(favorites) { preset in
                                 presetRow(preset)
                             }
                         }
                     }
                 }
-            }
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search presets")
-            .onChange(of: filter) { _, _ in
-                selectedCategory = nil
-            }
-            .onChange(of: presetManager.hasVisibleFavorites) {
-                if !presetManager.hasVisibleFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
-                    selectedCategory = nil
+
+                ForEach(filteredCategories, id: \.self) { category in
+                    Section(category) {
+                        ForEach(filteredPresets.filter { $0.category == category }) { preset in
+                            presetRow(preset)
+                        }
+                    }
                 }
             }
-            .navigationTitle("AI Actions")
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search presets")
+        .onChange(of: filter) { _, _ in
+            selectedCategory = nil
+        }
+        .onChange(of: presetManager.hasVisibleFavorites) {
+            if !presetManager.hasVisibleFavorites && selectedCategory == CategoryChipsView.favoritesFilter {
+                selectedCategory = nil
+            }
+        }
+    }
+
+    private var modeOverrideMenu: some View {
+        Menu {
+            Button {
+                overrideModeId = nil
+            } label: {
+                if overrideModeId == nil {
+                    Label(activeMode.name, systemImage: "checkmark")
+                } else {
+                    Text(activeMode.name)
+                }
+            }
+
+            ForEach(availableModes.filter { $0.id != activeMode.id }) { mode in
+                Button {
+                    overrideModeId = mode.id
+                } label: {
+                    if overrideModeId == mode.id {
+                        Label(mode.name, systemImage: "checkmark")
+                    } else {
+                        Text(mode.name)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "brain")
+                    .font(.caption2)
+                Text(effectiveModeName)
+                    .font(.caption)
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(overrideModeId == nil ? Color(uiColor: .systemGray5) : Color.accentColor.opacity(0.18))
+            )
+            .foregroundStyle(overrideModeId == nil ? Color.primary : Color.accentColor)
+            .frame(maxWidth: 160)
+        }
+        .accessibilityLabel("AI mode override")
+        .accessibilityValue(effectiveModeName)
     }
 
     private func presetRow(_ preset: Preset) -> some View {
         let exists = existingVariationIds.contains(preset.id)
         return Button {
-            onSelect(preset)
+            onSelect(preset, overrideMode)
         } label: {
             HStack(spacing: 10) {
                 if !preset.isBuiltIn {
