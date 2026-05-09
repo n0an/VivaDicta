@@ -259,6 +259,28 @@ extension View {
     }
 }
 
+// MARK: - Glass FAB Circle
+/// Floating action button background: regular interactive glass on iOS 26+, regular material fallback on older.
+struct GlassFABCircleModifier: ViewModifier {
+    var fallback: AnyShapeStyle
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: .circle)
+        } else {
+            content
+                .background(fallback, in: .circle)
+        }
+    }
+}
+
+extension View {
+    func glassFABCircle(fallback: some ShapeStyle = .regularMaterial) -> some View {
+        modifier(GlassFABCircleModifier(fallback: AnyShapeStyle(fallback)))
+    }
+}
+
 // MARK: - Glass Capsule
 /// Capsule background: interactive glass with optional tint on iOS 26+, solid fallback on older.
 struct GlassCapsuleModifier: ViewModifier {

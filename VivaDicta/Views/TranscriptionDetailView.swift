@@ -375,13 +375,6 @@ struct TranscriptionDetailView: View {
                     .padding(.horizontal)
             }
         }
-        .overlay(alignment: .bottomTrailing) {
-            if appendWithVoiceStyle == .floatingButton {
-                voiceAppendFloatingButton
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 12)
-            }
-        }
         .safeAreaInset(edge: .bottom) {
             if pendingReminderDraftCount > 0 {
                 HStack {
@@ -402,6 +395,15 @@ struct TranscriptionDetailView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
+                if appendWithVoiceStyle == .floatingButton {
+                    HStack {
+                        Spacer()
+                        voiceAppendFloatingButton
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 12)
+                }
+
                 TranscriptionTagChipsView(
                     transcription: transcription,
                     showTagPicker: $showTagPicker
@@ -695,11 +697,11 @@ struct TranscriptionDetailView: View {
         Button {
             startVoiceAppend()
         } label: {
-            Image(systemName: "mic.fill")
+            Image(systemName: "microphone.badge.plus.fill")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.tint)
                 .frame(width: 56, height: 56)
-                .floatingMicGlassBackground()
+                .glassFABCircle()
                 .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
@@ -1782,24 +1784,6 @@ private struct TextEditSheet: View {
                     }
                 }
         }
-    }
-}
-
-private struct FloatingMicGlassBackground: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content
-                .glassEffect(.regular.interactive(), in: .circle)
-        } else {
-            content
-                .background(.regularMaterial, in: .circle)
-        }
-    }
-}
-
-private extension View {
-    func floatingMicGlassBackground() -> some View {
-        modifier(FloatingMicGlassBackground())
     }
 }
 
