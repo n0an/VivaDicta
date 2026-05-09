@@ -62,7 +62,7 @@ struct ASCIIOrbView: View {
         let centerY = size.height / 2
 
         let halfDim = dim / 2
-        let orbRadius = halfDim * (0.78 + power * 0.10)
+        let orbRadius = halfDim * (0.437 + power * 0.056)
 
         // Hard cull beyond the silhouette band. Cells in [edgeStart, edgeEnd]
         // get a soft, noise-perturbed alpha so the orb's edge feels fluid
@@ -74,7 +74,7 @@ struct ASCIIOrbView: View {
         let outerCullSquared = outerCullRadius * outerCullRadius
 
         // Resolve each ramp glyph once per frame, then mutate `shading` per cell.
-        let font = Font.system(size: cellSize * 1.10, weight: .medium, design: .monospaced)
+        let font = Font.system(size: cellSize * 1.30, weight: .medium, design: .monospaced)
         let resolvedRamp = Self.ramp.map { glyph in
             context.resolve(Text(glyph).font(font))
         }
