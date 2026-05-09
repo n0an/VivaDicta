@@ -20,6 +20,7 @@ public enum LogCategory: String {
     case mainView = "MainView"
     case recordViewModel = "RecordViewModel"
     case transcriptionsContentView = "TranscriptionsContentView"
+    case transcriptionDetailView = "TranscriptionDetailView"
     case audioPlayerManager = "AudioPlayerManager"
     case modeEditViewModel = "ModeEditViewModel"
 

@@ -9,6 +9,9 @@ import SwiftUI
 import SwiftData
 import CoreSpotlight
 import TipKit
+import os
+
+private let logger = Logger(category: .transcriptionDetailView)
 
 struct TranscriptionDetailView: View {
     var transcription: Transcription
@@ -731,6 +734,7 @@ struct TranscriptionDetailView: View {
                 .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
         }
         .buttonStyle(.plain)
+        .disabled(appState.recordViewModel.recordingState != .idle)
         .accessibilityLabel("Send to Obsidian")
     }
 
@@ -765,9 +769,11 @@ struct TranscriptionDetailView: View {
             presetName: presetName,
             date: transcription.timestamp
         ) else {
+            logger.logError("📱 Obsidian: failed to build URL for manual send (template '\(template)', mode '\(modeName)')")
             return
         }
 
+        logger.logInfo("📱 Obsidian: manual send \(output.url.absoluteString)")
         ClipboardManager.copyToClipboard(output.clipboardText)
         UIApplication.shared.open(output.url)
     }

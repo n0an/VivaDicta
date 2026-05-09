@@ -77,7 +77,7 @@ struct IntegrationsView: View {
     @ViewBuilder
     private var obsidianFooter: some View {
         if isAnyObsidianEnabled {
-            Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. Per-mode opt-out for auto-open is available in each mode's settings. The clipboard is overwritten each time.")
+            Text("An Obsidian note is created for new transcriptions and appended to when an existing note name matches. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. Per-mode opt-out for auto-open is available in each mode's settings. The clipboard is overwritten each time.")
         }
     }
 }
