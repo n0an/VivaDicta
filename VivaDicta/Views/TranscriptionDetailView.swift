@@ -726,9 +726,10 @@ struct TranscriptionDetailView: View {
         Button {
             sendToObsidian()
         } label: {
-            Image(systemName: "arrow.up.forward.app.fill")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.tint)
+            Image("obsidian-color")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
                 .frame(width: 56, height: 56)
                 .glassFABCircle()
                 .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
