@@ -97,6 +97,7 @@ enum UserDefaultsStorage {
         // Integrations - Obsidian
         static let isObsidianGloballyEnabled = "isObsidianGloballyEnabled"
         static let obsidianNoteTemplate = "obsidianNoteTemplate"
+        static let isObsidianSendButtonEnabled = "isObsidianSendButtonEnabled"
 
         // Integrations - Folder export (silent markdown save to user-picked folder)
         static let isFolderExportGloballyEnabled = "isFolderExportGloballyEnabled"

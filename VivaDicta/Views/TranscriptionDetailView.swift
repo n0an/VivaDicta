@@ -45,6 +45,9 @@ struct TranscriptionDetailView: View {
     @AppStorage(UserDefaultsStorage.Keys.appendWithVoiceStyle)
     private var appendWithVoiceStyleRaw: String = AppendWithVoiceStyle.toolbar.rawValue
 
+    @AppStorage(UserDefaultsStorage.Keys.isObsidianSendButtonEnabled)
+    private var isObsidianSendButtonEnabled: Bool = false
+
     private var appendWithVoiceStyle: AppendWithVoiceStyle {
         AppendWithVoiceStyle(rawValue: appendWithVoiceStyleRaw) ?? .toolbar
     }
@@ -395,10 +398,16 @@ struct TranscriptionDetailView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
-                if appendWithVoiceStyle == .floatingButton {
-                    HStack {
+                let showsVoiceFAB = appendWithVoiceStyle == .floatingButton
+                if isObsidianSendButtonEnabled || showsVoiceFAB {
+                    HStack(spacing: 12) {
                         Spacer()
-                        voiceAppendFloatingButton
+                        if isObsidianSendButtonEnabled {
+                            obsidianSendFloatingButton
+                        }
+                        if showsVoiceFAB {
+                            voiceAppendFloatingButton
+                        }
                     }
                     .padding(.trailing, 16)
                     .padding(.bottom, 12)
@@ -707,6 +716,60 @@ struct TranscriptionDetailView: View {
         .buttonStyle(.plain)
         .disabled(appState.recordViewModel.recordingState != .idle)
         .accessibilityLabel("Append with Voice")
+    }
+
+    @ViewBuilder
+    private var obsidianSendFloatingButton: some View {
+        Button {
+            sendToObsidian()
+        } label: {
+            Image(systemName: "arrow.up.forward.app.fill")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.tint)
+                .frame(width: 56, height: 56)
+                .glassFABCircle()
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Send to Obsidian")
+    }
+
+    private func sendToObsidian() {
+        HapticManager.lightImpact()
+
+        let trimmedTemplate = (UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
+
+        let modeName: String = {
+            if let powerModeIdStr = transcription.powerModeId,
+               let powerModeId = UUID(uuidString: powerModeIdStr),
+               let mode = appState.aiService.modes.first(where: { $0.id == powerModeId }) {
+                return mode.name
+            }
+            return appState.aiService.selectedMode.name
+        }()
+
+        let presetName: String? = {
+            guard selectedChipId != "original",
+                  let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) else {
+                return nil
+            }
+            return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
+        }()
+
+        guard let output = ObsidianURLBuilder.build(
+            text: displayedText,
+            template: template,
+            modeName: modeName,
+            presetName: presetName,
+            date: transcription.timestamp
+        ) else {
+            return
+        }
+
+        ClipboardManager.copyToClipboard(output.clipboardText)
+        UIApplication.shared.open(output.url)
     }
 
     private var bottomActionBar: some View {
