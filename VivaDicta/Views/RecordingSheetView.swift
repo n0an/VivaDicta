@@ -30,7 +30,6 @@ struct RecordingSheetView: View {
             Group {
                 if isASCIIOrbEnabled {
                     ASCIIOrbView(audioPower: $appState.recordViewModel.audioPower)
-//                        .padding(.top, 20)
                         .offset(y: 10)
                 } else {
                     ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)

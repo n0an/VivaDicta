@@ -8,34 +8,57 @@
 import SwiftUI
 
 /// Settings screen for third-party integrations (Obsidian today; Webhooks /
-/// Zapier later). The master Obsidian toggle here gates the per-mode toggle
-/// in `ModeEditView`; flipping it off hides per-mode controls and short-
-/// circuits the hand-off in `RecordViewModel.openObsidianIfEnabled`.
+/// Zapier later). Two sibling toggles control the Obsidian hand-off:
+/// "Auto-open after transcription" (`isObsidianGloballyEnabled`) drives the
+/// automatic open in `RecordViewModel.openObsidianIfEnabled` and gates the
+/// per-mode opt-out in `ModeEditView`; "Show Send to Obsidian button"
+/// (`isObsidianSendButtonEnabled`) reveals a manual send button on the
+/// transcription detail screen. The note-name template is shared by both.
 struct IntegrationsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isObsidianGloballyEnabled)
-    private var isObsidianGloballyEnabled = false
+    private var isObsidianAutoOpenEnabled = false
+
+    @AppStorage(UserDefaultsStorage.Keys.isObsidianSendButtonEnabled)
+    private var isObsidianSendButtonEnabled = false
 
     @AppStorage(UserDefaultsStorage.Keys.obsidianNoteTemplate)
     private var obsidianNoteTemplate = UserDefaultsStorage.defaultObsidianNoteTemplate
+
+    private var isAnyObsidianEnabled: Bool {
+        isObsidianAutoOpenEnabled || isObsidianSendButtonEnabled
+    }
 
     var body: some View {
         Form {
             Section(header: Text("Obsidian"),
                     footer: obsidianFooter) {
-                Toggle(isOn: $isObsidianGloballyEnabled) {
+                Toggle(isOn: $isObsidianAutoOpenEnabled) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Save to Obsidian")
+                        Text("Auto-open after transcription")
                             .font(.body)
-                        Text("After each transcription, open Obsidian and save the text as a note.")
+                        Text("Open Obsidian after each transcription and save the text as a note.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-                .onChange(of: isObsidianGloballyEnabled) { _, _ in
+                .onChange(of: isObsidianAutoOpenEnabled) { _, _ in
                     HapticManager.selectionChanged()
                 }
 
-                if isObsidianGloballyEnabled {
+                Toggle(isOn: $isObsidianSendButtonEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Show Send to Obsidian button")
+                            .font(.body)
+                        Text("Add a button on each note's detail screen to send a transcription on demand.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onChange(of: isObsidianSendButtonEnabled) { _, _ in
+                    HapticManager.selectionChanged()
+                }
+
+                if isAnyObsidianEnabled {
                     HStack {
                         Text("Note name")
                         Spacer()
@@ -53,8 +76,8 @@ struct IntegrationsView: View {
 
     @ViewBuilder
     private var obsidianFooter: some View {
-        if isObsidianGloballyEnabled {
-            Text("A new Obsidian note is created for each transcription. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. Per-mode opt-out is available in each mode's settings. The clipboard is overwritten each time.")
+        if isAnyObsidianEnabled {
+            Text("An Obsidian note is created for new transcriptions and appended to when an existing note name matches. Placeholders: {date}, {yyyy}, {MM}, {dd}, {HH}, {mm}, {ss}, {preset}, {mode}. To instead append to a daily note, set the name to just {date}. Per-mode opt-out for auto-open is available in each mode's settings. The clipboard is overwritten each time.")
         }
     }
 }
