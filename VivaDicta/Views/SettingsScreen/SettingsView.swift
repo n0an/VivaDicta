@@ -577,6 +577,16 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Advanced") {
+                    NavigationLink(value: SettingsDestination.advanced) {
+                        HStack {
+                            Image(systemName: "slider.horizontal.3")
+                                .foregroundStyle(.gray)
+                            Text("Advanced")
+                        }
+                    }
+                }
+
                 Section("Support") {
                     Link(destination: URL(string: "https://vivadicta.com/ios/docs")!) {
                         HStack {
@@ -687,6 +697,8 @@ struct SettingsView: View {
                     SmartSearchSettingsView()
                 case .integrations:
                     IntegrationsView()
+                case .advanced:
+                    AdvancedSettingsView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in

@@ -42,6 +42,13 @@ struct TranscriptionDetailView: View {
     @State private var showExportErrorAlert: Bool = false
     @State private var exportErrorMessage: String = ""
 
+    @AppStorage(UserDefaultsStorage.Keys.appendWithVoiceStyle)
+    private var appendWithVoiceStyleRaw: String = AppendWithVoiceStyle.toolbar.rawValue
+
+    private var appendWithVoiceStyle: AppendWithVoiceStyle {
+        AppendWithVoiceStyle(rawValue: appendWithVoiceStyleRaw) ?? .toolbar
+    }
+
     // Ripple effect state for processing animations
     @State private var rippleEffectTimer: Timer?
     @State private var rippleEffectTrigger = false
@@ -388,6 +395,15 @@ struct TranscriptionDetailView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
+                if appendWithVoiceStyle == .floatingButton {
+                    HStack {
+                        Spacer()
+                        voiceAppendFloatingButton
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 12)
+                }
+
                 TranscriptionTagChipsView(
                     transcription: transcription,
                     showTagPicker: $showTagPicker
@@ -676,6 +692,23 @@ struct TranscriptionDetailView: View {
 
     // MARK: - Bottom Action Bar
 
+    @ViewBuilder
+    private var voiceAppendFloatingButton: some View {
+        Button {
+            startVoiceAppend()
+        } label: {
+            Image(systemName: "microphone.badge.plus.fill")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.tint)
+                .frame(width: 56, height: 56)
+                .glassFABCircle()
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(appState.recordViewModel.recordingState != .idle)
+        .accessibilityLabel("Append with Voice")
+    }
+
     private var bottomActionBar: some View {
         VStack(spacing: 0) {
             Divider()
@@ -763,10 +796,12 @@ struct TranscriptionDetailView: View {
                         showTextEditor = true
                     }
 
-                    Button("Append with Voice", systemImage: "mic") {
-                        startVoiceAppend()
+                    if appendWithVoiceStyle == .toolbar {
+                        Button("Append with Voice", systemImage: "mic") {
+                            startVoiceAppend()
+                        }
+                        .disabled(appState.recordViewModel.recordingState != .idle)
                     }
-                    .disabled(appState.recordViewModel.recordingState != .idle)
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 20))
