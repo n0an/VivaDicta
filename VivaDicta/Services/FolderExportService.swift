@@ -70,11 +70,55 @@ enum FolderExportService {
         }
     }
 
+    /// Outcome of a manual export attempt. Distinguishes failures so the UI
+    /// can show specific guidance instead of a generic "something went wrong".
+    enum ManualSaveResult: Equatable {
+        case success(filename: String)
+        case noFolderPicked
+        case bookmarkUnusable
+        case writeFailed(String)
+    }
+
+    /// Manually writes the transcription as a markdown file in the picked
+    /// folder. Bypasses the global auto-export toggle and per-mode opt-out
+    /// because the user explicitly tapped the Export to Folder button.
+    ///
+    /// Awaits the actual write (unlike `saveIfEnabled`) so callers can
+    /// surface real success or failure to the user instead of giving a
+    /// false success signal when the bookmark is stale or access is revoked.
+    @MainActor
+    static func saveManually(transcription: Transcription) async -> ManualSaveResult {
+        guard let bookmark = UserDefaultsStorage.shared.data(forKey: UserDefaultsStorage.SharedKeys.folderExportBookmark) else {
+            logger.logInfo("📁 Folder export: manual save requested but no folder picked")
+            return .noFolderPicked
+        }
+
+        let snapshots = TranscriptionMarkdownExportService.snapshots(for: [transcription])
+        guard let snapshot = snapshots.first else { return .writeFailed("No transcription snapshot") }
+        let items = TranscriptionMarkdownExportService.items(forSnapshots: snapshots)
+        guard let item = items.first else { return .writeFailed("No exportable item") }
+
+        return await Task.detached(priority: .userInitiated) {
+            await writeWithResult(item: item, snapshot: snapshot, bookmark: bookmark)
+        }.value
+    }
+
     private static func write(
         item: MarkdownExportItem,
         snapshot: TranscriptionMarkdownExportService.Snapshot,
         bookmark: Data
     ) async {
+        _ = await writeWithResult(item: item, snapshot: snapshot, bookmark: bookmark)
+    }
+
+    /// Same as `write`, but returns a typed outcome so manual callers can
+    /// surface accurate UI feedback (e.g. distinguish "bookmark stale" from
+    /// "write failed").
+    private static func writeWithResult(
+        item: MarkdownExportItem,
+        snapshot: TranscriptionMarkdownExportService.Snapshot,
+        bookmark: Data
+    ) async -> ManualSaveResult {
         var isStale = false
         let folderURL: URL
         do {
@@ -86,19 +130,19 @@ enum FolderExportService {
             )
         } catch {
             logger.logError("📁 Folder export: bookmark resolution failed - \(error.localizedDescription)")
-            return
+            return .bookmarkUnusable
         }
 
         if isStale {
             logger.logError("📁 Folder export: bookmark is stale - clearing so the user re-picks")
             await MainActor.run { Self.clearBookmark() }
-            return
+            return .bookmarkUnusable
         }
 
         guard folderURL.startAccessingSecurityScopedResource() else {
             logger.logError("📁 Folder export: cannot access \(folderURL.path) - clearing bookmark so the user re-picks")
             await MainActor.run { Self.clearBookmark() }
-            return
+            return .bookmarkUnusable
         }
         defer { folderURL.stopAccessingSecurityScopedResource() }
 
@@ -106,8 +150,10 @@ enum FolderExportService {
         do {
             try Data(item.text.utf8).write(to: destination, options: .atomic)
             logger.logInfo("📁 Folder export: wrote \(destination.lastPathComponent)")
+            return .success(filename: destination.lastPathComponent)
         } catch {
             logger.logError("📁 Folder export: write failed for \(destination.lastPathComponent) - \(error.localizedDescription)")
+            return .writeFailed(error.localizedDescription)
         }
     }
 

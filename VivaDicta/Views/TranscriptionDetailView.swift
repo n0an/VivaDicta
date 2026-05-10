@@ -51,6 +51,15 @@ struct TranscriptionDetailView: View {
     @AppStorage(UserDefaultsStorage.Keys.isObsidianSendButtonEnabled)
     private var isObsidianSendButtonEnabled: Bool = false
 
+    @AppStorage(UserDefaultsStorage.Keys.isFolderExportButtonEnabled)
+    private var isFolderExportButtonEnabled: Bool = false
+
+    @AppStorage(UserDefaultsStorage.SharedKeys.folderExportDisplayName, store: UserDefaultsStorage.shared)
+    private var folderExportDisplayName: String = ""
+
+    @State private var folderExportAlertMessage: String = ""
+    @State private var showFolderExportAlert: Bool = false
+
     private var appendWithVoiceStyle: AppendWithVoiceStyle {
         AppendWithVoiceStyle(rawValue: appendWithVoiceStyleRaw) ?? .toolbar
     }
@@ -402,9 +411,12 @@ struct TranscriptionDetailView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 let showsVoiceFAB = appendWithVoiceStyle == .floatingButton
-                if isObsidianSendButtonEnabled || showsVoiceFAB {
+                if isObsidianSendButtonEnabled || isFolderExportButtonEnabled || showsVoiceFAB {
                     HStack(spacing: 12) {
                         Spacer()
+                        if isFolderExportButtonEnabled {
+                            folderExportFloatingButton
+                        }
                         if isObsidianSendButtonEnabled {
                             obsidianSendFloatingButton
                         }
@@ -639,6 +651,11 @@ struct TranscriptionDetailView: View {
         } message: {
             Text(exportErrorMessage)
         }
+        .alert("Export to Folder", isPresented: $showFolderExportAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(folderExportAlertMessage)
+        }
     }
 
     private var exportSheetBinding: Binding<Bool> {
@@ -737,6 +754,44 @@ struct TranscriptionDetailView: View {
         .buttonStyle(.plain)
         .disabled(appState.recordViewModel.recordingState != .idle)
         .accessibilityLabel("Send to Obsidian")
+    }
+
+    @ViewBuilder
+    private var folderExportFloatingButton: some View {
+        Button {
+            exportToFolder()
+        } label: {
+            Image(systemName: "folder.fill.badge.plus")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.tint)
+                .frame(width: 56, height: 56)
+                .glassFABCircle()
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(appState.recordViewModel.recordingState != .idle)
+        .accessibilityLabel("Export to Folder")
+    }
+
+    private func exportToFolder() {
+        HapticManager.lightImpact()
+        Task {
+            let result = await FolderExportService.saveManually(transcription: transcription)
+            switch result {
+            case .success(let filename):
+                logger.logInfo("📁 Folder export: manual save wrote \(filename)")
+                HapticManager.success()
+            case .noFolderPicked:
+                folderExportAlertMessage = "Choose a folder in Settings → Export Notes before using the Export to Folder button."
+                showFolderExportAlert = true
+            case .bookmarkUnusable:
+                folderExportAlertMessage = "Lost access to the export folder. Pick it again in Settings → Export Notes."
+                showFolderExportAlert = true
+            case .writeFailed(let message):
+                folderExportAlertMessage = "Could not write the markdown file: \(message)"
+                showFolderExportAlert = true
+            }
+        }
     }
 
     private func sendToObsidian() {

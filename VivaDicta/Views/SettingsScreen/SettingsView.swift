@@ -9,7 +9,6 @@ import SwiftUI
 import AppIntents
 import TipKit
 import MessageUI
-import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(AppState.self) var appState
@@ -56,14 +55,6 @@ struct SettingsView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.isICloudSyncEnabled)
     private var isICloudSyncEnabled = true
-    @AppStorage(MarkdownExportContent.userDefaultsKey)
-    private var markdownExportContent: MarkdownExportContent = .default
-    @AppStorage(UserDefaultsStorage.Keys.isFolderExportGloballyEnabled)
-    private var isFolderExportGloballyEnabled = false
-    @AppStorage(UserDefaultsStorage.SharedKeys.folderExportDisplayName, store: UserDefaultsStorage.shared)
-    private var folderExportDisplayName: String = ""
-    @State private var isFolderPickerPresented = false
-    @State private var folderPickerError: String?
     @State private var showRestartAlert = false
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
@@ -391,67 +382,6 @@ struct SettingsView: View {
                     }
                 }
 
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Picker("Markdown Export", selection: $markdownExportContent) {
-                            ForEach(MarkdownExportContent.allCases) { option in
-                                Text(option.displayName).tag(option)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(.primary)
-                        Text("Choose what to include when exporting notes as Markdown. Applies to both manual export and auto-save below.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .onChange(of: markdownExportContent) { _, _ in
-                        HapticManager.selectionChanged()
-                    }
-
-                    Toggle(isOn: $isFolderExportGloballyEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Save markdown file")
-                                .font(.body)
-                            Text("After each transcription, silently save a .md file to a folder of your choice (e.g. an Obsidian vault in iCloud Drive).")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isFolderExportGloballyEnabled) { _, _ in
-                        HapticManager.selectionChanged()
-                    }
-
-                    if isFolderExportGloballyEnabled {
-                        Button {
-                            isFolderPickerPresented = true
-                        } label: {
-                            HStack {
-                                Text(folderExportDisplayName.isEmpty ? "Choose folder..." : "Folder")
-                                Spacer()
-                                if !folderExportDisplayName.isEmpty {
-                                    Text(folderExportDisplayName)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                        .truncationMode(.middle)
-                                }
-                            }
-                        }
-
-                        if !folderExportDisplayName.isEmpty {
-                            Button("Clear folder", role: .destructive) {
-                                FolderExportService.clearBookmark()
-                                folderExportDisplayName = ""
-                            }
-                        }
-                    }
-                } header: {
-                    Text("Export")
-                } footer: {
-                    if isFolderExportGloballyEnabled {
-                        Text("One markdown file per transcription, named VivaDicta-YYYY-MM-DD_HHmmss.md. Pick any folder, including an Obsidian vault. Once you pick a folder, every mode silently writes a file - opt out per-mode in each mode's settings.")
-                    }
-                }
-
                 Section("Storage") {
 
                     Toggle(isOn: $isAutoNoteCleanupEnabled) {
@@ -565,6 +495,16 @@ struct SettingsView: View {
                     Text("iCloud")
                 } footer: {
                     Text("Requires app restart to take effect.")
+                }
+                
+                Section("Export Notes") {
+                    NavigationLink(value: SettingsDestination.export) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up.on.square")
+                                .foregroundStyle(.blue)
+                            Text("Export Notes")
+                        }
+                    }
                 }
 
                 Section("Integrations") {
@@ -697,6 +637,8 @@ struct SettingsView: View {
                     SmartSearchSettingsView()
                 case .integrations:
                     IntegrationsView()
+                case .export:
+                    ExportSettingsView()
                 case .advanced:
                     AdvancedSettingsView()
                 }
@@ -772,38 +714,6 @@ struct SettingsView: View {
             Button("Later", role: .cancel) { }
         } message: {
             Text("The app needs to restart for iCloud sync changes to take effect.")
-        }
-        .fileImporter(
-            isPresented: $isFolderPickerPresented,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                guard let url = urls.first else { return }
-                guard url.startAccessingSecurityScopedResource() else {
-                    folderPickerError = "Could not access the selected folder."
-                    return
-                }
-                defer { url.stopAccessingSecurityScopedResource() }
-                do {
-                    try FolderExportService.storeBookmark(for: url)
-                } catch {
-                    folderPickerError = error.localizedDescription
-                }
-            case .failure(let error):
-                folderPickerError = error.localizedDescription
-            }
-        }
-        .alert("Folder selection failed",
-               isPresented: Binding(
-                   get: { folderPickerError != nil },
-                   set: { if !$0 { folderPickerError = nil } }
-               ),
-               presenting: folderPickerError) { _ in
-            Button("OK", role: .cancel) { folderPickerError = nil }
-        } message: { message in
-            Text(message)
         }
         .sheet(isPresented: $showMailCompose) {
             MailComposeView(
