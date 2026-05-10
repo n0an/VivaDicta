@@ -502,7 +502,7 @@ struct SettingsView: View {
                         HStack {
                             Image(systemName: "square.and.arrow.up.on.square")
                                 .foregroundStyle(.blue)
-                            Text("Export Notes Settings")
+                            Text("Export Notes")
                         }
                     }
                 }

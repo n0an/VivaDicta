@@ -57,7 +57,8 @@ struct TranscriptionDetailView: View {
     @AppStorage(UserDefaultsStorage.SharedKeys.folderExportDisplayName, store: UserDefaultsStorage.shared)
     private var folderExportDisplayName: String = ""
 
-    @State private var showExportNoFolderAlert: Bool = false
+    @State private var folderExportAlertMessage: String = ""
+    @State private var showFolderExportAlert: Bool = false
 
     private var appendWithVoiceStyle: AppendWithVoiceStyle {
         AppendWithVoiceStyle(rawValue: appendWithVoiceStyleRaw) ?? .toolbar
@@ -650,10 +651,10 @@ struct TranscriptionDetailView: View {
         } message: {
             Text(exportErrorMessage)
         }
-        .alert("Pick an export folder first", isPresented: $showExportNoFolderAlert) {
+        .alert("Export to Folder", isPresented: $showFolderExportAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Choose a folder in Settings -> Export before using the Export to Folder button.")
+            Text(folderExportAlertMessage)
         }
     }
 
@@ -774,17 +775,23 @@ struct TranscriptionDetailView: View {
 
     private func exportToFolder() {
         HapticManager.lightImpact()
-        if folderExportDisplayName.isEmpty {
-            showExportNoFolderAlert = true
-            return
+        Task {
+            let result = await FolderExportService.saveManually(transcription: transcription)
+            switch result {
+            case .success(let filename):
+                logger.logInfo("📁 Folder export: manual save wrote \(filename)")
+                HapticManager.success()
+            case .noFolderPicked:
+                folderExportAlertMessage = "Choose a folder in Settings → Export Notes before using the Export to Folder button."
+                showFolderExportAlert = true
+            case .bookmarkUnusable:
+                folderExportAlertMessage = "Lost access to the export folder. Pick it again in Settings → Export Notes."
+                showFolderExportAlert = true
+            case .writeFailed(let message):
+                folderExportAlertMessage = "Could not write the markdown file: \(message)"
+                showFolderExportAlert = true
+            }
         }
-        let scheduled = FolderExportService.saveManually(transcription: transcription)
-        if !scheduled {
-            showExportNoFolderAlert = true
-            return
-        }
-        logger.logInfo("📁 Folder export: manual save scheduled for \(transcription.audioFileName ?? "<no audio>")")
-        HapticManager.success()
     }
 
     private func sendToObsidian() {

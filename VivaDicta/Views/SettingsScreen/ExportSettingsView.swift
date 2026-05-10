@@ -108,7 +108,7 @@ struct ExportSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Export Settings")
+        .navigationTitle("Export Notes")
         .navigationBarTitleDisplayMode(.inline)
         .fileImporter(
             isPresented: $isFolderPickerPresented,
