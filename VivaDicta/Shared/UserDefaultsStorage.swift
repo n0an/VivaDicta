@@ -101,6 +101,7 @@ enum UserDefaultsStorage {
 
         // Integrations - Folder export (silent markdown save to user-picked folder)
         static let isFolderExportGloballyEnabled = "isFolderExportGloballyEnabled"
+        static let isFolderExportButtonEnabled = "isFolderExportButtonEnabled"
 
         // Live Translation
         static let liveTranslationSourceLanguage = "liveTranslation.sourceLanguage"

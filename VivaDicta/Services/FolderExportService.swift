@@ -70,6 +70,30 @@ enum FolderExportService {
         }
     }
 
+    /// Manually writes the transcription as a markdown file in the picked
+    /// folder. Bypasses the global auto-export toggle and per-mode opt-out
+    /// because the user explicitly tapped the Export to Folder button.
+    /// Returns whether a write was scheduled - callers can use this to
+    /// surface a "no folder picked" hint to the user.
+    @MainActor
+    @discardableResult
+    static func saveManually(transcription: Transcription) -> Bool {
+        guard let bookmark = UserDefaultsStorage.shared.data(forKey: UserDefaultsStorage.SharedKeys.folderExportBookmark) else {
+            logger.logInfo("📁 Folder export: manual save requested but no folder picked")
+            return false
+        }
+
+        let snapshots = TranscriptionMarkdownExportService.snapshots(for: [transcription])
+        guard let snapshot = snapshots.first else { return false }
+        let items = TranscriptionMarkdownExportService.items(forSnapshots: snapshots)
+        guard let item = items.first else { return false }
+
+        Task.detached(priority: .utility) {
+            await write(item: item, snapshot: snapshot, bookmark: bookmark)
+        }
+        return true
+    }
+
     private static func write(
         item: MarkdownExportItem,
         snapshot: TranscriptionMarkdownExportService.Snapshot,

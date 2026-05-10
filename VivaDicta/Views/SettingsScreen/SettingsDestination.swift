@@ -28,6 +28,9 @@ enum SettingsDestination: Hashable {
     // Integrations
     case integrations
 
+    // Export
+    case export
+
     // Advanced
     case advanced
 }

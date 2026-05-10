@@ -320,7 +320,7 @@ struct HudViewDark: View {
                 .blur(radius: 1)
                 .blendMode(.overlay)
         )
-//        .background(.black)
+        .background(.black.opacity(0.1))
         .clipShape(.rect(cornerRadius: 30))
         .applyHudGlassEffect(cornerRadius: 30, isInteractive: onCancel != nil)
     }
