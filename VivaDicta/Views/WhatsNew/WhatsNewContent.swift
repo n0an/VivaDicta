@@ -42,7 +42,7 @@ enum WhatsNewCatalog {
 
     private static let release_3_3 = WhatsNewRelease(
         id: "3.3",
-        headline: "What's New in VivaDicta 3.3",
+        headline: "What's New in VivaDicta 3.3.0",
         features: [
             WhatsNewFeature(
                 icon: "globe",
