@@ -59,7 +59,7 @@
          <EnvironmentVariable
             key = "SIGNPOST_ENABLED"
             value = "0"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>
