@@ -29,7 +29,7 @@ Integration points:
 ```swift
 private static let release_X_Y = WhatsNewRelease(
     id: "X.Y",
-    headline: "What's New in VivaDicta X.Y",
+    headline: "What's New in VivaDicta X.Y.Z",   // user-facing: ALWAYS use the full X.Y.Z form (e.g. "VivaDicta 3.3.0", not "3.3")
     features: [
         WhatsNewFeature(
             icon: "sf.symbol.name",      // SF Symbol

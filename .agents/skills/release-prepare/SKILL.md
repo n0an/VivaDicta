@@ -7,6 +7,19 @@ description: Prepare a new VivaDicta release — version bump, What's New screen
 
 Use this skill when preparing a new VivaDicta release for App Store submission.
 
+## Version Format Convention
+
+Use the full `X.Y.Z` form in **every user-facing surface** — never the short `X.Y` form like "3.3":
+
+- In-app What's New screen `headline` field (e.g. `"What's New in VivaDicta 3.3.0"`)
+- App Store release notes body text (e.g. `"VivaDicta 3.3.0 adds..."`)
+- App Store description if it mentions the version
+- Website changelog intro paragraph (the `<h2>` already shows `3.3.0`, but the prose must too)
+- LinkedIn / social post copy
+- Filenames: `whats-new-X.Y.Z.md`, `description-X.Y.Z.md`, `linkedin-X.Y.Z-<slug>.md`
+
+The **only** place short `X.Y` form survives is the internal `WhatsNewCatalog.releases` dictionary key, because the version-match logic is intentionally major.minor (so 3.3.0 / 3.3.1 / 3.3.2 all hit the same entry). That key is not user-visible.
+
 ## Related Skills
 
 - `asc-release-flow` — drive the App Store Connect submission flow
@@ -138,7 +151,7 @@ PYEOF
 Push happens during submission (see Step 10):
 ```bash
 asc metadata push --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
-asc submit preflight --app 6758147238 --version X.Y.Z --platform IOS   # expect 9/9 pass
+asc validate --app 6758147238 --version X.Y.Z --platform IOS   # expect 0 errors / 0 blocking; one info-level App Privacy advisory is normal
 ```
 
 ### Step 8 — Update feature changelog
@@ -219,4 +232,4 @@ Before handing off to `asc-release-flow`:
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
-- [ ] After build upload: `asc metadata push` + `asc submit preflight` passes 9/9 (App Privacy advisory is expected)
+- [ ] After build upload: `asc metadata push` + `asc validate` returns 0 errors / 0 blocking (one info-level App Privacy advisory is expected)
