@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.3": release_3_3,
         "3.2": release_3_2,
         "3.1": release_3_1,
         "3.0": release_3_0,
@@ -38,6 +39,50 @@ enum WhatsNewCatalog {
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_3 = WhatsNewRelease(
+        id: "3.3",
+        headline: "What's New in VivaDicta 3.3",
+        features: [
+            WhatsNewFeature(
+                icon: "globe",
+                iconColors: [.indigo, .cyan],
+                title: "Multi-Language Keyboard",
+                description: "Type in your language. New French, German, Spanish, and Russian layouts, with cycling between EN and your active languages."
+            ),
+            WhatsNewFeature(
+                icon: "waveform.badge.plus",
+                iconColors: [.green, .mint],
+                title: "Cartesia Transcription",
+                description: "New cloud transcription provider with fast, high-accuracy results. Add your Cartesia API key in Settings to try it."
+            ),
+            WhatsNewFeature(
+                icon: "folder.badge.plus",
+                iconColors: [.orange, .yellow],
+                title: "Auto Export to Folder",
+                description: "Pick a folder once and every new transcription is exported there as markdown. New Export Settings screen with one-tap manual export."
+            ),
+            WhatsNewFeature(
+                icon: "paperplane.fill",
+                iconColors: [.purple, .indigo],
+                title: "Send to Obsidian Button",
+                description: "Send any single transcription to Obsidian on demand from the detail view, even when auto-append is off."
+            ),
+            WhatsNewFeature(
+                icon: "slider.horizontal.below.rectangle",
+                iconColors: [.pink, .purple],
+                title: "Temporary Mode Override",
+                description: "Pick a different AI mode just for one transcription right from the AI Actions sheet, without changing your default."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.blue, .indigo],
+                title: "Quality of Life",
+                description: "Auto-enable keyboard languages from iOS preferences, tighter recording sheet layout, refined HUD contrast, and small polish across Settings."
+            ),
+        ],
+        tagline: "Dictation, in your language."
+    )
 
     private static let release_3_2 = WhatsNewRelease(
         id: "3.2",
