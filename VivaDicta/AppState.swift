@@ -336,7 +336,10 @@ class AppState {
         }
     }
 
-    /// Index a transcription entity in Spotlight (used from detached tasks to avoid actor isolation issues)
+    /// Index a transcription entity in Spotlight. `@concurrent` forces this off MainActor
+    /// regardless of caller, so the SwiftData transaction in the caller's flow doesn't
+    /// race with indexing.
+    @concurrent
     func indexTranscriptionEntityToSpotlight(_ entity: TranscriptionEntity) async {
         guard CSSearchableIndex.isIndexingAvailable() else {
             logger.logError("[Spotlight] Indexing is unavailable")
@@ -374,7 +377,9 @@ class AppState {
         await indexTranscriptionToSpotlight(transcription)
     }
 
-    /// Update a transcription entity in Spotlight (used from detached tasks to avoid actor isolation issues)
+    /// Update a transcription entity in Spotlight. `@concurrent` for the same reason as
+    /// the index variant above; reindexing the same id updates the existing entry.
+    @concurrent
     func updateTranscriptionEntityInSpotlight(_ entity: TranscriptionEntity) async {
         await indexTranscriptionEntityToSpotlight(entity)
     }

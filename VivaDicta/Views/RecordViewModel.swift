@@ -765,9 +765,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Haptic feedback for successful save
                     HapticManager.heartbeat()
 
-                    // Index to Spotlight (non-blocking to avoid SwiftData actor isolation issues)
+                    // Index to Spotlight (AppState method is @concurrent - runs off MainActor)
                     let transcriptionEntity = transcription.entity
-                    Task { @concurrent in
+                    Task {
                         await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
                     }
 
@@ -917,7 +917,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
 
         let transcriptionEntity = transcription.entity
-        Task { @concurrent in
+        Task {
             await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
         }
 
@@ -960,7 +960,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             try modelContext.save()
 
             let transcriptionEntity = transcription.entity
-            Task { @concurrent in
+            Task {
                 await self.appState?.updateTranscriptionEntityInSpotlight(transcriptionEntity)
             }
 
