@@ -77,7 +77,7 @@ final class LiveTranslationAudio {
         AsyncStream<Data>(bufferingPolicy: .bufferingNewest(50)) { continuation in
             captureContinuation = continuation
             continuation.onTermination = { @Sendable [weak self] _ in
-                Task { @MainActor [weak self] in
+                Task { @MainActor in
                     self?.captureContinuation = nil
                 }
             }
