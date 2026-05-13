@@ -41,6 +41,13 @@
 			remoteGlobalIDString = 181D04D62E3E55E400D357A6;
 			remoteInfo = VivaDicta;
 		};
+		187D20F92FB5011D004234D0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 181D04CF2E3E55E400D357A6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 181D04D62E3E55E400D357A6;
+			remoteInfo = VivaDicta;
+		};
 		189C7A932F0C6822004BAFBF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 181D04CF2E3E55E400D357A6 /* Project object */;
@@ -151,6 +158,7 @@
 /* Begin PBXFileReference section */
 		181D04D72E3E55E400D357A6 /* VivaDicta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VivaDicta.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		18351E572E634FF000944940 /* VivaDictaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VivaDictaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		187D20F32FB5011D004234D0 /* VivaDictaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VivaDictaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ActionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
@@ -374,6 +382,11 @@
 			path = VivaDictaTests;
 			sourceTree = "<group>";
 		};
+		187D20F42FB5011D004234D0 /* VivaDictaUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VivaDictaUITests;
+			sourceTree = "<group>";
+		};
 		189C7A8C2F0C6822004BAFBF /* ShareExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -453,6 +466,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		18351E542E634FF000944940 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		187D20F02FB5011D004234D0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -551,6 +571,7 @@
 				18BA24022F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests */,
 				18BA240C2F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests */,
 				18BA29282F7F29FD00C4F68B /* VivaDictaWatchWidget */,
+				187D20F42FB5011D004234D0 /* VivaDictaUITests */,
 				180E1D682E4A994800AE33B1 /* Frameworks */,
 				181D04D82E3E55E400D357A6 /* Products */,
 			);
@@ -569,6 +590,7 @@
 				18BA23FF2F7ED0D700C4F68B /* VivaDictaWatch Watch AppTests.xctest */,
 				18BA24092F7ED0D700C4F68B /* VivaDictaWatch Watch AppUITests.xctest */,
 				18BA29252F7F29FD00C4F68B /* VivaDictaWatchWidgetExtension.appex */,
+				187D20F32FB5011D004234D0 /* VivaDictaUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -636,6 +658,29 @@
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		187D20F22FB5011D004234D0 /* VivaDictaUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 187D20FE2FB5011D004234D0 /* Build configuration list for PBXNativeTarget "VivaDictaUITests" */;
+			buildPhases = (
+				187D20EF2FB5011D004234D0 /* Sources */,
+				187D20F02FB5011D004234D0 /* Frameworks */,
+				187D20F12FB5011D004234D0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				187D20FA2FB5011D004234D0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				187D20F42FB5011D004234D0 /* VivaDictaUITests */,
+			);
+			name = VivaDictaUITests;
+			packageProductDependencies = (
+			);
+			productName = VivaDictaUITests;
+			productReference = 187D20F32FB5011D004234D0 /* VivaDictaUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		189C7A8A2F0C6822004BAFBF /* ShareExtension */ = {
 			isa = PBXNativeTarget;
@@ -838,6 +883,10 @@
 						CreatedOnToolsVersion = 26.0;
 						TestTargetID = 181D04D62E3E55E400D357A6;
 					};
+					187D20F22FB5011D004234D0 = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = 181D04D62E3E55E400D357A6;
+					};
 					189C7A8A2F0C6822004BAFBF = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -889,6 +938,7 @@
 			targets = (
 				181D04D62E3E55E400D357A6 /* VivaDicta */,
 				18351E562E634FF000944940 /* VivaDictaTests */,
+				187D20F22FB5011D004234D0 /* VivaDictaUITests */,
 				18E1B49D2E8C6FF400BE8A11 /* VivaDictaKeyboard */,
 				18E1C7F92E8E793E00BE8A11 /* VivaDictaWidgetExtension */,
 				189C7A8A2F0C6822004BAFBF /* ShareExtension */,
@@ -911,6 +961,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		18351E552E634FF000944940 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		187D20F12FB5011D004234D0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1016,6 +1073,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		187D20EF2FB5011D004234D0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		189C7A872F0C6822004BAFBF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1079,6 +1143,11 @@
 			isa = PBXTargetDependency;
 			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
 			targetProxy = 18351E5B2E634FF000944940 /* PBXContainerItemProxy */;
+		};
+		187D20FA2FB5011D004234D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
+			targetProxy = 187D20F92FB5011D004234D0 /* PBXContainerItemProxy */;
 		};
 		189C7A942F0C6822004BAFBF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1389,6 +1458,70 @@
 				SWIFT_VERSION = 6.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VivaDicta.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VivaDicta";
+			};
+			name = Release;
+		};
+		187D20FB2FB5011D004234D0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antonnovoselov.VivaDictaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VivaDicta;
+			};
+			name = Debug;
+		};
+		187D20FC2FB5011D004234D0 /* QA */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antonnovoselov.VivaDictaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VivaDicta;
+			};
+			name = QA;
+		};
+		187D20FD2FB5011D004234D0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 358V8FBM3U;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antonnovoselov.VivaDictaUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VivaDicta;
 			};
 			name = Release;
 		};
@@ -2285,6 +2418,16 @@
 				18351E5D2E634FF000944940 /* Debug */,
 				18B497D72F267F2500538830 /* QA */,
 				18351E5E2E634FF000944940 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		187D20FE2FB5011D004234D0 /* Build configuration list for PBXNativeTarget "VivaDictaUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				187D20FB2FB5011D004234D0 /* Debug */,
+				187D20FC2FB5011D004234D0 /* QA */,
+				187D20FD2FB5011D004234D0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
