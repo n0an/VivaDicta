@@ -1037,7 +1037,7 @@ struct TranscriptionDetailView: View {
 
         // Update Spotlight index
         let entity = transcription.entity
-        Task.detached {
+        Task { @concurrent in
             await appState.updateTranscriptionEntityInSpotlight(entity)
         }
 
@@ -1073,7 +1073,7 @@ struct TranscriptionDetailView: View {
 
                 // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
                 let entity = transcription.entity
-                Task.detached {
+                Task { @concurrent in
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
 
@@ -1295,7 +1295,7 @@ struct TranscriptionDetailView: View {
 
                 // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
                 let entity = transcription.entity
-                Task.detached {
+                Task { @concurrent in
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
 

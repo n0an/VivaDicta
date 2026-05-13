@@ -106,7 +106,7 @@ final class LiveTranslationAudio {
     /// is guarded by its own `did-start` flag so a partial-start failure
     /// still tears down the audio session and tap.
     ///
-    /// The hardware teardown runs off MainActor via Task.detached: AVAudioEngine
+    /// The hardware teardown runs off MainActor via @concurrent: AVAudioEngine
     /// stop, removeTap, and AVAudioSession.setActive can each take a noticeable
     /// moment in some scenarios (especially after route changes), and if they
     /// run on MainActor SwiftUI freezes for the duration - which is what was
@@ -135,7 +135,7 @@ final class LiveTranslationAudio {
             logger: logger
         )
 
-        await Task.detached(priority: .userInitiated) {
+        await Task(priority: .userInitiated) { @concurrent in
             context.perform()
         }.value
     }

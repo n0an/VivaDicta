@@ -767,7 +767,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                     // Index to Spotlight (non-blocking to avoid SwiftData actor isolation issues)
                     let transcriptionEntity = transcription.entity
-                    Task.detached {
+                    Task { @concurrent in
                         await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
                     }
 
@@ -917,7 +917,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
 
         let transcriptionEntity = transcription.entity
-        Task.detached {
+        Task { @concurrent in
             await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
         }
 
@@ -960,7 +960,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             try modelContext.save()
 
             let transcriptionEntity = transcription.entity
-            Task.detached {
+            Task { @concurrent in
                 await self.appState?.updateTranscriptionEntityInSpotlight(transcriptionEntity)
             }
 

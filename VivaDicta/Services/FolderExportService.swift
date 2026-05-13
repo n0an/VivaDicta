@@ -65,7 +65,7 @@ enum FolderExportService {
         let items = TranscriptionMarkdownExportService.items(forSnapshots: snapshots)
         guard let item = items.first else { return }
 
-        Task.detached(priority: .utility) {
+        Task(priority: .utility) { @concurrent in
             await write(item: item, snapshot: snapshot, bookmark: bookmark)
         }
     }
@@ -98,7 +98,7 @@ enum FolderExportService {
         let items = TranscriptionMarkdownExportService.items(forSnapshots: snapshots)
         guard let item = items.first else { return .writeFailed("No exportable item") }
 
-        return await Task.detached(priority: .userInitiated) {
+        return await Task(priority: .userInitiated) { @concurrent in
             await writeWithResult(item: item, snapshot: snapshot, bookmark: bookmark)
         }.value
     }
