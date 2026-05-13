@@ -139,8 +139,16 @@ final class RAGIndexingService {
     // wrappers are `nonisolated` so no actor hop occurs and no sending check
     // applies. The `lumoKit` property is `nonisolated(unsafe)`; concurrent
     // access is fine because LumoKit internally serializes via VecturaKit.
+    //
+    // Debug-only assertions check that we're actually off MainActor. Under
+    // Swift 6.2's `nonisolated(nonsending)` default, a plain `nonisolated async`
+    // function stays in the caller's isolation - so when called from @MainActor
+    // these would run embedding/vector work on the main thread. If any
+    // assertion fires, the fix is to switch the wrapper from `nonisolated` to
+    // `@concurrent` to force off-main execution.
 
     nonisolated private func initializeLumoKit(storageDirectory: URL) async throws {
+        assert(!Thread.isMainThread, "RAG initializeLumoKit running on main thread")
         let logger = Logger(category: .ragIndexing)
         let searchOptions = VecturaConfig.SearchOptions(
             defaultNumResults: 5,
@@ -179,31 +187,37 @@ final class RAGIndexingService {
     }
 
     nonisolated private func _addDocuments(texts: [String]) async throws -> [UUID] {
+        assert(!Thread.isMainThread, "RAG _addDocuments running on main thread")
         guard let kit = lumoKit else { throw RAGError.notInitialized }
         return try await kit.addDocuments(texts: texts)
     }
 
     nonisolated private func _deleteChunks(ids: [UUID]) async throws {
+        assert(!Thread.isMainThread, "RAG _deleteChunks running on main thread")
         guard let kit = lumoKit else { throw RAGError.notInitialized }
         try await kit.deleteChunks(ids: ids)
     }
 
     nonisolated private func _semanticSearch(query: String, numResults: Int, threshold: Float) async throws -> [VecturaSearchResult] {
+        assert(!Thread.isMainThread, "RAG _semanticSearch running on main thread")
         guard let kit = lumoKit else { throw RAGError.notInitialized }
         return try await kit.semanticSearch(query: query, numResults: numResults, threshold: threshold)
     }
 
     nonisolated private func _documentCount() async throws -> Int {
+        assert(!Thread.isMainThread, "RAG _documentCount running on main thread")
         guard let kit = lumoKit else { throw RAGError.notInitialized }
         return try await kit.documentCount()
     }
 
     nonisolated private func _resetDB() async throws {
+        assert(!Thread.isMainThread, "RAG _resetDB running on main thread")
         guard let kit = lumoKit else { throw RAGError.notInitialized }
         try await kit.resetDB()
     }
 
     nonisolated private func _chunkText(_ text: String, config: ChunkingConfig) throws -> [Chunk] {
+        assert(!Thread.isMainThread, "RAG _chunkText running on main thread (sync wrapper - inherits caller thread)")
         guard let kit = lumoKit else { throw RAGError.notInitialized }
         return try kit.chunkText(text, config: config)
     }
