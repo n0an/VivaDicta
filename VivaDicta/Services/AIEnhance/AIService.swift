@@ -952,7 +952,7 @@ class AIService {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let filteredText = AIEnhancementOutputFilter.filter(trimmedText)
         if filteredText != text {
-            await onPartialResponse(filteredText)
+            onPartialResponse(filteredText)
         }
         return filteredText
     }
@@ -1056,7 +1056,7 @@ class AIService {
 
             if let delta = Self.openAICompatibleStreamingDelta(from: line) {
                 aggregatedText += delta
-                await onPartialResponse(aggregatedText)
+                onPartialResponse(aggregatedText)
             }
         }
 
@@ -1170,7 +1170,7 @@ class AIService {
                let text = delta["text"] as? String,
                text.isEmpty == false {
                 aggregatedText += text
-                await onPartialResponse(aggregatedText)
+                onPartialResponse(aggregatedText)
                 continue
             }
 
@@ -1205,7 +1205,7 @@ class AIService {
         }
 
         guard !text.isEmpty else {
-            await onPartialResponse("")
+            onPartialResponse("")
             return ""
         }
 
@@ -1388,7 +1388,7 @@ class AIService {
             systemMessage: systemMessage,
             preFormattedUserMessage: preFormattedUserMessage
         )
-        await onPartialResponse(result)
+        onPartialResponse(result)
         return result
     }
 

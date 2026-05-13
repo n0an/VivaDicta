@@ -189,7 +189,7 @@ extension AIService {
                 systemMessage: systemMessage,
                 messages: messages
             )
-            await onPartialResponse(result)
+            onPartialResponse(result)
             return result
         }
     }
@@ -537,7 +537,7 @@ extension AIService {
             try Task.checkCancellation()
             if let delta = Self.openAICompatibleStreamingDelta(from: line) {
                 aggregatedText += delta
-                await onPartialResponse(aggregatedText)
+                onPartialResponse(aggregatedText)
             }
         }
 
@@ -548,7 +548,7 @@ extension AIService {
         let result = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
         if filtered != aggregatedText {
-            await onPartialResponse(filtered)
+            onPartialResponse(filtered)
         }
         return filtered
     }
@@ -797,7 +797,7 @@ extension AIService {
                let text = delta["text"] as? String,
                !text.isEmpty {
                 aggregatedText += text
-                await onPartialResponse(aggregatedText)
+                onPartialResponse(aggregatedText)
                 continue
             }
 
@@ -819,7 +819,7 @@ extension AIService {
         let result = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(result)
         if filtered != aggregatedText {
-            await onPartialResponse(filtered)
+            onPartialResponse(filtered)
         }
         return filtered
     }

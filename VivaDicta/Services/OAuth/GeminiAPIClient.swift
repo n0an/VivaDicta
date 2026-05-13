@@ -241,7 +241,7 @@ enum GeminiAPIClient {
         }
 
         let finalResult = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        await onPartialResult(finalResult)
+        onPartialResult(finalResult)
         return finalResult
     }
 
@@ -273,7 +273,7 @@ enum GeminiAPIClient {
             } else {
                 aggregatedText += chunkText
             }
-            await onPartialResult(aggregatedText)
+            onPartialResult(aggregatedText)
         }
 
         return aggregatedText
@@ -434,7 +434,7 @@ enum GeminiAPIClient {
                 } else {
                     aggregatedText += chunkText
                 }
-                await onPartialResponse(aggregatedText)
+                onPartialResponse(aggregatedText)
             }
         }
 
@@ -446,7 +446,7 @@ enum GeminiAPIClient {
         let trimmed = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(trimmed)
         if filtered != aggregatedText {
-            await onPartialResponse(filtered)
+            onPartialResponse(filtered)
         }
         return filtered
     }
