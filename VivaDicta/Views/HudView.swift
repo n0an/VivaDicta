@@ -248,7 +248,7 @@ struct HudContentView: View {
                 Task { @MainActor in
                     isShowing = true
 
-                    Task { @MainActor in
+                    Task {
                         try? await Task.sleep(for: .seconds(2.6))
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isShowing = false

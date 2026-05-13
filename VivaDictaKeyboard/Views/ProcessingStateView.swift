@@ -159,7 +159,7 @@ struct InfoView: View {
                 Task { @MainActor in
                     isShowing = true
 
-                    Task { @MainActor in
+                    Task {
                         try? await Task.sleep(for: .seconds(2.6))
                         withAnimation(.spring(response: 0.15, dampingFraction: 0.7)) {
                             isShowing = false

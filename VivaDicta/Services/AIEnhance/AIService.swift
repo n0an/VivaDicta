@@ -199,7 +199,7 @@ class AIService {
         loadSavedOllamaModels()
 
         // Refresh connected providers on main actor (needed for Apple availability check)
-        Task { @MainActor in
+        Task {
             refreshOpenAIOAuthState()
             refreshGeminiOAuthState()
             refreshCopilotOAuthState()
