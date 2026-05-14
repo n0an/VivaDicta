@@ -98,7 +98,7 @@ public enum LogCategory: String {
 
 /// The app's subsystem identifier for all loggers
 /// Using the main app bundle ID for consistency across main app and extensions
-private nonisolated(unsafe) let kLoggingSubsystem = "com.antonnovoselov.VivaDicta"
+private nonisolated let kLoggingSubsystem = "com.antonnovoselov.VivaDicta"
 
 public extension Logger {
     /// Creates a Logger with the app's bundle identifier as subsystem and the specified category
