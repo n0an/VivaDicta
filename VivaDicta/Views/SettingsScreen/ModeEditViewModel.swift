@@ -618,24 +618,22 @@ class ModeEditViewModel {
     private func verifyOllamaConnection(for target: ModelSelectionTarget) {
         Task {
             let result = await aiService.verifyOllamaSetup()
-            await MainActor.run {
-                if result.success {
-                    logger.logInfo("Ollama connection verified: \(result.message)")
-                    if let firstModel = aiService.ollamaModels.first {
-                        if let currentModel = currentModel(for: target),
-                           aiService.ollamaModels.contains(currentModel) {
-                            return
-                        }
-                        setModel(firstModel, for: target)
+            if result.success {
+                logger.logInfo("Ollama connection verified: \(result.message)")
+                if let firstModel = aiService.ollamaModels.first {
+                    if let currentModel = currentModel(for: target),
+                       aiService.ollamaModels.contains(currentModel) {
+                        return
                     }
-                } else {
-                    logger.logWarning("Ollama connection failed: \(result.message)")
-                    aiService.ollamaModels = []
-                    aiService.disableOllamaEnhancementForAllModes()
-                    setModel(nil, for: target)
+                    setModel(firstModel, for: target)
                 }
-                aiService.refreshConnectedProviders()
+            } else {
+                logger.logWarning("Ollama connection failed: \(result.message)")
+                aiService.ollamaModels = []
+                aiService.disableOllamaEnhancementForAllModes()
+                setModel(nil, for: target)
             }
+            aiService.refreshConnectedProviders()
         }
     }
 
@@ -647,22 +645,20 @@ class ModeEditViewModel {
 
         Task {
             let result = await aiService.verifyCustomOpenAISetup()
-            await MainActor.run {
-                if result.success {
-                    aiService.customOpenAIIsVerified = true
-                    logger.logInfo("Custom OpenAI connection verified: \(result.message)")
-                    let configuredModel = aiService.customOpenAIModelName
-                    if !configuredModel.isEmpty {
-                        setModel(configuredModel, for: target)
-                    }
-                } else {
-                    aiService.customOpenAIIsVerified = false
-                    aiService.disableCustomOpenAIEnhancementForAllModes()
-                    logger.logWarning("Custom OpenAI connection failed: \(result.message)")
-                    setModel(nil, for: target)
+            if result.success {
+                aiService.customOpenAIIsVerified = true
+                logger.logInfo("Custom OpenAI connection verified: \(result.message)")
+                let configuredModel = aiService.customOpenAIModelName
+                if !configuredModel.isEmpty {
+                    setModel(configuredModel, for: target)
                 }
-                aiService.refreshConnectedProviders()
+            } else {
+                aiService.customOpenAIIsVerified = false
+                aiService.disableCustomOpenAIEnhancementForAllModes()
+                logger.logWarning("Custom OpenAI connection failed: \(result.message)")
+                setModel(nil, for: target)
             }
+            aiService.refreshConnectedProviders()
         }
     }
 

@@ -75,10 +75,8 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
             
             Task {
                 let samples = await WaveformGenerator.generateWaveformSamples(from: url)
-                await MainActor.run {
-                    self.waveformSamples = samples
-                    self.isLoadingWaveform = false
-                }
+                self.waveformSamples = samples
+                self.isLoadingWaveform = false
             }
         } catch {
             logger.logError("❌ Error loading audio: \(error.localizedDescription)")

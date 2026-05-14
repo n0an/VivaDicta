@@ -1898,10 +1898,8 @@ class AIService {
 
             let models = dataArray.compactMap { $0["id"] as? String }.sorted()
 
-            await MainActor.run {
-                self.ollamaModels = models
-                self.saveOllamaModels()
-            }
+            self.ollamaModels = models
+            self.saveOllamaModels()
 
             logger.logInfo("Successfully fetched \(models.count) Ollama models via OpenAI endpoint")
 
@@ -1938,10 +1936,8 @@ class AIService {
 
             let models = modelsArray.compactMap { $0["name"] as? String }.sorted()
 
-            await MainActor.run {
-                self.ollamaModels = models
-                self.saveOllamaModels()
-            }
+            self.ollamaModels = models
+            self.saveOllamaModels()
 
             logger.logInfo("Successfully fetched \(models.count) Ollama models via native endpoint")
 
@@ -2311,16 +2307,14 @@ class AIService {
     
     public func saveAPIKey(_ key: String, for provider: AIProvider) async -> Bool {
         let isValid = await verifyAPIKey(key, provider: provider)
-        
-        await MainActor.run {
-            if isValid {
-                KeychainService.shared.save(key, forKey: provider.keychainKey)
 
-                // Refresh connected providers to trigger UI update
-                self.refreshConnectedProviders()
-            }
+        if isValid {
+            KeychainService.shared.save(key, forKey: provider.keychainKey)
+
+            // Refresh connected providers to trigger UI update
+            self.refreshConnectedProviders()
         }
-        
+
         // Fetch models for providers that support dynamic model fetching
         if isValid && provider == .openRouter {
             await fetchOpenRouterModels()
@@ -2858,10 +2852,8 @@ class AIService {
             }
 
             let models = dataArray.compactMap { $0["id"] as? String }
-            await MainActor.run {
-                self.openRouterModels = models.sorted()
-                self.saveOpenRouterModels()
-            }
+            self.openRouterModels = models.sorted()
+            self.saveOpenRouterModels()
             logger.logInfo("Successfully fetched \(models.count) OpenRouter models.")
 
         } catch {
@@ -2905,10 +2897,8 @@ class AIService {
                 logger.logInfo("Vercel AI Gateway: Filtered \(totalCount) models to \(models.count) language models.")
             }
 
-            await MainActor.run {
-                self.vercelAIGatewayModels = models.sorted()
-                self.saveVercelAIGatewayModels()
-            }
+            self.vercelAIGatewayModels = models.sorted()
+            self.saveVercelAIGatewayModels()
             logger.logInfo("Successfully fetched \(models.count) Vercel AI Gateway models.")
 
         } catch {
@@ -2971,10 +2961,8 @@ class AIService {
                 logger.logInfo("HuggingFace: Filtered \(totalCount) models to \(models.count) text-to-text models (skipped \(nonTextModelsCount) non-text, \(missingArchitectureCount) malformed).")
             }
 
-            await MainActor.run {
-                self.huggingFaceModels = models.sorted()
-                self.saveHuggingFaceModels()
-            }
+            self.huggingFaceModels = models.sorted()
+            self.saveHuggingFaceModels()
             logger.logInfo("Successfully fetched \(models.count) HuggingFace models.")
 
         } catch {

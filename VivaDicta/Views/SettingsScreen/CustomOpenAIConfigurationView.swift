@@ -383,61 +383,51 @@ struct CustomOpenAIConfigurationView: View {
 
         guard isValidURL(urlToTest) else {
             logger.debug("CustomOpenAI Config - Invalid URL")
-            await MainActor.run {
-                connectionStatus = .invalidURL
-                isChecking = false
-            }
+            connectionStatus = .invalidURL
+            isChecking = false
             return
         }
 
         guard !modelToTest.isEmpty else {
             logger.debug("CustomOpenAI Config - Missing model name")
-            await MainActor.run {
-                connectionStatus = .missingModel
-                isChecking = false
-            }
+            connectionStatus = .missingModel
+            isChecking = false
             return
         }
 
-        await MainActor.run {
-            connectionStatus = .checking
-        }
+        connectionStatus = .checking
 
         HapticManager.lightImpact()
 
         // Save configuration to test
-        await MainActor.run {
-            aiService.customOpenAIEndpointURL = urlToTest
-            aiService.customOpenAIModelName = modelToTest
+        aiService.customOpenAIEndpointURL = urlToTest
+        aiService.customOpenAIModelName = modelToTest
 
-            if !apiKeyToSave.isEmpty {
-                KeychainService.shared.save(apiKeyToSave, forKey: AIProvider.customOpenAI.keychainKey)
-            } else {
-                KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
-            }
+        if !apiKeyToSave.isEmpty {
+            KeychainService.shared.save(apiKeyToSave, forKey: AIProvider.customOpenAI.keychainKey)
+        } else {
+            KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
         }
 
         let result = await aiService.verifyCustomOpenAISetup()
         logger.debug("CustomOpenAI Config - Result: success=\(result.success)")
 
-        await MainActor.run {
-            if result.success {
-                connectionStatus = .connected
-                // Mark as verified so other screens know it's ready
-                aiService.customOpenAIIsVerified = true
-                aiService.refreshConnectedProviders()
-                HapticManager.success()
-            } else {
-                connectionStatus = .failed(message: result.message)
-                // Mark as NOT verified - this invalidates the configuration
-                aiService.customOpenAIIsVerified = false
-                // Disable AI processing for all modes using Custom OpenAI
-                aiService.disableCustomOpenAIEnhancementForAllModes()
-                aiService.refreshConnectedProviders()
-                HapticManager.error()
-            }
-            isChecking = false
+        if result.success {
+            connectionStatus = .connected
+            // Mark as verified so other screens know it's ready
+            aiService.customOpenAIIsVerified = true
+            aiService.refreshConnectedProviders()
+            HapticManager.success()
+        } else {
+            connectionStatus = .failed(message: result.message)
+            // Mark as NOT verified - this invalidates the configuration
+            aiService.customOpenAIIsVerified = false
+            // Disable AI processing for all modes using Custom OpenAI
+            aiService.disableCustomOpenAIEnhancementForAllModes()
+            aiService.refreshConnectedProviders()
+            HapticManager.error()
         }
+        isChecking = false
     }
 
     private func clearConfiguration() {
