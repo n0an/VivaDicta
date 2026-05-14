@@ -15,10 +15,9 @@ struct StartRecordIntent: AppIntent {
 
     static let openAppWhenRun: Bool = true
 
+    @MainActor
     func perform() async throws -> some IntentResult {
-        await MainActor.run {
-            AppGroupCoordinator.shared.requestStartRecordingFromControl()
-        }
+        AppGroupCoordinator.shared.requestStartRecordingFromControl()
         return .result()
     }
 }

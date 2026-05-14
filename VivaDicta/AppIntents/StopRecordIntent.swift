@@ -15,10 +15,9 @@ struct StopRecordIntent: AppIntent {
 
     static let openAppWhenRun: Bool = true
 
+    @MainActor
     func perform() async throws -> some IntentResult {
-        await MainActor.run {
-            AppGroupCoordinator.shared.requestStopRecording()
-        }
+        AppGroupCoordinator.shared.requestStopRecording()
         return .result()
     }
 }

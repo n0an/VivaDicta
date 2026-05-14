@@ -17,16 +17,15 @@ struct ToggleRecordIntent: SetValueIntent {
     @Parameter(title: "Recording")
     var value: Bool
 
+    @MainActor
     func perform() async throws -> some IntentResult {
-        await MainActor.run {
-            let coordinator = AppGroupCoordinator.shared
-            let isCurrentlyRecording = coordinator.isRecording
+        let coordinator = AppGroupCoordinator.shared
+        let isCurrentlyRecording = coordinator.isRecording
 
-            if isCurrentlyRecording {
-                coordinator.requestStopRecording()
-            } else {
-                coordinator.requestStartRecordingFromControl()
-            }
+        if isCurrentlyRecording {
+            coordinator.requestStopRecording()
+        } else {
+            coordinator.requestStartRecordingFromControl()
         }
         return .result()
     }

@@ -15,10 +15,9 @@ struct CancelRecordIntent: AppIntent {
 
     static let openAppWhenRun: Bool = true
 
+    @MainActor
     func perform() async throws -> some IntentResult {
-        await MainActor.run {
-            AppGroupCoordinator.shared.requestCancelRecording()
-        }
+        AppGroupCoordinator.shared.requestCancelRecording()
         return .result()
     }
 }
