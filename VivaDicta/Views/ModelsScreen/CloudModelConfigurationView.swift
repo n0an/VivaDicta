@@ -218,29 +218,23 @@ struct CloudModelConfigurationView: View {
     func saveKey() {
         Task {
             guard let aiProvider = model.provider.mappedAIProvider else {
-                await MainActor.run {
-                    verificationError = "API verification not supported for this provider"
-                }
+                verificationError = "API verification not supported for this provider"
                 return
             }
             
-            await MainActor.run {
-                isVerifying = true
-                verificationError = nil
-            }
-            
+            isVerifying = true
+            verificationError = nil
+
             HapticManager.mediumImpact()
             
             let isValid = await aiService.saveAPIKey(apiKey, for: aiProvider)
             
-            await MainActor.run {
-                isVerifying = false
+            isVerifying = false
 
-                if isValid {
-                    onSave(model)
-                } else {
-                    verificationError = "Invalid API key. Please check your key and try again."
-                }
+            if isValid {
+                onSave(model)
+            } else {
+                verificationError = "Invalid API key. Please check your key and try again."
             }
         }
     }

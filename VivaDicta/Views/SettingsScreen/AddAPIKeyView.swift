@@ -248,24 +248,20 @@ struct AddAPIKeyView: View {
     
     func saveKey() {
         Task {
-            await MainActor.run {
-                isVerifying = true
-                verificationError = nil
-            }
+            isVerifying = true
+            verificationError = nil
             
             HapticManager.mediumImpact()
             
             let isValid = await aiService.saveAPIKey(apiKey, for: provider)
             
-            await MainActor.run {
-                isVerifying = false
+            isVerifying = false
                 
-                if isValid {
-                    onSave(provider)
-                    dismiss()
-                } else {
-                    verificationError = "Invalid API key. Please check your key and try again."
-                }
+            if isValid {
+                onSave(provider)
+                dismiss()
+            } else {
+                verificationError = "Invalid API key. Please check your key and try again."
             }
         }
     }

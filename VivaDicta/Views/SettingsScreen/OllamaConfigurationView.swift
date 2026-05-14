@@ -239,16 +239,12 @@ struct OllamaConfigurationView: View {
         let urlToTest = trimmedServerURL
 
         guard !urlToTest.isEmpty && isValidOllamaURL(urlToTest) else {
-            await MainActor.run {
-                connectionStatus = .invalidURL
-                isChecking = false
-            }
+            connectionStatus = .invalidURL
+            isChecking = false
             return
         }
 
-        await MainActor.run {
-            connectionStatus = .checking
-        }
+        connectionStatus = .checking
 
         HapticManager.lightImpact()
 
@@ -256,20 +252,18 @@ struct OllamaConfigurationView: View {
 
         let result = await aiService.verifyOllamaSetup()
 
-        await MainActor.run {
-            if result.success {
-                connectionStatus = .connected(modelCount: aiService.ollamaModels.count)
-                HapticManager.success()
-            } else {
-                connectionStatus = .failed(message: result.message)
-                // Clear models so other screens know Ollama is not ready
-                aiService.ollamaModels = []
-                // Disable AI processing for all modes using Ollama
-                aiService.disableOllamaEnhancementForAllModes()
-                HapticManager.error()
-            }
-            isChecking = false
+        if result.success {
+            connectionStatus = .connected(modelCount: aiService.ollamaModels.count)
+            HapticManager.success()
+        } else {
+            connectionStatus = .failed(message: result.message)
+            // Clear models so other screens know Ollama is not ready
+            aiService.ollamaModels = []
+            // Disable AI processing for all modes using Ollama
+            aiService.disableOllamaEnhancementForAllModes()
+            HapticManager.error()
         }
+        isChecking = false
     }
 }
 

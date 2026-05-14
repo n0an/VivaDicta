@@ -181,9 +181,7 @@ struct TranscriptionsContentView: View {
                     // Remove from the set after animation completes (1 second)
                     Task {
                         try? await Task.sleep(for: .seconds(1))
-                        await MainActor.run {
-                            _ = newlyInsertedIDs.remove(transcription.id)
-                        }
+                        _ = newlyInsertedIDs.remove(transcription.id)
                     }
                 }
             }
@@ -333,39 +331,31 @@ struct TranscriptionsContentView: View {
                 try await Task.sleep(for: .milliseconds(200))
 
                 guard !searchTerm.isEmpty else {
-                    await MainActor.run {
-                        filteredTranscriptions = allTranscriptions
-                        smartSearchMatches = []
-                        semanticScoresByID = [:]
-                    }
+                    filteredTranscriptions = allTranscriptions
+                    smartSearchMatches = []
+                    semanticScoresByID = [:]
                     return
                 }
 
                 let keywordResults = keywordSearchResults(for: searchTerm)
                 guard isSmartSearchEnabled else {
-                    await MainActor.run {
-                        filteredTranscriptions = keywordResults
-                        smartSearchMatches = []
-                        semanticScoresByID = [:]
-                    }
+                    filteredTranscriptions = keywordResults
+                    smartSearchMatches = []
+                    semanticScoresByID = [:]
                     return
                 }
 
                 guard searchMode != .keyword else {
-                    await MainActor.run {
-                        filteredTranscriptions = keywordResults
-                        smartSearchMatches = []
-                        semanticScoresByID = [:]
-                    }
+                    filteredTranscriptions = keywordResults
+                    smartSearchMatches = []
+                    semanticScoresByID = [:]
                     return
                 }
 
                 guard shouldRunSemanticSearch(for: searchTerm) else {
-                    await MainActor.run {
-                        filteredTranscriptions = keywordResults
-                        smartSearchMatches = []
-                        semanticScoresByID = [:]
-                    }
+                    filteredTranscriptions = keywordResults
+                    smartSearchMatches = []
+                    semanticScoresByID = [:]
                     return
                 }
 
@@ -373,24 +363,20 @@ struct TranscriptionsContentView: View {
 
                 switch searchMode {
                 case .all:
-                    await MainActor.run {
-                        filteredTranscriptions = keywordResults
-                        smartSearchMatches = smartMatches
-                        semanticScoresByID = Dictionary(
-                            uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
-                        )
-                    }
+                    filteredTranscriptions = keywordResults
+                    smartSearchMatches = smartMatches
+                    semanticScoresByID = Dictionary(
+                        uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                    )
                 case .smart:
                     let orderedResults = smartMatches.compactMap { match in
                         allTranscriptions.first(where: { $0.id == match.transcriptionId })
                     }
-                    await MainActor.run {
-                        filteredTranscriptions = orderedResults
-                        smartSearchMatches = smartMatches
-                        semanticScoresByID = Dictionary(
-                            uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
-                        )
-                    }
+                    filteredTranscriptions = orderedResults
+                    smartSearchMatches = smartMatches
+                    semanticScoresByID = Dictionary(
+                        uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                    )
                 case .keyword:
                     break
                 }

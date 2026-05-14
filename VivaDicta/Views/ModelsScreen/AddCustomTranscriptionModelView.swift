@@ -395,10 +395,8 @@ struct AddCustomTranscriptionModelView: View {
             // Dismiss after short delay
             Task {
                 try? await Task.sleep(for: .milliseconds(500))
-                await MainActor.run {
-                    onSave()
-                    dismiss()
-                }
+                onSave()
+                dismiss()
             }
         } else {
             connectionStatus = .failed(message: "Failed to save configuration")

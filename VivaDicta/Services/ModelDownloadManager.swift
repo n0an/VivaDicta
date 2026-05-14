@@ -115,12 +115,10 @@ class ModelDownloadManager {
     ///   - model: The model that failed to download.
     ///   - error: The error that occurred.
     public func handleModelDownloadError(_ model: any TranscriptionModel, _ error: any Error) async {
-        await MainActor.run {
-            downloadStatuses[model.name] = .download
-            downloadProgress.removeValue(forKey: model.name + "_main")
-            downloadProgress.removeValue(forKey: model.name + "_coreml")
-            downloadProgress.removeValue(forKey: model.name)
-        }
+        downloadStatuses[model.name] = .download
+        downloadProgress.removeValue(forKey: model.name + "_main")
+        downloadProgress.removeValue(forKey: model.name + "_coreml")
+        downloadProgress.removeValue(forKey: model.name)
         logger.logError("Error downloading model \(model.name): \(error.localizedDescription)")
     }
 
@@ -192,15 +190,11 @@ class ModelDownloadManager {
     public func deleteModel(_ model: any TranscriptionModel) async throws {
         if let parakeetModel = model as? ParakeetModel {
             try parakeetModel.deleteModel()
-            await MainActor.run {
-                downloadStatuses[model.name] = .download
-            }
+            downloadStatuses[model.name] = .download
             logger.logNotice("🗑️ Deleted model \(model.name)")
         } else if let whisperKitModel = model as? WhisperKitModel {
             try whisperKitModel.deleteModel()
-            await MainActor.run {
-                downloadStatuses[model.name] = .download
-            }
+            downloadStatuses[model.name] = .download
             logger.logNotice("🗑️ Deleted model \(model.name)")
         } else {
             throw ModelDownloadError.unsupportedModelType
@@ -211,10 +205,8 @@ class ModelDownloadManager {
     private func downloadParakeetModel(_ model: ParakeetModel) async throws {
         try Task.checkCancellation()
 
-        await MainActor.run {
-            downloadStatuses[model.name] = .downloading
-            downloadProgress[model.name] = 0.0
-        }
+        downloadStatuses[model.name] = .downloading
+        downloadProgress[model.name] = 0.0
 
         logger.logNotice("📥 Starting download of \(model.displayName)")
 
@@ -246,30 +238,24 @@ class ModelDownloadManager {
 
             try Task.checkCancellation()
 
-            await MainActor.run {
-                self.downloadProgress[model.name] = 1.0
-                self.downloadStatuses[model.name] = .downloaded
-                logger.logNotice("✅ Successfully downloaded \(model.displayName)")
-            }
+            self.downloadProgress[model.name] = 1.0
+            self.downloadStatuses[model.name] = .downloaded
+            logger.logNotice("✅ Successfully downloaded \(model.displayName)")
 
             // Log model download to Firebase Analytics
             AnalyticsService.track(.modelDownloaded(name: model.displayName, type: "parakeet"))
 
             try? await Task.sleep(for: .seconds(0.5))
 
-            await MainActor.run {
-                self.downloadProgress.removeValue(forKey: model.name)
-                self.onModelDownloaded?(model)
-            }
+            self.downloadProgress.removeValue(forKey: model.name)
+            self.onModelDownloaded?(model)
 
         } catch is CancellationError {
             logger.logNotice("🛑 Download of \(model.displayName) was cancelled")
             throw CancellationError()
         } catch {
-            await MainActor.run {
-                self.downloadStatuses[model.name] = .download
-                self.downloadProgress.removeValue(forKey: model.name)
-            }
+            self.downloadStatuses[model.name] = .download
+            self.downloadProgress.removeValue(forKey: model.name)
 
             logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
@@ -297,10 +283,8 @@ class ModelDownloadManager {
         // Check for cancellation before starting
         try Task.checkCancellation()
 
-        await MainActor.run {
-            downloadStatuses[model.name] = .downloading
-            downloadProgress[model.name] = 0.0
-        }
+        downloadStatuses[model.name] = .downloading
+        downloadProgress[model.name] = 0.0
 
         logger.logNotice("📥 Starting download and preparation of \(model.displayName)")
 
@@ -342,9 +326,7 @@ class ModelDownloadManager {
                 whisperKit.modelFolder = downloadedFolder
             } else {
                 whisperKit.modelFolder = modelFolder
-                await MainActor.run {
-                    self.downloadProgress[model.name] = 0.7
-                }
+                self.downloadProgress[model.name] = 0.7
             }
 
             // Check for cancellation before prewarm
@@ -352,9 +334,7 @@ class ModelDownloadManager {
 
             // Prewarm models with animated progress (critical for first-time performance)
             logger.logNotice("🔥 Prewarming model: \(model.whisperKitModelName)")
-            await MainActor.run {
-                self.downloadProgress[model.name] = 0.75
-            }
+            self.downloadProgress[model.name] = 0.75
 
             // Start progress animation for pre-warming phase
             let progressTask = Task { @MainActor in
@@ -379,9 +359,7 @@ class ModelDownloadManager {
             // Check for cancellation after prewarm
             try Task.checkCancellation()
 
-            await MainActor.run {
-                self.downloadProgress[model.name] = 0.9
-            }
+            self.downloadProgress[model.name] = 0.9
 
             // Load models with animated progress
             logger.logNotice("📚 Loading model: \(model.whisperKitModelName)")
@@ -407,12 +385,10 @@ class ModelDownloadManager {
             // Check for cancellation after load
             try Task.checkCancellation()
 
-            await MainActor.run {
-                self.downloadProgress[model.name] = 1.0
-                self.downloadStatuses[model.name] = .downloaded
-                logger.logNotice("✅ Successfully downloaded and prepared \(model.displayName)")
-                logger.logNotice("⏱️ Preparation time: prewarm: \(prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s")
-            }
+            self.downloadProgress[model.name] = 1.0
+            self.downloadStatuses[model.name] = .downloaded
+            logger.logNotice("✅ Successfully downloaded and prepared \(model.displayName)")
+            logger.logNotice("⏱️ Preparation time: prewarm: \(prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s")
 
             // Log model download to Firebase Analytics
             AnalyticsService.track(.modelDownloaded(name: model.displayName, type: "whisperkit"))
@@ -423,19 +399,15 @@ class ModelDownloadManager {
 
             try? await Task.sleep(for: .seconds(0.5))
 
-            await MainActor.run {
-                self.downloadProgress.removeValue(forKey: model.name)
-                self.onModelDownloaded?(model)
-            }
+            self.downloadProgress.removeValue(forKey: model.name)
+            self.onModelDownloaded?(model)
 
         } catch is CancellationError {
             logger.logNotice("🛑 Download of \(model.displayName) was cancelled")
             throw CancellationError()
         } catch {
-            await MainActor.run {
-                self.downloadStatuses[model.name] = .download
-                self.downloadProgress.removeValue(forKey: model.name)
-            }
+            self.downloadStatuses[model.name] = .download
+            self.downloadProgress.removeValue(forKey: model.name)
 
             logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
@@ -469,12 +441,10 @@ class ModelDownloadManager {
             let decayFactor = exp(-decayConstant * Float(elapsedTime))
             let currentProgress = initialProgress + progressRange * (1 - decayFactor)
 
-            await MainActor.run {
-                self.downloadProgress[modelName] = Double(currentProgress)
-                updateCount += 1
-                if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
-                    logger.logInfo("📊 Progress update #\(updateCount): \((currentProgress * 100).formatted(.number.precision(.fractionLength(1))))%")
-                }
+            self.downloadProgress[modelName] = Double(currentProgress)
+            updateCount += 1
+            if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
+                logger.logInfo("📊 Progress update #\(updateCount): \((currentProgress * 100).formatted(.number.precision(.fractionLength(1))))%")
             }
 
             // Stop when we're close enough to target or time limit exceeded
