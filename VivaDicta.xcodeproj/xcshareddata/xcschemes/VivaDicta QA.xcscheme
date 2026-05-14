@@ -34,6 +34,19 @@
             default = "YES">
          </TestPlanReference>
       </TestPlans>
+      <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "187D20F22FB5011D004234D0"
+               BuildableName = "VivaDictaUITests.xctest"
+               BlueprintName = "VivaDictaUITests"
+               ReferencedContainer = "container:VivaDicta.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "QA"

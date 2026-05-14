@@ -1035,9 +1035,9 @@ struct TranscriptionDetailView: View {
             }
         }
 
-        // Update Spotlight index
+        // Update Spotlight index (AppState method is @concurrent - runs off MainActor)
         let entity = transcription.entity
-        Task.detached {
+        Task {
             await appState.updateTranscriptionEntityInSpotlight(entity)
         }
 
@@ -1071,9 +1071,9 @@ struct TranscriptionDetailView: View {
                 transcription.transcriptionProviderName = appState.transcriptionManager.currentMode.transcriptionProvider.displayName
                 transcription.transcriptionDuration = transcriptionDuration
 
-                // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
+                // Update Spotlight index (AppState method is @concurrent - runs off MainActor)
                 let entity = transcription.entity
-                Task.detached {
+                Task {
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
 
@@ -1293,9 +1293,9 @@ struct TranscriptionDetailView: View {
 
                 transcription.enhancedText = resultText
 
-                // Update Spotlight index (non-blocking to avoid SwiftData actor isolation issues)
+                // Update Spotlight index (AppState method is @concurrent - runs off MainActor)
                 let entity = transcription.entity
-                Task.detached {
+                Task {
                     await appState.updateTranscriptionEntityInSpotlight(entity)
                 }
 

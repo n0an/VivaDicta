@@ -751,7 +751,7 @@ struct MainView: View {
             defer { isPreparingZipShare = false }
 
             do {
-                let archiveURL = try await Task.detached(priority: .userInitiated) {
+                let archiveURL = try await Task(priority: .userInitiated) { @concurrent in
                     let items = TranscriptionMarkdownExportService.items(forSnapshots: exportSnapshots)
                     return try MarkdownZipExportService.createArchive(from: items)
                 }.value

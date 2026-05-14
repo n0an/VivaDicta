@@ -1118,110 +1118,110 @@ public final class AppGroupCoordinator {
 
     nonisolated private func handleStartRecordingNotification() {
         Task { @MainActor in
-            await onStartRecordingRequested?()
+            onStartRecordingRequested?()
         }
     }
 
     nonisolated private func handleStopRecordingNotification() {
         Task { @MainActor in
-            await onStopRecordingRequested?()
+            onStopRecordingRequested?()
         }
     }
 
     nonisolated private func handleCancelRecordingNotification() {
         Task { @MainActor in
-            await onCancelRecordingRequested?()
+            onCancelRecordingRequested?()
         }
     }
 
     nonisolated private func handlePauseRecordingNotification() {
         Task { @MainActor in
-            await onPauseRecordingRequested?()
+            onPauseRecordingRequested?()
         }
     }
 
     nonisolated private func handleResumeRecordingNotification() {
         Task { @MainActor in
-            await onResumeRecordingRequested?()
+            onResumeRecordingRequested?()
         }
     }
 
     nonisolated private func handleTranscriptionTranscribingNotification() {
         Task { @MainActor in
-            await onTranscriptionTranscribing?()
+            onTranscriptionTranscribing?()
         }
     }
 
     nonisolated private func handleTranscriptionEnhancingNotification() {
         Task { @MainActor in
-            await onTranscriptionEnhancing?()
+            onTranscriptionEnhancing?()
         }
     }
 
     nonisolated private func handleTranscriptionCompletedNotification() {
         Task { @MainActor in
-            let text = await getAndConsumeTranscribedText() ?? ""
-            await onTranscriptionCompleted?(text)
+            let text = getAndConsumeTranscribedText() ?? ""
+            onTranscriptionCompleted?(text)
         }
     }
 
     nonisolated private func handleTranscriptionErrorNotification() {
         Task { @MainActor in
-            let message = await getAndConsumeTranscriptionErrorMessage() ?? ""
-            await onTranscriptionError?()
+            let message = getAndConsumeTranscriptionErrorMessage() ?? ""
+            onTranscriptionError?()
             if !message.isEmpty {
-                await onTranscriptionErrorMessage?(message)
+                onTranscriptionErrorMessage?(message)
             }
         }
     }
 
     nonisolated private func handleTranscriptionCancelledNotification() {
         Task { @MainActor in
-            await onTranscriptionCancelled?()
+            onTranscriptionCancelled?()
         }
     }
 
     nonisolated private func handleAudioLevelUpdatedNotification() {
         Task { @MainActor in
-            let level = await currentAudioLevel
-            await onAudioLevelUpdated?(level)
+            let level = currentAudioLevel
+            onAudioLevelUpdated?(level)
         }
     }
 
     nonisolated private func handleRecordingStateChangedNotification() {
         Task { @MainActor in
-            let recording = await isRecording
-            await onRecordingStateChanged?(recording)
+            let recording = isRecording
+            onRecordingStateChanged?(recording)
         }
     }
 
     nonisolated private func handleKeyboardSessionActivatedNotification() {
         Task { @MainActor in
-            await onKeyboardSessionActivated?()
+            onKeyboardSessionActivated?()
         }
     }
 
     nonisolated private func handleKeyboardSessionExpiredNotification() {
         Task { @MainActor in
-            await onKeyboardSessionExpired?()
+            onKeyboardSessionExpired?()
         }
     }
 
     nonisolated private func handleStartRecordingFromControlNotification() {
         Task { @MainActor in
-            await onStartRecordingFromControl?()
+            onStartRecordingFromControl?()
         }
     }
 
     nonisolated private func handleTerminateSessionFromLiveActivityNotification() {
         Task { @MainActor in
-            await onTerminateSessionFromLiveActivity?()
+            onTerminateSessionFromLiveActivity?()
         }
     }
 
     nonisolated private func handleVivaModeChangedNotification() {
         Task { @MainActor in
-            await onVivaModeChanged?()
+            onVivaModeChanged?()
         }
     }
 
@@ -1229,7 +1229,7 @@ public final class AppGroupCoordinator {
 
     nonisolated private func handleTextProcessingRequestedNotification() {
         Task { @MainActor in
-            await onTextProcessingRequested?()
+            onTextProcessingRequested?()
         }
     }
 
@@ -1238,7 +1238,7 @@ public final class AppGroupCoordinator {
             // Only consume the result if a callback is set — prevents the main app
             // from racing with the keyboard extension and deleting the result first.
             guard let callback = onTextProcessingCompleted else { return }
-            let text = await getAndConsumeTextProcessingResult() ?? ""
+            let text = getAndConsumeTextProcessingResult() ?? ""
             callback(text)
         }
     }
@@ -1246,7 +1246,7 @@ public final class AppGroupCoordinator {
     nonisolated private func handleTextProcessingErrorNotification() {
         Task { @MainActor in
             guard let callback = onTextProcessingError else { return }
-            let message = await getAndConsumeTextProcessingError() ?? "Text processing failed"
+            let message = getAndConsumeTextProcessingError() ?? "Text processing failed"
             callback(message)
         }
     }

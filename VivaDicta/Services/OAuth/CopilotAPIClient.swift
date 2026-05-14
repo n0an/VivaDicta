@@ -288,7 +288,7 @@ enum CopilotAPIClient {
 
             if let delta = streamingDelta(from: line) {
                 aggregatedText += delta
-                await onPartialResult(aggregatedText)
+                onPartialResult(aggregatedText)
             }
         }
 
@@ -297,7 +297,7 @@ enum CopilotAPIClient {
         }
 
         let finalResult = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        await onPartialResult(finalResult)
+        onPartialResult(finalResult)
         return finalResult
     }
 

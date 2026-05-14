@@ -171,12 +171,12 @@ struct VivaDictaApp: App {
                         // Set up handler for session termination from Live Activity
                         AppGroupCoordinator.shared.onTerminateSessionFromLiveActivity = {
                             logger.logInfo("🔴 Session termination requested from Live Activity")
-                            
+
                             // End audio prewarm session
                             AudioPrewarmManager.shared.endSession()
-                            
+
                             // End Live Activity
-                            Task { @MainActor in
+                            Task {
                                 await appState.endLiveActivity()
                             }
                             
@@ -186,16 +186,16 @@ struct VivaDictaApp: App {
                         // Set up handler for keyboard session expiration (timeout)
                         AppGroupCoordinator.shared.onKeyboardSessionExpired = {
                             logger.logInfo("⏰ Keyboard session expired - cleaning up Live Activity")
-                            
+
                             // End Live Activity when session times out
-                            Task { @MainActor in
+                            Task {
                                 await appState.endLiveActivity()
                             }
                         }
-                        
+
                         // Set up handler for recording state changes
                         AppGroupCoordinator.shared.onRecordingStateChanged = { isRecording in
-                            Task { @MainActor in
+                            Task {
                                 if isRecording {
                                     await appState.updateLiveActivityState(.recording)
                                 } else {
@@ -203,31 +203,31 @@ struct VivaDictaApp: App {
                                 }
                             }
                         }
-                        
+
                         // Set up handler for transcription processing
                         AppGroupCoordinator.shared.onTranscriptionTranscribing = {
-                            Task { @MainActor in
+                            Task {
                                 await appState.updateLiveActivityState(.transcribing)
                             }
                         }
-                        
+
                         // Set up handler for AI processing
                         AppGroupCoordinator.shared.onTranscriptionEnhancing = {
-                            Task { @MainActor in
+                            Task {
                                 await appState.updateLiveActivityState(.enhancing)
                             }
                         }
-                        
+
                         // Set up handler for transcription completion - return to idle
                         AppGroupCoordinator.shared.onTranscriptionCompleted = { _ in
-                            Task { @MainActor in
+                            Task {
                                 await appState.updateLiveActivityState(.idle)
                             }
                         }
-                        
+
                         // Set up handler for transcription error - return to idle
                         AppGroupCoordinator.shared.onTranscriptionError = {
-                            Task { @MainActor in
+                            Task {
                                 await appState.updateLiveActivityState(.idle)
                             }
                         }
@@ -296,9 +296,9 @@ struct VivaDictaApp: App {
         if let urlScheme = getURLSchemeForBundleId(hostId),
            let url = URL(string: urlScheme) {
             logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
-            
+
             // Check if we can open the URL before starting recording
-            Task { @MainActor in
+            Task {
                 if UIApplication.shared.canOpenURL(url) {
                     // We can return to host - start actual recording first
                     logger.logInfo("🎙️ Starting recording before returning to host app")
@@ -341,7 +341,7 @@ struct VivaDictaApp: App {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - start recording and show keyboard flow toast
             // so user can switch back manually and find recording already in progress
-            Task { @MainActor in
+            Task {
                 if let vm = appState.recordViewModel,
                    vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
                     logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
@@ -403,9 +403,9 @@ struct VivaDictaApp: App {
             logger.logInfo("📱 Recognized as keyboard recording request")
 
             appState.startLiveActivity()
-            
+
             // Start audio prewarm session and wait for it to be ready before recording
-            Task { @MainActor in
+            Task {
                 do {
                     // Start and await prewarm session to ensure it's fully ready
                     try await AudioPrewarmManager.shared.startPrewarmSession()
@@ -452,7 +452,7 @@ struct VivaDictaApp: App {
         } else if url.absoluteString.starts(with: "vivadicta://activate-for-keyboard") {
             logger.logInfo("📱 Recognized as keyboard session activation request (text processing)")
 
-            Task { @MainActor in
+            Task {
                 do {
                     try await AudioPrewarmManager.shared.startPrewarmSession()
                     logger.logInfo("🎙️ Prewarm session ready for text processing")
@@ -534,7 +534,7 @@ struct VivaDictaApp: App {
 
         if let urlScheme = getURLSchemeForBundleId(hostId),
            let url = URL(string: urlScheme) {
-            Task { @MainActor in
+            Task {
                 if UIApplication.shared.canOpenURL(url) {
                     UIApplication.shared.open(url, options: [:]) { success in
                         if success {

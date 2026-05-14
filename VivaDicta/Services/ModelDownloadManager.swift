@@ -68,7 +68,7 @@ enum DownloadStatus: String {
 /// manager.cancelDownload(for: model)
 /// ```
 @Observable
-class ModelDownloadManager: @unchecked Sendable {
+class ModelDownloadManager {
     /// Download progress per model (0.0 to 1.0), keyed by model name.
     public var downloadProgress: [String: Double] = [:]
 

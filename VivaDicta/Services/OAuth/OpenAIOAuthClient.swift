@@ -111,7 +111,7 @@ enum OpenAIOAuthClient {
 
         let filtered = AIEnhancementOutputFilter.filter(raw)
         if filtered != raw {
-            await onPartialResponse(filtered)
+            onPartialResponse(filtered)
         }
         return filtered
     }
@@ -234,7 +234,7 @@ enum OpenAIOAuthClient {
                let delta = event["delta"] as? String {
                 result += delta
                 if let onPartialResult {
-                    await onPartialResult(result)
+                    onPartialResult(result)
                 }
             }
         }
@@ -246,7 +246,7 @@ enum OpenAIOAuthClient {
 
         let finalResult = result.trimmingCharacters(in: .whitespacesAndNewlines)
         if let onPartialResult {
-            await onPartialResult(finalResult)
+            onPartialResult(finalResult)
         }
 
         return finalResult

@@ -317,26 +317,10 @@ class AppState {
         }
     }
     
-    /// Indexes a single transcription in Spotlight for system-wide search.
-    ///
-    /// - Parameter transcription: The transcription to index.
-    func indexTranscriptionToSpotlight(_ transcription: Transcription) async {
-        guard CSSearchableIndex.isIndexingAvailable() else {
-            logger.logError("[Spotlight] Indexing is unavailable")
-            return
-        }
-
-        do {
-            let index = CSSearchableIndex.default()
-            let transcriptionEntity = transcription.entity
-            try await index.indexAppEntities([transcriptionEntity])
-            logger.logInfo("[Spotlight] Indexed transcription: \(transcription.id.uuidString)")
-        } catch {
-            logger.logError("[Spotlight] Failed to index transcription: \(error.localizedDescription)")
-        }
-    }
-
-    /// Index a transcription entity in Spotlight (used from detached tasks to avoid actor isolation issues)
+    /// Index a transcription entity in Spotlight. `@concurrent` forces this off MainActor
+    /// regardless of caller, so the SwiftData transaction in the caller's flow doesn't
+    /// race with indexing.
+    @concurrent
     func indexTranscriptionEntityToSpotlight(_ entity: TranscriptionEntity) async {
         guard CSSearchableIndex.isIndexingAvailable() else {
             logger.logError("[Spotlight] Indexing is unavailable")
@@ -352,7 +336,9 @@ class AppState {
         }
     }
 
-    /// Remove a transcription from Spotlight index
+    /// Remove a transcription from Spotlight index. `@concurrent` for symmetry with
+    /// the index/update entity methods; UUID is Sendable so there's no isolation barrier.
+    @concurrent
     func removeTranscriptionFromSpotlight(_ transcriptionID: UUID) async {
         guard CSSearchableIndex.isIndexingAvailable() else {
             logger.logError("[Spotlight] Indexing is unavailable")
@@ -368,13 +354,9 @@ class AppState {
         }
     }
 
-    // TODO: Add method to update a single transcription in Spotlight when tags are generated
-    func updateTranscriptionInSpotlight(_ transcription: Transcription) async {
-        // Reindexing with the same identifier will update the existing item
-        await indexTranscriptionToSpotlight(transcription)
-    }
-
-    /// Update a transcription entity in Spotlight (used from detached tasks to avoid actor isolation issues)
+    /// Update a transcription entity in Spotlight. `@concurrent` for the same reason as
+    /// the index variant above; reindexing the same id updates the existing entry.
+    @concurrent
     func updateTranscriptionEntityInSpotlight(_ entity: TranscriptionEntity) async {
         await indexTranscriptionEntityToSpotlight(entity)
     }

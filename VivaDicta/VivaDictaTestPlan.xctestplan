@@ -18,6 +18,13 @@
         "identifier" : "18351E562E634FF000944940",
         "name" : "VivaDictaTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:VivaDicta.xcodeproj",
+        "identifier" : "187D20F22FB5011D004234D0",
+        "name" : "VivaDictaUITests"
+      }
     }
   ],
   "version" : 1

@@ -182,7 +182,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         destination: RecordingDestination = .newNote,
         sourceTag: String = SourceTag.app
     ) {
-        Task { @MainActor in
+        Task {
             // Guard against duplicate starts
             guard recordingState != .recording else {
                 logger.logInfo("📱 Already recording, ignoring duplicate start request")
@@ -307,7 +307,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             // In prewarm mode, we need a small delay to ensure file is flushed to disk
             // before trying to move it
-            Task { @MainActor in
+            Task {
                 try? await Task.sleep(for: .milliseconds(100))
 
                 resetValues()
@@ -407,7 +407,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         sourceTag: String? = nil,
         destination: RecordingDestination = .newNote
     ) -> Task<Void, Never> {
-        Task { @MainActor in
+        Task {
             // Begin background task to allow transcription to complete if user switches apps
             let bgTaskID = appState?.backgroundTaskService.beginBackgroundTask(
                 name: "transcription",
@@ -765,9 +765,9 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     // Haptic feedback for successful save
                     HapticManager.heartbeat()
 
-                    // Index to Spotlight (non-blocking to avoid SwiftData actor isolation issues)
+                    // Index to Spotlight (AppState method is @concurrent - runs off MainActor)
                     let transcriptionEntity = transcription.entity
-                    Task.detached {
+                    Task {
                         await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
                     }
 
@@ -917,7 +917,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
 
         let transcriptionEntity = transcription.entity
-        Task.detached {
+        Task {
             await self.appState?.indexTranscriptionEntityToSpotlight(transcriptionEntity)
         }
 
@@ -960,7 +960,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             try modelContext.save()
 
             let transcriptionEntity = transcription.entity
-            Task.detached {
+            Task {
                 await self.appState?.updateTranscriptionEntityInSpotlight(transcriptionEntity)
             }
 
