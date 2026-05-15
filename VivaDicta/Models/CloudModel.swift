@@ -47,8 +47,3 @@ struct CloudModel: @MainActor TranscriptionModel {
     }
 }
 
-extension CloudModel {
-    var apiKey: String? {
-        provider.mappedAIProvider?.apiKey
-    }
-}
