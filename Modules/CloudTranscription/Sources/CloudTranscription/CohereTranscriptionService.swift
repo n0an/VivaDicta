@@ -1,31 +1,56 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
-import TranscriptionCore
-import CloudTranscription
 import os
+import TranscriptionCore
 
-struct CohereTranscriptionService {
-    private let logger = Logger(category: .cohereTranscriptionService)
+/// Pre-configured Cohere transcription client. The app target is responsible
+/// for normalizing `language` to a Cohere-supported BCP-47 code before
+/// constructing the config; this service passes it through to the API.
+public struct CohereTranscriptionService: Sendable {
+    private let apiURL = URL(string: "https://api.cohere.com/v2/audio/transcriptions")!
+    private let logger = Logger(cloudTranscriptionCategory: "CohereTranscription")
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+    public struct Config: Sendable {
+        public let apiKey: String
+        public let modelName: String
+        /// Already-normalized BCP-47 code. Cohere doesn't accept `"auto"`, so
+        /// the caller should fall back to a supported default (typically `"en"`).
+        public let language: String
+
+        public init(apiKey: String, modelName: String, language: String) {
+            self.apiKey = apiKey
+            self.modelName = modelName
+            self.language = language
+        }
+    }
+
+    private let config: Config
+
+    public init(config: Config) {
+        self.config = config
+    }
+
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
         let text = try await NetworkRetry.withRetry(logger: logger) {
-            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+            try await makeTranscriptionRequest(audioURL: audioURL)
         }
         return .plain(text)
     }
 
-    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        let config = try getAPIConfig(for: model)
+    private func makeTranscriptionRequest(audioURL: URL) async throws -> String {
+        guard !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
 
         let boundary = "Boundary-\(UUID().uuidString)"
-        var request = URLRequest(url: config.url)
+        var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
-        let body = try createRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)
+        let body = try createRequestBody(audioURL: audioURL, boundary: boundary)
 
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
 
@@ -48,18 +73,7 @@ struct CohereTranscriptionService {
         }
     }
 
-    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let cloudModel = model as? CloudModel,
-              let apiKey = cloudModel.apiKey,
-              !apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
-        }
-
-        let apiURL = URL(string: "https://api.cohere.com/v2/audio/transcriptions")!
-        return APIConfig(url: apiURL, apiKey: apiKey, modelName: model.name)
-    }
-
-    private func createRequestBody(audioURL: URL, modelName: String, boundary: String) throws -> Data {
+    private func createRequestBody(audioURL: URL, boundary: String) throws -> Data {
         var body = Data()
         let crlf = "\r\n"
 
@@ -67,38 +81,23 @@ struct CohereTranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+        logger.logInfo("Using language: \(config.language)")
 
-        // Cohere requires a language from its supported set — fall back to English
-        let supportedCodes = Set(TranscriptionModelProvider.cohereLanguages.keys)
-        let language: String
-        if selectedLanguage == "auto" || selectedLanguage.isEmpty || !supportedCodes.contains(selectedLanguage) {
-            language = "en"
-        } else {
-            language = selectedLanguage
-        }
-
-        logger.logInfo("Using language: \(language) (selected: \(selectedLanguage))")
-
-        // Model (must appear before file)
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append(modelName.data(using: .utf8)!)
+        body.append(config.modelName.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
-        // Language (must appear before file, required by Cohere)
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append(language.data(using: .utf8)!)
+        body.append(config.language.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
-        // Temperature (must appear before file)
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"temperature\"\(crlf)\(crlf)".data(using: .utf8)!)
         body.append("0".data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
-        // File (must be last)
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: \(audioURL.audioMIMEType)\(crlf)\(crlf)".data(using: .utf8)!)
@@ -107,12 +106,6 @@ struct CohereTranscriptionService {
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
-    }
-
-    private struct APIConfig {
-        let url: URL
-        let apiKey: String
-        let modelName: String
     }
 
     private struct TranscriptionResponse: Decodable {

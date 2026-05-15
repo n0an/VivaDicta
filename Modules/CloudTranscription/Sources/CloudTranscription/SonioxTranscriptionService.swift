@@ -1,42 +1,58 @@
-//
-//  SonioxTranscriptionService.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.01.07
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
-import TranscriptionCore
-import CloudTranscription
 import os
+import TranscriptionCore
 
-struct SonioxTranscriptionService {
-    private let logger = Logger(category: .sonioxTranscriptionService)
+/// Pre-configured Soniox STT client. Uses an upload + create + poll flow.
+public struct SonioxTranscriptionService: Sendable {
+    private let logger = Logger(cloudTranscriptionCategory: "SonioxTranscription")
     private let apiBase = "https://api.soniox.com/v1"
     private let maxWaitSeconds: TimeInterval = 300
     private let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
-        let config = try getAPIConfig(for: model)
-        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
-        let translationTarget = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
-        let translationEnabled = !translationTarget.isEmpty
+    public struct Config: Sendable {
+        public let apiKey: String
+        public let modelName: String
+        public let language: String
+        public let vocabulary: [String]
+        public let isSpeakerDiarizationEnabled: Bool
+        /// `""` = no translation requested.
+        public let translationTargetLanguage: String
 
-        let fileId = try await uploadFile(audioURL: audioURL, apiKey: config.apiKey)
-        let transcriptionId = try await createTranscription(
-            fileId: fileId,
-            apiKey: config.apiKey,
-            modelName: model.name,
-            diarizationEnabled: diarizationEnabled,
-            translationTarget: translationTarget
-        )
-        try await pollTranscriptionStatus(id: transcriptionId, apiKey: config.apiKey)
-        let result = try await fetchTranscript(
-            id: transcriptionId,
-            apiKey: config.apiKey,
-            diarizationEnabled: diarizationEnabled,
-            translationEnabled: translationEnabled
-        )
+        public init(
+            apiKey: String,
+            modelName: String,
+            language: String = "auto",
+            vocabulary: [String] = [],
+            isSpeakerDiarizationEnabled: Bool = false,
+            translationTargetLanguage: String = ""
+        ) {
+            self.apiKey = apiKey
+            self.modelName = modelName
+            self.language = language
+            self.vocabulary = vocabulary
+            self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
+            self.translationTargetLanguage = translationTargetLanguage
+        }
+    }
+
+    private let config: Config
+
+    public init(config: Config) {
+        self.config = config
+    }
+
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
+        guard !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        let translationEnabled = !config.translationTargetLanguage.isEmpty
+
+        let fileId = try await uploadFile(audioURL: audioURL)
+        let transcriptionId = try await createTranscription(fileId: fileId)
+        try await pollTranscriptionStatus(id: transcriptionId)
+        let result = try await fetchTranscript(id: transcriptionId, translationEnabled: translationEnabled)
 
         guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CloudTranscriptionError.noTranscriptionReturned
@@ -44,18 +60,7 @@ struct SonioxTranscriptionService {
         return result
     }
 
-    // MARK: - Private Methods
-
-    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let cloudModel = model as? CloudModel,
-              let apiKey = cloudModel.apiKey,
-              !apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
-        }
-        return APIConfig(apiKey: apiKey)
-    }
-
-    private func uploadFile(audioURL: URL, apiKey: String) async throws -> String {
+    private func uploadFile(audioURL: URL) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/files") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -63,7 +68,7 @@ struct SonioxTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -91,13 +96,7 @@ struct SonioxTranscriptionService {
         }
     }
 
-    private func createTranscription(
-        fileId: String,
-        apiKey: String,
-        modelName: String,
-        diarizationEnabled: Bool,
-        translationTarget: String
-    ) async throws -> String {
+    private func createTranscription(fileId: String) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/transcriptions") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -105,39 +104,32 @@ struct SonioxTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         var payload: [String: Any] = [
             "file_id": fileId,
-            "model": modelName,
-            "enable_speaker_diarization": diarizationEnabled,
+            "model": config.modelName,
+            "enable_speaker_diarization": config.isSpeakerDiarizationEnabled,
             "enable_language_identification": true
         ]
 
-        // Add custom vocabulary terms if available
-        let vocabularyTerms = CustomVocabulary.getTerms()
-        if !vocabularyTerms.isEmpty {
-            payload["context"] = ["terms": vocabularyTerms]
-            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms")
+        if !config.vocabulary.isEmpty {
+            payload["context"] = ["terms": config.vocabulary]
+            logger.logInfo("Adding \(config.vocabulary.count) custom vocabulary terms")
         }
 
-        // Add language hints if not auto-detect. When the user has explicitly picked a language,
-        // enable strict mode so the model won't drift into other languages on noisy/short audio.
-        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        if selectedLanguage != "auto", !selectedLanguage.isEmpty {
-            payload["language_hints"] = [selectedLanguage]
+        if config.language != "auto", !config.language.isEmpty {
+            payload["language_hints"] = [config.language]
             payload["language_hints_strict"] = true
         }
 
-        // Optional inline translation - if a target language is configured for the active
-        // mode, ask Soniox to translate transcribed text into that language.
-        if !translationTarget.isEmpty {
+        if !config.translationTargetLanguage.isEmpty {
             payload["translation"] = [
                 "type": "one_way",
-                "target_language": translationTarget
+                "target_language": config.translationTargetLanguage
             ]
-            logger.logInfo("Soniox translation enabled, target: \(translationTarget)")
+            logger.logInfo("Soniox translation enabled, target: \(config.translationTargetLanguage)")
         }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
@@ -164,7 +156,7 @@ struct SonioxTranscriptionService {
         }
     }
 
-    private func pollTranscriptionStatus(id: String, apiKey: String) async throws {
+    private func pollTranscriptionStatus(id: String) async throws {
         guard let baseURL = URL(string: "\(apiBase)/transcriptions/\(id)") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -175,7 +167,7 @@ struct SonioxTranscriptionService {
             var request = URLRequest(url: baseURL)
             request.httpMethod = "GET"
             request.timeoutInterval = NetworkRetry.defaultTimeout
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -212,12 +204,7 @@ struct SonioxTranscriptionService {
         }
     }
 
-    private func fetchTranscript(
-        id: String,
-        apiKey: String,
-        diarizationEnabled: Bool,
-        translationEnabled: Bool
-    ) async throws -> TranscriptionServiceResult {
+    private func fetchTranscript(id: String, translationEnabled: Bool) async throws -> TranscriptionServiceResult {
         guard let apiURL = URL(string: "\(apiBase)/transcriptions/\(id)/transcript") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -225,7 +212,7 @@ struct SonioxTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "GET"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -240,14 +227,11 @@ struct SonioxTranscriptionService {
         }
 
         if let decoded = try? JSONDecoder().decode(TranscriptResponse.self, from: data) {
-            // For translation, Soniox interleaves original + translated tokens in `text`
-            // and tags each token with translation_status ("original" / "translation").
-            // Keep only translated tokens for the user-visible result.
             let effectiveTokens = translationEnabled
                 ? (decoded.tokens?.filter { $0.translationStatus == "translation" })
                 : decoded.tokens
 
-            if diarizationEnabled,
+            if config.isSpeakerDiarizationEnabled,
                let diarizedText = makeSpeakerAttributedText(from: effectiveTokens) {
                 return .speakerAttributed(diarizedText)
             }
@@ -315,12 +299,6 @@ struct SonioxTranscriptionService {
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
-    }
-
-    // MARK: - Response Types
-
-    private struct APIConfig {
-        let apiKey: String
     }
 
     private struct FileUploadResponse: Decodable {

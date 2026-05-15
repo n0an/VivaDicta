@@ -1,43 +1,59 @@
-//
-//  SpeechmaticsTranscriptionService.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.04.29
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
-import TranscriptionCore
-import CloudTranscription
 import os
+import TranscriptionCore
 
-struct SpeechmaticsTranscriptionService {
-    private let logger = Logger(category: .speechmaticsTranscriptionService)
+/// Pre-configured Speechmatics STT client. Uses an upload + create + poll flow.
+/// Maps the VivaDicta `zh` code to Speechmatics' `cmn` internally; all other
+/// codes pass through.
+public struct SpeechmaticsTranscriptionService: Sendable {
+    private let logger = Logger(cloudTranscriptionCategory: "SpeechmaticsTranscription")
     private let apiBase = "https://asr.api.speechmatics.com/v2"
     private let maxWaitSeconds: TimeInterval = 300
     private let pollIntervalNanoseconds: UInt64 = 2_000_000_000
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
-        let config = try getAPIConfig(for: model)
-        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
-        let translationTargetUI = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
-        let translationEnabled = !translationTargetUI.isEmpty
-        let translationTargetAPI = mapToSpeechmaticsCode(translationTargetUI)
+    public struct Config: Sendable {
+        public let apiKey: String
+        public let language: String
+        public let vocabulary: [String]
+        public let isSpeakerDiarizationEnabled: Bool
+        /// `""` = no translation requested.
+        public let translationTargetLanguage: String
 
-        let selectedLanguageUI = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        let selectedLanguageAPI = mapToSpeechmaticsCode(selectedLanguageUI)
+        public init(
+            apiKey: String,
+            language: String = "auto",
+            vocabulary: [String] = [],
+            isSpeakerDiarizationEnabled: Bool = false,
+            translationTargetLanguage: String = ""
+        ) {
+            self.apiKey = apiKey
+            self.language = language
+            self.vocabulary = vocabulary
+            self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
+            self.translationTargetLanguage = translationTargetLanguage
+        }
+    }
 
-        let jobId = try await createJob(
-            audioURL: audioURL,
-            apiKey: config.apiKey,
-            language: selectedLanguageAPI,
-            diarizationEnabled: diarizationEnabled,
-            translationTarget: translationTargetAPI
-        )
-        try await pollJobStatus(id: jobId, apiKey: config.apiKey)
+    private let config: Config
+
+    public init(config: Config) {
+        self.config = config
+    }
+
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
+        guard !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        let translationTargetAPI = mapToSpeechmaticsCode(config.translationTargetLanguage)
+        let translationEnabled = !translationTargetAPI.isEmpty
+        let languageAPI = mapToSpeechmaticsCode(config.language)
+
+        let jobId = try await createJob(language: languageAPI, audioURL: audioURL, translationTarget: translationTargetAPI)
+        try await pollJobStatus(id: jobId)
         let result = try await fetchTranscript(
             id: jobId,
-            apiKey: config.apiKey,
-            diarizationEnabled: diarizationEnabled,
             translationEnabled: translationEnabled,
             translationTarget: translationTargetAPI
         )
@@ -48,30 +64,12 @@ struct SpeechmaticsTranscriptionService {
         return result
     }
 
-    // MARK: - Private Methods
-
-    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let cloudModel = model as? CloudModel,
-              let apiKey = cloudModel.apiKey,
-              !apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
-        }
-        return APIConfig(apiKey: apiKey)
-    }
-
     /// Speechmatics uses `cmn` for Mandarin where the rest of our codebase uses `zh`.
-    /// Other codes pass through unchanged.
     private func mapToSpeechmaticsCode(_ code: String) -> String {
         code == "zh" ? "cmn" : code
     }
 
-    private func createJob(
-        audioURL: URL,
-        apiKey: String,
-        language: String,
-        diarizationEnabled: Bool,
-        translationTarget: String
-    ) async throws -> String {
+    private func createJob(language: String, audioURL: URL, translationTarget: String) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/jobs") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -79,7 +77,7 @@ struct SpeechmaticsTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -88,14 +86,13 @@ struct SpeechmaticsTranscriptionService {
             "language": language.isEmpty ? "auto" : language,
             "operating_point": "enhanced"
         ]
-        if diarizationEnabled {
+        if config.isSpeakerDiarizationEnabled {
             transcriptionConfig["diarization"] = "speaker"
         }
 
-        let vocabularyTerms = CustomVocabulary.getTerms()
-        if !vocabularyTerms.isEmpty {
-            transcriptionConfig["additional_vocab"] = vocabularyTerms.map { ["content": $0] }
-            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms to Speechmatics request")
+        if !config.vocabulary.isEmpty {
+            transcriptionConfig["additional_vocab"] = config.vocabulary.map { ["content": $0] }
+            logger.logInfo("Adding \(config.vocabulary.count) custom vocabulary terms to Speechmatics request")
         }
 
         var jobConfig: [String: Any] = [
@@ -113,11 +110,7 @@ struct SpeechmaticsTranscriptionService {
         let configData = try JSONSerialization.data(withJSONObject: jobConfig)
         let configString = String(data: configData, encoding: .utf8) ?? "{}"
 
-        let body = try createMultipartBody(
-            fileURL: audioURL,
-            configJSON: configString,
-            boundary: boundary
-        )
+        let body = try createMultipartBody(fileURL: audioURL, configJSON: configString, boundary: boundary)
 
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
 
@@ -141,7 +134,7 @@ struct SpeechmaticsTranscriptionService {
         }
     }
 
-    private func pollJobStatus(id: String, apiKey: String) async throws {
+    private func pollJobStatus(id: String) async throws {
         guard let baseURL = URL(string: "\(apiBase)/jobs/\(id)") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -152,7 +145,7 @@ struct SpeechmaticsTranscriptionService {
             var request = URLRequest(url: baseURL)
             request.httpMethod = "GET"
             request.timeoutInterval = NetworkRetry.defaultTimeout
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -189,13 +182,7 @@ struct SpeechmaticsTranscriptionService {
         }
     }
 
-    private func fetchTranscript(
-        id: String,
-        apiKey: String,
-        diarizationEnabled: Bool,
-        translationEnabled: Bool,
-        translationTarget: String
-    ) async throws -> TranscriptionServiceResult {
+    private func fetchTranscript(id: String, translationEnabled: Bool, translationTarget: String) async throws -> TranscriptionServiceResult {
         guard let apiURL = URL(string: "\(apiBase)/jobs/\(id)/transcript?format=json-v2") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -203,7 +190,7 @@ struct SpeechmaticsTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "GET"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -222,9 +209,6 @@ struct SpeechmaticsTranscriptionService {
         }
 
         if translationEnabled {
-            // Translation lives at top-level `translations.<target>` as an array of segments.
-            // If it's missing, we surface an error rather than falling back to the original
-            // language - the user explicitly requested translation.
             guard let translations = decoded.translations,
                   let segments = translations[translationTarget],
                   !segments.isEmpty else {
@@ -232,14 +216,14 @@ struct SpeechmaticsTranscriptionService {
                 throw CloudTranscriptionError.noTranscriptionReturned
             }
 
-            if diarizationEnabled,
+            if config.isSpeakerDiarizationEnabled,
                let diarized = makeSpeakerAttributedTextFromSegments(segments) {
                 return .speakerAttributed(diarized)
             }
             return .plain(segments.compactMap(\.content).joined(separator: " "))
         }
 
-        if diarizationEnabled,
+        if config.isSpeakerDiarizationEnabled,
            let diarized = makeSpeakerAttributedTextFromWords(decoded.results) {
             return .speakerAttributed(diarized)
         }
@@ -257,7 +241,6 @@ struct SpeechmaticsTranscriptionService {
 
     private func attachmentRule(for item: TranscriptResponse.ResultItem) -> AttachmentRule {
         let isPunctuation = item.type == "punctuation"
-        // Default punctuation to "previous" if Speechmatics omits the field.
         let attachesTo = item.attaches_to ?? (isPunctuation ? "previous" : "")
         return AttachmentRule(
             toPrevious: attachesTo == "previous" || attachesTo == "both",
@@ -265,10 +248,6 @@ struct SpeechmaticsTranscriptionService {
         )
     }
 
-    /// Speechmatics returns one item per word/punctuation in `results[]`.
-    /// Walks the list deciding whether each token needs a leading space based
-    /// on its own `attaches_to: "previous"|"both"` and the prior token's
-    /// `attaches_to: "next"|"both"`.
     private func buildPlainTranscript(from results: [TranscriptResponse.ResultItem]?) -> String {
         guard let results, !results.isEmpty else { return "" }
 
@@ -331,7 +310,6 @@ struct SpeechmaticsTranscriptionService {
         return SpeakerDiarizationFormatter.format(turns)
     }
 
-    /// Translation segments are sentence-level (each carries `content` and optional `speaker`).
     private func makeSpeakerAttributedTextFromSegments(_ segments: [TranscriptResponse.TranslationSegment]) -> String? {
         guard !segments.isEmpty else { return nil }
 
@@ -373,14 +351,12 @@ struct SpeechmaticsTranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        // config part
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"config\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: application/json\(crlf)\(crlf)".data(using: .utf8)!)
         body.append(configJSON.data(using: .utf8) ?? Data())
         body.append(crlf.data(using: .utf8)!)
 
-        // data_file part
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"data_file\"; filename=\"\(fileURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: \(fileURL.audioMIMEType)\(crlf)\(crlf)".data(using: .utf8)!)
@@ -390,12 +366,6 @@ struct SpeechmaticsTranscriptionService {
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
-    }
-
-    // MARK: - Response Types
-
-    private struct APIConfig {
-        let apiKey: String
     }
 
     private struct CreateJobResponse: Decodable {

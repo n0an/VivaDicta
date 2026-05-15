@@ -22,4 +22,8 @@ extension Logger {
     func logError(_ message: String) {
         self.error("\(message, privacy: .public)")
     }
+
+    func logNotice(_ message: String) {
+        self.notice("\(message, privacy: .public)")
+    }
 }

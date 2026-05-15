@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import TranscriptionCore
 @testable import VivaDicta
 
 struct SpeakerDiarizationFormatterTests {

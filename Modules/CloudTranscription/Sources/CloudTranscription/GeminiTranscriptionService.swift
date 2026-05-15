@@ -1,31 +1,49 @@
-//
-//  GeminiTranscriptionService.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.09.05
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
-import TranscriptionCore
-import CloudTranscription
 import os
+import TranscriptionCore
 
-class GeminiTranscriptionService {
-    private let logger = Logger(category: .geminiService)
-    
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+/// Pre-configured Google Gemini transcription client. Stateless apart from its
+/// config; the app target builds one per request.
+public struct GeminiTranscriptionService: Sendable {
+    private let logger = Logger(cloudTranscriptionCategory: "GeminiTranscription")
+
+    public struct Config: Sendable {
+        public let apiKey: String
+        public let modelName: String
+
+        public init(apiKey: String, modelName: String) {
+            self.apiKey = apiKey
+            self.modelName = modelName
+        }
+    }
+
+    private let config: Config
+
+    public init(config: Config) {
+        self.config = config
+    }
+
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
         let text = try await NetworkRetry.withRetry(logger: logger) {
-            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+            try await makeTranscriptionRequest(audioURL: audioURL)
         }
         return .plain(text)
     }
 
-    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        let config = try getAPIConfig(for: model)
+    private func makeTranscriptionRequest(audioURL: URL) async throws -> String {
+        guard !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(config.modelName):generateContent"
+        guard let apiURL = URL(string: urlString) else {
+            throw CloudTranscriptionError.dataEncodingError
+        }
 
-        logger.logNotice("Starting Gemini transcription with model: \(model.name)")
+        logger.logNotice("Starting Gemini transcription with model: \(config.modelName)")
 
-        var request = URLRequest(url: config.url)
+        var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "x-goog-api-key")
@@ -56,9 +74,7 @@ class GeminiTranscriptionService {
         )
 
         do {
-            let jsonData = try JSONEncoder().encode(requestBody)
-            request.httpBody = jsonData
-            logger.logNotice("Request body encoded, sending to Gemini API")
+            request.httpBody = try JSONEncoder().encode(requestBody)
         } catch {
             logger.logError("Failed to encode Gemini request: \(error.localizedDescription)")
             throw CloudTranscriptionError.dataEncodingError
@@ -84,50 +100,27 @@ class GeminiTranscriptionService {
                 logger.logError("No transcript found in Gemini response")
                 throw CloudTranscriptionError.noTranscriptionReturned
             }
-            logger.logNotice("Gemini transcription successful, text length: \(part.text.count)")
             return part.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        } catch let error as CloudTranscriptionError {
+            throw error
         } catch {
             logger.logError("Failed to decode Gemini API response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
     }
-    
-    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let cloudModel = model as? CloudModel,
-              let apiKey = cloudModel.apiKey,
-              !apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
-        }
-        
-        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(model.name):generateContent"
-        guard let apiURL = URL(string: urlString) else {
-            throw CloudTranscriptionError.dataEncodingError
-        }
-        
-        return APIConfig(
-            url: apiURL,
-            apiKey: apiKey,
-            modelName: model.name)
-    }
-    
-    private struct APIConfig {
-        let url: URL
-        let apiKey: String
-        let modelName: String
-    }
-    
+
     private struct GeminiRequest: Codable {
         let contents: [GeminiContent]
     }
-    
+
     private struct GeminiContent: Codable {
         let parts: [GeminiPart]
     }
-    
+
     private enum GeminiPart: Codable {
         case text(GeminiTextPart)
         case audio(GeminiAudioPart)
-        
+
         func encode(to encoder: any Encoder) throws {
             var container = encoder.singleValueContainer()
             switch self {
@@ -137,7 +130,7 @@ class GeminiTranscriptionService {
                 try container.encode(audioPart)
             }
         }
-        
+
         init(from decoder: any Decoder) throws {
             let container = try decoder.singleValueContainer()
             if let textPart = try? container.decode(GeminiTextPart.self) {
@@ -149,32 +142,32 @@ class GeminiTranscriptionService {
             }
         }
     }
-    
+
     private struct GeminiTextPart: Codable {
         let text: String
     }
-    
+
     private struct GeminiAudioPart: Codable {
         let inlineData: GeminiInlineData
     }
-    
+
     private struct GeminiInlineData: Codable {
         let mimeType: String
         let data: String
     }
-    
+
     private struct GeminiResponse: Codable {
         let candidates: [GeminiCandidate]
     }
-    
+
     private struct GeminiCandidate: Codable {
         let content: GeminiResponseContent
     }
-    
+
     private struct GeminiResponseContent: Codable {
         let parts: [GeminiResponsePart]
     }
-    
+
     private struct GeminiResponsePart: Codable {
         let text: String
     }
