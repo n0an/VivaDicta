@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Presets
 
 struct PresetSettings: View {
     var presetManager: PresetManager

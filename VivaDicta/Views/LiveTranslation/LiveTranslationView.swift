@@ -132,10 +132,7 @@ struct LiveTranslationView: View {
     }
 
     private func checkSonioxKey() -> Bool {
-        guard let key = KeychainService.shared.getString(forKey: "sonioxAPIKey") else {
-            return false
-        }
-        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        service.hasAPIKey
     }
 
     // MARK: - Subviews

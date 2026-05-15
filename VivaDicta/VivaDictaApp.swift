@@ -12,6 +12,7 @@ import AppIntents
 import CoreSpotlight
 import ActivityKit
 import TipKit
+import Presets
 
 @main
 struct VivaDictaApp: App {
@@ -22,7 +23,7 @@ struct VivaDictaApp: App {
     @State private var dataController: DataController
     @State private var modelContainer: ModelContainer
     @State private var router: Router
-    
+
     @State var appState: AppState
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)

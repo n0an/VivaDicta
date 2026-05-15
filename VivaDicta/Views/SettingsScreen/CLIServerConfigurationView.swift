@@ -86,7 +86,7 @@ struct CLIServerConfigurationView: View {
         .onAppear {
             isServerEnabled = UserDefaults.standard.bool(forKey: VivAgentsClient.isEnabledKey)
             serverURL = UserDefaults.standard.string(forKey: VivAgentsClient.serverURLKey) ?? ""
-            serverToken = KeychainService.shared.getString(forKey: VivAgentsClient.authTokenKeychainKey, syncable: false) ?? ""
+            serverToken = VivAgentsClient.authToken ?? ""
             hasUnsavedChanges = false
         }
         .task {
@@ -322,7 +322,7 @@ struct CLIServerConfigurationView: View {
     private func saveAndTestConnection() {
         UserDefaults.standard.set(isServerEnabled, forKey: VivAgentsClient.isEnabledKey)
         UserDefaults.standard.set(serverURL, forKey: VivAgentsClient.serverURLKey)
-        KeychainService.shared.save(serverToken, forKey: VivAgentsClient.authTokenKeychainKey, syncable: false)
+        VivAgentsClient.setAuthToken(serverToken)
         hasUnsavedChanges = false
 
         Task {

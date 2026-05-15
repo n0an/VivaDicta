@@ -2,6 +2,7 @@
 
 import Foundation
 import os
+import OAuth
 
 /// Client for OpenAI's backend API using OAuth tokens.
 enum OpenAIOAuthClient {

@@ -9,6 +9,7 @@ import UIKit
 import SwiftUI
 import UniformTypeIdentifiers
 import os
+import Presets
 
 // MARK: - Action Extension View Model
 
@@ -182,7 +183,7 @@ final class ActionExtensionViewModel {
 
     var promptDisplayName: String {
         guard let presetId = selectedMode.presetId else { return "Not set" }
-        return PresetCatalog.displayName(for: presetId, fallback: presetId)
+        return PresetCatalog.displayName(for: presetId, fallback: presetId, userDefaults: UserDefaultsStorage.shared)
     }
 }
 

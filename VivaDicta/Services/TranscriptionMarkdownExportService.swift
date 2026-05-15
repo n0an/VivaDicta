@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Presets
 
 enum TranscriptionMarkdownExportService {
     struct Snapshot: Sendable {
@@ -66,7 +67,8 @@ enum TranscriptionMarkdownExportService {
                 VariationSnapshot(
                     title: PresetCatalog.displayName(
                         for: $0.presetId,
-                        fallback: $0.presetDisplayName
+                        fallback: $0.presetDisplayName,
+                        userDefaults: UserDefaultsStorage.shared
                     ),
                     sortKey: $0.presetDisplayName,
                     text: $0.text,

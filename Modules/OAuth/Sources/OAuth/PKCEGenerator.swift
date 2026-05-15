@@ -4,12 +4,12 @@ import Foundation
 import CryptoKit
 
 /// Generates PKCE (Proof Key for Code Exchange) parameters for OAuth flows.
-struct PKCEGenerator: Sendable {
-    let verifier: String
-    let challenge: String
+public struct PKCEGenerator: Sendable {
+    public let verifier: String
+    public let challenge: String
 
     /// Generates a new PKCE verifier/challenge pair.
-    static func generate() -> PKCEGenerator {
+    public static func generate() -> PKCEGenerator {
         let verifierData = randomBytes(count: 32)
         let verifier = base64URLEncode(verifierData)
         let challengeData = Data(SHA256.hash(data: Data(verifier.utf8)))
@@ -18,13 +18,13 @@ struct PKCEGenerator: Sendable {
     }
 
     /// Generates a random state string for CSRF protection.
-    static func generateState() -> String {
+    public static func generateState() -> String {
         base64URLEncode(randomBytes(count: 32))
     }
 
     // MARK: - Helpers
 
-    static func base64URLEncode(_ data: Data) -> String {
+    public static func base64URLEncode(_ data: Data) -> String {
         data.base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")

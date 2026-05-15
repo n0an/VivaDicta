@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import Presets
 @testable import VivaDicta
 
 struct AIServiceConfigurationTests {

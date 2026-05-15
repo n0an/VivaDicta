@@ -7,13 +7,13 @@ import os
 /// Minimal TCP server that listens on localhost for an OAuth redirect callback.
 /// On iOS, it bridges the localhost redirect to a custom URL scheme so that
 /// ASWebAuthenticationSession can intercept it.
-final class OAuthCallbackServer: Sendable {
-    private let logger = Logger(category: .oauthManager)
-    let port: UInt16
+public final class OAuthCallbackServer: Sendable {
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "OAuth")
+    public let port: UInt16
     /// The custom URL scheme to redirect to after capturing the OAuth callback.
-    let customSchemeRedirectBase: String
+    public let customSchemeRedirectBase: String
 
-    init(port: UInt16 = 1455, customSchemeRedirectBase: String = "vivadicta://auth/callback") {
+    public init(port: UInt16 = 1455, customSchemeRedirectBase: String = "vivadicta://auth/callback") {
         self.port = port
         self.customSchemeRedirectBase = customSchemeRedirectBase
     }
@@ -21,7 +21,7 @@ final class OAuthCallbackServer: Sendable {
     /// Starts the local server. When the OAuth provider redirects to localhost,
     /// this server responds with an HTTP 302 redirect to the custom URL scheme,
     /// forwarding the authorization code and state parameters.
-    func start() async throws -> NWListener {
+    public func start() async throws -> NWListener {
         let listener = try NWListener(using: .tcp, on: NWEndpoint.Port(rawValue: port)!)
 
         listener.newConnectionHandler = { [logger, customSchemeRedirectBase] connection in
@@ -32,7 +32,7 @@ final class OAuthCallbackServer: Sendable {
                     return
                 }
 
-                logger.logInfo("OAuth callback server received request")
+                logger.info("OAuth callback server received request")
 
                 // Extract the request path from the HTTP request line
                 guard let firstLine = requestString.components(separatedBy: "\r\n").first,

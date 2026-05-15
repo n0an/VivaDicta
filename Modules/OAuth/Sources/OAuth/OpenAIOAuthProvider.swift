@@ -4,27 +4,29 @@ import Foundation
 
 /// OpenAI OAuth provider configuration.
 /// Uses the same client ID as the Codex CLI for OAuth PKCE flow.
-struct OpenAIOAuthProvider: OAuthProvider {
-    let providerName = "OpenAI"
-    let clientId = "app_EMoamEEZ73f0CkXaXp7hrann"
-    let authorizeURL = "https://auth.openai.com/oauth/authorize"
-    let tokenURL = "https://auth.openai.com/oauth/token"
-    let redirectURI = "http://localhost:1455/auth/callback"
-    let scopes = "openid profile email offline_access"
-    let keychainKey = "chatGPTOAuthCredential"
+public struct OpenAIOAuthProvider: OAuthProvider {
+    public let providerName = "OpenAI"
+    public let clientId = "app_EMoamEEZ73f0CkXaXp7hrann"
+    public let authorizeURL = "https://auth.openai.com/oauth/authorize"
+    public let tokenURL = "https://auth.openai.com/oauth/token"
+    public let redirectURI = "http://localhost:1455/auth/callback"
+    public let scopes = "openid profile email offline_access"
+    public let keychainKey = "chatGPTOAuthCredential"
 
-    let extraAuthParams: [String: String] = [
+    public let extraAuthParams: [String: String] = [
         "codex_cli_simplified_flow": "true",
         "id_token_add_organizations": "true"
     ]
 
+    public init() {}
+
     /// OpenAI backend API endpoint for AI completions.
-    static let completionsEndpoint = "https://chatgpt.com/backend-api/codex/responses"
+    public static let completionsEndpoint = "https://chatgpt.com/backend-api/codex/responses"
 
     /// OpenAI backend API endpoint for listing available models.
-    static let modelsEndpoint = "https://chatgpt.com/backend-api/codex/models"
+    public static let modelsEndpoint = "https://chatgpt.com/backend-api/codex/models"
 
-    func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {
+    public func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {
         // Account ID: try multiple known claim paths
         let accountId: String? = {
             if let id = claims["chatgpt_account_id"] as? String {
@@ -58,7 +60,7 @@ struct OpenAIOAuthProvider: OAuthProvider {
     }
 
     /// Decodes JWT payload without signature verification (trusted issuer).
-    static func decodeJWTPayload(_ jwt: String) -> [String: Any]? {
+    public static func decodeJWTPayload(_ jwt: String) -> [String: Any]? {
         let segments = jwt.components(separatedBy: ".")
         guard segments.count >= 2 else { return nil }
 

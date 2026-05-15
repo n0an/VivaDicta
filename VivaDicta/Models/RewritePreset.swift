@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import Presets
 
 /// A SwiftData model for CloudKit sync of AI presets between iOS and macOS.
 ///

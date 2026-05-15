@@ -7,6 +7,7 @@
 
 import SwiftUI
 import TipKit
+import Presets
 
 struct ModeEditView: View {
     @Environment(\.dismiss) private var dismiss
@@ -1325,7 +1326,7 @@ private struct ModelPickerSheet: View {
 
 #Preview {
     @Previewable @State var aiService = AIService()
-    @Previewable @State var presetManager = PresetManager()
+    @Previewable @State var presetManager = PresetManager(userDefaults: UserDefaultsStorage.shared)
     @Previewable @State var transcriptionManager = TranscriptionManager()
     @Previewable @State var navigationPath = NavigationPath()
     ModeEditView(

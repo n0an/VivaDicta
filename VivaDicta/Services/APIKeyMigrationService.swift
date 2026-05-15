@@ -6,16 +6,20 @@
 //
 
 import Foundation
+import Keychain
 import os
 
 /// One-time migration of API keys from UserDefaults (App Group) to Keychain (iCloud sync).
 final class APIKeyMigrationService: Sendable {
-    static let shared = APIKeyMigrationService()
+    static let shared = APIKeyMigrationService(keychain: KeychainServiceImpl())
 
+    private let keychain: any KeychainServicing
     private let logger = Logger(category: .keychainService)
     private let migrationCompletedKey = "HasMigratedAPIKeysToKeychain"
 
-    private init() {}
+    init(keychain: any KeychainServicing) {
+        self.keychain = keychain
+    }
 
     /// Migrates existing API keys from UserDefaults to Keychain.
     /// Safe to call multiple times — only runs once.
@@ -37,7 +41,7 @@ final class APIKeyMigrationService: Sendable {
             let oldKey = "apiKeyTemplate" + provider.rawValue
             if let value = UserDefaultsStorage.shared.string(forKey: oldKey),
                !value.isEmpty {
-                KeychainService.shared.save(value, forKey: provider.keychainKey)
+                keychain.save(value, forKey: provider.keychainKey)
                 migrated += 1
                 logger.logInfo("Migrated API key for \(provider.rawValue)")
             }
@@ -47,7 +51,7 @@ final class APIKeyMigrationService: Sendable {
         let oldCustomTranscriptionKey = "apiKey.customTranscription"
         if let value = UserDefaultsStorage.shared.string(forKey: oldCustomTranscriptionKey),
            !value.isEmpty {
-            KeychainService.shared.save(value, forKey: "customTranscriptionAPIKey")
+            keychain.save(value, forKey: "customTranscriptionAPIKey")
             migrated += 1
             logger.logInfo("Migrated custom transcription API key")
         }

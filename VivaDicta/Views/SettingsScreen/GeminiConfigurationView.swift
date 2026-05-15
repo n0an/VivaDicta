@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import SwiftUI
+import OAuth
 
 struct GeminiConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
@@ -475,7 +476,7 @@ struct GeminiConfigurationView: View {
     }
 
     private func deleteAPIKey() {
-        KeychainService.shared.delete(forKey: AIProvider.gemini.keychainKey)
+        aiService.deleteAPIKey(for: .gemini)
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()

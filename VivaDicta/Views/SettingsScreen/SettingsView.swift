@@ -9,6 +9,7 @@ import SwiftUI
 import AppIntents
 import TipKit
 import MessageUI
+import Presets
 
 struct SettingsView: View {
     @Environment(AppState.self) var appState
@@ -934,7 +935,7 @@ private struct ModeInfoRow: View {
                                     .foregroundStyle(.tertiary)
                                 if let presetId = mode.presetId {
                                     Text(presetManager.preset(for: presetId)?.name
-                                         ?? PresetCatalog.displayName(for: presetId, fallback: presetId))
+                                         ?? PresetCatalog.displayName(for: presetId, fallback: presetId, userDefaults: UserDefaultsStorage.shared))
                                         .foregroundStyle(.tertiary)
                                 }
                             }

@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseAnalytics
 import os
+import Presets
 
 /// Strongly-typed catalog of every analytics event the app reports.
 ///

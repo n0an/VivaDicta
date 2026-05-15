@@ -243,7 +243,7 @@ struct CloudModelConfigurationView: View {
         HapticManager.heavyImpact()
         // Remove the API key from Keychain
         if let aiProvider = model.provider.mappedAIProvider {
-            KeychainService.shared.delete(forKey: aiProvider.keychainKey)
+            aiService.deleteAPIKey(for: aiProvider)
         }
 
         // Clear the text field

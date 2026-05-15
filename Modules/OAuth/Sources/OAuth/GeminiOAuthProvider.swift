@@ -6,23 +6,25 @@ import os
 /// Google Gemini OAuth provider configuration.
 /// Uses the same client ID as the Gemini CLI for OAuth PKCE flow.
 /// After authentication, discovers a Google Cloud project via Code Assist API.
-struct GeminiOAuthProvider: OAuthProvider {
-    let providerName = "Gemini"
-    let clientId = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
-    let clientSecret: String? = "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"
-    let authorizeURL = "https://accounts.google.com/o/oauth2/v2/auth"
-    let tokenURL = "https://oauth2.googleapis.com/token"
-    let redirectURI = "http://localhost:8085/oauth2callback"
-    let scopes = "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
-    let keychainKey = "geminiOAuthCredential"
-    let userinfoURL: String? = "https://www.googleapis.com/oauth2/v3/userinfo"
+public struct GeminiOAuthProvider: OAuthProvider {
+    public let providerName = "Gemini"
+    public let clientId = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
+    public let clientSecret: String? = "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"
+    public let authorizeURL = "https://accounts.google.com/o/oauth2/v2/auth"
+    public let tokenURL = "https://oauth2.googleapis.com/token"
+    public let redirectURI = "http://localhost:8085/oauth2callback"
+    public let scopes = "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
+    public let keychainKey = "geminiOAuthCredential"
+    public let userinfoURL: String? = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-    let extraAuthParams: [String: String] = [
+    public let extraAuthParams: [String: String] = [
         "access_type": "offline",
         "prompt": "consent"
     ]
 
-    func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {
+    public init() {}
+
+    public func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {
         let id = claims["sub"] as? String
         let email = claims["email"] as? String
         return (id, email)
@@ -30,24 +32,24 @@ struct GeminiOAuthProvider: OAuthProvider {
 
     // MARK: - Code Assist Project Discovery
 
-    private static let logger = Logger(category: .oauthManager)
+    private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "OAuth")
     private static let codeAssistEndpoint = "https://cloudcode-pa.googleapis.com"
 
-    func postAuthSetup(accessToken: String) async throws -> String? {
+    public func postAuthSetup(accessToken: String) async throws -> String? {
         // Step 1: Try to load existing Code Assist project
         if let projectId = try? await loadCodeAssist(accessToken: accessToken) {
-            Self.logger.logInfo("Gemini: found existing project \(projectId)")
+            Self.logger.info("Gemini: found existing project \(projectId)")
             return projectId
         }
 
         // Step 2: Onboard user if no project exists
-        Self.logger.logInfo("Gemini: no project found, onboarding user")
+        Self.logger.info("Gemini: no project found, onboarding user")
         if let projectId = try? await onboardUser(accessToken: accessToken) {
-            Self.logger.logInfo("Gemini: onboarded, project \(projectId)")
+            Self.logger.info("Gemini: onboarded, project \(projectId)")
             return projectId
         }
 
-        Self.logger.logWarning("Gemini: project discovery failed, continuing without projectId")
+        Self.logger.warning("Gemini: project discovery failed, continuing without projectId")
         return nil
     }
 

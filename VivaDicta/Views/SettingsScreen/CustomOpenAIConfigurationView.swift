@@ -404,9 +404,9 @@ struct CustomOpenAIConfigurationView: View {
         aiService.customOpenAIModelName = modelToTest
 
         if !apiKeyToSave.isEmpty {
-            KeychainService.shared.save(apiKeyToSave, forKey: AIProvider.customOpenAI.keychainKey)
+            _ = await aiService.saveAPIKey(apiKeyToSave, for: .customOpenAI)
         } else {
-            KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
+            aiService.deleteAPIKey(for: .customOpenAI)
         }
 
         let result = await aiService.verifyCustomOpenAISetup()

@@ -10,6 +10,7 @@ import SwiftData
 import CoreSpotlight
 import TipKit
 import os
+import Presets
 
 private let logger = Logger(category: .transcriptionDetailView)
 
@@ -101,7 +102,7 @@ struct TranscriptionDetailView: View {
             return preset.name
         }
         if let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) {
-            return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
+            return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName, userDefaults: UserDefaultsStorage.shared)
         }
         return "Original"
     }
@@ -815,7 +816,7 @@ struct TranscriptionDetailView: View {
                   let variation = sortedVariations.first(where: { $0.presetId == selectedChipId }) else {
                 return nil
             }
-            return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName)
+            return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName, userDefaults: UserDefaultsStorage.shared)
         }()
 
         guard let output = ObsidianURLBuilder.build(
@@ -1119,7 +1120,7 @@ struct TranscriptionDetailView: View {
             ForEach(sortedVariations, id: \.id) { variation in
                 variationChip(
                     id: variation.presetId,
-                    label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName),
+                    label: PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName, userDefaults: UserDefaultsStorage.shared),
                     icon: PresetCatalog.icon(for: variation.presetId),
                     isLoading: generatingPresetId == variation.presetId
                 )

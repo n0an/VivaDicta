@@ -9,6 +9,7 @@ import os
 import SwiftData
 import SwiftUI
 import TipKit
+import Presets
 
 private enum TranscriptionSearchMode: String {
     case all
@@ -844,7 +845,8 @@ private struct TranscriptionNavigationRow: View {
                     .sorted(by: { $0.createdAt < $1.createdAt }).last {
                     let presetTitle = PresetCatalog.displayName(
                         for: latestVariation.presetId,
-                        fallback: latestVariation.presetDisplayName
+                        fallback: latestVariation.presetDisplayName,
+                        userDefaults: UserDefaultsStorage.shared
                     )
 
                     ShareLink(item: latestVariation.text) {

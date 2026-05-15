@@ -363,7 +363,7 @@ struct AnthropicConfigurationView: View {
 
     private func deleteAPIKey() {
         HapticManager.heavyImpact()
-        KeychainService.shared.delete(forKey: AIProvider.anthropic.keychainKey)
+        aiService.deleteAPIKey(for: .anthropic)
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()

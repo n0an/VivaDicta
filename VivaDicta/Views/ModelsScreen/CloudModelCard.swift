@@ -12,6 +12,7 @@ struct CloudModelCard: View {
     let onConfigure: (CloudModel) -> Void
     let onDeleteAPIKey: ((CloudModel) -> Void)?
 
+
     @State private var selectedTab: TranscriptionModelType = .cloud
     @State private var showDeleteAlert = false
 
@@ -189,12 +190,7 @@ struct CloudModelCard: View {
     private func deleteAPIKey() {
         HapticManager.heavyImpact()
 
-        // Remove the API key from Keychain
-        if let aiProvider = model.provider.mappedAIProvider {
-            KeychainService.shared.delete(forKey: aiProvider.keychainKey)
-        }
-
-        // Notify parent view about the deletion
+        // Parent removes the API key from Keychain via AIService.
         onDeleteAPIKey?(model)
     }
 }

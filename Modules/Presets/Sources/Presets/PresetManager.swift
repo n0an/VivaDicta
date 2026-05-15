@@ -1,6 +1,6 @@
 //
 //  PresetManager.swift
-//  VivaDicta
+//  Presets
 //
 //  Created by Anton Novoselov on 2026.02.20
 //
@@ -11,32 +11,34 @@ import os
 /// Manages AI text processing presets with persistence in App Group UserDefaults.
 ///
 /// Handles both built-in and custom presets. Built-in presets are editable but not deletable.
-/// Custom presets are synced to CloudKit via ``PresetSyncService`` using ``RewritePreset``
-/// SwiftData records.
+/// Custom presets are synced to CloudKit via a `PresetSyncing` implementation supplied by
+/// the app target (the package itself does not depend on SwiftData/CloudKit).
 ///
 /// ## Storage
 ///
-/// Presets are stored in App Group UserDefaults, making them accessible to the
-/// keyboard extension for Flow Mode functionality.
+/// Presets are stored in the `UserDefaults` instance passed in the initializer.
+/// Production callers pass the App Group UserDefaults so the keyboard extension
+/// can read them too.
 @Observable
-class PresetManager {
-    private let logger = Logger(category: .presetManager)
+public class PresetManager {
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "PresetManager")
     private let userDefaults: UserDefaults
     private let storageKey: String
     private let hiddenPresetIDsStorageKey: String
 
     /// All available presets (built-in + custom from UserDefaults).
-    private(set) var presets: [Preset] = []
+    public private(set) var presets: [Preset] = []
 
     /// Preset IDs hidden from pickers and keyboard on this device.
-    private(set) var hiddenPresetIDs: Set<String> = []
+    public private(set) var hiddenPresetIDs: Set<String> = []
 
-    /// Sync service for writing preset changes to SwiftData/CloudKit.
-    var syncService: PresetSyncService?
+    /// Sync service for writing preset changes to SwiftData/CloudKit. The
+    /// concrete implementation lives in the app target.
+    public var syncService: (any PresetSyncing)?
 
-    init(userDefaults: UserDefaults = UserDefaultsStorage.shared,
-         storageKey: String = UserDefaultsStorage.SharedKeys.presets,
-         hiddenPresetIDsStorageKey: String = UserDefaultsStorage.SharedKeys.hiddenPresetIDs) {
+    public init(userDefaults: UserDefaults,
+                storageKey: String = "Presets_v1",
+                hiddenPresetIDsStorageKey: String = "HiddenPresetIDs_v1") {
         self.userDefaults = userDefaults
         self.storageKey = storageKey
         self.hiddenPresetIDsStorageKey = hiddenPresetIDsStorageKey
@@ -48,47 +50,47 @@ class PresetManager {
     // MARK: - Lookup
 
     /// Returns a preset by its ID.
-    func preset(for id: String) -> Preset? {
+    public func preset(for id: String) -> Preset? {
         presets.first { $0.id == id }
     }
 
     /// Returns presets visible in pickers and keyboard on this device.
-    var visiblePresets: [Preset] {
+    public var visiblePresets: [Preset] {
         presets.filter { !hiddenPresetIDs.contains($0.id) }
     }
 
     /// Returns all presets for a given category.
-    func presets(in category: String) -> [Preset] {
+    public func presets(in category: String) -> [Preset] {
         presets.filter { $0.category == category }
     }
 
     /// Whether any presets are marked as favorites.
-    var hasFavorites: Bool {
+    public var hasFavorites: Bool {
         presets.contains { $0.isFavorite }
     }
 
     /// Whether any visible presets are marked as favorites.
-    var hasVisibleFavorites: Bool {
+    public var hasVisibleFavorites: Bool {
         visiblePresets.contains { $0.isFavorite }
     }
 
     /// Returns ordered category names using explicit category ordering.
-    var categories: [String] {
+    public var categories: [String] {
         categories(from: presets)
     }
 
     /// Returns ordered category names for presets visible in pickers and keyboard.
-    var visibleCategories: [String] {
+    public var visibleCategories: [String] {
         categories(from: visiblePresets)
     }
 
     /// Returns whether the preset is hidden from pickers and keyboard on this device.
-    func isPresetHidden(presetId: String) -> Bool {
+    public func isPresetHidden(presetId: String) -> Bool {
         hiddenPresetIDs.contains(presetId)
     }
 
     /// Updates whether the preset is hidden from pickers and keyboard on this device.
-    func setPresetHidden(presetId: String, isHidden: Bool) {
+    public func setPresetHidden(presetId: String, isHidden: Bool) {
         guard preset(for: presetId) != nil else { return }
 
         if isHidden {
@@ -98,13 +100,13 @@ class PresetManager {
         }
 
         saveHiddenPresetIDs()
-        logger.logInfo("Updated preset visibility: \(presetId) → hidden=\(isHidden)")
+        logger.info("Updated preset visibility: \(presetId, privacy: .public) hidden=\(isHidden)")
     }
 
     // MARK: - CRUD
 
     /// Adds a new custom preset.
-    func addPreset(_ preset: Preset) {
+    public func addPreset(_ preset: Preset) {
         presets.append(preset)
         savePresets()
 
@@ -112,11 +114,11 @@ class PresetManager {
             syncService?.createPresetRecord(from: preset)
         }
 
-        logger.logInfo("Added preset: \(preset.name)")
+        logger.info("Added preset: \(preset.name, privacy: .public)")
     }
 
     /// Updates an existing preset (matched by ID).
-    func updatePreset(_ preset: Preset) {
+    public func updatePreset(_ preset: Preset) {
         guard let index = presets.firstIndex(where: { $0.id == preset.id }) else { return }
         presets[index] = preset
         savePresets()
@@ -127,13 +129,13 @@ class PresetManager {
             syncService?.syncBuiltInPresetRecord(from: preset)
         }
 
-        logger.logInfo("Updated preset: \(preset.name)")
+        logger.info("Updated preset: \(preset.name, privacy: .public)")
     }
 
     /// Deletes a preset. Built-in presets cannot be deleted.
-    func deletePreset(_ preset: Preset) {
+    public func deletePreset(_ preset: Preset) {
         guard !preset.isBuiltIn else {
-            logger.logWarning("Cannot delete built-in preset: \(preset.name)")
+            logger.warning("Cannot delete built-in preset: \(preset.name, privacy: .public)")
             return
         }
         presets.removeAll { $0.id == preset.id }
@@ -145,11 +147,11 @@ class PresetManager {
             syncService?.deletePresetRecord(presetId: preset.id)
         }
 
-        logger.logInfo("Deleted preset: \(preset.name)")
+        logger.info("Deleted preset: \(preset.name, privacy: .public)")
     }
 
     /// Resets a built-in preset to its factory default.
-    func resetToDefault(presetId: String) {
+    public func resetToDefault(presetId: String) {
         guard let defaultPreset = PresetCatalog.defaultPreset(for: presetId),
               let index = presets.firstIndex(where: { $0.id == presetId }) else { return }
         presets[index] = defaultPreset
@@ -157,20 +159,20 @@ class PresetManager {
 
         syncService?.resetBuiltInPresetRecord(presetId: presetId)
 
-        logger.logInfo("Reset preset to default: \(defaultPreset.name)")
+        logger.info("Reset preset to default: \(defaultPreset.name, privacy: .public)")
     }
 
     /// Toggles the favorite state of a preset and syncs to CloudKit.
-    func toggleFavorite(presetId: String) {
+    public func toggleFavorite(presetId: String) {
         guard let index = presets.firstIndex(where: { $0.id == presetId }) else { return }
         presets[index].isFavorite.toggle()
         savePresets()
         syncService?.syncFavoriteState(presetId: presetId, isFavorite: presets[index].isFavorite)
-        logger.logInfo("Toggled favorite for preset: \(presets[index].name) → \(presets[index].isFavorite)")
+        logger.info("Toggled favorite: \(self.presets[index].name, privacy: .public) -> \(self.presets[index].isFavorite)")
     }
 
     /// Checks if a preset name already exists (for duplicate detection).
-    func isPresetNameDuplicate(_ name: String, excludingId: String? = nil) -> Bool {
+    public func isPresetNameDuplicate(_ name: String, excludingId: String? = nil) -> Bool {
         let normalizedName = normalizeForComparison(name)
         return presets.contains { preset in
             normalizeForComparison(preset.name) == normalizedName && preset.id != excludingId
@@ -187,7 +189,6 @@ class PresetManager {
         for builtIn in PresetCatalog.allBuiltIn {
             if let index = presets.firstIndex(where: { $0.id == builtIn.id }) {
                 if presets[index].isEdited {
-                    // User edited this preset — only sync category and icon
                     if presets[index].category != builtIn.category {
                         presets[index].category = builtIn.category
                         changed = true
@@ -197,7 +198,6 @@ class PresetManager {
                         changed = true
                     }
                 } else {
-                    // Not edited — refresh from catalog, preserving isFavorite
                     let wasFavorite = presets[index].isFavorite
                     if presets[index] != builtIn || wasFavorite != builtIn.isFavorite {
                         var refreshed = builtIn
@@ -209,7 +209,7 @@ class PresetManager {
             } else {
                 presets.append(builtIn)
                 changed = true
-                logger.logInfo("Populated built-in preset: \(builtIn.name)")
+                logger.info("Populated built-in preset: \(builtIn.name, privacy: .public)")
             }
         }
         if changed {
@@ -242,16 +242,16 @@ class PresetManager {
             return
         }
         presets = decoded
-        logger.logInfo("Loaded \(decoded.count) presets")
+        logger.info("Loaded \(decoded.count) presets")
     }
 
     private func savePresets() {
         guard let data = try? JSONEncoder().encode(presets) else {
-            logger.logError("Failed to encode presets")
+            logger.error("Failed to encode presets")
             return
         }
         userDefaults.set(data, forKey: storageKey)
-        logger.logInfo("Saved \(self.presets.count) presets")
+        logger.info("Saved \(self.presets.count) presets")
     }
 
     private func loadHiddenPresetIDs() {
@@ -261,12 +261,12 @@ class PresetManager {
         }
 
         hiddenPresetIDs = Set(ids)
-        logger.logInfo("Loaded \(ids.count) hidden preset IDs")
+        logger.info("Loaded \(ids.count) hidden preset IDs")
     }
 
     private func saveHiddenPresetIDs() {
         userDefaults.set(Array(hiddenPresetIDs).sorted(), forKey: hiddenPresetIDsStorageKey)
-        logger.logInfo("Saved \(hiddenPresetIDs.count) hidden preset IDs")
+        logger.info("Saved \(self.hiddenPresetIDs.count) hidden preset IDs")
     }
 
     // MARK: - Helpers

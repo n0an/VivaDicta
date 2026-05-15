@@ -6,11 +6,13 @@
 //
 
 import Foundation
+import Keychain
 import os
 
 enum VivAgentsClient {
 
     private static let logger = Logger(category: .vivAgentsClient)
+    private static let keychain: any KeychainServicing = KeychainServiceImpl()
 
     struct EnhanceRequest: Encodable {
         let text: String
@@ -85,7 +87,17 @@ enum VivAgentsClient {
     }
 
     static var authToken: String? {
-        KeychainService.shared.getString(forKey: authTokenKeychainKey, syncable: false)
+        keychain.getString(forKey: authTokenKeychainKey, syncable: false)
+    }
+
+    /// Writes the server auth token to the keychain (non-syncable).
+    static func setAuthToken(_ token: String) {
+        keychain.save(token, forKey: authTokenKeychainKey, syncable: false)
+    }
+
+    /// Removes the server auth token from the keychain.
+    static func clearAuthToken() {
+        keychain.delete(forKey: authTokenKeychainKey, syncable: false)
     }
 
     static var isVerified: Bool {

@@ -229,7 +229,7 @@ struct AddAPIKeyView: View {
         HapticManager.heavyImpact()
 
         // Remove the API key from Keychain
-        KeychainService.shared.delete(forKey: provider.keychainKey)
+        aiService.deleteAPIKey(for: provider)
 
         // Clear the text field and update state
         apiKey = ""

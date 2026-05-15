@@ -11,6 +11,7 @@ import AVFoundation
 import SwiftData
 import os
 import TipKit
+import Presets
 
 enum RecordingDestination: Equatable {
     case newNote
