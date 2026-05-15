@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2025.11.18
 //
 
+import Keychain
 import SwiftUI
 
 struct CloudModelCard: View {
@@ -12,6 +13,7 @@ struct CloudModelCard: View {
     let onConfigure: (CloudModel) -> Void
     let onDeleteAPIKey: ((CloudModel) -> Void)?
 
+    @Environment(\.dependencies) private var dependencies
     @State private var selectedTab: TranscriptionModelType = .cloud
     @State private var showDeleteAlert = false
 
@@ -191,7 +193,7 @@ struct CloudModelCard: View {
 
         // Remove the API key from Keychain
         if let aiProvider = model.provider.mappedAIProvider {
-            KeychainService.shared.delete(forKey: aiProvider.keychainKey)
+            dependencies.keychain.delete(forKey: aiProvider.keychainKey)
         }
 
         // Notify parent view about the deletion
