@@ -293,6 +293,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Modules/Keychain,
 				VivaDicta.xctestplan,
 			);
 			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
@@ -933,7 +934,6 @@
 				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
-				187D37592FB72989004234D0 /* XCLocalSwiftPackageReference "Packages/Keychain" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -2517,13 +2517,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCLocalSwiftPackageReference section */
-		187D37592FB72989004234D0 /* XCLocalSwiftPackageReference "Packages/Keychain" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/Keychain;
-		};
-/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */ = {

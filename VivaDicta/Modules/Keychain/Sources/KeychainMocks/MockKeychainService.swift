@@ -7,7 +7,6 @@
 
 import Foundation
 import Keychain
-import TestUtilities
 
 /// Hybrid fake/mock for `KeychainServicing`.
 ///
