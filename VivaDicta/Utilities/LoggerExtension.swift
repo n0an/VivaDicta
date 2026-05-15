@@ -154,20 +154,3 @@ public extension Logger {
     }
 }
 
-struct SignpostLog {
-    static var pointsOfInterest: OSLog {
-        if ProcessInfo.processInfo.environment["SIGNPOST_ENABLED"] == "1" {
-            return OSLog(subsystem: kLoggingSubsystem, category: .pointsOfInterest)
-        } else {
-            return .disabled
-        }
-    }
-    
-    static var general: OSLog {
-        if ProcessInfo.processInfo.environment["SIGNPOST_ENABLED"] == "1" {
-            return OSLog(subsystem: kLoggingSubsystem, category: "general")
-        } else {
-            return .disabled
-        }
-    }
-}

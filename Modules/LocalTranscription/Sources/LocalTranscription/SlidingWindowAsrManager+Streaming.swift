@@ -33,7 +33,8 @@ extension SlidingWindowAsrManager {
         }
 
         audioSamples.withUnsafeBufferPointer { samplesPointer in
-            channelData.update(from: samplesPointer.baseAddress!, count: audioSamples.count)
+            guard let base = samplesPointer.baseAddress else { return }
+            channelData.update(from: base, count: audioSamples.count)
         }
 
         streamAudio(buffer)

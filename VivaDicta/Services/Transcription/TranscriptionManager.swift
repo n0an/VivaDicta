@@ -36,8 +36,11 @@ import os
 ///
 /// ## Thread Safety
 ///
-/// This class is marked with `@Observable` for SwiftUI integration. All public
-/// methods should be called from the main actor or properly handle concurrency.
+/// This class is marked with `@Observable` for SwiftUI integration and
+/// `@MainActor` for explicit isolation. The on-device transcription services
+/// it owns are `@unchecked Sendable` non-actor classes; making the manager
+/// `@MainActor` is what serializes access to their mutable state.
+@MainActor
 @Observable
 class TranscriptionManager {
     private let logger = Logger(category: .transcriptionManager)

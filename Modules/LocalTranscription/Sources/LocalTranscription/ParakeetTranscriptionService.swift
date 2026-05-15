@@ -10,8 +10,12 @@ import TranscriptionCore
 /// FluidAudio. Caches the model + VAD manager in memory between calls. If the
 /// caller passes a non-empty vocabulary list, switches to FluidAudio's
 /// sliding-window streaming path with CTC vocabulary boosting.
-@MainActor
-public final class ParakeetTranscriptionService {
+/// Marked `@unchecked Sendable` because the service holds mutable state
+/// (ASR/VAD managers, vocabulary cache) that is serialized through the
+/// `TranscriptionManager`'s `@MainActor` caller chain. Non-isolated `async`
+/// methods run on the global executor (SE-0338), which is what we want for
+/// the per-buffer streaming loops.
+public final class ParakeetTranscriptionService: @unchecked Sendable {
 
     public struct Options: Sendable {
         public let isVADEnabled: Bool

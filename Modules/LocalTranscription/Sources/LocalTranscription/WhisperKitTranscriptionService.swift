@@ -11,9 +11,11 @@ import TranscriptionCore
 /// different model name. Model downloading is the caller's responsibility -
 /// this service expects the model files to already be on disk under
 /// `WhisperKitModelPath.directory(forModelName:)`.
-@MainActor
-@Observable
-public final class WhisperKitTranscriptionService {
+/// Marked `@unchecked Sendable` because the service holds mutable state
+/// (loaded model, cached durations) that is serialized through the
+/// `TranscriptionManager`'s `@MainActor` caller chain. Calls from off-Main
+/// would race; the manager is the sole caller and is `@MainActor`.
+public final class WhisperKitTranscriptionService: @unchecked Sendable {
 
     public struct Options: Sendable {
         /// BCP-47 code or `"auto"` to let WhisperKit detect.
