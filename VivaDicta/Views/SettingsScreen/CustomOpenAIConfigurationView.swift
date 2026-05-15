@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.01.17
 //
 
+import Keychain
 import SwiftUI
 import os
 
@@ -12,6 +13,7 @@ private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category:
 
 struct CustomOpenAIConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dependencies) private var dependencies
     let aiService: AIService
 
     @State private var endpointURL: String = ""
@@ -404,9 +406,9 @@ struct CustomOpenAIConfigurationView: View {
         aiService.customOpenAIModelName = modelToTest
 
         if !apiKeyToSave.isEmpty {
-            KeychainService.shared.save(apiKeyToSave, forKey: AIProvider.customOpenAI.keychainKey)
+            dependencies.keychain.save(apiKeyToSave, forKey: AIProvider.customOpenAI.keychainKey)
         } else {
-            KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
+            dependencies.keychain.delete(forKey: AIProvider.customOpenAI.keychainKey)
         }
 
         let result = await aiService.verifyCustomOpenAISetup()

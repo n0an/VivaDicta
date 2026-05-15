@@ -5,10 +5,12 @@
 //  Created by Anton Novoselov on 2025.09.03
 //
 
+import Keychain
 import SwiftUI
 
 struct CloudModelConfigurationView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(\.dependencies) private var dependencies
     var model: CloudModel
     var onSave: (CloudModel) -> Void
 
@@ -243,7 +245,7 @@ struct CloudModelConfigurationView: View {
         HapticManager.heavyImpact()
         // Remove the API key from Keychain
         if let aiProvider = model.provider.mappedAIProvider {
-            KeychainService.shared.delete(forKey: aiProvider.keychainKey)
+            dependencies.keychain.delete(forKey: aiProvider.keychainKey)
         }
 
         // Clear the text field

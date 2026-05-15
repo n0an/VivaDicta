@@ -1,9 +1,11 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
+import Keychain
 import SwiftUI
 
 struct OpenAIConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dependencies) private var dependencies
     let aiService: AIService
 
     // API Key state
@@ -475,7 +477,7 @@ struct OpenAIConfigurationView: View {
     }
 
     private func deleteAPIKey() {
-        KeychainService.shared.delete(forKey: AIProvider.openAI.keychainKey)
+        dependencies.keychain.delete(forKey: AIProvider.openAI.keychainKey)
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()
