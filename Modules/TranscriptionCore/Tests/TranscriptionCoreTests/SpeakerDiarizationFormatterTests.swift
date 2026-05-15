@@ -1,14 +1,8 @@
-//
-//  SpeakerDiarizationFormatterTests.swift
-//  VivaDictaTests
-//
-//  Created by Anton Novoselov on 2026.04.14
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
 import Testing
-import TranscriptionCore
-@testable import VivaDicta
+@testable import TranscriptionCore
 
 struct SpeakerDiarizationFormatterTests {
 
