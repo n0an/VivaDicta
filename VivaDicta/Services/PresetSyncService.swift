@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import os
+import Presets
 
 /// Bridges RewritePreset SwiftData records (CloudKit-synced) with PresetManager (UserDefaults).
 ///
@@ -21,7 +22,7 @@ import os
 /// - **Migration**: One-time migration of existing custom presets and old
 ///   ``CustomRewritePreset`` records to the new `RewritePreset` model.
 @Observable
-class PresetSyncService {
+class PresetSyncService: PresetSyncing {
     private let logger = Logger(category: .presetSync)
     private var modelContext: ModelContext?
 

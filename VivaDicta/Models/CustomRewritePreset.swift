@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import Presets
 
 /// Legacy SwiftData model for user-created custom rewrite presets.
 ///

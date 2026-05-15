@@ -13,6 +13,7 @@ import os
 import CoreSpotlight
 import SwiftData
 import AppIntents
+import Presets
 
 /// Central application state manager coordinating all major services.
 ///
@@ -121,7 +122,7 @@ class AppState {
     init(modelContainer: ModelContainer) {
         transcriptionManager = TranscriptionManager()
         aiService = AIService()
-        presetManager = PresetManager()
+        presetManager = PresetManager(userDefaults: UserDefaultsStorage.shared)
         aiService.presetManager = presetManager
         PresetMigrationService.migrateIfNeeded(presetManager: presetManager, aiService: aiService)
 

@@ -12,6 +12,7 @@ import AppIntents
 import CoreSpotlight
 import ActivityKit
 import TipKit
+import Presets
 
 @main
 struct VivaDictaApp: App {

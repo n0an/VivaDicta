@@ -1,26 +1,28 @@
-// swift-tools-version: 6.3
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version: 6.2
 
 import PackageDescription
 
 let package = Package(
     name: "Keychain",
+    platforms: [
+        .iOS(.v18),
+        .macOS(.v14),
+    ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "Keychain",
-            targets: ["Keychain"]
-        ),
+        .library(name: "Keychain", targets: ["Keychain"]),
+        .library(name: "KeychainMocks", targets: ["KeychainMocks"]),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "Keychain"
         ),
+        .target(
+            name: "KeychainMocks",
+            dependencies: ["Keychain"]
+        ),
         .testTarget(
             name: "KeychainTests",
-            dependencies: ["Keychain"]
+            dependencies: ["Keychain", "KeychainMocks"]
         ),
     ],
     swiftLanguageModes: [.v6]

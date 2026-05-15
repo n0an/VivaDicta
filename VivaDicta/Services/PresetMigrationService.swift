@@ -7,6 +7,7 @@
 
 import Foundation
 import os
+import Presets
 
 /// One-time migration from the legacy UserPrompt system to the new Preset system.
 ///

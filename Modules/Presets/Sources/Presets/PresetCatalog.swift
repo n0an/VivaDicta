@@ -16,11 +16,11 @@ import Foundation
 /// - Adding new built-in presets when the app updates
 ///
 /// Preset IDs must match between iOS and macOS for CloudKit variation compatibility.
-enum PresetCatalog {
+public enum PresetCatalog {
 
     // MARK: - Rewrite Presets (useSystemTemplate = true)
 
-    static let regular = Preset(
+    public static let regular = Preset(
         id: "regular",
         name: "Regular",
         icon: "✨",
@@ -45,7 +45,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let coding = Preset(
+    public static let coding = Preset(
         id: "coding",
         name: "Coding",
         icon: "💻",
@@ -62,7 +62,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let rewrite = Preset(
+    public static let rewrite = Preset(
         id: "rewrite",
         name: "Rewrite",
         icon: "✍️",
@@ -86,7 +86,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let simplify = Preset(
+    public static let simplify = Preset(
         id: "simplify",
         name: "Simplify",
         icon: "🔤",
@@ -103,7 +103,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let proofreading = Preset(
+    public static let proofreading = Preset(
         id: "proofreading",
         name: "Proofreading",
         icon: "🔍",
@@ -120,7 +120,7 @@ enum PresetCatalog {
 
     // MARK: - Format Presets
 
-    static let structured = Preset(
+    public static let structured = Preset(
         id: "structured",
         name: "Structured",
         icon: "📄",
@@ -136,7 +136,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let list = Preset(
+    public static let list = Preset(
         id: "list",
         name: "List",
         icon: "📋",
@@ -152,7 +152,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let table = Preset(
+    public static let table = Preset(
         id: "table",
         name: "Table",
         icon: "🗂️",
@@ -175,7 +175,7 @@ enum PresetCatalog {
 
     // MARK: - Style Presets
 
-    static let professional = Preset(
+    public static let professional = Preset(
         id: "professional",
         name: "Professional",
         icon: "💼",
@@ -191,7 +191,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let casual = Preset(
+    public static let casual = Preset(
         id: "casual",
         name: "Casual",
         icon: "😊",
@@ -207,7 +207,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let short = Preset(
+    public static let short = Preset(
         id: "short",
         name: "Short",
         icon: "✂️",
@@ -223,7 +223,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let expand = Preset(
+    public static let expand = Preset(
         id: "elaborated",
         name: "Expand",
         icon: "🔬",
@@ -242,7 +242,7 @@ enum PresetCatalog {
 
     // MARK: - Communication Presets
 
-    static let email = Preset(
+    public static let email = Preset(
         id: "email",
         name: "Email",
         icon: "📧",
@@ -262,7 +262,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let chat = Preset(
+    public static let chat = Preset(
         id: "chat",
         name: "Chat",
         icon: "💬",
@@ -287,7 +287,7 @@ enum PresetCatalog {
 
     // MARK: - Summarize Presets
 
-    static let summary = Preset(
+    public static let summary = Preset(
         id: "summary",
         name: "Summary",
         icon: "📝",
@@ -303,7 +303,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let actionPoints = Preset(
+    public static let actionPoints = Preset(
         id: "action_points",
         name: "Action Points",
         icon: "✅",
@@ -319,7 +319,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let takeaways = Preset(
+    public static let takeaways = Preset(
         id: "takeaways",
         name: "Takeaways",
         icon: "📌",
@@ -334,7 +334,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let mindMap = Preset(
+    public static let mindMap = Preset(
         id: "mind_map",
         name: "Mind Map",
         icon: "🕸️",
@@ -350,7 +350,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let keyPoints = Preset(
+    public static let keyPoints = Preset(
         id: "key_points",
         name: "Key Points",
         icon: "🎯",
@@ -370,7 +370,7 @@ enum PresetCatalog {
 
     // MARK: - Learn & Study Presets
 
-    static let studyNotes = Preset(
+    public static let studyNotes = Preset(
         id: "study_note",
         name: "Study Notes",
         icon: "🎓",
@@ -386,7 +386,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let definitions = Preset(
+    public static let definitions = Preset(
         id: "definitions",
         name: "Definitions",
         icon: "📖",
@@ -401,7 +401,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let quiz = Preset(
+    public static let quiz = Preset(
         id: "quiz",
         name: "Quiz",
         icon: "🧩",
@@ -419,7 +419,7 @@ enum PresetCatalog {
 
     // MARK: - Dive Deep Presets
 
-    static let insights = Preset(
+    public static let insights = Preset(
         id: "insights",
         name: "Insights",
         icon: "🧠",
@@ -434,7 +434,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let prosCons = Preset(
+    public static let prosCons = Preset(
         id: "pros_cons",
         name: "Pros & Cons",
         icon: "⚖️",
@@ -450,7 +450,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let newIdeas = Preset(
+    public static let newIdeas = Preset(
         id: "new_ideas",
         name: "New Ideas",
         icon: "💡",
@@ -466,7 +466,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let hiddenGems = Preset(
+    public static let hiddenGems = Preset(
         id: "hidden_gems",
         name: "Hidden Gems",
         icon: "💎",
@@ -484,7 +484,7 @@ enum PresetCatalog {
 
     // MARK: - Writing Presets
 
-    static let journalEntry = Preset(
+    public static let journalEntry = Preset(
         id: "journal_entry",
         name: "Journal Entry",
         icon: "📔",
@@ -500,7 +500,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let philosophical = Preset(
+    public static let philosophical = Preset(
         id: "philosophical",
         name: "Philosophical",
         icon: "🤔",
@@ -516,7 +516,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let blog = Preset(
+    public static let blog = Preset(
         id: "blog",
         name: "Blog",
         icon: "✒️",
@@ -533,7 +533,7 @@ enum PresetCatalog {
 
     // MARK: - Social Media Presets
 
-    static let instagram = Preset(
+    public static let instagram = Preset(
         id: "instagram",
         name: "Instagram",
         icon: "asset:instagram",
@@ -549,7 +549,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let facebook = Preset(
+    public static let facebook = Preset(
         id: "facebook",
         name: "Facebook",
         icon: "asset:facebook",
@@ -565,7 +565,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let youtube = Preset(
+    public static let youtube = Preset(
         id: "youtube",
         name: "YouTube",
         icon: "asset:youtube",
@@ -581,7 +581,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let twitter = Preset(
+    public static let twitter = Preset(
         id: "twitter",
         name: "X (Twitter)",
         icon: "asset:twitter",
@@ -596,7 +596,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let threads = Preset(
+    public static let threads = Preset(
         id: "threads",
         name: "Threads",
         icon: "asset:threads",
@@ -611,7 +611,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let linkedin = Preset(
+    public static let linkedin = Preset(
         id: "linkedin",
         name: "LinkedIn",
         icon: "asset:linkedin",
@@ -629,7 +629,7 @@ enum PresetCatalog {
 
     // MARK: - Translate Presets
 
-    static let translateEnglish = Preset(
+    public static let translateEnglish = Preset(
         id: "translate_en",
         name: "English",
         icon: "🇺🇸",
@@ -645,7 +645,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateRussian = Preset(
+    public static let translateRussian = Preset(
         id: "translate_ru",
         name: "Russian",
         icon: "🇷🇺",
@@ -661,7 +661,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateSpanish = Preset(
+    public static let translateSpanish = Preset(
         id: "translate_es",
         name: "Spanish",
         icon: "🇪🇸",
@@ -677,7 +677,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateChinese = Preset(
+    public static let translateChinese = Preset(
         id: "translate_zh",
         name: "Chinese",
         icon: "🇨🇳",
@@ -693,7 +693,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateFrench = Preset(
+    public static let translateFrench = Preset(
         id: "translate_fr",
         name: "French",
         icon: "🇫🇷",
@@ -709,7 +709,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateGerman = Preset(
+    public static let translateGerman = Preset(
         id: "translate_de",
         name: "German",
         icon: "🇩🇪",
@@ -725,7 +725,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translatePortuguese = Preset(
+    public static let translatePortuguese = Preset(
         id: "translate_pt",
         name: "Portuguese",
         icon: "🇧🇷",
@@ -741,7 +741,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateJapanese = Preset(
+    public static let translateJapanese = Preset(
         id: "translate_ja",
         name: "Japanese",
         icon: "🇯🇵",
@@ -757,7 +757,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateKorean = Preset(
+    public static let translateKorean = Preset(
         id: "translate_ko",
         name: "Korean",
         icon: "🇰🇷",
@@ -773,7 +773,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateArabic = Preset(
+    public static let translateArabic = Preset(
         id: "translate_ar",
         name: "Arabic",
         icon: "🇸🇦",
@@ -789,7 +789,7 @@ enum PresetCatalog {
         isBuiltIn: true
     )
 
-    static let translateItalian = Preset(
+    public static let translateItalian = Preset(
         id: "translate_it",
         name: "Italian",
         icon: "🇮🇹",
@@ -807,7 +807,7 @@ enum PresetCatalog {
 
     // MARK: - Assistant Preset (useSystemTemplate = false)
 
-    static let assistant = Preset(
+    public static let assistant = Preset(
         id: "assistant",
         name: "Assistant",
         icon: "🤖",
@@ -840,7 +840,7 @@ enum PresetCatalog {
     // MARK: - All Built-In
 
     /// All built-in presets ordered by category (matching macOS sort order).
-    static let allBuiltIn: [Preset] = [
+    public static let allBuiltIn: [Preset] = [
         // Rewrite
         regular,
         coding,
@@ -902,10 +902,10 @@ enum PresetCatalog {
     ]
 
     /// All built-in preset IDs for quick lookup.
-    static let builtInIds: Set<String> = Set(allBuiltIn.map(\.id))
+    public static let builtInIds: Set<String> = Set(allBuiltIn.map(\.id))
 
     /// Explicit category ordering matching macOS for deterministic display.
-    static let categoryOrder: [String] = [
+    public static let categoryOrder: [String] = [
         "Rewrite", "Format", "Style", "Communication",
         "Summarize", "Learn & Study", "Dive Deep",
         "Writing", "Social Media",
@@ -913,7 +913,7 @@ enum PresetCatalog {
     ]
 
     /// Ordered category names using explicit category ordering.
-    static var categories: [String] {
+    public static var categories: [String] {
         var seen = Set<String>()
         var result: [String] = []
         for preset in allBuiltIn {
@@ -931,19 +931,23 @@ enum PresetCatalog {
     }
 
     /// Returns the factory default for a built-in preset ID.
-    static func defaultPreset(for id: String) -> Preset? {
+    public static func defaultPreset(for id: String) -> Preset? {
         allBuiltIn.first { $0.id == id }
     }
 
     /// Returns the display name for a preset ID, with a fallback.
     ///
-    /// Checks built-in presets first, then looks up custom presets from UserDefaults.
-    static func displayName(for presetId: String, fallback: String) -> String {
+    /// Checks built-in presets first, then looks up custom presets from the
+    /// provided `UserDefaults` (the package can't reach the app's
+    /// `UserDefaultsStorage`; the caller passes the right suite explicitly).
+    public static func displayName(for presetId: String,
+                                   fallback: String,
+                                   userDefaults: UserDefaults,
+                                   storageKey: String = "Presets_v1") -> String {
         if let builtIn = allBuiltIn.first(where: { $0.id == presetId }) {
             return builtIn.name
         }
-        // Look up custom preset name from shared UserDefaults
-        if let data = UserDefaultsStorage.shared.data(forKey: UserDefaultsStorage.SharedKeys.presets),
+        if let data = userDefaults.data(forKey: storageKey),
            let presets = try? JSONDecoder().decode([Preset].self, from: data),
            let preset = presets.first(where: { $0.id == presetId }) {
             return preset.name
@@ -953,7 +957,7 @@ enum PresetCatalog {
 
     /// Returns the icon for a preset ID.
     /// Checks built-in presets first, then falls back to default.
-    static func icon(for presetId: String) -> String {
+    public static func icon(for presetId: String) -> String {
         if let icon = allBuiltIn.first(where: { $0.id == presetId })?.icon {
             return icon
         }
@@ -964,7 +968,7 @@ enum PresetCatalog {
 
     /// Stable UUIDs matching macOS RewritePreset records for CloudKit sync.
     /// These must stay in sync with macOS `RewritePreset.builtInDefinitions` UUIDs.
-    static let builtInUUIDs: [String: UUID] = [
+    public static let builtInUUIDs: [String: UUID] = [
         "regular":       UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
         "summary":       UUID(uuidString: "00000000-0000-0000-0000-000000000010")!,
         "action_points": UUID(uuidString: "00000000-0000-0000-0000-000000000011")!,
@@ -1020,12 +1024,12 @@ enum PresetCatalog {
     }()
 
     /// Returns the stable CloudKit UUID for a built-in preset ID.
-    static func uuid(for presetId: String) -> UUID? {
+    public static func uuid(for presetId: String) -> UUID? {
         builtInUUIDs[presetId]
     }
 
     /// Returns the built-in preset ID for a CloudKit UUID.
-    static func presetId(for uuid: UUID) -> String? {
+    public static func presetId(for uuid: UUID) -> String? {
         uuidToBuiltInId[uuid]
     }
 }

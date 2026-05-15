@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		186C057F2FB779AA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C057E2FB779AA00102432 /* Keychain */; };
+		186C05812FB779AA00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05802FB779AA00102432 /* Presets */; };
+		186C05832FB779BA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05822FB779BA00102432 /* Keychain */; };
+		186C05852FB779BA00102432 /* KeychainMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05842FB779BA00102432 /* KeychainMocks */; };
+		186C05872FB779BA00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05862FB779BA00102432 /* Presets */; };
+		186C05892FB779BA00102432 /* PresetsMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05882FB779BA00102432 /* PresetsMocks */; };
+		186C058B2FB779C200102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058A2FB779C200102432 /* Presets */; };
+		186C058D2FB779CB00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058C2FB779CB00102432 /* Presets */; };
+		186C058F2FB779D200102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058E2FB779D200102432 /* Presets */; };
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
@@ -181,6 +190,22 @@
 			);
 			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
 		};
+		186C04412FB7762100102432 /* Exceptions for "Modules" folder in "VivaDicta" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Keychain,
+				Presets,
+			);
+			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
+		};
+		186C04422FB7762100102432 /* Exceptions for "Modules" folder in "ActionExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Keychain,
+				Presets,
+			);
+			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
+		};
 		186E24542EA199EF00B19EDF /* Exceptions for "VivaDicta" folder in "VivaDictaTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -203,8 +228,6 @@
 				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
-				Models/Preset.swift,
-				Models/PresetCatalog.swift,
 				Models/TranscriptionModel.swift,
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,
@@ -235,8 +258,6 @@
 				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
-				Models/Preset.swift,
-				Models/PresetCatalog.swift,
 				Models/TranscriptionModel.swift,
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,
@@ -327,8 +348,6 @@
 				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
-				Models/Preset.swift,
-				Models/PresetCatalog.swift,
 				Models/TranscriptionModel.swift,
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,
@@ -380,6 +399,15 @@
 		18351E582E634FF000944940 /* VivaDictaTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = VivaDictaTests;
+			sourceTree = "<group>";
+		};
+		186C04402FB7762000102432 /* Modules */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				186C04412FB7762100102432 /* Exceptions for "Modules" folder in "VivaDicta" target */,
+				186C04422FB7762100102432 /* Exceptions for "Modules" folder in "ActionExtension" target */,
+			);
+			path = Modules;
 			sourceTree = "<group>";
 		};
 		187D20F42FB5011D004234D0 /* VivaDictaUITests */ = {
@@ -458,7 +486,9 @@
 				1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */,
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
+				186C05812FB779AA00102432 /* Presets in Frameworks */,
 				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
+				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
@@ -469,6 +499,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				186C05872FB779BA00102432 /* Presets in Frameworks */,
+				186C05852FB779BA00102432 /* KeychainMocks in Frameworks */,
+				186C05832FB779BA00102432 /* Keychain in Frameworks */,
+				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -484,6 +518,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */,
+				186C058B2FB779C200102432 /* Presets in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -491,6 +526,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				186C058D2FB779CB00102432 /* Presets in Frameworks */,
 				189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */,
 				189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */,
 			);
@@ -530,6 +566,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				186C058F2FB779D200102432 /* Presets in Frameworks */,
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
 				18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */,
 			);
@@ -560,6 +597,7 @@
 		181D04CE2E3E55E400D357A6 = {
 			isa = PBXGroup;
 			children = (
+				186C04402FB7762000102432 /* Modules */,
 				18B497E42F26822400538830 /* Settings.bundle */,
 				181D04D92E3E55E400D357A6 /* VivaDicta */,
 				18351E582E634FF000944940 /* VivaDictaTests */,
@@ -621,6 +659,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				181D04D92E3E55E400D357A6 /* VivaDicta */,
+				186C04402FB7762000102432 /* Modules */,
 			);
 			name = VivaDicta;
 			packageProductDependencies = (
@@ -631,6 +670,8 @@
 				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
 				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
+				186C057E2FB779AA00102432 /* Keychain */,
+				186C05802FB779AA00102432 /* Presets */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -654,6 +695,10 @@
 			);
 			name = VivaDictaTests;
 			packageProductDependencies = (
+				186C05822FB779BA00102432 /* Keychain */,
+				186C05842FB779BA00102432 /* KeychainMocks */,
+				186C05862FB779BA00102432 /* Presets */,
+				186C05882FB779BA00102432 /* PresetsMocks */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -700,6 +745,7 @@
 			name = ShareExtension;
 			packageProductDependencies = (
 				189C7AA62F0D4A6E004BAFBF /* FluidAudio */,
+				186C058A2FB779C200102432 /* Presets */,
 			);
 			productName = ShareExtension;
 			productReference = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */;
@@ -718,11 +764,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				186C04402FB7762000102432 /* Modules */,
 				189C7AB12F0D84E2004BAFBF /* ActionExtension */,
 			);
 			name = ActionExtension;
 			packageProductDependencies = (
 				189C7ACE2F0D8749004BAFBF /* FluidAudio */,
+				186C058C2FB779CB00102432 /* Presets */,
 			);
 			productName = ActionExtension;
 			productReference = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */;
@@ -839,6 +887,7 @@
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
 				18EBD7982ED1FCC600C0041E /* FluidAudio */,
+				186C058E2FB779D200102432 /* Presets */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -2558,6 +2607,42 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		186C057E2FB779AA00102432 /* Keychain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Keychain;
+		};
+		186C05802FB779AA00102432 /* Presets */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Presets;
+		};
+		186C05822FB779BA00102432 /* Keychain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Keychain;
+		};
+		186C05842FB779BA00102432 /* KeychainMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KeychainMocks;
+		};
+		186C05862FB779BA00102432 /* Presets */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Presets;
+		};
+		186C05882FB779BA00102432 /* PresetsMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PresetsMocks;
+		};
+		186C058A2FB779C200102432 /* Presets */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Presets;
+		};
+		186C058C2FB779CB00102432 /* Presets */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Presets;
+		};
+		186C058E2FB779D200102432 /* Presets */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Presets;
+		};
 		1879FD9F2F8C088E00952CF9 /* LumoKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;

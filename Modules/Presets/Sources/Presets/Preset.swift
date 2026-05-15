@@ -20,55 +20,55 @@ import SwiftUI
 ///
 /// Built-in presets are editable but not deletable. Custom presets are synced
 /// via ``RewritePreset`` SwiftData records through CloudKit.
-struct Preset: Identifiable, Codable, Equatable, Hashable {
+public struct Preset: Identifiable, Codable, Equatable, Hashable, Sendable {
     /// Stable string identifier. Built-in presets use readable IDs (e.g., "regular", "email").
     /// Custom presets use "custom_<UUID>" format.
-    let id: String
+    public let id: String
 
     /// User-visible name of the preset.
-    var name: String
+    public var name: String
 
     /// Icon for display. Can be an emoji, SF Symbol name, or "asset:<name>" for custom images.
-    var icon: String
+    public var icon: String
 
     /// Short user-visible description of what the preset does.
-    var presetDescription: String
+    public var presetDescription: String
 
     /// Grouping category: "Rewrite", "Format", "Style", "Communication", "Summarize",
     /// "Learn & Study", "Dive Deep", "Writing", "Social Media", "Translate", "Assistant", "Other".
-    var category: String
+    public var category: String
 
     /// The prompt text. For enhancement presets, this gets wrapped in the system template.
     /// For standalone presets, this IS the full system message.
-    var promptInstructions: String
+    public var promptInstructions: String
 
     /// When `true`, `promptInstructions` are injected into the TRANSCRIPTION ENHANCER
     /// system prompt wrapper via `PromptsTemplates.systemPrompt(with:)`.
     /// When `false`, `promptInstructions` are used directly as the system message.
-    var useSystemTemplate: Bool
+    public var useSystemTemplate: Bool
 
     /// When `true`, the input text is wrapped in `<TRANSCRIPT>` tags before sending to AI.
-    var wrapInTranscriptTags: Bool
+    public var wrapInTranscriptTags: Bool
 
     /// Built-in presets cannot be deleted (only edited and reset).
-    let isBuiltIn: Bool
+    public let isBuiltIn: Bool
 
     /// Whether a built-in preset has been modified by the user.
-    var isEdited: Bool
+    public var isEdited: Bool
 
     /// Whether the user has marked this preset as a favorite.
-    var isFavorite: Bool
+    public var isFavorite: Bool
 
     /// When this preset was created.
-    let createdAt: Date
+    public let createdAt: Date
 
     /// Whether the icon string is an emoji (as opposed to an SF Symbol name).
-    var iconIsEmoji: Bool {
+    public var iconIsEmoji: Bool {
         guard let first = icon.unicodeScalars.first else { return false }
         return first.properties.isEmoji && first.value > 0x238C
     }
 
-    init(id: String,
+    public init(id: String,
          name: String,
          icon: String,
          presetDescription: String = "",
@@ -94,7 +94,7 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
         self.createdAt = createdAt
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
@@ -112,16 +112,21 @@ struct Preset: Identifiable, Codable, Equatable, Hashable {
 }
 
 /// Renders a preset icon as an emoji `Text`, an SF Symbol `Image`, or a custom asset `Image`.
-struct PresetIconView: View {
-    let icon: String
-    var fontSize: CGFloat = 14
+public struct PresetIconView: View {
+    public let icon: String
+    public var fontSize: CGFloat = 14
 
     private var isEmoji: Bool {
         guard let first = icon.unicodeScalars.first else { return false }
         return first.properties.isEmoji && first.value > 0x238C
     }
 
-    var body: some View {
+    public init(icon: String, fontSize: CGFloat = 14) {
+        self.icon = icon
+        self.fontSize = fontSize
+    }
+
+    public var body: some View {
         if icon.hasPrefix("asset:") {
             let assetName = String(icon.dropFirst("asset:".count))
             Image(assetName)
