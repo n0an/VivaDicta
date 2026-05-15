@@ -1,25 +1,21 @@
-//
-//  NetworkRetry.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.01.02
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
 import os
 
-enum NetworkRetry {
-    static let defaultTimeout: TimeInterval = 120
-    static let maxRetries = 2
-    static let initialRetryDelay: Duration = .seconds(1)
+public enum NetworkRetry {
+    public static let defaultTimeout: TimeInterval = 120
+    public static let maxRetries = 2
+    public static let initialRetryDelay: Duration = .seconds(1)
 
     /// Executes an async operation with retry logic for transient failures.
     /// - Parameters:
-    ///   - logger: Logger for recording retry attempts
-    ///   - operation: The async throwing operation to execute
-    /// - Returns: The result of the operation
-    static func withRetry<T>(
+    ///   - logger: Logger for recording retry attempts.
+    ///   - operation: The async throwing operation to execute.
+    /// - Returns: The result of the operation.
+    public static func withRetry<T>(
         logger: Logger,
+        isolation: isolated (any Actor)? = #isolation,
         operation: () async throws -> T
     ) async throws -> T {
         var retries = 0

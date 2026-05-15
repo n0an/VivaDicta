@@ -1,13 +1,8 @@
-//
-//  URL+AudioMIMEType.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.04.05
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
 
-extension URL {
+public extension URL {
     var audioMIMEType: String {
         switch pathExtension.lowercased() {
         case "m4a": "audio/mp4"

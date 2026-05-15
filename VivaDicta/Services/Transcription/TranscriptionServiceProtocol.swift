@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TranscriptionCore
 
 /// A protocol defining the interface for audio transcription services.
 ///

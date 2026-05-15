@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TranscriptionCore
 import SwiftUI
 import os
 

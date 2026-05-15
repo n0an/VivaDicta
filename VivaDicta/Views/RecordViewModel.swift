@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import TranscriptionCore
 import AVFoundation
 import SwiftData
 import os

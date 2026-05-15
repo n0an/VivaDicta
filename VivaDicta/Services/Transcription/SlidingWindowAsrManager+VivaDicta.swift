@@ -7,6 +7,7 @@
 
 import AVFoundation
 @preconcurrency import FluidAudio
+import TranscriptionCore
 
 extension SlidingWindowAsrManager {
     func streamFloatSamples(_ audioSamples: [Float]) throws {

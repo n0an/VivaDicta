@@ -7,6 +7,7 @@
 
 import AVFoundation
 import Foundation
+import TranscriptionCore
 @preconcurrency import FluidAudio
 import os
 

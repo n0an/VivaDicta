@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TranscriptionCore
 @preconcurrency import SpeakerKit
 @preconcurrency import WhisperKit
 import os
