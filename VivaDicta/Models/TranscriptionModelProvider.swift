@@ -124,18 +124,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
 
-    /// Discovers the first cloud transcription provider that has an API key in the keychain.
-    /// API keys are validated when saved, so no network call is needed here.
-    static func discoverCloudProvider() -> (provider: TranscriptionModelProvider, modelName: String)? {
-        for provider in cloudProviders {
-            guard let aiProvider = provider.mappedAIProvider,
-                  let modelName = provider.defaultCloudTranscriptionModel,
-                  aiProvider.apiKey != nil else { continue }
-            return (provider, modelName)
-        }
-        return nil
-    }
-
     public var mappedAIProvider: AIProvider? {
         switch self {
         case .openAI:
