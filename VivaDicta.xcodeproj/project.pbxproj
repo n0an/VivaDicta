@@ -47,6 +47,7 @@
 		18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC12FB79A3E00280269 /* TranscriptionCore */; };
 		18F75FC42FB79A4400280269 /* CloudTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC32FB79A4400280269 /* CloudTranscription */; };
 		18F75FC62FB79A4B00280269 /* CloudTranscriptionMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */; };
+		18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F7637E2FB7D5E300280269 /* LocalTranscription */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -504,6 +505,7 @@
 				186C0C9C2FB7829A00102432 /* OAuth in Frameworks */,
 				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
 				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
+				18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
@@ -696,6 +698,7 @@
 				186C0C9B2FB7829A00102432 /* OAuth */,
 				18F75FBD2FB79A2B00280269 /* TranscriptionCore */,
 				18F75FBF2FB79A3200280269 /* CloudTranscription */,
+				18F7637E2FB7D5E300280269 /* LocalTranscription */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -2753,6 +2756,10 @@
 		18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CloudTranscriptionMocks;
+		};
+		18F7637E2FB7D5E300280269 /* LocalTranscription */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LocalTranscription;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

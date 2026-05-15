@@ -26,8 +26,6 @@ public enum LogCategory: String {
 
     // MARK: - Services - Transcription
     case transcriptionManager = "TranscriptionManager"
-    case whisperKitTranscriptionService = "WhisperKitTranscriptionService"
-    case parakeetTranscriptionService = "ParakeetTranscriptionService"
     case transcriptionOutputFilter = "TranscriptionOutputFilter"
 
     // MARK: - Services - Cloud Transcription

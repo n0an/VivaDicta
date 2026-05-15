@@ -1,15 +1,12 @@
-//
-//  SlidingWindowAsrManager+VivaDicta.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.04.14
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import AVFoundation
 @preconcurrency import FluidAudio
 import TranscriptionCore
 
 extension SlidingWindowAsrManager {
+    /// Streams a buffer of 16 kHz mono float samples to the sliding-window ASR
+    /// manager by wrapping them in an `AVAudioPCMBuffer` first.
     func streamFloatSamples(_ audioSamples: [Float]) throws {
         guard !audioSamples.isEmpty else { return }
 
