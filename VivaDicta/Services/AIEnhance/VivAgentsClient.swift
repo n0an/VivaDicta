@@ -90,6 +90,16 @@ enum VivAgentsClient {
         keychain.getString(forKey: authTokenKeychainKey, syncable: false)
     }
 
+    /// Writes the server auth token to the keychain (non-syncable).
+    static func setAuthToken(_ token: String) {
+        keychain.save(token, forKey: authTokenKeychainKey, syncable: false)
+    }
+
+    /// Removes the server auth token from the keychain.
+    static func clearAuthToken() {
+        keychain.delete(forKey: authTokenKeychainKey, syncable: false)
+    }
+
     static var isVerified: Bool {
         UserDefaults.standard.bool(forKey: isVerifiedKey)
     }

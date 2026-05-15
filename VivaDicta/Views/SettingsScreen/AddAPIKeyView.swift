@@ -5,12 +5,10 @@
 //  Created by Anton Novoselov on 2025.09.12
 //
 
-import Keychain
 import SwiftUI
 
 struct AddAPIKeyView: View {
     @Environment(\.dismiss) var dismiss
-    @Environment(\.dependencies) private var dependencies
     let provider: AIProvider
     let aiService: AIService
 
@@ -231,7 +229,7 @@ struct AddAPIKeyView: View {
         HapticManager.heavyImpact()
 
         // Remove the API key from Keychain
-        dependencies.keychain.delete(forKey: provider.keychainKey)
+        aiService.deleteAPIKey(for: provider)
 
         // Clear the text field and update state
         apiKey = ""

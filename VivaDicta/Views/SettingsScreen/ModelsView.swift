@@ -171,8 +171,10 @@ struct ModelsView: View {
     }
 
     func handleAPIKeyDeletion(for model: CloudModel) {
-        // Refresh the AI service to update connected providers
-        appState.aiService.refreshConnectedProviders()
+        // Remove the API key from Keychain (also refreshes connected providers).
+        if let aiProvider = model.provider.mappedAIProvider {
+            appState.aiService.deleteAPIKey(for: aiProvider)
+        }
 
         // Update cloud models to reflect the change
         appState.transcriptionManager.updateCloudModels()

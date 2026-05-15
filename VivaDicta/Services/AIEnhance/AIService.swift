@@ -2321,6 +2321,17 @@ class AIService {
             self.refreshConnectedProviders()
         }
 
+        return await processVerificationResult(isValid: isValid, key: key, provider: provider)
+    }
+
+    /// Removes the stored API key for the given provider and refreshes connected providers.
+    public func deleteAPIKey(for provider: AIProvider) {
+        keychain.delete(forKey: provider.keychainKey)
+        refreshConnectedProviders()
+    }
+
+    private func processVerificationResult(isValid: Bool, key: String, provider: AIProvider) async -> Bool {
+
         // Fetch models for providers that support dynamic model fetching
         if isValid && provider == .openRouter {
             await fetchOpenRouterModels()

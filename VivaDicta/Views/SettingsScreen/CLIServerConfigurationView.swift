@@ -5,12 +5,10 @@
 //  Created by Anton Novoselov on 2026.03.27
 //
 
-import Keychain
 import SwiftUI
 
 struct CLIServerConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.dependencies) private var dependencies
     let aiService: AIService
 
     // Server state — loaded in onAppear to always reflect current UserDefaults
@@ -88,7 +86,7 @@ struct CLIServerConfigurationView: View {
         .onAppear {
             isServerEnabled = UserDefaults.standard.bool(forKey: VivAgentsClient.isEnabledKey)
             serverURL = UserDefaults.standard.string(forKey: VivAgentsClient.serverURLKey) ?? ""
-            serverToken = dependencies.keychain.getString(forKey: VivAgentsClient.authTokenKeychainKey, syncable: false) ?? ""
+            serverToken = VivAgentsClient.authToken ?? ""
             hasUnsavedChanges = false
         }
         .task {
@@ -324,7 +322,7 @@ struct CLIServerConfigurationView: View {
     private func saveAndTestConnection() {
         UserDefaults.standard.set(isServerEnabled, forKey: VivAgentsClient.isEnabledKey)
         UserDefaults.standard.set(serverURL, forKey: VivAgentsClient.serverURLKey)
-        dependencies.keychain.save(serverToken, forKey: VivAgentsClient.authTokenKeychainKey, syncable: false)
+        VivAgentsClient.setAuthToken(serverToken)
         hasUnsavedChanges = false
 
         Task {

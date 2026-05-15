@@ -67,6 +67,12 @@ final class LiveTranslationService {
         self.audio.playbackRate = LiveTranslationPreferences.ttsRate
     }
 
+    /// Whether a non-empty Soniox API key is present in the keychain.
+    var hasAPIKey: Bool {
+        guard let key = keychain.getString(forKey: "sonioxAPIKey") else { return false }
+        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func clearFailureIfNeeded() {
         if case .failed = status { status = .idle }
     }

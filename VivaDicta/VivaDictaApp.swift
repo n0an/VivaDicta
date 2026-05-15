@@ -25,7 +25,6 @@ struct VivaDictaApp: App {
     @State private var router: Router
 
     @State var appState: AppState
-    private let dependencies = AppDependencies()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
     private var hasCompletedOnboarding = false
@@ -236,7 +235,6 @@ struct VivaDictaApp: App {
                     }
                     .environment(appState)
                     .environment(router)
-                    .environment(\.dependencies, dependencies)
                     .onOpenURL { url in
                         handleDeepLink(url)
                     }

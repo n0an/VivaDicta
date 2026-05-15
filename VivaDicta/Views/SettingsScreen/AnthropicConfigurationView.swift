@@ -5,12 +5,10 @@
 //  Created by Anton Novoselov on 2026.03.26
 //
 
-import Keychain
 import SwiftUI
 
 struct AnthropicConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.dependencies) private var dependencies
     let aiService: AIService
 
     // API Key state
@@ -365,7 +363,7 @@ struct AnthropicConfigurationView: View {
 
     private func deleteAPIKey() {
         HapticManager.heavyImpact()
-        dependencies.keychain.delete(forKey: AIProvider.anthropic.keychainKey)
+        aiService.deleteAPIKey(for: .anthropic)
         apiKey = ""
         hasExistingKey = false
         aiService.refreshConnectedProviders()

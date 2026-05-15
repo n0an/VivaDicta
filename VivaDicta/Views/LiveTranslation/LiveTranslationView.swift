@@ -6,7 +6,6 @@
 //
 
 import AVFoundation
-import Keychain
 import SwiftData
 import SwiftUI
 
@@ -14,7 +13,6 @@ struct LiveTranslationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self) private var appState
-    @Environment(\.dependencies) private var dependencies
 
     @State private var service = LiveTranslationService()
     @State private var savedSnapshot: SavedSnapshot?
@@ -134,10 +132,7 @@ struct LiveTranslationView: View {
     }
 
     private func checkSonioxKey() -> Bool {
-        guard let key = dependencies.keychain.getString(forKey: "sonioxAPIKey") else {
-            return false
-        }
-        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        service.hasAPIKey
     }
 
     // MARK: - Subviews
