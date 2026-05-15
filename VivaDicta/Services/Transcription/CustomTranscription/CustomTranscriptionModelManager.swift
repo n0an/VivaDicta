@@ -6,14 +6,16 @@
 //
 
 import Foundation
+import Keychain
 import os
 
 @Observable
 @MainActor
 final class CustomTranscriptionModelManager {
-    static let shared = CustomTranscriptionModelManager()
+    static let shared = CustomTranscriptionModelManager(keychain: KeychainServiceImpl())
 
     private let logger = Logger(category: .customTranscriptionService)
+    private let keychain: any KeychainServicing
 
     /// The single custom transcription model configuration
     private(set) var customModel: CustomTranscriptionModel
@@ -24,7 +26,8 @@ final class CustomTranscriptionModelManager {
     /// Fixed model ID for the singleton custom model
     private static let fixedModelId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
-    private init() {
+    init(keychain: any KeychainServicing) {
+        self.keychain = keychain
         // Initialize with empty model first
         customModel = CustomTranscriptionModel(
             id: Self.fixedModelId,
@@ -57,9 +60,9 @@ final class CustomTranscriptionModelManager {
 
         // Save API key to Keychain
         if !apiKey.isEmpty {
-            KeychainService.shared.save(apiKey, forKey: keychainKey)
+            keychain.save(apiKey, forKey: keychainKey)
         } else {
-            KeychainService.shared.delete(forKey: keychainKey)
+            keychain.delete(forKey: keychainKey)
         }
 
         // Update model
@@ -78,7 +81,7 @@ final class CustomTranscriptionModelManager {
     }
 
     func clearConfiguration() {
-        KeychainService.shared.delete(forKey: keychainKey)
+        keychain.delete(forKey: keychainKey)
         customModel = CustomTranscriptionModel(
             id: Self.fixedModelId,
             name: "custom",
@@ -95,11 +98,11 @@ final class CustomTranscriptionModelManager {
 
     func getAPIKey(forModelId id: UUID) -> String? {
         guard id == Self.fixedModelId else { return nil }
-        return KeychainService.shared.getString(forKey: keychainKey)
+        return keychain.getString(forKey: keychainKey)
     }
 
     var apiKey: String? {
-        KeychainService.shared.getString(forKey: keychainKey)
+        keychain.getString(forKey: keychainKey)
     }
 
     // MARK: - Persistence
