@@ -1,18 +1,13 @@
-//
-//  TranscriptionProgressInfo.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.04.14.
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
 
-enum TranscriptionProgressStage: Sendable, Equatable {
+public enum TranscriptionProgressStage: Sendable, Equatable {
     case preparingAudio
     case detectingSpeech
     case transcribing
 
-    var detailText: String {
+    public var detailText: String {
         switch self {
         case .preparingAudio:
             return "Preparing audio..."
@@ -24,16 +19,16 @@ enum TranscriptionProgressStage: Sendable, Equatable {
     }
 }
 
-struct TranscriptionProgressInfo: Sendable, Equatable {
-    let stage: TranscriptionProgressStage
-    let fractionCompleted: Double?
+public struct TranscriptionProgressInfo: Sendable, Equatable {
+    public let stage: TranscriptionProgressStage
+    public let fractionCompleted: Double?
 
-    init(stage: TranscriptionProgressStage, fractionCompleted: Double? = nil) {
+    public init(stage: TranscriptionProgressStage, fractionCompleted: Double? = nil) {
         self.stage = stage
         self.fractionCompleted = fractionCompleted.map { min(max($0, 0), 1) }
     }
 
-    var detailText: String? {
+    public var detailText: String? {
         switch stage {
         case .transcribing:
             if let fractionCompleted {
@@ -46,4 +41,4 @@ struct TranscriptionProgressInfo: Sendable, Equatable {
     }
 }
 
-typealias TranscriptionProgressHandler = @Sendable (TranscriptionProgressInfo) async -> Void
+public typealias TranscriptionProgressHandler = @Sendable (TranscriptionProgressInfo) async -> Void

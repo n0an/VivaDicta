@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import TranscriptionCore
+import CloudTranscription
 import os
 
 struct SonioxTranscriptionService {

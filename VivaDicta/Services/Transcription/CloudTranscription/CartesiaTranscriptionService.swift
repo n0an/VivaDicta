@@ -1,6 +1,8 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import TranscriptionCore
+import CloudTranscription
 import os
 
 struct CartesiaTranscriptionService {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TranscriptionCore
 import SwiftData
 import TipKit
 import UniformTypeIdentifiers

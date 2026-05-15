@@ -1,20 +1,15 @@
-//
-//  TranscriptionError.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.09.27
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
 
-enum TranscriptionError: LocalizedError {
+public enum TranscriptionError: LocalizedError {
     case modelLoadFailed
     case transcriptionFailed
     case unsupportedModel
     case audioConversionFailed
     case modelNotDownloaded
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .modelLoadFailed:
             return "Failed to load transcription model"
@@ -29,7 +24,7 @@ enum TranscriptionError: LocalizedError {
         }
     }
 
-    var failureReason: String {
+    public var failureReason: String {
         switch self {
         case .modelLoadFailed:
             return "The transcription model could not be loaded. Please try downloading the model again."

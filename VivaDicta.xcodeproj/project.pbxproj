@@ -42,6 +42,11 @@
 		18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD6B22ED1FBFB00C0041E /* FluidAudio */; };
 		18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD7982ED1FCC600C0041E /* FluidAudio */; };
 		18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */; };
+		18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FBD2FB79A2B00280269 /* TranscriptionCore */; };
+		18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FBF2FB79A3200280269 /* CloudTranscription */; };
+		18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC12FB79A3E00280269 /* TranscriptionCore */; };
+		18F75FC42FB79A4400280269 /* CloudTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC32FB79A4400280269 /* CloudTranscription */; };
+		18F75FC62FB79A4B00280269 /* CloudTranscriptionMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -195,20 +200,26 @@
 		186C04412FB7762100102432 /* Exceptions for "Modules" folder in "VivaDicta" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				CloudTranscription,
 				Keychain,
+				LocalTranscription,
 				OAuth,
 				Presets,
 				TestUtilities,
+				TranscriptionCore,
 			);
 			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
 		};
 		186C04422FB7762100102432 /* Exceptions for "Modules" folder in "ActionExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				CloudTranscription,
 				Keychain,
+				LocalTranscription,
 				OAuth,
 				Presets,
 				TestUtilities,
+				TranscriptionCore,
 			);
 			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
 		};
@@ -491,9 +502,11 @@
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				186C05812FB779AA00102432 /* Presets in Frameworks */,
 				186C0C9C2FB7829A00102432 /* OAuth in Frameworks */,
+				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
 				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
+				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
 			);
@@ -503,10 +516,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18F75FC42FB79A4400280269 /* CloudTranscription in Frameworks */,
 				186C05872FB779BA00102432 /* Presets in Frameworks */,
 				186C05852FB779BA00102432 /* KeychainMocks in Frameworks */,
+				18F75FC62FB79A4B00280269 /* CloudTranscriptionMocks in Frameworks */,
 				186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */,
 				186C05832FB779BA00102432 /* Keychain in Frameworks */,
+				18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -678,6 +694,8 @@
 				186C057E2FB779AA00102432 /* Keychain */,
 				186C05802FB779AA00102432 /* Presets */,
 				186C0C9B2FB7829A00102432 /* OAuth */,
+				18F75FBD2FB79A2B00280269 /* TranscriptionCore */,
+				18F75FBF2FB79A3200280269 /* CloudTranscription */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -706,6 +724,9 @@
 				186C05862FB779BA00102432 /* Presets */,
 				186C05882FB779BA00102432 /* PresetsMocks */,
 				186C0C9D2FB782A000102432 /* OAuthMocks */,
+				18F75FC12FB79A3E00280269 /* TranscriptionCore */,
+				18F75FC32FB79A4400280269 /* CloudTranscription */,
+				18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2712,6 +2733,26 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = SpeakerKit;
+		};
+		18F75FBD2FB79A2B00280269 /* TranscriptionCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TranscriptionCore;
+		};
+		18F75FBF2FB79A3200280269 /* CloudTranscription */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CloudTranscription;
+		};
+		18F75FC12FB79A3E00280269 /* TranscriptionCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TranscriptionCore;
+		};
+		18F75FC32FB79A4400280269 /* CloudTranscription */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CloudTranscription;
+		};
+		18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CloudTranscriptionMocks;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
