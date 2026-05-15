@@ -6,11 +6,13 @@
 //
 
 import Foundation
+import Keychain
 import os
 
 enum VivAgentsClient {
 
     private static let logger = Logger(category: .vivAgentsClient)
+    private static let keychain: any KeychainServicing = KeychainServiceImpl()
 
     struct EnhanceRequest: Encodable {
         let text: String
@@ -85,7 +87,7 @@ enum VivAgentsClient {
     }
 
     static var authToken: String? {
-        KeychainService.shared.getString(forKey: authTokenKeychainKey, syncable: false)
+        keychain.getString(forKey: authTokenKeychainKey, syncable: false)
     }
 
     static var isVerified: Bool {

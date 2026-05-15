@@ -5,10 +5,11 @@
 //  Created by Anton Novoselov on 2025.09.09
 //
 
+import Keychain
+import Presets
 import SwiftUI
 import TipKit
 import os
-import Presets
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
 ///
@@ -166,6 +167,7 @@ class AIService {
     private let userDefaults: UserDefaults
     private let modesStorageKey: String
     private let selectedModeStorageKey: String
+    private let keychain: any KeychainServicing
     private let baseTimeout: TimeInterval = 300
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
@@ -181,7 +183,8 @@ class AIService {
         return service
     }
 
-    init() {
+    init(keychain: any KeychainServicing = KeychainServiceImpl()) {
+        self.keychain = keychain
         self.userDefaults = UserDefaultsStorage.shared
         self.modesStorageKey = AppGroupCoordinator.vivaModesKey
         self.selectedModeStorageKey = AppGroupCoordinator.selectedVivaModeKey
@@ -221,7 +224,8 @@ class AIService {
     }
 
     /// Test-only initializer with injectable UserDefaults and no network side effects.
-    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode") {
+    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainServicing = KeychainServiceImpl()) {
+        self.keychain = keychain
         self.userDefaults = userDefaults
         self.modesStorageKey = modesStorageKey
         self.selectedModeStorageKey = selectedModeStorageKey
@@ -2224,7 +2228,7 @@ class AIService {
         customOpenAIEndpointURL = ""
         customOpenAIModelName = ""
         customOpenAIIsVerified = false
-        KeychainService.shared.delete(forKey: AIProvider.customOpenAI.keychainKey)
+        keychain.delete(forKey: AIProvider.customOpenAI.keychainKey)
     }
 
     /// Disables AI processing for all modes that use Custom OpenAI.
@@ -2310,7 +2314,7 @@ class AIService {
         let isValid = await verifyAPIKey(key, provider: provider)
 
         if isValid {
-            KeychainService.shared.save(key, forKey: provider.keychainKey)
+            keychain.save(key, forKey: provider.keychainKey)
 
             // Refresh connected providers to trigger UI update
             self.refreshConnectedProviders()
