@@ -1,15 +1,17 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import Keychain
 import os
 
 /// Manages GitHub Copilot authentication using the device code flow.
 /// Two-step process: GitHub device code → Copilot token exchange.
 @MainActor
 final class CopilotOAuthManager: Sendable {
-    static let shared = CopilotOAuthManager()
+    static let shared = CopilotOAuthManager(keychain: KeychainServiceImpl())
 
     private let logger = Logger(category: .copilotOAuth)
+    private let keychain: any KeychainServicing
 
     /// GitHub OAuth client ID (same as VS Code Copilot extension).
     private let clientId = "Iv1.b507a08c87ecfe98"
@@ -20,7 +22,9 @@ final class CopilotOAuthManager: Sendable {
 
     private var credential: CopilotCredential?
 
-    private init() {}
+    init(keychain: any KeychainServicing) {
+        self.keychain = keychain
+    }
 
     // MARK: - Public API
 
@@ -169,7 +173,7 @@ final class CopilotOAuthManager: Sendable {
 
     func signOut() {
         credential = nil
-        KeychainService.shared.delete(forKey: keychainKey, syncable: false)
+        keychain.delete(forKey: keychainKey, syncable: false)
         logger.logInfo("Signed out from GitHub Copilot")
     }
 
@@ -239,14 +243,14 @@ final class CopilotOAuthManager: Sendable {
     private func saveCredential(_ cred: CopilotCredential) {
         credential = cred
         if let data = try? JSONEncoder().encode(cred) {
-            KeychainService.shared.save(data: data, forKey: keychainKey, syncable: false)
+            keychain.save(data: data, forKey: keychainKey, syncable: false)
         }
     }
 
     private func loadCredential() -> CopilotCredential? {
         if let cached = credential { return cached }
 
-        guard let data = KeychainService.shared.getData(forKey: keychainKey, syncable: false),
+        guard let data = keychain.getData(forKey: keychainKey, syncable: false),
               let cred = try? JSONDecoder().decode(CopilotCredential.self, from: data) else {
             return nil
         }

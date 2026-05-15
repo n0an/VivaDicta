@@ -2,6 +2,7 @@
 
 import Foundation
 import AuthenticationServices
+import Keychain
 import Network
 import os
 
@@ -9,14 +10,17 @@ import os
 /// MainActor-isolated for safe interaction with UI and Keychain in Swift 6.
 @MainActor
 final class OAuthManager: Sendable {
-    static let shared = OAuthManager()
+    static let shared = OAuthManager(keychain: KeychainServiceImpl())
 
     private let logger = Logger(category: .oauthManager)
+    private let keychain: any KeychainServicing
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
-    private init() {}
+    init(keychain: any KeychainServicing) {
+        self.keychain = keychain
+    }
 
     // MARK: - Public API
 
@@ -123,7 +127,7 @@ final class OAuthManager: Sendable {
     /// Signs out by removing the stored credential.
     func signOut(provider: some OAuthProvider) {
         credentials.removeValue(forKey: provider.keychainKey)
-        KeychainService.shared.delete(forKey: provider.keychainKey, syncable: false)
+        keychain.delete(forKey: provider.keychainKey, syncable: false)
         logger.logInfo("Signed out from \(provider.providerName)")
     }
 
@@ -309,7 +313,7 @@ final class OAuthManager: Sendable {
     private func saveCredential(_ credential: OAuthCredential, for provider: some OAuthProvider) {
         credentials[provider.keychainKey] = credential
         if let data = try? JSONEncoder().encode(credential) {
-            KeychainService.shared.save(data: data, forKey: provider.keychainKey, syncable: false)
+            keychain.save(data: data, forKey: provider.keychainKey, syncable: false)
         }
     }
 
@@ -320,14 +324,14 @@ final class OAuthManager: Sendable {
         }
 
         // Load from Keychain
-        guard let data = KeychainService.shared.getData(forKey: provider.keychainKey, syncable: false),
+        guard let data = keychain.getData(forKey: provider.keychainKey, syncable: false),
               let credential = try? JSONDecoder().decode(OAuthCredential.self, from: data) else {
             return nil
         }
 
         // Don't return expired credentials with no way to refresh
         if credential.isExpired && credential.refreshToken.isEmpty {
-            KeychainService.shared.delete(forKey: provider.keychainKey, syncable: false)
+            keychain.delete(forKey: provider.keychainKey, syncable: false)
             return nil
         }
 
