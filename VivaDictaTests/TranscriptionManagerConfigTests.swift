@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import CloudTranscription
 @testable import VivaDicta
 
 struct TranscriptionManagerConfigTests {
