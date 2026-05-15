@@ -1,37 +1,61 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
-import TranscriptionCore
-import CloudTranscription
 import os
+import TranscriptionCore
 
-struct CartesiaTranscriptionService {
+/// Pre-configured Cartesia STT client. The app target is responsible for
+/// normalizing `language` to a Cartesia-supported code before constructing
+/// the config (Cartesia has no `"auto"`).
+public struct CartesiaTranscriptionService: Sendable {
     /// Cartesia requires a date-formatted version header. Bumping this is a
-    /// deliberate API-version pin; check the changelog before changing. Single
-    /// source of truth - referenced from both transcribe and key-verify paths.
-    static let cartesiaVersion = "2026-03-01"
+    /// deliberate API-version pin; check the changelog before changing.
+    public static let cartesiaVersion = "2026-03-01"
 
-    private let logger = Logger(category: .cartesiaTranscriptionService)
+    private let apiURL = URL(string: "https://api.cartesia.ai/stt")!
+    private let logger = Logger(cloudTranscriptionCategory: "CartesiaTranscription")
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
+    public struct Config: Sendable {
+        public let apiKey: String
+        public let modelName: String
+        /// Pre-normalized language code. Cartesia falls back to `"en"` when
+        /// the picker yields `"auto"` or an unsupported code.
+        public let language: String
+
+        public init(apiKey: String, modelName: String, language: String) {
+            self.apiKey = apiKey
+            self.modelName = modelName
+            self.language = language
+        }
+    }
+
+    private let config: Config
+
+    public init(config: Config) {
+        self.config = config
+    }
+
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
         let text = try await NetworkRetry.withRetry(logger: logger) {
-            try await makeTranscriptionRequest(audioURL: audioURL, model: model)
+            try await makeTranscriptionRequest(audioURL: audioURL)
         }
         return .plain(text)
     }
 
-    private func makeTranscriptionRequest(audioURL: URL, model: any TranscriptionModel) async throws -> String {
-        let config = try getAPIConfig(for: model)
+    private func makeTranscriptionRequest(audioURL: URL) async throws -> String {
+        guard !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
 
         let boundary = "Boundary-\(UUID().uuidString)"
-        var request = URLRequest(url: config.url)
+        var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue(Self.cartesiaVersion, forHTTPHeaderField: "Cartesia-Version")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
-        let body = try createRequestBody(audioURL: audioURL, modelName: config.modelName, boundary: boundary)
+        let body = try createRequestBody(audioURL: audioURL, boundary: boundary)
 
         let (data, response) = try await URLSession.shared.upload(for: request, from: body)
 
@@ -54,18 +78,7 @@ struct CartesiaTranscriptionService {
         }
     }
 
-    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let cloudModel = model as? CloudModel,
-              let apiKey = cloudModel.apiKey,
-              !apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
-        }
-
-        let apiURL = URL(string: "https://api.cartesia.ai/stt")!
-        return APIConfig(url: apiURL, apiKey: apiKey, modelName: model.name)
-    }
-
-    private func createRequestBody(audioURL: URL, modelName: String, boundary: String) throws -> Data {
+    private func createRequestBody(audioURL: URL, boundary: String) throws -> Data {
         var body = Data()
         let crlf = "\r\n"
 
@@ -73,33 +86,18 @@ struct CartesiaTranscriptionService {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+        logger.logInfo("Using language: \(config.language)")
 
-        // Cartesia has no auto-detect - falls back to "en" when user picked
-        // "auto" or chose a language outside Cartesia's supported set.
-        let supportedCodes = Set(TranscriptionModelProvider.cartesiaLanguages.keys)
-        let language: String
-        if selectedLanguage == "auto" || selectedLanguage.isEmpty || !supportedCodes.contains(selectedLanguage) {
-            language = "en"
-        } else {
-            language = selectedLanguage
-        }
-
-        logger.logInfo("Using language: \(language) (selected: \(selectedLanguage))")
-
-        // Model
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append(modelName.data(using: .utf8)!)
+        body.append(config.modelName.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
-        // Language
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append(language.data(using: .utf8)!)
+        body.append(config.language.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
-        // File (last)
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
         body.append("Content-Type: \(audioURL.audioMIMEType)\(crlf)\(crlf)".data(using: .utf8)!)
@@ -108,12 +106,6 @@ struct CartesiaTranscriptionService {
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
-    }
-
-    private struct APIConfig {
-        let url: URL
-        let apiKey: String
-        let modelName: String
     }
 
     private struct TranscriptionResponse: Decodable {
