@@ -12,6 +12,7 @@ import AppIntents
 import CoreSpotlight
 import ActivityKit
 import TipKit
+import Keychain
 
 @main
 struct VivaDictaApp: App {
@@ -22,8 +23,9 @@ struct VivaDictaApp: App {
     @State private var dataController: DataController
     @State private var modelContainer: ModelContainer
     @State private var router: Router
-    
+
     @State var appState: AppState
+    private let dependencies = AppDependencies()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
     private var hasCompletedOnboarding = false
@@ -158,7 +160,7 @@ struct VivaDictaApp: App {
                         DictionaryMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
 
                         // Migrate API keys from UserDefaults to Keychain for iCloud sync (one-time)
-                        APIKeyMigrationService.shared.migrateIfNeeded()
+                        APIKeyMigrationService(keychain: dependencies.keychain).migrateIfNeeded()
 
 
                         if SmartSearchFeature.isEnabled {

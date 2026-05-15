@@ -1,41 +1,39 @@
 //
-//  KeychainService.swift
-//  VivaDicta
+//  KeychainServiceImpl.swift
+//  Keychain
 //
-//  Created by Anton Novoselov on 2026.02.19
+//  Created by Anton Novoselov on 2026.05.15
 //
 
 import Foundation
-import Security
 import os
+import Security
 
-/// Securely stores and retrieves API keys using Keychain with iCloud sync.
-/// Uses the same `kSecAttrService` as the macOS app so items sync via iCloud Keychain.
-///
-/// Migration note: new code should depend on `any KeychainServicing` (from the
-/// `Keychain` package) via `AppDependencies` instead of this singleton. The
-/// `.shared` instance remains for legacy call sites until each is migrated.
-final class KeychainService: Sendable {
-    static let shared = KeychainService()
+/// Production keychain implementation. The default `service` value must match
+/// the macOS VivaDicta app for iCloud Keychain sync to work; do not change it
+/// without coordinating across both platforms.
+public final class KeychainServiceImpl: KeychainServicing, Sendable {
 
-    private let logger = Logger(category: .keychainService)
+    public static let defaultService = "com.antonnovoselov.VivaDicta"
 
-    /// Must match macOS KeychainService for iCloud Keychain sync
-    private let service = "com.antonnovoselov.VivaDicta"
+    private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeychainService")
+    private let service: String
 
-    private init() {}
+    public init(service: String = KeychainServiceImpl.defaultService) {
+        self.service = service
+    }
 
     @discardableResult
-    func save(_ value: String, forKey key: String, syncable: Bool = true) -> Bool {
+    public func save(_ value: String, forKey key: String, syncable: Bool) -> Bool {
         guard let data = value.data(using: .utf8) else {
-            logger.logError("Failed to convert value to data for key: \(key)")
+            logger.error("Failed to convert value to data for key: \(key, privacy: .public)")
             return false
         }
         return save(data: data, forKey: key, syncable: syncable)
     }
 
     @discardableResult
-    func save(data: Data, forKey key: String, syncable: Bool = true) -> Bool {
+    public func save(data: Data, forKey key: String, syncable: Bool) -> Bool {
         delete(forKey: key, syncable: syncable)
 
         var query = baseQuery(forKey: key, syncable: syncable)
@@ -45,17 +43,17 @@ final class KeychainService: Sendable {
         if status == errSecSuccess {
             return true
         } else {
-            logger.logError("Failed to save keychain item for key: \(key), status: \(status)")
+            logger.error("Failed to save keychain item for key: \(key, privacy: .public), status: \(status)")
             return false
         }
     }
 
-    func getString(forKey key: String, syncable: Bool = true) -> String? {
+    public func getString(forKey key: String, syncable: Bool) -> String? {
         guard let data = getData(forKey: key, syncable: syncable) else { return nil }
         return String(data: data, encoding: .utf8)
     }
 
-    func getData(forKey key: String, syncable: Bool = true) -> Data? {
+    public func getData(forKey key: String, syncable: Bool) -> Data? {
         var query = baseQuery(forKey: key, syncable: syncable)
         query[kSecReturnData as String] = kCFBooleanTrue
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -66,7 +64,7 @@ final class KeychainService: Sendable {
     }
 
     @discardableResult
-    func delete(forKey key: String, syncable: Bool = true) -> Bool {
+    public func delete(forKey key: String, syncable: Bool) -> Bool {
         let query = baseQuery(forKey: key, syncable: syncable)
         let status = SecItemDelete(query as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
@@ -83,16 +81,5 @@ final class KeychainService: Sendable {
             query[kSecAttrSynchronizable as String] = kCFBooleanTrue
         }
         return query
-    }
-}
-
-// MARK: - AIProvider convenience
-
-extension AIProvider {
-    /// Reads this provider's API key from the Keychain.
-    var apiKey: String? {
-        let key = keychainKey
-        guard !key.isEmpty else { return nil }
-        return KeychainService.shared.getString(forKey: key)
     }
 }

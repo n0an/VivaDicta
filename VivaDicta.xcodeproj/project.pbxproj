@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
+		187D375B2FB72989004234D0 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 187D375A2FB72989004234D0 /* Keychain */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
@@ -459,6 +460,7 @@
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
+				187D375B2FB72989004234D0 /* Keychain in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
@@ -631,6 +633,7 @@
 				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
 				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
+				187D375A2FB72989004234D0 /* Keychain */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -930,6 +933,7 @@
 				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
+				187D37592FB72989004234D0 /* XCLocalSwiftPackageReference "Packages/Keychain" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -2514,6 +2518,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		187D37592FB72989004234D0 /* XCLocalSwiftPackageReference "Packages/Keychain" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Keychain;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -2562,6 +2573,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
 			productName = LumoKit;
+		};
+		187D375A2FB72989004234D0 /* Keychain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Keychain;
 		};
 		189C7AA62F0D4A6E004BAFBF /* FluidAudio */ = {
 			isa = XCSwiftPackageProductDependency;
