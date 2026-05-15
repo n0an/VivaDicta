@@ -1,60 +1,57 @@
-//
-//  ParakeetTranscriptionService.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.09.27
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import AVFoundation
 import Foundation
-import TranscriptionCore
 @preconcurrency import FluidAudio
 import os
+import TranscriptionCore
 
-class ParakeetTranscriptionService: TranscriptionService {
+/// Transcribes audio using a locally-loaded Parakeet (NVIDIA) ASR model via
+/// FluidAudio. Caches the model + VAD manager in memory between calls. If the
+/// caller passes a non-empty vocabulary list, switches to FluidAudio's
+/// sliding-window streaming path with CTC vocabulary boosting.
+/// Marked `@unchecked Sendable` because the service holds mutable state
+/// (ASR/VAD managers, vocabulary cache) that is serialized through the
+/// `TranscriptionManager`'s `@MainActor` caller chain. Non-isolated `async`
+/// methods run on the global executor (SE-0338), which is what we want for
+/// the per-buffer streaming loops.
+public final class ParakeetTranscriptionService: @unchecked Sendable {
+
+    public struct Options: Sendable {
+        public let isVADEnabled: Bool
+        /// If non-empty, the service uses sliding-window streaming + CTC
+        /// vocabulary boosting. The app target gates this on its own user
+        /// settings (spelling corrections + Parakeet vocab boosting) and
+        /// passes an empty array when the toggle is off.
+        public let vocabulary: [String]
+
+        public init(isVADEnabled: Bool = true, vocabulary: [String] = []) {
+            self.isVADEnabled = isVADEnabled
+            self.vocabulary = vocabulary
+        }
+    }
+
     private var asrManager: AsrManager?
     private var vadManager: VadManager?
     private var cachedVocabularyTerms: [String] = []
     private var cachedVocabularyContext: CustomVocabularyContext?
     private var cachedCtcModels: CtcModels?
     private var cachedCtcTokenizer: CtcTokenizer?
-    private let logger = Logger(category: .parakeetTranscriptionService)
+    private let logger = Logger(localTranscriptionCategory: "ParakeetTranscription")
     private let boostedStreamingConfig = SlidingWindowAsrConfig.default
 
-    init() {}
+    public init() {}
 
-    func loadModel(model: ParakeetModel) async throws {
-        guard asrManager == nil else {
-            return
-        }
-
-        do {
-            let manager = AsrManager(config: .default)
-            let models = try await loadAsrModels(for: model)
-            try await manager.loadModels(models)
-
-            self.asrManager = manager
-            logger.logNotice("✅ Parakeet ASR model loaded successfully")
-        } catch {
-            logger.logError("❌ Failed to load Parakeet model: \(error.localizedDescription)")
-            throw error
-        }
-    }
- 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
-        try await transcribe(audioURL: audioURL, model: model, progressHandler: nil)
-    }
-
-    func transcribe(
+    public func transcribe(
         audioURL: URL,
-        model: any TranscriptionModel,
-        progressHandler: TranscriptionProgressHandler?
+        modelName: String,
+        displayName: String? = nil,
+        version: AsrModelVersion,
+        options: Options,
+        progressHandler: TranscriptionProgressHandler? = nil
     ) async throws -> TranscriptionServiceResult {
-        guard let parakeetModel = model as? ParakeetModel else {
-            throw TranscriptionError.unsupportedModel
-        }
-
-        logger.logNotice("🦜 Starting Parakeet transcription with model: \(parakeetModel.displayName)")
+        let label = displayName ?? modelName
+        logger.logNotice("🦜 Starting Parakeet transcription with model: \(label)")
 
         await reportProgress(.init(stage: .preparingAudio), to: progressHandler)
 
@@ -62,28 +59,24 @@ class ParakeetTranscriptionService: TranscriptionService {
         let durationSeconds = Double(audioFile.length) / audioFile.processingFormat.sampleRate
         logger.logNotice("📊 Audio duration: \(durationSeconds.formatted(.number.precision(.fractionLength(2)))) seconds")
 
-        // Apply VAD for recordings longer than 20 seconds
-        // VAD setting should be shared with keyboard extension
-        let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
-
         if let boostedText = try await transcribeWithVocabularyBoostingIfEnabled(
             audioURL: audioURL,
-            model: parakeetModel,
+            version: version,
             durationSeconds: durationSeconds,
-            isVADEnabled: isVADEnabled,
+            options: options,
             progressHandler: progressHandler
         ) {
             return .plain(boostedText)
         }
 
-        try await loadModel(model: parakeetModel)
+        try await loadModel(version: version)
 
-        guard let asrManager = asrManager else {
+        guard let asrManager else {
             logger.logNotice("🦜 ASR manager not initialized, cannot transcribe")
             throw TranscriptionError.modelLoadFailed
         }
 
-        if durationSeconds < 20.0 || !isVADEnabled {
+        if durationSeconds < 20.0 || !options.isVADEnabled {
             logger.logNotice("🎙️ Using direct file transcription for Parakeet")
             await reportProgress(.init(stage: .transcribing), to: progressHandler)
 
@@ -122,8 +115,27 @@ class ParakeetTranscriptionService: TranscriptionService {
         return .plain(result.text)
     }
 
+    public func loadModel(version: AsrModelVersion) async throws {
+        guard asrManager == nil else {
+            return
+        }
+
+        do {
+            let manager = AsrManager(config: .default)
+            let models = try await loadAsrModels(version: version)
+            try await manager.loadModels(models)
+
+            self.asrManager = manager
+            logger.logNotice("✅ Parakeet ASR model loaded successfully")
+        } catch {
+            logger.logError("❌ Failed to load Parakeet model: \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    // MARK: - Private
+
     private func readAndConvertAudio(from url: URL) async throws -> [Float] {
-        // Use AudioConverter from FluidAudio to properly convert audio to 16kHz mono
         let converter = AudioConverter()
         return try converter.resampleAudioFile(path: url.path)
     }
@@ -145,20 +157,19 @@ class ParakeetTranscriptionService: TranscriptionService {
         return audioSamples + [Float](repeating: 0, count: trailingSilenceSamples)
     }
 
-    private func loadAsrModels(for model: ParakeetModel) async throws -> AsrModels {
-        let isValid = try await AsrModels.isModelValid(version: model.version)
+    private func loadAsrModels(version: AsrModelVersion) async throws -> AsrModels {
+        let isValid = try await AsrModels.isModelValid(version: version)
         if !isValid {
-            logger.error("Model validation failed for \(model.version == .v2 ? "v2" : "v3"). Models are corrupted.")
+            logger.error("Model validation failed for \(version == .v2 ? "v2" : "v3"). Models are corrupted.")
             throw ParakeetTranscriptionError.modelValidationFailed("Parakeet models are corrupted. Please delete and re-download the model.")
         }
 
-        return try await AsrModels.loadFromCache(configuration: nil, version: model.version)
+        return try await AsrModels.loadFromCache(configuration: nil, version: version)
     }
 
     private func applyVAD(to audioSamples: [Float]) async throws -> [Float] {
         let vadConfig = VadConfig(defaultThreshold: 0.7)
 
-        // Initialize VAD manager if needed (uses FluidAudio's default cache)
         if vadManager == nil {
             do {
                 vadManager = try await VadManager(config: vadConfig)
@@ -168,13 +179,12 @@ class ParakeetTranscriptionService: TranscriptionService {
             }
         }
 
-        guard let vadManager = vadManager else {
+        guard let vadManager else {
             logger.logWarning("⚠️ VAD manager not available, using full audio")
             return audioSamples
         }
 
         do {
-            // Segment speech using VAD
             let segments = try await vadManager.segmentSpeechAudio(audioSamples)
 
             if segments.isEmpty {
@@ -182,7 +192,6 @@ class ParakeetTranscriptionService: TranscriptionService {
                 return audioSamples
             }
 
-            // Concatenate all speech segments
             let totalSamples = segments.reduce(0) { $0 + $1.count }
             logger.logNotice("📊 VAD extracted \(segments.count) segments, total: \((Double(totalSamples) / 16000.0).formatted(.number.precision(.fractionLength(2))))s")
 
@@ -193,43 +202,31 @@ class ParakeetTranscriptionService: TranscriptionService {
         }
     }
 
-    private var isVocabularyBoostingEnabled: Bool {
-        let isSpellingCorrectionsEnabled =
-            UserDefaultsStorage.appPrivate.object(
-                forKey: UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled
-            ) as? Bool ?? true
-
-        return isSpellingCorrectionsEnabled
-            && UserDefaultsStorage.appPrivate.bool(
-                forKey: UserDefaultsStorage.Keys.isParakeetVocabularyBoostingEnabled
-            )
-    }
-
     private func transcribeWithVocabularyBoostingIfEnabled(
         audioURL: URL,
-        model: ParakeetModel,
+        version: AsrModelVersion,
         durationSeconds: Double,
-        isVADEnabled: Bool,
+        options: Options,
         progressHandler: TranscriptionProgressHandler?
     ) async throws -> String? {
-        guard isVocabularyBoostingEnabled else {
+        guard !options.vocabulary.isEmpty else {
             return nil
         }
 
         do {
-            guard let (vocabulary, ctcModels) = try await loadVocabularyBoostingResources() else {
-                logger.logInfo("🦜 Vocabulary boosting enabled but no usable vocabulary terms found - falling back to standard Parakeet transcription")
+            guard let (vocabulary, ctcModels) = try await loadVocabularyBoostingResources(rawTerms: options.vocabulary) else {
+                logger.logInfo("🦜 Vocabulary provided but no usable terms tokenize - falling back to standard Parakeet transcription")
                 return nil
             }
 
             logger.logNotice("🦜 Using Parakeet custom vocabulary boosting with \(vocabulary.terms.count) terms")
             return try await transcribeWithVocabularyBoosting(
                 audioURL: audioURL,
-                model: model,
+                version: version,
                 vocabulary: vocabulary,
                 ctcModels: ctcModels,
                 durationSeconds: durationSeconds,
-                isVADEnabled: isVADEnabled,
+                isVADEnabled: options.isVADEnabled,
                 progressHandler: progressHandler
             )
         } catch is CancellationError {
@@ -240,8 +237,8 @@ class ParakeetTranscriptionService: TranscriptionService {
         }
     }
 
-    private func loadVocabularyBoostingResources() async throws -> (vocabulary: CustomVocabularyContext, ctcModels: CtcModels)? {
-        let terms = CustomVocabulary.getTerms()
+    private func loadVocabularyBoostingResources(rawTerms: [String]) async throws -> (vocabulary: CustomVocabularyContext, ctcModels: CtcModels)? {
+        let terms = rawTerms
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
@@ -305,7 +302,7 @@ class ParakeetTranscriptionService: TranscriptionService {
 
     private func transcribeWithVocabularyBoosting(
         audioURL: URL,
-        model: ParakeetModel,
+        version: AsrModelVersion,
         vocabulary: CustomVocabularyContext,
         ctcModels: CtcModels,
         durationSeconds: Double,
@@ -316,7 +313,7 @@ class ParakeetTranscriptionService: TranscriptionService {
             vadManager = nil
         }
 
-        let models = try await loadAsrModels(for: model)
+        let models = try await loadAsrModels(version: version)
         let slidingManager = SlidingWindowAsrManager(config: boostedStreamingConfig)
 
         do {
@@ -481,17 +478,17 @@ class ParakeetTranscriptionService: TranscriptionService {
     }
 }
 
-enum ParakeetTranscriptionError: LocalizedError {
+public enum ParakeetTranscriptionError: LocalizedError {
     case modelValidationFailed(String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .modelValidationFailed(let message):
             return message
         }
     }
-    
-    var failureReason: String? {
+
+    public var failureReason: String? {
         switch self {
         case .modelValidationFailed:
             return "Parakeet model validation failed"

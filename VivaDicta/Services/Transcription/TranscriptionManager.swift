@@ -7,6 +7,7 @@
 
 import Foundation
 import TranscriptionCore
+import LocalTranscription
 import SwiftUI
 import os
 
@@ -35,8 +36,11 @@ import os
 ///
 /// ## Thread Safety
 ///
-/// This class is marked with `@Observable` for SwiftUI integration. All public
-/// methods should be called from the main actor or properly handle concurrency.
+/// This class is marked with `@Observable` for SwiftUI integration and
+/// `@MainActor` for explicit isolation. The on-device transcription services
+/// it owns are `@unchecked Sendable` non-actor classes; making the manager
+/// `@MainActor` is what serializes access to their mutable state.
+@MainActor
 @Observable
 class TranscriptionManager {
     private let logger = Logger(category: .transcriptionManager)
@@ -208,13 +212,36 @@ class TranscriptionManager {
         let transcriptionResult: TranscriptionServiceResult
         switch model.provider {
         case .parakeet:
+            guard let parakeetModel = model as? ParakeetModel else {
+                throw TranscriptionError.unsupportedModel
+            }
+            let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
+            let vocabulary = parakeetVocabularyIfEnabled()
             transcriptionResult = try await parakeetTranscriptionService.transcribe(
                 audioURL: audioURL,
-                model: model,
+                modelName: parakeetModel.name,
+                displayName: parakeetModel.displayName,
+                version: parakeetModel.version,
+                options: .init(isVADEnabled: isVADEnabled, vocabulary: vocabulary),
                 progressHandler: progressHandler
             )
         case .whisperKit:
-            transcriptionResult = try await whisperKitTranscriptionService.transcribe(audioURL: audioURL, model: model)
+            guard let whisperKitModel = model as? WhisperKitModel else {
+                throw TranscriptionError.unsupportedModel
+            }
+            let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+            let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
+            let isSpeakerDiarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
+            transcriptionResult = try await whisperKitTranscriptionService.transcribe(
+                audioURL: audioURL,
+                modelName: whisperKitModel.whisperKitModelName,
+                displayName: whisperKitModel.displayName,
+                options: .init(
+                    language: language,
+                    isVADEnabled: isVADEnabled,
+                    isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled
+                )
+            )
         default:
             transcriptionResult = try await cloudTranscriptionService.transcribe(audioURL: audioURL, model: model)
         }
@@ -273,6 +300,23 @@ class TranscriptionManager {
         logger.logInfo("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
 
         // Trigger preload in background
-        await whisperKitTranscriptionService.preloadModelIfNeeded(modelPath: whisperKitModel.whisperKitModelName)
+        await whisperKitTranscriptionService.preloadModelIfNeeded(modelName: whisperKitModel.whisperKitModelName)
+    }
+
+    /// Returns the custom vocabulary terms when both spelling corrections and
+    /// Parakeet vocabulary boosting are enabled by the user. Empty otherwise.
+    /// Hosting this gate in the manager keeps the LocalTranscription module
+    /// agnostic of user-facing toggles.
+    private func parakeetVocabularyIfEnabled() -> [String] {
+        let spellingEnabled = UserDefaultsStorage.appPrivate.object(
+            forKey: UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled
+        ) as? Bool ?? true
+
+        let boostingEnabled = UserDefaultsStorage.appPrivate.bool(
+            forKey: UserDefaultsStorage.Keys.isParakeetVocabularyBoostingEnabled
+        )
+
+        guard spellingEnabled && boostingEnabled else { return [] }
+        return CustomVocabulary.getTerms()
     }
 }

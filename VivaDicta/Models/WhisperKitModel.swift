@@ -52,32 +52,3 @@ struct WhisperKitModel: @MainActor TranscriptionModel, Equatable {
     let whisperKitModelName: String
 }
 
-// MARK: - Download & File Management
-extension WhisperKitModel {
-    public static var whisperKitModelsRoot: URL {
-        URL.documentsDirectory
-            .appendingPathComponent("huggingface")
-            .appendingPathComponent("models")
-            .appendingPathComponent("argmaxinc")
-            .appendingPathComponent("whisperkit-coreml")
-    }
-
-    var modelsDirectory: URL {
-        Self.whisperKitModelsRoot.appendingPathComponent(whisperKitModelName)
-    }
-
-    /// Returns the full path to the WhisperKit model directory for a given model name
-    public static func modelPath(for modelName: String) -> URL {
-        whisperKitModelsRoot.appendingPathComponent(modelName)
-    }
-
-    var isDownloaded: Bool {
-        FileManager.default.fileExists(atPath: modelsDirectory.path)
-    }
-
-    func deleteModel() throws {
-        if isDownloaded {
-            try FileManager.default.removeItem(at: modelsDirectory)
-        }
-    }
-}
