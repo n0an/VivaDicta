@@ -14,6 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Keychain"),
+        .package(path: "../TestUtilities"),
     ],
     targets: [
         .target(
@@ -24,7 +25,10 @@ let package = Package(
         ),
         .target(
             name: "OAuthMocks",
-            dependencies: ["OAuth"]
+            dependencies: [
+                "OAuth",
+                .product(name: "TestUtilities", package: "TestUtilities"),
+            ]
         ),
         .testTarget(
             name: "OAuthTests",
@@ -32,6 +36,7 @@ let package = Package(
                 "OAuth",
                 "OAuthMocks",
                 .product(name: "KeychainMocks", package: "Keychain"),
+                .product(name: "TestUtilities", package: "TestUtilities"),
             ]
         ),
     ],

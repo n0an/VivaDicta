@@ -5,38 +5,35 @@ import AuthenticationServices
 import Keychain
 import Network
 import os
-import OAuth
 
-/// Manages OAuth authentication flows — sign-in, token refresh, and credential storage.
+/// Manages OAuth authentication flows - sign-in, token refresh, and credential storage.
 /// MainActor-isolated for safe interaction with UI and Keychain in Swift 6.
 @MainActor
-final class OAuthManager: Sendable {
-    static let shared = OAuthManager(keychain: KeychainServiceImpl())
-
-    private let logger = Logger(category: .oauthManager)
+public final class OAuthManager: Sendable {
+    private let logger = Logger(oauthCategory: "OAuthManager")
     private let keychain: any KeychainServicing
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
-    init(keychain: any KeychainServicing) {
+    public init(keychain: any KeychainServicing) {
         self.keychain = keychain
     }
 
     // MARK: - Public API
 
     /// Whether the user is signed in for a given provider.
-    func isSignedIn(provider: some OAuthProvider) -> Bool {
+    public func isSignedIn(provider: some OAuthProvider) -> Bool {
         loadCredential(for: provider) != nil
     }
 
     /// Returns the account email for a given provider, if signed in.
-    func accountEmail(for provider: some OAuthProvider) -> String? {
+    public func accountEmail(for provider: some OAuthProvider) -> String? {
         loadCredential(for: provider)?.accountEmail
     }
 
     /// iOS sign-in using ASWebAuthenticationSession.
-    func signIn(provider: some OAuthProvider) async throws -> OAuthCredential {
+    public func signIn(provider: some OAuthProvider) async throws -> OAuthCredential {
         let pkce = PKCEGenerator.generate()
         let state = PKCEGenerator.generateState()
 
@@ -62,7 +59,7 @@ final class OAuthManager: Sendable {
             throw OAuthError.tokenExchangeFailed("Invalid authorization URL")
         }
 
-        // Start local callback server that bridges localhost redirect → custom scheme
+        // Start local callback server that bridges localhost redirect -> custom scheme
         let callbackPort: UInt16 = {
             if let urlComponents = URLComponents(string: provider.redirectURI),
                let port = urlComponents.port {
@@ -77,7 +74,7 @@ final class OAuthManager: Sendable {
         logger.logInfo("OAuth callback server started on port \(callbackServer.port)")
 
         // Use ASWebAuthenticationSession with custom scheme interception
-        // The flow: browser → OpenAI → redirect to localhost → local server → 302 to vivadicta:// → session intercepts
+        // The flow: browser -> OpenAI -> redirect to localhost -> local server -> 302 to vivadicta:// -> session intercepts
         let callbackURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
             let session = ASWebAuthenticationSession(
                 url: authURL,
@@ -91,7 +88,9 @@ final class OAuthManager: Sendable {
                     continuation.resume(throwing: OAuthError.timeout)
                 }
             }
+            #if os(iOS)
             session.presentationContextProvider = ASWebAuthSessionContextProvider.shared
+            #endif
             session.prefersEphemeralWebBrowserSession = false
             session.start()
         }
@@ -126,14 +125,14 @@ final class OAuthManager: Sendable {
     }
 
     /// Signs out by removing the stored credential.
-    func signOut(provider: some OAuthProvider) {
+    public func signOut(provider: some OAuthProvider) {
         credentials.removeValue(forKey: provider.keychainKey)
         keychain.delete(forKey: provider.keychainKey, syncable: false)
         logger.logInfo("Signed out from \(provider.providerName)")
     }
 
     /// Returns a valid access token, refreshing if needed.
-    func validAccessToken(for provider: some OAuthProvider) async throws -> (token: String, accountId: String?, projectId: String?) {
+    public func validAccessToken(for provider: some OAuthProvider) async throws -> (token: String, accountId: String?, projectId: String?) {
         guard var credential = loadCredential(for: provider) else {
             throw OAuthError.noCredential
         }
@@ -255,7 +254,7 @@ final class OAuthManager: Sendable {
         guard let accessToken = json["access_token"] as? String else {
             throw OAuthError.tokenExchangeFailed("Missing access token in response")
         }
-        // Google's refresh endpoint omits refresh_token — fall back to existing one
+        // Google's refresh endpoint omits refresh_token - fall back to existing one
         let refreshToken = json["refresh_token"] as? String ?? existingRefreshToken ?? ""
 
         let expiresIn = json["expires_in"] as? TimeInterval ?? 3600

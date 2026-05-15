@@ -3,16 +3,14 @@
 import Foundation
 import Keychain
 import os
-import OAuth
 
 /// Manages GitHub Copilot authentication using the device code flow.
-/// Two-step process: GitHub device code → Copilot token exchange.
+/// Two-step process: GitHub device code -> Copilot token exchange.
 @MainActor
-final class CopilotOAuthManager: Sendable {
-    static let shared = CopilotOAuthManager(keychain: KeychainServiceImpl())
-
-    private let logger = Logger(category: .copilotOAuth)
+public final class CopilotOAuthManager: Sendable {
+    private let logger = Logger(oauthCategory: "CopilotOAuth")
     private let keychain: any KeychainServicing
+    private let backgroundTaskService: (any BackgroundTaskServicing)?
 
     /// GitHub OAuth client ID (same as VS Code Copilot extension).
     private let clientId = "Iv1.b507a08c87ecfe98"
@@ -23,22 +21,26 @@ final class CopilotOAuthManager: Sendable {
 
     private var credential: CopilotCredential?
 
-    init(keychain: any KeychainServicing) {
+    public init(
+        keychain: any KeychainServicing,
+        backgroundTaskService: (any BackgroundTaskServicing)? = nil
+    ) {
         self.keychain = keychain
+        self.backgroundTaskService = backgroundTaskService
     }
 
     // MARK: - Public API
 
-    var isSignedIn: Bool {
+    public var isSignedIn: Bool {
         loadCredential() != nil
     }
 
-    var accountInfo: String? {
+    public var accountInfo: String? {
         loadCredential()?.githubUsername
     }
 
     /// Starts the device code flow. Returns the user code and verification URI.
-    func startDeviceCodeFlow() async throws -> DeviceCodeResponse {
+    public func startDeviceCodeFlow() async throws -> DeviceCodeResponse {
         guard let url = URL(string: deviceCodeURL) else {
             throw CopilotOAuthError.deviceCodeFailed("Invalid device code URL")
         }
@@ -74,15 +76,15 @@ final class CopilotOAuthManager: Sendable {
     }
 
     /// Polls GitHub until the user authorizes the device code.
-    func pollForToken(deviceCode: String, interval: Int, expiresIn: Int = 900) async throws -> CopilotCredential {
+    public func pollForToken(deviceCode: String, interval: Int, expiresIn: Int = 900) async throws -> CopilotCredential {
         let pollInterval = max(interval, 5)
         let maxAttempts = expiresIn / pollInterval
 
         // Keep polling alive for ~30s while Safari is foregrounded for the device-code prompt.
-        let bgTaskId = BackgroundTaskService.shared?.beginBackgroundTask(name: "CopilotOAuthPoll") {}
+        let bgTaskId = backgroundTaskService?.beginBackgroundTask(name: "CopilotOAuthPoll", onExpiration: {})
         defer {
             if let bgTaskId {
-                BackgroundTaskService.shared?.endBackgroundTask(bgTaskId)
+                backgroundTaskService?.endBackgroundTask(bgTaskId)
             }
         }
 
@@ -152,7 +154,7 @@ final class CopilotOAuthManager: Sendable {
     }
 
     /// Returns a valid Copilot token, refreshing if needed.
-    func validCopilotToken() async throws -> String {
+    public func validCopilotToken() async throws -> String {
         guard var cred = loadCredential() else {
             throw CopilotOAuthError.noCredential
         }
@@ -172,7 +174,7 @@ final class CopilotOAuthManager: Sendable {
         return cred.copilotToken
     }
 
-    func signOut() {
+    public func signOut() {
         credential = nil
         keychain.delete(forKey: keychainKey, syncable: false)
         logger.logInfo("Signed out from GitHub Copilot")
@@ -203,7 +205,7 @@ final class CopilotOAuthManager: Sendable {
 
         guard httpResponse.statusCode == 200 else {
             let body = String(data: data, encoding: .utf8) ?? ""
-            logger.logError("Copilot token exchange failed: HTTP \(httpResponse.statusCode) — \(body)")
+            logger.logError("Copilot token exchange failed: HTTP \(httpResponse.statusCode) - \(body)")
             if httpResponse.statusCode == 401 {
                 throw CopilotOAuthError.noCopilotSubscription
             }
@@ -263,24 +265,50 @@ final class CopilotOAuthManager: Sendable {
 
 // MARK: - Models
 
-struct CopilotCredential: Codable, Sendable {
-    let githubAccessToken: String
-    let copilotToken: String
-    let copilotTokenExpiresAt: Date
-    let githubUsername: String?
+public struct CopilotCredential: Codable, Sendable {
+    public let githubAccessToken: String
+    public let copilotToken: String
+    public let copilotTokenExpiresAt: Date
+    public let githubUsername: String?
+
+    public init(
+        githubAccessToken: String,
+        copilotToken: String,
+        copilotTokenExpiresAt: Date,
+        githubUsername: String?
+    ) {
+        self.githubAccessToken = githubAccessToken
+        self.copilotToken = copilotToken
+        self.copilotTokenExpiresAt = copilotTokenExpiresAt
+        self.githubUsername = githubUsername
+    }
 }
 
-struct DeviceCodeResponse: Sendable {
-    let deviceCode: String
-    let userCode: String
-    let verificationUri: String
-    let interval: Int
-    let expiresIn: Int
+public struct DeviceCodeResponse: Sendable {
+    public let deviceCode: String
+    public let userCode: String
+    public let verificationUri: String
+    public let interval: Int
+    public let expiresIn: Int
+
+    public init(
+        deviceCode: String,
+        userCode: String,
+        verificationUri: String,
+        interval: Int,
+        expiresIn: Int
+    ) {
+        self.deviceCode = deviceCode
+        self.userCode = userCode
+        self.verificationUri = verificationUri
+        self.interval = interval
+        self.expiresIn = expiresIn
+    }
 }
 
 // MARK: - Errors
 
-enum CopilotOAuthError: LocalizedError {
+public enum CopilotOAuthError: LocalizedError {
     case deviceCodeFailed(String)
     case timeout
     case accessDenied
@@ -288,7 +316,7 @@ enum CopilotOAuthError: LocalizedError {
     case noCopilotSubscription
     case noCredential
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .deviceCodeFailed(let reason):
             return "Failed to start sign-in: \(reason)"
