@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import SwiftUI
+import OAuth
 
 struct CopilotConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
