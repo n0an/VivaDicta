@@ -236,6 +236,7 @@ struct VivaDictaApp: App {
                     }
                     .environment(appState)
                     .environment(router)
+                    .environment(\.dependencies, dependencies)
                     .onOpenURL { url in
                         handleDeepLink(url)
                     }
