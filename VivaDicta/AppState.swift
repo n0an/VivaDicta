@@ -118,9 +118,9 @@ class AppState {
     /// Audio file URL received via "Open With" from Files app.
     var openedAudioFileURL: URL?
 
-    init(modelContainer: ModelContainer) {
+    init(modelContainer: ModelContainer, dependencies: AppDependencies = AppDependencies()) {
         transcriptionManager = TranscriptionManager()
-        aiService = AIService()
+        aiService = AIService(keychain: dependencies.keychain)
         presetManager = PresetManager()
         aiService.presetManager = presetManager
         PresetMigrationService.migrateIfNeeded(presetManager: presetManager, aiService: aiService)

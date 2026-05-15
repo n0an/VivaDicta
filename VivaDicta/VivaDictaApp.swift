@@ -86,7 +86,7 @@ struct VivaDictaApp: App {
         AppDependencyManager.shared.add(dependency: dataController)
         AppDependencyManager.shared.add(dependency: router)
         
-        self._appState = State(initialValue: AppState(modelContainer: modelContainer))
+        self._appState = State(initialValue: AppState(modelContainer: modelContainer, dependencies: dependencies))
         
         // Initialize app directories
         FileManager.createAppDirectories()

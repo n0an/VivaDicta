@@ -7,6 +7,7 @@
 
 import Foundation
 import FoundationModels
+import Keychain
 import os
 
 enum WebSearchStatus: String, Sendable {
@@ -260,9 +261,10 @@ private enum ExaError: LocalizedError {
 
 enum ExaAPIKeyManager {
     static let keychainKey = "exaAPIKey"
+    private static let keychain: any KeychainServicing = KeychainServiceImpl()
 
     static var apiKey: String? {
-        KeychainService.shared.getString(forKey: keychainKey)
+        keychain.getString(forKey: keychainKey)
     }
 
     static var isConfigured: Bool {
@@ -272,11 +274,11 @@ enum ExaAPIKeyManager {
 
     @discardableResult
     static func save(_ key: String) -> Bool {
-        KeychainService.shared.save(key, forKey: keychainKey)
+        keychain.save(key, forKey: keychainKey)
     }
 
     @discardableResult
     static func delete() -> Bool {
-        KeychainService.shared.delete(forKey: keychainKey)
+        keychain.delete(forKey: keychainKey)
     }
 }
