@@ -41,7 +41,7 @@ public struct GeminiTranscriptionService: Sendable {
             throw CloudTranscriptionError.dataEncodingError
         }
 
-        logger.notice("Starting Gemini transcription with model: \(config.modelName, privacy: .public)")
+        logger.logNotice("Starting Gemini transcription with model: \(config.modelName)")
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
@@ -53,7 +53,7 @@ public struct GeminiTranscriptionService: Sendable {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        logger.notice("Audio file loaded, size: \(audioData.count) bytes")
+        logger.logNotice("Audio file loaded, size: \(audioData.count) bytes")
 
         let base64AudioData = audioData.base64EncodedString()
 

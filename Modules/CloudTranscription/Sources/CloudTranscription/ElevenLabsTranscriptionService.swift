@@ -56,7 +56,7 @@ public struct ElevenLabsTranscriptionService: Sendable {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
         }
 
-        logger.notice("ElevenLabs API Response Status: \(httpResponse.statusCode)")
+        logger.logNotice("ElevenLabs API Response Status: \(httpResponse.statusCode)")
 
         if !(200...299).contains(httpResponse.statusCode) {
             let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"

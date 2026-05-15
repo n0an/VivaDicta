@@ -124,7 +124,7 @@ public struct MistralTranscriptionService: Sendable {
         } else if config.isSpeakerDiarizationEnabled,
                   config.language.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false,
                   config.language != "auto" {
-            logger.notice("Skipping explicit language because Mistral diarization requires automatic language detection")
+            logger.logNotice("Skipping explicit language because Mistral diarization requires automatic language detection")
         }
 
         if config.isSpeakerDiarizationEnabled {
