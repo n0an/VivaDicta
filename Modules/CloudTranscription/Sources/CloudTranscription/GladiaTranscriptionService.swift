@@ -1,40 +1,56 @@
-//
-//  GladiaTranscriptionService.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.04.29
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
-import TranscriptionCore
-import CloudTranscription
 import os
+import TranscriptionCore
 
-struct GladiaTranscriptionService {
-    private let logger = Logger(category: .gladiaTranscriptionService)
+/// Pre-configured Gladia STT client. Uses an upload + create + poll flow.
+/// `modelName` is unused by the v2 API (the endpoint always uses the default
+/// pre-recorded model), so the config omits it.
+public struct GladiaTranscriptionService: Sendable {
+    private let logger = Logger(cloudTranscriptionCategory: "GladiaTranscription")
     private let apiBase = "https://api.gladia.io/v2"
     private let maxWaitSeconds: TimeInterval = 300
     private let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 
-    func transcribe(audioURL: URL, model: any TranscriptionModel) async throws -> TranscriptionServiceResult {
-        let config = try getAPIConfig(for: model)
-        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
-        let translationTarget = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
-        let translationEnabled = !translationTarget.isEmpty
+    public struct Config: Sendable {
+        public let apiKey: String
+        public let language: String
+        public let vocabulary: [String]
+        public let isSpeakerDiarizationEnabled: Bool
+        /// `""` = no translation requested.
+        public let translationTargetLanguage: String
 
-        let uploadedURL = try await uploadFile(audioURL: audioURL, apiKey: config.apiKey)
-        let jobId = try await createTranscription(
-            audioURL: uploadedURL,
-            apiKey: config.apiKey,
-            diarizationEnabled: diarizationEnabled,
-            translationTarget: translationTarget
-        )
-        let result = try await pollTranscription(
-            id: jobId,
-            apiKey: config.apiKey,
-            diarizationEnabled: diarizationEnabled,
-            translationEnabled: translationEnabled
-        )
+        public init(
+            apiKey: String,
+            language: String = "auto",
+            vocabulary: [String] = [],
+            isSpeakerDiarizationEnabled: Bool = false,
+            translationTargetLanguage: String = ""
+        ) {
+            self.apiKey = apiKey
+            self.language = language
+            self.vocabulary = vocabulary
+            self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
+            self.translationTargetLanguage = translationTargetLanguage
+        }
+    }
+
+    private let config: Config
+
+    public init(config: Config) {
+        self.config = config
+    }
+
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
+        guard !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        let translationEnabled = !config.translationTargetLanguage.isEmpty
+
+        let uploadedURL = try await uploadFile(audioURL: audioURL)
+        let jobId = try await createTranscription(audioURL: uploadedURL)
+        let result = try await pollTranscription(id: jobId, translationEnabled: translationEnabled)
 
         guard !result.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CloudTranscriptionError.noTranscriptionReturned
@@ -42,18 +58,7 @@ struct GladiaTranscriptionService {
         return result
     }
 
-    // MARK: - Private Methods
-
-    private func getAPIConfig(for model: any TranscriptionModel) throws -> APIConfig {
-        guard let cloudModel = model as? CloudModel,
-              let apiKey = cloudModel.apiKey,
-              !apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
-        }
-        return APIConfig(apiKey: apiKey)
-    }
-
-    private func uploadFile(audioURL: URL, apiKey: String) async throws -> String {
+    private func uploadFile(audioURL: URL) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/upload") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -61,7 +66,7 @@ struct GladiaTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue(apiKey, forHTTPHeaderField: "x-gladia-key")
+        request.setValue(config.apiKey, forHTTPHeaderField: "x-gladia-key")
 
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -89,12 +94,7 @@ struct GladiaTranscriptionService {
         }
     }
 
-    private func createTranscription(
-        audioURL: String,
-        apiKey: String,
-        diarizationEnabled: Bool,
-        translationTarget: String
-    ) async throws -> String {
+    private func createTranscription(audioURL: String) async throws -> String {
         guard let apiURL = URL(string: "\(apiBase)/pre-recorded") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -102,18 +102,17 @@ struct GladiaTranscriptionService {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.timeoutInterval = NetworkRetry.defaultTimeout
-        request.setValue(apiKey, forHTTPHeaderField: "x-gladia-key")
+        request.setValue(config.apiKey, forHTTPHeaderField: "x-gladia-key")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         var payload: [String: Any] = [
             "audio_url": audioURL,
-            "diarization": diarizationEnabled
+            "diarization": config.isSpeakerDiarizationEnabled
         ]
 
-        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-        if selectedLanguage != "auto", !selectedLanguage.isEmpty {
+        if config.language != "auto", !config.language.isEmpty {
             payload["language_config"] = [
-                "languages": [selectedLanguage],
+                "languages": [config.language],
                 "code_switching": false
             ]
         } else {
@@ -123,23 +122,22 @@ struct GladiaTranscriptionService {
             ]
         }
 
-        let vocabularyTerms = CustomVocabulary.getTerms()
-        if !vocabularyTerms.isEmpty {
+        if !config.vocabulary.isEmpty {
             payload["custom_vocabulary"] = true
             payload["custom_vocabulary_config"] = [
-                "vocabulary": vocabularyTerms
+                "vocabulary": config.vocabulary
             ]
-            logger.logInfo("Adding \(vocabularyTerms.count) custom vocabulary terms to Gladia request")
+            logger.logInfo("Adding \(config.vocabulary.count) custom vocabulary terms to Gladia request")
         }
 
-        if !translationTarget.isEmpty {
+        if !config.translationTargetLanguage.isEmpty {
             payload["translation"] = true
             payload["translation_config"] = [
-                "target_languages": [translationTarget],
+                "target_languages": [config.translationTargetLanguage],
                 "model": "enhanced",
                 "match_original_utterances": true
             ]
-            logger.logInfo("Gladia translation enabled, target: \(translationTarget)")
+            logger.logInfo("Gladia translation enabled, target: \(config.translationTargetLanguage)")
         }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
@@ -166,12 +164,7 @@ struct GladiaTranscriptionService {
         }
     }
 
-    private func pollTranscription(
-        id: String,
-        apiKey: String,
-        diarizationEnabled: Bool,
-        translationEnabled: Bool
-    ) async throws -> TranscriptionServiceResult {
+    private func pollTranscription(id: String, translationEnabled: Bool) async throws -> TranscriptionServiceResult {
         guard let baseURL = URL(string: "\(apiBase)/pre-recorded/\(id)") else {
             throw CloudTranscriptionError.dataEncodingError
         }
@@ -182,7 +175,7 @@ struct GladiaTranscriptionService {
             var request = URLRequest(url: baseURL)
             request.httpMethod = "GET"
             request.timeoutInterval = NetworkRetry.defaultTimeout
-            request.setValue(apiKey, forHTTPHeaderField: "x-gladia-key")
+            request.setValue(config.apiKey, forHTTPHeaderField: "x-gladia-key")
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -199,11 +192,7 @@ struct GladiaTranscriptionService {
             if let status = try? JSONDecoder().decode(StatusResponse.self, from: data) {
                 switch status.status.lowercased() {
                 case "done":
-                    return try extractResult(
-                        from: data,
-                        diarizationEnabled: diarizationEnabled,
-                        translationEnabled: translationEnabled
-                    )
+                    return try extractResult(from: data, translationEnabled: translationEnabled)
                 case "error":
                     let errorCode = status.error_code ?? -1
                     logger.logError("Gladia job failed with error_code \(errorCode)")
@@ -223,11 +212,7 @@ struct GladiaTranscriptionService {
         }
     }
 
-    private func extractResult(
-        from data: Data,
-        diarizationEnabled: Bool,
-        translationEnabled: Bool
-    ) throws -> TranscriptionServiceResult {
+    private func extractResult(from data: Data, translationEnabled: Bool) throws -> TranscriptionServiceResult {
         let decoded = try JSONDecoder().decode(JobResponse.self, from: data)
 
         guard let result = decoded.result else {
@@ -235,9 +220,6 @@ struct GladiaTranscriptionService {
         }
 
         if translationEnabled {
-            // When translation was requested, returning the original-language transcript
-            // would silently misrepresent the result. If the translation block is missing,
-            // marked unsuccessful, or empty, treat it as a transcription failure.
             guard let translation = result.translation,
                   translation.success != false,
                   let firstResult = translation.results?.first else {
@@ -245,14 +227,14 @@ struct GladiaTranscriptionService {
                 throw CloudTranscriptionError.noTranscriptionReturned
             }
 
-            if diarizationEnabled,
+            if config.isSpeakerDiarizationEnabled,
                let diarizedText = makeSpeakerAttributedText(from: firstResult.utterances) {
                 return .speakerAttributed(diarizedText)
             }
             return .plain(firstResult.full_transcript)
         }
 
-        if diarizationEnabled,
+        if config.isSpeakerDiarizationEnabled,
            let diarizedText = makeSpeakerAttributedText(from: result.transcription.utterances) {
             return .speakerAttributed(diarizedText)
         }
@@ -264,8 +246,6 @@ struct GladiaTranscriptionService {
             return nil
         }
 
-        // Gladia returns one speaker per utterance, so each utterance is its own turn.
-        // Merge consecutive utterances from the same speaker into a single turn.
         var turns: [SpeakerTurn] = []
         var currentSpeaker: String?
         var currentText = ""
@@ -311,12 +291,6 @@ struct GladiaTranscriptionService {
         body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
 
         return body
-    }
-
-    // MARK: - Response Types
-
-    private struct APIConfig {
-        let apiKey: String
     }
 
     private struct UploadResponse: Decodable {

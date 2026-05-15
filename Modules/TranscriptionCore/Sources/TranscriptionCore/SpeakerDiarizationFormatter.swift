@@ -1,19 +1,19 @@
-//
-//  SpeakerDiarizationFormatter.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.04.14
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
 
-struct SpeakerTurn: Hashable, Sendable {
-    let speakerID: String?
-    let text: String
+public struct SpeakerTurn: Hashable, Sendable {
+    public let speakerID: String?
+    public let text: String
+
+    public init(speakerID: String?, text: String) {
+        self.speakerID = speakerID
+        self.text = text
+    }
 }
 
-enum SpeakerDiarizationFormatter {
-    static func format(_ turns: [SpeakerTurn]) -> String? {
+public enum SpeakerDiarizationFormatter {
+    public static func format(_ turns: [SpeakerTurn]) -> String? {
         var mergedTurns = [MergedTurn]()
         var lastResolvedSpeakerID: String?
         var unknownSpeakerCount = 0
