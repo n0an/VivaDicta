@@ -3,7 +3,7 @@
 import Foundation
 
 /// Protocol for OAuth provider configurations.
-protocol OAuthProvider: Sendable {
+public protocol OAuthProvider: Sendable {
     /// Human-readable provider name (e.g., "OpenAI").
     var providerName: String { get }
 
@@ -47,14 +47,14 @@ protocol OAuthProvider: Sendable {
 
 extension OAuthProvider {
     /// Default: form-urlencoded (standard OAuth2).
-    var tokenRequestUsesJSON: Bool { false }
+    public var tokenRequestUsesJSON: Bool { false }
 
     /// Default: no client secret (public PKCE client).
-    var clientSecret: String? { nil }
+    public var clientSecret: String? { nil }
 
     /// Default: no userinfo endpoint (use JWT claims).
-    var userinfoURL: String? { nil }
+    public var userinfoURL: String? { nil }
 
     /// Default: no post-auth setup needed.
-    func postAuthSetup(accessToken: String) async throws -> String? { nil }
+    public func postAuthSetup(accessToken: String) async throws -> String? { nil }
 }

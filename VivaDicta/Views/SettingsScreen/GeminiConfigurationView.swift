@@ -2,6 +2,7 @@
 
 import Keychain
 import SwiftUI
+import OAuth
 
 struct GeminiConfigurationView: View {
     @Environment(\.dismiss) private var dismiss

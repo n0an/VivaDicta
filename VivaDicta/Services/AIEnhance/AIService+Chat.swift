@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import os
+import OAuth
 
 /// Multi-turn chat support for AIService.
 ///

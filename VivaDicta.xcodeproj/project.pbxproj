@@ -16,6 +16,8 @@
 		186C058B2FB779C200102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058A2FB779C200102432 /* Presets */; };
 		186C058D2FB779CB00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058C2FB779CB00102432 /* Presets */; };
 		186C058F2FB779D200102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058E2FB779D200102432 /* Presets */; };
+		186C0C9C2FB7829A00102432 /* OAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9B2FB7829A00102432 /* OAuth */; };
+		186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9D2FB782A000102432 /* OAuthMocks */; };
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
@@ -194,6 +196,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Keychain,
+				OAuth,
 				Presets,
 			);
 			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
@@ -202,6 +205,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Keychain,
+				OAuth,
 				Presets,
 			);
 			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
@@ -484,6 +488,7 @@
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				186C05812FB779AA00102432 /* Presets in Frameworks */,
+				186C0C9C2FB7829A00102432 /* OAuth in Frameworks */,
 				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
@@ -498,6 +503,7 @@
 			files = (
 				186C05872FB779BA00102432 /* Presets in Frameworks */,
 				186C05852FB779BA00102432 /* KeychainMocks in Frameworks */,
+				186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */,
 				186C05832FB779BA00102432 /* Keychain in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 			);
@@ -669,6 +675,7 @@
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
 				186C057E2FB779AA00102432 /* Keychain */,
 				186C05802FB779AA00102432 /* Presets */,
+				186C0C9B2FB7829A00102432 /* OAuth */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -696,6 +703,7 @@
 				186C05842FB779BA00102432 /* KeychainMocks */,
 				186C05862FB779BA00102432 /* Presets */,
 				186C05882FB779BA00102432 /* PresetsMocks */,
+				186C0C9D2FB782A000102432 /* OAuthMocks */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2639,6 +2647,14 @@
 		186C058E2FB779D200102432 /* Presets */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Presets;
+		};
+		186C0C9B2FB7829A00102432 /* OAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OAuth;
+		};
+		186C0C9D2FB782A000102432 /* OAuthMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OAuthMocks;
 		};
 		1879FD9F2F8C088E00952CF9 /* LumoKit */ = {
 			isa = XCSwiftPackageProductDependency;

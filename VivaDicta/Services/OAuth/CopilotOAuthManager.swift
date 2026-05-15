@@ -3,6 +3,7 @@
 import Foundation
 import Keychain
 import os
+import OAuth
 
 /// Manages GitHub Copilot authentication using the device code flow.
 /// Two-step process: GitHub device code → Copilot token exchange.

@@ -5,6 +5,7 @@ import AuthenticationServices
 import Keychain
 import Network
 import os
+import OAuth
 
 /// Manages OAuth authentication flows — sign-in, token refresh, and credential storage.
 /// MainActor-isolated for safe interaction with UI and Keychain in Swift 6.

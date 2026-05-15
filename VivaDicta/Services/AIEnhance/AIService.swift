@@ -10,6 +10,7 @@ import Presets
 import SwiftUI
 import TipKit
 import os
+import OAuth
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
 ///

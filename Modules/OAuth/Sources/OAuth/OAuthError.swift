@@ -3,7 +3,7 @@
 import Foundation
 
 /// Errors that can occur during the OAuth flow.
-enum OAuthError: LocalizedError {
+public enum OAuthError: LocalizedError {
     case timeout
     case stateMismatch
     case authorizationDenied(String)
@@ -12,7 +12,7 @@ enum OAuthError: LocalizedError {
     case noCredential
     case invalidResponse
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .timeout:
             return "Sign-in timed out. Please try again."
