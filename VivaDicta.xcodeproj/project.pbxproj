@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
 		187D375B2FB72989004234D0 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 187D375A2FB72989004234D0 /* Keychain */; };
+		187D55C52FB73ADE004234D0 /* KeychainMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 187D55C42FB73ADE004234D0 /* KeychainMocks */; };
+		187D55C72FB73AF1004234D0 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 187D55C62FB73AF1004234D0 /* Keychain */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
@@ -472,6 +474,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				187D55C72FB73AF1004234D0 /* Keychain in Frameworks */,
+				187D55C52FB73ADE004234D0 /* KeychainMocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -658,6 +662,8 @@
 			);
 			name = VivaDictaTests;
 			packageProductDependencies = (
+				187D55C42FB73ADE004234D0 /* KeychainMocks */,
+				187D55C62FB73AF1004234D0 /* Keychain */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2568,6 +2574,14 @@
 			productName = LumoKit;
 		};
 		187D375A2FB72989004234D0 /* Keychain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Keychain;
+		};
+		187D55C42FB73ADE004234D0 /* KeychainMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KeychainMocks;
+		};
+		187D55C62FB73AF1004234D0 /* Keychain */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Keychain;
 		};
