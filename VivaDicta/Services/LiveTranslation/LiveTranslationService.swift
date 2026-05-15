@@ -7,6 +7,7 @@
 
 import AVFoundation
 import Foundation
+import Keychain
 import os
 
 @MainActor
@@ -29,6 +30,7 @@ final class LiveTranslationService {
     }
 
     private let logger = Logger(category: .liveTranslationService)
+    private let keychain: any KeychainServicing
     private let audio: LiveTranslationAudio
     private let sttClient = SonioxRealtimeSTTClient()
     private var ttsClient: SonioxRealtimeTTSClient?
@@ -59,9 +61,10 @@ final class LiveTranslationService {
     private var sessionStartedAt: Date?
     private(set) var sessionTargetLanguage: LiveTranslationLanguage = .english
 
-    init() {
-        audio = LiveTranslationAudio()
-        audio.playbackRate = LiveTranslationPreferences.ttsRate
+    init(keychain: any KeychainServicing = KeychainServiceImpl()) {
+        self.keychain = keychain
+        self.audio = LiveTranslationAudio()
+        self.audio.playbackRate = LiveTranslationPreferences.ttsRate
     }
 
     func clearFailureIfNeeded() {
@@ -79,7 +82,7 @@ final class LiveTranslationService {
         sessionSourceLanguage = config.sourceLanguage
         sessionTargetLanguage = config.targetLanguage
 
-        guard let apiKey = KeychainService.shared.getString(forKey: "sonioxAPIKey"),
+        guard let apiKey = keychain.getString(forKey: "sonioxAPIKey"),
               !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             await fail(LiveTranslationError.missingAPIKey)
             return
@@ -296,7 +299,7 @@ final class LiveTranslationService {
         ttsClient = nil
 
         guard status == .running, config.ttsEnabled else { return }
-        guard let apiKey = KeychainService.shared.getString(forKey: "sonioxAPIKey"),
+        guard let apiKey = keychain.getString(forKey: "sonioxAPIKey"),
               !apiKey.isEmpty else { return }
         await openTTSStream(apiKey: apiKey)
     }
@@ -355,7 +358,7 @@ final class LiveTranslationService {
         Task { [weak self] in
             guard let self else { return }
             if self.config.ttsEnabled {
-                guard let apiKey = KeychainService.shared.getString(forKey: "sonioxAPIKey"),
+                guard let apiKey = keychain.getString(forKey: "sonioxAPIKey"),
                       !apiKey.isEmpty else { return }
                 await self.openTTSStream(apiKey: apiKey)
             } else {
