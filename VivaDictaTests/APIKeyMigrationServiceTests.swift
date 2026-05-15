@@ -7,7 +7,6 @@
 
 import Foundation
 import Testing
-import Keychain
 import KeychainMocks
 @testable import VivaDicta
 
