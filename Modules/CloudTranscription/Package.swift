@@ -14,6 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../TranscriptionCore"),
+        .package(path: "../Networking"),
         .package(path: "../TestUtilities"),
     ],
     targets: [
@@ -21,6 +22,7 @@ let package = Package(
             name: "CloudTranscription",
             dependencies: [
                 .product(name: "TranscriptionCore", package: "TranscriptionCore"),
+                .product(name: "Networking", package: "Networking"),
             ]
         ),
         .target(
@@ -37,6 +39,8 @@ let package = Package(
                 "CloudTranscription",
                 "CloudTranscriptionMocks",
                 .product(name: "TranscriptionCore", package: "TranscriptionCore"),
+                .product(name: "Networking", package: "Networking"),
+                .product(name: "NetworkingMocks", package: "Networking"),
                 .product(name: "TestUtilities", package: "TestUtilities"),
             ]
         ),

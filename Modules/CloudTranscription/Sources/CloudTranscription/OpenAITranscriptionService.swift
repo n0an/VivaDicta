@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import Networking
 import os
 import TranscriptionCore
 
@@ -25,9 +26,9 @@ public struct OpenAITranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: URLSession
+    private let urlSession: any URLSessionProtocol
 
-    public init(config: Config, urlSession: URLSession = .shared) {
+    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.config = config
         self.urlSession = urlSession
     }
