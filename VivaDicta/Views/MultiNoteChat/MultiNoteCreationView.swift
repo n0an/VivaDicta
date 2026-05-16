@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 import SwiftData
 
 /// Sheet for creating a new multi-note chat conversation.

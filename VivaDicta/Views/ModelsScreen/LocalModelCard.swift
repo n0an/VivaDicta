@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 import TipKit
 import os
 

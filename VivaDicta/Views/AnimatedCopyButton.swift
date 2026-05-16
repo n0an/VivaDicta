@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 struct AnimatedCopyButton: View {
     let textToCopy: String

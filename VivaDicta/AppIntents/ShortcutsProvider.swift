@@ -6,6 +6,7 @@
 //
 
 import AppIntents
+import DesignSystem
 
 final class ShortcutsProvider: AppShortcutsProvider {
     static let shortcutTileColor = ShortcutTileColor.lime

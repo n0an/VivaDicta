@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 import SwiftData
 
 private struct ChatSourceCitationDisplay: Identifiable {

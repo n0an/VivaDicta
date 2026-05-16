@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 import Presets
 
 /// Displays a VivaMode picker and categorized preset list for AI text processing in the keyboard.

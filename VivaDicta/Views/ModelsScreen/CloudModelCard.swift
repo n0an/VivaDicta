@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 struct CloudModelCard: View {
     let model: CloudModel

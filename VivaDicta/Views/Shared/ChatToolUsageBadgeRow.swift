@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 struct ChatToolUsageBadgeRow: View {
     @Environment(\.colorScheme) private var colorScheme

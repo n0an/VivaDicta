@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 /// Horizontal scrollable filter bar with source tags and user tags.
 struct TagFilterBar: View {
