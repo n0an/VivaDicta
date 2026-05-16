@@ -63,7 +63,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "hello world")
         let audio = try makeAudioFile()
 
-        let result = try await makeService(session: session).transcribe(audioURL: audio)
+        let sut = makeService(session: session)
+        let result = try await sut.transcribe(audioURL: audio)
 
         #expect(result.text == "hello world")
         #expect(result.isSpeakerAttributed == false)
@@ -77,7 +78,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
-        _ = try await makeService(session: session).transcribe(audioURL: audio)
+        let sut = makeService(session: session)
+        _ = try await sut.transcribe(audioURL: audio)
 
         let req = try #require(session.capturedRequest)
         #expect(req.url?.absoluteString == "https://api.openai.com/v1/audio/transcriptions")
@@ -89,7 +91,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
-        _ = try await makeService(session: session, apiKey: "sk-abc123").transcribe(audioURL: audio)
+        let sut = makeService(session: session, apiKey: "sk-abc123")
+        _ = try await sut.transcribe(audioURL: audio)
 
         let req = try #require(session.capturedRequest)
         #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer sk-abc123")
@@ -100,7 +103,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
-        _ = try await makeService(session: session).transcribe(audioURL: audio)
+        let sut = makeService(session: session)
+        _ = try await sut.transcribe(audioURL: audio)
 
         let req = try #require(session.capturedRequest)
         let contentType = try #require(req.value(forHTTPHeaderField: "Content-Type"))
@@ -112,7 +116,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
-        _ = try await makeService(session: session, modelName: "whisper-1").transcribe(audioURL: audio)
+        let sut = makeService(session: session, modelName: "whisper-1")
+        _ = try await sut.transcribe(audioURL: audio)
 
         let body = try #require(session.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
@@ -129,7 +134,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
-        _ = try await makeService(session: session, language: "en").transcribe(audioURL: audio)
+        let sut = makeService(session: session, language: "en")
+        _ = try await sut.transcribe(audioURL: audio)
 
         let body = try #require(session.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
@@ -141,7 +147,8 @@ struct OpenAITranscriptionServiceTests {
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
-        _ = try await makeService(session: session, language: "auto").transcribe(audioURL: audio)
+        let sut = makeService(session: session, language: "auto")
+        _ = try await sut.transcribe(audioURL: audio)
 
         let body = try #require(session.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
@@ -153,10 +160,10 @@ struct OpenAITranscriptionServiceTests {
     @Test func missingAPIKeyThrowsBeforeMakingRequest() async throws {
         let session = MockURLSession()
         let audio = try makeAudioFile()
-        let service = makeService(session: session, apiKey: "")
+        let sut = makeService(session: session, apiKey: "")
 
         await #expect(throws: CloudTranscriptionError.self) {
-            _ = try await service.transcribe(audioURL: audio)
+            _ = try await sut.transcribe(audioURL: audio)
         }
         #expect(session.uploadCallCount == 0, "no network call should be made when API key is empty")
     }
@@ -164,10 +171,10 @@ struct OpenAITranscriptionServiceTests {
     @Test func missingAudioFileThrowsAudioFileNotFound() async {
         let session = MockURLSession()
         let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
-        let service = makeService(session: session)
+        let sut = makeService(session: session)
 
         await #expect(throws: CloudTranscriptionError.self) {
-            _ = try await service.transcribe(audioURL: audio)
+            _ = try await sut.transcribe(audioURL: audio)
         }
     }
 
@@ -181,9 +188,10 @@ struct OpenAITranscriptionServiceTests {
             makeHTTPResponse(401)
         ))
         let audio = try makeAudioFile()
+        let sut = makeService(session: session)
 
         do {
-            _ = try await makeService(session: session).transcribe(audioURL: audio)
+            _ = try await sut.transcribe(audioURL: audio)
             Issue.record("expected apiRequestFailed to throw")
         } catch let CloudTranscriptionError.apiRequestFailed(statusCode, message) {
             #expect(statusCode == 401)
@@ -197,9 +205,10 @@ struct OpenAITranscriptionServiceTests {
         let session = MockURLSession()
         session.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
         let audio = try makeAudioFile()
+        let sut = makeService(session: session)
 
         do {
-            _ = try await makeService(session: session).transcribe(audioURL: audio)
+            _ = try await sut.transcribe(audioURL: audio)
             Issue.record("expected noTranscriptionReturned to throw")
         } catch CloudTranscriptionError.noTranscriptionReturned {
             // expected

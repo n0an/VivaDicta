@@ -14,50 +14,50 @@ import KeychainMocks
 struct MockKeychainServiceTests {
 
     @Test func inMemoryRoundtripForStrings() {
-        let mock = MockKeychainService()
-        #expect(mock.save("hello", forKey: "k", syncable: true))
-        #expect(mock.getString(forKey: "k", syncable: true) == "hello")
+        let sut = MockKeychainService()
+        #expect(sut.save("hello", forKey: "k", syncable: true))
+        #expect(sut.getString(forKey: "k", syncable: true) == "hello")
     }
 
     @Test func inMemoryRoundtripForData() {
-        let mock = MockKeychainService()
+        let sut = MockKeychainService()
         let bytes = Data([0x01, 0x02, 0x03])
-        #expect(mock.save(data: bytes, forKey: "k", syncable: true))
-        #expect(mock.getData(forKey: "k", syncable: true) == bytes)
+        #expect(sut.save(data: bytes, forKey: "k", syncable: true))
+        #expect(sut.getData(forKey: "k", syncable: true) == bytes)
     }
 
     @Test func stubOverrideForcesSaveFailure() {
-        let mock = MockKeychainService()
-        mock.stubSaveStringResult = false
-        #expect(!mock.save("hello", forKey: "k", syncable: true))
-        #expect(mock.getString(forKey: "k", syncable: true) == nil)
+        let sut = MockKeychainService()
+        sut.stubSaveStringResult = false
+        #expect(!sut.save("hello", forKey: "k", syncable: true))
+        #expect(sut.getString(forKey: "k", syncable: true) == nil)
     }
 
     @Test func deleteRemovesFromBackingStore() {
-        let mock = MockKeychainService()
-        mock.save("temp", forKey: "k", syncable: true)
-        #expect(mock.delete(forKey: "k", syncable: true))
-        #expect(mock.getString(forKey: "k", syncable: true) == nil)
+        let sut = MockKeychainService()
+        sut.save("temp", forKey: "k", syncable: true)
+        #expect(sut.delete(forKey: "k", syncable: true))
+        #expect(sut.getString(forKey: "k", syncable: true) == nil)
     }
 
     @Test func callCountsIncrement() {
-        let mock = MockKeychainService()
-        mock.save("a", forKey: "x", syncable: true)
-        mock.save("b", forKey: "y", syncable: true)
-        _ = mock.getString(forKey: "x", syncable: true)
-        mock.delete(forKey: "y", syncable: true)
-        #expect(mock.saveStringCallCount == 2)
-        #expect(mock.getStringCallCount == 1)
-        #expect(mock.deleteCallCount == 1)
+        let sut = MockKeychainService()
+        sut.save("a", forKey: "x", syncable: true)
+        sut.save("b", forKey: "y", syncable: true)
+        _ = sut.getString(forKey: "x", syncable: true)
+        sut.delete(forKey: "y", syncable: true)
+        #expect(sut.saveStringCallCount == 2)
+        #expect(sut.getStringCallCount == 1)
+        #expect(sut.deleteCallCount == 1)
     }
 
     @Test func didSaveStringFiresAfterMutation() {
-        let mock = MockKeychainService()
+        let sut = MockKeychainService()
         var observed: String?
-        mock.didSaveString = {
-            observed = mock.getString(forKey: "k", syncable: true)
+        sut.didSaveString = {
+            observed = sut.getString(forKey: "k", syncable: true)
         }
-        mock.save("written", forKey: "k", syncable: true)
+        sut.save("written", forKey: "k", syncable: true)
         #expect(observed == "written")
     }
 }

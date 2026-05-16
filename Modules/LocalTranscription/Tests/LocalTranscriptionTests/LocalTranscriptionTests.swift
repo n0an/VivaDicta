@@ -68,27 +68,27 @@ struct ParakeetOptionsTests {
 struct MockWhisperKitTranscriptionServiceTests {
 
     @Test func transcribeReturnsStubbedValue() async throws {
-        let mock = MockWhisperKitTranscriptionService()
-        mock.stubTranscribeResponse = .success(.plain("hello"))
+        let sut = MockWhisperKitTranscriptionService()
+        sut.stubTranscribeResponse = .success(.plain("hello"))
         let url = URL(fileURLWithPath: "/tmp/audio.wav")
-        let result = try await mock.transcribe(
+        let result = try await sut.transcribe(
             audioURL: url,
             modelName: "openai_whisper-tiny",
             options: .init()
         )
         #expect(result.text == "hello")
-        #expect(mock.transcribeCallCount == 1)
-        #expect(mock.capturedAudioURL == url)
-        #expect(mock.capturedModelName == "openai_whisper-tiny")
+        #expect(sut.transcribeCallCount == 1)
+        #expect(sut.capturedAudioURL == url)
+        #expect(sut.capturedModelName == "openai_whisper-tiny")
     }
 
     @Test func transcribePropagatesStubbedError() async {
         struct Boom: Error {}
-        let mock = MockWhisperKitTranscriptionService()
-        mock.stubTranscribeResponse = .failure(Boom())
+        let sut = MockWhisperKitTranscriptionService()
+        sut.stubTranscribeResponse = .failure(Boom())
         let url = URL(fileURLWithPath: "/tmp/audio.wav")
         await #expect(throws: Boom.self) {
-            _ = try await mock.transcribe(
+            _ = try await sut.transcribe(
                 audioURL: url,
                 modelName: "openai_whisper-tiny",
                 options: .init()
@@ -97,13 +97,13 @@ struct MockWhisperKitTranscriptionServiceTests {
     }
 
     @Test func preloadAndUnloadAreCounted() async {
-        let mock = MockWhisperKitTranscriptionService()
-        await mock.preloadModelIfNeeded(modelName: "model-a")
-        await mock.preloadModelIfNeeded(modelName: "model-b")
-        await mock.unloadModel()
+        let sut = MockWhisperKitTranscriptionService()
+        await sut.preloadModelIfNeeded(modelName: "model-a")
+        await sut.preloadModelIfNeeded(modelName: "model-b")
+        await sut.unloadModel()
 
-        #expect(mock.preloadCallCount == 2)
-        #expect(mock.capturedPreloadModelName == "model-b")
-        #expect(mock.unloadCallCount == 1)
+        #expect(sut.preloadCallCount == 2)
+        #expect(sut.capturedPreloadModelName == "model-b")
+        #expect(sut.unloadCallCount == 1)
     }
 }

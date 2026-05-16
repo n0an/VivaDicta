@@ -19,11 +19,11 @@ struct MockURLSessionTests {
     }
 
     @Test func returnsStubbedSuccessResponse() async throws {
-        let session = MockURLSession()
-        session.stubUploadResponse = .success((Data("ok".utf8), makeResponse(200)))
+        let sut = MockURLSession()
+        sut.stubUploadResponse = .success((Data("ok".utf8), makeResponse(200)))
 
         let request = URLRequest(url: URL(string: "https://example.com/x")!)
-        let (data, response) = try await session.upload(for: request, from: Data())
+        let (data, response) = try await sut.upload(for: request, from: Data())
 
         #expect(String(data: data, encoding: .utf8) == "ok")
         #expect((response as? HTTPURLResponse)?.statusCode == 200)
@@ -31,11 +31,11 @@ struct MockURLSessionTests {
 
     @Test func propagatesStubbedError() async {
         struct Boom: Error {}
-        let session = MockURLSession()
-        session.stubUploadResponse = .failure(Boom())
+        let sut = MockURLSession()
+        sut.stubUploadResponse = .failure(Boom())
 
         await #expect(throws: Boom.self) {
-            _ = try await session.upload(
+            _ = try await sut.upload(
                 for: URLRequest(url: URL(string: "https://example.com")!),
                 from: Data()
             )
@@ -43,28 +43,28 @@ struct MockURLSessionTests {
     }
 
     @Test func capturesRequestAndBody() async throws {
-        let session = MockURLSession()
-        session.stubUploadResponse = .success((Data(), makeResponse(200)))
+        let sut = MockURLSession()
+        sut.stubUploadResponse = .success((Data(), makeResponse(200)))
 
         var request = URLRequest(url: URL(string: "https://example.com/api")!)
         request.httpMethod = "POST"
         request.setValue("Bearer xyz", forHTTPHeaderField: "Authorization")
         let body = Data("payload".utf8)
 
-        _ = try await session.upload(for: request, from: body)
+        _ = try await sut.upload(for: request, from: body)
 
-        #expect(session.uploadCallCount == 1)
-        #expect(session.capturedRequest?.url?.absoluteString == "https://example.com/api")
-        #expect(session.capturedRequest?.httpMethod == "POST")
-        #expect(session.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer xyz")
-        #expect(session.capturedBody == body)
+        #expect(sut.uploadCallCount == 1)
+        #expect(sut.capturedRequest?.url?.absoluteString == "https://example.com/api")
+        #expect(sut.capturedRequest?.httpMethod == "POST")
+        #expect(sut.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer xyz")
+        #expect(sut.capturedBody == body)
     }
 
     @Test func unsetStubRecordsIssue() async {
         await withKnownIssue {
-            let session = MockURLSession()
+            let sut = MockURLSession()
             await #expect(throws: StubNotSetError.self) {
-                _ = try await session.upload(
+                _ = try await sut.upload(
                     for: URLRequest(url: URL(string: "https://example.com")!),
                     from: Data()
                 )
@@ -73,13 +73,13 @@ struct MockURLSessionTests {
     }
 
     @Test func didUploadCallbackFiresAfterCall() async throws {
-        let session = MockURLSession()
-        session.stubUploadResponse = .success((Data(), makeResponse(200)))
+        let sut = MockURLSession()
+        sut.stubUploadResponse = .success((Data(), makeResponse(200)))
 
         var fired = false
-        session.didUpload = { fired = true }
+        sut.didUpload = { fired = true }
 
-        _ = try await session.upload(
+        _ = try await sut.upload(
             for: URLRequest(url: URL(string: "https://example.com")!),
             from: Data()
         )

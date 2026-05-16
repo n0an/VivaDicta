@@ -55,31 +55,31 @@ struct OpenAIConfigTests {
 struct MockTranscriptionServiceTests {
 
     @Test func transcribeReturnsStubbedValue() async throws {
-        let mock = MockTranscriptionService()
-        mock.stubTranscribeResponse = .success(.plain("hello world"))
+        let sut = MockTranscriptionService()
+        sut.stubTranscribeResponse = .success(.plain("hello world"))
         let url = URL(fileURLWithPath: "/tmp/audio.wav")
-        let result = try await mock.transcribe(audioURL: url)
+        let result = try await sut.transcribe(audioURL: url)
         #expect(result.text == "hello world")
-        #expect(mock.transcribeCallCount == 1)
-        #expect(mock.capturedAudioURL == url)
+        #expect(sut.transcribeCallCount == 1)
+        #expect(sut.capturedAudioURL == url)
     }
 
     @Test func transcribePropagatesStubbedError() async {
         struct Boom: Error {}
-        let mock = MockTranscriptionService()
-        mock.stubTranscribeResponse = .failure(Boom())
+        let sut = MockTranscriptionService()
+        sut.stubTranscribeResponse = .failure(Boom())
         let url = URL(fileURLWithPath: "/tmp/audio.wav")
         await #expect(throws: Boom.self) {
-            _ = try await mock.transcribe(audioURL: url)
+            _ = try await sut.transcribe(audioURL: url)
         }
     }
 
     @Test func transcribeWithoutStubThrowsStubNotSet() async {
         await withKnownIssue {
-            let mock = MockTranscriptionService()
+            let sut = MockTranscriptionService()
             let url = URL(fileURLWithPath: "/tmp/audio.wav")
             await #expect(throws: StubNotSetError.self) {
-                _ = try await mock.transcribe(audioURL: url)
+                _ = try await sut.transcribe(audioURL: url)
             }
         }
     }
