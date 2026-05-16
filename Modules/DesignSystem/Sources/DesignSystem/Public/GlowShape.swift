@@ -84,7 +84,7 @@ public extension Array where Element == Gradient.Stop {
     /// positions. Re-evaluated each `updateInterval` to drive the animation.
     static var glowStyle: [Gradient.Stop] {
         [
-            Color(red: 188/255, green: 130/255, blue: 243/255),
+            .vivaSparkle,
             Color(red: 245/255, green: 185/255, blue: 234/255),
             Color(red: 141/255, green: 159/255, blue: 255/255),
             Color(red: 255/255, green: 103/255, blue: 120/255),

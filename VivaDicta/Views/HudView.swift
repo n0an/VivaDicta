@@ -1,5 +1,6 @@
 
 import SwiftUI
+import DesignSystem
 import TranscriptionCore
 
 struct HudView: View {

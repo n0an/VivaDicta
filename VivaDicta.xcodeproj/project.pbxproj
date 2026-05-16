@@ -376,8 +376,6 @@
 				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
-				Shared/AnimatedMeshGradient.swift,
-				Shared/AnimatedPath.swift,
 				Shared/MicButton.swift,
 				Shared/RecentNotesCache.swift,
 				Shared/RecordingState.swift,
