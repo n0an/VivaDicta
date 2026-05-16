@@ -7,8 +7,7 @@
 
 import Foundation
 import Testing
-import Presets
-@testable import VivaDicta
+@testable import Presets
 
 struct PresetManagerTests {
 

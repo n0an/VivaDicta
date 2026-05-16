@@ -6,9 +6,8 @@
 //
 
 import Foundation
-import AppGroup
 import Testing
-@testable import VivaDicta
+@testable import AppGroup
 
 struct AppGroupCoordinatorStateTests {
 
