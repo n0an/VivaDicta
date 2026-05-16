@@ -16,7 +16,7 @@ final class CustomTranscriptionModelManager {
     static let shared = CustomTranscriptionModelManager(keychain: KeychainServiceImpl())
 
     private let logger = Logger(category: .customTranscriptionService)
-    private let keychain: any KeychainServicing
+    private let keychain: any KeychainService
 
     /// The single custom transcription model configuration
     private(set) var customModel: CustomTranscriptionModel
@@ -27,7 +27,7 @@ final class CustomTranscriptionModelManager {
     /// Fixed model ID for the singleton custom model
     private static let fixedModelId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
-    init(keychain: any KeychainServicing) {
+    init(keychain: any KeychainService) {
         self.keychain = keychain
         // Initialize with empty model first
         customModel = CustomTranscriptionModel(

@@ -30,7 +30,7 @@ final class LiveTranslationService {
     }
 
     private let logger = Logger(category: .liveTranslationService)
-    private let keychain: any KeychainServicing
+    private let keychain: any KeychainService
     private let audio: LiveTranslationAudio
     private let sttClient = SonioxRealtimeSTTClient()
     private var ttsClient: SonioxRealtimeTTSClient?
@@ -61,7 +61,7 @@ final class LiveTranslationService {
     private var sessionStartedAt: Date?
     private(set) var sessionTargetLanguage: LiveTranslationLanguage = .english
 
-    init(keychain: any KeychainServicing = KeychainServiceImpl()) {
+    init(keychain: any KeychainService = KeychainServiceImpl()) {
         self.keychain = keychain
         self.audio = LiveTranslationAudio()
         self.audio.playbackRate = LiveTranslationPreferences.ttsRate

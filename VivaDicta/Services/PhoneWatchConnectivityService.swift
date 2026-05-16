@@ -17,12 +17,12 @@ final class PhoneWatchConnectivityService: NSObject {
     private var audioProcessor: WatchAudioProcessor?
 
     /// Service for background task protection.
-    private var backgroundTaskService: BackgroundTaskService?
+    private var backgroundTaskService: BackgroundTaskManager?
 
     /// Modes to sync to watch once session activates.
     private var pendingModes: [VivaMode]?
 
-    func configure(audioProcessor: WatchAudioProcessor, backgroundTaskService: BackgroundTaskService) {
+    func configure(audioProcessor: WatchAudioProcessor, backgroundTaskService: BackgroundTaskManager) {
         self.audioProcessor = audioProcessor
         self.backgroundTaskService = backgroundTaskService
     }

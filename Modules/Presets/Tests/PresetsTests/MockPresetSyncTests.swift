@@ -10,11 +10,11 @@ import Testing
 import Presets
 import PresetsMocks
 
-@Suite("MockPresetSyncing contract")
+@Suite("MockPresetSync contract")
 struct MockPresetSyncingTests {
 
     @Test func tracksCreatePresetRecord() {
-        let sut = MockPresetSyncing()
+        let sut = MockPresetSync()
         let preset = PresetCatalog.regular
         sut.createPresetRecord(from: preset)
 
@@ -23,7 +23,7 @@ struct MockPresetSyncingTests {
     }
 
     @Test func tracksDeletePresetRecord() {
-        let sut = MockPresetSyncing()
+        let sut = MockPresetSync()
         sut.deletePresetRecord(presetId: "custom_xyz")
 
         #expect(sut.deletePresetRecordCallCount == 1)
@@ -31,7 +31,7 @@ struct MockPresetSyncingTests {
     }
 
     @Test func tracksFavoriteSync() {
-        let sut = MockPresetSyncing()
+        let sut = MockPresetSync()
         sut.syncFavoriteState(presetId: "summary", isFavorite: true)
 
         #expect(sut.syncFavoriteStateCallCount == 1)
@@ -40,7 +40,7 @@ struct MockPresetSyncingTests {
     }
 
     @Test func didCallbackFiresAfterMutation() {
-        let sut = MockPresetSyncing()
+        let sut = MockPresetSync()
         var observedCount: Int?
         sut.didCreatePresetRecord = {
             observedCount = sut.createPresetRecordCallCount

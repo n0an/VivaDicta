@@ -11,12 +11,12 @@ import os
 @MainActor
 public final class OAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "OAuthManager")
-    private let keychain: any KeychainServicing
+    private let keychain: any KeychainService
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
-    public init(keychain: any KeychainServicing) {
+    public init(keychain: any KeychainService) {
         self.keychain = keychain
     }
 

@@ -9,8 +9,8 @@ import os
 @MainActor
 public final class CopilotOAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "CopilotOAuth")
-    private let keychain: any KeychainServicing
-    private let backgroundTaskService: (any BackgroundTaskServicing)?
+    private let keychain: any KeychainService
+    private let backgroundTaskService: (any BackgroundTaskService)?
 
     /// GitHub OAuth client ID (same as VS Code Copilot extension).
     private let clientId = "Iv1.b507a08c87ecfe98"
@@ -22,8 +22,8 @@ public final class CopilotOAuthManager: Sendable {
     private var credential: CopilotCredential?
 
     public init(
-        keychain: any KeychainServicing,
-        backgroundTaskService: (any BackgroundTaskServicing)? = nil
+        keychain: any KeychainService,
+        backgroundTaskService: (any BackgroundTaskService)? = nil
     ) {
         self.keychain = keychain
         self.backgroundTaskService = backgroundTaskService

@@ -3,13 +3,13 @@
 import Foundation
 import OAuth
 
-/// Hand-rolled mock for `BackgroundTaskServicing`.
+/// Hand-rolled mock for `BackgroundTaskService`.
 ///
 /// Returns an incrementing identifier from `beginBackgroundTask` and tracks
 /// begin/end calls. Set `stubBeginResult` to `nil` to simulate the system
 /// refusing to start a background task.
 @MainActor
-public final class MockBackgroundTaskService: BackgroundTaskServicing {
+public final class MockBackgroundTaskService: BackgroundTaskService {
 
     public init() {}
 
