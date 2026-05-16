@@ -30,10 +30,31 @@ import TranscriptionCore
 /// against the same local model from different tasks are not supported
 /// (the underlying service holds a single loaded model).
 public actor TranscriptionEngine {
+    /// Maps a `TranscriptionProvider` to the concrete service that will
+    /// transcribe the audio. Injected at init for tests; `nil` in production
+    /// (the engine uses its built-in dispatch + local-service cache).
+    public typealias ServiceFactory = @Sendable (
+        TranscriptionProvider,
+        TranscriptionProgressHandler?
+    ) -> any TranscriptionService
+
     private var whisperKitService: WhisperKitTranscriptionService?
     private var parakeetService: ParakeetTranscriptionService?
+    private let serviceFactory: ServiceFactory?
 
-    public init() {}
+    /// Build an engine for production use. The default dispatch handles all
+    /// backends and caches local services across calls.
+    public init() {
+        self.serviceFactory = nil
+    }
+
+    /// Build an engine that routes every `transcribe` call through the
+    /// supplied factory instead of the built-in dispatch. Use this from tests
+    /// to inject mocks of `TranscriptionService` and verify routing without
+    /// touching real network/model code.
+    public init(serviceFactory: @escaping ServiceFactory) {
+        self.serviceFactory = serviceFactory
+    }
 
     /// Transcribe `audioURL` using the backend described by `provider`.
     ///
@@ -45,7 +66,8 @@ public actor TranscriptionEngine {
         using provider: TranscriptionProvider,
         progress: TranscriptionProgressHandler? = nil
     ) async throws -> TranscriptionServiceResult {
-        let service = makeService(for: provider, progress: progress)
+        let service = serviceFactory?(provider, progress)
+            ?? makeService(for: provider, progress: progress)
         return try await service.transcribe(audioURL: audioURL)
     }
 

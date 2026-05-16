@@ -27,7 +27,12 @@ let package = Package(
         ),
         .testTarget(
             name: "TranscriptionKitTests",
-            dependencies: ["TranscriptionKit"]
+            dependencies: [
+                "TranscriptionKit",
+                .product(name: "TranscriptionCore", package: "TranscriptionCore"),
+                .product(name: "CloudTranscriptionMocks", package: "CloudTranscription"),
+                .product(name: "LocalTranscriptionMocks", package: "LocalTranscription"),
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]

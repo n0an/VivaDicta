@@ -8,7 +8,13 @@ import TranscriptionCore
 /// Mock for the `WhisperKitTranscriptionService` shape - mirrors the
 /// `transcribe(audioURL:modelName:displayName:options:)` signature so callers
 /// can swap it in via a protocol or a generic wrapper.
-public final class MockWhisperKitTranscriptionService: @unchecked Sendable {
+///
+/// Also conforms to `TranscriptionService` (the unified
+/// `transcribe(audioURL:)` entry point) so it can be returned from a
+/// `TranscriptionEngine.ServiceFactory` to test engine-level routing. The
+/// protocol path delegates to the same stub as the type-specific signature
+/// but ignores the model/options captures.
+public final class MockWhisperKitTranscriptionService: TranscriptionService, @unchecked Sendable {
 
     public init() {}
 
@@ -30,6 +36,16 @@ public final class MockWhisperKitTranscriptionService: @unchecked Sendable {
         capturedAudioURL = audioURL
         capturedModelName = modelName
         capturedOptions = options
+        return try stubTranscribeResponse.evaluate()
+    }
+
+    /// `TranscriptionService` conformance. Delegates to the same stub without
+    /// capturing model/options - use the typed signature above when you need
+    /// to verify those.
+    public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
+        defer { didTranscribe?() }
+        transcribeCallCount += 1
+        capturedAudioURL = audioURL
         return try stubTranscribeResponse.evaluate()
     }
 
