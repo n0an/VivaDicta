@@ -53,8 +53,6 @@
 		18F76A382FB85C1C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A372FB85C1C00280269 /* AppGroup */; };
 		18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A392FB85C2300280269 /* AppGroup */; };
 		18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3B2FB85C2A00280269 /* AppGroup */; };
-		18F76A3E2FB85C3800280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3D2FB85C3800280269 /* AppGroup */; };
-		18F76A402FB85C3C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3F2FB85C3C00280269 /* AppGroup */; };
 		18F76D862FB8617C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76D852FB8617C00280269 /* AppGroup */; };
 /* End PBXBuildFile section */
 
@@ -562,7 +560,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18F76A3E2FB85C3800280269 /* AppGroup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -585,7 +582,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				18BA29272F7F29FD00C4F68B /* SwiftUI.framework in Frameworks */,
-				18F76A402FB85C3C00280269 /* AppGroup in Frameworks */,
 				18BA29262F7F29FD00C4F68B /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -837,7 +833,6 @@
 			);
 			name = "VivaDictaWatch Watch App";
 			packageProductDependencies = (
-				18F76A3D2FB85C3800280269 /* AppGroup */,
 			);
 			productName = "VivaDictaWatch Watch App";
 			productReference = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */;
@@ -906,7 +901,6 @@
 			);
 			name = VivaDictaWatchWidgetExtension;
 			packageProductDependencies = (
-				18F76A3F2FB85C3C00280269 /* AppGroup */,
 			);
 			productName = VivaDictaWatchWidgetExtension;
 			productReference = 18BA29252F7F29FD00C4F68B /* VivaDictaWatchWidgetExtension.appex */;
@@ -2793,14 +2787,6 @@
 			productName = AppGroup;
 		};
 		18F76A3B2FB85C2A00280269 /* AppGroup */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AppGroup;
-		};
-		18F76A3D2FB85C3800280269 /* AppGroup */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AppGroup;
-		};
-		18F76A3F2FB85C3C00280269 /* AppGroup */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppGroup;
 		};
