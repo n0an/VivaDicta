@@ -471,10 +471,39 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         return allLanguages.filter { codes.contains($0.key) }
     }()
 
-    /// xAI Speech-to-Text requires a non-empty `language` whenever `format=true`,
-    /// so the picker exposes the full Whisper-style set minus "auto". The service
-    /// falls back to "en" if the user previously had "auto" selected globally.
-    static let xaiLanguages: [String: String] = allLanguages.filter { $0.key != "auto" }
+    /// xAI Speech-to-Text documents exactly 24 supported language codes and
+    /// rejects everything else with a 400 when `format=true`. The list is
+    /// enumerated here (not derived from `allLanguages`) so a future Whisper
+    /// addition can't silently leak an unsupported code into the picker. Note
+    /// that xAI uses `fil` for Filipino, not Whisper's `tl`. No auto-detect:
+    /// the API requires a concrete language when ITN formatting is on.
+    static let xaiLanguages: [String: String] = [
+        "ar": "Arabic",
+        "cs": "Czech",
+        "da": "Danish",
+        "nl": "Dutch",
+        "en": "English",
+        "fil": "Filipino",
+        "fr": "French",
+        "de": "German",
+        "hi": "Hindi",
+        "id": "Indonesian",
+        "it": "Italian",
+        "ja": "Japanese",
+        "ko": "Korean",
+        "mk": "Macedonian",
+        "ms": "Malay",
+        "fa": "Persian",
+        "pl": "Polish",
+        "pt": "Portuguese",
+        "ro": "Romanian",
+        "ru": "Russian",
+        "es": "Spanish",
+        "sv": "Swedish",
+        "th": "Thai",
+        "tr": "Turkish",
+        "vi": "Vietnamese",
+    ]
 
     /// Soniox stt-async-v4 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.
@@ -743,6 +772,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "et": "🇪🇪",
         "fo": "🇫🇴",
         "fi": "🇫🇮",
+        "fil": "🇵🇭",
         "fr": "🇫🇷",
         "gl": "🇪🇸",
         "ka": "🇬🇪",

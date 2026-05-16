@@ -15,12 +15,15 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
 
     public struct Config: Sendable {
         public let apiKey: String
+        /// One of xAI's 24 documented codes (e.g. "en", "fil"). xAI rejects
+        /// `format=true` without a `language`, so no default is provided -
+        /// callers must pass a concrete code (or pre-normalize "auto" → "en").
         public let language: String
-        /// When true the API returns naturally formatted text instead of
-        /// raw lowercased output. Defaults to true to match user expectations.
+        /// When true the API returns naturally formatted text with Inverse
+        /// Text Normalization (e.g. "$100" instead of "one hundred dollars").
         public let formatted: Bool
 
-        public init(apiKey: String, language: String = "auto", formatted: Bool = true) {
+        public init(apiKey: String, language: String, formatted: Bool = true) {
             self.apiKey = apiKey
             self.language = language
             self.formatted = formatted
@@ -91,12 +94,10 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
         body.append((config.formatted ? "true" : "false").data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
-        if config.language != "auto", !config.language.isEmpty {
-            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append(config.language.data(using: .utf8)!)
-            body.append(crlf.data(using: .utf8)!)
-        }
+        body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
+        body.append(config.language.data(using: .utf8)!)
+        body.append(crlf.data(using: .utf8)!)
 
         // `file` must be the last field per xAI docs.
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)

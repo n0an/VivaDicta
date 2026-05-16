@@ -38,7 +38,7 @@ struct XaiTranscriptionServiceTests {
     private func makeService(
         session: MockURLSession,
         apiKey: String = "xai-test-key",
-        language: String = "auto",
+        language: String = "en",
         formatted: Bool = true
     ) -> XaiTranscriptionService {
         XaiTranscriptionService(
@@ -132,7 +132,7 @@ struct XaiTranscriptionServiceTests {
         #expect(bodyString.range(of: "name=\"format\"\\s*\\r\\n\\r\\nfalse", options: .regularExpression) != nil)
     }
 
-    @Test func bodyIncludesLanguageFieldWhenNotAuto() async throws {
+    @Test func bodyIncludesLanguageField() async throws {
         let session = MockURLSession()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
@@ -145,20 +145,23 @@ struct XaiTranscriptionServiceTests {
         #expect(bodyString.range(of: "name=\"language\"\\s*\\r\\n\\r\\nfr", options: .regularExpression) != nil)
     }
 
-    @Test func bodyOmitsLanguageFieldWhenAuto() async throws {
+    @Test func bodyAlwaysSendsLanguageEvenForUnusualCodes() async throws {
+        // xAI rejects format=true without a language, so the service must
+        // never omit the field. Verify with `fil` (Filipino) since it's xAI's
+        // 3-letter outlier and proves no "drop if not in allowlist" sneaks in.
         let session = MockURLSession()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, language: "auto")
+        let sut = makeService(session: session, language: "fil")
 
         _ = try await sut.transcribe(audioURL: audio)
 
         let body = try #require(session.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
-        #expect(!bodyString.contains("name=\"language\""))
+        #expect(bodyString.range(of: "name=\"language\"\\s*\\r\\n\\r\\nfil", options: .regularExpression) != nil)
     }
 
-    @Test func bodyPlacesFileFieldLastPerXaiSpec() async throws {
+    @Test func bodyOrdersFieldsAsFormatLanguageFile() async throws {
         let session = MockURLSession()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
@@ -171,7 +174,9 @@ struct XaiTranscriptionServiceTests {
         let formatRange = try #require(bodyString.range(of: "name=\"format\""))
         let languageRange = try #require(bodyString.range(of: "name=\"language\""))
         let fileRange = try #require(bodyString.range(of: "name=\"file\""))
-        #expect(formatRange.lowerBound < fileRange.lowerBound)
+        // file MUST be last per xAI docs; strict ordering catches any future
+        // reshuffle that happens to keep file last but breaks the rest.
+        #expect(formatRange.lowerBound < languageRange.lowerBound)
         #expect(languageRange.lowerBound < fileRange.lowerBound)
     }
 
