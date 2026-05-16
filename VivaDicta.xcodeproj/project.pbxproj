@@ -28,6 +28,7 @@
 		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497EF2F268B2700538830 /* FirebaseAnalytics */; };
 		18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497F12F268B2700538830 /* FirebaseCrashlytics */; };
+		18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18B89BC22FB875530007FA96 /* TranscriptionKit */; };
 		18BA24132F7ED0D700C4F68B /* VivaDictaWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18BA29262F7F29FD00C4F68B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */; };
 		18BA29272F7F29FD00C4F68B /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
@@ -194,6 +195,10 @@
 		18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VivaDictaWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		18F784FD2FB872A200280269 /* TTSKitExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TTSKitExample.xcodeproj; sourceTree = "<group>"; };
+		18F7851D2FB872A200280269 /* WhisperAX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = WhisperAX.xcodeproj; sourceTree = "<group>"; };
+		18F7C9AB2FB872CB00280269 /* TTSKitExample.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = TTSKitExample.xcodeproj; sourceTree = "<group>"; };
+		18F7C9CB2FB872CB00280269 /* WhisperAX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = WhisperAX.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -215,6 +220,7 @@
 				Presets,
 				TestUtilities,
 				TranscriptionCore,
+				TranscriptionKit,
 			);
 			target = 181D04D62E3E55E400D357A6 /* VivaDicta */;
 		};
@@ -229,6 +235,7 @@
 				Presets,
 				TestUtilities,
 				TranscriptionCore,
+				TranscriptionKit,
 			);
 			target = 189C7AAD2F0D84E2004BAFBF /* ActionExtension */;
 		};
@@ -509,6 +516,7 @@
 				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
+				18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -659,6 +667,34 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		18F785D52FB872A200280269 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		18F785D72FB872A200280269 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		18F7CA8E2FB872CB00280269 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		18F7CA902FB872CB00280269 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -703,6 +739,7 @@
 				18F75FBF2FB79A3200280269 /* CloudTranscription */,
 				18F7637E2FB7D5E300280269 /* LocalTranscription */,
 				18F76A312FB85C0400280269 /* AppGroup */,
+				18B89BC22FB875530007FA96 /* TranscriptionKit */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -1023,6 +1060,24 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 18F785D52FB872A200280269 /* Products */;
+					ProjectRef = 18F784FD2FB872A200280269 /* TTSKitExample.xcodeproj */;
+				},
+				{
+					ProductGroup = 18F7CA902FB872CB00280269 /* Products */;
+					ProjectRef = 18F7C9AB2FB872CB00280269 /* TTSKitExample.xcodeproj */;
+				},
+				{
+					ProductGroup = 18F7CA8E2FB872CB00280269 /* Products */;
+					ProjectRef = 18F7C9CB2FB872CB00280269 /* WhisperAX.xcodeproj */;
+				},
+				{
+					ProductGroup = 18F785D72FB872A200280269 /* Products */;
+					ProjectRef = 18F7851D2FB872A200280269 /* WhisperAX.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				181D04D62E3E55E400D357A6 /* VivaDicta */,
@@ -2715,6 +2770,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		18B89BC22FB875530007FA96 /* TranscriptionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TranscriptionKit;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;

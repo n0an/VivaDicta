@@ -6,7 +6,7 @@ import TranscriptionCore
 
 /// Pre-configured Google Gemini transcription client. Stateless apart from its
 /// config; the app target builds one per request.
-public struct GeminiTranscriptionService: Sendable {
+public struct GeminiTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "GeminiTranscription")
 
     public struct Config: Sendable {

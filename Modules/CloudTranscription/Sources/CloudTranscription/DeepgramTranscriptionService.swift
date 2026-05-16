@@ -7,7 +7,7 @@ import TranscriptionCore
 /// Pre-configured Deepgram STT client. The router maps the `nova-3-multilingual`
 /// alias to `(modelName: "nova-3", language: "multi")` before constructing the
 /// config; this service treats both as opaque values.
-public struct DeepgramTranscriptionService: Sendable {
+public struct DeepgramTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "DeepgramTranscription")
 
     public struct Config: Sendable {

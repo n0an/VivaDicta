@@ -7,7 +7,7 @@ import TranscriptionCore
 /// Pre-configured Cartesia STT client. The app target is responsible for
 /// normalizing `language` to a Cartesia-supported code before constructing
 /// the config (Cartesia has no `"auto"`).
-public struct CartesiaTranscriptionService: Sendable {
+public struct CartesiaTranscriptionService: TranscriptionService, Sendable {
     /// Cartesia requires a date-formatted version header. Bumping this is a
     /// deliberate API-version pin; check the changelog before changing.
     public static let cartesiaVersion = "2026-03-01"

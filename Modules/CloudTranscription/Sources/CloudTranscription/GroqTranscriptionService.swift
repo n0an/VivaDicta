@@ -6,7 +6,7 @@ import TranscriptionCore
 
 /// Pre-configured Groq STT client. Vocabulary terms (if any) are folded into
 /// the OpenAI-compatible `prompt` field at request time.
-public struct GroqTranscriptionService: Sendable {
+public struct GroqTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "GroqTranscription")
 
     public struct Config: Sendable {

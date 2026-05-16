@@ -7,7 +7,7 @@ import TranscriptionCore
 /// Pre-configured Cohere transcription client. The app target is responsible
 /// for normalizing `language` to a Cohere-supported BCP-47 code before
 /// constructing the config; this service passes it through to the API.
-public struct CohereTranscriptionService: Sendable {
+public struct CohereTranscriptionService: TranscriptionService, Sendable {
     private let apiURL = URL(string: "https://api.cohere.com/v2/audio/transcriptions")!
     private let logger = Logger(cloudTranscriptionCategory: "CohereTranscription")
 

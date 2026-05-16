@@ -7,48 +7,33 @@
 
 import Foundation
 import AppGroup
-import TranscriptionCore
+import CloudTranscription
 import LocalTranscription
 import SwiftUI
+import TranscriptionCore
+import TranscriptionKit
 import os
 
 /// Central manager coordinating all transcription services in VivaDicta.
 ///
-/// `TranscriptionManager` serves as the primary interface for audio-to-text transcription,
-/// abstracting the complexity of multiple transcription backends (WhisperKit, Parakeet,
-/// and various cloud providers) behind a unified API.
-///
-/// ## Overview
-///
-/// The manager handles:
-/// - Mode-based model selection (each ``VivaMode`` specifies its transcription model)
-/// - Routing transcription requests to the appropriate service
-/// - Post-processing transcriptions (filtering, text formatting, replacements)
-/// - WhisperKit model preloading for improved performance
-///
-/// ## Usage
-///
-/// ```swift
-/// let manager = TranscriptionManager()
-/// manager.setCurrentMode(selectedMode)
-///
-/// let transcribedText = try await manager.transcribe(audioURL: recordingURL)
-/// ```
+/// Routes audio-to-text requests through `TranscriptionKit.TranscriptionEngine`,
+/// which dispatches to the right cloud or on-device backend based on the
+/// `TranscriptionProvider` value the manager constructs from the current
+/// `VivaMode` + user settings. After transcription, applies the app's
+/// post-processing pipeline (output filter, text formatter, replacements,
+/// trailing-period strip).
 ///
 /// ## Thread Safety
 ///
-/// This class is marked with `@Observable` for SwiftUI integration and
-/// `@MainActor` for explicit isolation. The on-device transcription services
-/// it owns are `@unchecked Sendable` non-actor classes; making the manager
-/// `@MainActor` is what serializes access to their mutable state.
+/// `@MainActor`-isolated for explicit serialization. The engine's cached
+/// local services (WhisperKit, Parakeet) hold mutable state that's safe
+/// only because the manager serializes access.
 @MainActor
 @Observable
 class TranscriptionManager {
     private let logger = Logger(category: .transcriptionManager)
 
-    private let cloudTranscriptionService = CloudTranscriptionService()
-    private let parakeetTranscriptionService = ParakeetTranscriptionService()
-    private let whisperKitTranscriptionService = WhisperKitTranscriptionService()
+    private let engine = TranscriptionEngine()
 
     /// The currently active transcription mode determining which model to use.
     private(set) var currentMode: VivaMode = .defaultMode
@@ -63,31 +48,18 @@ class TranscriptionManager {
             TranscriptionModelProvider.allCloudModels
 
     /// Indicates whether at least one transcription model is available for use.
-    ///
-    /// Returns `true` if any of the following conditions are met:
-    /// - A Parakeet model is downloaded
-    /// - A WhisperKit model is downloaded
-    /// - A cloud provider has an API key configured
-    /// - A custom transcription model is configured
     var hasAvailableTranscriptionModels: Bool {
         let hasParakeetModels = !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
-
         let hasWhisperKitModels = !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
-
-        // Check if any cloud models are configured (have API keys)
         let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
             model.apiKey != nil
         }
-
-        // Check if custom transcription model is configured
         let hasCustomModel = CustomTranscriptionModelManager.shared.isConfigured
-
         return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels || hasCustomModel
     }
 
     var selectedLanguage: String {
         get {
-            // Language setting should be shared with keyboard extension
             UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "en"
         }
         set {
@@ -106,22 +78,12 @@ class TranscriptionManager {
         }
     }
 
-    // WhisperKit performance metrics
-    var whisperKitPrewarmDuration: TimeInterval {
-        whisperKitTranscriptionService.lastPrewarmDuration
-    }
+    // WhisperKit performance metrics (read from the engine's cached service)
+    var whisperKitPrewarmDuration: TimeInterval { engine.whisperKit().lastPrewarmDuration }
+    var whisperKitLoadDuration: TimeInterval { engine.whisperKit().lastLoadDuration }
+    var whisperKitTotalInitDuration: TimeInterval { engine.whisperKit().lastTotalInitDuration }
 
-    var whisperKitLoadDuration: TimeInterval {
-        whisperKitTranscriptionService.lastLoadDuration
-    }
-
-    var whisperKitTotalInitDuration: TimeInterval {
-        whisperKitTranscriptionService.lastTotalInitDuration
-    }
-    
     /// Sets the current transcription mode and applies its language setting.
-    ///
-    /// - Parameter mode: The ``VivaMode`` to activate for transcription.
     public func setCurrentMode(_ mode: VivaMode) {
         currentMode = mode
         applyModeLanguage(mode)
@@ -138,9 +100,6 @@ class TranscriptionManager {
     }
 
     /// Refreshes the list of available cloud models and notifies observers.
-    ///
-    /// Call this method when API keys are added or removed to update the available
-    /// cloud transcription models.
     public func updateCloudModels() {
         allAvailableModels =
             TranscriptionModelProvider.allParakeetModels +
@@ -150,18 +109,10 @@ class TranscriptionManager {
     }
 
     /// Returns the transcription model for the current mode if it's available and usable.
-    ///
-    /// This method validates that the model is actually ready for use:
-    /// - On-device models must be downloaded
-    /// - Cloud models must have an API key configured
-    /// - Custom models must be properly configured
-    ///
-    /// - Returns: The transcription model if available and usable, or `nil` otherwise.
     public func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
         let provider = currentMode.transcriptionProvider
         let modelName = currentMode.transcriptionModel
 
-        // Check for custom model first
         if provider == .customTranscription && modelName == "custom" {
             return CustomTranscriptionModelManager.shared.configuredModel
         }
@@ -175,7 +126,6 @@ class TranscriptionManager {
             return nil
         }
 
-        // Check if the model is actually usable
         if let parakeetModel = model as? ParakeetModel {
             return parakeetModel.isDownloaded ? parakeetModel : nil
         } else if let whisperKitModel = model as? WhisperKitModel {
@@ -186,21 +136,10 @@ class TranscriptionManager {
 
         return model
     }
-    
-    /// Transcribes audio from a file URL using the current mode's model.
-    ///
-    /// This method routes the transcription request to the appropriate service based on
-    /// the current mode's provider, then applies post-processing including:
-    /// - Output filtering (removing unwanted artifacts)
-    /// - Text formatting (if enabled in settings)
-    /// - Custom text replacements (if enabled in settings)
-    ///
-    /// - Parameter audioURL: The file URL of the audio to transcribe.
-    ///
-    /// - Returns: The processed transcribed text.
-    ///
-    /// - Throws: ``TranscriptionError/transcriptionFailed`` if no valid model is configured,
-    ///   or any error thrown by the underlying transcription service.
+
+    /// Transcribes audio using the current mode's model via `TranscriptionEngine`,
+    /// then applies the app's post-processing pipeline (filter, text formatter,
+    /// replacements, trailing-period strip).
     public func transcribe(
         audioURL: URL,
         progressHandler: TranscriptionProgressHandler? = nil
@@ -210,61 +149,22 @@ class TranscriptionManager {
         }
 
         let startTime = Date()
-        let transcriptionResult: TranscriptionServiceResult
-        switch model.provider {
-        case .parakeet:
-            guard let parakeetModel = model as? ParakeetModel else {
-                throw TranscriptionError.unsupportedModel
-            }
-            let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
-            let vocabulary = parakeetVocabularyIfEnabled()
-            transcriptionResult = try await parakeetTranscriptionService.transcribe(
-                audioURL: audioURL,
-                modelName: parakeetModel.name,
-                displayName: parakeetModel.displayName,
-                version: parakeetModel.version,
-                options: .init(isVADEnabled: isVADEnabled, vocabulary: vocabulary),
-                progressHandler: progressHandler
-            )
-        case .whisperKit:
-            guard let whisperKitModel = model as? WhisperKitModel else {
-                throw TranscriptionError.unsupportedModel
-            }
-            let language = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
-            let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
-            let isSpeakerDiarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
-            transcriptionResult = try await whisperKitTranscriptionService.transcribe(
-                audioURL: audioURL,
-                modelName: whisperKitModel.whisperKitModelName,
-                displayName: whisperKitModel.displayName,
-                options: .init(
-                    language: language,
-                    isVADEnabled: isVADEnabled,
-                    isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled
-                )
-            )
-        default:
-            transcriptionResult = try await cloudTranscriptionService.transcribe(audioURL: audioURL, model: model)
-        }
+        let provider = try makeProvider(for: model, progressHandler: progressHandler)
+        let transcriptionResult = try await engine.transcribe(audioURL: audioURL, using: provider)
 
         var result = TranscriptionOutputFilter.filter(
             transcriptionResult.text,
             language: currentMode.transcriptionLanguage
         )
 
-        // Apply text formatting if enabled for current mode
         if currentMode.isAutoTextFormattingEnabled && transcriptionResult.isSpeakerAttributed == false {
             result = TextFormatter.format(result)
         }
 
-        // Apply text replacements if enabled
         if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isReplacementsEnabled) as? Bool ?? true {
             result = ReplacementsService.applyReplacements(to: result)
         }
 
-        // Strip trailing periods if the active mode opts in. Runs last so it
-        // operates on the final user-visible text, after replacements may have
-        // adjusted the tail.
         if currentMode.isStripTrailingPeriodEnabled {
             result = TranscriptionOutputFilter.stripTrailingPeriods(result)
         }
@@ -279,19 +179,14 @@ class TranscriptionManager {
         return result
     }
 
-    /// Preloads the WhisperKit model if the current mode uses it.
-    ///
-    /// Preloading prepares the model for faster first transcription by loading weights
-    /// into memory ahead of time. This is called on app startup and when switching to
-    /// a mode that uses WhisperKit.
+    /// Preloads the WhisperKit model if the current mode uses it. Best-effort
+    /// background load that makes the first real transcription faster.
     public func preloadWhisperKitModelIfNeeded() async {
-        // Check if current mode uses WhisperKit
         guard currentMode.transcriptionProvider == .whisperKit else {
             logger.logInfo("📱 Preload skipped: Current mode doesn't use WhisperKit (uses \(self.currentMode.transcriptionProvider.rawValue))")
             return
         }
 
-        // Check if we have a valid WhisperKit model selected
         guard let model = getCurrentTranscriptionModel(),
               let whisperKitModel = model as? WhisperKitModel else {
             logger.logInfo("📱 Preload skipped: No valid WhisperKit model in current mode")
@@ -299,15 +194,169 @@ class TranscriptionManager {
         }
 
         logger.logInfo("📱 Starting WhisperKit model preload for: \(whisperKitModel.whisperKitModelName)")
+        await engine.preloadWhisperKitModel(named: whisperKitModel.whisperKitModelName)
+    }
 
-        // Trigger preload in background
-        await whisperKitTranscriptionService.preloadModelIfNeeded(modelName: whisperKitModel.whisperKitModelName)
+    // MARK: - Provider Construction
+
+    /// Builds the `TranscriptionProvider` value for the given model. The
+    /// manager owns the UserDefaults + AppGroupCoordinator reads so the
+    /// engine and the underlying services stay agnostic of user-facing
+    /// toggles.
+    private func makeProvider(
+        for model: any TranscriptionModel,
+        progressHandler: TranscriptionProgressHandler?
+    ) throws -> TranscriptionProvider {
+        let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
+        let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
+        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
+        let translationTarget = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
+
+        switch model.provider {
+        case .parakeet:
+            guard let parakeetModel = model as? ParakeetModel else {
+                throw TranscriptionError.unsupportedModel
+            }
+            return .parakeet(
+                modelName: parakeetModel.name,
+                displayName: parakeetModel.displayName,
+                version: parakeetModel.version,
+                options: .init(isVADEnabled: isVADEnabled, vocabulary: parakeetVocabularyIfEnabled()),
+                progressHandler: progressHandler
+            )
+
+        case .whisperKit:
+            guard let whisperKitModel = model as? WhisperKitModel else {
+                throw TranscriptionError.unsupportedModel
+            }
+            return .whisperKit(
+                modelName: whisperKitModel.whisperKitModelName,
+                displayName: whisperKitModel.displayName,
+                options: .init(
+                    language: selectedLanguage,
+                    isVADEnabled: isVADEnabled,
+                    isSpeakerDiarizationEnabled: diarizationEnabled
+                )
+            )
+
+        case .openAI:
+            return .openAI(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: selectedLanguage))
+
+        case .groq:
+            return .groq(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: model.name,
+                language: selectedLanguage,
+                vocabulary: CustomVocabulary.getTerms(maxTerms: 25)
+            ))
+
+        case .elevenLabs:
+            return .elevenLabs(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: selectedLanguage))
+
+        case .deepgram:
+            // The app exposes `nova-3-multilingual` as a friendly alias; Deepgram
+            // expects model=nova-3 with language=multi.
+            let modelName: String
+            let language: String
+            if model.name == "nova-3-multilingual" {
+                modelName = "nova-3"
+                language = "multi"
+            } else {
+                modelName = model.name
+                language = selectedLanguage
+            }
+            return .deepgram(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: modelName,
+                language: language,
+                vocabulary: CustomVocabulary.getTerms(maxTerms: 100),
+                isSpeakerDiarizationEnabled: diarizationEnabled
+            ))
+
+        case .gemini:
+            return .gemini(.init(apiKey: try requireAPIKey(model), modelName: model.name))
+
+        case .mistral:
+            return .mistral(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: model.name,
+                language: selectedLanguage,
+                isSpeakerDiarizationEnabled: diarizationEnabled
+            ))
+
+        case .soniox:
+            return .soniox(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: model.name,
+                language: selectedLanguage,
+                vocabulary: CustomVocabulary.getTerms(),
+                isSpeakerDiarizationEnabled: diarizationEnabled,
+                translationTargetLanguage: translationTarget
+            ))
+
+        case .gladia:
+            return .gladia(.init(
+                apiKey: try requireAPIKey(model),
+                language: selectedLanguage,
+                vocabulary: CustomVocabulary.getTerms(),
+                isSpeakerDiarizationEnabled: diarizationEnabled,
+                translationTargetLanguage: translationTarget
+            ))
+
+        case .speechmatics:
+            return .speechmatics(.init(
+                apiKey: try requireAPIKey(model),
+                language: selectedLanguage,
+                vocabulary: CustomVocabulary.getTerms(),
+                isSpeakerDiarizationEnabled: diarizationEnabled,
+                translationTargetLanguage: translationTarget
+            ))
+
+        case .cohere:
+            let language = normalizedLanguage(
+                for: selectedLanguage,
+                supportedCodes: Set(TranscriptionModelProvider.cohereLanguages.keys),
+                fallback: "en"
+            )
+            return .cohere(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: language))
+
+        case .cartesia:
+            let language = normalizedLanguage(
+                for: selectedLanguage,
+                supportedCodes: Set(TranscriptionModelProvider.cartesiaLanguages.keys),
+                fallback: "en"
+            )
+            return .cartesia(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: language))
+
+        case .customTranscription:
+            guard let customModel = model as? CustomTranscriptionModel else {
+                throw CloudTranscriptionError.unsupportedProvider
+            }
+            return .custom(.init(
+                apiEndpoint: customModel.apiEndpoint,
+                apiKey: customModel.apiKey,
+                modelName: customModel.modelName,
+                language: selectedLanguage
+            ))
+        }
+    }
+
+    private func requireAPIKey(_ model: any TranscriptionModel) throws -> String {
+        guard let cloudModel = model as? CloudModel, let apiKey = cloudModel.apiKey, !apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+        return apiKey
+    }
+
+    private func normalizedLanguage(for picked: String, supportedCodes: Set<String>, fallback: String) -> String {
+        if picked == "auto" || picked.isEmpty || !supportedCodes.contains(picked) {
+            return fallback
+        }
+        return picked
     }
 
     /// Returns the custom vocabulary terms when both spelling corrections and
     /// Parakeet vocabulary boosting are enabled by the user. Empty otherwise.
-    /// Hosting this gate in the manager keeps the LocalTranscription module
-    /// agnostic of user-facing toggles.
     private func parakeetVocabularyIfEnabled() -> [String] {
         let spellingEnabled = UserDefaultsStorage.appPrivate.object(
             forKey: UserDefaultsStorage.Keys.isSpellingCorrectionsEnabled

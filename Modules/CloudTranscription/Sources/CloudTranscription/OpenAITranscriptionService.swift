@@ -8,7 +8,7 @@ import TranscriptionCore
 /// API key + model + language at construction; call `transcribe(audioURL:)` to
 /// run the request. Stateless apart from its config, so it's safe to create per
 /// transcription.
-public struct OpenAITranscriptionService: Sendable {
+public struct OpenAITranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "OpenAITranscription")
 
     public struct Config: Sendable {
