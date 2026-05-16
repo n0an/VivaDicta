@@ -25,6 +25,76 @@
         "identifier" : "187D20F22FB5011D004234D0",
         "name" : "VivaDictaUITests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/Presets",
+        "identifier" : "PresetsTests",
+        "name" : "PresetsTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/OAuth",
+        "identifier" : "OAuthTests",
+        "name" : "OAuthTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/CloudTranscription",
+        "identifier" : "CloudTranscriptionTests",
+        "name" : "CloudTranscriptionTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/TranscriptionKit",
+        "identifier" : "TranscriptionKitTests",
+        "name" : "TranscriptionKitTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/TranscriptionCore",
+        "identifier" : "TranscriptionCoreTests",
+        "name" : "TranscriptionCoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/TestUtilities",
+        "identifier" : "TestUtilitiesTests",
+        "name" : "TestUtilitiesTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/Keychain",
+        "identifier" : "KeychainTests",
+        "name" : "KeychainTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/Networking",
+        "identifier" : "NetworkingTests",
+        "name" : "NetworkingTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/LocalTranscription",
+        "identifier" : "LocalTranscriptionTests",
+        "name" : "LocalTranscriptionTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/AppGroup",
+        "identifier" : "AppGroupTests",
+        "name" : "AppGroupTests"
+      }
     }
   ],
   "version" : 1
