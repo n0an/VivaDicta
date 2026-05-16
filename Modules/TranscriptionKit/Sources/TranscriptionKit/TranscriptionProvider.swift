@@ -42,10 +42,6 @@ public enum TranscriptionProvider: Sendable {
     )
 }
 
-/// Identifies which Parakeet model family to load. Mirrors FluidAudio's
-/// `AsrModelVersion` but is owned by TranscriptionKit so consumers don't
-/// transitively pull in FluidAudio just to construct an enum case.
-public enum ParakeetModelVersion: Sendable {
-    case v2
-    case v3
-}
+// `ParakeetModelVersion` lives in `TranscriptionCore` so app-target model
+// catalogs (which are shared with extensions) can reference it without
+// linking TranscriptionKit.

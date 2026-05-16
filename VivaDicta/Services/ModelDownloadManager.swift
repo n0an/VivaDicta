@@ -5,9 +5,9 @@
 //  Created by Anton Novoselov on 2025.09.02
 //
 
+import LocalTranscription
 import SwiftUI
-import FluidAudio
-import WhisperKit
+import TranscriptionCore
 import os
 
 /// Status of a model download operation.
@@ -15,7 +15,7 @@ enum DownloadStatus: String {
     case download
     case downloading
     case downloaded
-    
+
     var actionButtonImage: String {
         switch self {
         case .download:
@@ -26,7 +26,7 @@ enum DownloadStatus: String {
             "trash.circle"
         }
     }
-    
+
     var actionButtonColor: Color {
         switch self {
         case .download:
@@ -42,7 +42,9 @@ enum DownloadStatus: String {
 /// Manager for downloading, tracking, and deleting on-device transcription models.
 ///
 /// `ModelDownloadManager` handles the download lifecycle for WhisperKit and Parakeet
-/// models, including progress tracking, cancellation, and cleanup.
+/// models, including progress tracking, cancellation, and cleanup. SDK-level work
+/// is delegated to `LocalTranscription.LocalModelDownloader` so this file does not
+/// import `WhisperKit` or `FluidAudio` directly.
 ///
 /// ## Overview
 ///
@@ -202,6 +204,7 @@ class ModelDownloadManager {
     }
 
     // MARK: - Parakeet Model Download
+
     private func downloadParakeetModel(_ model: ParakeetModel) async throws {
         try Task.checkCancellation()
 
@@ -210,77 +213,48 @@ class ModelDownloadManager {
 
         logger.logNotice("📥 Starting download of \(model.displayName)")
 
+        let modelName = model.name
+
         do {
-            let modelName = model.name
-
-            _ = try await AsrModels.downloadAndLoad(
+            try await LocalModelDownloader.downloadParakeet(
                 version: model.version,
-                progressHandler: { progress in
-                    self.updateParakeetDownloadProgress(
-                        for: modelName,
-                        progress: progress,
-                        within: 0.0 ... 0.85
-                    )
+                onProgress: { [weak self] progress in
+                    Task { @MainActor in
+                        guard let self else { return }
+                        guard self.downloadStatuses[modelName] == .downloading else { return }
+                        self.downloadProgress[modelName] = progress
+                    }
                 }
             )
 
             try Task.checkCancellation()
 
-            _ = try await VadManager(
-                progressHandler: { progress in
-                    self.updateParakeetDownloadProgress(
-                        for: modelName,
-                        progress: progress,
-                        within: 0.85 ... 1.0
-                    )
-                }
-            )
-
-            try Task.checkCancellation()
-
-            self.downloadProgress[model.name] = 1.0
-            self.downloadStatuses[model.name] = .downloaded
+            downloadProgress[model.name] = 1.0
+            downloadStatuses[model.name] = .downloaded
             logger.logNotice("✅ Successfully downloaded \(model.displayName)")
 
-            // Log model download to Firebase Analytics
             AnalyticsService.track(.modelDownloaded(name: model.displayName, type: "parakeet"))
 
             try? await Task.sleep(for: .seconds(0.5))
 
-            self.downloadProgress.removeValue(forKey: model.name)
-            self.onModelDownloaded?(model)
+            downloadProgress.removeValue(forKey: model.name)
+            onModelDownloaded?(model)
 
         } catch is CancellationError {
             logger.logNotice("🛑 Download of \(model.displayName) was cancelled")
             throw CancellationError()
         } catch {
-            self.downloadStatuses[model.name] = .download
-            self.downloadProgress.removeValue(forKey: model.name)
+            downloadStatuses[model.name] = .download
+            downloadProgress.removeValue(forKey: model.name)
 
             logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
             throw error
         }
     }
 
-    nonisolated private func updateParakeetDownloadProgress(
-        for modelName: String,
-        progress: DownloadUtils.DownloadProgress,
-        within range: ClosedRange<Double>
-    ) {
-        let boundedProgress =
-            range.lowerBound
-            + ((range.upperBound - range.lowerBound) * progress.fractionCompleted)
-
-        Task { @MainActor in
-            guard self.downloadStatuses[modelName] == .downloading else { return }
-            self.downloadProgress[modelName] = boundedProgress
-        }
-    }
-
     // MARK: - WhisperKit Model Download
 
     private func downloadWhisperKitModel(_ model: WhisperKitModel) async throws {
-        // Check for cancellation before starting
         try Task.checkCancellation()
 
         downloadStatuses[model.name] = .downloading
@@ -288,146 +262,124 @@ class ModelDownloadManager {
 
         logger.logNotice("📥 Starting download and preparation of \(model.displayName)")
 
+        let modelName = model.name
+        let displayName = model.displayName
+        let whisperKitModelName = model.whisperKitModelName
+
+        let phaseState = WhisperKitPhaseState()
+
         do {
-            // Initialize WhisperKit without auto-loading
-            let config = WhisperKitConfig(
-                verbose: false,
-                logLevel: .info,
-                prewarm: false,
-                load: false,
-                download: false
-            )
+            try await LocalModelDownloader.downloadAndPrepareWhisperKit(
+                modelName: whisperKitModelName,
+                onPhase: { [weak self] phase in
+                    Task { @MainActor in
+                        guard let self else { return }
+                        switch phase {
+                        case .downloading(let fractionCompleted):
+                            // First 70% of overall progress represents the download.
+                            self.downloadProgress[modelName] = fractionCompleted * 0.7
 
-            let whisperKit = try await WhisperKit(config)
-            
-            try Task.checkCancellation()
+                        case .prewarmStart:
+                            self.logger.logNotice("🔥 Prewarming model: \(whisperKitModelName)")
+                            self.downloadProgress[modelName] = 0.75
+                            phaseState.prewarmStart = Date()
+                            phaseState.prewarmProgressTask = Task { @MainActor [weak self] in
+                                self?.logger.logNotice("📊 Starting pre-warm progress animation from 75% to 90%")
+                                await self?.animateProgressExponentially(
+                                    for: modelName,
+                                    from: 0.75,
+                                    to: 0.9,
+                                    maxDuration: 240.0
+                                )
+                                self?.logger.logNotice("📊 Pre-warm progress animation completed or cancelled")
+                            }
 
-            // Check if model needs downloading using consolidated path
-            let modelFolder = WhisperKitModel.modelPath(for: model.whisperKitModelName)
+                        case .loadStart:
+                            if let prewarmStart = phaseState.prewarmStart {
+                                phaseState.prewarmDuration = Date().timeIntervalSince(prewarmStart)
+                                self.logger.logNotice("✅ Model prewarmed in \(phaseState.prewarmDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
+                            }
+                            phaseState.prewarmProgressTask?.cancel()
+                            self.downloadProgress[modelName] = 0.9
+                            self.logger.logNotice("📚 Loading model: \(whisperKitModelName)")
+                            phaseState.loadStart = Date()
+                            phaseState.loadProgressTask = Task { @MainActor [weak self] in
+                                await self?.animateProgressExponentially(
+                                    for: modelName,
+                                    from: 0.9,
+                                    to: 0.99,
+                                    maxDuration: 60.0
+                                )
+                            }
 
-            if !FileManager.default.fileExists(atPath: modelFolder.path) {
-                logger.logNotice("📥 Downloading model: \(model.whisperKitModelName)")
-
-                // Download the model with real progress tracking
-                let downloadedFolder = try await WhisperKit.download(
-                    variant: model.whisperKitModelName,
-                    from: "argmaxinc/whisperkit-coreml",
-                    progressCallback: { @Sendable progress in
-                        let progressValue = progress.fractionCompleted * 0.7
-                        Task { @MainActor in
-                            // 70% of progress for download
-                            self.downloadProgress[model.name] = progressValue
+                        case .finished:
+                            if let loadStart = phaseState.loadStart {
+                                phaseState.loadDuration = Date().timeIntervalSince(loadStart)
+                                self.logger.logNotice("✅ Model loaded in \(phaseState.loadDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
+                            }
+                            phaseState.loadProgressTask?.cancel()
                         }
                     }
-                )
-                
-                try Task.checkCancellation()
+                }
+            )
 
-                whisperKit.modelFolder = downloadedFolder
-            } else {
-                whisperKit.modelFolder = modelFolder
-                self.downloadProgress[model.name] = 0.7
-            }
-
-            // Check for cancellation before prewarm
             try Task.checkCancellation()
 
-            // Prewarm models with animated progress (critical for first-time performance)
-            logger.logNotice("🔥 Prewarming model: \(model.whisperKitModelName)")
-            self.downloadProgress[model.name] = 0.75
+            downloadProgress[model.name] = 1.0
+            downloadStatuses[model.name] = .downloaded
+            logger.logNotice("✅ Successfully downloaded and prepared \(displayName)")
+            logger.logNotice("⏱️ Preparation time: prewarm: \(phaseState.prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(phaseState.loadDuration.formatted(.number.precision(.fractionLength(2))))s")
 
-            // Start progress animation for pre-warming phase
-            let progressTask = Task { @MainActor in
-                logger.logNotice("📊 Starting pre-warm progress animation from 75% to 90%")
-                await self.animateProgressExponentially(
-                    for: model.name,
-                    from: 0.75,
-                    to: 0.9,
-                    maxDuration: 240.0 // 4 minutes max
-                )
-                logger.logNotice("📊 Pre-warm progress animation completed or cancelled")
-            }
-
-            let prewarmStart = Date()
-            try await whisperKit.prewarmModels()
-            let prewarmDuration = Date().timeIntervalSince(prewarmStart)
-            logger.logNotice("✅ Model prewarmed in \(prewarmDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
-
-            // Cancel the animation task and set final progress
-            progressTask.cancel()
-
-            // Check for cancellation after prewarm
-            try Task.checkCancellation()
-
-            self.downloadProgress[model.name] = 0.9
-
-            // Load models with animated progress
-            logger.logNotice("📚 Loading model: \(model.whisperKitModelName)")
-
-            // Start progress animation for loading phase
-            let loadProgressTask = Task {
-                await self.animateProgressExponentially(
-                    for: model.name,
-                    from: 0.9,
-                    to: 0.99,
-                    maxDuration: 60.0 // 1 minute max for loading
-                )
-            }
-
-            let loadStart = Date()
-            try await whisperKit.loadModels()
-            let loadDuration = Date().timeIntervalSince(loadStart)
-            logger.logNotice("✅ Model loaded in \(loadDuration.formatted(.number.precision(.fractionLength(2)))) seconds")
-
-            // Cancel the animation task and set final progress
-            loadProgressTask.cancel()
-
-            // Check for cancellation after load
-            try Task.checkCancellation()
-
-            self.downloadProgress[model.name] = 1.0
-            self.downloadStatuses[model.name] = .downloaded
-            logger.logNotice("✅ Successfully downloaded and prepared \(model.displayName)")
-            logger.logNotice("⏱️ Preparation time: prewarm: \(prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(loadDuration.formatted(.number.precision(.fractionLength(2))))s")
-
-            // Log model download to Firebase Analytics
-            AnalyticsService.track(.modelDownloaded(name: model.displayName, type: "whisperkit"))
-
-            // Unload models after download to free memory
-            // They will be loaded again when needed for transcription
-            await whisperKit.unloadModels()
+            AnalyticsService.track(.modelDownloaded(name: displayName, type: "whisperkit"))
 
             try? await Task.sleep(for: .seconds(0.5))
 
-            self.downloadProgress.removeValue(forKey: model.name)
-            self.onModelDownloaded?(model)
+            downloadProgress.removeValue(forKey: model.name)
+            onModelDownloaded?(model)
 
         } catch is CancellationError {
-            logger.logNotice("🛑 Download of \(model.displayName) was cancelled")
+            phaseState.prewarmProgressTask?.cancel()
+            phaseState.loadProgressTask?.cancel()
+            logger.logNotice("🛑 Download of \(displayName) was cancelled")
             throw CancellationError()
         } catch {
-            self.downloadStatuses[model.name] = .download
-            self.downloadProgress.removeValue(forKey: model.name)
+            phaseState.prewarmProgressTask?.cancel()
+            phaseState.loadProgressTask?.cancel()
+            downloadStatuses[model.name] = .download
+            downloadProgress.removeValue(forKey: model.name)
 
-            logger.logError("❌ Failed to download \(model.displayName): \(error.localizedDescription)")
+            logger.logError("❌ Failed to download \(displayName): \(error.localizedDescription)")
             throw error
         }
     }
 
+    /// Mutable state shared between the WhisperKit phase callback and the
+    /// surrounding download orchestration. All reads/writes happen inside
+    /// `Task { @MainActor in ... }` blocks, so concurrent access is
+    /// serialized by the MainActor; that lets us mark it `@unchecked
+    /// Sendable` and capture it by reference from the `@Sendable` phase
+    /// closure.
+    private final class WhisperKitPhaseState: @unchecked Sendable {
+        var prewarmStart: Date?
+        var prewarmDuration: TimeInterval = 0
+        var loadStart: Date?
+        var loadDuration: TimeInterval = 0
+        var prewarmProgressTask: Task<Void, Never>?
+        var loadProgressTask: Task<Void, Never>?
+    }
+
     // MARK: - Progress Animation
 
-    /// Animates progress exponentially from current value to target value over a maximum duration
-    /// Uses exponential decay function for smooth, natural-looking progress animation
+    /// Animates progress exponentially from current value to target value over a maximum duration.
+    /// Uses exponential decay function for smooth, natural-looking progress animation.
     private func animateProgressExponentially(
         for modelName: String,
         from initialProgress: Float,
         to targetProgress: Float,
         maxDuration: TimeInterval
     ) async {
-        // Calculate decay constant for exponential approach to target
-        // We want to reach ~99% of the target progress range in maxDuration
         let progressRange = targetProgress - initialProgress
-        let decayConstant = -log(0.01) / Float(maxDuration) // -log(0.01) ≈ 4.605
+        let decayConstant = -log(0.01) / Float(maxDuration)
         let startTime = Date()
 
         logger.logInfo("🎯 Starting progress animation: \(initialProgress) -> \(targetProgress) over \(maxDuration)s")
@@ -436,24 +388,20 @@ class ModelDownloadManager {
         while !Task.isCancelled {
             let elapsedTime = Date().timeIntervalSince(startTime)
 
-            // Calculate progress using exponential decay
-            // This ensures smooth, continuous progress that asymptotically approaches target
             let decayFactor = exp(-decayConstant * Float(elapsedTime))
             let currentProgress = initialProgress + progressRange * (1 - decayFactor)
 
-            self.downloadProgress[modelName] = Double(currentProgress)
+            downloadProgress[modelName] = Double(currentProgress)
             updateCount += 1
-            if updateCount % 10 == 0 { // Log every 5 seconds (10 * 0.5s)
+            if updateCount % 10 == 0 {
                 logger.logInfo("📊 Progress update #\(updateCount): \((currentProgress * 100).formatted(.number.precision(.fractionLength(1))))%")
             }
 
-            // Stop when we're close enough to target or time limit exceeded
             if currentProgress >= targetProgress - 0.001 || elapsedTime >= maxDuration {
                 logger.logInfo("🏁 Animation ended: final progress \((currentProgress * 100).formatted(.number.precision(.fractionLength(1))))%")
                 break
             }
 
-            // Update every 0.5 seconds for smooth animation
             try? await Task.sleep(for: .milliseconds(500))
         }
     }
