@@ -138,6 +138,8 @@ public actor TranscriptionEngine {
             return GladiaTranscriptionService(config: config)
         case .speechmatics(let config):
             return SpeechmaticsTranscriptionService(config: config)
+        case .xai(let config):
+            return XaiTranscriptionService(config: config)
         case .custom(let config):
             return CustomTranscriptionService(config: config)
         case .whisperKit(let modelName, let displayName, let options):
