@@ -21,6 +21,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case speechmatics
     case cohere
     case cartesia
+    case xai
     case customTranscription
     
     var id: Self { self }
@@ -53,6 +54,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Cohere"
         case .cartesia:
             "Cartesia"
+        case .xai:
+            "xAI"
         case .customTranscription:
             "Custom"
         }
@@ -74,6 +77,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         .elevenLabs,
         .gemini,
         .openAI,
+        .xai,
         .customTranscription]
     
     var cloudTranscriptionModelsNames: [String] {
@@ -120,6 +124,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .speechmatics: "speechmatics-batch-v2"
         case .cohere: "cohere-transcribe-03-2026"
         case .cartesia: "ink-whisper"
+        case .xai: "grok-stt"
         default: nil
         }
     }
@@ -148,6 +153,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .cohere
         case .cartesia:
             return .cartesia
+        case .xai:
+            return .grok
         default:
             return nil
         }
@@ -398,6 +405,19 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 cost: 0.9,  // $0.006/min
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "grok-stt",
+                displayName: "xAI Speech-to-Text",
+                description: "xAI's hosted speech-to-text endpoint with natural formatting and multilingual support. Uses the same xAI API key as Grok chat. No auto-detect - pick a language.",
+                provider: .xai,
+                recommended: true,
+                speed: 0.9,
+                accuracy: 0.95,
+                cost: 0.5,
+                supportManyLanguages: true,
+                supportedLanguages: xaiLanguages
             )
         ]
     }
@@ -450,6 +470,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         ]
         return allLanguages.filter { codes.contains($0.key) }
     }()
+
+    /// xAI Speech-to-Text requires a non-empty `language` whenever `format=true`,
+    /// so the picker exposes the full Whisper-style set minus "auto". The service
+    /// falls back to "en" if the user previously had "auto" selected globally.
+    static let xaiLanguages: [String: String] = allLanguages.filter { $0.key != "auto" }
 
     /// Soniox stt-async-v4 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.

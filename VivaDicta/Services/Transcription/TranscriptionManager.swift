@@ -325,6 +325,19 @@ class TranscriptionManager {
             )
             return .cartesia(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: language))
 
+        case .xai:
+            // xAI STT rejects `format=true` without a language, so fall back to
+            // "en" whenever the globally selected language is "auto".
+            let language = normalizedLanguage(
+                for: selectedLanguage,
+                supportedCodes: Set(TranscriptionModelProvider.xaiLanguages.keys),
+                fallback: "en"
+            )
+            return .xai(.init(
+                apiKey: try requireAPIKey(model),
+                language: language
+            ))
+
         case .customTranscription:
             guard let customModel = model as? CustomTranscriptionModel else {
                 throw CloudTranscriptionError.unsupportedProvider
