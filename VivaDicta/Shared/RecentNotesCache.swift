@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 /// A lightweight representation of a transcription for the keyboard extension.
 ///

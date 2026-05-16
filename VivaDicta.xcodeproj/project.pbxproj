@@ -48,6 +48,14 @@
 		18F75FC42FB79A4400280269 /* CloudTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC32FB79A4400280269 /* CloudTranscription */; };
 		18F75FC62FB79A4B00280269 /* CloudTranscriptionMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */; };
 		18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F7637E2FB7D5E300280269 /* LocalTranscription */; };
+		18F76A322FB85C0400280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A312FB85C0400280269 /* AppGroup */; };
+		18F76A342FB85C0B00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A332FB85C0B00280269 /* AppGroup */; };
+		18F76A382FB85C1C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A372FB85C1C00280269 /* AppGroup */; };
+		18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A392FB85C2300280269 /* AppGroup */; };
+		18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3B2FB85C2A00280269 /* AppGroup */; };
+		18F76A3E2FB85C3800280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3D2FB85C3800280269 /* AppGroup */; };
+		18F76A402FB85C3C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3F2FB85C3C00280269 /* AppGroup */; };
+		18F76D862FB8617C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76D852FB8617C00280269 /* AppGroup */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -201,6 +209,7 @@
 		186C04412FB7762100102432 /* Exceptions for "Modules" folder in "VivaDicta" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AppGroup,
 				CloudTranscription,
 				Keychain,
 				LocalTranscription,
@@ -214,6 +223,7 @@
 		186C04422FB7762100102432 /* Exceptions for "Modules" folder in "ActionExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AppGroup,
 				CloudTranscription,
 				Keychain,
 				LocalTranscription,
@@ -253,9 +263,6 @@
 				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
-				Shared/AppGroupCoordinator.swift,
-				Shared/KeyboardLanguage.swift,
-				Shared/UserDefaultsStorage.swift,
 				Utilities/LoggerExtension.swift,
 				Utils/HapticManager.swift,
 			);
@@ -282,9 +289,6 @@
 				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
-				Shared/AppGroupCoordinator.swift,
-				Shared/KeyboardLanguage.swift,
-				Shared/UserDefaultsStorage.swift,
 				Utilities/LoggerExtension.swift,
 				Utils/HapticManager.swift,
 			);
@@ -347,8 +351,6 @@
 				"GoogleService-Info.plist",
 				Models/VivaDictaLiveActivityAttributes.swift,
 				PrivacyInfo.xcprivacy,
-				Shared/AppGroupCoordinator.swift,
-				Shared/KeyboardLanguage.swift,
 				Utilities/LoggerExtension.swift,
 				"Utils/Extensions/Color+Ext.swift",
 				Utils/Extensions/GlowShape.swift,
@@ -374,14 +376,11 @@
 				Services/AIEnhance/VivaMode.swift,
 				Shared/AnimatedMeshGradient.swift,
 				Shared/AnimatedPath.swift,
-				Shared/AppGroupCoordinator.swift,
-				Shared/KeyboardLanguage.swift,
 				Shared/MicButton.swift,
 				Shared/RecentNotesCache.swift,
 				Shared/RecordingState.swift,
 				Shared/RippleEffect.metal,
 				Shared/RippleEffectModifier.swift,
-				Shared/UserDefaultsStorage.swift,
 				Shared/VivaModePicker.swift,
 				Utilities/LoggerExtension.swift,
 				Utils/ClipboardManager.swift,
@@ -502,6 +501,7 @@
 				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
 				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				186C05812FB779AA00102432 /* Presets in Frameworks */,
+				18F76A322FB85C0400280269 /* AppGroup in Frameworks */,
 				186C0C9C2FB7829A00102432 /* OAuth in Frameworks */,
 				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
 				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
@@ -525,6 +525,7 @@
 				186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */,
 				186C05832FB779BA00102432 /* Keychain in Frameworks */,
 				18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */,
+				18F76A342FB85C0B00280269 /* AppGroup in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -541,6 +542,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */,
+				18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */,
 				186C058B2FB779C200102432 /* Presets in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -551,6 +553,7 @@
 			files = (
 				186C058D2FB779CB00102432 /* Presets in Frameworks */,
 				189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */,
+				18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */,
 				189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -559,6 +562,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18F76A3E2FB85C3800280269 /* AppGroup in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -581,6 +585,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18BA29272F7F29FD00C4F68B /* SwiftUI.framework in Frameworks */,
+				18F76A402FB85C3C00280269 /* AppGroup in Frameworks */,
 				18BA29262F7F29FD00C4F68B /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -591,6 +596,7 @@
 			files = (
 				186C058F2FB779D200102432 /* Presets in Frameworks */,
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
+				18F76D862FB8617C00280269 /* AppGroup in Frameworks */,
 				18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -600,6 +606,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18E1C7FE2E8E793E00BE8A11 /* SwiftUI.framework in Frameworks */,
+				18F76A382FB85C1C00280269 /* AppGroup in Frameworks */,
 				18E1C7FC2E8E793E00BE8A11 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -699,6 +706,7 @@
 				18F75FBD2FB79A2B00280269 /* TranscriptionCore */,
 				18F75FBF2FB79A3200280269 /* CloudTranscription */,
 				18F7637E2FB7D5E300280269 /* LocalTranscription */,
+				18F76A312FB85C0400280269 /* AppGroup */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -730,6 +738,7 @@
 				18F75FC12FB79A3E00280269 /* TranscriptionCore */,
 				18F75FC32FB79A4400280269 /* CloudTranscription */,
 				18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */,
+				18F76A332FB85C0B00280269 /* AppGroup */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -777,6 +786,7 @@
 			packageProductDependencies = (
 				189C7AA62F0D4A6E004BAFBF /* FluidAudio */,
 				186C058A2FB779C200102432 /* Presets */,
+				18F76A392FB85C2300280269 /* AppGroup */,
 			);
 			productName = ShareExtension;
 			productReference = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */;
@@ -802,6 +812,7 @@
 			packageProductDependencies = (
 				189C7ACE2F0D8749004BAFBF /* FluidAudio */,
 				186C058C2FB779CB00102432 /* Presets */,
+				18F76A3B2FB85C2A00280269 /* AppGroup */,
 			);
 			productName = ActionExtension;
 			productReference = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */;
@@ -826,6 +837,7 @@
 			);
 			name = "VivaDictaWatch Watch App";
 			packageProductDependencies = (
+				18F76A3D2FB85C3800280269 /* AppGroup */,
 			);
 			productName = "VivaDictaWatch Watch App";
 			productReference = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */;
@@ -894,6 +906,7 @@
 			);
 			name = VivaDictaWatchWidgetExtension;
 			packageProductDependencies = (
+				18F76A3F2FB85C3C00280269 /* AppGroup */,
 			);
 			productName = VivaDictaWatchWidgetExtension;
 			productReference = 18BA29252F7F29FD00C4F68B /* VivaDictaWatchWidgetExtension.appex */;
@@ -919,6 +932,7 @@
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
 				18EBD7982ED1FCC600C0041E /* FluidAudio */,
 				186C058E2FB779D200102432 /* Presets */,
+				18F76D852FB8617C00280269 /* AppGroup */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -941,6 +955,7 @@
 			);
 			name = VivaDictaWidgetExtension;
 			packageProductDependencies = (
+				18F76A372FB85C1C00280269 /* AppGroup */,
 			);
 			productName = VivaDictaWidgetExtension;
 			productReference = 18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */;
@@ -2760,6 +2775,38 @@
 		18F7637E2FB7D5E300280269 /* LocalTranscription */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocalTranscription;
+		};
+		18F76A312FB85C0400280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76A332FB85C0B00280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76A372FB85C1C00280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76A392FB85C2300280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76A3B2FB85C2A00280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76A3D2FB85C3800280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76A3F2FB85C3C00280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
+		};
+		18F76D852FB8617C00280269 /* AppGroup */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppGroup;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 
 struct WhatsNewView: View {
     let release: WhatsNewRelease

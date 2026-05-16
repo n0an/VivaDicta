@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 import Testing
 import SwiftData
 @testable import VivaDicta

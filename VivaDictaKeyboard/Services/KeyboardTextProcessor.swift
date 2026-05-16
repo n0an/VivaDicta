@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AppGroup
 import os
 
 /// Orchestrates the text processing pipeline from the keyboard extension:

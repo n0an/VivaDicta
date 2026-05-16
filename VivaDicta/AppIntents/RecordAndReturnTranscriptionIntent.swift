@@ -7,6 +7,7 @@
 
 import AppIntents
 import Foundation
+import AppGroup
 
 struct RecordAndReturnTranscriptionIntent: AppIntent {
     static let title: LocalizedStringResource = "Record and Get Note"

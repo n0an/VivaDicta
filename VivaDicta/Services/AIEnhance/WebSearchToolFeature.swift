@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 enum WebSearchToolFeature {
     static let isEnabledKey = UserDefaultsStorage.Keys.isImplicitWebSearchEnabled

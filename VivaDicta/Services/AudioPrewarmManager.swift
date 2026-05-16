@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import AppGroup
 import AVFoundation
 import os
 

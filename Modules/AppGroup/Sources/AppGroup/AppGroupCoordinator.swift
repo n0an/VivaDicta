@@ -45,10 +45,10 @@ import os
 ///     self.startRecording()
 /// }
 /// ```
-public final class AppGroupCoordinator {
+public final class AppGroupCoordinator: @unchecked Sendable {
     public static let shared = AppGroupCoordinator()
 
-    private let logger = Logger(category: .appGroupCoordinator)
+    private let logger = Logger(appGroupCategory: "AppGroupCoordinator")
 
     
     // MARK: - Constants
@@ -150,29 +150,29 @@ public final class AppGroupCoordinator {
     private let sharedDefaults: UserDefaults?
     nonisolated private let notificationCenter = CFNotificationCenterGetDarwinNotifyCenter()
 
-    @MainActor var onStartRecordingRequested: (() -> Void)?
-    @MainActor var onStopRecordingRequested: (() -> Void)?
-    @MainActor var onCancelRecordingRequested: (() -> Void)?
-    @MainActor var onPauseRecordingRequested: (() -> Void)?
-    @MainActor var onResumeRecordingRequested: (() -> Void)?
-    @MainActor var onKeyboardSessionActivated: (() -> Void)?
-    @MainActor var onTranscriptionCompleted: ((String) -> Void)?
-    @MainActor var onTranscriptionTranscribing: (() -> Void)?
-    @MainActor var onTranscriptionEnhancing: (() -> Void)?
-    @MainActor var onTranscriptionError: (() -> Void)?
-    @MainActor var onTranscriptionCancelled: (() -> Void)?
-    @MainActor var onTranscriptionErrorMessage: ((String) -> Void)?
-    @MainActor var onKeyboardSessionExpired: (() -> Void)?
-    @MainActor var onAudioLevelUpdated: ((CGFloat) -> Void)?
-    @MainActor var onRecordingStateChanged: ((Bool) -> Void)?
-    @MainActor var onStartRecordingFromControl: (() -> Void)?
-    @MainActor var onTerminateSessionFromLiveActivity: (() -> Void)?
-    @MainActor var onVivaModeChanged: (() -> Void)?
+    @MainActor public var onStartRecordingRequested: (() -> Void)?
+    @MainActor public var onStopRecordingRequested: (() -> Void)?
+    @MainActor public var onCancelRecordingRequested: (() -> Void)?
+    @MainActor public var onPauseRecordingRequested: (() -> Void)?
+    @MainActor public var onResumeRecordingRequested: (() -> Void)?
+    @MainActor public var onKeyboardSessionActivated: (() -> Void)?
+    @MainActor public var onTranscriptionCompleted: ((String) -> Void)?
+    @MainActor public var onTranscriptionTranscribing: (() -> Void)?
+    @MainActor public var onTranscriptionEnhancing: (() -> Void)?
+    @MainActor public var onTranscriptionError: (() -> Void)?
+    @MainActor public var onTranscriptionCancelled: (() -> Void)?
+    @MainActor public var onTranscriptionErrorMessage: ((String) -> Void)?
+    @MainActor public var onKeyboardSessionExpired: (() -> Void)?
+    @MainActor public var onAudioLevelUpdated: ((CGFloat) -> Void)?
+    @MainActor public var onRecordingStateChanged: ((Bool) -> Void)?
+    @MainActor public var onStartRecordingFromControl: (() -> Void)?
+    @MainActor public var onTerminateSessionFromLiveActivity: (() -> Void)?
+    @MainActor public var onVivaModeChanged: (() -> Void)?
 
     // Text processing (keyboard rewrite feature)
-    @MainActor var onTextProcessingRequested: (() -> Void)?
-    @MainActor var onTextProcessingCompleted: ((String) -> Void)?
-    @MainActor var onTextProcessingError: ((String) -> Void)?
+    @MainActor public var onTextProcessingRequested: (() -> Void)?
+    @MainActor public var onTextProcessingCompleted: ((String) -> Void)?
+    @MainActor public var onTextProcessingError: ((String) -> Void)?
 
     // MARK: - Initialization
     private init() {
@@ -181,7 +181,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Test-only initializer with injectable UserDefaults and no Darwin notification observers.
-    init(userDefaults: UserDefaults) {
+    public init(userDefaults: UserDefaults) {
         sharedDefaults = userDefaults
     }
 
@@ -192,7 +192,7 @@ public final class AppGroupCoordinator {
     // MARK: - App Launch State Management
 
     /// Reset session state on app launch to prevent stale state issues
-    func resetSessionStateOnAppLaunch() {
+    public func resetSessionStateOnAppLaunch() {
         sharedDefaults?.set(false, forKey: UserDefaultsKeys.keyboardSessionActive)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         sharedDefaults?.set(false, forKey: UserDefaultsKeys.isRecording)
@@ -246,7 +246,7 @@ public final class AppGroupCoordinator {
         logger.logError("📡 Requested session termination from Live Activity")
     }
 
-    var isRecording: Bool {
+    public var isRecording: Bool {
         let storedState = sharedDefaults?.bool(forKey: UserDefaultsKeys.isRecording) ?? false
         let timestamp = sharedDefaults?.double(forKey: UserDefaultsKeys.lastRecordingTimestamp) ?? 0
         let currentTime = Date().timeIntervalSince1970
@@ -265,13 +265,13 @@ public final class AppGroupCoordinator {
     /// where the getter's side-effect of clearing the flag mid-recording
     /// would corrupt state. Only the default `isRecording` getter (with
     /// its crash-recovery semantics) should be used by UI-level callers.
-    var isRecordingRaw: Bool {
+    public var isRecordingRaw: Bool {
         sharedDefaults?.bool(forKey: UserDefaultsKeys.isRecording) ?? false
     }
 
     // MARK: - Public Interface for Main App
 
-    func updateRecordingState(_ isRecording: Bool) {
+    public func updateRecordingState(_ isRecording: Bool) {
         sharedDefaults?.set(isRecording, forKey: UserDefaultsKeys.isRecording)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.recordingStateChanged)
@@ -279,13 +279,13 @@ public final class AppGroupCoordinator {
     }
 
     // MARK: - Audio Level Sharing
-    func updateAudioLevel(_ level: CGFloat) {
+    public func updateAudioLevel(_ level: CGFloat) {
         let clamped = max(0, min(1, level))
         sharedDefaults?.set(Double(clamped), forKey: UserDefaultsKeys.audioLevel)
         postDarwinNotification(NotificationNames.audioLevelUpdated)
     }
 
-    var currentAudioLevel: CGFloat {
+    public var currentAudioLevel: CGFloat {
         let value = sharedDefaults?.double(forKey: UserDefaultsKeys.audioLevel) ?? 0
         return CGFloat(max(0, min(1, value)))
     }
@@ -295,7 +295,7 @@ public final class AppGroupCoordinator {
     /// Activates a keyboard recording session with the specified timeout.
     ///
     /// - Parameter timeoutSeconds: How long the session remains active without activity.
-    func activateKeyboardSession(timeoutSeconds: Int) {
+    public func activateKeyboardSession(timeoutSeconds: Int) {
         let expiryTime = Date().timeIntervalSince1970 + Double(timeoutSeconds)
         sharedDefaults?.set(true, forKey: UserDefaultsKeys.keyboardSessionActive)
         sharedDefaults?.set(expiryTime, forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
@@ -304,7 +304,7 @@ public final class AppGroupCoordinator {
         logger.logError("🔑 Keyboard session activated for \(timeoutSeconds) seconds")
     }
 
-    var isKeyboardSessionActive: Bool {
+    public var isKeyboardSessionActive: Bool {
         guard let defaults = sharedDefaults else { return false }
 
         let isActive = defaults.bool(forKey: UserDefaultsKeys.keyboardSessionActive)
@@ -323,7 +323,7 @@ public final class AppGroupCoordinator {
         return isActive
     }
 
-    func deactivateKeyboardSession() {
+    public func deactivateKeyboardSession() {
         let wasActive = sharedDefaults?.bool(forKey: UserDefaultsKeys.keyboardSessionActive) ?? true
         guard wasActive else { return }
 
@@ -333,7 +333,7 @@ public final class AppGroupCoordinator {
         logger.logError("🔑 Keyboard session deactivated")
     }
 
-    func refreshKeyboardSessionExpiry(timeoutSeconds: Int) {
+    public func refreshKeyboardSessionExpiry(timeoutSeconds: Int) {
         guard let defaults = sharedDefaults else { return }
         let isActive = defaults.bool(forKey: UserDefaultsKeys.keyboardSessionActive)
         guard isActive else { return }
@@ -346,7 +346,7 @@ public final class AppGroupCoordinator {
     // MARK: - Keyboard Clipboard Context
 
     /// Stores clipboard text captured by the keyboard extension for AI context.
-    func setKeyboardClipboardContext(_ text: String?) {
+    public func setKeyboardClipboardContext(_ text: String?) {
         if let text {
             sharedDefaults?.set(text, forKey: UserDefaultsKeys.keyboardClipboardContext)
         } else {
@@ -355,7 +355,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Retrieves and clears the keyboard-captured clipboard context.
-    func getAndConsumeKeyboardClipboardContext() -> String? {
+    public func getAndConsumeKeyboardClipboardContext() -> String? {
         guard let defaults = sharedDefaults else { return nil }
         let text = defaults.string(forKey: UserDefaultsKeys.keyboardClipboardContext)
         if text != nil {
@@ -381,7 +381,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Retrieves and clears the pending text processing request (called by main app).
-    func getAndConsumePendingTextProcessing() -> (text: String, modeName: String, presetId: String?)? {
+    public func getAndConsumePendingTextProcessing() -> (text: String, modeName: String, presetId: String?)? {
         guard let defaults = sharedDefaults,
               let text = defaults.string(forKey: UserDefaultsKeys.textProcessingInput),
               let modeName = defaults.string(forKey: UserDefaultsKeys.textProcessingModeName),
@@ -396,7 +396,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Shares the AI-processed text result back to the keyboard extension (called by main app).
-    func shareTextProcessingResult(_ text: String) {
+    public func shareTextProcessingResult(_ text: String) {
         sharedDefaults?.set(text, forKey: UserDefaultsKeys.textProcessingResult)
         sharedDefaults?.synchronize()
         postDarwinNotification(NotificationNames.textProcessingCompleted)
@@ -404,7 +404,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Shares a text processing error message with the keyboard extension (called by main app).
-    func shareTextProcessingError(_ message: String) {
+    public func shareTextProcessingError(_ message: String) {
         sharedDefaults?.set(message, forKey: UserDefaultsKeys.textProcessingErrorMessage)
         sharedDefaults?.synchronize()
         postDarwinNotification(NotificationNames.textProcessingError)
@@ -412,7 +412,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Retrieves and clears the text processing result (called by keyboard extension).
-    func getAndConsumeTextProcessingResult() -> String? {
+    public func getAndConsumeTextProcessingResult() -> String? {
         guard let defaults = sharedDefaults else { return nil }
         let text = defaults.string(forKey: UserDefaultsKeys.textProcessingResult)
         if text != nil {
@@ -422,7 +422,7 @@ public final class AppGroupCoordinator {
     }
 
     /// Retrieves and clears the text processing error message (called by keyboard extension).
-    func getAndConsumeTextProcessingError() -> String? {
+    public func getAndConsumeTextProcessingError() -> String? {
         guard let defaults = sharedDefaults else { return nil }
         let message = defaults.string(forKey: UserDefaultsKeys.textProcessingErrorMessage)
         if message != nil {
@@ -455,7 +455,7 @@ public final class AppGroupCoordinator {
     /// Shares transcribed text with extensions and updates status to completed.
     ///
     /// - Parameter text: The transcribed (and optionally enhanced) text.
-    func shareTranscribedText(_ text: String) {
+    public func shareTranscribedText(_ text: String) {
         sharedDefaults?.set(text, forKey: UserDefaultsKeys.transcribedText)
         updateTranscriptionStatus(.completed)
         postDarwinNotification(NotificationNames.transcriptionCompleted)
@@ -466,7 +466,7 @@ public final class AppGroupCoordinator {
     /// read when the URL opens. Used only when the transcription originates
     /// from the keyboard extension, so the extension can open the URL and
     /// write the clipboard from a foregrounded host-app context.
-    func setPendingObsidianHandoff(url: URL, clipboardText: String) {
+    public func setPendingObsidianHandoff(url: URL, clipboardText: String) {
         sharedDefaults?.set(url.absoluteString, forKey: UserDefaultsKeys.pendingObsidianURL)
         sharedDefaults?.set(clipboardText, forKey: UserDefaultsKeys.pendingObsidianClipboard)
     }
@@ -474,7 +474,7 @@ public final class AppGroupCoordinator {
     /// Consumes a pending Obsidian hand-off, clearing both keys. Returns nil
     /// if the main app did not delegate on this transcription (e.g. a main-app
     /// recording where the main app opened `obsidian://` directly).
-    func consumePendingObsidianHandoff() -> (url: URL, clipboardText: String)? {
+    public func consumePendingObsidianHandoff() -> (url: URL, clipboardText: String)? {
         guard let defaults = sharedDefaults,
               let raw = defaults.string(forKey: UserDefaultsKeys.pendingObsidianURL),
               let url = URL(string: raw)
@@ -488,7 +488,7 @@ public final class AppGroupCoordinator {
     /// Retrieves and clears the shared transcribed text.
     ///
     /// - Returns: The transcribed text, or `nil` if none is available.
-    func getAndConsumeTranscribedText() -> String? {
+    public func getAndConsumeTranscribedText() -> String? {
         guard let defaults = sharedDefaults else { return nil }
 
         let text = defaults.string(forKey: UserDefaultsKeys.transcribedText)
@@ -500,7 +500,7 @@ public final class AppGroupCoordinator {
         return text
     }
 
-    func updateTranscriptionStatus(_ status: TranscriptionStatus) {
+    public func updateTranscriptionStatus(_ status: TranscriptionStatus) {
         sharedDefaults?.set(status.rawValue, forKey: UserDefaultsKeys.transcriptionStatus)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
 
@@ -523,12 +523,12 @@ public final class AppGroupCoordinator {
     }
 
     /// Convenience to set an error message and notify listeners of an error state.
-    func updateTranscriptionError(_ message: String) {
+    public func updateTranscriptionError(_ message: String) {
         sharedDefaults?.set(message, forKey: UserDefaultsKeys.transcriptionErrorMessage)
         updateTranscriptionStatus(.error)
     }
 
-    var transcriptionStatus: TranscriptionStatus {
+    public var transcriptionStatus: TranscriptionStatus {
         guard let defaults = sharedDefaults,
               let statusString = defaults.string(forKey: UserDefaultsKeys.transcriptionStatus),
               let status = TranscriptionStatus(rawValue: statusString) else {
@@ -537,7 +537,7 @@ public final class AppGroupCoordinator {
         return status
     }
 
-    func getAndConsumeTranscriptionErrorMessage() -> String? {
+    public func getAndConsumeTranscriptionErrorMessage() -> String? {
         guard let defaults = sharedDefaults else { return nil }
         let message = defaults.string(forKey: UserDefaultsKeys.transcriptionErrorMessage)
         if message != nil {

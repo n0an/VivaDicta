@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 import KeyboardKit
 
 /// Custom action name for the in-keyboard language cycle key.

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 import StoreKit
 
 /// Manager for handling app rating requests.

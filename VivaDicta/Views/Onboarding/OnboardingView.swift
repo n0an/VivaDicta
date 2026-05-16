@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 import AVFoundation
 
 enum OnboardingPage: Int, CaseIterable, Comparable, Identifiable {

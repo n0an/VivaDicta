@@ -8,6 +8,7 @@
 import UIKit
 import KeyboardKit
 import SwiftUI
+import AppGroup
 import os
 
 class KeyboardViewController: KeyboardInputViewController {

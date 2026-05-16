@@ -52,7 +52,6 @@ public enum LogCategory: String {
     case aiService = "AIService"
     case modelDownloadManager = "ModelDownloadManager"
     case audioPrewarmManager = "AudioPrewarmManager"
-    case appGroupCoordinator = "AppGroupCoordinator"
     case promptsManager = "PromptsManager"
     case customVocabulary = "CustomVocabulary"
     case replacementsService = "ReplacementsService"

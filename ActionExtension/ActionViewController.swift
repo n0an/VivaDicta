@@ -7,6 +7,7 @@
 
 import UIKit
 import SwiftUI
+import AppGroup
 import UniformTypeIdentifiers
 import os
 import Presets

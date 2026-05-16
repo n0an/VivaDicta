@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 /// User preference for the Chinese script used in AI-enhanced output.
 /// The preference is appended as a short hint to the AI system message, so it

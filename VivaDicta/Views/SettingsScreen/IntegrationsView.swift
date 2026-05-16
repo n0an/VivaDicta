@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 
 /// Settings screen for third-party integrations (Obsidian today; Webhooks /
 /// Zapier later). Two sibling toggles control the Obsidian hand-off:

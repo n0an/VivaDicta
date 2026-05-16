@@ -7,6 +7,7 @@
 
 import AppIntents
 import SwiftUI
+import AppGroup
 
 struct ToggleRecordIntent: SetValueIntent {
     static let title: LocalizedStringResource = "Toggle Recording"

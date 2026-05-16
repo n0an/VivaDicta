@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import AppGroup
 import SwiftUI
 @preconcurrency import ActivityKit
 import os

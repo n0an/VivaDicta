@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 struct SavedNotesFilter: Equatable {
     var sourceTags: Set<String> = []

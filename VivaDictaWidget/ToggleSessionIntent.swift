@@ -8,6 +8,7 @@
 import AppIntents
 import ActivityKit
 import SwiftUI
+import AppGroup
 
 struct ToggleSessionIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Toggle Session"

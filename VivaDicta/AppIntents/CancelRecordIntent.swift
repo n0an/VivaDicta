@@ -6,6 +6,7 @@
 //
 
 import AppIntents
+import AppGroup
 
 struct CancelRecordIntent: AppIntent {
     static let title: LocalizedStringResource = "Cancel Recording"

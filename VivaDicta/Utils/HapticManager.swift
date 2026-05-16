@@ -7,6 +7,7 @@
 
 import UIKit
 import SwiftUI
+import AppGroup
 import CoreHaptics
 
 /// Centralized manager for haptic feedback throughout the app
