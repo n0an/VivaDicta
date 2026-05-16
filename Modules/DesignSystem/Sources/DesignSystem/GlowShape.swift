@@ -1,33 +1,26 @@
-//
-//  GlowShape.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.12.03
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import SwiftUI
 
-extension View {
+/// Adds a multi-layered animated rainbow glow around a shape.
+///
+/// Apply with `.glowBackground(in: .capsule)` or `.glowOverlay(in: .capsule)`
+/// on any view. The glow re-randomizes its gradient stops at a fixed
+/// interval, animating between them. Honors `accessibilityReduceMotion` by
+/// suppressing the animation when enabled.
+public extension View {
     @MainActor
-    func glowBackground<S: InsettableShape>(
-        in shape: S
-    ) -> some View {
-        background(
-            shape.glowStroke()
-        )
+    func glowBackground<S: InsettableShape>(in shape: S) -> some View {
+        background(shape.glowStroke())
     }
-    
+
     @MainActor
-    func glowOverlay<S: InsettableShape>(
-        in shape: S
-    ) -> some View {
-        overlay(
-            shape.glowStroke()
-        )
+    func glowOverlay<S: InsettableShape>(in shape: S) -> some View {
+        overlay(shape.glowStroke())
     }
 }
 
-extension InsettableShape {
+public extension InsettableShape {
     @MainActor
     func glowStroke(
         lineWidths: [CGFloat] = [6, 9, 11, 15],
@@ -86,7 +79,9 @@ private struct GlowStrokeView<S: InsettableShape>: View {
     }
 }
 
-private extension Array where Element == Gradient.Stop {
+public extension Array where Element == Gradient.Stop {
+    /// VivaDicta's brand glow gradient - six branded colors at randomized
+    /// positions. Re-evaluated each `updateInterval` to drive the animation.
     static var glowStyle: [Gradient.Stop] {
         [
             Color(red: 188/255, green: 130/255, blue: 243/255),
@@ -101,7 +96,7 @@ private extension Array where Element == Gradient.Stop {
     }
 }
 
-#Preview {
+#Preview("Glow background") {
     VStack(spacing: 30) {
         Text("Some text here")
             .padding(22)
@@ -111,4 +106,5 @@ private extension Array where Element == Gradient.Stop {
             .padding(22)
             .glowOverlay(in: .capsule)
     }
+    .padding()
 }
