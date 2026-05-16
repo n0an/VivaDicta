@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 enum CrossNoteSearchToolFeature {
     static let isEnabledKey = UserDefaultsStorage.Keys.isImplicitCrossNoteSearchEnabled

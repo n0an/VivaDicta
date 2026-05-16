@@ -8,6 +8,7 @@
 import AppIntents
 import CoreSpotlight
 import Foundation
+import AppGroup
 import SwiftData
 import os
 

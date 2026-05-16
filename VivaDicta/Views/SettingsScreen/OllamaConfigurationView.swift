@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 
 struct OllamaConfigurationView: View {
     @Environment(\.dismiss) private var dismiss

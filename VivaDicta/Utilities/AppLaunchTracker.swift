@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 /// Utility for tracking app launch count and related launch-based features.
 /// Use this for analytics, rate app prompts, feature gating by launch count, etc.

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 import TranscriptionCore
 import SwiftData
 import TipKit

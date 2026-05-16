@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 
 /// A configuration preset combining transcription and AI processing settings.
 ///

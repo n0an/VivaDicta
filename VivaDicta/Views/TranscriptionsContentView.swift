@@ -8,6 +8,7 @@
 import os
 import SwiftData
 import SwiftUI
+import AppGroup
 import TipKit
 import Presets
 

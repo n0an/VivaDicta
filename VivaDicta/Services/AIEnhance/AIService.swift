@@ -8,6 +8,7 @@
 import Keychain
 import Presets
 import SwiftUI
+import AppGroup
 import TipKit
 import os
 import OAuth

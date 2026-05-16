@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 
 /// Settings UI for picking which languages the custom keyboard should offer.
 ///

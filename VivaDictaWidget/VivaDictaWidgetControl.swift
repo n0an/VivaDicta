@@ -7,6 +7,7 @@
 
 import AppIntents
 import SwiftUI
+import AppGroup
 import WidgetKit
 
 struct RecordingControlConfiguration: ControlConfigurationIntent {

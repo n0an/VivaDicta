@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 
 enum LiveTranslationLanguage: String, CaseIterable, Identifiable, Sendable {
     // Source list: Soniox real-time STT + translation supported languages.

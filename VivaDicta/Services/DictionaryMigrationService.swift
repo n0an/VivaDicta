@@ -1,4 +1,5 @@
 import Foundation
+import AppGroup
 import SwiftData
 import os
 

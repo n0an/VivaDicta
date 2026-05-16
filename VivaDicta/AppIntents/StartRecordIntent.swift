@@ -6,6 +6,7 @@
 //
 
 import AppIntents
+import AppGroup
 
 struct StartRecordIntent: AppIntent {
     static let title: LocalizedStringResource = "Start Recording"

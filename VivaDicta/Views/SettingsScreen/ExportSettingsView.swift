@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 import UniformTypeIdentifiers
 
 /// Settings screen for the markdown folder-export integration. Two sibling

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 import Presets
 
 /// Loads presets from shared App Group UserDefaults for display in the keyboard extension.

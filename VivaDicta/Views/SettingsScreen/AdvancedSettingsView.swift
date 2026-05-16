@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppGroup
 
 enum AppendWithVoiceStyle: String, CaseIterable, Identifiable {
     case toolbar

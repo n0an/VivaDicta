@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 import os
 
 /// Silently writes each transcription as a markdown file into a user-picked

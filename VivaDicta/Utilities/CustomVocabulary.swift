@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppGroup
 import SwiftData
 
 enum CustomVocabulary {

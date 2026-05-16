@@ -1,4 +1,5 @@
 import SwiftUI
+import AppGroup
 
 @MainActor
 @Observable
