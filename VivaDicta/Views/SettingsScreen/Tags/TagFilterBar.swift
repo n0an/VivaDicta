@@ -76,10 +76,6 @@ struct TagFilterBar: View {
             .padding(.horizontal)
         }
         .scrollIndicators(.hidden)
-//        .glassEffectOrMaterial()
-        
-        
-        
     }
 
     private func chipButton(label: String, icon: String?, isSelected: Bool, color: Color = .blue, action: @escaping () -> Void) -> some View {
