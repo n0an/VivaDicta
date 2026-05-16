@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import CloudTranscription
+@preconcurrency import FluidAudio
 import Foundation
 import LocalTranscription
 import TranscriptionCore
@@ -14,18 +15,37 @@ import TranscriptionCore
 /// Parakeet) are stateful - the engine caches a single instance of each so
 /// loaded models survive across calls. Call `unloadLocalModels()` when you
 /// want to free that memory.
-public final class TranscriptionEngine: @unchecked Sendable {
+///
+/// ## Concurrency
+///
+/// `TranscriptionEngine` is an `actor`. Cache access (the WhisperKit /
+/// Parakeet service instances it holds) is serialized by the actor; the
+/// heavy work happens inside the awaited service calls, which are
+/// non-isolated async functions and run off the actor on the global
+/// executor.
+///
+/// The engine is deliberately not `@MainActor` so library consumers (CLI
+/// tools, server contexts, view models on other actors) can use it without
+/// being forced onto the main thread. Concurrent transcription requests
+/// against the same local model from different tasks are not supported
+/// (the underlying service holds a single loaded model).
+public actor TranscriptionEngine {
     private var whisperKitService: WhisperKitTranscriptionService?
     private var parakeetService: ParakeetTranscriptionService?
 
     public init() {}
 
     /// Transcribe `audioURL` using the backend described by `provider`.
+    ///
+    /// - Parameter progress: Optional callback for streaming progress updates.
+    ///   Currently only Parakeet emits progress events; other backends ignore
+    ///   the handler.
     public func transcribe(
         audioURL: URL,
-        using provider: TranscriptionProvider
+        using provider: TranscriptionProvider,
+        progress: TranscriptionProgressHandler? = nil
     ) async throws -> TranscriptionServiceResult {
-        let service = makeService(for: provider)
+        let service = makeService(for: provider, progress: progress)
         return try await service.transcribe(audioURL: audioURL)
     }
 
@@ -38,23 +58,29 @@ public final class TranscriptionEngine: @unchecked Sendable {
     /// Drop the cached WhisperKit/Parakeet services so their models leave
     /// memory. The engine will rebuild them on next use.
     public func unloadLocalModels() async {
+        // WhisperKit needs an explicit `unloadModel()` to release the
+        // WhisperKit + SpeakerKit instances it holds. Parakeet's
+        // `ParakeetTranscriptionService` releases its `AsrManager` after each
+        // transcription in `cleanupAfterTranscription`, so dropping the
+        // wrapper reference is sufficient.
         await whisperKitService?.unloadModel()
         whisperKitService = nil
         parakeetService = nil
     }
 
-    /// The engine's cached WhisperKit service. Useful when callers need to
-    /// query model state or reach API surface not covered by the protocol
-    /// (e.g. observable durations for UI).
-    public func whisperKit() -> WhisperKitTranscriptionService {
+    // MARK: - Private cache
+
+    /// Returns the engine's cached WhisperKit service, creating it lazily.
+    /// Private so the cache is owned entirely by the actor.
+    private func whisperKit() -> WhisperKitTranscriptionService {
         if let whisperKitService { return whisperKitService }
         let service = WhisperKitTranscriptionService()
         whisperKitService = service
         return service
     }
 
-    /// The engine's cached Parakeet service.
-    public func parakeet() -> ParakeetTranscriptionService {
+    /// Returns the engine's cached Parakeet service, creating it lazily.
+    private func parakeet() -> ParakeetTranscriptionService {
         if let parakeetService { return parakeetService }
         let service = ParakeetTranscriptionService()
         parakeetService = service
@@ -63,7 +89,10 @@ public final class TranscriptionEngine: @unchecked Sendable {
 
     // MARK: - Dispatch
 
-    private func makeService(for provider: TranscriptionProvider) -> any TranscriptionService {
+    private func makeService(
+        for provider: TranscriptionProvider,
+        progress: TranscriptionProgressHandler?
+    ) -> any TranscriptionService {
         switch provider {
         case .openAI(let config):
             return OpenAITranscriptionService(config: config)
@@ -95,14 +124,21 @@ public final class TranscriptionEngine: @unchecked Sendable {
                 displayName: displayName,
                 options: options
             )
-        case .parakeet(let modelName, let displayName, let version, let options, let progressHandler):
+        case .parakeet(let modelName, let displayName, let version, let options):
             return parakeet().operation(
                 modelName: modelName,
                 displayName: displayName,
-                version: version,
+                version: asrModelVersion(for: version),
                 options: options,
-                progressHandler: progressHandler
+                progressHandler: progress
             )
+        }
+    }
+
+    private nonisolated func asrModelVersion(for version: ParakeetModelVersion) -> AsrModelVersion {
+        switch version {
+        case .v2: return .v2
+        case .v3: return .v3
         }
     }
 }

@@ -8,6 +8,7 @@
 import Foundation
 import AppGroup
 import CloudTranscription
+@preconcurrency import FluidAudio
 import LocalTranscription
 import SwiftUI
 import TranscriptionCore
@@ -78,11 +79,6 @@ class TranscriptionManager {
         }
     }
 
-    // WhisperKit performance metrics (read from the engine's cached service)
-    var whisperKitPrewarmDuration: TimeInterval { engine.whisperKit().lastPrewarmDuration }
-    var whisperKitLoadDuration: TimeInterval { engine.whisperKit().lastLoadDuration }
-    var whisperKitTotalInitDuration: TimeInterval { engine.whisperKit().lastTotalInitDuration }
-
     /// Sets the current transcription mode and applies its language setting.
     public func setCurrentMode(_ mode: VivaMode) {
         currentMode = mode
@@ -149,8 +145,12 @@ class TranscriptionManager {
         }
 
         let startTime = Date()
-        let provider = try makeProvider(for: model, progressHandler: progressHandler)
-        let transcriptionResult = try await engine.transcribe(audioURL: audioURL, using: provider)
+        let provider = try makeProvider(for: model)
+        let transcriptionResult = try await engine.transcribe(
+            audioURL: audioURL,
+            using: provider,
+            progress: progressHandler
+        )
 
         var result = TranscriptionOutputFilter.filter(
             transcriptionResult.text,
@@ -204,8 +204,7 @@ class TranscriptionManager {
     /// engine and the underlying services stay agnostic of user-facing
     /// toggles.
     private func makeProvider(
-        for model: any TranscriptionModel,
-        progressHandler: TranscriptionProgressHandler?
+        for model: any TranscriptionModel
     ) throws -> TranscriptionProvider {
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
@@ -217,12 +216,12 @@ class TranscriptionManager {
             guard let parakeetModel = model as? ParakeetModel else {
                 throw TranscriptionError.unsupportedModel
             }
+            let version: ParakeetModelVersion = (parakeetModel.version == .v2) ? .v2 : .v3
             return .parakeet(
                 modelName: parakeetModel.name,
                 displayName: parakeetModel.displayName,
-                version: parakeetModel.version,
-                options: .init(isVADEnabled: isVADEnabled, vocabulary: parakeetVocabularyIfEnabled()),
-                progressHandler: progressHandler
+                version: version,
+                options: .init(isVADEnabled: isVADEnabled, vocabulary: parakeetVocabularyIfEnabled())
             )
 
         case .whisperKit:

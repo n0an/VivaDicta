@@ -1,7 +1,6 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import CloudTranscription
-@preconcurrency import FluidAudio
 import Foundation
 import LocalTranscription
 import TranscriptionCore
@@ -12,6 +11,11 @@ import TranscriptionCore
 ///
 /// Cloud cases wrap the existing per-service `Config` types unchanged; local
 /// cases name the model + options pair directly.
+///
+/// `TranscriptionProvider` is a pure value-type description of what to
+/// transcribe. Per-call concerns (e.g. a progress-handler closure) are not
+/// part of the provider - pass them as separate arguments to
+/// `TranscriptionEngine.transcribe(audioURL:using:progress:)`.
 public enum TranscriptionProvider: Sendable {
     case openAI(OpenAITranscriptionService.Config)
     case gemini(GeminiTranscriptionService.Config)
@@ -33,8 +37,15 @@ public enum TranscriptionProvider: Sendable {
     case parakeet(
         modelName: String,
         displayName: String? = nil,
-        version: AsrModelVersion,
-        options: ParakeetTranscriptionService.Options,
-        progressHandler: TranscriptionProgressHandler? = nil
+        version: ParakeetModelVersion,
+        options: ParakeetTranscriptionService.Options
     )
+}
+
+/// Identifies which Parakeet model family to load. Mirrors FluidAudio's
+/// `AsrModelVersion` but is owned by TranscriptionKit so consumers don't
+/// transitively pull in FluidAudio just to construct an enum case.
+public enum ParakeetModelVersion: Sendable {
+    case v2
+    case v3
 }
