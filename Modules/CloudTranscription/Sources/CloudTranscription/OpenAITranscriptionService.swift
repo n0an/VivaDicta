@@ -25,9 +25,11 @@ public struct OpenAITranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
+    private let urlSession: URLSession
 
-    public init(config: Config) {
+    public init(config: Config, urlSession: URLSession = .shared) {
         self.config = config
+        self.urlSession = urlSession
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -52,7 +54,7 @@ public struct OpenAITranscriptionService: TranscriptionService, Sendable {
 
         let body = try createOpenAICompatibleRequestBody(audioURL: audioURL, boundary: boundary)
 
-        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+        let (data, response) = try await urlSession.upload(for: request, from: body)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
