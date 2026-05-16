@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 /// Horizontal scrollable filter bar with source tags and user tags.
 struct TagFilterBar: View {
@@ -82,7 +83,10 @@ struct TagFilterBar: View {
     }
 
     private func chipButton(label: String, icon: String?, isSelected: Bool, color: Color = .blue, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let chipColor = color.opacity(colorScheme == .dark ? 0.6 : 1.0)
+        let chipFallback: Color = isSelected ? chipColor.opacity(0.2) : Color(.systemGray6)
+
+        return Button(action: action) {
             HStack(spacing: 4) {
                 if let icon {
                     Image(systemName: icon)
@@ -95,37 +99,8 @@ struct TagFilterBar: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .chipBackground(isSelected: isSelected, color: color.opacity(colorScheme == .dark ? 0.6 : 1.0))
+            .glassCapsule(tint: isSelected ? chipColor : nil, fallback: chipFallback)
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Chip Background Modifier
-
-private struct ChipBackgroundModifier: ViewModifier {
-    let isSelected: Bool
-    let color: Color
-
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content
-                .glassEffect(
-                    isSelected
-                    ? .regular.tint(color).interactive()
-                    : .regular.interactive(),
-                    in: .capsule
-                )
-        } else {
-            content
-                .background(isSelected ? color.opacity(0.2) : Color(.systemGray6))
-                .clipShape(.capsule)
-        }
-    }
-}
-
-extension View {
-    fileprivate func chipBackground(isSelected: Bool, color: Color) -> some View {
-        modifier(ChipBackgroundModifier(isSelected: isSelected, color: color))
     }
 }
