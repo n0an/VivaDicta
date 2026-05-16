@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import DesignSystem
 import KeyboardKit
 import SwiftUI
 import AppGroup

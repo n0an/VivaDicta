@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 struct ReminderSuggestionsFloatingControl: View {
     let pendingReminderDraftCount: Int

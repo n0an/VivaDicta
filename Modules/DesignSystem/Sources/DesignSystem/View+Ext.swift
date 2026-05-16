@@ -1,29 +1,29 @@
-//
-//  View+Ext.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.08.02
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import SwiftUI
 
 // MARK: - BlurTransition
-struct BlurTransition: Transition {
-    var radius: CGFloat
-    func body(content: Content, phase: TransitionPhase) -> some View {
+
+public struct BlurTransition: Transition {
+    public var radius: CGFloat
+    public init(radius: CGFloat) {
+        self.radius = radius
+    }
+    public func body(content: Content, phase: TransitionPhase) -> some View {
         content
             .blur(radius: phase.isIdentity ? 0 : radius)
     }
 }
 
-extension Transition where Self == BlurTransition {
+public extension Transition where Self == BlurTransition {
     static func blur(radius: CGFloat) -> Self {
         BlurTransition(radius: radius)
     }
 }
 
 // MARK: - Badges
-protocol BadgeStyle {
+
+public protocol BadgeStyle {
     associatedtype Body: View
     @ViewBuilder func makeBody(_ label: AnyView) -> Body
 }
@@ -47,7 +47,7 @@ enum BadgeStyleKey: EnvironmentKey {
     nonisolated(unsafe) static var defaultValue: any BadgeStyle = DefaultBadgeStyle()
 }
 
-extension EnvironmentValues {
+public extension EnvironmentValues {
     var badgeStyle: any BadgeStyle {
         get { self[BadgeStyleKey.self] }
         set { self[BadgeStyleKey.self] = newValue }
@@ -69,14 +69,15 @@ struct OverlayBadge<BadgeLabel: View>: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func badge<V: View>(alignment: Alignment = .topTrailing,
                         @ViewBuilder _ content: () -> V) -> some View {
         modifier(OverlayBadge(alignment: alignment, label: content()))
     }
 }
 
-struct FancyBadgeStyle: BadgeStyle {
+public struct FancyBadgeStyle: BadgeStyle {
+    public init() {}
     var background: some View {
         ZStack {
             ContainerRelativeShape()
@@ -92,7 +93,7 @@ struct FancyBadgeStyle: BadgeStyle {
         }
     }
 
-    func makeBody(_ label: AnyView) -> some View {
+    public func makeBody(_ label: AnyView) -> some View {
         label
             .foregroundStyle(.white)
             .font(.caption)
@@ -103,20 +104,21 @@ struct FancyBadgeStyle: BadgeStyle {
     }
 }
 
-extension View {
+public extension View {
     func badgeStyle(_ style: any BadgeStyle) -> some View {
         environment(\.badgeStyle, style)
     }
 }
 
-extension BadgeStyle where Self == FancyBadgeStyle {
+public extension BadgeStyle where Self == FancyBadgeStyle {
     static var fancy: FancyBadgeStyle {
         FancyBadgeStyle()
     }
 }
 
 // MARK: - Debug
-extension View {
+
+public extension View {
     @ViewBuilder
     func debugBorder() -> some View {
 #if DEBUG
@@ -128,7 +130,8 @@ extension View {
 }
 
 // MARK: - iflet
-extension View {
+
+public extension View {
     @ViewBuilder
     func iflet<Value>(_ value: Value?, @ViewBuilder transform: (Value, Self) -> some View) -> some View {
         if let value {
@@ -140,6 +143,7 @@ extension View {
 }
 
 // MARK: - onFirstAppear
+
 private struct OnFirstAppearModifier: ViewModifier {
     @State private var didPerform = false
 
@@ -156,14 +160,15 @@ private struct OnFirstAppearModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func onFirstAppear(perform action: (() -> Void)? = nil) -> some View {
         modifier(OnFirstAppearModifier(action: action))
     }
 }
 
 // MARK: - minimizedSearch
-extension View {
+
+public extension View {
     @ViewBuilder func minimizedSearch() -> some View {
         if #available(iOS 26.0, *) {
             self.searchToolbarBehavior(.minimize)
@@ -172,6 +177,7 @@ extension View {
 }
 
 // MARK: - glassEffectOrMaterial
+
 struct GlassEffectOrMaterialModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
@@ -184,17 +190,18 @@ struct GlassEffectOrMaterialModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func glassEffectOrMaterial() -> some View {
         modifier(GlassEffectOrMaterialModifier())
     }
 }
 
 // MARK: - glassEffectClear
+
 struct GlassEffectClearModifier: ViewModifier {
-    
+
     var isInteractive: Bool
-    
+
     func body(content: Content) -> some View {
         if #available(iOS 26, *){
             content
@@ -205,7 +212,7 @@ struct GlassEffectClearModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func glassEffectClear(isInteractive: Bool = true) -> some View {
         modifier(GlassEffectClearModifier(isInteractive: isInteractive))
     }
@@ -215,7 +222,7 @@ struct GlassEffectColorModifier: ViewModifier {
     var isInteractive: Bool
     var color: Color
     var opacity: CGFloat
-    
+
     func body(content: Content) -> some View {
         if #available(iOS 26, *){
             content
@@ -226,7 +233,7 @@ struct GlassEffectColorModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func glassEffectColor(isInteractive: Bool = true,
                           color: Color = .clear,
                           opacity: CGFloat = 1.0) -> some View {
@@ -253,7 +260,7 @@ struct GlassDismissCircleModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func glassDismissCircle(fallback: some ShapeStyle = Color.gray.opacity(0.1)) -> some View {
         modifier(GlassDismissCircleModifier(fallback: AnyShapeStyle(fallback)))
     }
@@ -275,7 +282,7 @@ struct GlassFABCircleModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func glassFABCircle(fallback: some ShapeStyle = .regularMaterial) -> some View {
         modifier(GlassFABCircleModifier(fallback: AnyShapeStyle(fallback)))
     }
@@ -303,13 +310,14 @@ struct GlassCapsuleModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func glassCapsule(tint: Color? = nil, fallback: some ShapeStyle = Color(.systemGray5)) -> some View {
         modifier(GlassCapsuleModifier(tint: tint, fallback: AnyShapeStyle(fallback)))
     }
 }
 
 // MARK: - Model Card Background
+
 struct ModelCardBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
@@ -328,7 +336,7 @@ struct ModelCardBackgroundModifier: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func modelCardBackground() -> some View {
         modifier(ModelCardBackgroundModifier())
     }
@@ -336,6 +344,7 @@ extension View {
 
 // MARK: - ButtonStyle
 // MARK: prominentButton
+
 struct ProminentButton: ViewModifier {
 
     var color: Color
@@ -353,19 +362,20 @@ struct ProminentButton: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func prominentButton(color: Color) -> some View {
         modifier(ProminentButton(color: color))
     }
 }
 
 // MARK: - animatedCopyButtonStyle
+
 struct AnimatedCopyButtonStyle: ViewModifier {
     var color: Color
     var colorPressed: Color
-    
+
     var isPressed: Bool
-    
+
     func body(content: Content) -> some View {
         if #available(iOS 26, *){
             content
@@ -379,7 +389,7 @@ struct AnimatedCopyButtonStyle: ViewModifier {
     }
 }
 
-extension View {
+public extension View {
     func animatedCopyButtonStyle(color: Color,
                                  colorPressed: Color,
                                  isPressed: Bool) -> some View {
@@ -387,15 +397,19 @@ extension View {
     }
 }
 
-struct RecordButtonButtonStyle: ButtonStyle {
+public struct RecordButtonButtonStyle: ButtonStyle {
     /// Trigger for bounce animation. Change this value to trigger a double bounce.
-    var bounceTrigger: Int = 0
+    public var bounceTrigger: Int
+
+    public init(bounceTrigger: Int = 0) {
+        self.bounceTrigger = bounceTrigger
+    }
 
     private struct BounceValue {
         var scale: CGFloat = 1.0
     }
 
-    func makeBody(configuration: Configuration) -> some View {
+    public func makeBody(configuration: Configuration) -> some View {
         KeyframeAnimator(
             initialValue: BounceValue(),
             trigger: bounceTrigger
@@ -421,4 +435,3 @@ struct RecordButtonButtonStyle: ButtonStyle {
         }
     }
 }
-

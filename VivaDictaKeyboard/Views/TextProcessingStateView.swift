@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 /// Shows progress during text processing (rewrite) in the keyboard.
 ///
