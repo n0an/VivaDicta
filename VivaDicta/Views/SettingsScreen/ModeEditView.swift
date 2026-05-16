@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import DesignSystem
 import AppGroup
 import TipKit
 import Presets

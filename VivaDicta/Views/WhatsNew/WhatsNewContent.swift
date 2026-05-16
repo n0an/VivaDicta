@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import DesignSystem
 
 struct WhatsNewFeature: Identifiable {
     let id = UUID()
