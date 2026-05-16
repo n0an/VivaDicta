@@ -7,7 +7,10 @@ import TestUtilities
 
 /// Hand-rolled mock for the `transcribe(audioURL:)` shape used by cloud
 /// transcription services. Stub the result via `stubTranscribeResponse`.
-public final class MockTranscriptionService: @unchecked Sendable {
+///
+/// Conforms to `TranscriptionService` so it can be returned from a
+/// `TranscriptionEngine.ServiceFactory` to test engine-level routing.
+public final class MockTranscriptionService: TranscriptionService, @unchecked Sendable {
 
     public init() {}
 
