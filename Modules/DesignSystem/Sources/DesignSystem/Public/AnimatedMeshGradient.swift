@@ -1,16 +1,15 @@
-//
-//  AnimatedMeshGradient.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2025.11.23
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import SwiftUI
 
-struct AnimatedMeshGradient: View {
+/// Brand mesh gradient #1 - red/purple/indigo/orange/white/blue/yellow/black/mint.
+/// Used as background for HUDs and floating action buttons.
+public struct AnimatedMeshGradient: View {
     @State private var startDate = Date.now
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         TimelineView(.animation) { timeline in
             let t = Float(timeline.date.timeIntervalSince(startDate)) * 10
             MeshGradient(width: 3, height: 3, points: [
@@ -43,10 +42,14 @@ struct AnimatedMeshGradient: View {
     AnimatedMeshGradient()
 }
 
-struct AnimatedMeshGradient2: View {
+/// Brand mesh gradient #2 - blue/red/orange/indigo/cyan/purple/mint.
+/// Cooler / more "AI-flavored" palette used in transcription rows + processing states.
+public struct AnimatedMeshGradient2: View {
     @State private var startDate = Date.now
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         TimelineView(.animation) { timeline in
             let t = Float(timeline.date.timeIntervalSince(startDate)) * 10
             MeshGradient(width: 3, height: 3, points: [

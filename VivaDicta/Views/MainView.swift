@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 import AppGroup
 import TranscriptionCore
 import SwiftData

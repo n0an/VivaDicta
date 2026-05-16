@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import DesignSystem
 
 // MARK: - Not used. Keep for reference.
 struct HudViewLightBounceOnly: View {
