@@ -77,7 +77,7 @@ class AppState {
     var watchConnectivityService: PhoneWatchConnectivityService!
 
     /// Service for managing background task protection.
-    var backgroundTaskService: BackgroundTaskService!
+    var backgroundTaskService: BackgroundTaskManager!
 
 
     // MARK: - Navigation State
@@ -179,7 +179,7 @@ class AppState {
         )
 
         // Set up background task service
-        backgroundTaskService = BackgroundTaskService(modelContainer: modelContainer)
+        backgroundTaskService = BackgroundTaskManager(modelContainer: modelContainer)
         backgroundTaskService.configure(watchAudioProcessor: watchProcessor)
 
         watchConnectivityService = PhoneWatchConnectivityService()

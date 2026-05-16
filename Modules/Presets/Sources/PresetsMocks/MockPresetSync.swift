@@ -1,5 +1,5 @@
 //
-//  MockPresetSyncing.swift
+//  MockPresetSync.swift
 //  PresetsMocks
 //
 //  Created by Anton Novoselov on 2026.05.15
@@ -8,12 +8,12 @@
 import Foundation
 import Presets
 
-/// Hand-rolled mock for `PresetSyncing`. Tracks call counts and the records
+/// Hand-rolled mock for `PresetSync`. Tracks call counts and the records
 /// the production code under test wrote, but does not actually persist
 /// anything. Each method also exposes an after-side-effect callback so tests
 /// can fulfill expectations only after the production code has finished
 /// touching the mock.
-public final class MockPresetSyncing: PresetSyncing, @unchecked Sendable {
+public final class MockPresetSync: PresetSync, @unchecked Sendable {
 
     public init() {}
 

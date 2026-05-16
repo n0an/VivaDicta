@@ -1,5 +1,5 @@
 //
-//  BackgroundTaskService.swift
+//  BackgroundTaskManager.swift
 //  VivaDicta
 //
 //  Created by Anton Novoselov on 2026.04.04
@@ -19,11 +19,11 @@ import os
 /// The primary use case is protecting Watch audio processing, which happens
 /// entirely in background when the iPhone receives files via WatchConnectivity.
 @MainActor
-final class BackgroundTaskService {
+final class BackgroundTaskManager {
     nonisolated static let bgTaskIdentifier = "com.antonnovoselov.VivaDicta.transcription-processing"
 
     /// Live instance reference for the BGTask handler to dispatch to.
-    static nonisolated(unsafe) weak var shared: BackgroundTaskService?
+    static nonisolated(unsafe) weak var shared: BackgroundTaskManager?
 
     private let logger = Logger(category: .backgroundTask)
     private nonisolated(unsafe) let queue: BackgroundTaskQueue
@@ -107,7 +107,7 @@ final class BackgroundTaskService {
     /// Registers the BGProcessingTask handler. Must be called during `didFinishLaunching`.
     ///
     /// The handler dispatches to the live `shared` instance. By the time iOS delivers
-    /// a BGProcessingTask, AppState (and thus BackgroundTaskService) is always initialized
+    /// a BGProcessingTask, AppState (and thus BackgroundTaskManager) is always initialized
     /// because the task is scheduled from within the running app.
     static func registerBGTaskHandler() {
         BGTaskScheduler.shared.register(

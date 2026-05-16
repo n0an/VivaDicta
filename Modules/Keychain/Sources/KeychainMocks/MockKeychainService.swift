@@ -8,14 +8,14 @@
 import Foundation
 import Keychain
 
-/// Hybrid fake/mock for `KeychainServicing`.
+/// Hybrid fake/mock for `KeychainService`.
 ///
 /// Backed by an in-memory `[String: Data]` store so tests don't have to stub
 /// every read/write to model state. Stub-style overrides (`stub*Result`) take
 /// precedence when set, letting tests force specific failure modes. Per-method
 /// `didFoo` callbacks fire via `defer` so test expectations are only signaled
 /// after the side effect completes.
-public final class MockKeychainService: KeychainServicing, @unchecked Sendable {
+public final class MockKeychainService: KeychainService, @unchecked Sendable {
 
     public init() {}
 

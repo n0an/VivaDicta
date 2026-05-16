@@ -4,11 +4,11 @@ import Foundation
 import UIKit
 import OAuth
 
-/// App-target adapter that bridges the OAuth module's `BackgroundTaskServicing`
-/// protocol to the concrete `BackgroundTaskService` singleton.
-struct BackgroundTaskServiceAdapter: BackgroundTaskServicing {
+/// App-target adapter that bridges the OAuth module's `BackgroundTaskService`
+/// protocol to the concrete `BackgroundTaskManager` singleton.
+struct BackgroundTaskServiceAdapter: BackgroundTaskService {
     func beginBackgroundTask(name: String, onExpiration: @escaping @Sendable () -> Void) -> UInt? {
-        guard let identifier = BackgroundTaskService.shared?.beginBackgroundTask(name: name, onExpiration: onExpiration) else {
+        guard let identifier = BackgroundTaskManager.shared?.beginBackgroundTask(name: name, onExpiration: onExpiration) else {
             return nil
         }
         guard identifier != .invalid else { return nil }
@@ -16,6 +16,6 @@ struct BackgroundTaskServiceAdapter: BackgroundTaskServicing {
     }
 
     func endBackgroundTask(_ identifier: UInt) {
-        BackgroundTaskService.shared?.endBackgroundTask(UIBackgroundTaskIdentifier(rawValue: Int(identifier)))
+        BackgroundTaskManager.shared?.endBackgroundTask(UIBackgroundTaskIdentifier(rawValue: Int(identifier)))
     }
 }

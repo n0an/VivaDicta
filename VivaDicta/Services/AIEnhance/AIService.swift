@@ -170,7 +170,7 @@ class AIService {
     private let userDefaults: UserDefaults
     private let modesStorageKey: String
     private let selectedModeStorageKey: String
-    private let keychain: any KeychainServicing
+    private let keychain: any KeychainService
     private let baseTimeout: TimeInterval = 300
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
@@ -186,7 +186,7 @@ class AIService {
         return service
     }
 
-    init(keychain: any KeychainServicing = KeychainServiceImpl()) {
+    init(keychain: any KeychainService = KeychainServiceImpl()) {
         self.keychain = keychain
         self.userDefaults = UserDefaultsStorage.shared
         self.modesStorageKey = AppGroupCoordinator.vivaModesKey
@@ -227,7 +227,7 @@ class AIService {
     }
 
     /// Test-only initializer with injectable UserDefaults and no network side effects.
-    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainServicing = KeychainServiceImpl()) {
+    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainService = KeychainServiceImpl()) {
         self.keychain = keychain
         self.userDefaults = userDefaults
         self.modesStorageKey = modesStorageKey

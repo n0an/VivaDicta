@@ -11,7 +11,7 @@ import os
 /// Manages AI text processing presets with persistence in App Group UserDefaults.
 ///
 /// Handles both built-in and custom presets. Built-in presets are editable but not deletable.
-/// Custom presets are synced to CloudKit via a `PresetSyncing` implementation supplied by
+/// Custom presets are synced to CloudKit via a `PresetSync` implementation supplied by
 /// the app target (the package itself does not depend on SwiftData/CloudKit).
 ///
 /// ## Storage
@@ -34,7 +34,7 @@ public class PresetManager {
 
     /// Sync service for writing preset changes to SwiftData/CloudKit. The
     /// concrete implementation lives in the app target.
-    public var syncService: (any PresetSyncing)?
+    public var syncService: (any PresetSync)?
 
     public init(userDefaults: UserDefaults,
                 storageKey: String = "Presets_v1",

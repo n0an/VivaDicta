@@ -22,7 +22,7 @@ import Presets
 /// - **Migration**: One-time migration of existing custom presets and old
 ///   ``CustomRewritePreset`` records to the new `RewritePreset` model.
 @Observable
-class PresetSyncService: PresetSyncing {
+class PresetSyncService: PresetSync {
     private let logger = Logger(category: .presetSync)
     private var modelContext: ModelContext?
 

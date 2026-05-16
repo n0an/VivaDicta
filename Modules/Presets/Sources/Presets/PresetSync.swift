@@ -1,5 +1,5 @@
 //
-//  PresetSyncing.swift
+//  PresetSync.swift
 //  Presets
 //
 //  Created by Anton Novoselov on 2026.05.15
@@ -11,7 +11,7 @@ import Foundation
 /// changes. The concrete implementation lives in the app target (where the
 /// `ModelContainer` and CloudKit container are configured); the package only
 /// depends on this protocol so `PresetManager` can be tested with a mock.
-public protocol PresetSyncing: AnyObject {
+public protocol PresetSync: AnyObject {
     func createPresetRecord(from preset: Preset)
     func updatePresetRecord(from preset: Preset)
     func deletePresetRecord(presetId: String)

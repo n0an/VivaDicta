@@ -7,7 +7,7 @@ import Foundation
 /// in Safari) without depending on the app target's `BackgroundTaskService`.
 ///
 /// The app target provides an adapter that forwards to `UIApplication`.
-public protocol BackgroundTaskServicing: Sendable {
+public protocol BackgroundTaskService: Sendable {
     /// Begin a background task with the given name. `onExpiration` runs when
     /// the system is about to terminate the task. Returns an opaque identifier
     /// used to end the task, or `nil` if the task could not be started.

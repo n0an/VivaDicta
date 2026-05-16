@@ -1,5 +1,5 @@
 //
-//  KeychainServicing.swift
+//  KeychainService.swift
 //  Keychain
 //
 //  Created by Anton Novoselov on 2026.05.15
@@ -10,7 +10,7 @@ import Foundation
 /// Secure storage abstraction. The `syncable` flag controls whether the item
 /// participates in iCloud Keychain sync; the VivaDicta macOS app and iOS app
 /// share API keys via this mechanism.
-public protocol KeychainServicing: Sendable {
+public protocol KeychainService: Sendable {
 
     @discardableResult
     func save(_ value: String, forKey key: String, syncable: Bool) -> Bool
@@ -29,7 +29,7 @@ public protocol KeychainServicing: Sendable {
 // Default-syncable convenience overloads. Protocol methods cannot carry
 // default parameter values, so these live in an extension to preserve the
 // `keychain.save(value, forKey: key)` call shape used today.
-public extension KeychainServicing {
+public extension KeychainService {
 
     @discardableResult
     func save(_ value: String, forKey key: String) -> Bool {

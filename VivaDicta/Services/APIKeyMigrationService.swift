@@ -14,11 +14,11 @@ import os
 final class APIKeyMigrationService: Sendable {
     static let shared = APIKeyMigrationService(keychain: KeychainServiceImpl())
 
-    private let keychain: any KeychainServicing
+    private let keychain: any KeychainService
     private let logger = Logger(category: .keychainService)
     private let migrationCompletedKey = "HasMigratedAPIKeysToKeychain"
 
-    init(keychain: any KeychainServicing) {
+    init(keychain: any KeychainService) {
         self.keychain = keychain
     }
 

@@ -12,7 +12,7 @@ import Security
 /// Production keychain implementation. The default `service` value must match
 /// the macOS VivaDicta app for iCloud Keychain sync to work; do not change it
 /// without coordinating across both platforms.
-public final class KeychainServiceImpl: KeychainServicing, Sendable {
+public final class KeychainServiceImpl: KeychainService, Sendable {
 
     public static let defaultService = "com.antonnovoselov.VivaDicta"
 
