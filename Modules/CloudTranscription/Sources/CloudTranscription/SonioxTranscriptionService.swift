@@ -5,7 +5,7 @@ import os
 import TranscriptionCore
 
 /// Pre-configured Soniox STT client. Uses an upload + create + poll flow.
-public struct SonioxTranscriptionService: Sendable {
+public struct SonioxTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "SonioxTranscription")
     private let apiBase = "https://api.soniox.com/v1"
     private let maxWaitSeconds: TimeInterval = 300

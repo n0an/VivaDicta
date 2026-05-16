@@ -7,7 +7,7 @@ import TranscriptionCore
 /// Pre-configured Gladia STT client. Uses an upload + create + poll flow.
 /// `modelName` is unused by the v2 API (the endpoint always uses the default
 /// pre-recorded model), so the config omits it.
-public struct GladiaTranscriptionService: Sendable {
+public struct GladiaTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "GladiaTranscription")
     private let apiBase = "https://api.gladia.io/v2"
     private let maxWaitSeconds: TimeInterval = 300

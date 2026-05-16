@@ -5,7 +5,7 @@ import os
 import TranscriptionCore
 
 /// Pre-configured Mistral STT client.
-public struct MistralTranscriptionService: Sendable {
+public struct MistralTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "MistralTranscription")
 
     public struct Config: Sendable {

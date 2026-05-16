@@ -6,7 +6,7 @@ import TranscriptionCore
 
 /// Pre-configured ElevenLabs speech-to-text client. Stateless apart from its
 /// config; the app target builds one per request.
-public struct ElevenLabsTranscriptionService: Sendable {
+public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
     private let apiURL = URL(string: "https://api.elevenlabs.io/v1/speech-to-text")!
     private let logger = Logger(cloudTranscriptionCategory: "ElevenLabsTranscription")
 

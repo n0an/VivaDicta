@@ -7,7 +7,7 @@ import TranscriptionCore
 /// User-configured OpenAI-compatible transcription endpoint. The endpoint URL,
 /// optional API key, and model name come from the user's stored custom model;
 /// the router builds the config from `CustomTranscriptionModel` at call time.
-public struct CustomTranscriptionService: Sendable {
+public struct CustomTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "CustomTranscription")
 
     public struct Config: Sendable {

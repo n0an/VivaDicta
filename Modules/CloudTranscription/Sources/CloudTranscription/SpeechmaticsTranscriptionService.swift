@@ -7,7 +7,7 @@ import TranscriptionCore
 /// Pre-configured Speechmatics STT client. Uses an upload + create + poll flow.
 /// Maps the VivaDicta `zh` code to Speechmatics' `cmn` internally; all other
 /// codes pass through.
-public struct SpeechmaticsTranscriptionService: Sendable {
+public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "SpeechmaticsTranscription")
     private let apiBase = "https://asr.api.speechmatics.com/v2"
     private let maxWaitSeconds: TimeInterval = 300
