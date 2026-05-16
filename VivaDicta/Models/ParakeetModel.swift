@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import FluidAudio
 
 struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
     static func == (lhs: ParakeetModel, rhs: ParakeetModel) -> Bool {
@@ -22,7 +21,7 @@ struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
     let speed: Double
     let accuracy: Double
     let ramUsage: Double
-    
+
     init(name: String,
          displayName: String,
          description: String,
@@ -48,31 +47,4 @@ struct ParakeetModel: @MainActor TranscriptionModel, Equatable {
     }
 
     let supportedLanguages: [String: String]
-}
-
-// MARK: - Download & File Management
-extension ParakeetModel {
-    var version: AsrModelVersion {
-        name.lowercased().contains("v2") ? .v2 : .v3
-    }
-
-    /// Returns FluidAudio's default cache directory for this model version.
-    /// This ensures consistency between download, validation, and loading.
-    var modelsDirectory: URL {
-        AsrModels.defaultCacheDirectory(for: version)
-    }
-
-    private var hasCachedModelDirectory: Bool {
-        FileManager.default.fileExists(atPath: modelsDirectory.path)
-    }
-
-    var isDownloaded: Bool {
-        AsrModels.modelsExist(at: modelsDirectory, version: version)
-    }
-
-    func deleteModel() throws {
-        if hasCachedModelDirectory {
-            try FileManager.default.removeItem(at: modelsDirectory)
-        }
-    }
 }

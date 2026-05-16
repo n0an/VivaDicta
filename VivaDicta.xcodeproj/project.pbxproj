@@ -20,10 +20,8 @@
 		186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9D2FB782A000102432 /* OAuthMocks */; };
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7AA62F0D4A6E004BAFBF /* FluidAudio */; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
 		189C7ABC2F0D84E2004BAFBF /* ActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 189C7ACE2F0D8749004BAFBF /* FluidAudio */; };
 		18B497E52F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497EF2F268B2700538830 /* FirebaseAnalytics */; };
@@ -39,10 +37,6 @@
 		18E1C7FC2E8E793E00BE8A11 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */; };
 		18E1C7FE2E8E793E00BE8A11 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
 		18E1C80F2E8E793F00BE8A11 /* VivaDictaWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1C7FA2E8E793E00BE8A11 /* VivaDictaWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		18E328F72E894C3D0026327D /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E328F62E894C3D0026327D /* WhisperKit */; };
-		18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD6B22ED1FBFB00C0041E /* FluidAudio */; };
-		18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 18EBD7982ED1FCC600C0041E /* FluidAudio */; };
-		18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */; };
 		18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FBD2FB79A2B00280269 /* TranscriptionCore */; };
 		18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FBF2FB79A3200280269 /* CloudTranscription */; };
 		18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18F75FC12FB79A3E00280269 /* TranscriptionCore */; };
@@ -503,13 +497,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */,
-				18EBD6B32ED1FBFB00C0041E /* FluidAudio in Frameworks */,
-				18E328F72E894C3D0026327D /* WhisperKit in Frameworks */,
 				186C05812FB779AA00102432 /* Presets in Frameworks */,
 				18F76A322FB85C0400280269 /* AppGroup in Frameworks */,
 				186C0C9C2FB7829A00102432 /* OAuth in Frameworks */,
 				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
-				18F0AA4B2F90A11100A1B2C3 /* SpeakerKit in Frameworks */,
 				18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
@@ -547,7 +538,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				189C7AA72F0D4A6E004BAFBF /* FluidAudio in Frameworks */,
 				18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */,
 				186C058B2FB779C200102432 /* Presets in Frameworks */,
 			);
@@ -558,7 +548,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				186C058D2FB779CB00102432 /* Presets in Frameworks */,
-				189C7ACF2F0D8749004BAFBF /* FluidAudio in Frameworks */,
 				18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */,
 				189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */,
 			);
@@ -601,7 +590,6 @@
 				186C058F2FB779D200102432 /* Presets in Frameworks */,
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
 				18F76D862FB8617C00280269 /* AppGroup in Frameworks */,
-				18EBD7992ED1FCC600C0041E /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -725,10 +713,7 @@
 			);
 			name = VivaDicta;
 			packageProductDependencies = (
-				18E328F62E894C3D0026327D /* WhisperKit */,
-				18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */,
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
-				18EBD6B22ED1FBFB00C0041E /* FluidAudio */,
 				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
 				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
@@ -817,7 +802,6 @@
 			);
 			name = ShareExtension;
 			packageProductDependencies = (
-				189C7AA62F0D4A6E004BAFBF /* FluidAudio */,
 				186C058A2FB779C200102432 /* Presets */,
 				18F76A392FB85C2300280269 /* AppGroup */,
 			);
@@ -843,7 +827,6 @@
 			);
 			name = ActionExtension;
 			packageProductDependencies = (
-				189C7ACE2F0D8749004BAFBF /* FluidAudio */,
 				186C058C2FB779CB00102432 /* Presets */,
 				18F76A3B2FB85C2A00280269 /* AppGroup */,
 			);
@@ -961,7 +944,6 @@
 			name = VivaDictaKeyboard;
 			packageProductDependencies = (
 				18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */,
-				18EBD7982ED1FCC600C0041E /* FluidAudio */,
 				186C058E2FB779D200102432 /* Presets */,
 				18F76D852FB8617C00280269 /* AppGroup */,
 			);
@@ -1051,9 +1033,7 @@
 			mainGroup = 181D04CE2E3E55E400D357A6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
-				18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
 			);
@@ -2683,22 +2663,6 @@
 				version = 10.3.1;
 			};
 		};
-		18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-		18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/FluidInference/FluidAudio";
-			requirement = {
-				kind = exactVersion;
-				version = 0.13.6;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2751,16 +2715,6 @@
 			package = 1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
 			productName = LumoKit;
 		};
-		189C7AA62F0D4A6E004BAFBF /* FluidAudio */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
-		};
-		189C7ACE2F0D8749004BAFBF /* FluidAudio */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
-		};
 		18B497EF2F268B2700538830 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
@@ -2784,26 +2738,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */;
 			productName = KeyboardKit;
-		};
-		18E328F62E894C3D0026327D /* WhisperKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
-			productName = WhisperKit;
-		};
-		18EBD6B22ED1FBFB00C0041E /* FluidAudio */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
-		};
-		18EBD7982ED1FCC600C0041E /* FluidAudio */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18EBD6B12ED1FBFB00C0041E /* XCRemoteSwiftPackageReference "FluidAudio" */;
-			productName = FluidAudio;
-		};
-		18F0AA4A2F90A11100A1B2C3 /* SpeakerKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18E328F52E894C3D0026327D /* XCRemoteSwiftPackageReference "WhisperKit" */;
-			productName = SpeakerKit;
 		};
 		18F75FBD2FB79A2B00280269 /* TranscriptionCore */ = {
 			isa = XCSwiftPackageProductDependency;

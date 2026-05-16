@@ -8,7 +8,6 @@
 import Foundation
 import AppGroup
 import CloudTranscription
-@preconcurrency import FluidAudio
 import LocalTranscription
 import SwiftUI
 import TranscriptionCore
@@ -216,11 +215,10 @@ class TranscriptionManager {
             guard let parakeetModel = model as? ParakeetModel else {
                 throw TranscriptionError.unsupportedModel
             }
-            let version: ParakeetModelVersion = (parakeetModel.version == .v2) ? .v2 : .v3
             return .parakeet(
                 modelName: parakeetModel.name,
                 displayName: parakeetModel.displayName,
-                version: version,
+                version: parakeetModel.version,
                 options: .init(isVADEnabled: isVADEnabled, vocabulary: parakeetVocabularyIfEnabled())
             )
 
