@@ -24,125 +24,125 @@ struct AppGroupCoordinatorStateTests {
     // MARK: - Audio Level Tests
 
     @Test func audioLevel_clampsNegativeToZero() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.updateAudioLevel(-0.5)
+        sut.updateAudioLevel(-0.5)
 
-        #expect(coordinator.currentAudioLevel == 0.0)
+        #expect(sut.currentAudioLevel == 0.0)
     }
 
     @Test func audioLevel_clampsAboveOneToOne() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.updateAudioLevel(1.5)
+        sut.updateAudioLevel(1.5)
 
-        #expect(coordinator.currentAudioLevel == 1.0)
+        #expect(sut.currentAudioLevel == 1.0)
     }
 
     @Test func audioLevel_normalValueStored() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.updateAudioLevel(0.7)
+        sut.updateAudioLevel(0.7)
 
-        #expect(abs(coordinator.currentAudioLevel - 0.7) < 0.001)
+        #expect(abs(sut.currentAudioLevel - 0.7) < 0.001)
     }
 
     @Test func audioLevel_defaultIsZero() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        #expect(coordinator.currentAudioLevel == 0.0)
+        #expect(sut.currentAudioLevel == 0.0)
     }
 
     // MARK: - Transcription Status Tests
 
     @Test func transcriptionStatus_roundTrips() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
         let statuses: [AppGroupCoordinator.TranscriptionStatus] = [
             .idle, .recording, .transcribing, .enhancing, .completed, .error
         ]
 
         for status in statuses {
-            coordinator.updateTranscriptionStatus(status)
-            #expect(coordinator.transcriptionStatus == status)
+            sut.updateTranscriptionStatus(status)
+            #expect(sut.transcriptionStatus == status)
         }
     }
 
     @Test func transcriptionStatus_defaultIsIdle() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        #expect(coordinator.transcriptionStatus == .idle)
+        #expect(sut.transcriptionStatus == .idle)
     }
 
     @Test func transcriptionStatus_invalidString_returnsIdle() {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defaults.set("garbage_status", forKey: "transcriptionStatus")
-        let coordinator = AppGroupCoordinator(userDefaults: defaults)
+        let sut = AppGroupCoordinator(userDefaults: defaults)
 
-        #expect(coordinator.transcriptionStatus == .idle)
+        #expect(sut.transcriptionStatus == .idle)
     }
 
     // MARK: - Recording State Tests
 
     @Test func recordingState_setAndGet() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.updateRecordingState(true)
-        #expect(coordinator.isRecording == true)
+        sut.updateRecordingState(true)
+        #expect(sut.isRecording == true)
 
-        coordinator.updateRecordingState(false)
-        #expect(coordinator.isRecording == false)
+        sut.updateRecordingState(false)
+        #expect(sut.isRecording == false)
     }
 
     // MARK: - Transcribed Text Sharing Tests
 
     @Test func shareTranscribedText_storesAndSetsCompleted() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.shareTranscribedText("Hello world")
+        sut.shareTranscribedText("Hello world")
 
-        #expect(coordinator.transcriptionStatus == .completed)
+        #expect(sut.transcriptionStatus == .completed)
     }
 
     @Test func getAndConsumeTranscribedText_retrievesAndClears() {
-        let coordinator = makeCoordinator()
-        coordinator.shareTranscribedText("Test text")
+        let sut = makeCoordinator()
+        sut.shareTranscribedText("Test text")
 
-        let text = coordinator.getAndConsumeTranscribedText()
-        let textAgain = coordinator.getAndConsumeTranscribedText()
+        let text = sut.getAndConsumeTranscribedText()
+        let textAgain = sut.getAndConsumeTranscribedText()
 
         #expect(text == "Test text")
         #expect(textAgain == nil)
     }
 
     @Test func getAndConsumeTranscribedText_setsStatusIdle() {
-        let coordinator = makeCoordinator()
-        coordinator.shareTranscribedText("Test text")
+        let sut = makeCoordinator()
+        sut.shareTranscribedText("Test text")
 
-        _ = coordinator.getAndConsumeTranscribedText()
+        _ = sut.getAndConsumeTranscribedText()
 
-        #expect(coordinator.transcriptionStatus == .idle)
+        #expect(sut.transcriptionStatus == .idle)
     }
 
     // MARK: - Clipboard Context Tests
 
     @Test func getAndConsumeClipboardContext_retrievesAndClears() {
-        let coordinator = makeCoordinator()
-        coordinator.setKeyboardClipboardContext("clipboard content")
+        let sut = makeCoordinator()
+        sut.setKeyboardClipboardContext("clipboard content")
 
-        let text = coordinator.getAndConsumeKeyboardClipboardContext()
-        let textAgain = coordinator.getAndConsumeKeyboardClipboardContext()
+        let text = sut.getAndConsumeKeyboardClipboardContext()
+        let textAgain = sut.getAndConsumeKeyboardClipboardContext()
 
         #expect(text == "clipboard content")
         #expect(textAgain == nil)
     }
 
     @Test func setKeyboardClipboardContext_nil_clears() {
-        let coordinator = makeCoordinator()
-        coordinator.setKeyboardClipboardContext("something")
-        coordinator.setKeyboardClipboardContext(nil)
+        let sut = makeCoordinator()
+        sut.setKeyboardClipboardContext("something")
+        sut.setKeyboardClipboardContext(nil)
 
-        let text = coordinator.getAndConsumeKeyboardClipboardContext()
+        let text = sut.getAndConsumeKeyboardClipboardContext()
         #expect(text == nil)
     }
 }

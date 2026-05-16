@@ -24,34 +24,34 @@ struct AppGroupCoordinatorSessionTests {
     // MARK: - Activate / Deactivate Session
 
     @Test func activateKeyboardSession_setsActiveAndExpiry() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.activateKeyboardSession(timeoutSeconds: 60)
+        sut.activateKeyboardSession(timeoutSeconds: 60)
 
-        #expect(coordinator.isKeyboardSessionActive == true)
+        #expect(sut.isKeyboardSessionActive == true)
     }
 
     @Test func deactivateKeyboardSession_clearsState() {
-        let coordinator = makeCoordinator()
-        coordinator.activateKeyboardSession(timeoutSeconds: 60)
+        let sut = makeCoordinator()
+        sut.activateKeyboardSession(timeoutSeconds: 60)
 
-        coordinator.deactivateKeyboardSession()
+        sut.deactivateKeyboardSession()
 
-        #expect(coordinator.isKeyboardSessionActive == false)
+        #expect(sut.isKeyboardSessionActive == false)
     }
 
     @Test func isKeyboardSessionActive_notActivated_false() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        #expect(coordinator.isKeyboardSessionActive == false)
+        #expect(sut.isKeyboardSessionActive == false)
     }
 
     @Test func isKeyboardSessionActive_activated_true() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.activateKeyboardSession(timeoutSeconds: 300)
+        sut.activateKeyboardSession(timeoutSeconds: 300)
 
-        #expect(coordinator.isKeyboardSessionActive == true)
+        #expect(sut.isKeyboardSessionActive == true)
     }
 
     // MARK: - Refresh Session Expiry
@@ -59,13 +59,13 @@ struct AppGroupCoordinatorSessionTests {
     @Test func refreshSessionExpiry_extendsTimeout() {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        let coordinator = AppGroupCoordinator(userDefaults: defaults)
+        let sut = AppGroupCoordinator(userDefaults: defaults)
 
-        coordinator.activateKeyboardSession(timeoutSeconds: 10)
+        sut.activateKeyboardSession(timeoutSeconds: 10)
         let oldExpiry = defaults.double(forKey: "keyboardSessionExpiryTime")
 
         // Small delay to ensure new expiry is later
-        coordinator.refreshKeyboardSessionExpiry(timeoutSeconds: 60)
+        sut.refreshKeyboardSessionExpiry(timeoutSeconds: 60)
         let newExpiry = defaults.double(forKey: "keyboardSessionExpiryTime")
 
         #expect(newExpiry >= oldExpiry)
@@ -74,9 +74,9 @@ struct AppGroupCoordinatorSessionTests {
     @Test func refreshSessionExpiry_inactiveSession_noOp() {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        let coordinator = AppGroupCoordinator(userDefaults: defaults)
+        let sut = AppGroupCoordinator(userDefaults: defaults)
 
-        coordinator.refreshKeyboardSessionExpiry(timeoutSeconds: 60)
+        sut.refreshKeyboardSessionExpiry(timeoutSeconds: 60)
 
         let expiry = defaults.double(forKey: "keyboardSessionExpiryTime")
         #expect(expiry == 0)
@@ -85,31 +85,31 @@ struct AppGroupCoordinatorSessionTests {
     // MARK: - Settings Flags
 
     @Test func settingsFlags_defaultValues() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        #expect(coordinator.isSmartFormattingOnPasteEnabled == true)
-        #expect(coordinator.isKeepTranscriptInClipboardEnabled == false)
-        #expect(coordinator.isSpeakerDiarizationEnabled == false)
-        #expect(coordinator.isKeyboardHapticFeedbackEnabled == true)
-        #expect(coordinator.isKeyboardSoundFeedbackEnabled == true)
+        #expect(sut.isSmartFormattingOnPasteEnabled == true)
+        #expect(sut.isKeepTranscriptInClipboardEnabled == false)
+        #expect(sut.isSpeakerDiarizationEnabled == false)
+        #expect(sut.isKeyboardHapticFeedbackEnabled == true)
+        #expect(sut.isKeyboardSoundFeedbackEnabled == true)
     }
 
     @Test func settingsFlags_setAndGet() {
-        let coordinator = makeCoordinator()
+        let sut = makeCoordinator()
 
-        coordinator.isSmartFormattingOnPasteEnabled = false
-        #expect(coordinator.isSmartFormattingOnPasteEnabled == false)
+        sut.isSmartFormattingOnPasteEnabled = false
+        #expect(sut.isSmartFormattingOnPasteEnabled == false)
 
-        coordinator.isKeepTranscriptInClipboardEnabled = true
-        #expect(coordinator.isKeepTranscriptInClipboardEnabled == true)
+        sut.isKeepTranscriptInClipboardEnabled = true
+        #expect(sut.isKeepTranscriptInClipboardEnabled == true)
 
-        coordinator.isSpeakerDiarizationEnabled = true
-        #expect(coordinator.isSpeakerDiarizationEnabled == true)
+        sut.isSpeakerDiarizationEnabled = true
+        #expect(sut.isSpeakerDiarizationEnabled == true)
 
-        coordinator.isKeyboardHapticFeedbackEnabled = false
-        #expect(coordinator.isKeyboardHapticFeedbackEnabled == false)
+        sut.isKeyboardHapticFeedbackEnabled = false
+        #expect(sut.isKeyboardHapticFeedbackEnabled == false)
 
-        coordinator.isKeyboardSoundFeedbackEnabled = false
-        #expect(coordinator.isKeyboardSoundFeedbackEnabled == false)
+        sut.isKeyboardSoundFeedbackEnabled = false
+        #expect(sut.isKeyboardSoundFeedbackEnabled == false)
     }
 }

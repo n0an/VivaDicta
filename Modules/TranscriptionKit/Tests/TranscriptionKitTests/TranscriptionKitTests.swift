@@ -12,13 +12,13 @@ import TranscriptionCore
 struct TranscriptionEngineTests {
 
     /// `unloadLocalModels()` is idempotent and safe to call on a freshly
-    /// constructed engine. Smoke test that hits the actor methods without
+    /// constructed sut. Smoke test that hits the actor methods without
     /// touching real models.
     @Test func unloadOnFreshEngineDoesNotThrow() async {
-        let engine = TranscriptionEngine()
-        await engine.unloadLocalModels()
+        let sut = TranscriptionEngine()
+        await sut.unloadLocalModels()
         // Second call should also be a no-op.
-        await engine.unloadLocalModels()
+        await sut.unloadLocalModels()
     }
 
     @Test func injectedFactoryReceivesProviderAndProgress() async throws {
@@ -28,12 +28,12 @@ struct TranscriptionEngineTests {
         let expectedAudio = URL(fileURLWithPath: "/tmp/test.wav")
         let received = ProviderCapture()
 
-        let engine = TranscriptionEngine { provider, progress in
+        let sut = TranscriptionEngine { provider, progress in
             received.set(provider: provider, progressIsNonNil: progress != nil)
             return mock
         }
 
-        let result = try await engine.transcribe(
+        let result = try await sut.transcribe(
             audioURL: expectedAudio,
             using: .openAI(.init(apiKey: "test-key", modelName: "whisper-1"))
         )
@@ -50,12 +50,12 @@ struct TranscriptionEngineTests {
         mock.stubTranscribeResponse = .success(.plain("ok"))
 
         let capture = ProviderCapture()
-        let engine = TranscriptionEngine { provider, progress in
+        let sut = TranscriptionEngine { provider, progress in
             capture.set(provider: provider, progressIsNonNil: progress != nil)
             return mock
         }
 
-        _ = try await engine.transcribe(
+        _ = try await sut.transcribe(
             audioURL: URL(fileURLWithPath: "/tmp/audio.wav"),
             using: .parakeet(
                 modelName: "parakeet-v3",
@@ -73,10 +73,10 @@ struct TranscriptionEngineTests {
         let mock = MockTranscriptionService()
         mock.stubTranscribeResponse = .failure(StubError())
 
-        let engine = TranscriptionEngine { _, _ in mock }
+        let sut = TranscriptionEngine { _, _ in mock }
 
         await #expect(throws: StubError.self) {
-            _ = try await engine.transcribe(
+            _ = try await sut.transcribe(
                 audioURL: URL(fileURLWithPath: "/tmp/a.wav"),
                 using: .openAI(.init(apiKey: "k", modelName: "whisper-1"))
             )
@@ -88,9 +88,9 @@ struct TranscriptionEngineTests {
         let mock = MockWhisperKitTranscriptionService()
         mock.stubTranscribeResponse = .success(.plain("whisper output"))
 
-        let engine = TranscriptionEngine { _, _ in mock }
+        let sut = TranscriptionEngine { _, _ in mock }
 
-        let result = try await engine.transcribe(
+        let result = try await sut.transcribe(
             audioURL: URL(fileURLWithPath: "/tmp/wk.wav"),
             using: .whisperKit(
                 modelName: "openai_whisper-tiny",
