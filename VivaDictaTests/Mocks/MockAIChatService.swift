@@ -85,4 +85,46 @@ final class MockAIChatService: AIChatService {
         }
         return try stubMakeChatStreamingRequestResult.get()
     }
+
+    // MARK: - makeCrossNoteSearchToolDecision
+
+    var stubMakeCrossNoteSearchToolDecisionResult: Result<String?, Error> = .success(nil)
+    var makeCrossNoteSearchToolDecisionCallCount = 0
+    var lastMakeCrossNoteSearchToolDecisionCapture: ChatRequestCapture?
+    func makeCrossNoteSearchToolDecision(
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]]
+    ) async throws -> String? {
+        makeCrossNoteSearchToolDecisionCallCount += 1
+        lastMakeCrossNoteSearchToolDecisionCapture = ChatRequestCapture(
+            provider: provider,
+            model: model,
+            systemMessage: systemMessage,
+            messages: messages
+        )
+        return try stubMakeCrossNoteSearchToolDecisionResult.get()
+    }
+
+    // MARK: - makeWebSearchToolDecision
+
+    var stubMakeWebSearchToolDecisionResult: Result<String?, Error> = .success(nil)
+    var makeWebSearchToolDecisionCallCount = 0
+    var lastMakeWebSearchToolDecisionCapture: ChatRequestCapture?
+    func makeWebSearchToolDecision(
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]]
+    ) async throws -> String? {
+        makeWebSearchToolDecisionCallCount += 1
+        lastMakeWebSearchToolDecisionCapture = ChatRequestCapture(
+            provider: provider,
+            model: model,
+            systemMessage: systemMessage,
+            messages: messages
+        )
+        return try stubMakeWebSearchToolDecisionResult.get()
+    }
 }

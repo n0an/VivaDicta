@@ -32,6 +32,26 @@ protocol AIChatService: AnyObject {
         systemMessage: String,
         messages: [[String: String]]
     ) async throws -> String
+
+    /// Lets the model decide whether to invoke a cross-note search tool.
+    /// Returns the focused search query, or `nil` if the model decides not
+    /// to search this turn.
+    func makeCrossNoteSearchToolDecision(
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]]
+    ) async throws -> String?
+
+    /// Lets the model decide whether to invoke the web search tool.
+    /// Returns the focused search query, or `nil` if the model decides not
+    /// to search this turn.
+    func makeWebSearchToolDecision(
+        provider: AIProvider,
+        model: String,
+        systemMessage: String,
+        messages: [[String: String]]
+    ) async throws -> String?
 }
 
 extension AIService: AIChatService {}

@@ -46,7 +46,7 @@ enum CrossNoteSearchPlanner {
     private static let logger = Logger(category: .chatViewModel)
 
     static func makePlan(
-        aiService: AIService,
+        aiService: any AIChatService,
         provider: AIProvider,
         model: String,
         noteText: String,
@@ -121,7 +121,7 @@ enum CrossNoteSearchPlanner {
     }
 
     private static func makeCloudPlan(
-        aiService: AIService,
+        aiService: any AIChatService,
         provider: AIProvider,
         model: String,
         noteText: String,
