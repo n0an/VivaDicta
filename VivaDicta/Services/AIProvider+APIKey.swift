@@ -12,7 +12,7 @@ import Keychain
 // without forcing every consumer of `AIProvider.apiKey` to inject one.
 // `AIProvider` is a domain enum used in non-DI contexts (data models,
 // view models) that don't have a ready `AppDependencies` reference.
-private let keychain: any KeychainService = KeychainServiceImpl()
+private let keychain: any KeychainService = DefaultKeychainService()
 
 extension AIProvider {
     /// Reads this provider's API key from the Keychain.

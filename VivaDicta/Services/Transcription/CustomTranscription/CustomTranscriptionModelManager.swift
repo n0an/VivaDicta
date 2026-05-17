@@ -13,7 +13,7 @@ import os
 @Observable
 @MainActor
 final class CustomTranscriptionModelManager {
-    static let shared = CustomTranscriptionModelManager(keychain: KeychainServiceImpl())
+    static let shared = CustomTranscriptionModelManager(keychain: DefaultKeychainService())
 
     private let logger = Logger(category: .customTranscriptionService)
     private let keychain: any KeychainService

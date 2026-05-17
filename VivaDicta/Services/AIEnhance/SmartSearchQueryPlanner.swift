@@ -46,7 +46,7 @@ enum SmartSearchQueryPlanner {
     private static let logger = Logger(category: .smartSearchChat)
 
     static func makePlan(
-        aiService: AIService,
+        aiService: any AIChatService,
         provider: AIProvider,
         model: String,
         recentMessages: [SmartSearchQueryPlannerMessage],
@@ -116,7 +116,7 @@ enum SmartSearchQueryPlanner {
     }
 
     private static func makeCloudPlan(
-        aiService: AIService,
+        aiService: any AIChatService,
         provider: AIProvider,
         model: String,
         recentMessages: [SmartSearchQueryPlannerMessage],

@@ -61,7 +61,7 @@ final class LiveTranslationService {
     private var sessionStartedAt: Date?
     private(set) var sessionTargetLanguage: LiveTranslationLanguage = .english
 
-    init(keychain: any KeychainService = KeychainServiceImpl()) {
+    init(keychain: any KeychainService = DefaultKeychainService()) {
         self.keychain = keychain
         self.audio = LiveTranslationAudio()
         self.audio.playbackRate = LiveTranslationPreferences.ttsRate

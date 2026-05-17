@@ -105,7 +105,7 @@ final class SmartSearchChatViewModel {
     // MARK: - Dependencies
 
     let conversation: SmartSearchConversation
-    private let aiService: AIService
+    private let aiService: any AIChatService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
@@ -114,7 +114,7 @@ final class SmartSearchChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: SmartSearchConversation, aiService: AIService, modelContext: ModelContext) {
+    init(conversation: SmartSearchConversation, aiService: any AIChatService, modelContext: ModelContext) {
         self.conversation = conversation
         self.aiService = aiService
         self.modelContext = modelContext

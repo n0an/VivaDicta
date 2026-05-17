@@ -186,7 +186,7 @@ class AIService {
         return service
     }
 
-    init(keychain: any KeychainService = KeychainServiceImpl()) {
+    init(keychain: any KeychainService = DefaultKeychainService()) {
         self.keychain = keychain
         self.userDefaults = UserDefaultsStorage.shared
         self.modesStorageKey = AppGroupCoordinator.vivaModesKey
@@ -227,7 +227,7 @@ class AIService {
     }
 
     /// Test-only initializer with injectable UserDefaults and no network side effects.
-    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainService = KeychainServiceImpl()) {
+    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainService = DefaultKeychainService()) {
         self.keychain = keychain
         self.userDefaults = userDefaults
         self.modesStorageKey = modesStorageKey

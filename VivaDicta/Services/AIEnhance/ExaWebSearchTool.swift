@@ -261,7 +261,7 @@ private enum ExaError: LocalizedError {
 
 enum ExaAPIKeyManager {
     static let keychainKey = "exaAPIKey"
-    private static let keychain: any KeychainService = KeychainServiceImpl()
+    private static let keychain: any KeychainService = DefaultKeychainService()
 
     static var apiKey: String? {
         keychain.getString(forKey: keychainKey)
