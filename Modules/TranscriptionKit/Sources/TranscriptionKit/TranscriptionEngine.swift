@@ -12,6 +12,12 @@ import TranscriptionCore
 /// The protocol is intentionally `Sendable` and not `@MainActor`-isolated:
 /// consumers on any actor (CLI tools, server contexts, view models on
 /// other actors) can use it without being forced onto the main thread.
+///
+/// The protocol surface intentionally excludes lifecycle/cache APIs such
+/// as `unloadLocalModels()`. Those live on ``DefaultTranscriptionEngine``
+/// directly - callers that need to manage the local-model cache should
+/// hold the concrete type. If a future consumer needs cache control
+/// through the protocol, add it here.
 public protocol TranscriptionEngine: Sendable {
     /// Transcribe `audioURL` using the backend described by `provider`.
     ///
