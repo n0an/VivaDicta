@@ -51,6 +51,7 @@
 		18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A392FB85C2300280269 /* AppGroup */; };
 		18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3B2FB85C2A00280269 /* AppGroup */; };
 		18F76D862FB8617C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76D852FB8617C00280269 /* AppGroup */; };
+		E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */ = {isa = PBXBuildFile; productRef = F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -523,6 +524,7 @@
 				18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */,
 				18F76A342FB85C0B00280269 /* AppGroup in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
+				E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -758,6 +760,7 @@
 				18F75FC32FB79A4400280269 /* CloudTranscription */,
 				18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */,
 				18F76A332FB85C0B00280269 /* AppGroup */,
+				F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2796,6 +2799,10 @@
 		18F76D852FB8617C00280269 /* AppGroup */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppGroup;
+		};
+		F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TranscriptionKitMocks;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -15,7 +15,7 @@ struct TranscriptionEngineTests {
     /// constructed sut. Smoke test that hits the actor methods without
     /// touching real models.
     @Test func unloadOnFreshEngineDoesNotThrow() async {
-        let sut = TranscriptionEngine()
+        let sut = DefaultTranscriptionEngine()
         await sut.unloadLocalModels()
         // Second call should also be a no-op.
         await sut.unloadLocalModels()
@@ -28,7 +28,7 @@ struct TranscriptionEngineTests {
         let expectedAudio = URL(fileURLWithPath: "/tmp/test.wav")
         let received = ProviderCapture()
 
-        let sut = TranscriptionEngine { provider, progress in
+        let sut = DefaultTranscriptionEngine { provider, progress in
             received.set(provider: provider, progressIsNonNil: progress != nil)
             return mock
         }
@@ -50,7 +50,7 @@ struct TranscriptionEngineTests {
         mock.stubTranscribeResponse = .success(.plain("ok"))
 
         let capture = ProviderCapture()
-        let sut = TranscriptionEngine { provider, progress in
+        let sut = DefaultTranscriptionEngine { provider, progress in
             capture.set(provider: provider, progressIsNonNil: progress != nil)
             return mock
         }
@@ -73,7 +73,7 @@ struct TranscriptionEngineTests {
         let mock = MockTranscriptionService()
         mock.stubTranscribeResponse = .failure(StubError())
 
-        let sut = TranscriptionEngine { _, _ in mock }
+        let sut = DefaultTranscriptionEngine { _, _ in mock }
 
         await #expect(throws: StubError.self) {
             _ = try await sut.transcribe(
@@ -88,7 +88,7 @@ struct TranscriptionEngineTests {
         let mock = MockWhisperKitTranscriptionService()
         mock.stubTranscribeResponse = .success(.plain("whisper output"))
 
-        let sut = TranscriptionEngine { _, _ in mock }
+        let sut = DefaultTranscriptionEngine { _, _ in mock }
 
         let result = try await sut.transcribe(
             audioURL: URL(fileURLWithPath: "/tmp/wk.wav"),

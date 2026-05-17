@@ -9,7 +9,7 @@ import TestUtilities
 /// transcription services. Stub the result via `stubTranscribeResponse`.
 ///
 /// Conforms to `TranscriptionService` so it can be returned from a
-/// `TranscriptionEngine.ServiceFactory` to test engine-level routing.
+/// `DefaultTranscriptionEngine.ServiceFactory` to test engine-level routing.
 public final class MockTranscriptionService: TranscriptionService, @unchecked Sendable {
 
     public init() {}

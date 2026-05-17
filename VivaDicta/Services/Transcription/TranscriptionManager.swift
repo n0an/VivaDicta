@@ -33,7 +33,11 @@ import os
 class TranscriptionManager {
     private let logger = Logger(category: .transcriptionManager)
 
-    private let engine = TranscriptionEngine()
+    private let engine: any TranscriptionEngine
+
+    init(engine: any TranscriptionEngine = DefaultTranscriptionEngine()) {
+        self.engine = engine
+    }
 
     /// The currently active transcription mode determining which model to use.
     private(set) var currentMode: VivaMode = .defaultMode

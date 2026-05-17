@@ -11,7 +11,7 @@ import TranscriptionCore
 ///
 /// Also conforms to `TranscriptionService` (the unified
 /// `transcribe(audioURL:)` entry point) so it can be returned from a
-/// `TranscriptionEngine.ServiceFactory` to test engine-level routing. The
+/// `DefaultTranscriptionEngine.ServiceFactory` to test engine-level routing. The
 /// protocol path delegates to the same stub as the type-specific signature
 /// but ignores the model/options captures.
 public final class MockWhisperKitTranscriptionService: TranscriptionService, @unchecked Sendable {

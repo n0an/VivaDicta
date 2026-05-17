@@ -10,12 +10,14 @@ let package = Package(
     ],
     products: [
         .library(name: "TranscriptionKit", targets: ["TranscriptionKit"]),
+        .library(name: "TranscriptionKitMocks", targets: ["TranscriptionKitMocks"]),
     ],
     dependencies: [
         .package(path: "../TranscriptionCore"),
         .package(path: "../CloudTranscription"),
         .package(path: "../LocalTranscription"),
         .package(path: "../Networking"),
+        .package(path: "../TestUtilities"),
     ],
     targets: [
         .target(
@@ -31,6 +33,14 @@ let package = Package(
                 // SPM doesn't propagate this transitive conformance link
                 // through the umbrella in every build context.
                 .product(name: "Networking", package: "Networking"),
+            ]
+        ),
+        .target(
+            name: "TranscriptionKitMocks",
+            dependencies: [
+                "TranscriptionKit",
+                .product(name: "TranscriptionCore", package: "TranscriptionCore"),
+                .product(name: "TestUtilities", package: "TestUtilities"),
             ]
         ),
         .testTarget(
