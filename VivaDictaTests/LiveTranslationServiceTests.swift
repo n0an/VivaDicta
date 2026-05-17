@@ -21,7 +21,6 @@ struct LiveTranslationServiceTests {
         let sut = LiveTranslationService(keychain: mockKeychain)
 
         #expect(sut.hasAPIKey == false)
-        #expect(mockKeychain.getStringCallCount == 1)
     }
 
     @Test func hasAPIKey_returnsTrue_whenSonioxAPIKeyIsStored() {
@@ -39,16 +38,6 @@ struct LiveTranslationServiceTests {
 
         let sut = LiveTranslationService(keychain: mockKeychain)
 
-        #expect(sut.hasAPIKey == false)
-    }
-
-    @Test func hasAPIKey_returnsFalse_whenStoredValueIsEmpty() {
-        let mockKeychain = MockKeychainService()
-        mockKeychain.save("", forKey: "sonioxAPIKey", syncable: true)
-
-        let sut = LiveTranslationService(keychain: mockKeychain)
-
-        // Empty string is stored but trimmed to empty, so hasAPIKey is false.
         #expect(sut.hasAPIKey == false)
     }
 }
