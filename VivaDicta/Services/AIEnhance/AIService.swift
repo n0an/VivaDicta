@@ -42,8 +42,11 @@ import CloudTranscription
 ///
 /// ## Thread Safety
 ///
-/// This class is marked with `@Observable` for SwiftUI integration. API key operations
-/// and provider refreshing should be performed on the main actor.
+/// This class is marked with `@Observable` for SwiftUI integration and is
+/// `@MainActor`-isolated: API key operations, provider refreshing, and all
+/// chat-routing methods must run on the main actor. The `AIChatService`
+/// protocol's `@MainActor` requirement matches this isolation.
+@MainActor
 @Observable
 class AIService {
     private let logger = Logger(category: .aiService)
