@@ -12,7 +12,7 @@ import os
 
 /// One-time migration of API keys from UserDefaults (App Group) to Keychain (iCloud sync).
 final class APIKeyMigrationService: Sendable {
-    static let shared = APIKeyMigrationService(keychain: KeychainServiceImpl())
+    static let shared = APIKeyMigrationService(keychain: DefaultKeychainService())
 
     private let keychain: any KeychainService
     private let logger = Logger(category: .keychainService)

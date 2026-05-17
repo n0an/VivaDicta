@@ -42,8 +42,11 @@ import CloudTranscription
 ///
 /// ## Thread Safety
 ///
-/// This class is marked with `@Observable` for SwiftUI integration. API key operations
-/// and provider refreshing should be performed on the main actor.
+/// This class is marked with `@Observable` for SwiftUI integration and is
+/// `@MainActor`-isolated: API key operations, provider refreshing, and all
+/// chat-routing methods must run on the main actor. The `AIChatService`
+/// protocol's `@MainActor` requirement matches this isolation.
+@MainActor
 @Observable
 class AIService {
     private let logger = Logger(category: .aiService)
@@ -186,7 +189,7 @@ class AIService {
         return service
     }
 
-    init(keychain: any KeychainService = KeychainServiceImpl()) {
+    init(keychain: any KeychainService = DefaultKeychainService()) {
         self.keychain = keychain
         self.userDefaults = UserDefaultsStorage.shared
         self.modesStorageKey = AppGroupCoordinator.vivaModesKey
@@ -227,7 +230,7 @@ class AIService {
     }
 
     /// Test-only initializer with injectable UserDefaults and no network side effects.
-    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainService = KeychainServiceImpl()) {
+    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainService = DefaultKeychainService()) {
         self.keychain = keychain
         self.userDefaults = userDefaults
         self.modesStorageKey = modesStorageKey

@@ -12,7 +12,7 @@ import os
 enum VivAgentsClient {
 
     private static let logger = Logger(category: .vivAgentsClient)
-    private static let keychain: any KeychainService = KeychainServiceImpl()
+    private static let keychain: any KeychainService = DefaultKeychainService()
 
     struct EnhanceRequest: Encodable {
         let text: String

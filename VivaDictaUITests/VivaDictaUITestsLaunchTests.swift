@@ -9,10 +9,6 @@ import XCTest
 
 final class VivaDictaUITestsLaunchTests: XCTestCase {
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
-        false
-    }
-
     override func setUpWithError() throws {
         continueAfterFailure = false
     }

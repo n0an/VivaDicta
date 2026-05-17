@@ -1,5 +1,5 @@
 //
-//  KeychainServiceImpl.swift
+//  DefaultKeychainService.swift
 //  Keychain
 //
 //  Created by Anton Novoselov on 2026.05.15
@@ -12,14 +12,14 @@ import Security
 /// Production keychain implementation. The default `service` value must match
 /// the macOS VivaDicta app for iCloud Keychain sync to work; do not change it
 /// without coordinating across both platforms.
-public final class KeychainServiceImpl: KeychainService, Sendable {
+public final class DefaultKeychainService: KeychainService, Sendable {
 
     public static let defaultService = "com.antonnovoselov.VivaDicta"
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "KeychainService")
     private let service: String
 
-    public init(service: String = KeychainServiceImpl.defaultService) {
+    public init(service: String = DefaultKeychainService.defaultService) {
         self.service = service
     }
 
