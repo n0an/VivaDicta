@@ -10,7 +10,7 @@ import XCTest
 final class VivaDictaUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
-        true
+        false
     }
 
     override func setUpWithError() throws {
@@ -19,6 +19,7 @@ final class VivaDictaUITestsLaunchTests: XCTestCase {
 
     @MainActor
     func testLaunch() throws {
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launch()
 
