@@ -133,7 +133,7 @@ final class MultiNoteChatViewModel {
     // MARK: - Dependencies
 
     let conversation: MultiNoteConversation
-    private let aiService: AIService
+    private let aiService: any AIChatService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private let notesSearchToolCaptureID = UUID()
@@ -150,7 +150,7 @@ final class MultiNoteChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: MultiNoteConversation, aiService: AIService, modelContext: ModelContext) {
+    init(conversation: MultiNoteConversation, aiService: any AIChatService, modelContext: ModelContext) {
         self.conversation = conversation
         self.aiService = aiService
         self.modelContext = modelContext

@@ -142,7 +142,7 @@ final class ChatViewModel {
 
     let conversation: ChatConversation
     let transcription: Transcription
-    private let aiService: AIService
+    private let aiService: any AIChatService
     private let modelContext: ModelContext
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
@@ -159,7 +159,7 @@ final class ChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: ChatConversation, transcription: Transcription, aiService: AIService, modelContext: ModelContext) {
+    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext) {
         self.conversation = conversation
         self.transcription = transcription
         self.aiService = aiService
