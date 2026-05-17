@@ -1214,7 +1214,7 @@ struct TranscriptionDetailView: View {
                     modelContext: modelContext
                 )
 
-                guard !Task.isCancelled else { return }
+                try Task.checkCancellation()
                 processingState = .idle
                 showExtractedRemindersSheet = true
             } catch is CancellationError {
