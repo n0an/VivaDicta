@@ -177,7 +177,6 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
                 throw CloudTranscriptionError.apiRequestFailed(statusCode: 504, message: "Transcription timed out")
             }
 
-            try Task.checkCancellation()
             try await Task.sleep(for: .nanoseconds(pollIntervalNanoseconds))
         }
     }

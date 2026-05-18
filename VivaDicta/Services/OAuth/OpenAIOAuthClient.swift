@@ -222,7 +222,6 @@ enum OpenAIOAuthClient {
 
         var result = ""
         for try await line in bytes.lines {
-            try Task.checkCancellation()
             guard line.hasPrefix("data: ") else { continue }
             let jsonStr = String(line.dropFirst(6))
             if jsonStr == "[DONE]" { break }
