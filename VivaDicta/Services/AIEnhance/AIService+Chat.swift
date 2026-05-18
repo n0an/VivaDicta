@@ -516,8 +516,6 @@ extension AIService {
         let body = buildOpenAIChatRequestBody(model: model, systemMessage: systemMessage, messages: messages, stream: true)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -535,7 +533,6 @@ extension AIService {
 
         var aggregatedText = ""
         for try await line in bytes.lines {
-            try Task.checkCancellation()
             if let delta = Self.openAICompatibleStreamingDelta(from: line) {
                 aggregatedText += delta
                 onPartialResponse(aggregatedText)
@@ -572,8 +569,6 @@ extension AIService {
 
         let body = buildOpenAIChatRequestBody(model: model, systemMessage: systemMessage, messages: messages, stream: false)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-
-        try Task.checkCancellation()
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -630,8 +625,6 @@ extension AIService {
         body["tool_choice"] = "auto"
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        try Task.checkCancellation()
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -697,8 +690,6 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        try Task.checkCancellation()
-
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -761,8 +752,6 @@ extension AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -780,8 +769,6 @@ extension AIService {
 
         var aggregatedText = ""
         for try await line in bytes.lines {
-            try Task.checkCancellation()
-
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             guard !payload.isEmpty,
@@ -847,8 +834,6 @@ extension AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        try Task.checkCancellation()
-
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -896,8 +881,6 @@ extension AIService {
         ]
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        try Task.checkCancellation()
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -950,8 +933,6 @@ extension AIService {
         ]
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        try Task.checkCancellation()
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

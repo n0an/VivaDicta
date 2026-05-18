@@ -76,8 +76,6 @@ struct RecordAndReturnTranscriptionIntent: AppIntent {
         var consecutiveIdleTicks = 0
 
         while Date() < deadline {
-            try Task.checkCancellation()
-
             let status = coordinator.transcriptionStatus
 
             // The main app never writes `.recording` to `transcriptionStatus`;

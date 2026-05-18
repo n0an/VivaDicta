@@ -21,8 +21,6 @@ public enum LocalModelDownloader {
     /// Downloads (if not cached) and validates the Parakeet ASR model plus the
     /// VAD model for the given version. Progress is unified across both
     /// phases: ASR occupies 0.0...0.85, VAD occupies 0.85...1.0.
-    ///
-    /// Honors `Task.checkCancellation()` between phases.
     public static func downloadParakeet(
         version: ParakeetModelVersion,
         onProgress: @escaping ProgressHandler

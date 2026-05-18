@@ -179,8 +179,6 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -212,8 +210,6 @@ enum GeminiAPIClient {
         var bufferedDataLines: [String] = []
 
         for try await line in bytes.lines {
-            try Task.checkCancellation()
-
             if line.hasPrefix("data: ") {
                 bufferedDataLines.append(String(line.dropFirst(6)))
                 continue
@@ -353,8 +349,6 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -405,8 +399,6 @@ enum GeminiAPIClient {
         // the well-separated and the no-blank-line cases, and also gives
         // proper token-by-token streaming in the UI.
         for try await line in bytes.lines {
-            try Task.checkCancellation()
-
             guard line.hasPrefix("data: ") else { continue }
 
             let payload = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)

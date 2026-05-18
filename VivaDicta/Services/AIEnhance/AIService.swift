@@ -1032,8 +1032,6 @@ class AIService {
         )
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -1063,8 +1061,6 @@ class AIService {
 
         var aggregatedText = ""
         for try await line in bytes.lines {
-            try Task.checkCancellation()
-
             if let delta = Self.openAICompatibleStreamingDelta(from: line) {
                 aggregatedText += delta
                 onPartialResponse(aggregatedText)
@@ -1137,8 +1133,6 @@ class AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -1163,8 +1157,6 @@ class AIService {
 
         var aggregatedText = ""
         for try await line in bytes.lines {
-            try Task.checkCancellation()
-
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             guard payload.isEmpty == false,
@@ -1636,15 +1628,9 @@ class AIService {
             request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
             request.timeoutInterval = baseTimeout
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
-            
+
             do {
-                // Check for cancellation before making network request
-                try Task.checkCancellation()
-
                 let (data, response) = try await URLSession.shared.data(for: request)
-
-                // Check for cancellation after network request
-                try Task.checkCancellation()
 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw EnhancementError.invalidResponse
@@ -1698,13 +1684,7 @@ class AIService {
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
             do {
-                // Check for cancellation before making network request
-                try Task.checkCancellation()
-
                 let (data, response) = try await URLSession.shared.data(for: request)
-
-                // Check for cancellation after network request
-                try Task.checkCancellation()
 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw EnhancementError.invalidResponse
@@ -1741,7 +1721,7 @@ class AIService {
             }
         }
     }
-    
+
     // MARK: - System Message (Cloud Providers)
 
     /// Returns the Chinese script hint that should be appended to system messages,
@@ -1827,11 +1807,7 @@ class AIService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: finalRequestBody)
 
         do {
-            try Task.checkCancellation()
-
             let (data, response) = try await URLSession.shared.data(for: request)
-
-            try Task.checkCancellation()
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw EnhancementError.invalidResponse
@@ -2052,11 +2028,7 @@ class AIService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
         do {
-            try Task.checkCancellation()
-
             let (data, response) = try await URLSession.shared.data(for: request)
-
-            try Task.checkCancellation()
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw EnhancementError.invalidResponse

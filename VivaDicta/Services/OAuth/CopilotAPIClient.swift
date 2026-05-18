@@ -261,8 +261,6 @@ enum CopilotAPIClient {
         _ request: URLRequest,
         onPartialResult: @escaping @MainActor (String) -> Void
     ) async throws -> String {
-        try Task.checkCancellation()
-
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -285,8 +283,6 @@ enum CopilotAPIClient {
 
         var aggregatedText = ""
         for try await line in bytes.lines {
-            try Task.checkCancellation()
-
             if let delta = streamingDelta(from: line) {
                 aggregatedText += delta
                 onPartialResult(aggregatedText)
