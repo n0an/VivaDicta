@@ -34,6 +34,8 @@ public enum LocalModelDownloader {
             }
         )
 
+        try Task.checkCancellation()
+
         _ = try await VadManager(
             progressHandler: { progress in
                 onProgress(0.85 + progress.fractionCompleted * 0.15)
