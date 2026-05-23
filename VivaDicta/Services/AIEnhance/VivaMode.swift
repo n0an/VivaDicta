@@ -145,7 +145,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         transcriptionProvider = try container.decode(TranscriptionModelProvider.self, forKey: .transcriptionProvider)
-        transcriptionModel = try container.decode(String.self, forKey: .transcriptionModel)
+        let decodedTranscriptionModel = try container.decode(String.self, forKey: .transcriptionModel)
+        transcriptionModel = VivaMode.normalizedTranscriptionModelID(decodedTranscriptionModel, provider: transcriptionProvider)
         transcriptionLanguage = try container.decodeIfPresent(String.self, forKey: .transcriptionLanguage)
         translationTargetLanguage = try container.decodeIfPresent(String.self, forKey: .translationTargetLanguage)
         aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
@@ -193,6 +194,20 @@ struct VivaMode: Identifiable, Hashable, Codable {
         switch modelID {
         case "gemini-3-pro-preview":
             // Retired by Google; superseded by gemini-3.1-pro-preview.
+            return "gemini-3.1-pro-preview"
+        default:
+            return modelID
+        }
+    }
+
+    /// Same rewrite logic as `normalizedModelID(_:provider:)` but for the transcription model.
+    /// Without this, a saved mode pinned to a retired transcription model would fail
+    /// `TranscriptionManager.getCurrentTranscriptionModel()`'s exact lookup in `allCloudModels`
+    /// and the user would get `TranscriptionError.transcriptionFailed` before any network call.
+    static func normalizedTranscriptionModelID(_ modelID: String, provider: TranscriptionModelProvider) -> String {
+        guard provider == .gemini else { return modelID }
+        switch modelID {
+        case "gemini-3-pro-preview":
             return "gemini-3.1-pro-preview"
         default:
             return modelID

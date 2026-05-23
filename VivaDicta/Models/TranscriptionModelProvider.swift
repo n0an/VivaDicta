@@ -115,7 +115,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         switch self {
         case .groq: "whisper-large-v3-turbo"
         case .mistral: "voxtral-mini-latest"
-        case .gemini: "gemini-3-flash-preview"
+        case .gemini: "gemini-3.5-flash"
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-4o-mini-transcribe"
@@ -329,20 +329,42 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
 
             // Gemini Models
             CloudModel(
-                name: "gemini-3-pro-preview",
-                displayName: "Gemini 3 Pro",
-                description: "Google's latest multimodal model with enhanced transcription capabilities.",
+                name: "gemini-3.5-flash",
+                displayName: "Gemini 3.5 Flash",
+                description: "Google's latest stable fast multimodal model with strong transcription quality.",
                 provider: .gemini,
-                speed: 0.75,
+                speed: 0.92,
                 accuracy: 0.92,
                 cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
             CloudModel(
+                name: "gemini-3.1-pro-preview",
+                displayName: "Gemini 3.1 Pro (Preview)",
+                description: "Google's most capable Gemini model with advanced multimodal understanding.",
+                provider: .gemini,
+                speed: 0.7,
+                accuracy: 0.94,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "gemini-3.1-flash-lite",
+                displayName: "Gemini 3.1 Flash Lite",
+                description: "Google's fastest and cheapest model, designed for high-volume transcription.",
+                provider: .gemini,
+                speed: 0.95,
+                accuracy: 0.85,
+                cost: 0.15,  // Cheapest Gemini tier - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gemini-3-flash-preview",
-                displayName: "Gemini 3 Flash",
-                description: "Google's newest fast model combining intelligence with superior speed.",
+                displayName: "Gemini 3 Flash (Preview)",
+                description: "Earlier preview of Gemini 3 Flash combining intelligence with superior speed.",
                 provider: .gemini,
                 speed: 0.92,
                 accuracy: 0.9,
@@ -350,10 +372,12 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),
+            // Gemini 2.5 family is scheduled for shutdown on 2026-10-16 per Google's deprecation page.
+            // Kept for backward compatibility; plan migration of user selections before October.
             CloudModel(
                 name: "gemini-2.5-pro",
                 displayName: "Gemini 2.5 Pro",
-                description: "Google's advanced model with superior noise filtering and speaker diarization. Free tier available + $300 Google Cloud credits",
+                description: "Google's advanced 2.5-generation model with superior noise filtering and speaker diarization. Scheduled for shutdown 2026-10-16.",
                 provider: .gemini,
                 speed: 0.7,
                 accuracy: 0.92,
@@ -364,7 +388,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-2.5-flash",
                 displayName: "Gemini 2.5 Flash",
-                description: "Google's fastest model with 887 tokens/sec output and cost-effective batch processing. Free tier available + $300 Google Cloud credits",
+                description: "Google's fast 2.5-generation model with cost-effective batch processing. Scheduled for shutdown 2026-10-16.",
                 provider: .gemini,
                 speed: 0.9,
                 accuracy: 0.7,
