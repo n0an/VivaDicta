@@ -60,7 +60,7 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 
 - **`AIService`** — central service for all AI text processing. Uses `VivaMode` for per-mode configuration (provider, model, preset)
 - **`PromptsTemplates`** — unified system prompt template used by all providers (cloud and Apple FM)
-- **Providers**: OpenAI, Anthropic, Google Gemini, Mistral, Groq, OpenRouter, xAI, Ollama, Custom OpenAI-compatible, Apple Foundation Model (iOS 26+)
+- **Providers** (16 LLM/text providers, see `AIProvider.generalProviders`): OpenAI, Anthropic, Google Gemini, Groq, Cerebras, Mistral, xAI (Grok), OpenRouter, Z.AI, Kimi (Moonshot), Vercel AI Gateway, HuggingFace, GitHub Copilot, Ollama, Custom OpenAI-compatible, Apple Foundation Model (iOS 26+). Speech-only providers (ElevenLabs, Deepgram, Soniox, Gladia, Speechmatics, Cohere, Cartesia) also live in the `AIProvider` enum but are not used for text processing.
 - **`generateVariation(text:preset:)`** — generates AI output for a specific preset, returns `(text, duration)`
 - **`makeRequest()`** — core method routing to the correct provider. Accepts optional `systemMessage`/`preFormattedUserMessage` for variation generation with custom presets
 
