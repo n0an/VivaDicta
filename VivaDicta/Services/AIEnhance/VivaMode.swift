@@ -149,9 +149,15 @@ struct VivaMode: Identifiable, Hashable, Codable {
         transcriptionLanguage = try container.decodeIfPresent(String.self, forKey: .transcriptionLanguage)
         translationTargetLanguage = try container.decodeIfPresent(String.self, forKey: .translationTargetLanguage)
         aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
-        aiModel = try container.decode(String.self, forKey: .aiModel)
-        reminderExtractorProvider = try container.decodeIfPresent(AIProvider.self, forKey: .reminderExtractorProvider)
-        reminderExtractorModel = try container.decodeIfPresent(String.self, forKey: .reminderExtractorModel)
+        let decodedAIModel = try container.decode(String.self, forKey: .aiModel)
+        aiModel = VivaMode.normalizedModelID(decodedAIModel, provider: aiProvider)
+        let decodedReminderProvider = try container.decodeIfPresent(AIProvider.self, forKey: .reminderExtractorProvider)
+        reminderExtractorProvider = decodedReminderProvider
+        if let decodedReminderModel = try container.decodeIfPresent(String.self, forKey: .reminderExtractorModel) {
+            reminderExtractorModel = VivaMode.normalizedModelID(decodedReminderModel, provider: decodedReminderProvider)
+        } else {
+            reminderExtractorModel = nil
+        }
         aiEnhanceEnabled = try container.decode(Bool.self, forKey: .aiEnhanceEnabled)
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
@@ -171,6 +177,25 @@ struct VivaMode: Identifiable, Hashable, Codable {
             presetId = legacyPrompt?.title
         } else {
             presetId = nil
+        }
+    }
+
+    // MARK: - Model ID Normalization
+
+    /// Rewrites retired or renamed model IDs to their current replacements on decode,
+    /// so users who picked a model that has since been removed from `AIProvider.availableModels`
+    /// or `GeminiAPIClient.supportedModels` don't end up with a blank picker or a 404.
+    ///
+    /// Add new entries here whenever a model is removed from the available lists.
+    /// Mirror Google's deprecation table for Gemini.
+    static func normalizedModelID(_ modelID: String, provider: AIProvider?) -> String {
+        guard provider == .gemini else { return modelID }
+        switch modelID {
+        case "gemini-3-pro-preview":
+            // Retired by Google; superseded by gemini-3.1-pro-preview.
+            return "gemini-3.1-pro-preview"
+        default:
+            return modelID
         }
     }
 
