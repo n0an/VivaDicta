@@ -1132,82 +1132,14 @@ class AIService {
         model: String,
         onPartialResponse: @escaping @MainActor (String) -> Void
     ) async throws -> String {
-        var request = URLRequest(url: URL(string: AIProvider.anthropic.baseURL)!)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-        request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.timeoutInterval = baseTimeout
-
-        let requestBody: [String: Any] = [
-            "model": model,
-            "max_tokens": 8192,
-            "system": systemMessage,
-            "messages": [
-                ["role": "user", "content": userMessage]
-            ],
-            "stream": true
-        ]
-
-        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
-
-        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-        guard httpResponse.statusCode == 200 else {
-            var errorData = Data()
-            for try await byte in bytes {
-                errorData.append(byte)
-            }
-            let errorString = String(data: errorData, encoding: .utf8) ?? "Could not decode error response."
-
-            if httpResponse.statusCode == 429 {
-                throw EnhancementError.rateLimitExceeded
-            } else if (500...599).contains(httpResponse.statusCode) {
-                throw EnhancementError.serverError
-            } else {
-                throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
-            }
-        }
-
-        var aggregatedText = ""
-        for try await line in bytes.lines {
-            guard line.hasPrefix("data: ") else { continue }
-            let payload = String(line.dropFirst(6))
-            guard payload.isEmpty == false,
-                  let data = payload.data(using: .utf8),
-                  let event = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let type = event["type"] as? String else {
-                continue
-            }
-
-            if type == "content_block_delta",
-               let delta = event["delta"] as? [String: Any],
-               let deltaType = delta["type"] as? String,
-               deltaType == "text_delta",
-               let text = delta["text"] as? String,
-               text.isEmpty == false {
-                aggregatedText += text
-                onPartialResponse(aggregatedText)
-                continue
-            }
-
-            if type == "error",
-               let error = event["error"] as? [String: Any] {
-                let message = (error["message"] as? String) ?? "Anthropic streaming error"
-                let errorType = error["type"] as? String
-                if errorType == "overloaded_error" {
-                    throw EnhancementError.serverError
-                }
-                throw EnhancementError.customError(message)
-            }
-        }
-
-        guard !aggregatedText.isEmpty else {
-            throw EnhancementError.enhancementFailed
-        }
-
-        return await finalizeStreamingResult(aggregatedText, onPartialResponse: onPartialResponse)
+        let service = AnthropicService(networkService: networkService, logger: logger, baseTimeout: baseTimeout)
+        return try await service.enhanceStreaming(
+            systemMessage: systemMessage,
+            userMessage: userMessage,
+            apiKey: apiKey,
+            model: model,
+            onPartialResponse: onPartialResponse
+        )
     }
 
     private func makeStreamingRequest(
@@ -1629,55 +1561,14 @@ class AIService {
 
         switch aiProvider {
         case .anthropic:
-            let requestBody: [String: Any] = [
-                "model": mode.aiModel,
-                "max_tokens": 8192,
-                "system": resolvedSystemMessage,
-                "messages": [
-                    ["role": "user", "content": formattedText]
-                ]
-            ]
-            
-            var request = URLRequest(url: URL(string: aiProvider.baseURL)!)
-            request.httpMethod = "POST"
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
-            request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-            request.timeoutInterval = baseTimeout
-            request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
+            let service = AnthropicService(networkService: networkService, logger: logger, baseTimeout: baseTimeout)
+            return try await service.enhance(
+                systemMessage: resolvedSystemMessage,
+                userMessage: formattedText,
+                apiKey: apiKey,
+                model: mode.aiModel
+            )
 
-            do {
-                let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-                if httpResponse.statusCode == 200 {
-                    guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                          let content = jsonResponse["content"] as? [[String: Any]],
-                          let firstContent = content.first,
-                          let enhancedText = firstContent["text"] as? String else {
-                        throw EnhancementError.enhancementFailed
-                    }
-
-                    let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
-                    return filteredText
-                } else if httpResponse.statusCode == 429 {
-                    throw EnhancementError.rateLimitExceeded
-                } else if (500...599).contains(httpResponse.statusCode) {
-                    throw EnhancementError.serverError
-                } else {
-                    let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
-                    throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
-                }
-
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch let error as EnhancementError {
-                throw error
-            } catch let error as URLError {
-                throw error
-            } catch {
-                throw EnhancementError.customError(error.localizedDescription)
-            }
-            
         default:
             let url = URL(string: aiProvider.baseURL)!
             var request = URLRequest(url: url)
@@ -2250,33 +2141,8 @@ class AIService {
     }
 
     private func verifyAnthropicAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: AIProvider.anthropic.baseURL)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue(key, forHTTPHeaderField: "x-api-key")
-        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        
-        let testBody: [String: Any] = [
-            "model": AIProvider.anthropic.defaultModel,
-            "max_tokens": 1024,
-            "system": "You are a test system.",
-            "messages": [
-                ["role": "user", "content": "test"]
-            ]
-        ]
-        
-        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
-        
-        do {
-            let (_, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            
-            return httpResponse.statusCode == 200
-            
-        } catch {
-            return false
-        }
+        let service = AnthropicService(networkService: networkService, logger: logger, baseTimeout: baseTimeout)
+        return await service.verifyAPIKey(key)
     }
     
     private func verifyElevenLabsAPIKey(_ key: String) async -> Bool {
