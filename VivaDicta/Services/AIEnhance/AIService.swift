@@ -997,32 +997,12 @@ class AIService {
         userMessage: String,
         stream: Bool
     ) -> [String: Any] {
-        let messages: [[String: Any]] = [
-            ["role": "system", "content": systemMessage],
-            ["role": "user", "content": userMessage]
-        ]
-
-        var requestBody: [String: Any] = [
-            "model": modelName,
-            "messages": messages,
-            "stream": stream
-        ]
-
-        if modelName.lowercased().hasPrefix("gpt-5") == false {
-            requestBody["temperature"] = 0.3
-        }
-
-        if let reasoningEffort = ReasoningConfig.getReasoningParameter(for: modelName) {
-            requestBody["reasoning_effort"] = reasoningEffort
-        }
-
-        if let extraBody = ReasoningConfig.getExtraBodyParameters(for: modelName) {
-            for (key, value) in extraBody {
-                requestBody[key] = value
-            }
-        }
-
-        return requestBody
+        OpenAICompatibleService.buildRequestBody(
+            modelName: modelName,
+            systemMessage: systemMessage,
+            userMessage: userMessage,
+            stream: stream
+        )
     }
 
     private func makeOpenAICompatibleStreamingRequest(
@@ -1037,92 +1017,23 @@ class AIService {
         unauthorizedMessage: String? = nil,
         onPartialResponse: @escaping @MainActor (String) -> Void
     ) async throws -> String {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("text/event-stream", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = timeout
-
-        for (key, value) in headers {
-            request.addValue(value, forHTTPHeaderField: key)
-        }
-
-        let requestBody = buildOpenAICompatibleRequestBody(
+        let service = OpenAICompatibleService(networkService: networkService, logger: logger)
+        return try await service.enhanceStreaming(
+            url: url,
             modelName: modelName,
             systemMessage: systemMessage,
             userMessage: userMessage,
-            stream: true
+            headers: headers,
+            timeout: timeout,
+            errorPrefix: errorPrefix,
+            notFoundMessage: notFoundMessage,
+            unauthorizedMessage: unauthorizedMessage,
+            onPartialResponse: onPartialResponse
         )
-        request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
-
-        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-        guard httpResponse.statusCode == 200 else {
-            var errorData = Data()
-            for try await byte in bytes {
-                errorData.append(byte)
-            }
-            let errorString = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-
-            switch httpResponse.statusCode {
-            case 401 where unauthorizedMessage != nil:
-                throw EnhancementError.customError(unauthorizedMessage ?? errorString)
-            case 404 where notFoundMessage != nil:
-                throw EnhancementError.customError(notFoundMessage ?? errorString)
-            case 429:
-                throw EnhancementError.rateLimitExceeded
-            case 500...599:
-                throw EnhancementError.serverError
-            default:
-                throw EnhancementError.customError("\(errorPrefix) (HTTP \(httpResponse.statusCode)): \(errorString)")
-            }
-        }
-
-        var aggregatedText = ""
-        for try await line in bytes.lines {
-            if let delta = Self.openAICompatibleStreamingDelta(from: line) {
-                aggregatedText += delta
-                onPartialResponse(aggregatedText)
-            }
-        }
-
-        guard !aggregatedText.isEmpty else {
-            throw EnhancementError.enhancementFailed
-        }
-
-        return await finalizeStreamingResult(aggregatedText, onPartialResponse: onPartialResponse)
     }
 
     static func openAICompatibleStreamingDelta(from line: String) -> String? {
-        guard line.hasPrefix("data:") else {
-            return nil
-        }
-
-        let payload = String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
-        guard payload.isEmpty == false, payload != "[DONE]",
-              let data = payload.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = json["choices"] as? [[String: Any]],
-              let firstChoice = choices.first else {
-            return nil
-        }
-
-        if let delta = firstChoice["delta"] as? [String: Any] {
-            if let content = delta["content"] as? String, content.isEmpty == false {
-                return content
-            }
-
-            if let contentItems = delta["content"] as? [[String: Any]] {
-                let text = contentItems.compactMap { $0["text"] as? String }.joined()
-                return text.isEmpty ? nil : text
-            }
-        }
-
-        if let text = firstChoice["text"] as? String, text.isEmpty == false {
-            return text
-        }
-
-        return nil
+        OpenAICompatibleService.streamingDelta(from: line)
     }
 
     private func makeAnthropicStreamingRequest(
@@ -1570,55 +1481,15 @@ class AIService {
             )
 
         default:
-            let url = URL(string: aiProvider.baseURL)!
-            var request = URLRequest(url: url)
-            
-            request.httpMethod = "POST"
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-            request.timeoutInterval = baseTimeout
-
-            let requestBody = buildOpenAICompatibleRequestBody(
+            let service = OpenAICompatibleService(networkService: networkService, logger: logger)
+            return try await service.enhance(
+                url: URL(string: aiProvider.baseURL)!,
                 modelName: mode.aiModel,
                 systemMessage: resolvedSystemMessage,
                 userMessage: formattedText,
-                stream: false
+                headers: ["Authorization": "Bearer \(apiKey)"],
+                timeout: baseTimeout
             )
-
-            request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
-
-            do {
-                let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-                if httpResponse.statusCode == 200 {
-                    guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                          let choices = jsonResponse["choices"] as? [[String: Any]],
-                          let firstChoice = choices.first,
-                          let message = firstChoice["message"] as? [String: Any],
-                          let enhancedText = message["content"] as? String else {
-                        throw EnhancementError.enhancementFailed
-                    }
-
-                    let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
-                    return filteredText
-                } else if httpResponse.statusCode == 429 {
-                    throw EnhancementError.rateLimitExceeded
-                } else if (500...599).contains(httpResponse.statusCode) {
-                    throw EnhancementError.serverError
-                } else {
-                    let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
-                    throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
-                }
-
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch let error as EnhancementError {
-                throw error
-            } catch let error as URLError {
-                throw error
-            } catch {
-                throw EnhancementError.customError(error.localizedDescription)
-            }
         }
     }
 
@@ -2072,43 +1943,13 @@ class AIService {
     }
     
     private func verifyOpenAICompatibleAPIKey(_ key: String, provider: AIProvider) async -> Bool {
-        let url = URL(string: provider.baseURL)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        
-        let testBody: [String: Any] = [
-            "model": provider.defaultModel,
-            "messages": [
-                ["role": "user", "content": "test"]
-            ]
-        ]
-        
-        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
-        
-        logger.logNotice("🔑 Verifying API key for \(provider.rawValue) provider at \(url.absoluteString)")
-        
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            let isValid = httpResponse.statusCode == 200
-
-            if !isValid {
-                // Log the exact API error response
-                if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.logNotice("🔑 API key verification failed for \(provider.rawValue) - Status: \(httpResponse.statusCode) - \(exactAPIError)")
-                } else {
-                    logger.logNotice("🔑 API key verification failed for \(provider.rawValue) - Status: \(httpResponse.statusCode)")
-                }
-            }
-            
-            return isValid
-            
-        } catch {
-            logger.logNotice("🔑 API key verification failed for \(provider.rawValue): \(error.localizedDescription)")
-            return false
-        }
+        let service = OpenAICompatibleService(networkService: networkService, logger: logger)
+        return await service.verifyChatCompletionsAPIKey(
+            key,
+            baseURL: provider.baseURL,
+            defaultModel: provider.defaultModel,
+            providerName: provider.rawValue
+        )
     }
     
     private func verifyCerebrasAPIKey(_ key: String) async -> Bool {
