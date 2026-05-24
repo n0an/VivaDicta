@@ -1992,125 +1992,30 @@ class AIService {
         }
     }
 
-    /// Verifies Custom OpenAI setup and returns status message
+    /// Validates the Custom OpenAI configuration and probes the endpoint.
+    /// Validation stays here (we read the `@Observable` config state);
+    /// the HTTP probe delegates to `CustomOpenAIService`.
     public func verifyCustomOpenAISetup() async -> (success: Bool, message: String) {
         let endpointURL = customOpenAIRequestURL
         let modelName = customOpenAIModelName
 
-        // Check URL is configured
         guard !endpointURL.isEmpty else {
             return (false, "Endpoint URL is not configured")
         }
-
-        // Validate URL format
         guard URL(string: endpointURL) != nil else {
             return (false, "Invalid endpoint URL format")
         }
-
-        // Check model name is configured
         guard !modelName.isEmpty else {
             return (false, "Model name is not configured")
         }
 
-        // Test connection with a minimal chat completions request
-        return await testCustomOpenAIEndpoint()
-    }
-
-    /// Tests the Custom OpenAI endpoint with a minimal request and returns detailed status
-    private func testCustomOpenAIEndpoint() async -> (success: Bool, message: String) {
-        let endpointURL = customOpenAIRequestURL
-        let modelName = customOpenAIModelName
-
-        logger.logNotice("🔧 Custom AI Test - URL: '\(endpointURL)'")
-        logger.logNotice("🔧 Custom AI Test - Model: '\(modelName)'")
-
-        guard let url = URL(string: endpointURL) else {
-            logger.logError("🔧 Custom AI Test - Invalid URL: '\(endpointURL)'")
-            return (false, "Invalid endpoint URL format")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 15
-
-        // Add API key if configured
-        let apiKey = getAPIKey(for: .customOpenAI)
-        let hasApiKey = apiKey != nil && !apiKey!.isEmpty
-        logger.logNotice("🔧 Custom OpenAI Test - API Key present: \(hasApiKey)")
-
-        if let apiKey, !apiKey.isEmpty {
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        }
-        
-        let testBody: [String: Any] = [
-            "model": modelName,
-            "messages": [
-                ["role": "user", "content": "test"]
-            ]
-        ]
-
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: testBody) else {
-            logger.logError("🔧 Custom OpenAI Test - Failed to serialize request body")
-            return (false, "Failed to create request")
-        }
-        request.httpBody = bodyData
-
-        if let bodyString = String(data: bodyData, encoding: .utf8) {
-            logger.logNotice("🔧 Custom OpenAI Test - Request body: \(bodyString)")
-        }
-
-        do {
-            logger.logNotice("🔧 Custom OpenAI Test - Sending request...")
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            let responseString = String(data: data, encoding: .utf8) ?? "(unable to decode)"
-            logger.logNotice("🔧 Custom OpenAI Test - HTTP Status: \(httpResponse.statusCode)")
-            logger.logNotice("🔧 Custom OpenAI Test - Response: \(responseString.prefix(500))")
-
-            switch httpResponse.statusCode {
-            case 200:
-                logger.logNotice("🔧 Custom OpenAI Test - SUCCESS!")
-                return (true, "Connected successfully")
-            case 401:
-                logger.logError("🔧 Custom OpenAI Test - 401 Unauthorized")
-                return (false, "Authentication failed. Check your API key.")
-            case 404:
-                logger.logError("🔧 Custom OpenAI Test - 404 Not Found")
-                return (false, "Endpoint not found. Check the URL.")
-            case 400:
-                // 400 could mean various things - try to extract error message
-                logger.logError("🔧 Custom OpenAI Test - 400 Bad Request")
-                if let errorData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let error = errorData["error"] as? [String: Any],
-                   let message = error["message"] as? String {
-                    logger.logError("🔧 Custom OpenAI Test - Error message: \(message)")
-                    return (false, message)
-                }
-                return (false, "Bad request: \(responseString.prefix(200))")
-            case 500...599:
-                logger.logError("🔧 Custom OpenAI Test - Server error")
-                return (false, "Server error (\(httpResponse.statusCode)). Try again later.")
-            default:
-                logger.logError("🔧 Custom OpenAI Test - Unexpected status: \(httpResponse.statusCode)")
-                return (false, "HTTP \(httpResponse.statusCode): \(responseString.prefix(200))")
-            }
-        } catch let error as URLError {
-            logger.logError("🔧 Custom OpenAI Test - URLError: \(error.code.rawValue) - \(error.localizedDescription)")
-            switch error.code {
-            case .cannotConnectToHost:
-                return (false, "Cannot connect to server. Check the URL and that the server is running.")
-            case .timedOut:
-                return (false, "Connection timed out. Server may be slow or unreachable.")
-            case .notConnectedToInternet:
-                return (false, "No internet connection.")
-            default:
-                return (false, "Connection error: \(error.localizedDescription)")
-            }
-        } catch {
-            logger.logError("🔧 Custom OpenAI Test - Error: \(error)")
-            return (false, "Error: \(error.localizedDescription)")
-        }
+        let service = CustomOpenAIService(networkService: networkService, logger: logger)
+        let result = await service.testEndpoint(
+            endpointURL: endpointURL,
+            modelName: modelName,
+            apiKey: getAPIKey(for: .customOpenAI)
+        )
+        return (result.isSuccess, result.message)
     }
 
     /// Clears Custom OpenAI configuration
