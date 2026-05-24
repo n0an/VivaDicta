@@ -74,17 +74,21 @@ struct AnthropicService: Sendable {
                       let content = jsonResponse["content"] as? [[String: Any]],
                       let firstContent = content.first,
                       let enhancedText = firstContent["text"] as? String else {
+                    logger.logError("Anthropic enhance - malformed 200 body")
                     throw EnhancementError.enhancementFailed
                 }
 
                 let filteredText = AIEnhancementOutputFilter.filter(enhancedText.trimmingCharacters(in: .whitespacesAndNewlines))
                 return filteredText
             } else if httpResponse.statusCode == 429 {
+                logger.logWarning("Anthropic enhance - rate limit exceeded (429)")
                 throw EnhancementError.rateLimitExceeded
             } else if (500...599).contains(httpResponse.statusCode) {
+                logger.logError("Anthropic enhance - server error \(httpResponse.statusCode)")
                 throw EnhancementError.serverError
             } else {
                 let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
+                logger.logError("Anthropic enhance - HTTP \(httpResponse.statusCode): \(errorString.prefix(500))")
                 throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
             }
         } catch is CancellationError {
@@ -92,8 +96,10 @@ struct AnthropicService: Sendable {
         } catch let error as EnhancementError {
             throw error
         } catch let error as URLError {
+            logger.logError("Anthropic enhance - URLError \(error.code.rawValue): \(error.localizedDescription)")
             throw error
         } catch {
+            logger.logError("Anthropic enhance - error: \(error.localizedDescription)")
             throw EnhancementError.customError(error.localizedDescription)
         }
     }
@@ -142,10 +148,13 @@ struct AnthropicService: Sendable {
             let errorString = String(data: errorData, encoding: .utf8) ?? "Could not decode error response."
 
             if httpResponse.statusCode == 429 {
+                logger.logWarning("Anthropic streaming - rate limit exceeded (429)")
                 throw EnhancementError.rateLimitExceeded
             } else if (500...599).contains(httpResponse.statusCode) {
+                logger.logError("Anthropic streaming - server error \(httpResponse.statusCode)")
                 throw EnhancementError.serverError
             } else {
+                logger.logError("Anthropic streaming - HTTP \(httpResponse.statusCode): \(errorString.prefix(500))")
                 throw EnhancementError.customError("HTTP \(httpResponse.statusCode): \(errorString)")
             }
         }
@@ -168,7 +177,7 @@ struct AnthropicService: Sendable {
                let text = delta["text"] as? String,
                text.isEmpty == false {
                 aggregatedText += text
-                onPartialResponse(aggregatedText)
+                await onPartialResponse(aggregatedText)
                 continue
             }
 
@@ -177,13 +186,16 @@ struct AnthropicService: Sendable {
                 let message = (error["message"] as? String) ?? "Anthropic streaming error"
                 let errorType = error["type"] as? String
                 if errorType == "overloaded_error" {
+                    logger.logError("Anthropic streaming - overloaded_error event: \(message)")
                     throw EnhancementError.serverError
                 }
+                logger.logError("Anthropic streaming - error event (type: \(errorType ?? "unknown")): \(message)")
                 throw EnhancementError.customError(message)
             }
         }
 
         guard !aggregatedText.isEmpty else {
+            logger.logError("Anthropic streaming - finished with empty aggregated text")
             throw EnhancementError.enhancementFailed
         }
 
