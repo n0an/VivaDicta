@@ -4,6 +4,7 @@ import Foundation
 import AuthenticationServices
 import Keychain
 import Network
+import Networking
 import os
 
 /// Manages OAuth authentication flows - sign-in, token refresh, and credential storage.
@@ -12,12 +13,14 @@ import os
 public final class OAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "OAuthManager")
     private let keychain: any KeychainService
+    private let urlSession: any URLSessionProtocol
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
-    public init(keychain: any KeychainService) {
+    public init(keychain: any KeychainService, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.keychain = keychain
+        self.urlSession = urlSession
     }
 
     // MARK: - Public API
@@ -236,7 +239,7 @@ public final class OAuthManager: Sendable {
             request.httpBody = formBody.data(using: .utf8)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OAuthError.invalidResponse
@@ -298,7 +301,7 @@ public final class OAuthManager: Sendable {
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 10
 
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
+        guard let (data, response) = try? await urlSession.data(for: request),
               let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

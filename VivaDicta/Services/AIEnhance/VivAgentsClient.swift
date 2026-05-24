@@ -7,12 +7,16 @@
 
 import Foundation
 import Keychain
+import Networking
 import os
 
 enum VivAgentsClient {
 
     private static let logger = Logger(category: .vivAgentsClient)
     private static let keychain: any KeychainService = DefaultKeychainService()
+
+    /// URL session used for all requests. Override only from tests.
+    nonisolated(unsafe) static var urlSession: any URLSessionProtocol = URLSession.shared
 
     struct EnhanceRequest: Encodable {
         let text: String
@@ -177,7 +181,7 @@ enum VivAgentsClient {
 
         logger.logInfo("VivAgents request: provider=\(provider), model=\(model), textLength=\(text.count)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             logger.logError("VivAgents: invalid response (not HTTP)")
@@ -250,7 +254,7 @@ enum VivAgentsClient {
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await urlSession.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else { return nil }
             return try JSONDecoder().decode(HealthResponse.self, from: data)
@@ -273,7 +277,7 @@ enum VivAgentsClient {
         }
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await urlSession.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else { return false }
             let health = try JSONDecoder().decode(HealthResponse.self, from: data)

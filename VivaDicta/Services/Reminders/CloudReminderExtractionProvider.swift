@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Networking
 import os
 import OAuth
 
@@ -71,9 +72,11 @@ private struct CloudReminderDraftsPayload: Codable {
 final class CloudReminderExtractionProvider {
     private let logger = Logger(category: .reminderExtraction)
     private let aiService: AIService
+    private let urlSession: any URLSessionProtocol
 
-    init(aiService: AIService) {
+    init(aiService: AIService, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.aiService = aiService
+        self.urlSession = urlSession
     }
 
     func canExtract(
@@ -312,7 +315,7 @@ final class CloudReminderExtractionProvider {
         )
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ReminderExtractionError.invalidResponse
@@ -442,7 +445,7 @@ final class CloudReminderExtractionProvider {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ReminderExtractionError.invalidResponse
