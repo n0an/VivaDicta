@@ -176,6 +176,8 @@ class AIService {
     private let selectedModeStorageKey: String
     private let keychain: any KeychainService
     let urlSession: any URLSessionProtocol
+    let oauthManager: OAuthManager
+    let copilotOAuthManager: CopilotOAuthManager
     private let baseTimeout: TimeInterval = 300
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
@@ -191,9 +193,16 @@ class AIService {
         return service
     }
 
-    init(keychain: any KeychainService = DefaultKeychainService(), urlSession: any URLSessionProtocol = URLSession.shared) {
+    init(
+        keychain: any KeychainService = DefaultKeychainService(),
+        urlSession: any URLSessionProtocol = URLSession.shared,
+        oauthManager: OAuthManager = .shared,
+        copilotOAuthManager: CopilotOAuthManager = .shared
+    ) {
         self.keychain = keychain
         self.urlSession = urlSession
+        self.oauthManager = oauthManager
+        self.copilotOAuthManager = copilotOAuthManager
         self.userDefaults = UserDefaultsStorage.shared
         self.modesStorageKey = AppGroupCoordinator.vivaModesKey
         self.selectedModeStorageKey = AppGroupCoordinator.selectedVivaModeKey
@@ -233,9 +242,19 @@ class AIService {
     }
 
     /// Test-only initializer with injectable UserDefaults and no network side effects.
-    init(userDefaults: UserDefaults, modesStorageKey: String = "VivaModes", selectedModeStorageKey: String = "selectedVivaMode", keychain: any KeychainService = DefaultKeychainService(), urlSession: any URLSessionProtocol = URLSession.shared) {
+    init(
+        userDefaults: UserDefaults,
+        modesStorageKey: String = "VivaModes",
+        selectedModeStorageKey: String = "selectedVivaMode",
+        keychain: any KeychainService = DefaultKeychainService(),
+        urlSession: any URLSessionProtocol = URLSession.shared,
+        oauthManager: OAuthManager = .shared,
+        copilotOAuthManager: CopilotOAuthManager = .shared
+    ) {
         self.keychain = keychain
         self.urlSession = urlSession
+        self.oauthManager = oauthManager
+        self.copilotOAuthManager = copilotOAuthManager
         self.userDefaults = userDefaults
         self.modesStorageKey = modesStorageKey
         self.selectedModeStorageKey = selectedModeStorageKey
@@ -1255,7 +1274,7 @@ class AIService {
                 onPartialResponse: onPartialResponse
             )
         case .copilot:
-            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            let token = try await copilotOAuthManager.validCopilotToken()
             let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
             let result = try await CopilotAPIClient.enhanceStreaming(
                 text: userMsg,
@@ -1268,7 +1287,7 @@ class AIService {
         case .geminiOAuth:
             do {
                 let provider = GeminiOAuthProvider()
-                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let (token, _, projectId) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
                 let result = try await GeminiAPIClient.enhanceStreaming(
                     text: userMsg,
@@ -1276,7 +1295,8 @@ class AIService {
                     model: model,
                     accessToken: token,
                     projectId: projectId,
-                    onPartialResult: onPartialResponse
+                    onPartialResult: onPartialResponse,
+                    urlSession: urlSession
                 )
                 return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
             } catch let error as EnhancementError {
@@ -1292,7 +1312,7 @@ class AIService {
         case .openAIOAuth:
             do {
                 let provider = OpenAIOAuthProvider()
-                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let (token, accountId, _) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
                 let result = try await OpenAIOAuthClient.enhance(
                     text: userMsg,
@@ -1484,7 +1504,7 @@ class AIService {
             lastUserMessageSent = formattedText
             do {
                 let provider = OpenAIOAuthProvider()
-                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let (token, accountId, _) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
                 let result = try await OpenAIOAuthClient.enhance(
                     text: formattedText,
@@ -1510,14 +1530,15 @@ class AIService {
             lastUserMessageSent = formattedText
             do {
                 let provider = GeminiOAuthProvider()
-                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+                let (token, _, projectId) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
                 let result = try await GeminiAPIClient.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: model,
                     accessToken: token,
-                    projectId: projectId
+                    projectId: projectId,
+                    urlSession: urlSession
                 )
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as EnhancementError {
@@ -1586,7 +1607,7 @@ class AIService {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             do {
-                let token = try await CopilotOAuthManager.shared.validCopilotToken()
+                let token = try await copilotOAuthManager.validCopilotToken()
                 let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
                 let result = try await CopilotAPIClient.enhance(
                     text: formattedText,
@@ -3026,8 +3047,8 @@ extension AIService {
     @MainActor
     func refreshOpenAIOAuthState() {
         let provider = OpenAIOAuthProvider()
-        isOpenAISignedIn = OAuthManager.shared.isSignedIn(provider: provider)
-        openAIEmail = OAuthManager.shared.accountEmail(for: provider)
+        isOpenAISignedIn = oauthManager.isSignedIn(provider: provider)
+        openAIEmail = oauthManager.accountEmail(for: provider)
     }
 
     /// Signs in to OpenAI via OAuth.
@@ -3037,7 +3058,7 @@ extension AIService {
         defer { isOpenAISigningIn = false }
 
         let provider = OpenAIOAuthProvider()
-        let credential = try await OAuthManager.shared.signIn(provider: provider)
+        let credential = try await oauthManager.signIn(provider: provider)
         isOpenAISignedIn = true
         openAIEmail = credential.accountEmail
         refreshConnectedProviders()
@@ -3047,7 +3068,7 @@ extension AIService {
     @MainActor
     func signOutFromOpenAI() {
         let provider = OpenAIOAuthProvider()
-        OAuthManager.shared.signOut(provider: provider)
+        oauthManager.signOut(provider: provider)
         isOpenAISignedIn = false
         openAIEmail = nil
         refreshConnectedProviders()
@@ -3061,8 +3082,8 @@ extension AIService {
     @MainActor
     func refreshGeminiOAuthState() {
         let provider = GeminiOAuthProvider()
-        isGeminiSignedIn = OAuthManager.shared.isSignedIn(provider: provider)
-        geminiEmail = OAuthManager.shared.accountEmail(for: provider)
+        isGeminiSignedIn = oauthManager.isSignedIn(provider: provider)
+        geminiEmail = oauthManager.accountEmail(for: provider)
     }
 
     /// Signs in to Gemini via OAuth.
@@ -3072,7 +3093,7 @@ extension AIService {
         defer { isGeminiSigningIn = false }
 
         let provider = GeminiOAuthProvider()
-        let credential = try await OAuthManager.shared.signIn(provider: provider)
+        let credential = try await oauthManager.signIn(provider: provider)
         isGeminiSignedIn = true
         geminiEmail = credential.accountEmail
         refreshConnectedProviders()
@@ -3082,7 +3103,7 @@ extension AIService {
     @MainActor
     func signOutFromGemini() {
         let provider = GeminiOAuthProvider()
-        OAuthManager.shared.signOut(provider: provider)
+        oauthManager.signOut(provider: provider)
         isGeminiSignedIn = false
         geminiEmail = nil
         refreshConnectedProviders()
@@ -3094,13 +3115,13 @@ extension AIService {
 extension AIService {
     @MainActor
     func refreshCopilotOAuthState() {
-        isCopilotSignedIn = CopilotOAuthManager.shared.isSignedIn
-        copilotUsername = CopilotOAuthManager.shared.accountInfo
+        isCopilotSignedIn = copilotOAuthManager.isSignedIn
+        copilotUsername = copilotOAuthManager.accountInfo
 
         // Fetch available models if signed in
         if isCopilotSignedIn {
             Task {
-                if let token = try? await CopilotOAuthManager.shared.validCopilotToken() {
+                if let token = try? await copilotOAuthManager.validCopilotToken() {
                     let models = await CopilotAPIClient.fetchModels(copilotToken: token)
                     self.copilotModels = models
                 }
@@ -3113,7 +3134,7 @@ extension AIService {
         isCopilotSigningIn = true
         defer { isCopilotSigningIn = false }
 
-        let credential = try await CopilotOAuthManager.shared.pollForToken(
+        let credential = try await copilotOAuthManager.pollForToken(
             deviceCode: deviceCode.deviceCode,
             interval: deviceCode.interval,
             expiresIn: deviceCode.expiresIn
@@ -3123,14 +3144,14 @@ extension AIService {
         refreshConnectedProviders()
 
         // Fetch models after sign-in
-        if let token = try? await CopilotOAuthManager.shared.validCopilotToken() {
+        if let token = try? await copilotOAuthManager.validCopilotToken() {
             copilotModels = await CopilotAPIClient.fetchModels(copilotToken: token)
         }
     }
 
     @MainActor
     func signOutFromCopilot() {
-        CopilotOAuthManager.shared.signOut()
+        copilotOAuthManager.signOut()
         isCopilotSignedIn = false
         copilotUsername = nil
         copilotModels = []

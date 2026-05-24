@@ -86,7 +86,7 @@ extension AIService {
             )
 
         case .copilot:
-            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            let token = try await copilotOAuthManager.validCopilotToken()
             guard let url = URL(string: "\(CopilotAPIClient.baseURL)/chat/completions") else {
                 throw EnhancementError.customError("Invalid Copilot URL")
             }
@@ -134,7 +134,7 @@ extension AIService {
         case .openAIOAuth:
             do {
                 let oauthProvider = OpenAIOAuthProvider()
-                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                let (token, accountId, _) = try await oauthManager.validAccessToken(for: oauthProvider)
                 return try await OpenAIOAuthClient.chatStreaming(
                     systemMessage: systemMessage,
                     messages: messages,
@@ -160,14 +160,15 @@ extension AIService {
         case .geminiOAuth:
             do {
                 let oauthProvider = GeminiOAuthProvider()
-                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                let (token, _, projectId) = try await oauthManager.validAccessToken(for: oauthProvider)
                 return try await GeminiAPIClient.chatStreaming(
                     systemMessage: systemMessage,
                     messages: messages,
                     model: model,
                     accessToken: token,
                     projectId: projectId,
-                    onPartialResponse: onPartialResponse
+                    onPartialResponse: onPartialResponse,
+                    urlSession: urlSession
                 )
             } catch let error as OAuthError {
                 if let apiKey = provider.apiKey {
@@ -220,7 +221,7 @@ extension AIService {
         case .openAI where isOpenAISignedIn:
             do {
                 let oauthProvider = OpenAIOAuthProvider()
-                let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                let (token, accountId, _) = try await oauthManager.validAccessToken(for: oauthProvider)
                 return try await OpenAIOAuthClient.chat(
                     systemMessage: systemMessage,
                     messages: messages,
@@ -245,13 +246,14 @@ extension AIService {
         case .gemini where isGeminiSignedIn:
             do {
                 let oauthProvider = GeminiOAuthProvider()
-                let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: oauthProvider)
+                let (token, _, projectId) = try await oauthManager.validAccessToken(for: oauthProvider)
                 return try await GeminiAPIClient.chat(
                     systemMessage: systemMessage,
                     messages: messages,
                     model: model,
                     accessToken: token,
-                    projectId: projectId
+                    projectId: projectId,
+                    urlSession: urlSession
                 )
             } catch let error as OAuthError {
                 if let apiKey = provider.apiKey {
@@ -390,7 +392,7 @@ extension AIService {
     private func chatRequestConfig(for provider: AIProvider, model: String) async throws -> (URL, [String: String]) {
         switch provider {
         case .copilot:
-            let token = try await CopilotOAuthManager.shared.validCopilotToken()
+            let token = try await copilotOAuthManager.validCopilotToken()
             guard let url = URL(string: "\(CopilotAPIClient.baseURL)/chat/completions") else {
                 throw EnhancementError.customError("Invalid Copilot URL")
             }
