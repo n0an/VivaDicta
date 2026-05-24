@@ -381,6 +381,67 @@ struct OpenAICompatibleServiceTests {
         #expect(messages == [["role": "user", "content": "test"]])
     }
 
+    // MARK: - verifyGETEndpoint
+
+    @Test func verifyGETEndpointReturnsTrueOn200() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+        let sut = makeSUT(networkService: networkService)
+
+        let valid = await sut.verifyGETEndpoint(
+            "sk-test",
+            url: URL(string: "https://api.cerebras.ai/v1/models")!,
+            providerName: "cerebras"
+        )
+
+        #expect(valid)
+    }
+
+    @Test func verifyGETEndpointReturnsFalseOn401() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(401)))
+        let sut = makeSUT(networkService: networkService)
+
+        let valid = await sut.verifyGETEndpoint(
+            "sk-bad",
+            url: URL(string: "https://api.mistral.ai/v1/models")!,
+            providerName: "mistral"
+        )
+
+        #expect(!valid)
+    }
+
+    @Test func verifyGETEndpointReturnsFalseOnTransportError() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .failure(URLError(.notConnectedToInternet))
+        let sut = makeSUT(networkService: networkService)
+
+        let valid = await sut.verifyGETEndpoint(
+            "sk-test",
+            url: URL(string: "https://ai-gateway.vercel.sh/v1/credits")!,
+            providerName: "vercelAIGateway"
+        )
+
+        #expect(!valid)
+    }
+
+    @Test func verifyGETEndpointSendsBearerAuthAndGETMethod() async throws {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+        let sut = makeSUT(networkService: networkService)
+
+        _ = await sut.verifyGETEndpoint(
+            "sk-probe",
+            url: URL(string: "https://api.cerebras.ai/v1/models")!,
+            providerName: "cerebras"
+        )
+
+        let request = try #require(networkService.capturedRequest)
+        #expect(request.httpMethod == "GET")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer sk-probe")
+        #expect(request.httpBody == nil)
+    }
+
     // MARK: - Streaming request shape
     //
     // `MockNetworkService.bytes(for:)` cannot return a real

@@ -275,12 +275,50 @@ struct OpenAICompatibleService: Sendable {
 
     // MARK: - API key verification
 
+    /// Probes a GET endpoint with `Authorization: Bearer <key>` and
+    /// returns `true` if the response is 200. Used by providers whose
+    /// verify path is "hit a cheap GET endpoint and see if auth works"
+    /// instead of generating a tiny chat completion - currently
+    /// Cerebras (`/v1/models`), Mistral (`/v1/models`), and Vercel AI
+    /// Gateway (`/v1/credits`).
+    ///
+    /// Never throws. `providerName` is used only for log lines.
+    func verifyGETEndpoint(
+        _ key: String,
+        url: URL,
+        providerName: String
+    ) async -> Bool {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        logger.logNotice("🔑 Verifying API key for \(providerName) provider at \(url.absoluteString)")
+
+        do {
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+            let isValid = httpResponse.statusCode == 200
+
+            if !isValid {
+                if let exactAPIError = String(data: data, encoding: .utf8) {
+                    logger.logNotice("🔑 API key verification failed for \(providerName) - Status: \(httpResponse.statusCode) - \(exactAPIError)")
+                } else {
+                    logger.logNotice("🔑 API key verification failed for \(providerName) - Status: \(httpResponse.statusCode)")
+                }
+            }
+
+            return isValid
+        } catch {
+            logger.logNotice("🔑 API key verification failed for \(providerName): \(error.localizedDescription)")
+            return false
+        }
+    }
+
     /// Probes an OpenAI-compatible chat-completions endpoint with a
     /// minimal `messages: [{ "role": "user", "content": "test" }]`
     /// request and returns `true` if the response is 200. Used by
     /// providers whose verify path is "send a tiny chat completion and
     /// see if it succeeds" - currently the generic AIService fallback
-    /// for OpenAI, Groq, OpenRouter, Z.AI, Kimi, Vercel AI Gateway.
+    /// for OpenAI, Groq, OpenRouter, Z.AI, Kimi, Grok, HuggingFace.
     ///
     /// Never throws. `providerName` is used only for log lines.
     func verifyChatCompletionsAPIKey(
