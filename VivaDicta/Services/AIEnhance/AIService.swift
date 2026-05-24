@@ -1992,7 +1992,6 @@ class AIService {
         }
     }
 
-    /// Verifies Custom OpenAI setup and returns status message
     /// Validates the Custom OpenAI configuration and probes the endpoint.
     /// Validation stays here (we read the `@Observable` config state);
     /// the HTTP probe delegates to `CustomOpenAIService`.

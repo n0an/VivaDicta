@@ -133,11 +133,23 @@ struct CustomOpenAIService: Sendable {
     /// a `NetworkError.transport(URLError)` wrap. Returns `nil` for
     /// non-URL-error throws.
     ///
-    /// Diagnostic note: in some build configurations `error as? NetworkError`
-    /// returns `nil` even when the dynamic type is `NetworkError`, so this
-    /// helper falls back to inspecting `String(describing:)` to find the
-    /// `.transport(...)` wrapping. The NSError-domain check still works for
-    /// any URL-domain error (raw or bridged), which covers production usage.
+    /// ## Two paths, two contexts
+    ///
+    /// - **In production**, the typed `error as? NetworkError` cast succeeds
+    ///   and the helper returns via the second clause.
+    /// - **In the test bundle**, the typed cast returns `nil` even when the
+    ///   dynamic type is `NetworkError` - apparently because the `Networking`
+    ///   module is loaded twice (once into the app, once via the test target's
+    ///   explicit `import Networking` alongside `@testable import VivaDicta`),
+    ///   producing two distinct `NetworkError` types with the same nominal
+    ///   name. `as?` does strict identity comparison and fails. The
+    ///   `String(describing:)` fallback parses the NSError-bridged form
+    ///   (`transport(Error Domain=NSURLErrorDomain Code=-1004 ...)`) to
+    ///   recover the URL error code.
+    ///
+    /// If the dual-link is ever fixed (e.g., by making `Networking` a dynamic
+    /// library or dropping the test target's explicit import), the fallback
+    /// becomes unreachable - but it's cheap insurance.
     private func unwrapURLError(_ error: any Error) -> URLError? {
         if let urlError = error as? URLError {
             return urlError
@@ -147,21 +159,12 @@ struct CustomOpenAIService: Sendable {
            let urlError = underlying as? URLError {
             return urlError
         }
-        // Fallback: extract URLError code from the NSError-bridged description
-        // of a NetworkError.transport(URLError) when the typed cast above
-        // fails for type-resolution reasons.
-        let nsError = error as NSError
-        if nsError.domain == NSURLErrorDomain {
-            return URLError(URLError.Code(rawValue: nsError.code))
-        }
         let description = String(describing: error)
-        if description.hasPrefix("transport(") {
-            // Pull the URL error code from the embedded NSError description.
-            if let codeMatch = description.range(of: #"Code=(-?\d+)"#, options: .regularExpression) {
-                let codeString = String(description[codeMatch]).replacingOccurrences(of: "Code=", with: "")
-                if let code = Int(codeString) {
-                    return URLError(URLError.Code(rawValue: code))
-                }
+        if description.hasPrefix("transport("),
+           let codeMatch = description.range(of: #"Code=(-?\d+)"#, options: .regularExpression) {
+            let codeString = String(description[codeMatch]).replacing("Code=", with: "")
+            if let code = Int(codeString) {
+                return URLError(URLError.Code(rawValue: code))
             }
         }
         return nil
