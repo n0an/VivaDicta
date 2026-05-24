@@ -34,13 +34,13 @@ struct GroqTranscriptionServiceTests {
         )!
     }
 
-    private func stubSuccess(on session: MockNetworkService, text: String) {
+    private func stubSuccess(on networkService: MockNetworkService, text: String) {
         let body = Data(#"{"text":"\#(text)","language":"en","duration":0.5}"#.utf8)
-        session.stubUploadResponse = .success((body, makeHTTPResponse(200)))
+        networkService.stubUploadResponse = .success((body, makeHTTPResponse(200)))
     }
 
     private func makeService(
-        session: MockNetworkService,
+        networkService: MockNetworkService,
         apiKey: String = "gsk-test-key",
         modelName: String = "whisper-large-v3",
         language: String = "auto",
@@ -53,74 +53,74 @@ struct GroqTranscriptionServiceTests {
                 language: language,
                 vocabulary: vocabulary
             ),
-            networkService: session
+            networkService: networkService
         )
     }
 
     // MARK: - Success path
 
     @Test func successReturnsTranscribedText() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "groq hello")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "groq hello")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         let result = try await sut.transcribe(audioURL: audio)
 
         #expect(result.text == "groq hello")
         #expect(result.isSpeakerAttributed == false)
-        #expect(session.uploadCallCount == 1)
+        #expect(networkService.uploadCallCount == 1)
     }
 
     // MARK: - Request shape
 
     @Test func requestTargetsGroqTranscriptionsEndpoint() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let req = try #require(session.capturedRequest)
+        let req = try #require(networkService.capturedRequest)
         #expect(req.url?.absoluteString == "https://api.groq.com/openai/v1/audio/transcriptions")
         #expect(req.httpMethod == "POST")
     }
 
     @Test func requestSendsBearerAuthorizationHeader() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, apiKey: "gsk-abc123")
+        let sut = makeService(networkService: networkService, apiKey: "gsk-abc123")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let req = try #require(session.capturedRequest)
+        let req = try #require(networkService.capturedRequest)
         #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer gsk-abc123")
     }
 
     @Test func requestSendsMultipartContentTypeWithBoundary() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let req = try #require(session.capturedRequest)
+        let req = try #require(networkService.capturedRequest)
         let contentType = try #require(req.value(forHTTPHeaderField: "Content-Type"))
         #expect(contentType.hasPrefix("multipart/form-data; boundary=Boundary-"))
     }
 
     @Test func bodyContainsModelAndResponseFormatFields() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, modelName: "whisper-large-v3")
+        let sut = makeService(networkService: networkService, modelName: "whisper-large-v3")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.range(of: "name=\"model\"\\s*\\r\\n\\r\\nwhisper-large-v3", options: .regularExpression) != nil)
         #expect(bodyString.range(of: "name=\"response_format\"\\s*\\r\\n\\r\\njson", options: .regularExpression) != nil)
@@ -128,27 +128,27 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func bodyIncludesLanguageFieldWhenNotAuto() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, language: "fr")
+        let sut = makeService(networkService: networkService, language: "fr")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.range(of: "name=\"language\"\\s*\\r\\n\\r\\nfr", options: .regularExpression) != nil)
     }
 
     @Test func bodyOmitsLanguageFieldWhenAuto() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, language: "auto")
+        let sut = makeService(networkService: networkService, language: "auto")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(!bodyString.contains("name=\"language\""))
     }
@@ -156,27 +156,27 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Vocabulary / prompt (Groq-specific)
 
     @Test func bodyOmitsPromptFieldWhenVocabularyIsEmpty() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, vocabulary: [])
+        let sut = makeService(networkService: networkService, vocabulary: [])
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(!bodyString.contains("name=\"prompt\""))
     }
 
     @Test func bodyIncludesPromptFieldWhenVocabularyProvided() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, vocabulary: ["SwiftUI", "Kubernetes"])
+        let sut = makeService(networkService: networkService, vocabulary: ["SwiftUI", "Kubernetes"])
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.contains("name=\"prompt\""))
         #expect(bodyString.contains("SwiftUI, Kubernetes"))
@@ -186,20 +186,20 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Validation / short-circuit
 
     @Test func missingAPIKeyThrowsBeforeMakingRequest() async throws {
-        let session = MockNetworkService()
+        let networkService = MockNetworkService()
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, apiKey: "")
+        let sut = makeService(networkService: networkService, apiKey: "")
 
         await #expect(throws: CloudTranscriptionError.self) {
             _ = try await sut.transcribe(audioURL: audio)
         }
-        #expect(session.uploadCallCount == 0, "no network call should be made when API key is empty")
+        #expect(networkService.uploadCallCount == 0, "no network call should be made when API key is empty")
     }
 
     @Test func missingAudioFileThrowsAudioFileNotFound() async {
-        let session = MockNetworkService()
+        let networkService = MockNetworkService()
         let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         await #expect(throws: CloudTranscriptionError.self) {
             _ = try await sut.transcribe(audioURL: audio)
@@ -209,13 +209,13 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Response handling
 
     @Test func nonSuccessStatusThrowsApiRequestFailed() async throws {
-        let session = MockNetworkService()
-        session.stubUploadResponse = .success((
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponse = .success((
             Data(#"{"error":"invalid key"}"#.utf8),
             makeHTTPResponse(401)
         ))
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         do {
             _ = try await sut.transcribe(audioURL: audio)
@@ -229,10 +229,10 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func undecodableJSONOn200ThrowsNoTranscriptionReturned() async throws {
-        let session = MockNetworkService()
-        session.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         do {
             _ = try await sut.transcribe(audioURL: audio)
