@@ -316,16 +316,25 @@ struct OpenAICompatibleService: Sendable {
     /// Probes an OpenAI-compatible chat-completions endpoint with a
     /// minimal `messages: [{ "role": "user", "content": "test" }]`
     /// request and returns `true` if the response is 200. Used by
-    /// providers whose verify path is "send a tiny chat completion and
-    /// see if it succeeds" - currently the generic AIService fallback
-    /// for OpenAI, Groq, OpenRouter, Z.AI, Kimi, Grok, HuggingFace.
+    /// every provider that goes through the generic
+    /// `verifyOpenAICompatibleAPIKey` path in `AIService` - currently
+    /// OpenAI, Groq, OpenRouter, Z.AI, Kimi, Grok, HuggingFace, plus
+    /// any future provider that falls through the `default:` branch
+    /// (Gemini and Copilot also land here today via fall-through).
+    ///
+    /// Callers should pass `maxTokens: 1` (or another small cap) to
+    /// avoid letting the verification probe generate a full default
+    /// response on heavy models (e.g. HuggingFace's
+    /// `openai/gpt-oss-120b`, Grok's frontier model) - uncapped probes
+    /// can be slow enough to risk false-negative timeouts.
     ///
     /// Never throws. `providerName` is used only for log lines.
     func verifyChatCompletionsAPIKey(
         _ key: String,
         baseURL: String,
         defaultModel: String,
-        providerName: String
+        providerName: String,
+        maxTokens: Int? = nil
     ) async -> Bool {
         let url = URL(string: baseURL)!
         var request = URLRequest(url: url)
@@ -333,12 +342,15 @@ struct OpenAICompatibleService: Sendable {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
 
-        let testBody: [String: Any] = [
+        var testBody: [String: Any] = [
             "model": defaultModel,
             "messages": [
                 ["role": "user", "content": "test"]
             ]
         ]
+        if let maxTokens {
+            testBody["max_tokens"] = maxTokens
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
 
         logger.logNotice("🔑 Verifying API key for \(providerName) provider at \(url.absoluteString)")

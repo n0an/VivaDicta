@@ -1934,19 +1934,26 @@ class AIService {
         case .vercelAIGateway:
             return await verifyVercelAIGatewayAPIKey(key)
         default:
-            // OpenAI-compatible providers (OpenAI, Groq, OpenRouter, Z.AI, Kimi,
-            // Grok, HuggingFace) all share the chat-completions probe.
+            // OpenAI-compatible providers fall through to the chat-completions
+            // probe. Today that covers OpenAI, Groq, OpenRouter, Z.AI, Kimi,
+            // Grok, and HuggingFace explicitly, plus .gemini and .copilot
+            // which are also OpenAI-compatible at this verify endpoint.
             return await verifyOpenAICompatibleAPIKey(key, provider: provider)
         }
     }
     
     private func verifyOpenAICompatibleAPIKey(_ key: String, provider: AIProvider) async -> Bool {
+        // Cap probe output at 1 token. Critical for heavy default models like
+        // HuggingFace's 120B-param Gpt-OSS or Grok's frontier - uncapped probes
+        // can be slow enough to risk false-negative timeouts. Free for cheaper
+        // providers (OpenAI, Groq, OpenRouter, Z.AI, Kimi).
         let service = OpenAICompatibleService(networkService: networkService, logger: logger)
         return await service.verifyChatCompletionsAPIKey(
             key,
             baseURL: provider.baseURL,
             defaultModel: provider.defaultModel,
-            providerName: provider.rawValue
+            providerName: provider.rawValue,
+            maxTokens: 1
         )
     }
     

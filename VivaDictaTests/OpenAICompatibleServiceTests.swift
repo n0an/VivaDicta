@@ -379,6 +379,28 @@ struct OpenAICompatibleServiceTests {
         #expect(json["model"] as? String == "gpt-4-mini")
         let messages = try #require(json["messages"] as? [[String: String]])
         #expect(messages == [["role": "user", "content": "test"]])
+        // Default omits max_tokens.
+        #expect(json["max_tokens"] == nil)
+    }
+
+    @Test func verifyChatCompletionsAPIKeyIncludesMaxTokensWhenProvided() async throws {
+        // Caps the probe response on heavy default models (HuggingFace's 120B,
+        // Grok frontier) to avoid false-negative timeouts on slow networks.
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+        let sut = makeSUT(networkService: networkService)
+
+        _ = await sut.verifyChatCompletionsAPIKey(
+            "sk-probe",
+            baseURL: endpointURL,
+            defaultModel: "openai/gpt-oss-120b",
+            providerName: "huggingface",
+            maxTokens: 1
+        )
+
+        let body = try #require(networkService.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["max_tokens"] as? Int == 1)
     }
 
     // MARK: - verifyGETEndpoint
