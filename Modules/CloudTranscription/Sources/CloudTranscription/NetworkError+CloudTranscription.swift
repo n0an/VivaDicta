@@ -3,24 +3,30 @@
 import Foundation
 import Networking
 
-/// Bridges `NetworkError` (produced by `NetworkClient`) into the
-/// `CloudTranscriptionError` contract that `NetworkRetry.withRetry` already
-/// knows how to inspect for retry decisions (429 / 5xx / URLError).
+/// Bridges `NetworkError` (produced by `NetworkClient`) into the error type
+/// `NetworkRetry.withRetry` already knows how to inspect for retry decisions.
 ///
-/// Lets transcription services adopt `NetworkClient` without giving up the
-/// existing retry semantics.
+/// - `.invalidResponse` / `.unacceptableStatus` / `.decodingFailed` map to
+///   `CloudTranscriptionError` so the status-aware retry policy (5xx + 429)
+///   applies.
+/// - `.transport(URLError)` is **unwrapped** to the raw underlying error so
+///   `NetworkRetry.shouldRetryURLError`'s allowlist (`notConnected` /
+///   `timedOut` / `connectionLost` / `cannotConnectToHost`) makes the call.
+///   Wrapping these as `.networkError` would cause unconditional retry of
+///   non-retryable codes like `URLError.cancelled` -- a UX regression on
+///   user-initiated cancellation.
 extension NetworkError {
-    func asCloudTranscriptionError() -> CloudTranscriptionError {
+    func asTranscriptionError() -> any Error {
         switch self {
         case .invalidResponse:
-            return .networkError(URLError(.badServerResponse))
+            return CloudTranscriptionError.networkError(URLError(.badServerResponse))
         case let .unacceptableStatus(code, body):
             let message = String(data: body, encoding: .utf8) ?? "No error message"
-            return .apiRequestFailed(statusCode: code, message: message)
+            return CloudTranscriptionError.apiRequestFailed(statusCode: code, message: message)
         case let .transport(error):
-            return .networkError(error)
+            return error
         case .decodingFailed:
-            return .noTranscriptionReturned
+            return CloudTranscriptionError.noTranscriptionReturned
         }
     }
 }

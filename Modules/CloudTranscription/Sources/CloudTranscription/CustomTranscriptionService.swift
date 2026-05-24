@@ -65,7 +65,7 @@ public struct CustomTranscriptionService: TranscriptionService, Sendable {
         do {
             (data, _) = try await networkClient.upload(request, from: body)
         } catch let error as NetworkError {
-            throw error.asCloudTranscriptionError()
+            throw error.asTranscriptionError()
         }
 
         do {

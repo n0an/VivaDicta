@@ -87,7 +87,7 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
         do {
             transcriptionResponse = try await networkClient.sendJSON(request, as: GeminiResponse.self)
         } catch let error as NetworkError {
-            throw error.asCloudTranscriptionError()
+            throw error.asTranscriptionError()
         }
 
         guard let candidate = transcriptionResponse.candidates.first,
