@@ -56,7 +56,7 @@ struct OllamaServiceTests {
 
     // MARK: - fetchModels (native fallback path)
 
-    @Test func fetchModelsFallsBackToNativeWhenOpenAICompatibleFailsParse() async throws {
+    @Test func fetchModelsFallsBackToNativeWhenOpenAICompatibleReturnsMalformedJSON() async throws {
         // OpenAI-compatible returns 200 but malformed; native returns valid.
         let networkService = SequencedMockNetworkService(responses: [
             .success((Data(#"{"unexpected": []}"#.utf8), makeHTTPResponse(openAIEndpoint(), code: 200))),
@@ -72,17 +72,70 @@ struct OllamaServiceTests {
         #expect(models == ["llama3.2"])
     }
 
-    @Test func fetchModelsThrowsWhenBothEndpointsFail() async {
+    @Test func fetchModelsFallsBackToNativeWhenOpenAICompatibleReturnsNon200() async throws {
+        // OpenAI-compatible returns 500; native succeeds.
         let networkService = SequencedMockNetworkService(responses: [
             .success((Data(), makeHTTPResponse(openAIEndpoint(), code: 500))),
-            .success((Data(), makeHTTPResponse(nativeEndpoint(), code: 500)))
+            .success((Data(#"{"models": [{"name": "qwen2.5"}]}"#.utf8), makeHTTPResponse(nativeEndpoint(), code: 200)))
         ])
         let sut = OllamaService(
             networkService: networkService,
             logger: Logger(subsystem: "test", category: "OllamaServiceTests")
         )
 
-        await #expect(throws: OllamaServiceError.self) {
+        let models = try await sut.fetchModels(serverURL: serverURL)
+
+        #expect(models == ["qwen2.5"])
+    }
+
+    @Test func fetchModelsFallsBackToNativeWhenOpenAICompatibleThrowsTransportError() async throws {
+        // OpenAI-compatible throws; native succeeds. This is the case where
+        // the diagnostic warning log matters (the regression fixed by PR #284).
+        let networkService = SequencedMockNetworkService(responses: [
+            .failure(URLError(.cannotConnectToHost)),
+            .success((Data(#"{"models": [{"name": "phi3"}]}"#.utf8), makeHTTPResponse(nativeEndpoint(), code: 200)))
+        ])
+        let sut = OllamaService(
+            networkService: networkService,
+            logger: Logger(subsystem: "test", category: "OllamaServiceTests")
+        )
+
+        let models = try await sut.fetchModels(serverURL: serverURL)
+
+        #expect(models == ["phi3"])
+    }
+
+    @Test func fetchModelsThrowsMalformedResponseWhenNativeEndpointReturns200WithBadJSON() async {
+        // OpenAI-compatible 500 + native 200-but-malformed -> native helper
+        // throws .malformedResponse, which surfaces to the caller.
+        let networkService = SequencedMockNetworkService(responses: [
+            .success((Data(), makeHTTPResponse(openAIEndpoint(), code: 500))),
+            .success((Data(#"{"unexpected": []}"#.utf8), makeHTTPResponse(nativeEndpoint(), code: 200)))
+        ])
+        let sut = OllamaService(
+            networkService: networkService,
+            logger: Logger(subsystem: "test", category: "OllamaServiceTests")
+        )
+
+        await #expect(throws: OllamaServiceError.malformedResponse) {
+            _ = try await sut.fetchModels(serverURL: serverURL)
+        }
+    }
+
+    @Test func fetchModelsThrowsWhenBothEndpointsReturnNon200() async {
+        let networkService = SequencedMockNetworkService(responses: [
+            .success((Data(), makeHTTPResponse(openAIEndpoint(), code: 500))),
+            .success((Data(), makeHTTPResponse(nativeEndpoint(), code: 503)))
+        ])
+        let sut = OllamaService(
+            networkService: networkService,
+            logger: Logger(subsystem: "test", category: "OllamaServiceTests")
+        )
+
+        // Pin the specific error case so a regression in error-mapping doesn't
+        // pass silently. The OpenAI helper threw .unexpectedStatus(500), but
+        // the surfaced error is from the native helper's .unexpectedStatus(503).
+        await #expect(throws: OllamaServiceError.unexpectedStatus(503)) {
             _ = try await sut.fetchModels(serverURL: serverURL)
         }
     }

@@ -38,10 +38,12 @@ struct OllamaService: Sendable {
     /// Returns the (sorted) model names. Throws only if both endpoints fail
     /// to produce a usable response.
     func fetchModels(serverURL: String) async throws -> [String] {
-        if let models = try? await fetchModelsViaOpenAICompatibleEndpoint(serverURL: serverURL) {
-            return models
+        do {
+            return try await fetchModelsViaOpenAICompatibleEndpoint(serverURL: serverURL)
+        } catch {
+            logger.logWarning("Failed to fetch Ollama models via OpenAI-compatible endpoint: \(error.localizedDescription); trying native endpoint")
+            return try await fetchModelsViaNativeEndpoint(serverURL: serverURL)
         }
-        return try await fetchModelsViaNativeEndpoint(serverURL: serverURL)
     }
 
     /// Lightweight reachability check. Pings the native `/api/tags` endpoint
@@ -67,10 +69,11 @@ struct OllamaService: Sendable {
     // MARK: - Private endpoint helpers
 
     private func fetchModelsViaOpenAICompatibleEndpoint(serverURL: String) async throws -> [String] {
-        guard let url = URL(string: "\(serverURL)/v1/models") else {
-            throw OllamaServiceError.invalidServerURL(serverURL)
-        }
-
+        // `URL(string:)` is intentionally permissive here. If the user-typed
+        // serverURL is malformed enough that URLSession can't reach it, the
+        // request below throws a URLError which propagates to the caller's
+        // fallback / catch.
+        let url = URL(string: "\(serverURL)/v1/models")!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 5
@@ -94,10 +97,7 @@ struct OllamaService: Sendable {
     }
 
     private func fetchModelsViaNativeEndpoint(serverURL: String) async throws -> [String] {
-        guard let url = URL(string: "\(serverURL)/api/tags") else {
-            throw OllamaServiceError.invalidServerURL(serverURL)
-        }
-
+        let url = URL(string: "\(serverURL)/api/tags")!
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 5
@@ -122,7 +122,6 @@ struct OllamaService: Sendable {
 }
 
 enum OllamaServiceError: Error, Equatable {
-    case invalidServerURL(String)
     case unexpectedStatus(Int)
     case malformedResponse
 }
