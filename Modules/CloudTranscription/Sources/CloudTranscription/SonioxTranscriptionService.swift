@@ -39,11 +39,14 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        config: Config,
+        networkService: any NetworkService = DefaultNetworkService(category: "SonioxTranscription")
+    ) {
         self.config = config
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -77,16 +80,11 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         let body = try createMultipartBody(fileURL: audioURL, boundary: boundary)
-        let (data, response) = try await urlSession.upload(for: request, from: body)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Soniox file upload failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.upload(request, from: body)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         do {
@@ -137,16 +135,11 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Soniox create transcription failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.send(request)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         do {
@@ -172,16 +165,11 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
             request.timeoutInterval = NetworkRetry.defaultTimeout
             request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
-            let (data, response) = try await urlSession.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-            }
-
-            if !(200...299).contains(httpResponse.statusCode) {
-                let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-                logger.logError("Soniox status poll failed with status \(httpResponse.statusCode): \(errorMessage)")
-                throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+            let data: Data
+            do {
+                (data, _) = try await networkService.send(request)
+            } catch let error as NetworkError {
+                throw error.asTranscriptionError()
             }
 
             if let status = try? JSONDecoder().decode(TranscriptionStatusResponse.self, from: data) {
@@ -216,16 +204,11 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
         request.timeoutInterval = NetworkRetry.defaultTimeout
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Soniox fetch transcript failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.send(request)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         if let decoded = try? JSONDecoder().decode(TranscriptResponse.self, from: data) {

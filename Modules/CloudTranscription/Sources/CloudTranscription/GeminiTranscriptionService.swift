@@ -21,11 +21,14 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let networkClient: NetworkClient
+    private let networkService: any NetworkService
 
-    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        config: Config,
+        networkService: any NetworkService = DefaultNetworkService(category: "GeminiTranscription")
+    ) {
         self.config = config
-        self.networkClient = NetworkClient(session: urlSession, category: "GeminiTranscription")
+        self.networkService = networkService
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -85,7 +88,7 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
 
         let transcriptionResponse: GeminiResponse
         do {
-            transcriptionResponse = try await networkClient.sendJSON(request, as: GeminiResponse.self)
+            transcriptionResponse = try await networkService.sendJSON(request, as: GeminiResponse.self)
         } catch let error as NetworkError {
             throw error.asTranscriptionError()
         }

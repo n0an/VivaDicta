@@ -329,7 +329,7 @@ private struct ExaWebSearchSettingsView: View {
         request.httpBody = body
 
         do {
-            let client = NetworkClient(category: "ExaKeyVerification")
+            let client: any NetworkService = DefaultNetworkService(category: "ExaKeyVerification")
             let (_, response) = try await client.send(request)
             return (200...299).contains(response.statusCode)
         } catch {

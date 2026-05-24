@@ -8,14 +8,14 @@ import Testing
 import TranscriptionCore
 
 /// Tests exercise `OpenAITranscriptionService` end-to-end with a stubbed
-/// `MockURLSession` (`URLSessionProtocol` conformer from `NetworkingMocks`).
+/// `MockNetworkService` (`URLSessionProtocol` conformer from `NetworkingMocks`).
 /// Verifies request shape (URL, method, headers, multipart body) and
 /// response handling (success, non-2xx, undecodable JSON).
 ///
 /// Retry-path tests are intentionally skipped here - retry semantics belong
 /// on `NetworkRetry`'s own tests.
 ///
-/// Each test creates a fresh `MockURLSession`, so there's no shared mutable
+/// Each test creates a fresh `MockNetworkService`, so there's no shared mutable
 /// state and the suite is safe to run in parallel with other suites.
 struct OpenAITranscriptionServiceTests {
 
@@ -39,27 +39,27 @@ struct OpenAITranscriptionServiceTests {
         )!
     }
 
-    private func stubSuccess(on session: MockURLSession, text: String) {
+    private func stubSuccess(on session: MockNetworkService, text: String) {
         let body = Data(#"{"text":"\#(text)","language":"en","duration":0.5}"#.utf8)
         session.stubUploadResponse = .success((body, makeHTTPResponse(200)))
     }
 
     private func makeService(
-        session: MockURLSession,
+        session: MockNetworkService,
         apiKey: String = "sk-test-key",
         modelName: String = "whisper-1",
         language: String = "auto"
     ) -> OpenAITranscriptionService {
         OpenAITranscriptionService(
             config: .init(apiKey: apiKey, modelName: modelName, language: language),
-            urlSession: session
+            networkService: session
         )
     }
 
     // MARK: - Success path
 
     @Test func successReturnsTranscribedText() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "hello world")
         let audio = try makeAudioFile()
 
@@ -74,7 +74,7 @@ struct OpenAITranscriptionServiceTests {
     // MARK: - Request shape
 
     @Test func requestTargetsOpenAITranscriptionsEndpoint() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
@@ -87,7 +87,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func requestSendsBearerAuthorizationHeader() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
@@ -99,7 +99,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func requestSendsMultipartContentTypeWithBoundary() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
@@ -112,7 +112,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func bodyContainsModelAndResponseFormatFields() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
@@ -130,7 +130,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func bodyIncludesLanguageFieldWhenNotAuto() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
@@ -143,7 +143,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func bodyOmitsLanguageFieldWhenAuto() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
 
@@ -158,7 +158,7 @@ struct OpenAITranscriptionServiceTests {
     // MARK: - Validation / short-circuit
 
     @Test func missingAPIKeyThrowsBeforeMakingRequest() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         let audio = try makeAudioFile()
         let sut = makeService(session: session, apiKey: "")
 
@@ -169,7 +169,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func missingAudioFileThrowsAudioFileNotFound() async {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
         let sut = makeService(session: session)
 
@@ -182,7 +182,7 @@ struct OpenAITranscriptionServiceTests {
 
     @Test func nonSuccessStatusThrowsApiRequestFailed() async throws {
         // 401 is not retried (only 429 + 5xx are), so this throws immediately.
-        let session = MockURLSession()
+        let session = MockNetworkService()
         session.stubUploadResponse = .success((
             Data(#"{"error":"invalid key"}"#.utf8),
             makeHTTPResponse(401)
@@ -202,7 +202,7 @@ struct OpenAITranscriptionServiceTests {
     }
 
     @Test func undecodableJSONOn200ThrowsNoTranscriptionReturned() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         session.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
         let audio = try makeAudioFile()
         let sut = makeService(session: session)

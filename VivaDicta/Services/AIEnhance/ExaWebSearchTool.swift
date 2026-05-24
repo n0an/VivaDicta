@@ -140,7 +140,7 @@ enum ExaWebSearchToolRuntime {
 
 nonisolated enum ExaSearchClient: Sendable {
     /// URL session used for Exa search requests. Override only from tests.
-    nonisolated(unsafe) static var urlSession: any URLSessionProtocol = URLSession.shared
+    nonisolated(unsafe) static var networkService: any NetworkService = DefaultNetworkService(category: "AppClient")
 
     nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
         guard let url = URL(string: "https://api.exa.ai/search") else {
@@ -159,7 +159,7 @@ nonisolated enum ExaSearchClient: Sendable {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.httpBody = try JSONEncoder().encode(payload)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ExaError.invalidResponse

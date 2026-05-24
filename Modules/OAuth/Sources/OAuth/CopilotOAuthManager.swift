@@ -12,7 +12,7 @@ public final class CopilotOAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "CopilotOAuth")
     private let keychain: any KeychainService
     private let backgroundTaskService: (any BackgroundTaskService)?
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
     /// GitHub OAuth client ID (same as VS Code Copilot extension).
     private let clientId = "Iv1.b507a08c87ecfe98"
@@ -26,11 +26,11 @@ public final class CopilotOAuthManager: Sendable {
     public init(
         keychain: any KeychainService,
         backgroundTaskService: (any BackgroundTaskService)? = nil,
-        urlSession: any URLSessionProtocol = URLSession.shared
+        networkService: any NetworkService = DefaultNetworkService(category: "CopilotOAuthManager")
     ) {
         self.keychain = keychain
         self.backgroundTaskService = backgroundTaskService
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     // MARK: - Public API
@@ -54,7 +54,7 @@ public final class CopilotOAuthManager: Sendable {
         request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = "client_id=\(clientId)&scope=read:user".data(using: .utf8)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             throw CopilotOAuthError.deviceCodeFailed("Failed to get device code")
@@ -108,7 +108,7 @@ public final class CopilotOAuthManager: Sendable {
 
             let data: Data
             do {
-                data = try await urlSession.data(for: request).0
+                data = try await networkService.send(request, acceptableStatusCodes: Set(0...999)).0
             } catch let urlError as URLError where urlError.code != .cancelled {
                 // Transient network error (e.g. -1005 after backgrounding); retry on next tick.
                 logger.logInfo("Poll network error \(urlError.code.rawValue), retrying")
@@ -201,7 +201,7 @@ public final class CopilotOAuthManager: Sendable {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 15
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
@@ -235,7 +235,7 @@ public final class CopilotOAuthManager: Sendable {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 10
 
-        guard let (data, response) = try? await urlSession.data(for: request),
+        guard let (data, response) = try? await networkService.send(request, acceptableStatusCodes: Set(0...999)),
               let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

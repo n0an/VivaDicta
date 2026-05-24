@@ -8,7 +8,7 @@ import Testing
 import TranscriptionCore
 
 /// Tests exercise `GroqTranscriptionService` end-to-end with a stubbed
-/// `MockURLSession`. Verifies request shape (URL, method, headers,
+/// `MockNetworkService`. Verifies request shape (URL, method, headers,
 /// multipart body) and response handling (success, non-2xx, undecodable
 /// JSON), plus the Groq-specific vocabulary-prompt path.
 ///
@@ -34,13 +34,13 @@ struct GroqTranscriptionServiceTests {
         )!
     }
 
-    private func stubSuccess(on session: MockURLSession, text: String) {
+    private func stubSuccess(on session: MockNetworkService, text: String) {
         let body = Data(#"{"text":"\#(text)","language":"en","duration":0.5}"#.utf8)
         session.stubUploadResponse = .success((body, makeHTTPResponse(200)))
     }
 
     private func makeService(
-        session: MockURLSession,
+        session: MockNetworkService,
         apiKey: String = "gsk-test-key",
         modelName: String = "whisper-large-v3",
         language: String = "auto",
@@ -53,14 +53,14 @@ struct GroqTranscriptionServiceTests {
                 language: language,
                 vocabulary: vocabulary
             ),
-            urlSession: session
+            networkService: session
         )
     }
 
     // MARK: - Success path
 
     @Test func successReturnsTranscribedText() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "groq hello")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -75,7 +75,7 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Request shape
 
     @Test func requestTargetsGroqTranscriptionsEndpoint() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -88,7 +88,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func requestSendsBearerAuthorizationHeader() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, apiKey: "gsk-abc123")
@@ -100,7 +100,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func requestSendsMultipartContentTypeWithBoundary() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -113,7 +113,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func bodyContainsModelAndResponseFormatFields() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, modelName: "whisper-large-v3")
@@ -128,7 +128,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func bodyIncludesLanguageFieldWhenNotAuto() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, language: "fr")
@@ -141,7 +141,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func bodyOmitsLanguageFieldWhenAuto() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, language: "auto")
@@ -156,7 +156,7 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Vocabulary / prompt (Groq-specific)
 
     @Test func bodyOmitsPromptFieldWhenVocabularyIsEmpty() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, vocabulary: [])
@@ -169,7 +169,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func bodyIncludesPromptFieldWhenVocabularyProvided() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, vocabulary: ["SwiftUI", "Kubernetes"])
@@ -186,7 +186,7 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Validation / short-circuit
 
     @Test func missingAPIKeyThrowsBeforeMakingRequest() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         let audio = try makeAudioFile()
         let sut = makeService(session: session, apiKey: "")
 
@@ -197,7 +197,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func missingAudioFileThrowsAudioFileNotFound() async {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
         let sut = makeService(session: session)
 
@@ -209,7 +209,7 @@ struct GroqTranscriptionServiceTests {
     // MARK: - Response handling
 
     @Test func nonSuccessStatusThrowsApiRequestFailed() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         session.stubUploadResponse = .success((
             Data(#"{"error":"invalid key"}"#.utf8),
             makeHTTPResponse(401)
@@ -229,7 +229,7 @@ struct GroqTranscriptionServiceTests {
     }
 
     @Test func undecodableJSONOn200ThrowsNoTranscriptionReturned() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         session.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
         let audio = try makeAudioFile()
         let sut = makeService(session: session)

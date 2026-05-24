@@ -72,11 +72,11 @@ private struct CloudReminderDraftsPayload: Codable {
 final class CloudReminderExtractionProvider {
     private let logger = Logger(category: .reminderExtraction)
     private let aiService: AIService
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    init(aiService: AIService, urlSession: any URLSessionProtocol = URLSession.shared) {
+    init(aiService: AIService, networkService: any NetworkService = DefaultNetworkService(category: "CloudReminderExtraction")) {
         self.aiService = aiService
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     func canExtract(
@@ -315,7 +315,7 @@ final class CloudReminderExtractionProvider {
         )
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ReminderExtractionError.invalidResponse
@@ -380,9 +380,7 @@ final class CloudReminderExtractionProvider {
             systemPrompt: systemMessage(now: now, timeZone: timeZone, language: language),
             model: model,
             accessToken: token,
-            projectId: projectId,
-            urlSession: urlSession
-        )
+            projectId: projectId        )
         return try decodeTextResponse(responseText)
     }
 
@@ -446,7 +444,7 @@ final class CloudReminderExtractionProvider {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ReminderExtractionError.invalidResponse

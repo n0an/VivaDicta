@@ -46,7 +46,7 @@ enum GeminiAPIClient {
         model: String,
         accessToken: String,
         projectId: String?,
-        urlSession: any URLSessionProtocol = URLSession.shared
+        networkService: any NetworkService = DefaultNetworkService(category: "GeminiAPIClient")
     ) async throws -> String {
         guard let url = URL(string: endpoint) else {
             throw OAuthError.invalidResponse
@@ -89,7 +89,7 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OAuthError.invalidResponse
@@ -145,7 +145,7 @@ enum GeminiAPIClient {
         accessToken: String,
         projectId: String?,
         onPartialResult: @escaping @MainActor (String) -> Void,
-        urlSession: any URLSessionProtocol = URLSession.shared
+        networkService: any NetworkService = DefaultNetworkService(category: "GeminiAPIClient")
     ) async throws -> String {
         guard let url = URL(string: streamingEndpoint) else {
             throw OAuthError.invalidResponse
@@ -188,7 +188,7 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OAuthError.invalidResponse
@@ -318,7 +318,7 @@ enum GeminiAPIClient {
         accessToken: String,
         projectId: String?,
         onPartialResponse: @escaping @MainActor (String) -> Void,
-        urlSession: any URLSessionProtocol = URLSession.shared
+        networkService: any NetworkService = DefaultNetworkService(category: "GeminiAPIClient")
     ) async throws -> String {
         guard let url = URL(string: streamingEndpoint) else {
             throw OAuthError.invalidResponse
@@ -359,7 +359,7 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OAuthError.invalidResponse
@@ -461,7 +461,7 @@ enum GeminiAPIClient {
         model: String,
         accessToken: String,
         projectId: String?,
-        urlSession: any URLSessionProtocol = URLSession.shared
+        networkService: any NetworkService = DefaultNetworkService(category: "GeminiAPIClient")
     ) async throws -> String {
         try await chatStreaming(
             systemMessage: systemMessage,
@@ -470,7 +470,7 @@ enum GeminiAPIClient {
             accessToken: accessToken,
             projectId: projectId,
             onPartialResponse: { _ in },
-            urlSession: urlSession
+            networkService: networkService
         )
     }
 

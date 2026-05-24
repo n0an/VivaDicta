@@ -23,10 +23,10 @@ public struct GeminiOAuthProvider: OAuthProvider {
         "prompt": "consent"
     ]
 
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    public init(urlSession: any URLSessionProtocol = URLSession.shared) {
-        self.urlSession = urlSession
+    public init(networkService: any NetworkService = DefaultNetworkService(category: "GeminiOAuthProvider")) {
+        self.networkService = networkService
     }
 
     public func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {
@@ -76,7 +76,7 @@ public struct GeminiOAuthProvider: OAuthProvider {
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             return nil
@@ -102,7 +102,7 @@ public struct GeminiOAuthProvider: OAuthProvider {
         let body: [String: Any] = ["tierId": "free-tier"]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             return nil
@@ -131,7 +131,7 @@ public struct GeminiOAuthProvider: OAuthProvider {
             request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             request.timeoutInterval = 10
 
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

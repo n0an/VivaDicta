@@ -13,14 +13,17 @@ import os
 public final class OAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "OAuthManager")
     private let keychain: any KeychainService
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
-    public init(keychain: any KeychainService, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        keychain: any KeychainService,
+        networkService: any NetworkService = DefaultNetworkService(category: "OAuthManager")
+    ) {
         self.keychain = keychain
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     // MARK: - Public API
@@ -239,7 +242,7 @@ public final class OAuthManager: Sendable {
             request.httpBody = formBody.data(using: .utf8)
         }
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OAuthError.invalidResponse
@@ -301,7 +304,7 @@ public final class OAuthManager: Sendable {
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 10
 
-        guard let (data, response) = try? await urlSession.data(for: request),
+        guard let (data, response) = try? await networkService.send(request, acceptableStatusCodes: Set(0...999)),
               let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

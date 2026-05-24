@@ -11,7 +11,7 @@ enum CopilotAPIClient {
     private static let logger = Logger(category: .copilotAPI)
 
     /// URL session used for all Copilot API calls. Override only from tests.
-    nonisolated(unsafe) static var urlSession: any URLSessionProtocol = URLSession.shared
+    nonisolated(unsafe) static var networkService: any NetworkService = DefaultNetworkService(category: "AppClient")
 
     /// Base URL for Copilot's API.
     static let baseURL = "https://api.individual.githubcopilot.com"
@@ -234,7 +234,7 @@ enum CopilotAPIClient {
     // MARK: - Shared Response Handling
 
     private static func executeRequest(_ request: URLRequest) async throws -> String {
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
@@ -265,7 +265,7 @@ enum CopilotAPIClient {
         _ request: URLRequest,
         onPartialResult: @escaping @MainActor (String) -> Void
     ) async throws -> String {
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
@@ -350,7 +350,7 @@ enum CopilotAPIClient {
             request.addValue(value, forHTTPHeaderField: key)
         }
 
-        guard let (data, response) = try? await urlSession.data(for: request),
+        guard let (data, response) = try? await networkService.send(request, acceptableStatusCodes: Set(0...999)),
               let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

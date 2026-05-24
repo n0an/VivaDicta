@@ -175,7 +175,7 @@ class AIService {
     private let modesStorageKey: String
     private let selectedModeStorageKey: String
     private let keychain: any KeychainService
-    let urlSession: any URLSessionProtocol
+    let networkService: any NetworkService
     let oauthManager: OAuthManager
     let copilotOAuthManager: CopilotOAuthManager
     private let baseTimeout: TimeInterval = 300
@@ -195,12 +195,12 @@ class AIService {
 
     init(
         keychain: any KeychainService = DefaultKeychainService(),
-        urlSession: any URLSessionProtocol = URLSession.shared,
+        networkService: any NetworkService = DefaultNetworkService(category: "AIService"),
         oauthManager: OAuthManager = .shared,
         copilotOAuthManager: CopilotOAuthManager = .shared
     ) {
         self.keychain = keychain
-        self.urlSession = urlSession
+        self.networkService = networkService
         self.oauthManager = oauthManager
         self.copilotOAuthManager = copilotOAuthManager
         self.userDefaults = UserDefaultsStorage.shared
@@ -247,12 +247,12 @@ class AIService {
         modesStorageKey: String = "VivaModes",
         selectedModeStorageKey: String = "selectedVivaMode",
         keychain: any KeychainService = DefaultKeychainService(),
-        urlSession: any URLSessionProtocol = URLSession.shared,
+        networkService: any NetworkService = DefaultNetworkService(category: "AIService"),
         oauthManager: OAuthManager = .shared,
         copilotOAuthManager: CopilotOAuthManager = .shared
     ) {
         self.keychain = keychain
-        self.urlSession = urlSession
+        self.networkService = networkService
         self.oauthManager = oauthManager
         self.copilotOAuthManager = copilotOAuthManager
         self.userDefaults = userDefaults
@@ -1055,7 +1055,7 @@ class AIService {
         )
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -1156,7 +1156,7 @@ class AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -1295,8 +1295,7 @@ class AIService {
                     model: model,
                     accessToken: token,
                     projectId: projectId,
-                    onPartialResult: onPartialResponse,
-                    urlSession: urlSession
+                    onPartialResult: onPartialResponse
                 )
                 return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
             } catch let error as EnhancementError {
@@ -1537,8 +1536,7 @@ class AIService {
                     systemPrompt: resolvedSystemMessage,
                     model: model,
                     accessToken: token,
-                    projectId: projectId,
-                    urlSession: urlSession
+                    projectId: projectId
                 )
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as EnhancementError {
@@ -1655,7 +1653,7 @@ class AIService {
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
             do {
-                let (data, response) = try await urlSession.data(for: request)
+                let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw EnhancementError.invalidResponse
@@ -1709,7 +1707,7 @@ class AIService {
             request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
             do {
-                let (data, response) = try await urlSession.data(for: request)
+                let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw EnhancementError.invalidResponse
@@ -1832,7 +1830,7 @@ class AIService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: finalRequestBody)
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw EnhancementError.invalidResponse
@@ -1891,7 +1889,7 @@ class AIService {
         request.timeoutInterval = 5 // Short timeout for local service
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else {
@@ -1931,7 +1929,7 @@ class AIService {
         request.timeoutInterval = 5
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else {
@@ -1970,7 +1968,7 @@ class AIService {
         request.timeoutInterval = 3
 
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
             }
@@ -2053,7 +2051,7 @@ class AIService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw EnhancementError.invalidResponse
@@ -2170,7 +2168,7 @@ class AIService {
 
         do {
             logger.logNotice("🔧 Custom OpenAI Test - Sending request...")
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logError("🔧 Custom OpenAI Test - Response is not HTTPURLResponse")
@@ -2407,7 +2405,7 @@ class AIService {
         logger.logNotice("🔑 Verifying API key for \(provider.rawValue) provider at \(url.absoluteString)")
         
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
             
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logNotice("🔑 API key verification failed for \(provider.rawValue): Invalid response")
@@ -2442,7 +2440,7 @@ class AIService {
         logger.logNotice("🔑 Verifying API key for cerebras provider at \(url.absoluteString)")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logNotice("🔑 API key verification failed for cerebras: Invalid response")
@@ -2487,7 +2485,7 @@ class AIService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
         
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
             
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2509,7 +2507,7 @@ class AIService {
         request.addValue(key, forHTTPHeaderField: "xi-api-key")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
             let isValid = (response as? HTTPURLResponse)?.statusCode == 200
 
             if let body = String(data: data, encoding: .utf8) {
@@ -2530,7 +2528,7 @@ class AIService {
         request.addValue("Token \(key)", forHTTPHeaderField: "Authorization")
         
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
             
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2551,7 +2549,7 @@ class AIService {
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logError("Mistral API key verification failed: Invalid response from server.")
@@ -2584,7 +2582,7 @@ class AIService {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
 
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2607,7 +2605,7 @@ class AIService {
         request.addValue(key, forHTTPHeaderField: "x-gladia-key")
 
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2629,7 +2627,7 @@ class AIService {
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
 
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2649,7 +2647,7 @@ class AIService {
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
 
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2676,7 +2674,7 @@ class AIService {
         request.addValue(CartesiaTranscriptionService.cartesiaVersion, forHTTPHeaderField: "Cartesia-Version")
 
         do {
-            let (_, response) = try await urlSession.data(for: request)
+            let (_, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 return false
@@ -2700,7 +2698,7 @@ class AIService {
         logger.logNotice("🔑 Verifying Vercel AI Gateway API key")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logNotice("🔑 Vercel AI Gateway API key verification failed: Invalid response")
@@ -2745,7 +2743,7 @@ class AIService {
         logger.logNotice("🔑 Verifying Grok API key at \(url.absoluteString)")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logNotice("🔑 Grok API key verification failed: Invalid response")
@@ -2790,7 +2788,7 @@ class AIService {
         logger.logNotice("🔑 Verifying HuggingFace API key at \(url.absoluteString)")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 logger.logNotice("🔑 HuggingFace API key verification failed: Invalid response")
@@ -2855,7 +2853,7 @@ class AIService {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 logger.logError("Failed to fetch OpenRouter models: Invalid HTTP response")
@@ -2888,7 +2886,7 @@ class AIService {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 logger.logError("Failed to fetch Vercel AI Gateway models: Invalid HTTP response")
@@ -2933,7 +2931,7 @@ class AIService {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
         do {
-            let (data, response) = try await urlSession.data(for: request)
+            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 logger.logError("Failed to fetch HuggingFace models: Invalid HTTP response")

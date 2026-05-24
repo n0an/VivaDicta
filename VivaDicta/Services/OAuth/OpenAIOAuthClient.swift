@@ -10,7 +10,7 @@ enum OpenAIOAuthClient {
     private static let logger = Logger(category: .openAIOAuthAPI)
 
     /// URL session used for all OpenAI OAuth API calls. Override only from tests.
-    nonisolated(unsafe) static var urlSession: any URLSessionProtocol = URLSession.shared
+    nonisolated(unsafe) static var networkService: any NetworkService = DefaultNetworkService(category: "AppClient")
 
     /// Originator header required by the Codex endpoint.
     private static let originator = "codex_cli_rs"
@@ -151,7 +151,7 @@ enum OpenAIOAuthClient {
         request.addValue(originator, forHTTPHeaderField: "originator")
         request.timeoutInterval = 15
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             return [defaultModel]
@@ -197,7 +197,7 @@ enum OpenAIOAuthClient {
         request: URLRequest,
         onPartialResult: (@MainActor (String) -> Void)?
     ) async throws -> String {
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OAuthError.invalidResponse

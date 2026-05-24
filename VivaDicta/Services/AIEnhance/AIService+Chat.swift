@@ -167,8 +167,7 @@ extension AIService {
                     model: model,
                     accessToken: token,
                     projectId: projectId,
-                    onPartialResponse: onPartialResponse,
-                    urlSession: urlSession
+                    onPartialResponse: onPartialResponse
                 )
             } catch let error as OAuthError {
                 if let apiKey = provider.apiKey {
@@ -252,8 +251,7 @@ extension AIService {
                     messages: messages,
                     model: model,
                     accessToken: token,
-                    projectId: projectId,
-                    urlSession: urlSession
+                    projectId: projectId
                 )
             } catch let error as OAuthError {
                 if let apiKey = provider.apiKey {
@@ -519,7 +517,7 @@ extension AIService {
         let body = buildOpenAIChatRequestBody(model: model, systemMessage: systemMessage, messages: messages, stream: true)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -573,7 +571,7 @@ extension AIService {
         let body = buildOpenAIChatRequestBody(model: model, systemMessage: systemMessage, messages: messages, stream: false)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -629,7 +627,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -693,7 +691,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -755,7 +753,7 @@ extension AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (bytes, response) = try await urlSession.bytes(for: request)
+        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -837,7 +835,7 @@ extension AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -885,7 +883,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
@@ -937,7 +935,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw EnhancementError.invalidResponse
