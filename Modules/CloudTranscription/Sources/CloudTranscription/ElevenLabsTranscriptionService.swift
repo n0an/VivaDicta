@@ -25,11 +25,14 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        config: Config,
+        networkService: any NetworkService = DefaultNetworkService(category: "ElevenLabsTranscription")
+    ) {
         self.config = config
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -53,17 +56,11 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
 
         let body = try createRequestBody(audioURL: audioURL, boundary: boundary)
 
-        let (data, response) = try await urlSession.upload(for: request, from: body)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        logger.logNotice("ElevenLabs API Response Status: \(httpResponse.statusCode)")
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.upload(request, from: body)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         do {

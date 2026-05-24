@@ -8,7 +8,7 @@ import Testing
 import TranscriptionCore
 
 /// Tests exercise `XaiTranscriptionService` end-to-end with a stubbed
-/// `MockURLSession`. Verifies request shape (URL, method, headers,
+/// `MockNetworkService`. Verifies request shape (URL, method, headers,
 /// multipart body) and response handling (success, non-2xx, undecodable
 /// JSON), plus the xAI-specific `format`/`file-last` body ordering.
 struct XaiTranscriptionServiceTests {
@@ -30,13 +30,13 @@ struct XaiTranscriptionServiceTests {
         )!
     }
 
-    private func stubSuccess(on session: MockURLSession, text: String) {
+    private func stubSuccess(on session: MockNetworkService, text: String) {
         let body = Data(#"{"text":"\#(text)"}"#.utf8)
         session.stubUploadResponse = .success((body, makeHTTPResponse(200)))
     }
 
     private func makeService(
-        session: MockURLSession,
+        session: MockNetworkService,
         apiKey: String = "xai-test-key",
         language: String = "en",
         formatted: Bool = true
@@ -47,14 +47,14 @@ struct XaiTranscriptionServiceTests {
                 language: language,
                 formatted: formatted
             ),
-            urlSession: session
+            networkService: session
         )
     }
 
     // MARK: - Success path
 
     @Test func successReturnsTranscribedText() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "xai hello")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -69,7 +69,7 @@ struct XaiTranscriptionServiceTests {
     // MARK: - Request shape
 
     @Test func requestTargetsXaiSttEndpoint() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -82,7 +82,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func requestSendsBearerAuthorizationHeader() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, apiKey: "xai-abc123")
@@ -94,7 +94,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func requestSendsMultipartContentTypeWithBoundary() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -107,7 +107,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func bodyContainsFormatTrueByDefault() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session)
@@ -120,7 +120,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func bodySendsFormatFalseWhenFormattedDisabled() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, formatted: false)
@@ -133,7 +133,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func bodyIncludesLanguageField() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, language: "fr")
@@ -149,7 +149,7 @@ struct XaiTranscriptionServiceTests {
         // xAI rejects format=true without a language, so the service must
         // never omit the field. Verify with `fil` (Filipino) since it's xAI's
         // 3-letter outlier and proves no "drop if not in allowlist" sneaks in.
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, language: "fil")
@@ -162,7 +162,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func bodyOrdersFieldsAsFormatLanguageFile() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         stubSuccess(on: session, text: "ok")
         let audio = try makeAudioFile()
         let sut = makeService(session: session, language: "en")
@@ -183,7 +183,7 @@ struct XaiTranscriptionServiceTests {
     // MARK: - Validation / short-circuit
 
     @Test func missingAPIKeyThrowsBeforeMakingRequest() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         let audio = try makeAudioFile()
         let sut = makeService(session: session, apiKey: "")
 
@@ -194,7 +194,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func missingAudioFileThrowsAudioFileNotFound() async {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
         let sut = makeService(session: session)
 
@@ -206,7 +206,7 @@ struct XaiTranscriptionServiceTests {
     // MARK: - Response handling
 
     @Test func nonSuccessStatusThrowsApiRequestFailed() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         session.stubUploadResponse = .success((
             Data(#"{"error":"invalid key"}"#.utf8),
             makeHTTPResponse(401)
@@ -226,7 +226,7 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func undecodableJSONOn200ThrowsNoTranscriptionReturned() async throws {
-        let session = MockURLSession()
+        let session = MockNetworkService()
         session.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
         let audio = try makeAudioFile()
         let sut = makeService(session: session)

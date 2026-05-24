@@ -6,7 +6,7 @@ import NetworkingMocks
 import Testing
 @testable import VivaDicta
 
-/// Smoke tests confirming `AIService` plumbs the injected `URLSessionProtocol`
+/// Smoke tests confirming `AIService` plumbs the injected `NetworkService`
 /// through to the underlying HTTP calls. Full per-provider coverage lives in
 /// each provider's own test suite; this file just locks in the wiring so a
 /// future refactor that drops the injection is caught immediately.
@@ -21,17 +21,16 @@ struct AIServiceNetworkingTests {
         return defaults
     }
 
-    @Test func storesInjectedURLSession() {
-        let session = MockURLSession()
-        let service = AIService(userDefaults: makeDefaults(), urlSession: session)
+    @Test func storesInjectedNetworkService() {
+        let net = MockNetworkService()
+        let service = AIService(userDefaults: makeDefaults(), networkService: net)
 
-        // The injected mock should be reachable as the same instance.
-        #expect(service.urlSession is MockURLSession)
+        #expect(service.networkService is MockNetworkService)
     }
 
-    @Test func defaultURLSessionIsRealURLSessionWhenNotInjected() {
+    @Test func defaultNetworkServiceIsDefaultNetworkServiceWhenNotInjected() {
         let service = AIService(userDefaults: makeDefaults())
 
-        #expect(service.urlSession is URLSession)
+        #expect(service.networkService is DefaultNetworkService)
     }
 }

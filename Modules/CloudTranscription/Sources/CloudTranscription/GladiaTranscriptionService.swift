@@ -38,11 +38,14 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        config: Config,
+        networkService: any NetworkService = DefaultNetworkService(category: "GladiaTranscription")
+    ) {
         self.config = config
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -75,16 +78,11 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         let body = try createMultipartBody(fileURL: audioURL, boundary: boundary)
-        let (data, response) = try await urlSession.upload(for: request, from: body)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Gladia upload failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.upload(request, from: body)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         do {
@@ -145,16 +143,11 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Gladia create transcription failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.send(request)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         do {
@@ -180,16 +173,11 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
             request.timeoutInterval = NetworkRetry.defaultTimeout
             request.setValue(config.apiKey, forHTTPHeaderField: "x-gladia-key")
 
-            let (data, response) = try await urlSession.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-            }
-
-            if !(200...299).contains(httpResponse.statusCode) {
-                let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-                logger.logError("Gladia status poll failed with status \(httpResponse.statusCode): \(errorMessage)")
-                throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+            let data: Data
+            do {
+                (data, _) = try await networkService.send(request)
+            } catch let error as NetworkError {
+                throw error.asTranscriptionError()
             }
 
             if let status = try? JSONDecoder().decode(StatusResponse.self, from: data) {

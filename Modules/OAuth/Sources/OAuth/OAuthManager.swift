@@ -13,14 +13,17 @@ import os
 public final class OAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "OAuthManager")
     private let keychain: any KeychainService
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
-    public init(keychain: any KeychainService, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        keychain: any KeychainService,
+        networkService: any NetworkService = DefaultNetworkService(category: "OAuthManager")
+    ) {
         self.keychain = keychain
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     // MARK: - Public API
@@ -239,11 +242,7 @@ public final class OAuthManager: Sendable {
             request.httpBody = formBody.data(using: .utf8)
         }
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw OAuthError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -301,8 +300,7 @@ public final class OAuthManager: Sendable {
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 10
 
-        guard let (data, response) = try? await urlSession.data(for: request),
-              let httpResponse = response as? HTTPURLResponse,
+        guard let (data, httpResponse) = try? await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny),
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return (nil, nil)

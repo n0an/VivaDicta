@@ -30,11 +30,14 @@ public struct DeepgramTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
+    public init(
+        config: Config,
+        networkService: any NetworkService = DefaultNetworkService(category: "DeepgramTranscription")
+    ) {
         self.config = config
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -91,16 +94,11 @@ public struct DeepgramTranscriptionService: TranscriptionService, Sendable {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        let (data, response) = try await urlSession.upload(for: request, from: audioData)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Deepgram API request failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkService.upload(request, from: audioData)
+        } catch let error as NetworkError {
+            throw error.asTranscriptionError()
         }
 
         do {

@@ -12,7 +12,7 @@ public final class CopilotOAuthManager: Sendable {
     private let logger = Logger(oauthCategory: "CopilotOAuth")
     private let keychain: any KeychainService
     private let backgroundTaskService: (any BackgroundTaskService)?
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
     /// GitHub OAuth client ID (same as VS Code Copilot extension).
     private let clientId = "Iv1.b507a08c87ecfe98"
@@ -26,11 +26,11 @@ public final class CopilotOAuthManager: Sendable {
     public init(
         keychain: any KeychainService,
         backgroundTaskService: (any BackgroundTaskService)? = nil,
-        urlSession: any URLSessionProtocol = URLSession.shared
+        networkService: any NetworkService = DefaultNetworkService(category: "CopilotOAuthManager")
     ) {
         self.keychain = keychain
         self.backgroundTaskService = backgroundTaskService
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     // MARK: - Public API
@@ -54,9 +54,9 @@ public final class CopilotOAuthManager: Sendable {
         request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = "client_id=\(clientId)&scope=read:user".data(using: .utf8)
 
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode == 200 else {
             throw CopilotOAuthError.deviceCodeFailed("Failed to get device code")
         }
 
@@ -108,10 +108,14 @@ public final class CopilotOAuthManager: Sendable {
 
             let data: Data
             do {
-                data = try await urlSession.data(for: request).0
-            } catch let urlError as URLError where urlError.code != .cancelled {
+                data = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny).0
+            } catch NetworkError.transport(let underlying)
+                        where (underlying as? URLError)?.code != .cancelled {
                 // Transient network error (e.g. -1005 after backgrounding); retry on next tick.
-                logger.logInfo("Poll network error \(urlError.code.rawValue), retrying")
+                // `NetworkService` wraps URLErrors as `NetworkError.transport`, so we unwrap
+                // here to match the previous URLError-only retry behavior.
+                let code = (underlying as? URLError)?.code.rawValue ?? -1
+                logger.logInfo("Poll network error \(code), retrying")
                 continue
             }
 
@@ -201,11 +205,7 @@ public final class CopilotOAuthManager: Sendable {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 15
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let body = String(data: data, encoding: .utf8) ?? ""
@@ -235,8 +235,7 @@ public final class CopilotOAuthManager: Sendable {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 10
 
-        guard let (data, response) = try? await urlSession.data(for: request),
-              let httpResponse = response as? HTTPURLResponse,
+        guard let (data, httpResponse) = try? await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny),
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil

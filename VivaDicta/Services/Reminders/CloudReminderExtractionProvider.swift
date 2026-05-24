@@ -72,11 +72,11 @@ private struct CloudReminderDraftsPayload: Codable {
 final class CloudReminderExtractionProvider {
     private let logger = Logger(category: .reminderExtraction)
     private let aiService: AIService
-    private let urlSession: any URLSessionProtocol
+    private let networkService: any NetworkService
 
-    init(aiService: AIService, urlSession: any URLSessionProtocol = URLSession.shared) {
+    init(aiService: AIService, networkService: any NetworkService = DefaultNetworkService(category: "CloudReminderExtraction")) {
         self.aiService = aiService
-        self.urlSession = urlSession
+        self.networkService = networkService
     }
 
     func canExtract(
@@ -315,11 +315,7 @@ final class CloudReminderExtractionProvider {
         )
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw ReminderExtractionError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -381,7 +377,7 @@ final class CloudReminderExtractionProvider {
             model: model,
             accessToken: token,
             projectId: projectId,
-            urlSession: urlSession
+            networkService: networkService
         )
         return try decodeTextResponse(responseText)
     }
@@ -446,11 +442,7 @@ final class CloudReminderExtractionProvider {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw ReminderExtractionError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
