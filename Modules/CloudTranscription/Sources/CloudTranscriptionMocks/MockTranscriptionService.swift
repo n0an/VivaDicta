@@ -5,11 +5,21 @@ import CloudTranscription
 import TranscriptionCore
 import TestUtilities
 
-/// Hand-rolled mock for the `transcribe(audioURL:)` shape used by cloud
-/// transcription services. Stub the result via `stubTranscribeResponse`.
+/// Generic mock conforming to `TranscriptionService`. Serves every provider
+/// (cloud + local) since the protocol surface is a single
+/// `transcribe(audioURL:)` method. Tests that need to assert per-provider
+/// routing create one `MockTranscriptionService` instance per route and
+/// hand them to the engine's `ServiceFactory`.
 ///
-/// Conforms to `TranscriptionService` so it can be returned from a
-/// `DefaultTranscriptionEngine.ServiceFactory` to test engine-level routing.
+/// ## Usage
+///
+/// ```swift
+/// let sut = MockTranscriptionService()
+/// sut.stubTranscribeResponse = .success(.plain("hello"))
+/// let result = try await sut.transcribe(audioURL: testFile)
+/// #expect(result.text == "hello")
+/// #expect(sut.transcribeCallCount == 1)
+/// ```
 public final class MockTranscriptionService: TranscriptionService, @unchecked Sendable {
 
     public init() {}
