@@ -24,7 +24,7 @@ struct OAuthManagerTests {
         let encoded = try JSONEncoder().encode(credential)
         keychain.save(data: encoded, forKey: provider.keychainKey, syncable: false)
 
-        let sut = OAuthManager(keychain: keychain)
+        let sut = DefaultOAuthManager(keychain: keychain)
         #expect(sut.isSignedIn(provider: provider))
 
         sut.signOut(provider: provider)
@@ -37,7 +37,7 @@ struct OAuthManagerTests {
     @Test func isSignedInReturnsFalseWhenKeychainEmpty() {
         let keychain = MockKeychainService()
         let provider = MockOAuthProvider(keychainKey: "test.oauth.credential")
-        let sut = OAuthManager(keychain: keychain)
+        let sut = DefaultOAuthManager(keychain: keychain)
 
         #expect(!sut.isSignedIn(provider: provider))
     }
@@ -56,7 +56,7 @@ struct OAuthManagerTests {
         let encoded = try JSONEncoder().encode(credential)
         keychain.save(data: encoded, forKey: provider.keychainKey, syncable: false)
 
-        let sut = OAuthManager(keychain: keychain)
+        let sut = DefaultOAuthManager(keychain: keychain)
         #expect(sut.accountEmail(for: provider) == "user@example.com")
     }
 }
@@ -76,7 +76,7 @@ struct CopilotOAuthManagerTests {
         keychain.save(data: encoded, forKey: "copilotOAuthCredential", syncable: false)
 
         let bgTask = MockBackgroundTaskService()
-        let sut = CopilotOAuthManager(keychain: keychain, backgroundTaskService: bgTask)
+        let sut = DefaultCopilotOAuthManager(keychain: keychain, backgroundTaskService: bgTask)
         #expect(sut.isSignedIn)
         #expect(sut.accountInfo == "octocat")
 
@@ -89,7 +89,7 @@ struct CopilotOAuthManagerTests {
     @Test func backgroundTaskServiceIsOptional() {
         let keychain = MockKeychainService()
         // Construction succeeds without a background task sut.
-        let sut = CopilotOAuthManager(keychain: keychain, backgroundTaskService: nil)
+        let sut = DefaultCopilotOAuthManager(keychain: keychain, backgroundTaskService: nil)
         #expect(!sut.isSignedIn)
     }
 }

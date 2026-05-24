@@ -176,8 +176,8 @@ class AIService {
     private let selectedModeStorageKey: String
     private let keychain: any KeychainService
     let networkService: any NetworkService
-    let oauthManager: OAuthManager
-    let copilotOAuthManager: CopilotOAuthManager
+    let oauthManager: any OAuthManager
+    let copilotOAuthManager: any CopilotOAuthManager
     private let baseTimeout: TimeInterval = 300
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
@@ -196,8 +196,8 @@ class AIService {
     init(
         keychain: any KeychainService = DefaultKeychainService(),
         networkService: any NetworkService = DefaultNetworkService(category: "AIService"),
-        oauthManager: OAuthManager = .shared,
-        copilotOAuthManager: CopilotOAuthManager = .shared
+        oauthManager: any OAuthManager = DefaultOAuthManager.shared,
+        copilotOAuthManager: any CopilotOAuthManager = DefaultCopilotOAuthManager.shared
     ) {
         self.keychain = keychain
         self.networkService = networkService
@@ -248,8 +248,8 @@ class AIService {
         selectedModeStorageKey: String = "selectedVivaMode",
         keychain: any KeychainService = DefaultKeychainService(),
         networkService: any NetworkService = DefaultNetworkService(category: "AIService"),
-        oauthManager: OAuthManager = .shared,
-        copilotOAuthManager: CopilotOAuthManager = .shared
+        oauthManager: any OAuthManager = DefaultOAuthManager.shared,
+        copilotOAuthManager: any CopilotOAuthManager = DefaultCopilotOAuthManager.shared
     ) {
         self.keychain = keychain
         self.networkService = networkService

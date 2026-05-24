@@ -7,12 +7,12 @@ import OAuth
 /// App-target shared instances of the OAuth managers. The managers themselves
 /// live in `Modules/OAuth` and are dependency-injected; this file is the
 /// composition root for the convenience singletons used across the app.
-extension OAuthManager {
-    @MainActor public static let shared = OAuthManager(keychain: DefaultKeychainService())
+extension DefaultOAuthManager {
+    @MainActor public static let shared = DefaultOAuthManager(keychain: DefaultKeychainService())
 }
 
-extension CopilotOAuthManager {
-    @MainActor public static let shared = CopilotOAuthManager(
+extension DefaultCopilotOAuthManager {
+    @MainActor public static let shared = DefaultCopilotOAuthManager(
         keychain: DefaultKeychainService(),
         backgroundTaskService: BackgroundTaskServiceAdapter()
     )

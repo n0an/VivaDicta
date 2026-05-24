@@ -178,7 +178,7 @@ struct CopilotConfigurationView: View {
     private func startCopilotSignIn() {
         pollingTask = Task {
             do {
-                let code = try await CopilotOAuthManager.shared.startDeviceCodeFlow()
+                let code = try await DefaultCopilotOAuthManager.shared.startDeviceCodeFlow()
                 self.deviceCode = code
 
                 // Copy code to clipboard

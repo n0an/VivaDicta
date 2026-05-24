@@ -10,7 +10,7 @@ import os
 /// Manages OAuth authentication flows - sign-in, token refresh, and credential storage.
 /// MainActor-isolated for safe interaction with UI and Keychain in Swift 6.
 @MainActor
-public final class OAuthManager: Sendable {
+public final class DefaultOAuthManager: OAuthManager, Sendable {
     private let logger = Logger(oauthCategory: "OAuthManager")
     private let keychain: any KeychainService
     private let networkService: any NetworkService
