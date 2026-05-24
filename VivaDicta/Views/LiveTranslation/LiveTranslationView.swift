@@ -75,11 +75,14 @@ struct LiveTranslationView: View {
                 )
             }
             .sheet(isPresented: $showingSaveOptions) {
-                SaveOptionsSheet(snapshot: service.transcriptSnapshot()) { content in
+                // Capture the snapshot once here so the option-visibility
+                // decision and the actual save use the exact same data,
+                // even if a late finalization mutates `service` in between.
+                SaveOptionsSheet(snapshot: service.transcriptSnapshot()) { content, snapshot in
                     showingSaveOptions = false
-                    saveAsNote(content: content)
+                    saveAsNote(content: content, snapshot: snapshot)
                 }
-                .presentationDetents([.height(350)])
+                .presentationDetents([.medium])
                 .presentationDragIndicator(.hidden)
             }
         }
@@ -397,8 +400,10 @@ struct LiveTranslationView: View {
         )
     }
 
-    private func saveAsNote(content: SaveContent) {
-        let snapshot = service.transcriptSnapshot()
+    private func saveAsNote(
+        content: SaveContent,
+        snapshot: (sourceLanguage: LiveTranslationLanguage, original: String, targetLanguage: LiveTranslationLanguage, translation: String)
+    ) {
         let combined = combineSnapshot(snapshot, content: content)
         guard !combined.isEmpty else { return }
 
@@ -468,20 +473,22 @@ struct LiveTranslationView: View {
     }
 }
 
-fileprivate enum SaveContent {
+private enum SaveContent {
     case originalOnly
     case translatedOnly
     case both
 }
 
 private struct SaveOptionsSheet: View {
-    let snapshot: (
+    typealias Snapshot = (
         sourceLanguage: LiveTranslationLanguage,
         original: String,
         targetLanguage: LiveTranslationLanguage,
         translation: String
     )
-    let onSelect: (SaveContent) -> Void
+
+    let snapshot: Snapshot
+    let onSelect: (SaveContent, Snapshot) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -503,7 +510,7 @@ private struct SaveOptionsSheet: View {
                         title: "Both languages",
                         systemImage: "doc.on.doc"
                     ) {
-                        onSelect(.both)
+                        onSelect(.both, snapshot)
                     }
                 }
                 if !snapshot.original.isEmpty {
@@ -511,7 +518,7 @@ private struct SaveOptionsSheet: View {
                         title: "\(snapshot.sourceLanguage.displayName) only",
                         systemImage: "text.bubble"
                     ) {
-                        onSelect(.originalOnly)
+                        onSelect(.originalOnly, snapshot)
                     }
                 }
                 if !snapshot.translation.isEmpty {
@@ -519,7 +526,7 @@ private struct SaveOptionsSheet: View {
                         title: "\(snapshot.targetLanguage.displayName) only",
                         systemImage: "character.bubble"
                     ) {
-                        onSelect(.translatedOnly)
+                        onSelect(.translatedOnly, snapshot)
                     }
                 }
             }
