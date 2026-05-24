@@ -7,18 +7,18 @@ import Foundation
 /// from `OAuthMocks` to fake the OAuth lifecycle without running real PKCE
 /// flows or hitting the keychain.
 ///
-/// `@MainActor`-isolated because credential storage and any
-/// `ASWebAuthenticationSession` invocation must happen on the main thread.
+/// `@MainActor`-isolated because credential storage and any platform
+/// authentication UI invocation must happen on the main thread.
 @MainActor
-public protocol OAuthManager: Sendable {
+public protocol OAuthManager {
     /// Whether the user is signed in for a given provider.
     func isSignedIn(provider: some OAuthProvider) -> Bool
 
     /// Returns the account email for a given provider, if signed in.
     func accountEmail(for provider: some OAuthProvider) -> String?
 
-    /// Triggers the platform-appropriate sign-in flow (PKCE on iOS via
-    /// `ASWebAuthenticationSession`) and stores the resulting credential.
+    /// Triggers the platform-appropriate PKCE sign-in flow and stores the
+    /// resulting credential.
     func signIn(provider: some OAuthProvider) async throws -> OAuthCredential
 
     /// Signs out by removing the stored credential.

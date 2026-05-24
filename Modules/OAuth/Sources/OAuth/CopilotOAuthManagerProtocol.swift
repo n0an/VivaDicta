@@ -10,7 +10,7 @@ import Foundation
 /// `@MainActor`-isolated to match the credential-storage and background-task
 /// requirements of the device-code flow.
 @MainActor
-public protocol CopilotOAuthManager: Sendable {
+public protocol CopilotOAuthManager {
     /// Whether the user is signed in to Copilot.
     var isSignedIn: Bool { get }
 
@@ -31,11 +31,4 @@ public protocol CopilotOAuthManager: Sendable {
 
     /// Signs out by removing the stored credential.
     func signOut()
-}
-
-// Convenience: keep the `expiresIn: Int = 900` ergonomics on the protocol.
-public extension CopilotOAuthManager {
-    func pollForToken(deviceCode: String, interval: Int) async throws -> CopilotCredential {
-        try await pollForToken(deviceCode: deviceCode, interval: interval, expiresIn: 900)
-    }
 }

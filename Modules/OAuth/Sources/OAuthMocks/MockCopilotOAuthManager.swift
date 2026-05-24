@@ -66,7 +66,13 @@ public final class MockCopilotOAuthManager: CopilotOAuthManager {
         capturedPollDeviceCode = deviceCode
         capturedPollInterval = interval
         capturedPollExpiresIn = expiresIn
-        return try stubPollForTokenResponse.evaluate()
+        let credential = try stubPollForTokenResponse.evaluate() as CopilotCredential
+        // Mirror DefaultCopilotOAuthManager.saveCredential: a successful poll
+        // means the user authorized the device code, so the manager is now
+        // signed in.
+        isSignedIn = true
+        accountInfo = credential.githubUsername
+        return credential
     }
 
     public func validCopilotToken() async throws -> String {
@@ -78,6 +84,9 @@ public final class MockCopilotOAuthManager: CopilotOAuthManager {
     public func signOut() {
         defer { didSignOut?() }
         signOutCallCount += 1
+        // Match DefaultCopilotOAuthManager.signOut: the credential is removed
+        // entirely, so both isSignedIn and accountInfo reset.
         isSignedIn = false
+        accountInfo = nil
     }
 }

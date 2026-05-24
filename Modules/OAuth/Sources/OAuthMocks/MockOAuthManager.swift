@@ -68,14 +68,24 @@ public final class MockOAuthManager: OAuthManager {
         defer { didSignIn?() }
         signInCallCount += 1
         capturedSignInProviderKey = provider.keychainKey
-        return try stubSignInResponse.evaluate()
+        let credential = try stubSignInResponse.evaluate() as OAuthCredential
+        // Mirror DefaultOAuthManager.saveCredential: on successful sign-in,
+        // the provider becomes signed-in and the account email is cached.
+        signedInProviders.insert(provider.keychainKey)
+        if let email = credential.accountEmail {
+            accountEmails[provider.keychainKey] = email
+        }
+        return credential
     }
 
     public func signOut(provider: some OAuthProvider) {
         defer { didSignOut?() }
         signOutCallCount += 1
         capturedSignOutProviderKey = provider.keychainKey
+        // Match DefaultOAuthManager.signOut: clear both signed-in state and
+        // the cached email.
         signedInProviders.remove(provider.keychainKey)
+        accountEmails.removeValue(forKey: provider.keychainKey)
     }
 
     public func validAccessToken(for provider: some OAuthProvider) async throws -> (token: String, accountId: String?, projectId: String?) {
