@@ -264,6 +264,28 @@ struct OpenAICompatibleServiceTests {
         }
     }
 
+    @Test func enhanceRethrowsURLErrorTransport() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .failure(URLError(.timedOut))
+        let sut = makeSUT(networkService: networkService)
+
+        do {
+            _ = try await sut.enhance(
+                url: URL(string: endpointURL)!,
+                modelName: "m",
+                systemMessage: "s",
+                userMessage: "u",
+                headers: [:],
+                timeout: 30
+            )
+            Issue.record("Expected URLError")
+        } catch let error as URLError {
+            #expect(error.code == .timedOut)
+        } catch {
+            Issue.record("Expected URLError, got \(error)")
+        }
+    }
+
     @Test func enhanceMapsOtherStatusToCustomError() async {
         let networkService = MockNetworkService()
         let body = Data(#"{"error":"unauthorized"}"#.utf8)
