@@ -19,6 +19,7 @@ struct LiveTranslationView: View {
     @State private var saveError: SaveErrorAlert?
     @State private var headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
     @State private var hasSonioxKey: Bool = false
+    @State private var showingSaveOptions = false
 
     private static let sonioxConsoleURL = URL(string: "https://console.soniox.com/", encodingInvalidCharacters: false)
         ?? URL(string: "https://soniox.com")!
@@ -72,6 +73,17 @@ struct LiveTranslationView: View {
                     message: Text(error.message),
                     dismissButton: .default(Text("OK"))
                 )
+            }
+            .sheet(isPresented: $showingSaveOptions) {
+                // Capture the snapshot once here so the option-visibility
+                // decision and the actual save use the exact same data,
+                // even if a late finalization mutates `service` in between.
+                SaveOptionsSheet(snapshot: service.transcriptSnapshot()) { content, snapshot in
+                    showingSaveOptions = false
+                    saveAsNote(content: content, snapshot: snapshot)
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.hidden)
             }
         }
     }
@@ -273,7 +285,7 @@ struct LiveTranslationView: View {
 
             if shouldShowSaveButton {
                 Button {
-                    saveAsNote()
+                    showingSaveOptions = true
                 } label: {
                     Label("Save as note", systemImage: "square.and.arrow.down")
                         .frame(maxWidth: .infinity)
@@ -388,16 +400,17 @@ struct LiveTranslationView: View {
         )
     }
 
-    private func saveAsNote() {
-        let snapshot = service.transcriptSnapshot()
-        guard !snapshot.original.isEmpty || !snapshot.translation.isEmpty else { return }
+    private func saveAsNote(
+        content: SaveContent,
+        snapshot: (sourceLanguage: LiveTranslationLanguage, original: String, targetLanguage: LiveTranslationLanguage, translation: String)
+    ) {
+        let combined = combineSnapshot(snapshot, content: content)
+        guard !combined.isEmpty else { return }
 
         // Combine source + translation into the `text` field with section
         // headings; leave `enhancedText` nil so Spotlight, list previews,
         // search, and the dual-write Variation pipeline aren't confused
         // (`enhancedText` is the AI-output cache and must not hold raw MT).
-        let combined = combineSnapshot(snapshot)
-
         let transcription = Transcription(
             text: combined,
             audioDuration: 0,
@@ -423,18 +436,26 @@ struct LiveTranslationView: View {
     }
 
     private func combineSnapshot(
-        _ snapshot: (sourceLanguage: LiveTranslationLanguage, original: String, targetLanguage: LiveTranslationLanguage, translation: String)
+        _ snapshot: (sourceLanguage: LiveTranslationLanguage, original: String, targetLanguage: LiveTranslationLanguage, translation: String),
+        content: SaveContent
     ) -> String {
         // Use the snapshot's session-time languages, not service.config.* —
         // the user can change pickers between Stop and Save.
-        var sections: [String] = []
-        if !snapshot.original.isEmpty {
-            sections.append("\(snapshot.sourceLanguage.displayName):\n\(snapshot.original)")
+        switch content {
+        case .originalOnly:
+            return snapshot.original
+        case .translatedOnly:
+            return snapshot.translation
+        case .both:
+            var sections: [String] = []
+            if !snapshot.original.isEmpty {
+                sections.append("\(snapshot.sourceLanguage.displayName):\n\(snapshot.original)")
+            }
+            if !snapshot.translation.isEmpty {
+                sections.append("\(snapshot.targetLanguage.displayName):\n\(snapshot.translation)")
+            }
+            return sections.joined(separator: "\n\n")
         }
-        if !snapshot.translation.isEmpty {
-            sections.append("\(snapshot.targetLanguage.displayName):\n\(snapshot.translation)")
-        }
-        return sections.joined(separator: "\n\n")
     }
 
     private struct FailureAlert: Identifiable {
@@ -449,6 +470,90 @@ struct LiveTranslationView: View {
     private struct SaveErrorAlert: Identifiable {
         let id = UUID()
         let message: String
+    }
+}
+
+private enum SaveContent {
+    case originalOnly
+    case translatedOnly
+    case both
+}
+
+private struct SaveOptionsSheet: View {
+    typealias Snapshot = (
+        sourceLanguage: LiveTranslationLanguage,
+        original: String,
+        targetLanguage: LiveTranslationLanguage,
+        translation: String
+    )
+
+    let snapshot: Snapshot
+    let onSelect: (SaveContent, Snapshot) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            VStack(spacing: 4) {
+                Text("Save as note")
+                    .font(.title3.bold())
+                Text("Choose what to include in the note")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 8)
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: 10) {
+                if !snapshot.original.isEmpty && !snapshot.translation.isEmpty {
+                    optionButton(
+                        title: "Both languages",
+                        systemImage: "doc.on.doc"
+                    ) {
+                        onSelect(.both, snapshot)
+                    }
+                }
+                if !snapshot.original.isEmpty {
+                    optionButton(
+                        title: "\(snapshot.sourceLanguage.displayName) only",
+                        systemImage: "text.bubble"
+                    ) {
+                        onSelect(.originalOnly, snapshot)
+                    }
+                }
+                if !snapshot.translation.isEmpty {
+                    optionButton(
+                        title: "\(snapshot.targetLanguage.displayName) only",
+                        systemImage: "character.bubble"
+                    ) {
+                        onSelect(.translatedOnly, snapshot)
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Button("Cancel", role: .cancel) { dismiss() }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal)
+        .padding(.bottom)
+    }
+
+    private func optionButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.indigo)
+        .controlSize(.large)
     }
 }
 
