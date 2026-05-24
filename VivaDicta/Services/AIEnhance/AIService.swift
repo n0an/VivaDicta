@@ -1856,104 +1856,24 @@ class AIService {
         }
     }
 
-    /// Fetches available models from the Ollama server
+    /// Fetches available models from the Ollama server, then publishes them
+    /// to the `@Observable` `ollamaModels` property. Delegates the HTTP work
+    /// to `OllamaService`; this method owns the observable-state update.
     public func fetchOllamaModels() async {
-        let serverURL = ollamaServerURL
-
-        // Try OpenAI-compatible endpoint first
-        guard let url = URL(string: "\(serverURL)/v1/models") else {
-            logger.logError("Invalid Ollama server URL: \(serverURL)")
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 5 // Short timeout for local service
-
+        let service = OllamaService(networkService: networkService, logger: logger)
         do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            guard httpResponse.statusCode == 200 else {
-                logger.logWarning("Ollama OpenAI-compatible endpoint not responding, trying native endpoint")
-                await fetchOllamaModelsNative()
-                return
-            }
-
-            // Parse OpenAI-compatible response
-            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
-                logger.logError("Failed to parse Ollama models response")
-                await fetchOllamaModelsNative()
-                return
-            }
-
-            let models = dataArray.compactMap { $0["id"] as? String }.sorted()
-
+            let models = try await service.fetchModels(serverURL: ollamaServerURL)
             self.ollamaModels = models
             self.saveOllamaModels()
-
-            logger.logInfo("Successfully fetched \(models.count) Ollama models via OpenAI endpoint")
-
         } catch {
-            logger.logWarning("Failed to fetch Ollama models via OpenAI endpoint: \(error.localizedDescription)")
-            await fetchOllamaModelsNative()
+            logger.logError("Failed to fetch Ollama models: \(error.localizedDescription)")
         }
     }
 
-    /// Fallback to native Ollama API endpoint for fetching models
-    private func fetchOllamaModelsNative() async {
-        let serverURL = ollamaServerURL
-        guard let url = URL(string: "\(serverURL)/api/tags") else { return }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 5
-
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            guard httpResponse.statusCode == 200 else {
-                logger.logError("Ollama native endpoint not responding")
-                return
-            }
-
-            // Parse native Ollama response
-            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let modelsArray = jsonResponse["models"] as? [[String: Any]] else {
-                logger.logError("Failed to parse Ollama native models response")
-                return
-            }
-
-            let models = modelsArray.compactMap { $0["name"] as? String }.sorted()
-
-            self.ollamaModels = models
-            self.saveOllamaModels()
-
-            logger.logInfo("Successfully fetched \(models.count) Ollama models via native endpoint")
-
-        } catch {
-            logger.logError("Failed to fetch Ollama models via native endpoint: \(error.localizedDescription)")
-        }
-    }
-
-    /// Checks if Ollama server is reachable
+    /// Checks if Ollama server is reachable. Delegates to `OllamaService`.
     public func checkOllamaConnection() async -> Bool {
-        let serverURL = ollamaServerURL
-        guard let url = URL(string: "\(serverURL)/api/tags") else {
-            return false
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 3
-
-        do {
-            let (_, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            return httpResponse.statusCode == 200
-        } catch {
-            return false
-        }
+        let service = OllamaService(networkService: networkService, logger: logger)
+        return await service.checkConnection(serverURL: ollamaServerURL)
     }
 
     /// Verifies Ollama setup and returns status message
