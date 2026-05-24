@@ -25,9 +25,9 @@ struct DefaultNetworkServiceTests {
         let session = MockURLSession()
         let payload = Data(#"{"ok":true}"#.utf8)
         session.stubDataResponse = .success((payload, makeResponse(200)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
-        let (data, response) = try await client.send(URLRequest(url: endpoint))
+        let (data, response) = try await sut.send(URLRequest(url: endpoint))
 
         #expect(data == payload)
         #expect(response.statusCode == 200)
@@ -38,10 +38,10 @@ struct DefaultNetworkServiceTests {
         let session = MockURLSession()
         let body = Data(#"{"error":"nope"}"#.utf8)
         session.stubDataResponse = .success((body, makeResponse(404)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
         await #expect {
-            try await client.send(URLRequest(url: endpoint))
+            try await sut.send(URLRequest(url: endpoint))
         } throws: { error in
             guard let net = error as? NetworkError,
                   case let .unacceptableStatus(code, payload) = net else {
@@ -55,10 +55,10 @@ struct DefaultNetworkServiceTests {
         struct Boom: Error {}
         let session = MockURLSession()
         session.stubDataResponse = .failure(Boom())
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
         await #expect {
-            try await client.send(URLRequest(url: endpoint))
+            try await sut.send(URLRequest(url: endpoint))
         } throws: { error in
             guard let net = error as? NetworkError,
                   case .transport = net else { return false }
@@ -69,9 +69,9 @@ struct DefaultNetworkServiceTests {
     @Test func customAcceptableStatusCodesOverrideDefault() async throws {
         let session = MockURLSession()
         session.stubDataResponse = .success((Data(), makeResponse(302)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
-        let (_, response) = try await client.send(
+        let (_, response) = try await sut.send(
             URLRequest(url: endpoint),
             acceptableStatusCodes: [200, 302]
         )
@@ -87,9 +87,9 @@ struct DefaultNetworkServiceTests {
     @Test func sendJSONDecodesResponse() async throws {
         let session = MockURLSession()
         session.stubDataResponse = .success((Data(#"{"value":"hi"}"#.utf8), makeResponse(200)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
-        let result: Echo = try await client.sendJSON(URLRequest(url: endpoint))
+        let result: Echo = try await sut.sendJSON(URLRequest(url: endpoint))
 
         #expect(result == Echo(value: "hi"))
     }
@@ -97,10 +97,10 @@ struct DefaultNetworkServiceTests {
     @Test func sendJSONWrapsDecodingErrors() async throws {
         let session = MockURLSession()
         session.stubDataResponse = .success((Data(#"{"wrong":"shape"}"#.utf8), makeResponse(200)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
         await #expect {
-            let _: Echo = try await client.sendJSON(URLRequest(url: endpoint))
+            let _: Echo = try await sut.sendJSON(URLRequest(url: endpoint))
         } throws: { error in
             guard let net = error as? NetworkError,
                   case .decodingFailed = net else { return false }
@@ -113,10 +113,10 @@ struct DefaultNetworkServiceTests {
     @Test func uploadPassesBodyToSession() async throws {
         let session = MockURLSession()
         session.stubUploadResponse = .success((Data(), makeResponse(200)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
         let body = Data("payload".utf8)
-        _ = try await client.upload(URLRequest(url: endpoint), from: body)
+        _ = try await sut.upload(URLRequest(url: endpoint), from: body)
 
         #expect(session.uploadCallCount == 1)
         #expect(session.capturedBody == body)
@@ -125,10 +125,10 @@ struct DefaultNetworkServiceTests {
     @Test func uploadThrowsForServerErrors() async throws {
         let session = MockURLSession()
         session.stubUploadResponse = .success((Data("internal".utf8), makeResponse(500)))
-        let client = DefaultNetworkService(session: session)
+        let sut = DefaultNetworkService(session: session)
 
         await #expect {
-            _ = try await client.upload(URLRequest(url: endpoint), from: Data())
+            _ = try await sut.upload(URLRequest(url: endpoint), from: Data())
         } throws: { error in
             (error as? NetworkError)?.statusCode == 500
         }

@@ -22,15 +22,15 @@ struct AIServiceNetworkingTests {
     }
 
     @Test func storesInjectedNetworkService() {
-        let net = MockNetworkService()
-        let service = AIService(userDefaults: makeDefaults(), networkService: net)
+        let networkService = MockNetworkService()
+        let sut = AIService(userDefaults: makeDefaults(), networkService: networkService)
 
-        #expect(service.networkService is MockNetworkService)
+        #expect(sut.networkService is MockNetworkService)
     }
 
     @Test func defaultNetworkServiceIsDefaultNetworkServiceWhenNotInjected() {
-        let service = AIService(userDefaults: makeDefaults())
+        let sut = AIService(userDefaults: makeDefaults())
 
-        #expect(service.networkService is DefaultNetworkService)
+        #expect(sut.networkService is DefaultNetworkService)
     }
 }

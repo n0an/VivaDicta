@@ -30,13 +30,13 @@ struct XaiTranscriptionServiceTests {
         )!
     }
 
-    private func stubSuccess(on session: MockNetworkService, text: String) {
+    private func stubSuccess(on networkService: MockNetworkService, text: String) {
         let body = Data(#"{"text":"\#(text)"}"#.utf8)
-        session.stubUploadResponse = .success((body, makeHTTPResponse(200)))
+        networkService.stubUploadResponse = .success((body, makeHTTPResponse(200)))
     }
 
     private func makeService(
-        session: MockNetworkService,
+        networkService: MockNetworkService,
         apiKey: String = "xai-test-key",
         language: String = "en",
         formatted: Bool = true
@@ -47,100 +47,100 @@ struct XaiTranscriptionServiceTests {
                 language: language,
                 formatted: formatted
             ),
-            networkService: session
+            networkService: networkService
         )
     }
 
     // MARK: - Success path
 
     @Test func successReturnsTranscribedText() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "xai hello")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "xai hello")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         let result = try await sut.transcribe(audioURL: audio)
 
         #expect(result.text == "xai hello")
         #expect(result.isSpeakerAttributed == false)
-        #expect(session.uploadCallCount == 1)
+        #expect(networkService.uploadCallCount == 1)
     }
 
     // MARK: - Request shape
 
     @Test func requestTargetsXaiSttEndpoint() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let req = try #require(session.capturedRequest)
+        let req = try #require(networkService.capturedRequest)
         #expect(req.url?.absoluteString == "https://api.x.ai/v1/stt")
         #expect(req.httpMethod == "POST")
     }
 
     @Test func requestSendsBearerAuthorizationHeader() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, apiKey: "xai-abc123")
+        let sut = makeService(networkService: networkService, apiKey: "xai-abc123")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let req = try #require(session.capturedRequest)
+        let req = try #require(networkService.capturedRequest)
         #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer xai-abc123")
     }
 
     @Test func requestSendsMultipartContentTypeWithBoundary() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let req = try #require(session.capturedRequest)
+        let req = try #require(networkService.capturedRequest)
         let contentType = try #require(req.value(forHTTPHeaderField: "Content-Type"))
         #expect(contentType.hasPrefix("multipart/form-data; boundary=Boundary-"))
     }
 
     @Test func bodyContainsFormatTrueByDefault() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.range(of: "name=\"format\"\\s*\\r\\n\\r\\ntrue", options: .regularExpression) != nil)
     }
 
     @Test func bodySendsFormatFalseWhenFormattedDisabled() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, formatted: false)
+        let sut = makeService(networkService: networkService, formatted: false)
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.range(of: "name=\"format\"\\s*\\r\\n\\r\\nfalse", options: .regularExpression) != nil)
     }
 
     @Test func bodyIncludesLanguageField() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, language: "fr")
+        let sut = makeService(networkService: networkService, language: "fr")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.range(of: "name=\"language\"\\s*\\r\\n\\r\\nfr", options: .regularExpression) != nil)
     }
@@ -149,27 +149,27 @@ struct XaiTranscriptionServiceTests {
         // xAI rejects format=true without a language, so the service must
         // never omit the field. Verify with `fil` (Filipino) since it's xAI's
         // 3-letter outlier and proves no "drop if not in allowlist" sneaks in.
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, language: "fil")
+        let sut = makeService(networkService: networkService, language: "fil")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.range(of: "name=\"language\"\\s*\\r\\n\\r\\nfil", options: .regularExpression) != nil)
     }
 
     @Test func bodyOrdersFieldsAsFormatLanguageFile() async throws {
-        let session = MockNetworkService()
-        stubSuccess(on: session, text: "ok")
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, language: "en")
+        let sut = makeService(networkService: networkService, language: "en")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        let body = try #require(session.capturedBody)
+        let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         let formatRange = try #require(bodyString.range(of: "name=\"format\""))
         let languageRange = try #require(bodyString.range(of: "name=\"language\""))
@@ -183,20 +183,20 @@ struct XaiTranscriptionServiceTests {
     // MARK: - Validation / short-circuit
 
     @Test func missingAPIKeyThrowsBeforeMakingRequest() async throws {
-        let session = MockNetworkService()
+        let networkService = MockNetworkService()
         let audio = try makeAudioFile()
-        let sut = makeService(session: session, apiKey: "")
+        let sut = makeService(networkService: networkService, apiKey: "")
 
         await #expect(throws: CloudTranscriptionError.self) {
             _ = try await sut.transcribe(audioURL: audio)
         }
-        #expect(session.uploadCallCount == 0, "no network call should be made when API key is empty")
+        #expect(networkService.uploadCallCount == 0, "no network call should be made when API key is empty")
     }
 
     @Test func missingAudioFileThrowsAudioFileNotFound() async {
-        let session = MockNetworkService()
+        let networkService = MockNetworkService()
         let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         await #expect(throws: CloudTranscriptionError.self) {
             _ = try await sut.transcribe(audioURL: audio)
@@ -206,13 +206,13 @@ struct XaiTranscriptionServiceTests {
     // MARK: - Response handling
 
     @Test func nonSuccessStatusThrowsApiRequestFailed() async throws {
-        let session = MockNetworkService()
-        session.stubUploadResponse = .success((
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponse = .success((
             Data(#"{"error":"invalid key"}"#.utf8),
             makeHTTPResponse(401)
         ))
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         do {
             _ = try await sut.transcribe(audioURL: audio)
@@ -226,10 +226,10 @@ struct XaiTranscriptionServiceTests {
     }
 
     @Test func undecodableJSONOn200ThrowsNoTranscriptionReturned() async throws {
-        let session = MockNetworkService()
-        session.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponse = .success((Data("not json".utf8), makeHTTPResponse(200)))
         let audio = try makeAudioFile()
-        let sut = makeService(session: session)
+        let sut = makeService(networkService: networkService)
 
         do {
             _ = try await sut.transcribe(audioURL: audio)
