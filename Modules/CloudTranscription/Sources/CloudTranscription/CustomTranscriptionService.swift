@@ -27,11 +27,11 @@ public struct CustomTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: any URLSessionProtocol
+    private let networkClient: NetworkClient
 
     public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.config = config
-        self.urlSession = urlSession
+        self.networkClient = NetworkClient(session: urlSession, category: "CustomTranscription")
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -61,16 +61,11 @@ public struct CustomTranscriptionService: TranscriptionService, Sendable {
 
         logger.logInfo("Sending request to custom endpoint: \(config.apiEndpoint)")
 
-        let (data, response) = try await urlSession.upload(for: request, from: body)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Custom API request failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
+        let data: Data
+        do {
+            (data, _) = try await networkClient.upload(request, from: body)
+        } catch let error as NetworkError {
+            throw error.asCloudTranscriptionError()
         }
 
         do {

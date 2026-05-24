@@ -21,11 +21,11 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
-    private let urlSession: any URLSessionProtocol
+    private let networkClient: NetworkClient
 
     public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.config = config
-        self.urlSession = urlSession
+        self.networkClient = NetworkClient(session: urlSession, category: "GeminiTranscription")
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -83,33 +83,20 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
             throw CloudTranscriptionError.dataEncodingError
         }
 
-        let (data, response) = try await urlSession.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
-        }
-
-        if !(200...299).contains(httpResponse.statusCode) {
-            let errorMessage = String(data: data, encoding: .utf8) ?? "No error message"
-            logger.logError("Gemini API request failed with status \(httpResponse.statusCode): \(errorMessage)")
-            throw CloudTranscriptionError.apiRequestFailed(statusCode: httpResponse.statusCode, message: errorMessage)
-        }
-
+        let transcriptionResponse: GeminiResponse
         do {
-            let transcriptionResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
-            guard let candidate = transcriptionResponse.candidates.first,
-                  let part = candidate.content.parts.first,
-                  !part.text.isEmpty else {
-                logger.logError("No transcript found in Gemini response")
-                throw CloudTranscriptionError.noTranscriptionReturned
-            }
-            return part.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        } catch let error as CloudTranscriptionError {
-            throw error
-        } catch {
-            logger.logError("Failed to decode Gemini API response: \(error.localizedDescription)")
+            transcriptionResponse = try await networkClient.sendJSON(request, as: GeminiResponse.self)
+        } catch let error as NetworkError {
+            throw error.asCloudTranscriptionError()
+        }
+
+        guard let candidate = transcriptionResponse.candidates.first,
+              let part = candidate.content.parts.first,
+              !part.text.isEmpty else {
+            logger.logError("No transcript found in Gemini response")
             throw CloudTranscriptionError.noTranscriptionReturned
         }
+        return part.text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private struct GeminiRequest: Codable {

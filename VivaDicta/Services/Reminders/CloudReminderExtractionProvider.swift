@@ -355,7 +355,7 @@ final class CloudReminderExtractionProvider {
         language: String?
     ) async throws -> ReminderDraftsResponse {
         let provider = OpenAIOAuthProvider()
-        let (token, accountId, _) = try await OAuthManager.shared.validAccessToken(for: provider)
+        let (token, accountId, _) = try await aiService.oauthManager.validAccessToken(for: provider)
         let responseText = try await OpenAIOAuthClient.enhance(
             text: textTransportUserMessage(noteText: noteText, now: now, timeZone: timeZone, language: language),
             systemPrompt: systemMessage(now: now, timeZone: timeZone, language: language),
@@ -374,13 +374,14 @@ final class CloudReminderExtractionProvider {
         language: String?
     ) async throws -> ReminderDraftsResponse {
         let provider = GeminiOAuthProvider()
-        let (token, _, projectId) = try await OAuthManager.shared.validAccessToken(for: provider)
+        let (token, _, projectId) = try await aiService.oauthManager.validAccessToken(for: provider)
         let responseText = try await GeminiAPIClient.enhance(
             text: textTransportUserMessage(noteText: noteText, now: now, timeZone: timeZone, language: language),
             systemPrompt: systemMessage(now: now, timeZone: timeZone, language: language),
             model: model,
             accessToken: token,
-            projectId: projectId
+            projectId: projectId,
+            urlSession: urlSession
         )
         return try decodeTextResponse(responseText)
     }
