@@ -8,7 +8,7 @@ import os
 /// Manages GitHub Copilot authentication using the device code flow.
 /// Two-step process: GitHub device code -> Copilot token exchange.
 @MainActor
-public final class CopilotOAuthManager: Sendable {
+public final class DefaultCopilotOAuthManager: CopilotOAuthManager {
     private let logger = Logger(oauthCategory: "CopilotOAuth")
     private let keychain: any KeychainService
     private let backgroundTaskService: (any BackgroundTaskService)?
