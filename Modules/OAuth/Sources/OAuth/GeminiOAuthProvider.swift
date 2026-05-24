@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import Networking
 import os
 
 /// Google Gemini OAuth provider configuration.
@@ -22,7 +23,11 @@ public struct GeminiOAuthProvider: OAuthProvider {
         "prompt": "consent"
     ]
 
-    public init() {}
+    private let urlSession: any URLSessionProtocol
+
+    public init(urlSession: any URLSessionProtocol = URLSession.shared) {
+        self.urlSession = urlSession
+    }
 
     public func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {
         let id = claims["sub"] as? String
@@ -71,7 +76,7 @@ public struct GeminiOAuthProvider: OAuthProvider {
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             return nil
@@ -97,7 +102,7 @@ public struct GeminiOAuthProvider: OAuthProvider {
         let body: [String: Any] = ["tierId": "free-tier"]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             return nil
@@ -126,7 +131,7 @@ public struct GeminiOAuthProvider: OAuthProvider {
             request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             request.timeoutInterval = 10
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await urlSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

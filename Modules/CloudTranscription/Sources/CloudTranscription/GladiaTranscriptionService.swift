@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import Networking
 import os
 import TranscriptionCore
 
@@ -37,9 +38,11 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
+    private let urlSession: any URLSessionProtocol
 
-    public init(config: Config) {
+    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.config = config
+        self.urlSession = urlSession
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -72,7 +75,7 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         let body = try createMultipartBody(fileURL: audioURL, boundary: boundary)
-        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+        let (data, response) = try await urlSession.upload(for: request, from: body)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
@@ -142,7 +145,7 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
@@ -177,7 +180,7 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
             request.timeoutInterval = NetworkRetry.defaultTimeout
             request.setValue(config.apiKey, forHTTPHeaderField: "x-gladia-key")
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await urlSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw CloudTranscriptionError.networkError(URLError(.badServerResponse))

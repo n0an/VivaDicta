@@ -22,6 +22,8 @@
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
 		189C7ABC2F0D84E2004BAFBF /* ActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		18AABBCC0011223344556602 /* Networking in Frameworks */ = {isa = PBXBuildFile; productRef = 18AABBCC0011223344556601 /* Networking */; };
+		18AABBCC0011223344556604 /* NetworkingMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18AABBCC0011223344556603 /* NetworkingMocks */; };
 		18B497E52F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497EF2F268B2700538830 /* FirebaseAnalytics */; };
@@ -502,6 +504,7 @@
 				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
 				18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
+				18AABBCC0011223344556602 /* Networking in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
@@ -520,6 +523,7 @@
 				186C05852FB779BA00102432 /* KeychainMocks in Frameworks */,
 				18F75FC62FB79A4B00280269 /* CloudTranscriptionMocks in Frameworks */,
 				186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */,
+				18AABBCC0011223344556604 /* NetworkingMocks in Frameworks */,
 				186C05832FB779BA00102432 /* Keychain in Frameworks */,
 				18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */,
 				18F76A342FB85C0B00280269 /* AppGroup in Frameworks */,
@@ -724,6 +728,7 @@
 				186C0C9B2FB7829A00102432 /* OAuth */,
 				18F75FBD2FB79A2B00280269 /* TranscriptionCore */,
 				18F75FBF2FB79A3200280269 /* CloudTranscription */,
+				18AABBCC0011223344556601 /* Networking */,
 				18F7637E2FB7D5E300280269 /* LocalTranscription */,
 				18F76A312FB85C0400280269 /* AppGroup */,
 				18B89BC22FB875530007FA96 /* TranscriptionKit */,
@@ -759,6 +764,7 @@
 				18F75FC12FB79A3E00280269 /* TranscriptionCore */,
 				18F75FC32FB79A4400280269 /* CloudTranscription */,
 				18F75FC52FB79A4B00280269 /* CloudTranscriptionMocks */,
+				18AABBCC0011223344556603 /* NetworkingMocks */,
 				18F76A332FB85C0B00280269 /* AppGroup */,
 				F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */,
 			);
@@ -2719,6 +2725,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
 			productName = LumoKit;
+		};
+		18AABBCC0011223344556601 /* Networking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Networking;
+		};
+		18AABBCC0011223344556603 /* NetworkingMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NetworkingMocks;
 		};
 		18B497EF2F268B2700538830 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;

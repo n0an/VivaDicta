@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import Keychain
+import Networking
 import os
 
 enum WebSearchStatus: String, Sendable {
@@ -138,6 +139,9 @@ enum ExaWebSearchToolRuntime {
 // MARK: - API Client (nonisolated for Tool protocol compatibility)
 
 nonisolated enum ExaSearchClient: Sendable {
+    /// URL session used for Exa search requests. Override only from tests.
+    nonisolated(unsafe) static var urlSession: any URLSessionProtocol = URLSession.shared
+
     nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
         guard let url = URL(string: "https://api.exa.ai/search") else {
             throw ExaError.invalidURL
@@ -155,7 +159,7 @@ nonisolated enum ExaSearchClient: Sendable {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.httpBody = try JSONEncoder().encode(payload)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ExaError.invalidResponse

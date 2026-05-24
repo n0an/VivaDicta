@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.04.10
 //
 
+import Networking
 import SwiftUI
 
 /// Settings hub for chat tools such as automatic note search and web search.
@@ -328,9 +329,9 @@ private struct ExaWebSearchSettingsView: View {
         request.httpBody = body
 
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else { return false }
-            return (200...299).contains(httpResponse.statusCode)
+            let client = NetworkClient(category: "ExaKeyVerification")
+            let (_, response) = try await client.send(request)
+            return (200...299).contains(response.statusCode)
         } catch {
             return false
         }

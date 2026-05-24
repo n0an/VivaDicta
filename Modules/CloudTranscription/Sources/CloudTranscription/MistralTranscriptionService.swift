@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import Networking
 import os
 import TranscriptionCore
 
@@ -38,9 +39,11 @@ public struct MistralTranscriptionService: TranscriptionService, Sendable {
     }
 
     private let config: Config
+    private let urlSession: any URLSessionProtocol
 
-    public init(config: Config) {
+    public init(config: Config, urlSession: any URLSessionProtocol = URLSession.shared) {
         self.config = config
+        self.urlSession = urlSession
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
@@ -64,7 +67,7 @@ public struct MistralTranscriptionService: TranscriptionService, Sendable {
 
         let body = try createRequestBody(audioURL: audioURL, boundary: boundary)
 
-        let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+        let (data, response) = try await urlSession.upload(for: request, from: body)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw CloudTranscriptionError.networkError(URLError(.badServerResponse))
