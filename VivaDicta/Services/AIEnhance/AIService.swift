@@ -1913,8 +1913,6 @@ class AIService {
             return true
         case .anthropic:
             return await verifyAnthropicAPIKey(key)
-        case .grok:
-            return await verifyGrokAPIKey(key)
         case .elevenLabs:
             return await verifyElevenLabsAPIKey(key)
         case .deepgram:
@@ -1935,50 +1933,37 @@ class AIService {
             return await verifyCerebrasAPIKey(key)
         case .vercelAIGateway:
             return await verifyVercelAIGatewayAPIKey(key)
-        case .huggingFace:
-            return await verifyHuggingFaceAPIKey(key)
         default:
+            // OpenAI-compatible providers fall through to the chat-completions
+            // probe. Today that covers OpenAI, Groq, OpenRouter, Z.AI, Kimi,
+            // Grok, and HuggingFace explicitly, plus .gemini and .copilot
+            // which are also OpenAI-compatible at this verify endpoint.
             return await verifyOpenAICompatibleAPIKey(key, provider: provider)
         }
     }
     
     private func verifyOpenAICompatibleAPIKey(_ key: String, provider: AIProvider) async -> Bool {
+        // Cap probe output at 1 token. Critical for heavy default models like
+        // HuggingFace's 120B-param Gpt-OSS or Grok's frontier - uncapped probes
+        // can be slow enough to risk false-negative timeouts. Free for cheaper
+        // providers (OpenAI, Groq, OpenRouter, Z.AI, Kimi).
         let service = OpenAICompatibleService(networkService: networkService, logger: logger)
         return await service.verifyChatCompletionsAPIKey(
             key,
             baseURL: provider.baseURL,
             defaultModel: provider.defaultModel,
-            providerName: provider.rawValue
+            providerName: provider.rawValue,
+            maxTokens: 1
         )
     }
     
     private func verifyCerebrasAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: "https://api.cerebras.ai/v1/models")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-
-        logger.logNotice("🔑 Verifying API key for cerebras provider at \(url.absoluteString)")
-
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            let isValid = httpResponse.statusCode == 200
-
-            if !isValid {
-                if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.logNotice("🔑 API key verification failed for cerebras - Status: \(httpResponse.statusCode) - \(exactAPIError)")
-                } else {
-                    logger.logNotice("🔑 API key verification failed for cerebras - Status: \(httpResponse.statusCode)")
-                }
-            }
-
-            return isValid
-
-        } catch {
-            logger.logNotice("🔑 API key verification failed for cerebras: \(error.localizedDescription)")
-            return false
-        }
+        let service = OpenAICompatibleService(networkService: networkService, logger: logger)
+        return await service.verifyGETEndpoint(
+            key,
+            url: URL(string: "https://api.cerebras.ai/v1/models")!,
+            providerName: "cerebras"
+        )
     }
 
     private func verifyAnthropicAPIKey(_ key: String) async -> Bool {
@@ -2028,28 +2013,12 @@ class AIService {
     }
     
     private func verifyMistralAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: "https://api.mistral.ai/v1/models")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            if httpResponse.statusCode == 200 {
-                return true
-            } else {
-                if let body = String(data: data, encoding: .utf8) {
-                    logger.logError("Mistral API key verification failed with status code \(httpResponse.statusCode): \(body)")
-                } else {
-                    logger.logError("Mistral API key verification failed with status code \(httpResponse.statusCode) and no response body.")
-                }
-                return false
-            }
-        } catch {
-            logger.logError("Mistral API key verification failed: \(error.localizedDescription)")
-            return false
-        }
+        let service = OpenAICompatibleService(networkService: networkService, logger: logger)
+        return await service.verifyGETEndpoint(
+            key,
+            url: URL(string: "https://api.mistral.ai/v1/models")!,
+            providerName: "mistral"
+        )
     }
     
     private func verifySonioxAPIKey(_ key: String) async -> Bool {
@@ -2148,114 +2117,13 @@ class AIService {
     }
 
     private func verifyVercelAIGatewayAPIKey(_ key: String) async -> Bool {
-        // Use /v1/credits endpoint to verify API key
-        let url = URL(string: "https://ai-gateway.vercel.sh/v1/credits")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        logger.logNotice("🔑 Verifying Vercel AI Gateway API key")
-
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            let isValid = httpResponse.statusCode == 200
-
-            if !isValid {
-                if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.logNotice("🔑 Vercel AI Gateway API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError)")
-                } else {
-                    logger.logNotice("🔑 Vercel AI Gateway API key verification failed - Status: \(httpResponse.statusCode)")
-                }
-            }
-
-            return isValid
-
-        } catch {
-            logger.logNotice("🔑 Vercel AI Gateway API key verification failed: \(error.localizedDescription)")
-            return false
-        }
-    }
-
-    private func verifyGrokAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: AIProvider.grok.baseURL)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        
-        let testBody: [String: Any] = [
-            "model": AIProvider.grok.defaultModel,
-            "messages": [
-                ["role": "user", "content": "test"]
-            ],
-            "max_tokens": 1
-        ]
-        
-        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
-        
-        logger.logNotice("🔑 Verifying Grok API key at \(url.absoluteString)")
-
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            let isValid = httpResponse.statusCode == 200
-
-            if !isValid {
-                if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.logNotice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError)")
-                } else {
-                    logger.logNotice("🔑 Grok API key verification failed - Status: \(httpResponse.statusCode)")
-                }
-            }
-
-            return isValid
-
-        } catch {
-            logger.logNotice("🔑 Grok API key verification failed: \(error.localizedDescription)")
-            return false
-        }
-    }
-
-    private func verifyHuggingFaceAPIKey(_ key: String) async -> Bool {
-        let url = URL(string: AIProvider.huggingFace.baseURL)!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-
-        let testBody: [String: Any] = [
-            "model": AIProvider.huggingFace.defaultModel,
-            "messages": [
-                ["role": "user", "content": "test"]
-            ],
-            "max_tokens": 1
-        ]
-
-        request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
-
-        logger.logNotice("🔑 Verifying HuggingFace API key at \(url.absoluteString)")
-
-        do {
-            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
-
-            let isValid = httpResponse.statusCode == 200
-
-            if !isValid {
-                if let exactAPIError = String(data: data, encoding: .utf8) {
-                    logger.logNotice("🔑 HuggingFace API key verification failed - Status: \(httpResponse.statusCode) - \(exactAPIError)")
-                } else {
-                    logger.logNotice("🔑 HuggingFace API key verification failed - Status: \(httpResponse.statusCode)")
-                }
-            }
-
-            return isValid
-
-        } catch {
-            logger.logNotice("🔑 HuggingFace API key verification failed: \(error.localizedDescription)")
-            return false
-        }
+        // Vercel AI Gateway verifies against /v1/credits, not the chat URL.
+        let service = OpenAICompatibleService(networkService: networkService, logger: logger)
+        return await service.verifyGETEndpoint(
+            key,
+            url: URL(string: "https://ai-gateway.vercel.sh/v1/credits")!,
+            providerName: "vercelAIGateway"
+        )
     }
 
     // MARK: - Dynamic Models methods

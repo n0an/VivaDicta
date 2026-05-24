@@ -379,6 +379,89 @@ struct OpenAICompatibleServiceTests {
         #expect(json["model"] as? String == "gpt-4-mini")
         let messages = try #require(json["messages"] as? [[String: String]])
         #expect(messages == [["role": "user", "content": "test"]])
+        // Default omits max_tokens.
+        #expect(json["max_tokens"] == nil)
+    }
+
+    @Test func verifyChatCompletionsAPIKeyIncludesMaxTokensWhenProvided() async throws {
+        // Caps the probe response on heavy default models (HuggingFace's 120B,
+        // Grok frontier) to avoid false-negative timeouts on slow networks.
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+        let sut = makeSUT(networkService: networkService)
+
+        _ = await sut.verifyChatCompletionsAPIKey(
+            "sk-probe",
+            baseURL: endpointURL,
+            defaultModel: "openai/gpt-oss-120b",
+            providerName: "huggingface",
+            maxTokens: 1
+        )
+
+        let body = try #require(networkService.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["max_tokens"] as? Int == 1)
+    }
+
+    // MARK: - verifyGETEndpoint
+
+    @Test func verifyGETEndpointReturnsTrueOn200() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+        let sut = makeSUT(networkService: networkService)
+
+        let valid = await sut.verifyGETEndpoint(
+            "sk-test",
+            url: URL(string: "https://api.cerebras.ai/v1/models")!,
+            providerName: "cerebras"
+        )
+
+        #expect(valid)
+    }
+
+    @Test func verifyGETEndpointReturnsFalseOn401() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(401)))
+        let sut = makeSUT(networkService: networkService)
+
+        let valid = await sut.verifyGETEndpoint(
+            "sk-bad",
+            url: URL(string: "https://api.mistral.ai/v1/models")!,
+            providerName: "mistral"
+        )
+
+        #expect(!valid)
+    }
+
+    @Test func verifyGETEndpointReturnsFalseOnTransportError() async {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .failure(URLError(.notConnectedToInternet))
+        let sut = makeSUT(networkService: networkService)
+
+        let valid = await sut.verifyGETEndpoint(
+            "sk-test",
+            url: URL(string: "https://ai-gateway.vercel.sh/v1/credits")!,
+            providerName: "vercelAIGateway"
+        )
+
+        #expect(!valid)
+    }
+
+    @Test func verifyGETEndpointSendsBearerAuthAndGETMethod() async throws {
+        let networkService = MockNetworkService()
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+        let sut = makeSUT(networkService: networkService)
+
+        _ = await sut.verifyGETEndpoint(
+            "sk-probe",
+            url: URL(string: "https://api.cerebras.ai/v1/models")!,
+            providerName: "cerebras"
+        )
+
+        let request = try #require(networkService.capturedRequest)
+        #expect(request.httpMethod == "GET")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer sk-probe")
+        #expect(request.httpBody == nil)
     }
 
     // MARK: - Streaming request shape
