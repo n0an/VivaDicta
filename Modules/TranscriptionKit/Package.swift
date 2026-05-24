@@ -48,6 +48,7 @@ let package = Package(
             dependencies: [
                 "TranscriptionKit",
                 .product(name: "TranscriptionCore", package: "TranscriptionCore"),
+                .product(name: "TranscriptionCoreMocks", package: "TranscriptionCore"),
                 .product(name: "CloudTranscriptionMocks", package: "CloudTranscription"),
                 .product(name: "LocalTranscriptionMocks", package: "LocalTranscription"),
             ]

@@ -10,12 +10,17 @@ let package = Package(
     ],
     products: [
         .library(name: "TranscriptionCore", targets: ["TranscriptionCore"]),
+        .library(name: "TranscriptionCoreMocks", targets: ["TranscriptionCoreMocks"]),
     ],
     targets: [
         .target(name: "TranscriptionCore"),
+        .target(
+            name: "TranscriptionCoreMocks",
+            dependencies: ["TranscriptionCore"]
+        ),
         .testTarget(
             name: "TranscriptionCoreTests",
-            dependencies: ["TranscriptionCore"]
+            dependencies: ["TranscriptionCore", "TranscriptionCoreMocks"]
         ),
     ],
     swiftLanguageModes: [.v6]
