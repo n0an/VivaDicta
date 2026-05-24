@@ -167,7 +167,8 @@ extension AIService {
                     model: model,
                     accessToken: token,
                     projectId: projectId,
-                    onPartialResponse: onPartialResponse
+                    onPartialResponse: onPartialResponse,
+                    networkService: networkService
                 )
             } catch let error as OAuthError {
                 if let apiKey = provider.apiKey {
@@ -251,7 +252,8 @@ extension AIService {
                     messages: messages,
                     model: model,
                     accessToken: token,
-                    projectId: projectId
+                    projectId: projectId,
+                    networkService: networkService
                 )
             } catch let error as OAuthError {
                 if let apiKey = provider.apiKey {
@@ -517,11 +519,7 @@ extension AIService {
         let body = buildOpenAIChatRequestBody(model: model, systemMessage: systemMessage, messages: messages, stream: true)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             var errorData = Data()
@@ -571,11 +569,7 @@ extension AIService {
         let body = buildOpenAIChatRequestBody(model: model, systemMessage: systemMessage, messages: messages, stream: false)
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -627,11 +621,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -691,11 +681,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -753,11 +739,7 @@ extension AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             var errorData = Data()
@@ -835,11 +817,7 @@ extension AIService {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -883,11 +861,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -935,11 +909,7 @@ extension AIService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw EnhancementError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"

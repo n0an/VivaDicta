@@ -159,11 +159,7 @@ nonisolated enum ExaSearchClient: Sendable {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.httpBody = try JSONEncoder().encode(payload)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw ExaError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard (200...299).contains(httpResponse.statusCode) else {
             throw ExaError.httpStatus(code: httpResponse.statusCode)

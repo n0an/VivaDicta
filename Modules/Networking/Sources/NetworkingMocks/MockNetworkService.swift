@@ -39,8 +39,8 @@ public final class MockNetworkService: NetworkService, @unchecked Sendable {
 
     /// Per-test stub for `sendJSON`. Stored as `Any` because the return type
     /// is generic; tests put a `T` value here (or wrap an Error). The mock
-    /// type-checks at call time and records an Issue if the stub doesn't match
-    /// the requested `T`.
+    /// type-checks at call time and throws `StubNotSetError` if the stub
+    /// doesn't match the requested `T`.
     public var stubSendJSONResponse: Result<Any, Error>?
     public var didSendJSON: (() -> Void)?
     public private(set) var sendJSONCallCount = 0

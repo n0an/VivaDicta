@@ -181,12 +181,7 @@ enum VivAgentsClient {
 
         logger.logInfo("VivAgents request: provider=\(provider), model=\(model), textLength=\(text.count)")
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            logger.logError("VivAgents: invalid response (not HTTP)")
-            throw VivAgentsClientError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         logger.logInfo("VivAgents response: HTTP \(httpResponse.statusCode)")
 
@@ -254,9 +249,9 @@ enum VivAgentsClient {
         }
 
         do {
-            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else { return nil }
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+            guard httpResponse.statusCode == 200 else { return nil }
             return try JSONDecoder().decode(HealthResponse.self, from: data)
         } catch {
             return nil
@@ -277,9 +272,9 @@ enum VivAgentsClient {
         }
 
         do {
-            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else { return false }
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+            guard httpResponse.statusCode == 200 else { return false }
             let health = try JSONDecoder().decode(HealthResponse.self, from: data)
             switch provider {
             case "codex": return health.codexAvailable ?? false

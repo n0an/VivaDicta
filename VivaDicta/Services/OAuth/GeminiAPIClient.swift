@@ -89,11 +89,7 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw OAuthError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -188,11 +184,7 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw OAuthError.invalidResponse
-        }
+        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             var errorData = Data()
@@ -359,11 +351,7 @@ enum GeminiAPIClient {
 
         request.httpBody = try? JSONSerialization.data(withJSONObject: requestBody)
 
-        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw OAuthError.invalidResponse
-        }
+        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             var errorData = Data()

@@ -242,11 +242,7 @@ public final class OAuthManager: Sendable {
             request.httpBody = formBody.data(using: .utf8)
         }
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw OAuthError.invalidResponse
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -304,8 +300,7 @@ public final class OAuthManager: Sendable {
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 10
 
-        guard let (data, response) = try? await networkService.send(request, acceptableStatusCodes: Set(0...999)),
-              let httpResponse = response as? HTTPURLResponse,
+        guard let (data, httpResponse) = try? await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny),
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return (nil, nil)

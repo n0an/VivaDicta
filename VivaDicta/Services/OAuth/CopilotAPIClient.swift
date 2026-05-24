@@ -234,11 +234,7 @@ enum CopilotAPIClient {
     // MARK: - Shared Response Handling
 
     private static func executeRequest(_ request: URLRequest) async throws -> String {
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
-        }
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
@@ -265,11 +261,7 @@ enum CopilotAPIClient {
         _ request: URLRequest,
         onPartialResult: @escaping @MainActor (String) -> Void
     ) async throws -> String {
-        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw CopilotOAuthError.tokenExchangeFailed("Invalid response")
-        }
+        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             var errorData = Data()
@@ -350,8 +342,7 @@ enum CopilotAPIClient {
             request.addValue(value, forHTTPHeaderField: key)
         }
 
-        guard let (data, response) = try? await networkService.send(request, acceptableStatusCodes: Set(0...999)),
-              let httpResponse = response as? HTTPURLResponse,
+        guard let (data, httpResponse) = try? await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny),
               httpResponse.statusCode == 200,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let models = json["data"] as? [[String: Any]] else {

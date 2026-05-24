@@ -76,9 +76,9 @@ public struct GeminiOAuthProvider: OAuthProvider {
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode == 200 else {
             return nil
         }
 
@@ -102,9 +102,9 @@ public struct GeminiOAuthProvider: OAuthProvider {
         let body: [String: Any] = ["tierId": "free-tier"]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode == 200 else {
             return nil
         }
 
@@ -131,9 +131,9 @@ public struct GeminiOAuthProvider: OAuthProvider {
             request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             request.timeoutInterval = 10
 
-            let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200,
+            guard httpResponse.statusCode == 200,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 continue
             }

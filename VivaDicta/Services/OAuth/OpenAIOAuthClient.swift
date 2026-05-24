@@ -151,9 +151,9 @@ enum OpenAIOAuthClient {
         request.addValue(originator, forHTTPHeaderField: "originator")
         request.timeoutInterval = 15
 
-        let (data, response) = try await networkService.send(request, acceptableStatusCodes: Set(0...999))
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard httpResponse.statusCode == 200 else {
             return [defaultModel]
         }
 
@@ -197,11 +197,7 @@ enum OpenAIOAuthClient {
         request: URLRequest,
         onPartialResult: (@MainActor (String) -> Void)?
     ) async throws -> String {
-        let (bytes, response) = try await networkService.bytes(for: request, acceptableStatusCodes: Set(0...999))
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw OAuthError.invalidResponse
-        }
+        let (bytes, httpResponse) = try await networkService.bytes(for: request, acceptableStatusCodes: Set<Int>.acceptAny)
 
         guard httpResponse.statusCode == 200 else {
             var errorData = Data()

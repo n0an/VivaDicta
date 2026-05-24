@@ -47,6 +47,17 @@ public protocol NetworkService: Sendable {
     ) async throws -> (URLSession.AsyncBytes, HTTPURLResponse)
 }
 
+// MARK: - Acceptable status code presets
+
+public extension Set where Element == Int {
+    /// "Accept any HTTP status code" - call sites that do their own
+    /// status-code mapping (OAuth's 200-only check, streaming endpoints that
+    /// drain the error body manually, etc.) pass this as
+    /// `acceptableStatusCodes` to bypass `NetworkService`'s default
+    /// `200..<300` validation.
+    static var acceptAny: Set<Int> { Set(0...999) }
+}
+
 // MARK: - Ergonomic defaults
 
 /// Convenience overloads with sensible defaults so call sites stay clean.
