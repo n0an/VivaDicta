@@ -96,6 +96,13 @@
         "identifier" : "AppGroupTests",
         "name" : "AppGroupTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/AudioRecording",
+        "identifier" : "AudioRecordingTests",
+        "name" : "AudioRecordingTests"
+      }
     }
   ],
   "version" : 1
