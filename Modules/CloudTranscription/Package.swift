@@ -39,7 +39,7 @@ let package = Package(
                 "CloudTranscription",
                 "CloudTranscriptionMocks",
                 .product(name: "TranscriptionCore", package: "TranscriptionCore"),
-                .product(name: "Networking", package: "Networking"),
+//                .product(name: "Networking", package: "Networking"),
                 .product(name: "NetworkingMocks", package: "Networking"),
                 .product(name: "TestUtilities", package: "TestUtilities"),
             ]

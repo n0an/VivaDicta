@@ -20,6 +20,7 @@
       }
     },
     {
+      "enabled" : false,
       "target" : {
         "containerPath" : "container:VivaDicta.xcodeproj",
         "identifier" : "187D20F22FB5011D004234D0",

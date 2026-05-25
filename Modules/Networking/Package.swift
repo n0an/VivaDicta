@@ -20,7 +20,6 @@ let package = Package(
         .target(
             name: "NetworkingMocks",
             dependencies: [
-                "Networking",
                 .product(name: "TestUtilities", package: "TestUtilities"),
             ]
         ),
