@@ -33,6 +33,22 @@ struct VivaDictaApp: App {
     private let logger = Logger(category: .app)
 
     init() {
+        #if DEBUG || QA
+        if ProcessInfo.processInfo.arguments.contains("UI-TESTING") {
+            UIView.setAnimationsEnabled(false)
+            if let bundleId = Bundle.main.bundleIdentifier {
+                UserDefaults.standard.removePersistentDomain(forName: bundleId)
+            }
+            // Inline the App Group ID so this wipe runs before any
+            // AppGroupCoordinator.shared access, which would trigger the
+            // singleton's init (registering observers, etc.) before state
+            // is cleared.
+            let appGroupId = "group.com.antonnovoselov.VivaDicta"
+            UserDefaults(suiteName: appGroupId)?
+                .removePersistentDomain(forName: appGroupId)
+        }
+        #endif
+        
         // Track app launch count for analytics and feature gating
         AppLaunchTracker.recordLaunch()
 

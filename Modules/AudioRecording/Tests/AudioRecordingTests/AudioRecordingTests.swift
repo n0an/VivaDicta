@@ -8,8 +8,9 @@ import AudioRecordingMocks
 
 struct DefaultAudioFileServiceTests {
 
+    let sut = DefaultAudioFileService()
+
     @Test func move_transfersFileToDestination() throws {
-        let sut = DefaultAudioFileService()
         let source = try makeTempFile(contents: Data([1, 2, 3]))
         let destination = uniqueTempURL()
 
@@ -21,7 +22,6 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func move_throwsWhenSourceMissing() {
-        let sut = DefaultAudioFileService()
         let missingSource = uniqueTempURL()
         let destination = uniqueTempURL()
 
@@ -31,7 +31,6 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func remove_deletesFile() throws {
-        let sut = DefaultAudioFileService()
         let url = try makeTempFile(contents: Data([0xff]))
 
         try sut.remove(at: url)
@@ -40,7 +39,6 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func remove_throwsWhenFileMissing() {
-        let sut = DefaultAudioFileService()
         let missing = uniqueTempURL()
 
         #expect(throws: (any Error).self) {
@@ -49,7 +47,6 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func fileSize_returnsBytesOnDisk() throws {
-        let sut = DefaultAudioFileService()
         let payload = Data(repeating: 0xab, count: 512)
         let url = try makeTempFile(contents: payload)
         defer { try? FileManager.default.removeItem(at: url) }
@@ -60,7 +57,6 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func duration_returnsSecondsOfGeneratedWav() async throws {
-        let sut = DefaultAudioFileService()
         let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
         defer { try? FileManager.default.removeItem(at: source) }
 
@@ -71,7 +67,6 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func downsampleTo16kHzMono_producesValidShorterRateFile() async throws {
-        let sut = DefaultAudioFileService()
         let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
         defer { try? FileManager.default.removeItem(at: source) }
         let destination = source.deletingPathExtension().appendingPathExtension("16k.wav")
