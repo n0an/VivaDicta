@@ -22,7 +22,7 @@ struct DefaultAudioFileServiceTests {
     }
 
     @Test func move_throwsWhenSourceMissing() {
-let missingSource = uniqueTempURL()
+        let missingSource = uniqueTempURL()
         let destination = uniqueTempURL()
 
         #expect(throws: (any Error).self) {
@@ -31,7 +31,7 @@ let missingSource = uniqueTempURL()
     }
 
     @Test func remove_deletesFile() throws {
-let url = try makeTempFile(contents: Data([0xff]))
+        let url = try makeTempFile(contents: Data([0xff]))
 
         try sut.remove(at: url)
 
@@ -39,7 +39,7 @@ let url = try makeTempFile(contents: Data([0xff]))
     }
 
     @Test func remove_throwsWhenFileMissing() {
-let missing = uniqueTempURL()
+        let missing = uniqueTempURL()
 
         #expect(throws: (any Error).self) {
             try sut.remove(at: missing)
@@ -47,7 +47,7 @@ let missing = uniqueTempURL()
     }
 
     @Test func fileSize_returnsBytesOnDisk() throws {
-let payload = Data(repeating: 0xab, count: 512)
+        let payload = Data(repeating: 0xab, count: 512)
         let url = try makeTempFile(contents: payload)
         defer { try? FileManager.default.removeItem(at: url) }
 
@@ -57,7 +57,7 @@ let payload = Data(repeating: 0xab, count: 512)
     }
 
     @Test func duration_returnsSecondsOfGeneratedWav() async throws {
-let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
+        let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
         defer { try? FileManager.default.removeItem(at: source) }
 
         let duration = try await sut.duration(of: source)
@@ -67,7 +67,7 @@ let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
     }
 
     @Test func downsampleTo16kHzMono_producesValidShorterRateFile() async throws {
-let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
+        let source = try makeSineWaveFile(sampleRate: 44_100, durationSeconds: 0.5)
         defer { try? FileManager.default.removeItem(at: source) }
         let destination = source.deletingPathExtension().appendingPathExtension("16k.wav")
         defer { try? FileManager.default.removeItem(at: destination) }
