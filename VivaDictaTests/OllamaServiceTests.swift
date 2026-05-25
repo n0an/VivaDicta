@@ -10,7 +10,7 @@ import Testing
 /// Tests cover `OllamaService` in isolation: the HTTP shape of model
 /// fetching (OpenAI-compatible + native fallback) and connection checks.
 /// `MockNetworkService` stands in for the real network.
-@Suite("OllamaService")
+@Suite("OllamaService", .tags(.networking))
 struct OllamaServiceTests {
 
     private let serverURL = "http://localhost:11434"

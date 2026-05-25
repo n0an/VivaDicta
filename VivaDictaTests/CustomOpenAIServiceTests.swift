@@ -10,7 +10,7 @@ import Testing
 /// Tests cover `CustomOpenAIService` in isolation: the status-code mapping,
 /// API-key forwarding, body shape, and URLError handling - both raw and
 /// wrapped in `NetworkError.transport`.
-@Suite("CustomOpenAIService")
+@Suite("CustomOpenAIService", .tags(.networking))
 struct CustomOpenAIServiceTests {
 
     private let endpointURL = "https://api.example.com/v1/chat/completions"

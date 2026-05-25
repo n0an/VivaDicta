@@ -18,7 +18,7 @@ import Testing
 /// `URLSession.AsyncBytes`. The streaming tests here verify the
 /// outgoing request shape and rely on integration / manual testing
 /// for end-to-end SSE parsing.
-@Suite("AnthropicService")
+@Suite("AnthropicService", .tags(.networking))
 struct AnthropicServiceTests {
 
     private let endpointURL = AIProvider.anthropic.baseURL

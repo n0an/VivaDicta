@@ -55,44 +55,44 @@ struct AIServiceConfigurationTests {
 
     @Test func isProperlyConfigured_aiDisabled_returnsFalse() {
         let mode = makeMode(aiEnhanceEnabled: false)
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     @Test func isProperlyConfigured_noProvider_returnsFalse() {
         let mode = makeMode(aiProvider: nil)
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     @Test func isProperlyConfigured_emptyModel_returnsFalse() {
         let mode = makeMode(aiModel: "")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     @Test func isProperlyConfigured_noPreset_returnsFalse() {
         let mode = makeMode(presetId: nil)
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     @Test func isProperlyConfigured_emptyPresetInstructions_returnsFalse() {
         let mode = makeMode(presetId: "empty_preset")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
 
         let pm = makePresetManager()
         let emptyPreset = Preset(
@@ -106,84 +106,84 @@ struct AIServiceConfigurationTests {
             isBuiltIn: false
         )
         pm.addPreset(emptyPreset)
-        service.presetManager = pm
+        sut.presetManager = pm
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     @Test func isProperlyConfigured_ollamaProvider_validConfig_returnsTrue() {
         // Ollama doesn't need API key — just needs model + preset
         let mode = makeMode(aiProvider: .ollama, aiModel: "llama3.2", presetId: "regular")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
 
-        #expect(service.isProperlyConfigured() == true)
+        #expect(sut.isProperlyConfigured() == true)
     }
 
     @Test func isProperlyConfigured_customOpenAI_noEndpoint_returnsFalse() {
         let mode = makeMode(aiProvider: .customOpenAI, aiModel: "gpt-4")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
         // customOpenAIEndpointURL is "" by default
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     @Test func isProperlyConfigured_cloudProvider_noAPIKey_returnsFalse() {
         // Anthropic requires API key — no key in keychain → false
         let mode = makeMode(aiProvider: .anthropic, aiModel: "claude-sonnet-4-6")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.presetManager = makePresetManager()
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.presetManager = makePresetManager()
 
-        #expect(service.isProperlyConfigured() == false)
+        #expect(sut.isProperlyConfigured() == false)
     }
 
     // MARK: - Streaming Capability Tests
 
     @Test func currentModeSupportsResponseStreaming_appleMode_returnsTrue() {
         let mode = makeMode(aiProvider: .apple, aiModel: "foundation-model")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
 
-        #expect(service.currentModeSupportsResponseStreaming == true)
+        #expect(sut.currentModeSupportsResponseStreaming == true)
     }
 
     @Test func currentModeSupportsResponseStreaming_openAIAPIKeyMode_returnsTrue() {
         let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5-mini")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
 
-        #expect(service.currentModeSupportsResponseStreaming == true)
+        #expect(sut.currentModeSupportsResponseStreaming == true)
     }
 
     @Test func currentModeSupportsResponseStreaming_openAIOAuth_returnsTrue() {
         let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-5.4-mini")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.isOpenAISignedIn = true
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.isOpenAISignedIn = true
 
-        #expect(service.currentModeSupportsResponseStreaming == true)
+        #expect(sut.currentModeSupportsResponseStreaming == true)
     }
 
     @Test func currentModeSupportsResponseStreaming_geminiOAuth_returnsTrue() {
         let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-3-flash-preview")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.isGeminiSignedIn = true
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.isGeminiSignedIn = true
 
-        #expect(service.currentModeSupportsResponseStreaming == true)
+        #expect(sut.currentModeSupportsResponseStreaming == true)
     }
 
     @Test func currentModeSupportsResponseStreaming_copilotOAuth_returnsTrue() {
         let mode = makeMode(aiProvider: .copilot, aiModel: "gpt-4o")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
-        service.isCopilotSignedIn = true
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
+        sut.isCopilotSignedIn = true
 
-        #expect(service.currentModeSupportsResponseStreaming == true)
+        #expect(sut.currentModeSupportsResponseStreaming == true)
     }
 
     @Test func openAICompatibleStreamingDelta_extractsContentDelta() {
@@ -233,10 +233,10 @@ struct AIServiceConfigurationTests {
 
     @Test func currentModeSupportsResponseStreaming_anthropicReturnsTrue() {
         let mode = makeMode(aiProvider: .anthropic, aiModel: "claude-sonnet-4-6")
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
 
-        #expect(service.currentModeSupportsResponseStreaming == true)
+        #expect(sut.currentModeSupportsResponseStreaming == true)
     }
 
     // MARK: - Apple FM Sampling Profiles
@@ -277,12 +277,12 @@ struct AIServiceConfigurationTests {
     @Test func disableAIForModesUsingProvider_onlyAffectsMatchingModes() {
         let groqMode = makeMode(name: "Groq Mode", aiProvider: .groq, aiModel: "llama-3.3-70b-versatile")
         let ollamaMode = makeMode(name: "Ollama Mode", aiProvider: .ollama, aiModel: "llama3.2")
-        let service = makeService(withModes: [groqMode, ollamaMode])
+        let sut = makeService(withModes: [groqMode, ollamaMode])
 
-        service.disableAIEnhancementForModesUsingProvider(.groq)
+        sut.disableAIEnhancementForModesUsingProvider(.groq)
 
-        let updatedGroq = service.modes.first { $0.name == "Groq Mode" }!
-        let updatedOllama = service.modes.first { $0.name == "Ollama Mode" }!
+        let updatedGroq = sut.modes.first { $0.name == "Groq Mode" }!
+        let updatedOllama = sut.modes.first { $0.name == "Ollama Mode" }!
 
         #expect(updatedGroq.aiEnhanceEnabled == false)
         #expect(updatedOllama.aiEnhanceEnabled == true)
@@ -290,12 +290,12 @@ struct AIServiceConfigurationTests {
 
     @Test func disableAIForModesUsingProvider_updatesSelectedMode() {
         let mode = makeMode(name: "Active", aiProvider: .groq)
-        let service = makeService(withModes: [mode])
-        service.selectedModeName = mode.name
+        let sut = makeService(withModes: [mode])
+        sut.selectedModeName = mode.name
 
-        service.disableAIEnhancementForModesUsingProvider(.groq)
+        sut.disableAIEnhancementForModesUsingProvider(.groq)
 
-        #expect(service.selectedMode.aiEnhanceEnabled == false)
+        #expect(sut.selectedMode.aiEnhanceEnabled == false)
     }
 
     // MARK: - Disable Modes by Preset Tests
@@ -303,12 +303,12 @@ struct AIServiceConfigurationTests {
     @Test func disableAIForModesUsingPreset_onlyAffectsMatchingModes() {
         let summaryMode = makeMode(name: "Summary", presetId: "summary")
         let regularMode = makeMode(name: "Regular", presetId: "regular")
-        let service = makeService(withModes: [summaryMode, regularMode])
+        let sut = makeService(withModes: [summaryMode, regularMode])
 
-        service.disableAIEnhancementForModesUsingPreset(presetId: "summary")
+        sut.disableAIEnhancementForModesUsingPreset(presetId: "summary")
 
-        let updatedSummary = service.modes.first { $0.name == "Summary" }!
-        let updatedRegular = service.modes.first { $0.name == "Regular" }!
+        let updatedSummary = sut.modes.first { $0.name == "Summary" }!
+        let updatedRegular = sut.modes.first { $0.name == "Regular" }!
 
         #expect(updatedSummary.aiEnhanceEnabled == false)
         #expect(updatedSummary.presetId == nil)
@@ -319,37 +319,37 @@ struct AIServiceConfigurationTests {
     // MARK: - Get Available Models Tests
 
     @Test func getAvailableModels_staticProvider_returnsProviderModels() {
-        let service = makeService()
+        let sut = makeService()
 
-        let anthropicModels = service.getAvailableModels(for: .anthropic)
+        let anthropicModels = sut.getAvailableModels(for: .anthropic)
 
         #expect(anthropicModels.isEmpty == false)
         #expect(anthropicModels.contains("claude-sonnet-4-6"))
     }
 
     @Test func getAvailableModels_dynamicProvider_returnsStoredModels() {
-        let service = makeService()
-        service.openRouterModels = ["model-a", "model-b"]
+        let sut = makeService()
+        sut.openRouterModels = ["model-a", "model-b"]
 
-        let models = service.getAvailableModels(for: .openRouter)
+        let models = sut.getAvailableModels(for: .openRouter)
 
         #expect(models == ["model-a", "model-b"])
     }
 
     @Test func getAvailableModels_customOpenAI_returnsConfiguredModel() {
-        let service = makeService()
-        service.customOpenAIModelName = "my-custom-model"
+        let sut = makeService()
+        sut.customOpenAIModelName = "my-custom-model"
 
-        let models = service.getAvailableModels(for: .customOpenAI)
+        let models = sut.getAvailableModels(for: .customOpenAI)
 
         #expect(models == ["my-custom-model"])
     }
 
     @Test func getAvailableModels_customOpenAI_emptyName_returnsEmpty() {
-        let service = makeService()
-        service.customOpenAIModelName = ""
+        let sut = makeService()
+        sut.customOpenAIModelName = ""
 
-        let models = service.getAvailableModels(for: .customOpenAI)
+        let models = sut.getAvailableModels(for: .customOpenAI)
 
         #expect(models.isEmpty)
     }

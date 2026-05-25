@@ -10,6 +10,7 @@ import Testing
 /// through to the underlying HTTP calls. Full per-provider coverage lives in
 /// each provider's own test suite; this file just locks in the wiring so a
 /// future refactor that drops the injection is caught immediately.
+@Suite(.tags(.networking))
 @MainActor
 struct AIServiceNetworkingTests {
 

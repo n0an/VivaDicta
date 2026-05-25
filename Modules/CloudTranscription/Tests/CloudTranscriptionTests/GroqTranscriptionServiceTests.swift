@@ -15,6 +15,7 @@ import TranscriptionCore
 /// Mirrors the structure of `OpenAITranscriptionServiceTests`. Retry-path
 /// tests are intentionally skipped here - retry semantics belong on
 /// `NetworkRetry`'s own tests.
+@Suite(.tags(.networking))
 struct GroqTranscriptionServiceTests {
 
     // MARK: - Test Helpers

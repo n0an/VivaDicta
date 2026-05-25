@@ -5,7 +5,7 @@ import Foundation
 import Networking
 import Testing
 
-@Suite("NetworkError → transcription error bridge")
+@Suite("NetworkError → transcription error bridge", .tags(.networking))
 struct NetworkErrorBridgeTests {
 
     @Test func unacceptableStatusMapsToApiRequestFailed() {
