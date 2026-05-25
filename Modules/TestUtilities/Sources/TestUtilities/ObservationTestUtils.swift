@@ -35,7 +35,14 @@ public func changes<T, U>(
     withObservationTracking {
         _ = parent[keyPath: keyPath]
     } onChange: {
-        exp.fulfill()
+        // onChange fires synchronously when the observed property is mutated.
+        // Because `changes(...)` is `@MainActor`, the trigger closure - and
+        // therefore the mutation that wakes this callback - runs on the main
+        // actor. Bridge from the nonisolated callback to the main-actor
+        // `fulfill()` accordingly.
+        MainActor.assumeIsolated {
+            exp.fulfill()
+        }
     }
     trigger()
     try await exp.wait()

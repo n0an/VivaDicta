@@ -8,8 +8,13 @@ import Testing
 ///
 /// Unlike a naive `Task.sleep(timeout) + check` implementation, `wait()`
 /// returns immediately once `fulfill()` has been called - either before
-/// `wait()` (fast path) or during the wait via a continuation race with
-/// the timeout. The full timeout is only paid in the failing case.
+/// `wait()` (fast path) or during the wait via a continuation resume. The
+/// full timeout is only paid in the failing case.
+///
+/// Synchronization is provided by `@MainActor` isolation. All mutation of
+/// `isFulfilled` and `continuation` happens on the main actor, so no
+/// locks or atomics are needed. Callers from other actors must `await`,
+/// which routes the calls through the main actor's serial executor.
 ///
 /// ## Usage
 ///
@@ -20,7 +25,8 @@ import Testing
 /// try await exp.wait()
 /// #expect(service.didThing)
 /// ```
-public final class SwiftExpectation: @unchecked Sendable {
+@MainActor
+public final class SwiftExpectation {
 
     private let timeout: Double
     private var isFulfilled = false
@@ -43,23 +49,27 @@ public final class SwiftExpectation: @unchecked Sendable {
     public func wait() async throws {
         if isFulfilled { return }
 
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask { [self] in
-                await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-                    if isFulfilled {
-                        cont.resume()
-                    } else {
-                        self.continuation = cont
-                    }
-                }
-            }
-            group.addTask { [timeout] in
-                try? await Task.sleep(for: .seconds(timeout))
-            }
-            _ = await group.next()
-            group.cancelAll()
+        let timeoutTask = Task {
+            try? await Task.sleep(for: .seconds(timeout))
         }
 
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            if isFulfilled {
+                cont.resume()
+                return
+            }
+            self.continuation = cont
+
+            Task { @MainActor [weak self] in
+                await timeoutTask.value
+                guard let self, self.continuation != nil else { return }
+                let pending = self.continuation
+                self.continuation = nil
+                pending?.resume()
+            }
+        }
+
+        timeoutTask.cancel()
         try #require(isFulfilled)
     }
 }
