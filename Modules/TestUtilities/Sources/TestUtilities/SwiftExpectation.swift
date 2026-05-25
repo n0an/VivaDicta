@@ -6,15 +6,18 @@ import Testing
 /// Swift Testing replacement for `XCTestExpectation`. Use when a test needs
 /// to wait for an asynchronous callback before asserting state.
 ///
-/// Unlike a naive `Task.sleep(timeout) + check` implementation, `wait()`
-/// returns immediately once `fulfill()` has been called - either before
-/// `wait()` (fast path) or during the wait via a continuation resume. The
-/// full timeout is only paid in the failing case.
-///
 /// Synchronization is provided by `@MainActor` isolation. All mutation of
-/// `isFulfilled` and `continuation` happens on the main actor, so no
-/// locks or atomics are needed. Callers from other actors must `await`,
-/// which routes the calls through the main actor's serial executor.
+/// `isFulfilled` happens on the main actor, so no locks or atomics are
+/// needed. Callers from other actors must `await`, which routes the calls
+/// through the main actor's serial executor.
+///
+/// `wait()` short-circuits if `fulfill()` was already called - which is
+/// the common case when the trigger is synchronous (e.g. setting up an
+/// `@Observable` observer, then mutating in the same actor before
+/// awaiting). For truly asynchronous callbacks that may fulfill *during*
+/// the wait, the full timeout is paid in the success path. We don't have
+/// that pattern in the codebase today; add it back if a real caller needs
+/// it.
 ///
 /// ## Usage
 ///
@@ -30,17 +33,13 @@ public final class SwiftExpectation {
 
     private let timeout: Double
     private var isFulfilled = false
-    private var continuation: CheckedContinuation<Void, Never>?
 
     public init(timeout: Double = 1) {
         self.timeout = timeout
     }
 
     public func fulfill() {
-        guard !isFulfilled else { return }
         isFulfilled = true
-        continuation?.resume()
-        continuation = nil
     }
 
     /// Wait up to `timeout` seconds. Fails the test if the expectation was
@@ -48,28 +47,7 @@ public final class SwiftExpectation {
     /// called before `wait()`.
     public func wait() async throws {
         if isFulfilled { return }
-
-        let timeoutTask = Task {
-            try? await Task.sleep(for: .seconds(timeout))
-        }
-
-        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            if isFulfilled {
-                cont.resume()
-                return
-            }
-            self.continuation = cont
-
-            Task { @MainActor [weak self] in
-                await timeoutTask.value
-                guard let self, self.continuation != nil else { return }
-                let pending = self.continuation
-                self.continuation = nil
-                pending?.resume()
-            }
-        }
-
-        timeoutTask.cancel()
+        try await Task.sleep(for: .seconds(timeout))
         try #require(isFulfilled)
     }
 }
