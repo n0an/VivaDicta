@@ -323,7 +323,7 @@ struct AIServiceConfigurationTests {
 
         let anthropicModels = service.getAvailableModels(for: .anthropic)
 
-        #expect(!anthropicModels.isEmpty)
+        #expect(anthropicModels.isEmpty == false)
         #expect(anthropicModels.contains("claude-sonnet-4-6"))
     }
 

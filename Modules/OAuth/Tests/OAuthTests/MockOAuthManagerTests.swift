@@ -42,7 +42,7 @@ struct MockOAuthManagerLifecycleTests {
 
         sut.signOut(provider: provider)
 
-        #expect(!sut.isSignedIn(provider: provider))
+        #expect(sut.isSignedIn(provider: provider) == false)
         #expect(sut.accountEmail(for: provider) == nil)
     }
 
@@ -69,7 +69,7 @@ struct MockOAuthManagerLifecycleTests {
 
         sut.signOut()
 
-        #expect(!sut.isSignedIn)
+        #expect(sut.isSignedIn == false)
         #expect(sut.accountInfo == nil)
     }
 }

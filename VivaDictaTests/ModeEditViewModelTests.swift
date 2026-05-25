@@ -261,6 +261,6 @@ struct ModeEditViewModelTests {
         // The name with whitespace should still be considered valid
         // (validation trims the name)
         let trimmedName = viewModel.modeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        #expect(!trimmedName.isEmpty)
+        #expect(trimmedName.isEmpty == false)
     }
 }

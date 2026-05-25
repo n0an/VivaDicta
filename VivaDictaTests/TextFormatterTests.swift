@@ -28,8 +28,8 @@ struct TextFormatterTests {
     @Test func format_trimsWhitespace() {
         let result = TextFormatter.format("  Hello world.  ")
 
-        #expect(!result.hasPrefix(" "))
-        #expect(!result.hasSuffix(" "))
+        #expect(result.hasPrefix(" ") == false)
+        #expect(result.hasSuffix(" ") == false)
     }
 
     // MARK: - Single Paragraph (Short Text)
@@ -37,7 +37,7 @@ struct TextFormatterTests {
     @Test func format_singleShortSentence_singleParagraph() {
         let result = TextFormatter.format("This is a short sentence.")
 
-        #expect(!result.contains("\n\n"))
+        #expect(result.contains("\n\n") == false)
         #expect(result.contains("This is a short sentence."))
     }
 
@@ -45,7 +45,7 @@ struct TextFormatterTests {
         // Short sentences (< 4 words each) don't count as "significant"
         let result = TextFormatter.format("Yes. OK. I see. Thanks.")
 
-        #expect(!result.contains("\n\n"))
+        #expect(result.contains("\n\n") == false)
     }
 
     // MARK: - Paragraph Splitting
@@ -77,7 +77,7 @@ struct TextFormatterTests {
         #expect(paragraphs.count >= 2)
         // First paragraph should contain 4 significant sentences
         #expect(paragraphs[0].contains("fourth"))
-        #expect(!paragraphs[0].contains("fifth"))
+        #expect(paragraphs[0].contains("fifth") == false)
     }
 
     @Test func format_mixedShortLongSentences_balanced() {
@@ -100,7 +100,7 @@ struct TextFormatterTests {
         let result = TextFormatter.format(shortNumberText)
 
         // Short enough text → no split
-        #expect(!result.contains("\n\n"))
+        #expect(result.contains("\n\n") == false)
     }
 
     @Test func format_russianText_handledCorrectly() {

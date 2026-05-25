@@ -39,7 +39,7 @@ struct TranscriptionOutputFilterTests {
         let input = "Hello [background noise] world"
         let result = TranscriptionOutputFilter.filter(input)
 
-        #expect(!result.contains("[background noise]"))
+        #expect(result.contains("[background noise]") == false)
         #expect(result.contains("Hello"))
         #expect(result.contains("world"))
     }
@@ -48,14 +48,14 @@ struct TranscriptionOutputFilterTests {
         let input = "Hello (inaudible) world"
         let result = TranscriptionOutputFilter.filter(input)
 
-        #expect(!result.contains("(inaudible)"))
+        #expect(result.contains("(inaudible)") == false)
     }
 
     @Test func filter_removesBracedContent() {
         let input = "Hello {music} world"
         let result = TranscriptionOutputFilter.filter(input)
 
-        #expect(!result.contains("{music}"))
+        #expect(result.contains("{music}") == false)
     }
 
     // MARK: - filter Tests — Filler Words
@@ -64,9 +64,9 @@ struct TranscriptionOutputFilterTests {
         let input = "So uh I think um we should eh go"
         let result = TranscriptionOutputFilter.filter(input)
 
-        #expect(!result.contains(" uh "))
-        #expect(!result.contains(" um "))
-        #expect(!result.contains(" eh "))
+        #expect(result.contains(" uh ") == false)
+        #expect(result.contains(" um ") == false)
+        #expect(result.contains(" eh ") == false)
         #expect(result.contains("I think"))
         #expect(result.contains("we should"))
     }
@@ -75,7 +75,7 @@ struct TranscriptionOutputFilterTests {
         let input = "Well, uh, I think so"
         let result = TranscriptionOutputFilter.filter(input)
 
-        #expect(!result.contains("uh,"))
+        #expect(result.contains("uh,") == false)
     }
 
     // MARK: - filter Tests — Tag Removal
@@ -84,8 +84,8 @@ struct TranscriptionOutputFilterTests {
         let input = "Hello <note>this is a note</note> world"
         let result = TranscriptionOutputFilter.filter(input)
 
-        #expect(!result.contains("<note>"))
-        #expect(!result.contains("this is a note"))
+        #expect(result.contains("<note>") == false)
+        #expect(result.contains("this is a note") == false)
         #expect(result.contains("Hello"))
         #expect(result.contains("world"))
     }
@@ -129,16 +129,16 @@ struct TranscriptionOutputFilterTests {
         let inputRu = "Это um важное hmm сообщение для теста."
         let result = TranscriptionOutputFilter.filter(inputRu, language: "ru")
 
-        #expect(!result.contains("um"))
-        #expect(!result.contains("hmm"))
+        #expect(result.contains("um") == false)
+        #expect(result.contains("hmm") == false)
     }
 
     @Test func filter_russianFillers_removedWhenLanguageIsRussian() {
         let input = "Я думаю ээ что нам ыыы нужно идти."
         let result = TranscriptionOutputFilter.filter(input, language: "ru")
 
-        #expect(!result.contains("ээ"))
-        #expect(!result.contains("ыыы"))
+        #expect(result.contains("ээ") == false)
+        #expect(result.contains("ыыы") == false)
         #expect(result.contains("Я думаю"))
         #expect(result.contains("нужно идти"))
     }
@@ -147,7 +147,7 @@ struct TranscriptionOutputFilterTests {
         let input = "Я э-э думаю что э-э-э нам нужно идти."
         let result = TranscriptionOutputFilter.filter(input, language: "ru")
 
-        #expect(!result.contains("э-э"))
+        #expect(result.contains("э-э") == false)
         #expect(result.contains("Я"))
         #expect(result.contains("думаю"))
         #expect(result.contains("нужно идти"))
@@ -157,8 +157,8 @@ struct TranscriptionOutputFilterTests {
         let input = "Ich denke äh dass wir ähm gehen sollten."
         let result = TranscriptionOutputFilter.filter(input, language: "de")
 
-        #expect(!result.contains("äh"))
-        #expect(!result.contains("ähm"))
+        #expect(result.contains("äh") == false)
+        #expect(result.contains("ähm") == false)
         #expect(result.contains("Ich denke"))
         #expect(result.contains("gehen sollten"))
     }
@@ -167,8 +167,8 @@ struct TranscriptionOutputFilterTests {
         let input = "Je pense euh qu'on devrait heu y aller."
         let result = TranscriptionOutputFilter.filter(input, language: "fr")
 
-        #expect(!result.contains("euh"))
-        #expect(!result.contains("heu"))
+        #expect(result.contains("euh") == false)
+        #expect(result.contains("heu") == false)
         #expect(result.contains("Je pense"))
         #expect(result.contains("y aller"))
     }
@@ -177,8 +177,8 @@ struct TranscriptionOutputFilterTests {
         let input = "Yo creo ehm que deberíamos eee ir."
         let result = TranscriptionOutputFilter.filter(input, language: "es")
 
-        #expect(!result.contains("ehm"))
-        #expect(!result.contains("eee"))
+        #expect(result.contains("ehm") == false)
+        #expect(result.contains("eee") == false)
         #expect(result.contains("Yo creo"))
         #expect(result.contains("deberíamos"))
     }
@@ -198,7 +198,7 @@ struct TranscriptionOutputFilterTests {
         let input = "Well, eh, ok."
         let result = TranscriptionOutputFilter.filter(input, language: "auto")
 
-        #expect(!result.contains("eh"))
+        #expect(result.contains("eh") == false)
     }
 
     @Test func filter_explicitLanguageWithRegionSuffix_resolvesToBase() {
@@ -206,7 +206,7 @@ struct TranscriptionOutputFilterTests {
         let input = "I think eh we should go."
         let result = TranscriptionOutputFilter.filter(input, language: "en-US")
 
-        #expect(!result.contains(" eh "))
+        #expect(result.contains(" eh ") == false)
     }
 
     // MARK: - stripTrailingPeriod Tests

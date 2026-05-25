@@ -78,20 +78,20 @@ struct PromptsTemplatesTests {
             if template == .custom {
                 #expect(template.prompt.isEmpty)
             } else {
-                #expect(!template.prompt.isEmpty, "\(template.rawValue) has empty prompt")
+                #expect(template.prompt.isEmpty == false, "\(template.rawValue) has empty prompt")
             }
         }
     }
 
     @Test func allCases_haveNonEmptyDisplayNames() {
         for template in PromptsTemplates.allCases {
-            #expect(!template.displayName.isEmpty, "\(template.rawValue) has empty displayName")
+            #expect(template.displayName.isEmpty == false, "\(template.rawValue) has empty displayName")
         }
     }
 
     @Test func allCases_haveNonEmptyDescriptions() {
         for template in PromptsTemplates.allCases {
-            #expect(!template.description.isEmpty, "\(template.rawValue) has empty description")
+            #expect(template.description.isEmpty == false, "\(template.rawValue) has empty description")
         }
     }
 
@@ -101,7 +101,7 @@ struct PromptsTemplatesTests {
 
     @Test func nonCustom_haveNonEmptyDefaultTitles() {
         for template in PromptsTemplates.allCases where template != .custom {
-            #expect(!template.defaultTitle.isEmpty, "\(template.rawValue) has empty defaultTitle")
+            #expect(template.defaultTitle.isEmpty == false, "\(template.rawValue) has empty defaultTitle")
         }
     }
 

@@ -197,7 +197,7 @@ struct AnthropicServiceTests {
 
         let valid = await sut.verifyAPIKey("sk-ant-bad")
 
-        #expect(!valid)
+        #expect(valid == false)
     }
 
     @Test func verifyAPIKeyReturnsFalseOnTransportError() async {
@@ -207,7 +207,7 @@ struct AnthropicServiceTests {
 
         let valid = await sut.verifyAPIKey("sk-ant-test")
 
-        #expect(!valid)
+        #expect(valid == false)
     }
 
     @Test func verifyAPIKeySendsCorrectHeadersAndBody() async throws {
