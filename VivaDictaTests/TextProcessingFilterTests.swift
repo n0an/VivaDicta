@@ -133,54 +133,52 @@ struct TranscriptionOutputFilterTests {
         #expect(result.contains("hmm") == false)
     }
 
-    @Test func filter_russianFillers_removedWhenLanguageIsRussian() {
-        let input = "Я думаю ээ что нам ыыы нужно идти."
-        let result = TranscriptionOutputFilter.filter(input, language: "ru")
+    @Test(arguments: [
+        (
+            lang: "ru",
+            input: "Я думаю ээ что нам ыыы нужно идти.",
+            removed: ["ээ", "ыыы"],
+            kept: ["Я думаю", "нужно идти"]
+        ),
+        (
+            lang: "ru",
+            input: "Я э-э думаю что э-э-э нам нужно идти.",
+            removed: ["э-э"],
+            kept: ["Я", "думаю", "нужно идти"]
+        ),
+        (
+            lang: "de",
+            input: "Ich denke äh dass wir ähm gehen sollten.",
+            removed: ["äh", "ähm"],
+            kept: ["Ich denke", "gehen sollten"]
+        ),
+        (
+            lang: "fr",
+            input: "Je pense euh qu'on devrait heu y aller.",
+            removed: ["euh", "heu"],
+            kept: ["Je pense", "y aller"]
+        ),
+        (
+            lang: "es",
+            input: "Yo creo ehm que deberíamos eee ir.",
+            removed: ["ehm", "eee"],
+            kept: ["Yo creo", "deberíamos"]
+        ),
+    ])
+    func filter_languageFillers_removedWhenLanguageMatches(
+        lang: String,
+        input: String,
+        removed: [String],
+        kept: [String]
+    ) {
+        let result = TranscriptionOutputFilter.filter(input, language: lang)
 
-        #expect(result.contains("ээ") == false)
-        #expect(result.contains("ыыы") == false)
-        #expect(result.contains("Я думаю"))
-        #expect(result.contains("нужно идти"))
-    }
-
-    @Test func filter_russianHyphenatedFillers_removedWhenLanguageIsRussian() {
-        let input = "Я э-э думаю что э-э-э нам нужно идти."
-        let result = TranscriptionOutputFilter.filter(input, language: "ru")
-
-        #expect(result.contains("э-э") == false)
-        #expect(result.contains("Я"))
-        #expect(result.contains("думаю"))
-        #expect(result.contains("нужно идти"))
-    }
-
-    @Test func filter_germanFillers_removedWhenLanguageIsGerman() {
-        let input = "Ich denke äh dass wir ähm gehen sollten."
-        let result = TranscriptionOutputFilter.filter(input, language: "de")
-
-        #expect(result.contains("äh") == false)
-        #expect(result.contains("ähm") == false)
-        #expect(result.contains("Ich denke"))
-        #expect(result.contains("gehen sollten"))
-    }
-
-    @Test func filter_frenchFillers_removedWhenLanguageIsFrench() {
-        let input = "Je pense euh qu'on devrait heu y aller."
-        let result = TranscriptionOutputFilter.filter(input, language: "fr")
-
-        #expect(result.contains("euh") == false)
-        #expect(result.contains("heu") == false)
-        #expect(result.contains("Je pense"))
-        #expect(result.contains("y aller"))
-    }
-
-    @Test func filter_spanishFillers_removedWhenLanguageIsSpanish() {
-        let input = "Yo creo ehm que deberíamos eee ir."
-        let result = TranscriptionOutputFilter.filter(input, language: "es")
-
-        #expect(result.contains("ehm") == false)
-        #expect(result.contains("eee") == false)
-        #expect(result.contains("Yo creo"))
-        #expect(result.contains("deberíamos"))
+        for token in removed {
+            #expect(result.contains(token) == false, "[\(lang)] expected \"\(token)\" to be removed; got: \(result)")
+        }
+        for token in kept {
+            #expect(result.contains(token), "[\(lang)] expected \"\(token)\" to be kept; got: \(result)")
+        }
     }
 
     @Test func filter_germanFillers_notRemovedWhenLanguageIsRussian() {

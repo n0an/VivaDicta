@@ -120,18 +120,17 @@ struct AnthropicServiceTests {
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(429)))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
                 systemMessage: "s",
                 userMessage: "u",
                 apiKey: "k",
                 model: "m"
             )
-            Issue.record("Expected rateLimitExceeded")
-        } catch let error as EnhancementError {
-            if case .rateLimitExceeded = error {} else {
-                Issue.record("Expected .rateLimitExceeded, got \(error)")
-            }
+        }
+        guard case .rateLimitExceeded = error else {
+            Issue.record("Expected .rateLimitExceeded, got \(error)")
+            return
         }
     }
 
@@ -140,18 +139,17 @@ struct AnthropicServiceTests {
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(503)))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
                 systemMessage: "s",
                 userMessage: "u",
                 apiKey: "k",
                 model: "m"
             )
-            Issue.record("Expected serverError")
-        } catch let error as EnhancementError {
-            if case .serverError = error {} else {
-                Issue.record("Expected .serverError, got \(error)")
-            }
+        }
+        guard case .serverError = error else {
+            Issue.record("Expected .serverError, got \(error)")
+            return
         }
     }
 
@@ -161,21 +159,19 @@ struct AnthropicServiceTests {
         networkService.stubSendResponse = .success((body, makeHTTPResponse(400)))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
                 systemMessage: "s",
                 userMessage: "u",
                 apiKey: "k",
                 model: "m"
             )
-            Issue.record("Expected customError")
-        } catch let error as EnhancementError {
-            if case let .customError(message) = error {
-                #expect(message.hasPrefix("HTTP 400"))
-            } else {
-                Issue.record("Expected .customError, got \(error)")
-            }
         }
+        guard case let .customError(message) = error else {
+            Issue.record("Expected .customError, got \(error)")
+            return
+        }
+        #expect(message.hasPrefix("HTTP 400"))
     }
 
     // MARK: - verifyAPIKey
