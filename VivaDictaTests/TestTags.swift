@@ -5,6 +5,6 @@ import Testing
 extension Tag {
     /// Marks suites that exercise networking through a mocked transport.
     /// No real network calls happen - the tag exists so the suites can be
-    /// filtered as a group (e.g. `swift test --filter-tag networking`).
+    /// selected/excluded as a group from an Xcode Test Plan.
     @Tag static var networking: Self
 }
