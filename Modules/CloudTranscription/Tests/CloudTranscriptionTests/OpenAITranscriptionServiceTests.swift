@@ -152,7 +152,7 @@ struct OpenAITranscriptionServiceTests {
 
         let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
-        #expect(!bodyString.contains("name=\"language\""))
+        #expect(bodyString.contains("name=\"language\"") == false)
     }
 
     // MARK: - Validation / short-circuit

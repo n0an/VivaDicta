@@ -48,7 +48,7 @@ struct TextInsertionFormatterTests {
         let context = makeContext(textBefore: "word ")
         let result = TextInsertionFormatter.formatTextForInsertion("test", context: context)
 
-        #expect(!result.hasPrefix(" "))
+        #expect(result.hasPrefix(" ") == false)
     }
 
     @Test func shouldAddSpaceBefore_afterPeriod_true() {
@@ -64,7 +64,7 @@ struct TextInsertionFormatterTests {
         let result = TextInsertionFormatter.formatTextForInsertion("test", context: context)
 
         // At start of document — no space before, but space after
-        #expect(!result.hasPrefix(" "))
+        #expect(result.hasPrefix(" ") == false)
     }
 
     // MARK: - Smart Spacing: After
@@ -73,14 +73,14 @@ struct TextInsertionFormatterTests {
         let context = makeContext(textBefore: "word ", textAfter: ".")
         let result = TextInsertionFormatter.formatTextForInsertion("test", context: context)
 
-        #expect(!result.hasSuffix(" "))
+        #expect(result.hasSuffix(" ") == false)
     }
 
     @Test func spacing_beforeWhitespace_noSpaceAfter() {
         let context = makeContext(textBefore: "word ", textAfter: " more")
         let result = TextInsertionFormatter.formatTextForInsertion("test", context: context)
 
-        #expect(!result.hasSuffix(" "))
+        #expect(result.hasSuffix(" ") == false)
     }
 
     @Test func spacing_endOfText_addsSpaceAfter() {

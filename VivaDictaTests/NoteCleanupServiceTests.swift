@@ -14,7 +14,7 @@ import SwiftData
 @MainActor
 struct NoteCleanupServiceTests {
 
-    private let testSuiteName = "NoteCleanupServiceTests"
+    private let testSuiteName = "NoteCleanupServiceTests.\(UUID().uuidString)"
 
     private func makeTestDefaults() -> UserDefaults {
         let defaults = UserDefaults(suiteName: testSuiteName)!
@@ -135,7 +135,7 @@ struct NoteCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Old note fully deleted, recent note kept
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(oldFileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(oldFileName).path) == false)
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(recentFileName).path))
 
         let fetchDescriptor = FetchDescriptor<Transcription>()
@@ -171,7 +171,7 @@ struct NoteCleanupServiceTests {
         )
         await service.performCleanupIfNeeded(modelContext: context)
 
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
         let fetchDescriptor = FetchDescriptor<Transcription>()
         let remaining = try context.fetch(fetchDescriptor)
         #expect(remaining.isEmpty)
@@ -209,7 +209,7 @@ struct NoteCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Both audio file and transcription record should be gone
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
         let fetchDescriptor = FetchDescriptor<Transcription>()
         let remaining = try context.fetch(fetchDescriptor)
         #expect(remaining.isEmpty)
@@ -329,7 +329,7 @@ struct NoteCleanupServiceTests {
         #expect(remaining.first?.text == "Recent note")
 
         for i in 1...5 {
-            #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent("audio-\(i).m4a").path))
+            #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent("audio-\(i).m4a").path) == false)
         }
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(recentFileName).path))
 

@@ -160,7 +160,7 @@ struct OllamaServiceTests {
 
         let reachable = await sut.checkConnection(serverURL: serverURL)
 
-        #expect(!reachable)
+        #expect(reachable == false)
     }
 
     @Test func checkConnectionReturnsFalseOnTransportError() async {
@@ -170,7 +170,7 @@ struct OllamaServiceTests {
 
         let reachable = await sut.checkConnection(serverURL: serverURL)
 
-        #expect(!reachable)
+        #expect(reachable == false)
     }
 
 }

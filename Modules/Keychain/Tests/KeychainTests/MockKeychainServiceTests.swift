@@ -32,7 +32,7 @@ struct MockKeychainServiceTests {
 
     @Test func stubOverrideForcesSaveFailure() {
         sut.stubSaveStringResult = false
-        #expect(!sut.save("hello", forKey: "k", syncable: true))
+        #expect(sut.save("hello", forKey: "k", syncable: true) == false)
         #expect(sut.getString(forKey: "k", syncable: true) == nil)
     }
 

@@ -32,7 +32,7 @@ struct NotesFilterResetPolicyTests {
             remainingFilteredCount: 1
         )
 
-        #expect(!shouldReset)
+        #expect(shouldReset == false)
     }
 
     @Test func keepsFilterWhenSearchIsActive() {
@@ -45,7 +45,7 @@ struct NotesFilterResetPolicyTests {
             remainingFilteredCount: 0
         )
 
-        #expect(!shouldReset)
+        #expect(shouldReset == false)
     }
 
     @Test func keepsFilterWhenEverythingWasDeleted() {
@@ -58,7 +58,7 @@ struct NotesFilterResetPolicyTests {
             remainingFilteredCount: 0
         )
 
-        #expect(!shouldReset)
+        #expect(shouldReset == false)
     }
 
     @Test func keepsFilterWhenDeletionDoesNotRemoveAnyVisibleMatches() {
@@ -71,6 +71,6 @@ struct NotesFilterResetPolicyTests {
             remainingFilteredCount: 0
         )
 
-        #expect(!shouldReset)
+        #expect(shouldReset == false)
     }
 }

@@ -36,13 +36,13 @@ struct OAuthManagerTests {
 
         sut.signOut(provider: provider)
 
-        #expect(!sut.isSignedIn(provider: provider))
+        #expect(sut.isSignedIn(provider: provider) == false)
         #expect(keychain.deleteCallCount >= 1)
         #expect(keychain.getData(forKey: provider.keychainKey, syncable: false) == nil)
     }
 
     @Test func isSignedInReturnsFalseWhenKeychainEmpty() {
-        #expect(!sut.isSignedIn(provider: provider))
+        #expect(sut.isSignedIn(provider: provider) == false)
     }
 
     @Test func accountEmailReturnsStoredEmail() throws {
@@ -85,7 +85,7 @@ struct CopilotOAuthManagerTests {
 
         sut.signOut()
 
-        #expect(!sut.isSignedIn)
+        #expect(sut.isSignedIn == false)
         #expect(keychain.deleteCallCount >= 1)
     }
 
@@ -93,7 +93,7 @@ struct CopilotOAuthManagerTests {
         let keychain = MockKeychainService()
         // Construction succeeds without a background task sut.
         let sut = DefaultCopilotOAuthManager(keychain: keychain, backgroundTaskService: nil)
-        #expect(!sut.isSignedIn)
+        #expect(sut.isSignedIn == false)
     }
 }
 

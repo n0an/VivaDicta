@@ -14,7 +14,7 @@ import SwiftData
 @MainActor
 struct AudioCleanupServiceTests {
 
-    private let testSuiteName = "AudioCleanupServiceTests"
+    private let testSuiteName = "AudioCleanupServiceTests.\(UUID().uuidString)"
 
     private func makeTestDefaults() -> UserDefaults {
         let defaults = UserDefaults(suiteName: testSuiteName)!
@@ -141,7 +141,7 @@ struct AudioCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Verify: old file deleted, recent file kept
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(oldFileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(oldFileName).path) == false)
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(recentFileName).path))
         #expect(oldTranscription.audioFileName == nil)
         #expect(recentTranscription.audioFileName == recentFileName)
@@ -179,7 +179,7 @@ struct AudioCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file deleted
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
         #expect(transcription.audioFileName == nil)
 
         // Cleanup
@@ -411,7 +411,7 @@ struct AudioCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Verify file deleted from disk
-        #expect(!FileManager.default.fileExists(atPath: filePath.path))
+        #expect(FileManager.default.fileExists(atPath: filePath.path) == false)
 
         // Cleanup
         try? FileManager.default.removeItem(at: audioDir)
@@ -488,7 +488,7 @@ struct AudioCleanupServiceTests {
         // Verify: all files deleted, all audioFileNames cleared
         for (i, transcription) in transcriptions.enumerated() {
             let fileName = "audio-\(i + 1).m4a"
-            #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+            #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
             #expect(transcription.audioFileName == nil)
             #expect(transcription.text == "Transcription \(i + 1)")
         }
@@ -570,7 +570,7 @@ struct AudioCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file deleted because enough time passed
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
         #expect(transcription.audioFileName == nil)
 
         // Cleanup
@@ -605,7 +605,7 @@ struct AudioCleanupServiceTests {
         await service.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file deleted on first launch
-        #expect(!FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
+        #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
         #expect(transcription.audioFileName == nil)
 
         // Cleanup

@@ -22,19 +22,19 @@ struct PresetCatalogTests {
 
     @Test func allBuiltIn_haveNonEmptyNames() {
         for preset in PresetCatalog.allBuiltIn {
-            #expect(!preset.name.isEmpty, "Preset \(preset.id) has empty name")
+            #expect(preset.name.isEmpty == false, "Preset \(preset.id) has empty name")
         }
     }
 
     @Test func allBuiltIn_haveNonEmptyPromptInstructions() {
         for preset in PresetCatalog.allBuiltIn {
-            #expect(!preset.promptInstructions.isEmpty, "Preset \(preset.id) has empty instructions")
+            #expect(preset.promptInstructions.isEmpty == false, "Preset \(preset.id) has empty instructions")
         }
     }
 
     @Test func allBuiltIn_haveNonEmptyIcons() {
         for preset in PresetCatalog.allBuiltIn {
-            #expect(!preset.icon.isEmpty, "Preset \(preset.id) has empty icon")
+            #expect(preset.icon.isEmpty == false, "Preset \(preset.id) has empty icon")
         }
     }
 

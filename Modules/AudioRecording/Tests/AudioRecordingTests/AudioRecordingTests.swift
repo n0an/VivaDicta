@@ -16,7 +16,7 @@ struct DefaultAudioFileServiceTests {
 
         try sut.move(from: source, to: destination)
 
-        #expect(!FileManager.default.fileExists(atPath: source.path))
+        #expect(FileManager.default.fileExists(atPath: source.path) == false)
         #expect(FileManager.default.fileExists(atPath: destination.path))
         try FileManager.default.removeItem(at: destination)
     }
@@ -35,7 +35,7 @@ struct DefaultAudioFileServiceTests {
 
         try sut.remove(at: url)
 
-        #expect(!FileManager.default.fileExists(atPath: url.path))
+        #expect(FileManager.default.fileExists(atPath: url.path) == false)
     }
 
     @Test func remove_throwsWhenFileMissing() {

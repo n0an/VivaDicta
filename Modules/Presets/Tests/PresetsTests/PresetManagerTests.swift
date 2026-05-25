@@ -46,7 +46,7 @@ struct PresetManagerTests {
     // MARK: - Initialization Tests
 
     @Test func init_populatesBuiltInPresets() {
-        #expect(!sut.presets.isEmpty)
+        #expect(sut.presets.isEmpty == false)
         #expect(sut.presets.contains { $0.id == "regular" })
         #expect(sut.presets.contains { $0.id == "summary" })
         #expect(sut.presets.contains { $0.id == "assistant" })
@@ -74,14 +74,14 @@ struct PresetManagerTests {
     @Test func presetsInCategory_returnsFilteredPresets() {
         let rewritePresets = sut.presets(in: "Rewrite")
 
-        #expect(!rewritePresets.isEmpty)
+        #expect(rewritePresets.isEmpty == false)
         #expect(rewritePresets.allSatisfy { $0.category == "Rewrite" })
     }
 
     @Test func categories_returnsOrderedCategories() {
         let categories = sut.categories
 
-        #expect(!categories.isEmpty)
+        #expect(categories.isEmpty == false)
         // Rewrite should come before Translate based on categoryOrder
         if let rewriteIdx = categories.firstIndex(of: "Rewrite"),
            let translateIdx = categories.firstIndex(of: "Translate") {
@@ -186,7 +186,7 @@ struct PresetManagerTests {
 
         sut.setPresetHidden(presetId: "regular", isHidden: true)
 
-        #expect(!sut.visiblePresets.contains { $0.id == "regular" })
+        #expect(sut.visiblePresets.contains { $0.id == "regular" } == false)
         #expect(sut.isPresetHidden(presetId: "regular") == true)
     }
 
@@ -268,7 +268,7 @@ struct PresetManagerTests {
         )
 
         #expect(manager2.isPresetHidden(presetId: "regular") == true)
-        #expect(!manager2.visiblePresets.contains { $0.id == "regular" })
+        #expect(manager2.visiblePresets.contains { $0.id == "regular" } == false)
 
         defaults.removePersistentDomain(forName: suiteName)
     }

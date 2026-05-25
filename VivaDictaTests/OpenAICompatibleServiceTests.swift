@@ -342,7 +342,7 @@ struct OpenAICompatibleServiceTests {
             providerName: "openai"
         )
 
-        #expect(!valid)
+        #expect(valid == false)
     }
 
     @Test func verifyChatCompletionsAPIKeyReturnsFalseOnTransportError() async {
@@ -357,7 +357,7 @@ struct OpenAICompatibleServiceTests {
             providerName: "openai"
         )
 
-        #expect(!valid)
+        #expect(valid == false)
     }
 
     @Test func verifyChatCompletionsAPIKeySendsBearerAndMinimalBody() async throws {
@@ -430,7 +430,7 @@ struct OpenAICompatibleServiceTests {
             providerName: "mistral"
         )
 
-        #expect(!valid)
+        #expect(valid == false)
     }
 
     @Test func verifyGETEndpointReturnsFalseOnTransportError() async {
@@ -444,7 +444,7 @@ struct OpenAICompatibleServiceTests {
             providerName: "vercelAIGateway"
         )
 
-        #expect(!valid)
+        #expect(valid == false)
     }
 
     @Test func verifyGETEndpointSendsBearerAuthAndGETMethod() async throws {

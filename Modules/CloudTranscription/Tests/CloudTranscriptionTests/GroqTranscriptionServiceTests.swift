@@ -150,7 +150,7 @@ struct GroqTranscriptionServiceTests {
 
         let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
-        #expect(!bodyString.contains("name=\"language\""))
+        #expect(bodyString.contains("name=\"language\"") == false)
     }
 
     // MARK: - Vocabulary / prompt (Groq-specific)
@@ -165,7 +165,7 @@ struct GroqTranscriptionServiceTests {
 
         let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
-        #expect(!bodyString.contains("name=\"prompt\""))
+        #expect(bodyString.contains("name=\"prompt\"") == false)
     }
 
     @Test func bodyIncludesPromptFieldWhenVocabularyProvided() async throws {
