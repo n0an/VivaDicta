@@ -3,8 +3,14 @@
 import Foundation
 import Testing
 
-/// Thrown when a test calls a mocked method that requires a stub but no stub
-/// was set. The Swift Testing port of Bev's `StubNotSetError`.
+/// Thrown by mocks for test-infrastructure failures - either a stub the
+/// test forgot to set, or a stub that exists but can't satisfy the call
+/// (mismatched type, fundamentally unstubbable method). Carries a
+/// message so the test report points at the specific mock + method.
+///
+/// Both the `.evaluate()` helper below and individual mocks
+/// (`MockNetworkService`, `MockURLSession`) throw this directly so every
+/// test-infra failure surfaces with a consistent error type.
 public struct StubNotSetError: Error, CustomStringConvertible {
     public let description: String
 
@@ -18,33 +24,14 @@ public extension Optional {
     ///
     /// Stubs should be of type `Result<T, Error>?`. The optional is evaluated
     /// in 1 of 3 ways:
-    /// 1. `nil` -> the stub has not been set; records a Swift Testing `Issue`
-    ///    at the call site and throws `StubNotSetError`.
+    /// 1. `nil` -> records a Swift Testing issue and throws `StubNotSetError`.
     /// 2. `.success(value)` -> returns `value`.
     /// 3. `.failure(error)` -> throws `error`.
-    ///
-    /// Uses standard built-in source-location macros so callers don't need to
-    /// `import Testing` themselves.
-    func evaluate<T>(
-        _ message: @autoclosure () -> String = "Stub not set",
-        fileID: String = #fileID,
-        filePath: String = #filePath,
-        line: Int = #line,
-        column: Int = #column
-    ) throws -> T where Wrapped == Result<T, Error> {
-        switch self {
-        case .some(let result):
-            return try result.get()
-        case .none:
-            let detail = message()
-            let location = SourceLocation(
-                fileID: fileID,
-                filePath: filePath,
-                line: line,
-                column: column
-            )
-            Issue.record(Comment(rawValue: detail), sourceLocation: location)
-            throw StubNotSetError(detail)
+    func evaluate<T>() throws -> T where Wrapped == Result<T, Error> {
+        guard let result = self else {
+            Issue.record("Stub not set")
+            throw StubNotSetError()
         }
+        return try result.get()
     }
 }

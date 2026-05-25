@@ -7,17 +7,19 @@
 
 import Foundation
 import Testing
+import TestUtilities
 @testable import Presets
 
 struct PresetManagerTests {
 
-    // MARK: - Test Helpers
+    var sut: PresetManager
 
-    private func makeManager(suiteName: String = "PresetManagerTests") -> PresetManager {
+    init() {
+        let suiteName = "PresetManagerTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removeObject(forKey: "testPresets")
         defaults.removeObject(forKey: "testHiddenPresetIDs")
-        return PresetManager(
+        self.sut = PresetManager(
             userDefaults: defaults,
             storageKey: "testPresets",
             hiddenPresetIDsStorageKey: "testHiddenPresetIDs"
@@ -44,8 +46,6 @@ struct PresetManagerTests {
     // MARK: - Initialization Tests
 
     @Test func init_populatesBuiltInPresets() {
-        let sut = makeManager()
-
         #expect(!sut.presets.isEmpty)
         #expect(sut.presets.contains { $0.id == "regular" })
         #expect(sut.presets.contains { $0.id == "summary" })
@@ -53,7 +53,6 @@ struct PresetManagerTests {
     }
 
     @Test func init_builtInPresetsCount_matchesCatalog() {
-        let sut = makeManager()
         let builtInCount = sut.presets.filter(\.isBuiltIn).count
 
         #expect(builtInCount == PresetCatalog.allBuiltIn.count)
@@ -62,8 +61,6 @@ struct PresetManagerTests {
     // MARK: - Lookup Tests
 
     @Test func preset_forId_returnsCorrectPreset() {
-        let sut = makeManager()
-
         let preset = sut.preset(for: "regular")
 
         #expect(preset?.name == "Regular")
@@ -71,14 +68,10 @@ struct PresetManagerTests {
     }
 
     @Test func preset_forId_returnsNilForUnknownId() {
-        let sut = makeManager()
-
         #expect(sut.preset(for: "nonexistent") == nil)
     }
 
     @Test func presetsInCategory_returnsFilteredPresets() {
-        let sut = makeManager()
-
         let rewritePresets = sut.presets(in: "Rewrite")
 
         #expect(!rewritePresets.isEmpty)
@@ -86,8 +79,6 @@ struct PresetManagerTests {
     }
 
     @Test func categories_returnsOrderedCategories() {
-        let sut = makeManager()
-
         let categories = sut.categories
 
         #expect(!categories.isEmpty)
@@ -101,7 +92,6 @@ struct PresetManagerTests {
     // MARK: - Add Preset Tests
 
     @Test func addPreset_addsCustomPreset() {
-        let sut = makeManager()
         let initialCount = sut.presets.count
         let preset = makeCustomPreset()
 
@@ -114,7 +104,6 @@ struct PresetManagerTests {
     // MARK: - Update Preset Tests
 
     @Test func updatePreset_updatesExistingPreset() {
-        let sut = makeManager()
         let preset = makeCustomPreset()
         sut.addPreset(preset)
 
@@ -126,7 +115,6 @@ struct PresetManagerTests {
     }
 
     @Test func updatePreset_nonExistentId_noEffect() {
-        let sut = makeManager()
         let initialCount = sut.presets.count
 
         let preset = makeCustomPreset(id: "custom_nonexistent")
@@ -138,7 +126,6 @@ struct PresetManagerTests {
     // MARK: - Delete Preset Tests
 
     @Test func deletePreset_removesCustomPreset() {
-        let sut = makeManager()
         let preset = makeCustomPreset()
         sut.addPreset(preset)
         let countAfterAdd = sut.presets.count
@@ -150,7 +137,6 @@ struct PresetManagerTests {
     }
 
     @Test func deletePreset_builtIn_doesNotDelete() {
-        let sut = makeManager()
         let regularPreset = sut.preset(for: "regular")!
         let initialCount = sut.presets.count
 
@@ -163,8 +149,6 @@ struct PresetManagerTests {
     // MARK: - Reset to Default Tests
 
     @Test func resetToDefault_restoresBuiltInPreset() {
-        let sut = makeManager()
-
         // Edit the preset first
         var edited = sut.preset(for: "regular")!
         edited.name = "My Custom Regular"
@@ -181,8 +165,6 @@ struct PresetManagerTests {
     // MARK: - Favorite Tests
 
     @Test func toggleFavorite_togglesState() {
-        let sut = makeManager()
-
         #expect(sut.preset(for: "regular")?.isFavorite == false)
 
         sut.toggleFavorite(presetId: "regular")
@@ -193,8 +175,6 @@ struct PresetManagerTests {
     }
 
     @Test func hasFavorites_reflectsState() {
-        let sut = makeManager()
-
         #expect(sut.hasFavorites == false)
 
         sut.toggleFavorite(presetId: "regular")
@@ -202,8 +182,6 @@ struct PresetManagerTests {
     }
 
     @Test func visiblePresets_excludesHiddenPresets() {
-        let sut = makeManager()
-
         #expect(sut.visiblePresets.contains { $0.id == "regular" })
 
         sut.setPresetHidden(presetId: "regular", isHidden: true)
@@ -213,7 +191,6 @@ struct PresetManagerTests {
     }
 
     @Test func hasVisibleFavorites_ignoresHiddenFavorites() {
-        let sut = makeManager()
         sut.toggleFavorite(presetId: "regular")
 
         #expect(sut.hasVisibleFavorites == true)
@@ -226,27 +203,25 @@ struct PresetManagerTests {
     // MARK: - Duplicate Detection Tests
 
     @Test func isPresetNameDuplicate_detectsDuplicates() {
-        let sut = makeManager()
-
         #expect(sut.isPresetNameDuplicate("Regular") == true)
         #expect(sut.isPresetNameDuplicate("NonExistent Preset") == false)
     }
 
     @Test func isPresetNameDuplicate_excludesOwnId() {
-        let sut = makeManager()
-
         // "Regular" exists, but when excluding its own ID it should not be a duplicate
         #expect(sut.isPresetNameDuplicate("Regular", excludingId: "regular") == false)
     }
 
     @Test func isPresetNameDuplicate_caseInsensitive() {
-        let sut = makeManager()
-
         #expect(sut.isPresetNameDuplicate("regular") == true)
         #expect(sut.isPresetNameDuplicate("REGULAR") == true)
     }
 
     // MARK: - Persistence Tests
+
+    // Persistence tests need a manager pair against the same defaults to
+    // verify cross-instance reads, so they construct managers inline rather
+    // than using the hoisted `sut`.
 
     @Test func persistence_presetsPersistedAcrossInstances() {
         let suiteName = "PresetManagerPersistenceTest_\(UUID().uuidString)"
@@ -301,7 +276,6 @@ struct PresetManagerTests {
     // MARK: - Sorting Tests
 
     @Test func sorting_builtInPresetsBeforeCustom() {
-        let sut = makeManager()
         let custom = makeCustomPreset()
         sut.addPreset(custom)
 
@@ -318,7 +292,6 @@ struct PresetManagerTests {
     }
 
     @Test func deletePreset_removesHiddenState() {
-        let sut = makeManager()
         let preset = makeCustomPreset()
         sut.addPreset(preset)
         sut.setPresetHidden(presetId: preset.id, isHidden: true)
@@ -326,5 +299,34 @@ struct PresetManagerTests {
         sut.deletePreset(preset)
 
         #expect(sut.isPresetHidden(presetId: preset.id) == false)
+    }
+
+    // MARK: - Observation
+
+    @MainActor
+    @Test func addPreset_firesObservationOnPresets() async throws {
+        let initialCount = sut.presets.count
+        let preset = makeCustomPreset()
+
+        try await changes(to: \.presets, on: sut, timeout: 0.5) {
+            sut.addPreset(preset)
+        }
+
+        #expect(sut.presets.count == initialCount + 1)
+        #expect(sut.preset(for: preset.id) != nil)
+    }
+
+    @MainActor
+    @Test func deletePreset_firesObservationOnPresets() async throws {
+        let preset = makeCustomPreset()
+        sut.addPreset(preset)
+        let countAfterAdd = sut.presets.count
+
+        try await changes(to: \.presets, on: sut, timeout: 0.5) {
+            sut.deletePreset(preset)
+        }
+
+        #expect(sut.presets.count == countAfterAdd - 1)
+        #expect(sut.preset(for: preset.id) == nil)
     }
 }
