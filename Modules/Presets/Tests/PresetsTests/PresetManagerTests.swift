@@ -91,7 +91,7 @@ struct PresetManagerTests {
 
     // MARK: - Add Preset Tests
 
-    @Test mutating func addPreset_addsCustomPreset() {
+    @Test func addPreset_addsCustomPreset() {
         let initialCount = sut.presets.count
         let preset = makeCustomPreset()
 
@@ -103,7 +103,7 @@ struct PresetManagerTests {
 
     // MARK: - Update Preset Tests
 
-    @Test mutating func updatePreset_updatesExistingPreset() {
+    @Test func updatePreset_updatesExistingPreset() {
         let preset = makeCustomPreset()
         sut.addPreset(preset)
 
@@ -114,7 +114,7 @@ struct PresetManagerTests {
         #expect(sut.preset(for: preset.id)?.name == "Updated Name")
     }
 
-    @Test mutating func updatePreset_nonExistentId_noEffect() {
+    @Test func updatePreset_nonExistentId_noEffect() {
         let initialCount = sut.presets.count
 
         let preset = makeCustomPreset(id: "custom_nonexistent")
@@ -125,7 +125,7 @@ struct PresetManagerTests {
 
     // MARK: - Delete Preset Tests
 
-    @Test mutating func deletePreset_removesCustomPreset() {
+    @Test func deletePreset_removesCustomPreset() {
         let preset = makeCustomPreset()
         sut.addPreset(preset)
         let countAfterAdd = sut.presets.count
@@ -136,7 +136,7 @@ struct PresetManagerTests {
         #expect(sut.preset(for: preset.id) == nil)
     }
 
-    @Test mutating func deletePreset_builtIn_doesNotDelete() {
+    @Test func deletePreset_builtIn_doesNotDelete() {
         let regularPreset = sut.preset(for: "regular")!
         let initialCount = sut.presets.count
 
@@ -148,7 +148,7 @@ struct PresetManagerTests {
 
     // MARK: - Reset to Default Tests
 
-    @Test mutating func resetToDefault_restoresBuiltInPreset() {
+    @Test func resetToDefault_restoresBuiltInPreset() {
         // Edit the preset first
         var edited = sut.preset(for: "regular")!
         edited.name = "My Custom Regular"
@@ -164,7 +164,7 @@ struct PresetManagerTests {
 
     // MARK: - Favorite Tests
 
-    @Test mutating func toggleFavorite_togglesState() {
+    @Test func toggleFavorite_togglesState() {
         #expect(sut.preset(for: "regular")?.isFavorite == false)
 
         sut.toggleFavorite(presetId: "regular")
@@ -174,14 +174,14 @@ struct PresetManagerTests {
         #expect(sut.preset(for: "regular")?.isFavorite == false)
     }
 
-    @Test mutating func hasFavorites_reflectsState() {
+    @Test func hasFavorites_reflectsState() {
         #expect(sut.hasFavorites == false)
 
         sut.toggleFavorite(presetId: "regular")
         #expect(sut.hasFavorites == true)
     }
 
-    @Test mutating func visiblePresets_excludesHiddenPresets() {
+    @Test func visiblePresets_excludesHiddenPresets() {
         #expect(sut.visiblePresets.contains { $0.id == "regular" })
 
         sut.setPresetHidden(presetId: "regular", isHidden: true)
@@ -190,7 +190,7 @@ struct PresetManagerTests {
         #expect(sut.isPresetHidden(presetId: "regular") == true)
     }
 
-    @Test mutating func hasVisibleFavorites_ignoresHiddenFavorites() {
+    @Test func hasVisibleFavorites_ignoresHiddenFavorites() {
         sut.toggleFavorite(presetId: "regular")
 
         #expect(sut.hasVisibleFavorites == true)
@@ -275,7 +275,7 @@ struct PresetManagerTests {
 
     // MARK: - Sorting Tests
 
-    @Test mutating func sorting_builtInPresetsBeforeCustom() {
+    @Test func sorting_builtInPresetsBeforeCustom() {
         let custom = makeCustomPreset()
         sut.addPreset(custom)
 
@@ -291,7 +291,7 @@ struct PresetManagerTests {
         }
     }
 
-    @Test mutating func deletePreset_removesHiddenState() {
+    @Test func deletePreset_removesHiddenState() {
         let preset = makeCustomPreset()
         sut.addPreset(preset)
         sut.setPresetHidden(presetId: preset.id, isHidden: true)
