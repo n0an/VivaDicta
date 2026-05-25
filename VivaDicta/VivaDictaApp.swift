@@ -33,6 +33,15 @@ struct VivaDictaApp: App {
     private let logger = Logger(category: .app)
 
     init() {
+        #if DEBUG || QA
+        if ProcessInfo.processInfo.arguments.contains("UI-TESTING") {
+            UIView.setAnimationsEnabled(false)
+            UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
+            UserDefaults(suiteName: AppGroupCoordinator.shared.appGroupId)?
+                .removePersistentDomain(forName: AppGroupCoordinator.shared.appGroupId)
+        }
+        #endif
+        
         // Track app launch count for analytics and feature gating
         AppLaunchTracker.recordLaunch()
 
