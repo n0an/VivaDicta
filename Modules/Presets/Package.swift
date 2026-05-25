@@ -12,6 +12,9 @@ let package = Package(
         .library(name: "Presets", targets: ["Presets"]),
         .library(name: "PresetsMocks", targets: ["PresetsMocks"]),
     ],
+    dependencies: [
+        .package(path: "../TestUtilities"),
+    ],
     targets: [
         .target(
             name: "Presets"
@@ -22,7 +25,11 @@ let package = Package(
         ),
         .testTarget(
             name: "PresetsTests",
-            dependencies: ["Presets", "PresetsMocks"]
+            dependencies: [
+                "Presets",
+                "PresetsMocks",
+                .product(name: "TestUtilities", package: "TestUtilities"),
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]
