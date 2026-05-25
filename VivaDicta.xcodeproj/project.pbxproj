@@ -19,6 +19,8 @@
 		186C0C9C2FB7829A00102432 /* OAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9B2FB7829A00102432 /* OAuth */; };
 		186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9D2FB782A000102432 /* OAuthMocks */; };
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
+		188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */ = {isa = PBXBuildFile; productRef = 188E02562FC3BCB4007B8BC1 /* AudioRecording */; };
+		188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */; };
 		189C7A952F0C6822004BAFBF /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 189C7AAF2F0D84E2004BAFBF /* UniformTypeIdentifiers.framework */; };
 		189C7ABC2F0D84E2004BAFBF /* ActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -212,6 +214,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppGroup,
+				AudioRecording,
 				CloudTranscription,
 				DesignSystem,
 				Keychain,
@@ -229,6 +232,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppGroup,
+				AudioRecording,
 				CloudTranscription,
 				DesignSystem,
 				Keychain,
@@ -509,6 +513,7 @@
 				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
+				188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */,
 				18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */,
 				18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */,
 			);
@@ -529,6 +534,7 @@
 				18F76A342FB85C0B00280269 /* AppGroup in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 				E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */,
+				188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -733,6 +739,7 @@
 				18F76A312FB85C0400280269 /* AppGroup */,
 				18B89BC22FB875530007FA96 /* TranscriptionKit */,
 				18B8BEB02FB8BD7D0007FA96 /* DesignSystem */,
+				188E02562FC3BCB4007B8BC1 /* AudioRecording */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -767,6 +774,7 @@
 				18AABBCC0011223344556603 /* NetworkingMocks */,
 				18F76A332FB85C0B00280269 /* AppGroup */,
 				F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */,
+				188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2725,6 +2733,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
 			productName = LumoKit;
+		};
+		188E02562FC3BCB4007B8BC1 /* AudioRecording */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AudioRecording;
+		};
+		188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AudioRecordingMocks;
 		};
 		18AABBCC0011223344556601 /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
