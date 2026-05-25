@@ -117,6 +117,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         self.audioRecordingService = audioRecordingService
         self.audioFileService = audioFileService
         super.init()
+        self.audioRecordingService.onDidFinishUnsuccessfully = { [weak self] in
+            guard let self else { return }
+            self.resetValues()
+            self.recordingState = .idle
+        }
         setupKeyboardRecordingHandlers()
     }
 
@@ -175,7 +180,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     /// Starts audio recording.
     ///
     /// If a keyboard prewarm session is active, uses the prewarmed audio engine.
-    /// Otherwise, configures and starts a standard AVAudioRecorder.
+    /// Otherwise, delegates capture to ``AudioRecordingService``.
     func startCaptureAudio(
         destination: RecordingDestination = .newNote,
         sourceTag: String = SourceTag.app

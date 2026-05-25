@@ -34,9 +34,17 @@ public final class MockAudioRecordingService: AudioRecordingService {
     public private(set) var capturedStartURL: URL?
     public private(set) var capturedStartSettings: [String: Any]?
 
+    public var onDidFinishUnsuccessfully: (@MainActor () -> Void)?
+
     public var isRecording: Bool { stubIsRecording }
     public var currentTime: TimeInterval { stubCurrentTime }
     public var currentAudioPower: Float { stubCurrentAudioPower }
+
+    /// Test helper: simulate the underlying recorder reporting an
+    /// unsuccessful finish, invoking the wired-up consumer callback.
+    public func fireDidFinishUnsuccessfully() {
+        onDidFinishUnsuccessfully?()
+    }
 
     public func startRecording(to url: URL, settings: [String: Any]) throws {
         startRecordingCallCount += 1

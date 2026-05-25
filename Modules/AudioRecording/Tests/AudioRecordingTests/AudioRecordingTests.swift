@@ -4,6 +4,7 @@ import AVFoundation
 import Foundation
 import Testing
 @testable import AudioRecording
+import AudioRecordingMocks
 
 struct DefaultAudioFileServiceTests {
 
@@ -101,6 +102,27 @@ struct DefaultAudioRecordingServiceTests {
         #expect(sut.isRecording == false)
         #expect(sut.currentTime == 0)
         #expect(sut.currentAudioPower == -160)
+    }
+
+    @MainActor
+    @Test func unsuccessfulFinishCallback_canBeWiredAndCleared() {
+        let sut = DefaultAudioRecordingService()
+        sut.onDidFinishUnsuccessfully = {}
+
+        #expect(sut.onDidFinishUnsuccessfully != nil)
+        sut.onDidFinishUnsuccessfully = nil
+        #expect(sut.onDidFinishUnsuccessfully == nil)
+    }
+
+    @MainActor
+    @Test func mockUnsuccessfulFinishCallback_invokesConsumer() {
+        let sut = MockAudioRecordingService()
+        var fired = false
+        sut.onDidFinishUnsuccessfully = { fired = true }
+
+        sut.fireDidFinishUnsuccessfully()
+
+        #expect(fired)
     }
 
     @MainActor

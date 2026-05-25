@@ -26,9 +26,17 @@ public protocol AudioRecordingService: AnyObject {
     var currentTime: TimeInterval { get }
     var currentAudioPower: Float { get }
 
+    /// Fired when the underlying recorder reports an unsuccessful finish
+    /// (e.g. interruption, encoding failure, disk-full). Consumers wire
+    /// this to reset UI state and bail out of any in-progress capture
+    /// pipeline. The service has already cleared its own internal recorder
+    /// state and deactivated the audio session by the time this fires.
+    var onDidFinishUnsuccessfully: (@MainActor () -> Void)? { get set }
+
     /// Configure the audio session and start recording to the given URL.
     /// Throws if the session fails to activate or the recorder cannot be
-    /// constructed with the provided settings.
+    /// constructed with the provided settings. The audio session is
+    /// deactivated on the failure path so callers don't have to.
     func startRecording(to url: URL, settings: [String: Any]) throws
 
     /// Stop the active recording. Returns the URL of the finished file, or

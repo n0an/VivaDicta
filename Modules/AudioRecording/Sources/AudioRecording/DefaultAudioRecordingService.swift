@@ -1,6 +1,6 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 import os
 
@@ -10,13 +10,15 @@ import os
 @MainActor
 public final class DefaultAudioRecordingService: NSObject, AudioRecordingService {
 
-    private let logger = Logger(
+    private nonisolated let logger = Logger(
         subsystem: "com.antonnovoselov.VivaDicta",
         category: "AudioRecordingService"
     )
 
     private var recorder: AVAudioRecorder?
     private var currentURL: URL?
+
+    public var onDidFinishUnsuccessfully: (@MainActor () -> Void)?
 
     public override init() {
         super.init()
@@ -46,16 +48,20 @@ public final class DefaultAudioRecordingService: NSObject, AudioRecordingService
         try session.setActive(true)
         #endif
 
-        let recorder = try AVAudioRecorder(url: url, settings: settings)
-        recorder.delegate = self
-        recorder.isMeteringEnabled = true
-        guard recorder.record() else {
-            throw AudioRecordingError.failedToStart
+        do {
+            let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.delegate = self
+            recorder.isMeteringEnabled = true
+            guard recorder.record() else {
+                throw AudioRecordingError.failedToStart
+            }
+            self.recorder = recorder
+            self.currentURL = url
+            logger.info("Recording started: \(url.lastPathComponent, privacy: .public)")
+        } catch {
+            deactivateSessionQuietly()
+            throw error
         }
-
-        self.recorder = recorder
-        self.currentURL = url
-        logger.info("Recording started: \(url.lastPathComponent, privacy: .public)")
     }
 
     public func stopRecording() -> URL? {
@@ -64,7 +70,11 @@ public final class DefaultAudioRecordingService: NSObject, AudioRecordingService
         let finishedURL = currentURL
         self.recorder = nil
         self.currentURL = nil
+        deactivateSessionQuietly()
+        return finishedURL
+    }
 
+    private func deactivateSessionQuietly() {
         #if !os(macOS)
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -72,19 +82,22 @@ public final class DefaultAudioRecordingService: NSObject, AudioRecordingService
             logger.warning("Failed to deactivate audio session: \(error.localizedDescription, privacy: .public)")
         }
         #endif
+    }
 
-        return finishedURL
+    fileprivate func handleUnsuccessfulFinish() {
+        logger.error("AVAudioRecorder finished unsuccessfully")
+        self.recorder = nil
+        self.currentURL = nil
+        deactivateSessionQuietly()
+        onDidFinishUnsuccessfully?()
     }
 }
 
 extension DefaultAudioRecordingService: AVAudioRecorderDelegate {
     nonisolated public func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-        if !flag {
-            let logger = Logger(
-                subsystem: "com.antonnovoselov.VivaDicta",
-                category: "AudioRecordingService"
-            )
-            logger.error("AVAudioRecorder finished unsuccessfully")
+        guard !flag else { return }
+        Task { @MainActor [weak self] in
+            self?.handleUnsuccessfulFinish()
         }
     }
 }
