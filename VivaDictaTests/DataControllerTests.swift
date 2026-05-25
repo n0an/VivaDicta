@@ -147,7 +147,7 @@ struct DataControllerTests {
         let entities = try sut.transcriptionEntities()
 
         #expect(entities.count == 1)
-        let entity = entities.first!
+        let entity = try #require(entities.first)
         #expect(entity.id == transcription.id)
         #expect(entity.text == "Entity test")
         #expect(entity.enhancedText == "Enhanced entity")

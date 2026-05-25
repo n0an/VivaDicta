@@ -14,7 +14,7 @@ import Testing
 /// `verifyChatCompletionsAPIKey` probe, and the streaming request
 /// shape (full SSE parsing is not testable via MockNetworkService;
 /// see the comment near the streaming tests).
-@Suite("OpenAICompatibleService")
+@Suite("OpenAICompatibleService", .tags(.networking))
 struct OpenAICompatibleServiceTests {
 
     private let endpointURL = "https://api.example.com/v1/chat/completions"

@@ -85,12 +85,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: audio file still exists, transcription unchanged
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
@@ -133,12 +133,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: old file deleted, recent file kept
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(oldFileName).path) == false)
@@ -171,12 +171,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file deleted
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
@@ -207,12 +207,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file still exists (5 days < 7 day default retention)
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
@@ -246,12 +246,12 @@ struct AudioCleanupServiceTests {
         #expect(transcription.audioFileName == fileName)
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: audioFileName is cleared
         #expect(transcription.audioFileName == nil)
@@ -287,12 +287,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: text preserved, audio cleared
         #expect(transcription.text == originalText)
@@ -326,12 +326,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: nothing changed
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
@@ -361,12 +361,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup - should complete without errors
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: transcription unchanged
         #expect(transcription.text == "Old transcription without audio")
@@ -403,12 +403,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify file deleted from disk
         #expect(FileManager.default.fileExists(atPath: filePath.path) == false)
@@ -436,12 +436,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup - should complete without errors
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: audioFileName still cleared even if file didn't exist
         #expect(transcription.audioFileName == nil)
@@ -478,12 +478,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: all files deleted, all audioFileNames cleared
         for (i, transcription) in transcriptions.enumerated() {
@@ -523,12 +523,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup with 24 hour interval (default)
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 24 * 60 * 60
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file NOT deleted because cleanup ran recently
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path))
@@ -562,12 +562,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup with 24 hour interval
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 24 * 60 * 60
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file deleted because enough time passed
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
@@ -597,12 +597,12 @@ struct AudioCleanupServiceTests {
         try context.save()
 
         // Run cleanup with 24 hour interval
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 24 * 60 * 60
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify: file deleted on first launch
         #expect(FileManager.default.fileExists(atPath: audioDir.appendingPathComponent(fileName).path) == false)
@@ -637,12 +637,12 @@ struct AudioCleanupServiceTests {
         let beforeCleanup = Date()
 
         // Run cleanup
-        let service = AudioCleanupService(
+        let sut = AudioCleanupService(
             userDefaults: defaults,
             audioDirectory: audioDir,
             minimumCleanupInterval: 0
         )
-        await service.performCleanupIfNeeded(modelContext: context)
+        await sut.performCleanupIfNeeded(modelContext: context)
 
         // Verify timestamp was set
         let lastCleanup = defaults.object(forKey: "lastAudioCleanupDate") as? Date

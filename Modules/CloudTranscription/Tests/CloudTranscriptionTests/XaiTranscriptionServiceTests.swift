@@ -11,6 +11,7 @@ import TranscriptionCore
 /// `MockNetworkService`. Verifies request shape (URL, method, headers,
 /// multipart body) and response handling (success, non-2xx, undecodable
 /// JSON), plus the xAI-specific `format`/`file-last` body ordering.
+@Suite(.tags(.networking))
 struct XaiTranscriptionServiceTests {
 
     // MARK: - Test Helpers

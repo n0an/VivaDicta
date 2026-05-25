@@ -17,6 +17,7 @@ import TranscriptionCore
 ///
 /// Each test creates a fresh `MockNetworkService`, so there's no shared mutable
 /// state and the suite is safe to run in parallel with other suites.
+@Suite(.tags(.networking))
 struct OpenAITranscriptionServiceTests {
 
     // MARK: - Test Helpers
