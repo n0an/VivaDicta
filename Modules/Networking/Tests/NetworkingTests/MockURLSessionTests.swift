@@ -9,6 +9,12 @@ import TestUtilities
 @Suite("MockURLSession contract")
 struct MockURLSessionTests {
 
+    var sut: MockURLSession
+
+    init() {
+        self.sut = MockURLSession()
+    }
+
     private func makeResponse(_ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(
             url: URL(string: "https://example.com")!,
@@ -19,7 +25,6 @@ struct MockURLSessionTests {
     }
 
     @Test func returnsStubbedSuccessResponse() async throws {
-        let sut = MockURLSession()
         sut.stubUploadResponse = .success((Data("ok".utf8), makeResponse(200)))
 
         let request = URLRequest(url: URL(string: "https://example.com/x")!)
@@ -31,7 +36,6 @@ struct MockURLSessionTests {
 
     @Test func propagatesStubbedError() async {
         struct Boom: Error {}
-        let sut = MockURLSession()
         sut.stubUploadResponse = .failure(Boom())
 
         await #expect(throws: Boom.self) {
@@ -43,7 +47,6 @@ struct MockURLSessionTests {
     }
 
     @Test func capturesRequestAndBody() async throws {
-        let sut = MockURLSession()
         sut.stubUploadResponse = .success((Data(), makeResponse(200)))
 
         var request = URLRequest(url: URL(string: "https://example.com/api")!)
@@ -62,7 +65,6 @@ struct MockURLSessionTests {
 
     @Test func unsetStubRecordsIssue() async {
         await withKnownIssue {
-            let sut = MockURLSession()
             await #expect(throws: StubNotSetError.self) {
                 _ = try await sut.upload(
                     for: URLRequest(url: URL(string: "https://example.com")!),
@@ -73,7 +75,6 @@ struct MockURLSessionTests {
     }
 
     @Test func didUploadCallbackFiresAfterCall() async throws {
-        let sut = MockURLSession()
         sut.stubUploadResponse = .success((Data(), makeResponse(200)))
 
         var fired = false
