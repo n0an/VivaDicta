@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import AppGroup
+import AudioRecording
 import TranscriptionCore
 import AVFoundation
 import SwiftData
@@ -76,14 +77,11 @@ private struct PendingTranscriptionData {
 /// viewModel.cancelProcessing()
 /// ```
 @Observable @MainActor
-class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate {
+class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer!
-    var audioRecorder: AVAudioRecorder!
 
-#if !os(macOS)
-    var recordingSession = AVAudioSession.sharedInstance()
-#endif
-    
+    private let audioRecordingService: AudioRecordingService
+    private let audioFileService: AudioFileService
     private let prewarmManager = AudioPrewarmManager.shared
     private let logger = Logger(category: .recordViewModel)
 
@@ -108,9 +106,16 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         appState?.aiService.modes ?? []
     }
 
-    init(appState: AppState, modelContainer: ModelContainer) {
+    init(
+        appState: AppState,
+        modelContainer: ModelContainer,
+        audioRecordingService: AudioRecordingService = DefaultAudioRecordingService(),
+        audioFileService: AudioFileService = DefaultAudioFileService()
+    ) {
         self.appState = appState
         self.modelContext = ModelContext(modelContainer)
+        self.audioRecordingService = audioRecordingService
+        self.audioFileService = audioFileService
         super.init()
         setupKeyboardRecordingHandlers()
     }
@@ -153,25 +158,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
-    private func setupAudioSession() async throws -> Bool {
+    private func requestMicrophonePermission() async -> Bool {
 #if !os(macOS)
-        do {
-#if os(iOS)
-            try recordingSession.setCategory(.playAndRecord, options: .defaultToSpeaker)
-            try recordingSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
-#endif
-            try recordingSession.setActive(true)
-            
-            return await withCheckedContinuation { continuation in
-                AVAudioApplication.requestRecordPermission { allowed in
-                    continuation.resume(returning: allowed)
-                }
+        await withCheckedContinuation { continuation in
+            AVAudioApplication.requestRecordPermission { allowed in
+                continuation.resume(returning: allowed)
             }
-        } catch {
-            throw RecordError.other
         }
 #else
-        return true
+        true
 #endif
     }
     
@@ -233,16 +228,10 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                 logger.logInfo("🎙️ Using normal recording flow")
 
                 
-                do {
-                    let hasPermission = try await setupAudioSession()
-                    
-                    if !hasPermission {
-                        recordError = .userDenied
-                        isShowingAlert = true
-                        return
-                    }
-                } catch {
-                    recordingState = .error(.other)
+                let hasPermission = await requestMicrophonePermission()
+                if !hasPermission {
+                    recordError = .userDenied
+                    isShowingAlert = true
                     return
                 }
 
@@ -265,22 +254,15 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         AVLinearPCMIsFloatKey: false
                     ]
                     
-                    audioRecorder = try AVAudioRecorder(
-                        url: captureURL,
-                        settings: settings)
-                    audioRecorder.isMeteringEnabled = true
-                    audioRecorder.delegate = self
-                    audioRecorder.record()
+                    try audioRecordingService.startRecording(to: captureURL, settings: settings)
 
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            guard self?.audioRecorder != nil else { return }
-                            self?.audioRecorder.updateMeters()
-                            if let audioRecorder = self?.audioRecorder {
-                                let power = min(1, max(0, 1 - abs(Double(audioRecorder.averagePower(forChannel: 0)) / 50) ))
-                                self?.audioPower = power
-                                AppGroupCoordinator.shared.updateAudioLevel(power)
-                            }
+                            guard let self, self.audioRecordingService.isRecording else { return }
+                            let rawPower = Double(self.audioRecordingService.currentAudioPower)
+                            let power = min(1, max(0, 1 - abs(rawPower / 50)))
+                            self.audioPower = power
+                            AppGroupCoordinator.shared.updateAudioLevel(power)
                         }
                     })
 
@@ -320,7 +302,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
                 let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
                 do {
-                    try FileManager.default.moveItem(at: captureURL, to: finalURL)
+                    try audioFileService.move(from: captureURL, to: finalURL)
                     transcribingSpeechTask = transcribeSpeechTask(
                         recordURL: finalURL,
                         modelContext: modelContext,
@@ -340,7 +322,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
 
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
             do {
-                try FileManager.default.moveItem(at: captureURL, to: finalURL)
+                try audioFileService.move(from: captureURL, to: finalURL)
                 transcribingSpeechTask = transcribeSpeechTask(
                     recordURL: finalURL,
                     modelContext: modelContext,
@@ -353,57 +335,6 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         }
     }
     
-    /// Downsample audio file to 16kHz mono for optimal transcription
-    private func downsampleTo16kHzMono(inputURL: URL, outputURL: URL) async throws {
-        // 1) Open source file
-        let inFile = try AVAudioFile(forReading: inputURL)
-        let inFmt = inFile.processingFormat
-
-        // 2) Target format: 16kHz, mono, PCM Int16
-        guard let outFmt = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: 16_000,
-            channels: 1,
-            interleaved: false
-        ) else {
-            throw RecordError.other
-        }
-
-        // 3) Create converter with quality settings
-        guard let converter = AVAudioConverter(from: inFmt, to: outFmt) else {
-            throw RecordError.other
-        }
-        converter.sampleRateConverterQuality = AVAudioQuality.max.rawValue
-
-        // 4) Read entire input file
-        let frameCount = AVAudioFrameCount(inFile.length)
-        guard let inputBuffer = AVAudioPCMBuffer(pcmFormat: inFmt, frameCapacity: frameCount) else {
-            throw RecordError.other
-        }
-        try inFile.read(into: inputBuffer)
-
-        // 5) Calculate output buffer size
-        let outputFrameCount = AVAudioFrameCount(Double(frameCount) * (16000.0 / inFmt.sampleRate))
-        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outFmt, frameCapacity: outputFrameCount) else {
-            throw RecordError.other
-        }
-
-        // 6) Convert
-        var error: NSError?
-        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
-            outStatus.pointee = .haveData
-            return inputBuffer
-        }
-
-        if let error = error {
-            throw error
-        }
-
-        // 7) Write output file
-        let outFile = try AVAudioFile(forWriting: outputURL, settings: outFmt.settings, commonFormat: outFmt.commonFormat, interleaved: false)
-        try outFile.write(from: outputBuffer)
-    }
-
     func transcribeSpeechTask(
         recordURL: URL,
         modelContext: ModelContext,
@@ -443,22 +374,21 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                         let downsampledURL = recordURL.deletingPathExtension().appendingPathExtension("16k.wav")
 
                         do {
-                            try await downsampleTo16kHzMono(inputURL: recordURL, outputURL: downsampledURL)
+                            try await audioFileService.downsampleTo16kHzMono(from: recordURL, to: downsampledURL)
 
                             // Verify the output file was created and has content
-                            let attributes = try FileManager.default.attributesOfItem(atPath: downsampledURL.path)
-                            let fileSize = attributes[.size] as? Int64 ?? 0
+                            let fileSize = try audioFileService.fileSize(at: downsampledURL)
 
                             if fileSize > 1000 {  // At least 1KB
                                 // Delete original high-rate file to save space
-                                try? FileManager.default.removeItem(at: recordURL)
+                                try? audioFileService.remove(at: recordURL)
 
                                 // Use downsampled file for transcription
                                 audioURLToTranscribe = downsampledURL
                                 logger.logInfo("🎙️ Downsampling complete, file size: \(fileSize) bytes, saved ~\(Int((1.0 - 16000.0/sampleRate) * 100))% space")
                             } else {
                                 logger.logWarning("🎙️ Downsampled file too small (\(fileSize) bytes), using original")
-                                try? FileManager.default.removeItem(at: downsampledURL)
+                                try? audioFileService.remove(at: downsampledURL)
                             }
                         } catch {
                             logger.logWarning("🎙️ Downsampling failed, using original file: \(error.localizedDescription)")
@@ -489,7 +419,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
                     logger.logInfo("📱 Transcription contains no meaningful content, skipping save")
 
                     // Clean up audio file
-                    try? FileManager.default.removeItem(at: audioURLToTranscribe)
+                    try? audioFileService.remove(at: audioURLToTranscribe)
 
                     // Reset state
                     resetValues()
@@ -968,7 +898,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
             }
 
             Task { await RAGIndexingService.shared.indexTranscription(transcription) }
-            try? FileManager.default.removeItem(at: audioURL)
+            try? audioFileService.remove(at: audioURL)
             return transcription
         }
 
@@ -1022,8 +952,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         transcriptionProgress = nil
         AppGroupCoordinator.shared.updateAudioLevel(0)
 
-        audioRecorder?.stop()
-        audioRecorder = nil
+        _ = audioRecordingService.stopRecording()
 
         audioPlayer?.stop()
         audioPlayer = nil
@@ -1031,16 +960,7 @@ class RecordViewModel: NSObject, AVAudioRecorderDelegate, AVAudioPlayerDelegate 
         animationTimer?.invalidate()
         animationTimer = nil
     }
-    
-    nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-        Task { @MainActor in
-            if !flag {
-                resetValues()
-                recordingState = .idle
-            }
-        }
-    }
-    
+
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
             resetValues()
