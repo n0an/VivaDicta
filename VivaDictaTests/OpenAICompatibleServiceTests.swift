@@ -216,12 +216,12 @@ struct OpenAICompatibleServiceTests {
         }
     }
 
-    @Test func enhanceMaps429ToRateLimitExceeded() async {
+    @Test func enhanceMaps429ToRateLimitExceeded() async throws {
         let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(429)))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
                 url: URL(string: endpointURL)!,
                 modelName: "m",
@@ -230,22 +230,19 @@ struct OpenAICompatibleServiceTests {
                 headers: [:],
                 timeout: 30
             )
-            Issue.record("Expected rateLimitExceeded")
-        } catch let error as EnhancementError {
-            if case .rateLimitExceeded = error {} else {
-                Issue.record("Expected .rateLimitExceeded, got \(error)")
-            }
-        } catch {
-            Issue.record("Expected EnhancementError, got \(error)")
+        }
+        guard case .rateLimitExceeded = error else {
+            Issue.record("Expected .rateLimitExceeded, got \(error)")
+            return
         }
     }
 
-    @Test func enhanceMaps5xxToServerError() async {
+    @Test func enhanceMaps5xxToServerError() async throws {
         let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(502)))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
                 url: URL(string: endpointURL)!,
                 modelName: "m",
@@ -254,22 +251,19 @@ struct OpenAICompatibleServiceTests {
                 headers: [:],
                 timeout: 30
             )
-            Issue.record("Expected serverError")
-        } catch let error as EnhancementError {
-            if case .serverError = error {} else {
-                Issue.record("Expected .serverError, got \(error)")
-            }
-        } catch {
-            Issue.record("Expected EnhancementError, got \(error)")
+        }
+        guard case .serverError = error else {
+            Issue.record("Expected .serverError, got \(error)")
+            return
         }
     }
 
-    @Test func enhanceRethrowsURLErrorTransport() async {
+    @Test func enhanceRethrowsURLErrorTransport() async throws {
         let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(URLError(.timedOut))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: URLError.self) {
             _ = try await sut.enhance(
                 url: URL(string: endpointURL)!,
                 modelName: "m",
@@ -278,21 +272,17 @@ struct OpenAICompatibleServiceTests {
                 headers: [:],
                 timeout: 30
             )
-            Issue.record("Expected URLError")
-        } catch let error as URLError {
-            #expect(error.code == .timedOut)
-        } catch {
-            Issue.record("Expected URLError, got \(error)")
         }
+        #expect(error.code == .timedOut)
     }
 
-    @Test func enhanceMapsOtherStatusToCustomError() async {
+    @Test func enhanceMapsOtherStatusToCustomError() async throws {
         let networkService = MockNetworkService()
         let body = Data(#"{"error":"unauthorized"}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(401)))
         let sut = makeSUT(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
                 url: URL(string: endpointURL)!,
                 modelName: "m",
@@ -301,16 +291,12 @@ struct OpenAICompatibleServiceTests {
                 headers: [:],
                 timeout: 30
             )
-            Issue.record("Expected customError")
-        } catch let error as EnhancementError {
-            if case let .customError(message) = error {
-                #expect(message.hasPrefix("HTTP 401"))
-            } else {
-                Issue.record("Expected .customError, got \(error)")
-            }
-        } catch {
-            Issue.record("Expected EnhancementError, got \(error)")
         }
+        guard case let .customError(message) = error else {
+            Issue.record("Expected .customError, got \(error)")
+            return
+        }
+        #expect(message.hasPrefix("HTTP 401"))
     }
 
     // MARK: - verifyChatCompletionsAPIKey

@@ -214,15 +214,15 @@ struct XaiTranscriptionServiceTests {
         let audio = try makeAudioFile()
         let sut = makeService(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: CloudTranscriptionError.self) {
             _ = try await sut.transcribe(audioURL: audio)
-            Issue.record("expected apiRequestFailed to throw")
-        } catch let CloudTranscriptionError.apiRequestFailed(statusCode, message) {
-            #expect(statusCode == 401)
-            #expect(message.contains("invalid key"))
-        } catch {
-            Issue.record("expected CloudTranscriptionError.apiRequestFailed, got \(error)")
         }
+        guard case let .apiRequestFailed(statusCode, message) = error else {
+            Issue.record("expected CloudTranscriptionError.apiRequestFailed, got \(error)")
+            return
+        }
+        #expect(statusCode == 401)
+        #expect(message.contains("invalid key"))
     }
 
     @Test func undecodableJSONOn200ThrowsNoTranscriptionReturned() async throws {
@@ -231,13 +231,12 @@ struct XaiTranscriptionServiceTests {
         let audio = try makeAudioFile()
         let sut = makeService(networkService: networkService)
 
-        do {
+        let error = try await #require(throws: CloudTranscriptionError.self) {
             _ = try await sut.transcribe(audioURL: audio)
-            Issue.record("expected noTranscriptionReturned to throw")
-        } catch CloudTranscriptionError.noTranscriptionReturned {
-            // expected
-        } catch {
+        }
+        guard case .noTranscriptionReturned = error else {
             Issue.record("expected noTranscriptionReturned, got \(error)")
+            return
         }
     }
 }

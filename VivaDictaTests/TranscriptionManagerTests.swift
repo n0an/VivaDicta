@@ -24,6 +24,14 @@ import TranscriptionKitMocks
 @MainActor
 struct TranscriptionManagerTests {
 
+    let mockEngine: MockTranscriptionEngine
+    let sut: TranscriptionManager
+
+    init() {
+        mockEngine = MockTranscriptionEngine()
+        sut = TranscriptionManager(engine: mockEngine)
+    }
+
     private func makeMode(
         provider: TranscriptionModelProvider,
         model: String
@@ -41,8 +49,6 @@ struct TranscriptionManagerTests {
     // MARK: - preloadWhisperKitModelIfNeeded
 
     @Test func preloadWhisperKitModelIfNeeded_doesNothing_whenCurrentModeIsParakeet() async {
-        let mockEngine = MockTranscriptionEngine()
-        let sut = TranscriptionManager(engine: mockEngine)
         sut.setCurrentMode(makeMode(provider: .parakeet, model: "parakeet-tdt-0.6b-v3"))
 
         await sut.preloadWhisperKitModelIfNeeded()
@@ -51,8 +57,6 @@ struct TranscriptionManagerTests {
     }
 
     @Test func preloadWhisperKitModelIfNeeded_doesNothing_whenCurrentModeIsCloudProvider() async {
-        let mockEngine = MockTranscriptionEngine()
-        let sut = TranscriptionManager(engine: mockEngine)
         sut.setCurrentMode(makeMode(provider: .openAI, model: "whisper-1"))
 
         await sut.preloadWhisperKitModelIfNeeded()
@@ -63,8 +67,6 @@ struct TranscriptionManagerTests {
     // MARK: - transcribe error path
 
     @Test func transcribe_throws_andDoesNotInvokeEngine_whenCurrentModelIsUnknown() async {
-        let mockEngine = MockTranscriptionEngine()
-        let sut = TranscriptionManager(engine: mockEngine)
         sut.setCurrentMode(makeMode(provider: .whisperKit, model: "nonexistent-model-xyz"))
 
         let url = URL(fileURLWithPath: "/tmp/x.wav")
@@ -77,8 +79,6 @@ struct TranscriptionManagerTests {
     // MARK: - setCurrentMode
 
     @Test func setCurrentMode_updatesCurrentMode() {
-        let mockEngine = MockTranscriptionEngine()
-        let sut = TranscriptionManager(engine: mockEngine)
         let mode = makeMode(provider: .parakeet, model: "parakeet-tdt-0.6b-v3")
 
         sut.setCurrentMode(mode)

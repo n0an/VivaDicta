@@ -12,6 +12,12 @@ import CloudTranscription
 
 struct TranscriptionManagerConfigTests {
 
+    let sut: TranscriptionManager
+
+    init() {
+        sut = TranscriptionManager()
+    }
+
     // MARK: - Test Helpers
 
     private func makeMode(
@@ -34,49 +40,43 @@ struct TranscriptionManagerConfigTests {
     // MARK: - Set Current Mode
 
     @Test func setCurrentMode_updatesMode() {
-        let manager = TranscriptionManager()
         let mode = makeMode(name: "Custom Mode")
 
-        manager.setCurrentMode(mode)
+        sut.setCurrentMode(mode)
 
-        #expect(manager.currentMode.name == "Custom Mode")
+        #expect(sut.currentMode.name == "Custom Mode")
     }
 
     @Test func setCurrentMode_appliesLanguage() {
-        let manager = TranscriptionManager()
         let mode = makeMode(language: "es")
 
-        manager.setCurrentMode(mode)
+        sut.setCurrentMode(mode)
 
-        #expect(manager.selectedLanguage == "es")
+        #expect(sut.selectedLanguage == "es")
     }
 
     @Test func setCurrentMode_nilLanguage_defaultsToAuto() {
-        let manager = TranscriptionManager()
         let mode = makeMode(language: nil)
 
-        manager.setCurrentMode(mode)
+        sut.setCurrentMode(mode)
 
-        #expect(manager.selectedLanguage == "auto")
+        #expect(sut.selectedLanguage == "auto")
     }
 
     // MARK: - Get Current Model
 
     @Test func getCurrentModel_defaultMode_returnsNil() {
         // Default mode has empty transcriptionModel → no match
-        let manager = TranscriptionManager()
-
-        let model = manager.getCurrentTranscriptionModel()
+        let model = sut.getCurrentTranscriptionModel()
 
         #expect(model == nil)
     }
 
     @Test func getCurrentModel_invalidModel_returnsNil() {
-        let manager = TranscriptionManager()
         let mode = makeMode(model: "nonexistent-model-xyz")
-        manager.setCurrentMode(mode)
+        sut.setCurrentMode(mode)
 
-        let model = manager.getCurrentTranscriptionModel()
+        let model = sut.getCurrentTranscriptionModel()
 
         #expect(model == nil)
     }
@@ -84,23 +84,21 @@ struct TranscriptionManagerConfigTests {
     // MARK: - Update Cloud Models
 
     @Test func updateCloudModels_firesCallback() {
-        let manager = TranscriptionManager()
         var callbackFired = false
-        manager.onCloudModelsUpdate = { callbackFired = true }
+        sut.onCloudModelsUpdate = { callbackFired = true }
 
-        manager.updateCloudModels()
+        sut.updateCloudModels()
 
         #expect(callbackFired == true)
     }
 
     @Test func updateCloudModels_rebuildsModelList() {
-        let manager = TranscriptionManager()
-        let countBefore = manager.allAvailableModels.count
+        let countBefore = sut.allAvailableModels.count
 
-        manager.updateCloudModels()
+        sut.updateCloudModels()
 
         // Should repopulate (count may be same but list was rebuilt)
-        #expect(manager.allAvailableModels.count == countBefore)
+        #expect(sut.allAvailableModels.count == countBefore)
     }
 }
 
