@@ -34,9 +34,14 @@ class TranscriptionManager {
     private let logger = Logger(category: .transcriptionManager)
 
     private let engine: any TranscriptionEngine
+    private let customTranscriptionSource: any CustomTranscriptionModelSource
 
-    init(engine: any TranscriptionEngine = DefaultTranscriptionEngine()) {
+    init(
+        engine: any TranscriptionEngine = DefaultTranscriptionEngine(),
+        customTranscriptionSource: any CustomTranscriptionModelSource = CustomTranscriptionModelManager.shared
+    ) {
         self.engine = engine
+        self.customTranscriptionSource = customTranscriptionSource
     }
 
     /// The currently active transcription mode determining which model to use.
@@ -58,7 +63,7 @@ class TranscriptionManager {
         let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
             model.apiKey != nil
         }
-        let hasCustomModel = CustomTranscriptionModelManager.shared.isConfigured
+        let hasCustomModel = customTranscriptionSource.isConfigured
         return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels || hasCustomModel
     }
 
@@ -113,7 +118,7 @@ class TranscriptionManager {
         let modelName = currentMode.transcriptionModel
 
         if provider == .customTranscription && modelName == "custom" {
-            return CustomTranscriptionModelManager.shared.configuredModel
+            return customTranscriptionSource.configuredModel
         }
 
         let allModels: [any TranscriptionModel] =

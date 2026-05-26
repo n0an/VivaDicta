@@ -241,34 +241,25 @@ struct AIServiceConfigurationTests {
 
     // MARK: - Apple FM Sampling Profiles
 
-    @Test func appleFMSamplingProfile_extractivePresetsUseExtractive() {
-        let extractivePresetIDs = [
-            "summary",
-            "action_points",
-            "key_points",
-            "takeaways",
-            "mind_map"
-        ]
-
-        for presetID in extractivePresetIDs {
-            #expect(AppleFoundationModelSamplingProfile.profile(for: presetID) == .extractive)
-        }
+    @Test(arguments: [
+        ("summary", AppleFoundationModelSamplingProfile.extractive),
+        ("action_points", .extractive),
+        ("key_points", .extractive),
+        ("takeaways", .extractive),
+        ("mind_map", .extractive),
+        ("regular", .balanced),
+        ("chat", .conversational),
+        ("philosophical", .creative),
+        ("custom_123", .balanced)
+    ])
+    func appleFMSamplingProfile_mapsPresetIDToProfile(
+        presetID: String,
+        expected: AppleFoundationModelSamplingProfile
+    ) {
+        #expect(AppleFoundationModelSamplingProfile.profile(for: presetID) == expected)
     }
 
-    @Test func appleFMSamplingProfile_regularUsesBalanced() {
-        #expect(AppleFoundationModelSamplingProfile.profile(for: "regular") == .balanced)
-    }
-
-    @Test func appleFMSamplingProfile_chatUsesConversational() {
-        #expect(AppleFoundationModelSamplingProfile.profile(for: "chat") == .conversational)
-    }
-
-    @Test func appleFMSamplingProfile_philosophicalUsesCreative() {
-        #expect(AppleFoundationModelSamplingProfile.profile(for: "philosophical") == .creative)
-    }
-
-    @Test func appleFMSamplingProfile_unknownPresetFallsBackToBalanced() {
-        #expect(AppleFoundationModelSamplingProfile.profile(for: "custom_123") == .balanced)
+    @Test func appleFMSamplingProfile_nilPresetFallsBackToBalanced() {
         #expect(AppleFoundationModelSamplingProfile.profile(for: nil) == .balanced)
     }
 

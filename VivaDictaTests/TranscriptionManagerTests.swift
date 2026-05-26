@@ -15,21 +15,26 @@ import TranscriptionKitMocks
 /// (`TranscriptionKitMocks`) to inject a `MockTranscriptionEngine` into
 /// `TranscriptionManager` through the `any TranscriptionEngine` protocol.
 ///
-/// Coverage is intentionally narrow: the manager reads several singletons
-/// directly (`UserDefaultsStorage.shared`, `AppGroupCoordinator.shared`,
-/// `CustomTranscriptionModelManager.shared`) so end-to-end pipeline tests
-/// are out of scope until those are DI'd as well. These tests prove the
-/// protocol-DI wire and exercise the control-flow branches that don't
-/// touch app-wide state.
+/// Coverage is intentionally narrow: the manager still reads a couple of
+/// singletons directly (`UserDefaultsStorage.shared`, `AppGroupCoordinator.shared`)
+/// so end-to-end pipeline tests are out of scope until those are DI'd as well.
+/// The custom-transcription source is now injected (see `FakeCustomSource`),
+/// so `hasAvailableTranscriptionModels` and the custom-model path of
+/// `getCurrentTranscriptionModel` are testable.
 @MainActor
 struct TranscriptionManagerTests {
 
     let mockEngine: MockTranscriptionEngine
+    let customSource: FakeCustomSource
     let sut: TranscriptionManager
 
     init() {
         mockEngine = MockTranscriptionEngine()
-        sut = TranscriptionManager(engine: mockEngine)
+        customSource = FakeCustomSource()
+        sut = TranscriptionManager(
+            engine: mockEngine,
+            customTranscriptionSource: customSource
+        )
     }
 
     private func makeMode(
@@ -85,4 +90,49 @@ struct TranscriptionManagerTests {
 
         #expect(sut.currentMode.id == mode.id)
     }
+
+    // MARK: - Custom transcription source injection
+
+    @Test func hasAvailableTranscriptionModels_isTrue_whenOnlyCustomSourceIsConfigured() {
+        customSource.isConfigured = true
+        customSource.configuredModel = Self.makeCustomModel()
+
+        #expect(sut.hasAvailableTranscriptionModels)
+    }
+
+    @Test func getCurrentTranscriptionModel_returnsCustomModel_whenSourceConfigured() {
+        let model = Self.makeCustomModel()
+        customSource.isConfigured = true
+        customSource.configuredModel = model
+        sut.setCurrentMode(makeMode(provider: .customTranscription, model: "custom"))
+
+        let result = sut.getCurrentTranscriptionModel()
+
+        #expect((result as? CustomTranscriptionModel)?.id == model.id)
+    }
+
+    @Test func getCurrentTranscriptionModel_returnsNil_whenCustomSourceUnconfigured() {
+        customSource.isConfigured = false
+        customSource.configuredModel = nil
+        sut.setCurrentMode(makeMode(provider: .customTranscription, model: "custom"))
+
+        #expect(sut.getCurrentTranscriptionModel() == nil)
+    }
+
+    private static func makeCustomModel() -> CustomTranscriptionModel {
+        CustomTranscriptionModel(
+            id: UUID(),
+            name: "custom",
+            displayName: "Custom",
+            apiEndpoint: "https://example.com/v1",
+            modelName: "test-model",
+            isMultilingual: true
+        )
+    }
+}
+
+@MainActor
+final class FakeCustomSource: CustomTranscriptionModelSource {
+    var isConfigured: Bool = false
+    var configuredModel: CustomTranscriptionModel? = nil
 }
