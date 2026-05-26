@@ -18,16 +18,19 @@ import Testing
 struct OpenAICompatibleServiceTests {
 
     private let endpointURL = "https://api.example.com/v1/chat/completions"
+    let networkService: MockNetworkService
+    let sut: OpenAICompatibleService
 
-    private func makeHTTPResponse(_ code: Int) -> HTTPURLResponse {
-        HTTPURLResponse(url: URL(string: endpointURL)!, statusCode: code, httpVersion: nil, headerFields: nil)!
-    }
-
-    private func makeSUT(networkService: MockNetworkService) -> OpenAICompatibleService {
-        OpenAICompatibleService(
+    init() {
+        networkService = MockNetworkService()
+        sut = OpenAICompatibleService(
             networkService: networkService,
             logger: Logger(subsystem: "test", category: "OpenAICompatibleServiceTests")
         )
+    }
+
+    private func makeHTTPResponse(_ code: Int) -> HTTPURLResponse {
+        HTTPURLResponse(url: URL(string: endpointURL)!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }
 
     // MARK: - Static buildRequestBody
@@ -132,10 +135,8 @@ struct OpenAICompatibleServiceTests {
     // MARK: - enhance non-streaming success
 
     @Test func enhanceReturnsTextFromChoicesArray() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"choices":[{"message":{"content":"  enhanced output  "}}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = try await sut.enhance(
             url: URL(string: endpointURL)!,
@@ -151,10 +152,8 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func enhanceSendsBearerAuthorizationHeader() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"choices":[{"message":{"content":"ok"}}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = try await sut.enhance(
             url: URL(string: endpointURL)!,
@@ -171,10 +170,8 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func enhanceSendsChatCompletionsBody() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"choices":[{"message":{"content":"ok"}}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = try await sut.enhance(
             url: URL(string: endpointURL)!,
@@ -199,10 +196,8 @@ struct OpenAICompatibleServiceTests {
     // MARK: - enhance error mapping
 
     @Test func enhanceThrowsEnhancementFailedOnMalformedBody() async {
-        let networkService = MockNetworkService()
         let body = Data(#"{"unexpected":"shape"}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         await #expect(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -217,9 +212,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func enhanceMaps429ToRateLimitExceeded() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(429)))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -238,9 +231,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func enhanceMaps5xxToServerError() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(502)))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -259,9 +250,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func enhanceRethrowsURLErrorTransport() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(URLError(.timedOut))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: URLError.self) {
             _ = try await sut.enhance(
@@ -277,10 +266,8 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func enhanceMapsOtherStatusToCustomError() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"error":"unauthorized"}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(401)))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -302,9 +289,7 @@ struct OpenAICompatibleServiceTests {
     // MARK: - verifyChatCompletionsAPIKey
 
     @Test func verifyChatCompletionsAPIKeyReturnsTrueOn200() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyChatCompletionsAPIKey(
             "sk-test",
@@ -317,9 +302,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func verifyChatCompletionsAPIKeyReturnsFalseOn401() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(401)))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyChatCompletionsAPIKey(
             "sk-bad",
@@ -332,9 +315,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func verifyChatCompletionsAPIKeyReturnsFalseOnTransportError() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(URLError(.notConnectedToInternet))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyChatCompletionsAPIKey(
             "sk-test",
@@ -347,9 +328,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func verifyChatCompletionsAPIKeySendsBearerAndMinimalBody() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.verifyChatCompletionsAPIKey(
             "sk-probe",
@@ -372,9 +351,7 @@ struct OpenAICompatibleServiceTests {
     @Test func verifyChatCompletionsAPIKeyIncludesMaxTokensWhenProvided() async throws {
         // Caps the probe response on heavy default models (HuggingFace's 120B,
         // Grok frontier) to avoid false-negative timeouts on slow networks.
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.verifyChatCompletionsAPIKey(
             "sk-probe",
@@ -392,9 +369,7 @@ struct OpenAICompatibleServiceTests {
     // MARK: - verifyGETEndpoint
 
     @Test func verifyGETEndpointReturnsTrueOn200() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyGETEndpoint(
             "sk-test",
@@ -406,9 +381,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func verifyGETEndpointReturnsFalseOn401() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(401)))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyGETEndpoint(
             "sk-bad",
@@ -420,9 +393,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func verifyGETEndpointReturnsFalseOnTransportError() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(URLError(.notConnectedToInternet))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyGETEndpoint(
             "sk-test",
@@ -434,9 +405,7 @@ struct OpenAICompatibleServiceTests {
     }
 
     @Test func verifyGETEndpointSendsBearerAuthAndGETMethod() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.verifyGETEndpoint(
             "sk-probe",
@@ -459,9 +428,6 @@ struct OpenAICompatibleServiceTests {
     // exercised by the static `streamingDelta(from:)` tests above.
 
     @Test func enhanceStreamingSendsCorrectHeadersAndBody() async throws {
-        let networkService = MockNetworkService()
-        let sut = makeSUT(networkService: networkService)
-
         _ = try? await sut.enhanceStreaming(
             url: URL(string: endpointURL)!,
             modelName: "gpt-4",

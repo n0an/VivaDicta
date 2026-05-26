@@ -11,52 +11,43 @@ import Testing
 
 struct AppGroupCoordinatorStateTests {
 
-    // MARK: - Test Helpers
-
     private let suiteName = "AppGroupCoordinatorStateTests.\(UUID().uuidString)"
+    let defaults: UserDefaults
+    let sut: AppGroupCoordinator
 
-    private func makeCoordinator() -> AppGroupCoordinator {
-        let defaults = UserDefaults(suiteName: suiteName)!
+    init() {
+        defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        return AppGroupCoordinator(userDefaults: defaults)
+        sut = AppGroupCoordinator(userDefaults: defaults)
     }
 
     // MARK: - Audio Level Tests
 
     @Test func audioLevel_clampsNegativeToZero() {
-        let sut = makeCoordinator()
-
         sut.updateAudioLevel(-0.5)
 
         #expect(sut.currentAudioLevel == 0.0)
     }
 
     @Test func audioLevel_clampsAboveOneToOne() {
-        let sut = makeCoordinator()
-
         sut.updateAudioLevel(1.5)
 
         #expect(sut.currentAudioLevel == 1.0)
     }
 
     @Test func audioLevel_normalValueStored() {
-        let sut = makeCoordinator()
-
         sut.updateAudioLevel(0.7)
 
         #expect(abs(sut.currentAudioLevel - 0.7) < 0.001)
     }
 
     @Test func audioLevel_defaultIsZero() {
-        let sut = makeCoordinator()
-
         #expect(sut.currentAudioLevel == 0.0)
     }
 
     // MARK: - Transcription Status Tests
 
     @Test func transcriptionStatus_roundTrips() {
-        let sut = makeCoordinator()
         let statuses: [AppGroupCoordinator.TranscriptionStatus] = [
             .idle, .recording, .transcribing, .enhancing, .completed, .error
         ]
@@ -68,14 +59,13 @@ struct AppGroupCoordinatorStateTests {
     }
 
     @Test func transcriptionStatus_defaultIsIdle() {
-        let sut = makeCoordinator()
-
         #expect(sut.transcriptionStatus == .idle)
     }
 
     @Test func transcriptionStatus_invalidString_returnsIdle() {
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
+        // Pre-seed a garbage value, then build a fresh coordinator that has
+        // to read it at construction time. Shadows the hoisted `sut`
+        // intentionally so initial-read behaviour is exercised.
         defaults.set("garbage_status", forKey: "transcriptionStatus")
         let sut = AppGroupCoordinator(userDefaults: defaults)
 
@@ -85,8 +75,6 @@ struct AppGroupCoordinatorStateTests {
     // MARK: - Recording State Tests
 
     @Test func recordingState_setAndGet() {
-        let sut = makeCoordinator()
-
         sut.updateRecordingState(true)
         #expect(sut.isRecording == true)
 
@@ -97,15 +85,12 @@ struct AppGroupCoordinatorStateTests {
     // MARK: - Transcribed Text Sharing Tests
 
     @Test func shareTranscribedText_storesAndSetsCompleted() {
-        let sut = makeCoordinator()
-
         sut.shareTranscribedText("Hello world")
 
         #expect(sut.transcriptionStatus == .completed)
     }
 
     @Test func getAndConsumeTranscribedText_retrievesAndClears() {
-        let sut = makeCoordinator()
         sut.shareTranscribedText("Test text")
 
         let text = sut.getAndConsumeTranscribedText()
@@ -116,7 +101,6 @@ struct AppGroupCoordinatorStateTests {
     }
 
     @Test func getAndConsumeTranscribedText_setsStatusIdle() {
-        let sut = makeCoordinator()
         sut.shareTranscribedText("Test text")
 
         _ = sut.getAndConsumeTranscribedText()
@@ -127,7 +111,6 @@ struct AppGroupCoordinatorStateTests {
     // MARK: - Clipboard Context Tests
 
     @Test func getAndConsumeClipboardContext_retrievesAndClears() {
-        let sut = makeCoordinator()
         sut.setKeyboardClipboardContext("clipboard content")
 
         let text = sut.getAndConsumeKeyboardClipboardContext()
@@ -138,7 +121,6 @@ struct AppGroupCoordinatorStateTests {
     }
 
     @Test func setKeyboardClipboardContext_nil_clears() {
-        let sut = makeCoordinator()
         sut.setKeyboardClipboardContext("something")
         sut.setKeyboardClipboardContext(nil)
 

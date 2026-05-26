@@ -22,26 +22,27 @@ import Testing
 struct AnthropicServiceTests {
 
     private let endpointURL = AIProvider.anthropic.baseURL
+    let networkService: MockNetworkService
+    let sut: AnthropicService
 
-    private func makeHTTPResponse(_ code: Int) -> HTTPURLResponse {
-        HTTPURLResponse(url: URL(string: endpointURL)!, statusCode: code, httpVersion: nil, headerFields: nil)!
-    }
-
-    private func makeSUT(networkService: MockNetworkService) -> AnthropicService {
-        AnthropicService(
+    init() {
+        networkService = MockNetworkService()
+        sut = AnthropicService(
             networkService: networkService,
             logger: Logger(subsystem: "test", category: "AnthropicServiceTests"),
             baseTimeout: 30
         )
     }
 
+    private func makeHTTPResponse(_ code: Int) -> HTTPURLResponse {
+        HTTPURLResponse(url: URL(string: endpointURL)!, statusCode: code, httpVersion: nil, headerFields: nil)!
+    }
+
     // MARK: - Request shape (non-streaming)
 
     @Test func enhanceSendsXAPIKeyHeaderNotBearer() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"content":[{"text":"ok"}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = try await sut.enhance(
             systemMessage: "system",
@@ -58,10 +59,8 @@ struct AnthropicServiceTests {
     }
 
     @Test func enhanceSendsAnthropicMessagesBodyShape() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"content":[{"text":"ok"}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = try await sut.enhance(
             systemMessage: "you are a helper",
@@ -83,10 +82,8 @@ struct AnthropicServiceTests {
     // MARK: - Non-streaming success/error mapping
 
     @Test func enhanceReturnsTextFromAnthropicContentArray() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"content":[{"type":"text","text":"  enhanced output  "}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = try await sut.enhance(
             systemMessage: "system",
@@ -100,10 +97,8 @@ struct AnthropicServiceTests {
     }
 
     @Test func enhanceThrowsEnhancementFailedOnMalformedBody() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"unexpected":"shape"}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         await #expect(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -116,9 +111,7 @@ struct AnthropicServiceTests {
     }
 
     @Test func enhanceMaps429ToRateLimitExceeded() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(429)))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -135,9 +128,7 @@ struct AnthropicServiceTests {
     }
 
     @Test func enhanceMaps5xxToServerError() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(503)))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -154,10 +145,8 @@ struct AnthropicServiceTests {
     }
 
     @Test func enhanceMapsOtherStatusToCustomError() async throws {
-        let networkService = MockNetworkService()
         let body = Data(#"{"error":{"message":"bad model"}}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(400)))
-        let sut = makeSUT(networkService: networkService)
 
         let error = try await #require(throws: EnhancementError.self) {
             _ = try await sut.enhance(
@@ -177,9 +166,7 @@ struct AnthropicServiceTests {
     // MARK: - verifyAPIKey
 
     @Test func verifyAPIKeyReturnsTrueOn200() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyAPIKey("sk-ant-test")
 
@@ -187,9 +174,7 @@ struct AnthropicServiceTests {
     }
 
     @Test func verifyAPIKeyReturnsFalseOn401() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(401)))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyAPIKey("sk-ant-bad")
 
@@ -197,9 +182,7 @@ struct AnthropicServiceTests {
     }
 
     @Test func verifyAPIKeyReturnsFalseOnTransportError() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(URLError(.notConnectedToInternet))
-        let sut = makeSUT(networkService: networkService)
 
         let valid = await sut.verifyAPIKey("sk-ant-test")
 
@@ -207,9 +190,7 @@ struct AnthropicServiceTests {
     }
 
     @Test func verifyAPIKeySendsCorrectHeadersAndBody() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.verifyAPIKey("sk-ant-test")
 
@@ -232,9 +213,6 @@ struct AnthropicServiceTests {
     // integration / manual testing.
 
     @Test func enhanceStreamingSendsCorrectHeadersAndStreamingBody() async throws {
-        let networkService = MockNetworkService()
-        let sut = makeSUT(networkService: networkService)
-
         _ = try? await sut.enhanceStreaming(
             systemMessage: "you are a helper",
             userMessage: "stream this",

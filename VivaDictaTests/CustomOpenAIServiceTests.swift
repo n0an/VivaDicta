@@ -19,8 +19,12 @@ struct CustomOpenAIServiceTests {
         HTTPURLResponse(url: URL(string: endpointURL)!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }
 
-    private func makeSUT(networkService: MockNetworkService) -> CustomOpenAIService {
-        CustomOpenAIService(
+    let networkService: MockNetworkService
+    let sut: CustomOpenAIService
+
+    init() {
+        networkService = MockNetworkService()
+        sut = CustomOpenAIService(
             networkService: networkService,
             logger: Logger(subsystem: "test", category: "CustomOpenAIServiceTests")
         )
@@ -29,9 +33,7 @@ struct CustomOpenAIServiceTests {
     // MARK: - Success path
 
     @Test func testEndpointReturnsSuccessOn200() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: "sk-test")
 
@@ -42,9 +44,7 @@ struct CustomOpenAIServiceTests {
     // MARK: - Request shape
 
     @Test func testEndpointSendsBearerAuthorizationWhenAPIKeyProvided() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: "sk-abc")
 
@@ -52,9 +52,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointOmitsAuthorizationWhenAPIKeyIsNil() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -62,9 +60,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointOmitsAuthorizationWhenAPIKeyIsEmpty() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: "")
 
@@ -72,9 +68,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointSendsMinimalChatCompletionBody() async throws {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
-        let sut = makeSUT(networkService: networkService)
 
         _ = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4-test", apiKey: nil)
 
@@ -88,9 +82,7 @@ struct CustomOpenAIServiceTests {
     // MARK: - Status code mapping
 
     @Test func testEndpointMapsUnauthorizedTo401Message() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(401)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: "sk-test")
 
@@ -98,9 +90,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointMapsNotFoundTo404Message() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(404)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -108,10 +98,8 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointExtractsErrorMessageFromBadRequestBody() async {
-        let networkService = MockNetworkService()
         let body = Data(#"{"error": {"message": "model 'foo' not found"}}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(400)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "foo", apiKey: nil)
 
@@ -119,10 +107,8 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointFallsBackToGenericMessageOnMalformedBadRequestBody() async {
-        let networkService = MockNetworkService()
         let body = Data("plain text error".utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(400)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -134,9 +120,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointMapsServerErrorTo5xxMessage() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .success((Data(), makeHTTPResponse(503)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -146,9 +130,7 @@ struct CustomOpenAIServiceTests {
     // MARK: - Transport errors
 
     @Test func testEndpointMapsCannotConnectToFriendlyMessage() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(NetworkError.transport(URLError(.cannotConnectToHost)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -156,9 +138,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointMapsTimeoutToFriendlyMessage() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(NetworkError.transport(URLError(.timedOut)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -166,9 +146,7 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointMapsNoInternetToFriendlyMessage() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(NetworkError.transport(URLError(.notConnectedToInternet)))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -183,9 +161,7 @@ struct CustomOpenAIServiceTests {
     /// "Two paths, two contexts" doc on `unwrapURLError`. This test pins
     /// the production code path so it doesn't silently break.
     @Test func testEndpointMapsRawURLErrorTransportToFriendlyMessage() async {
-        let networkService = MockNetworkService()
         networkService.stubSendResponse = .failure(URLError(.timedOut))
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -193,14 +169,12 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointMapsBridgedNSURLErrorDomainToFriendlyMessage() async {
-        let networkService = MockNetworkService()
         // NSError(domain: NSURLErrorDomain, code: ...) bridges to URLError,
         // so the typed `error as? URLError` cast in `unwrapURLError` succeeds
         // for it - same as the production case where `DefaultNetworkService`
         // would have surfaced a `NetworkError.transport(URLError)`.
         let nsError = NSError(domain: NSURLErrorDomain, code: URLError.cannotConnectToHost.rawValue)
         networkService.stubSendResponse = .failure(nsError)
-        let sut = makeSUT(networkService: networkService)
 
         let result = await sut.testEndpoint(endpointURL: endpointURL, modelName: "gpt-4", apiKey: nil)
 
@@ -208,8 +182,6 @@ struct CustomOpenAIServiceTests {
     }
 
     @Test func testEndpointReturnsInvalidURLFailureForUnparseableEndpoint() async {
-        let networkService = MockNetworkService()
-        let sut = makeSUT(networkService: networkService)
 
         // Empty string is the one URL(string:) actually rejects.
         let result = await sut.testEndpoint(endpointURL: "", modelName: "gpt-4", apiKey: nil)
