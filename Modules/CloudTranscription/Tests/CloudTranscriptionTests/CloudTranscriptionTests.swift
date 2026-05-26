@@ -54,8 +54,13 @@ struct OpenAIConfigTests {
 
 struct MockTranscriptionServiceTests {
 
+    let sut: MockTranscriptionService
+
+    init() {
+        sut = MockTranscriptionService()
+    }
+
     @Test func transcribeReturnsStubbedValue() async throws {
-        let sut = MockTranscriptionService()
         sut.stubTranscribeResponse = .success(.plain("hello world"))
         let url = URL(fileURLWithPath: "/tmp/audio.wav")
         let result = try await sut.transcribe(audioURL: url)
@@ -66,7 +71,6 @@ struct MockTranscriptionServiceTests {
 
     @Test func transcribePropagatesStubbedError() async {
         struct Boom: Error {}
-        let sut = MockTranscriptionService()
         sut.stubTranscribeResponse = .failure(Boom())
         let url = URL(fileURLWithPath: "/tmp/audio.wav")
         await #expect(throws: Boom.self) {
@@ -76,7 +80,6 @@ struct MockTranscriptionServiceTests {
 
     @Test func transcribeWithoutStubThrowsStubNotSet() async {
         await withKnownIssue {
-            let sut = MockTranscriptionService()
             let url = URL(fileURLWithPath: "/tmp/audio.wav")
             await #expect(throws: StubNotSetError.self) {
                 _ = try await sut.transcribe(audioURL: url)

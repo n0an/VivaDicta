@@ -9,6 +9,13 @@ import Testing
 struct DefaultNetworkServiceTests {
 
     private let endpoint = URL(string: "https://example.com/api")!
+    let session: MockURLSession
+    let sut: DefaultNetworkService
+
+    init() {
+        session = MockURLSession()
+        sut = DefaultNetworkService(session: session)
+    }
 
     private func makeResponse(_ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(
@@ -22,10 +29,8 @@ struct DefaultNetworkServiceTests {
     // MARK: send
 
     @Test func sendReturnsBodyAndHTTPResponseOnSuccess() async throws {
-        let session = MockURLSession()
         let payload = Data(#"{"ok":true}"#.utf8)
         session.stubDataResponse = .success((payload, makeResponse(200)))
-        let sut = DefaultNetworkService(session: session)
 
         let (data, response) = try await sut.send(URLRequest(url: endpoint))
 
@@ -35,10 +40,8 @@ struct DefaultNetworkServiceTests {
     }
 
     @Test func sendThrowsUnacceptableStatusFor4xx() async throws {
-        let session = MockURLSession()
         let body = Data(#"{"error":"nope"}"#.utf8)
         session.stubDataResponse = .success((body, makeResponse(404)))
-        let sut = DefaultNetworkService(session: session)
 
         await #expect {
             try await sut.send(URLRequest(url: endpoint))
@@ -53,9 +56,7 @@ struct DefaultNetworkServiceTests {
 
     @Test func sendWrapsTransportError() async throws {
         struct Boom: Error {}
-        let session = MockURLSession()
         session.stubDataResponse = .failure(Boom())
-        let sut = DefaultNetworkService(session: session)
 
         await #expect {
             try await sut.send(URLRequest(url: endpoint))
@@ -67,9 +68,7 @@ struct DefaultNetworkServiceTests {
     }
 
     @Test func customAcceptableStatusCodesOverrideDefault() async throws {
-        let session = MockURLSession()
         session.stubDataResponse = .success((Data(), makeResponse(302)))
-        let sut = DefaultNetworkService(session: session)
 
         let (_, response) = try await sut.send(
             URLRequest(url: endpoint),
@@ -85,9 +84,7 @@ struct DefaultNetworkServiceTests {
     }
 
     @Test func sendJSONDecodesResponse() async throws {
-        let session = MockURLSession()
         session.stubDataResponse = .success((Data(#"{"value":"hi"}"#.utf8), makeResponse(200)))
-        let sut = DefaultNetworkService(session: session)
 
         let result: Echo = try await sut.sendJSON(URLRequest(url: endpoint))
 
@@ -95,9 +92,7 @@ struct DefaultNetworkServiceTests {
     }
 
     @Test func sendJSONWrapsDecodingErrors() async throws {
-        let session = MockURLSession()
         session.stubDataResponse = .success((Data(#"{"wrong":"shape"}"#.utf8), makeResponse(200)))
-        let sut = DefaultNetworkService(session: session)
 
         await #expect {
             let _: Echo = try await sut.sendJSON(URLRequest(url: endpoint))
@@ -111,9 +106,7 @@ struct DefaultNetworkServiceTests {
     // MARK: upload
 
     @Test func uploadPassesBodyToSession() async throws {
-        let session = MockURLSession()
         session.stubUploadResponse = .success((Data(), makeResponse(200)))
-        let sut = DefaultNetworkService(session: session)
 
         let body = Data("payload".utf8)
         _ = try await sut.upload(URLRequest(url: endpoint), from: body)
@@ -123,9 +116,7 @@ struct DefaultNetworkServiceTests {
     }
 
     @Test func uploadThrowsForServerErrors() async throws {
-        let session = MockURLSession()
         session.stubUploadResponse = .success((Data("internal".utf8), makeResponse(500)))
-        let sut = DefaultNetworkService(session: session)
 
         await #expect {
             _ = try await sut.upload(URLRequest(url: endpoint), from: Data())

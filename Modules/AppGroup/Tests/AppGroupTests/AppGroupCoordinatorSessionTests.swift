@@ -11,28 +11,25 @@ import Testing
 
 struct AppGroupCoordinatorSessionTests {
 
-    // MARK: - Test Helpers
-
     private let suiteName = "AppGroupCoordinatorSessionTests.\(UUID().uuidString)"
+    let defaults: UserDefaults
+    let sut: AppGroupCoordinator
 
-    private func makeCoordinator() -> AppGroupCoordinator {
-        let defaults = UserDefaults(suiteName: suiteName)!
+    init() {
+        defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        return AppGroupCoordinator(userDefaults: defaults)
+        sut = AppGroupCoordinator(userDefaults: defaults)
     }
 
     // MARK: - Activate / Deactivate Session
 
     @Test func activateKeyboardSession_setsActiveAndExpiry() {
-        let sut = makeCoordinator()
-
         sut.activateKeyboardSession(timeoutSeconds: 60)
 
         #expect(sut.isKeyboardSessionActive == true)
     }
 
     @Test func deactivateKeyboardSession_clearsState() {
-        let sut = makeCoordinator()
         sut.activateKeyboardSession(timeoutSeconds: 60)
 
         sut.deactivateKeyboardSession()
@@ -41,14 +38,10 @@ struct AppGroupCoordinatorSessionTests {
     }
 
     @Test func isKeyboardSessionActive_notActivated_false() {
-        let sut = makeCoordinator()
-
         #expect(sut.isKeyboardSessionActive == false)
     }
 
     @Test func isKeyboardSessionActive_activated_true() {
-        let sut = makeCoordinator()
-
         sut.activateKeyboardSession(timeoutSeconds: 300)
 
         #expect(sut.isKeyboardSessionActive == true)
@@ -57,10 +50,6 @@ struct AppGroupCoordinatorSessionTests {
     // MARK: - Refresh Session Expiry
 
     @Test func refreshSessionExpiry_extendsTimeout() {
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        let sut = AppGroupCoordinator(userDefaults: defaults)
-
         sut.activateKeyboardSession(timeoutSeconds: 10)
         let oldExpiry = defaults.double(forKey: "keyboardSessionExpiryTime")
 
@@ -72,10 +61,6 @@ struct AppGroupCoordinatorSessionTests {
     }
 
     @Test func refreshSessionExpiry_inactiveSession_noOp() {
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
-        let sut = AppGroupCoordinator(userDefaults: defaults)
-
         sut.refreshKeyboardSessionExpiry(timeoutSeconds: 60)
 
         let expiry = defaults.double(forKey: "keyboardSessionExpiryTime")
@@ -85,8 +70,6 @@ struct AppGroupCoordinatorSessionTests {
     // MARK: - Settings Flags
 
     @Test func settingsFlags_defaultValues() {
-        let sut = makeCoordinator()
-
         #expect(sut.isSmartFormattingOnPasteEnabled == true)
         #expect(sut.isKeepTranscriptInClipboardEnabled == false)
         #expect(sut.isSpeakerDiarizationEnabled == false)
@@ -95,8 +78,6 @@ struct AppGroupCoordinatorSessionTests {
     }
 
     @Test func settingsFlags_setAndGet() {
-        let sut = makeCoordinator()
-
         sut.isSmartFormattingOnPasteEnabled = false
         #expect(sut.isSmartFormattingOnPasteEnabled == false)
 
