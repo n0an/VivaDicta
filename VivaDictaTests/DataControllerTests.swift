@@ -10,6 +10,7 @@ import SwiftData
 import Testing
 @testable import VivaDicta
 
+@Suite(.tags(.database))
 struct DataControllerTests {
 
     let sut: DataController

@@ -13,41 +13,29 @@ struct VivaModeModelNormalizationTests {
 
     // MARK: - AI model normalization
 
-    @Test func aiModel_geminiRetiredProPreview_isRewritten() {
-        let normalized = VivaMode.normalizedModelID("gemini-3-pro-preview", provider: .gemini)
-        #expect(normalized == "gemini-3.1-pro-preview")
-    }
-
-    @Test func aiModel_currentGeminiModel_isPassedThrough() {
-        let normalized = VivaMode.normalizedModelID("gemini-3.5-flash", provider: .gemini)
-        #expect(normalized == "gemini-3.5-flash")
-    }
-
-    @Test func aiModel_nonGeminiProvider_isNotRewritten() {
-        let normalized = VivaMode.normalizedModelID("gemini-3-pro-preview", provider: .openAI)
-        #expect(normalized == "gemini-3-pro-preview")
-    }
-
-    @Test func aiModel_nilProvider_isNotRewritten() {
-        let normalized = VivaMode.normalizedModelID("gemini-3-pro-preview", provider: nil)
-        #expect(normalized == "gemini-3-pro-preview")
+    @Test(arguments: [
+        (input: "gemini-3-pro-preview", provider: AIProvider?.some(.gemini), expected: "gemini-3.1-pro-preview"),
+        (input: "gemini-3.5-flash", provider: .some(.gemini), expected: "gemini-3.5-flash"),
+        (input: "gemini-3-pro-preview", provider: .some(.openAI), expected: "gemini-3-pro-preview"),
+        (input: "gemini-3-pro-preview", provider: nil, expected: "gemini-3-pro-preview")
+    ])
+    func aiModel_normalization(input: String, provider: AIProvider?, expected: String) {
+        #expect(VivaMode.normalizedModelID(input, provider: provider) == expected)
     }
 
     // MARK: - Transcription model normalization
 
-    @Test func transcriptionModel_geminiRetiredProPreview_isRewritten() {
-        let normalized = VivaMode.normalizedTranscriptionModelID("gemini-3-pro-preview", provider: .gemini)
-        #expect(normalized == "gemini-3.1-pro-preview")
-    }
-
-    @Test func transcriptionModel_currentGeminiModel_isPassedThrough() {
-        let normalized = VivaMode.normalizedTranscriptionModelID("gemini-3.5-flash", provider: .gemini)
-        #expect(normalized == "gemini-3.5-flash")
-    }
-
-    @Test func transcriptionModel_nonGeminiProvider_isNotRewritten() {
-        let normalized = VivaMode.normalizedTranscriptionModelID("gemini-3-pro-preview", provider: .openAI)
-        #expect(normalized == "gemini-3-pro-preview")
+    @Test(arguments: [
+        (input: "gemini-3-pro-preview", provider: TranscriptionModelProvider.gemini, expected: "gemini-3.1-pro-preview"),
+        (input: "gemini-3.5-flash", provider: .gemini, expected: "gemini-3.5-flash"),
+        (input: "gemini-3-pro-preview", provider: .openAI, expected: "gemini-3-pro-preview")
+    ])
+    func transcriptionModel_normalization(
+        input: String,
+        provider: TranscriptionModelProvider,
+        expected: String
+    ) {
+        #expect(VivaMode.normalizedTranscriptionModelID(input, provider: provider) == expected)
     }
 
     // MARK: - Decoder integration

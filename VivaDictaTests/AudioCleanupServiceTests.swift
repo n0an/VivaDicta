@@ -12,6 +12,7 @@ import SwiftData
 @testable import VivaDicta
 
 @MainActor
+@Suite(.tags(.cleanup, .database), .timeLimit(.minutes(1)))
 struct AudioCleanupServiceTests {
 
     private let testSuiteName = "AudioCleanupServiceTests.\(UUID().uuidString)"
