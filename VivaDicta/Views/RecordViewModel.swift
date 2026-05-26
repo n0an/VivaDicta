@@ -89,30 +89,30 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
     weak var appState: AppState?
     var modelContext: ModelContext
-    
-    public var transcriptionManager: TranscriptionManager {
-        appState?.transcriptionManager ?? TranscriptionManager()
-    }
-    public var aiService: AIService {
-        appState?.aiService ?? AIService()
-    }
+
+    public let transcriptionManager: TranscriptionManager
+    public let aiService: AIService
 
     var selectedModeName: String {
-        get { appState?.aiService.selectedModeName ?? "" }
-        set { appState?.aiService.selectedModeName = newValue }
+        get { aiService.selectedModeName }
+        set { aiService.selectedModeName = newValue }
     }
 
     var availableModes: [VivaMode] {
-        appState?.aiService.modes ?? []
+        aiService.modes
     }
 
     init(
         appState: AppState,
         modelContainer: ModelContainer,
+        transcriptionManager: TranscriptionManager? = nil,
+        aiService: AIService? = nil,
         audioRecordingService: AudioRecordingService = DefaultAudioRecordingService(),
         audioFileService: AudioFileService = DefaultAudioFileService()
     ) {
         self.appState = appState
+        self.transcriptionManager = transcriptionManager ?? appState.transcriptionManager
+        self.aiService = aiService ?? appState.aiService
         self.modelContext = ModelContext(modelContainer)
         self.audioRecordingService = audioRecordingService
         self.audioFileService = audioFileService

@@ -120,20 +120,25 @@ class AppState {
     /// Audio file URL received via "Open With" from Files app.
     var openedAudioFileURL: URL?
 
-    init(modelContainer: ModelContainer) {
-        transcriptionManager = TranscriptionManager()
-        aiService = AIService()
-        presetManager = PresetManager(userDefaults: UserDefaultsStorage.shared)
-        aiService.presetManager = presetManager
-        PresetMigrationService.migrateIfNeeded(presetManager: presetManager, aiService: aiService)
+    init(
+        modelContainer: ModelContainer,
+        transcriptionManager: TranscriptionManager = TranscriptionManager(),
+        aiService: AIService = AIService(),
+        presetManager: PresetManager? = nil
+    ) {
+        self.transcriptionManager = transcriptionManager
+        self.aiService = aiService
+        self.presetManager = presetManager ?? PresetManager(userDefaults: UserDefaultsStorage.shared)
+        aiService.presetManager = self.presetManager
+        PresetMigrationService.migrateIfNeeded(presetManager: self.presetManager, aiService: aiService)
 
         // Set up preset sync service for CloudKit sync
         presetSyncService = PresetSyncService()
         presetSyncService.configure(modelContext: modelContainer.mainContext)
         presetSyncService.migrateOldCustomRewritePresets()
-        presetSyncService.migrateExistingCustomPresets(presetManager: presetManager)
-        presetSyncService.syncFromCloudKit(presetManager: presetManager)
-        presetManager.syncService = presetSyncService
+        presetSyncService.migrateExistingCustomPresets(presetManager: self.presetManager)
+        presetSyncService.syncFromCloudKit(presetManager: self.presetManager)
+        self.presetManager.syncService = presetSyncService
 
         recordViewModel = RecordViewModel(appState: self, modelContainer: modelContainer)
         downloadManager = ModelDownloadManager()

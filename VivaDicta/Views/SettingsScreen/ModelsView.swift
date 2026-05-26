@@ -86,6 +86,7 @@ struct ModelsView: View {
         .navigationDestination(item: $cloudModelToConfigure, destination: { model in
             CloudModelConfigurationView(
                 model: model,
+                aiService: appState.aiService,
                 onSave: { cloudModel in
                     cloudModelConfigured(cloudModel)
                 })

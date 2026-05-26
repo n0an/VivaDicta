@@ -10,12 +10,12 @@ import SwiftUI
 struct CloudModelConfigurationView: View {
     @Environment(\.dismiss) var dismiss
     var model: CloudModel
+    let aiService: AIService
     var onSave: (CloudModel) -> Void
 
     @State var apiKey: String = ""
     @State private var isVerifying: Bool = false
     @State private var verificationError: String? = nil
-    @State private var aiService = AIService()
     @State private var showDeleteConfirmation: Bool = false
     @State private var clearButtonVisible = false
 
@@ -262,6 +262,7 @@ struct CloudModelConfigurationView: View {
 #Preview {
     CloudModelConfigurationView(
         model: TranscriptionModelProvider.allCloudModels[0],
+        aiService: AIService(),
         onSave: { _ in }
     )
 }
