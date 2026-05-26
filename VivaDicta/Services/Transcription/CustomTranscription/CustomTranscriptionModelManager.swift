@@ -10,9 +10,18 @@ import AppGroup
 import Keychain
 import os
 
+/// Read-only seam used by `TranscriptionManager` to ask "is there a configured
+/// custom transcription model right now?" without depending on the concrete
+/// singleton, so tests can substitute a fake.
+@MainActor
+protocol CustomTranscriptionModelSource {
+    var isConfigured: Bool { get }
+    var configuredModel: CustomTranscriptionModel? { get }
+}
+
 @Observable
 @MainActor
-final class CustomTranscriptionModelManager {
+final class CustomTranscriptionModelManager: CustomTranscriptionModelSource {
     static let shared = CustomTranscriptionModelManager(keychain: DefaultKeychainService())
 
     private let logger = Logger(category: .customTranscriptionService)
