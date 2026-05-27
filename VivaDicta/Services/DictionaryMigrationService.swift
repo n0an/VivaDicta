@@ -3,7 +3,7 @@ import AppGroup
 import SwiftData
 import os
 
-class DictionaryMigrationService {
+final class DictionaryMigrationService {
     static let shared = DictionaryMigrationService(
         sourceDefaults: UserDefaultsStorage.appPrivate,
         flagDefaults: UserDefaults.standard

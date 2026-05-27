@@ -129,6 +129,23 @@ struct DictionaryMigrationServiceTests {
         #expect(try fetchReplacements(in: context).isEmpty)
     }
 
+    @Test func migrateIfNeeded_handlesCorruptedReplacementsBlob_andStillMarksMigrationDone() throws {
+        // The SUT decodes the legacy replacements payload with `try?`, so a
+        // malformed blob silently produces zero replacements AND still flips
+        // the completion flag. Pin that contract so a future refactor to
+        // `try` (which would throw and abort the migration) can't change
+        // semantics without a test failure.
+        let (source, flag) = makeDefaults()
+        source.set(Data("not valid json".utf8), forKey: UserDefaultsStorage.Keys.textReplacements)
+        let context = try makeContext()
+
+        let sut = DictionaryMigrationService(sourceDefaults: source, flagDefaults: flag)
+        sut.migrateIfNeeded(context: context)
+
+        #expect(try fetchReplacements(in: context).isEmpty)
+        #expect(flag.bool(forKey: migrationCompletedKey))
+    }
+
     // MARK: - Idempotency
 
     @Test func migrateIfNeeded_secondCall_doesNotDuplicateRecords() throws {
