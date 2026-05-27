@@ -79,6 +79,9 @@ class AppState {
     /// Service for managing background task protection.
     var backgroundTaskService: BackgroundTaskManager!
 
+    /// Orchestrates periodic cleanup services (notes, audio, chats).
+    var maintenanceCoordinator: MaintenanceCoordinator!
+
 
     // MARK: - Navigation State
 
@@ -124,11 +127,17 @@ class AppState {
         modelContainer: ModelContainer,
         transcriptionManager: TranscriptionManager = TranscriptionManager(),
         aiService: AIService = AIService(),
-        presetManager: PresetManager? = nil
+        presetManager: PresetManager? = nil,
+        maintenanceCoordinator: MaintenanceCoordinator? = nil
     ) {
         self.transcriptionManager = transcriptionManager
         self.aiService = aiService
         self.presetManager = presetManager ?? PresetManager(userDefaults: UserDefaultsStorage.shared)
+        self.maintenanceCoordinator = maintenanceCoordinator ?? MaintenanceCoordinator(services: [
+            NoteCleanupService.shared,
+            AudioCleanupService.shared,
+            ChatCleanupService.shared
+        ])
         aiService.presetManager = self.presetManager
         PresetMigrationService.migrateIfNeeded(presetManager: self.presetManager, aiService: aiService)
 

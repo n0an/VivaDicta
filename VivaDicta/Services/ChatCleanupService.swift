@@ -15,7 +15,7 @@ import os
 /// Deleting a `ChatConversation` cascade-deletes its `ChatMessage` records.
 /// Detached single-note chats are also cleaned up conservatively to prevent hidden orphan buildup.
 @MainActor
-final class ChatCleanupService {
+final class ChatCleanupService: MaintenanceService {
     static let shared = ChatCleanupService()
 
     private static let lastCleanupKey = "lastChatCleanupDate"
