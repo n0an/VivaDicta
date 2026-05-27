@@ -3,18 +3,30 @@ import AppGroup
 import SwiftData
 import os
 
-class DictionaryMigrationService {
-    static let shared = DictionaryMigrationService()
+final class DictionaryMigrationService {
+    static let shared = DictionaryMigrationService(
+        sourceDefaults: UserDefaultsStorage.appPrivate,
+        flagDefaults: UserDefaults.standard
+    )
+
     private let logger = Logger(category: .dictionaryMigration)
+    private let sourceDefaults: UserDefaults
+    private let flagDefaults: UserDefaults
 
     private let migrationCompletedKey = "HasMigratedDictionaryToSwiftData"
 
-    private init() {}
+    init(
+        sourceDefaults: UserDefaults = UserDefaultsStorage.appPrivate,
+        flagDefaults: UserDefaults = UserDefaults.standard
+    ) {
+        self.sourceDefaults = sourceDefaults
+        self.flagDefaults = flagDefaults
+    }
 
     /// Migrates dictionary data from UserDefaults to SwiftData.
     /// This is a one-time operation that preserves all existing user data.
     func migrateIfNeeded(context: ModelContext) {
-        if UserDefaults.standard.bool(forKey: migrationCompletedKey) {
+        if flagDefaults.bool(forKey: migrationCompletedKey) {
             return
         }
 
@@ -24,8 +36,7 @@ class DictionaryMigrationService {
         var replacementsMigrated = 0
 
         // Migrate vocabulary words
-        let vocabDefaults = UserDefaultsStorage.appPrivate
-        if let words = vocabDefaults.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) {
+        if let words = sourceDefaults.stringArray(forKey: UserDefaultsStorage.Keys.customVocabularyWords) {
             logger.logInfo("Found \(words.count) vocabulary words to migrate")
 
             for word in words {
@@ -40,7 +51,7 @@ class DictionaryMigrationService {
         }
 
         // Migrate word replacements
-        if let data = vocabDefaults.data(forKey: UserDefaultsStorage.Keys.textReplacements),
+        if let data = sourceDefaults.data(forKey: UserDefaultsStorage.Keys.textReplacements),
            let oldReplacements = try? JSONDecoder().decode([LegacyReplacement].self, from: data) {
             logger.logInfo("Found \(oldReplacements.count) word replacements to migrate")
 
@@ -59,7 +70,7 @@ class DictionaryMigrationService {
         // Save the migrated data
         do {
             try context.save()
-            UserDefaults.standard.set(true, forKey: migrationCompletedKey)
+            flagDefaults.set(true, forKey: migrationCompletedKey)
             logger.logInfo("Dictionary migration completed successfully")
         } catch {
             logger.logError("Failed to save migrated dictionary data: \(error.localizedDescription)")
