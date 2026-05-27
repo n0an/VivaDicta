@@ -12,20 +12,32 @@ import os
 
 /// One-time migration of API keys from UserDefaults (App Group) to Keychain (iCloud sync).
 final class APIKeyMigrationService: Sendable {
-    static let shared = APIKeyMigrationService(keychain: DefaultKeychainService())
+    static let shared = APIKeyMigrationService(
+        keychain: DefaultKeychainService(),
+        sourceDefaults: UserDefaultsStorage.shared,
+        flagDefaults: UserDefaults.standard
+    )
 
     private let keychain: any KeychainService
+    private let sourceDefaults: UserDefaults
+    private let flagDefaults: UserDefaults
     private let logger = Logger(category: .keychainService)
     private let migrationCompletedKey = "HasMigratedAPIKeysToKeychain"
 
-    init(keychain: any KeychainService) {
+    init(
+        keychain: any KeychainService,
+        sourceDefaults: UserDefaults = UserDefaultsStorage.shared,
+        flagDefaults: UserDefaults = UserDefaults.standard
+    ) {
         self.keychain = keychain
+        self.sourceDefaults = sourceDefaults
+        self.flagDefaults = flagDefaults
     }
 
     /// Migrates existing API keys from UserDefaults to Keychain.
     /// Safe to call multiple times — only runs once.
     func migrateIfNeeded() {
-        guard !UserDefaults.standard.bool(forKey: migrationCompletedKey) else { return }
+        guard !flagDefaults.bool(forKey: migrationCompletedKey) else { return }
 
         logger.logInfo("Starting API key migration from UserDefaults to Keychain")
         var migrated = 0
@@ -40,7 +52,7 @@ final class APIKeyMigrationService: Sendable {
 
         for provider in providersToMigrate {
             let oldKey = "apiKeyTemplate" + provider.rawValue
-            if let value = UserDefaultsStorage.shared.string(forKey: oldKey),
+            if let value = sourceDefaults.string(forKey: oldKey),
                !value.isEmpty {
                 keychain.save(value, forKey: provider.keychainKey)
                 migrated += 1
@@ -50,14 +62,14 @@ final class APIKeyMigrationService: Sendable {
 
         // Migrate custom transcription API key
         let oldCustomTranscriptionKey = "apiKey.customTranscription"
-        if let value = UserDefaultsStorage.shared.string(forKey: oldCustomTranscriptionKey),
+        if let value = sourceDefaults.string(forKey: oldCustomTranscriptionKey),
            !value.isEmpty {
             keychain.save(value, forKey: "customTranscriptionAPIKey")
             migrated += 1
             logger.logInfo("Migrated custom transcription API key")
         }
 
-        UserDefaults.standard.set(true, forKey: migrationCompletedKey)
+        flagDefaults.set(true, forKey: migrationCompletedKey)
         logger.logInfo("API key migration completed: \(migrated) keys migrated")
     }
 }
