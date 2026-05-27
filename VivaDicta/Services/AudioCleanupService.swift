@@ -12,7 +12,7 @@ import os
 
 /// Service responsible for cleaning up old audio files based on user settings
 @MainActor
-final class AudioCleanupService {
+final class AudioCleanupService: MaintenanceService {
     static let shared = AudioCleanupService()
 
     private static let lastCleanupKey = "lastAudioCleanupDate"

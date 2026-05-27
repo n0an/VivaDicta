@@ -14,7 +14,7 @@ import os
 
 /// Service responsible for auto-deleting old transcription notes based on user settings
 @MainActor
-final class NoteCleanupService {
+final class NoteCleanupService: MaintenanceService {
     static let shared = NoteCleanupService()
 
     private static let lastCleanupKey = "lastNoteCleanupDate"

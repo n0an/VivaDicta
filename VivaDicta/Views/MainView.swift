@@ -729,9 +729,7 @@ struct MainView: View {
     }
 
     private func performMaintenanceTasks() async {
-        await NoteCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
-        await AudioCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
-        await ChatCleanupService.shared.performCleanupIfNeeded(modelContext: modelContext)
+        await appState.maintenanceCoordinator.performAllCleanupIfNeeded(modelContext: modelContext)
     }
 
     private func exportSelectedTranscriptions() {
