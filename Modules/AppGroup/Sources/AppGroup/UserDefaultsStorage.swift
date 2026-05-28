@@ -89,6 +89,8 @@ public enum UserDefaultsStorage {
 
         // Advanced settings
         public static let appendWithVoiceStyle = "appendWithVoiceStyle"
+        public static let isChatEnabled = "isChatEnabled"
+        public static let isLiveTranslationEnabled = "isLiveTranslationEnabled"
 
         // Notes filter
         public static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"

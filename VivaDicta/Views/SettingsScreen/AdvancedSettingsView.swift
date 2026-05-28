@@ -26,6 +26,12 @@ struct AdvancedSettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.appendWithVoiceStyle)
     private var appendWithVoiceStyleRaw: String = AppendWithVoiceStyle.toolbar.rawValue
 
+    @AppStorage(UserDefaultsStorage.Keys.isChatEnabled)
+    private var isChatEnabled: Bool = true
+
+    @AppStorage(UserDefaultsStorage.Keys.isLiveTranslationEnabled)
+    private var isLiveTranslationEnabled: Bool = true
+
     private var appendWithVoiceStyle: Binding<AppendWithVoiceStyle> {
         Binding(
             get: {
@@ -57,6 +63,30 @@ struct AdvancedSettingsView: View {
                 }
             } header: {
                 Text("Note Detail")
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Chats", isOn: $isChatEnabled)
+                        .onChange(of: isChatEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    Text("Show chat buttons on the main screen and in note detail. Disable to hide chat buttons across the app. Siri Shortcuts and deep links can still open chats.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Live Translation", isOn: $isLiveTranslationEnabled)
+                        .onChange(of: isLiveTranslationEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    Text("Show the Live Translation button in the main screen toolbar. Disable to hide it if you don't use live translation.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Features")
             }
         }
         .navigationTitle("Advanced")

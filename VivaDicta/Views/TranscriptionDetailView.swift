@@ -51,6 +51,9 @@ struct TranscriptionDetailView: View {
     @AppStorage(UserDefaultsStorage.Keys.appendWithVoiceStyle)
     private var appendWithVoiceStyleRaw: String = AppendWithVoiceStyle.toolbar.rawValue
 
+    @AppStorage(UserDefaultsStorage.Keys.isChatEnabled)
+    private var isChatEnabled: Bool = true
+
     @AppStorage(UserDefaultsStorage.Keys.isObsidianSendButtonEnabled)
     private var isObsidianSendButtonEnabled: Bool = false
 
@@ -890,32 +893,34 @@ struct TranscriptionDetailView: View {
                 .popoverTip(AIVariationsDiscoveryTip())
 
                 Spacer()
-                
+
                 // Button 3: Chat with Note
-                Button {
-                    HapticManager.lightImpact()
-                    if isAIConfigured {
-                        if chatViewModel == nil {
-                            let conversation = findOrCreateConversation(for: transcription)
-                            chatViewModel = ChatViewModel(
-                                conversation: conversation,
-                                transcription: transcription,
-                                aiService: appState.aiService,
-                                modelContext: modelContext
-                            )
+                if isChatEnabled {
+                    Button {
+                        HapticManager.lightImpact()
+                        if isAIConfigured {
+                            if chatViewModel == nil {
+                                let conversation = findOrCreateConversation(for: transcription)
+                                chatViewModel = ChatViewModel(
+                                    conversation: conversation,
+                                    transcription: transcription,
+                                    aiService: appState.aiService,
+                                    modelContext: modelContext
+                                )
+                            }
+                            showChat = true
+                            Task { await SingleNoteChatDiscoveryTip.singleNoteChatOpenedEvent.donate() }
+                        } else {
+                            showConfigureChat = true
                         }
-                        showChat = true
-                        Task { await SingleNoteChatDiscoveryTip.singleNoteChatOpenedEvent.donate() }
-                    } else {
-                        showConfigureChat = true
+                    } label: {
+                        chatButtonLabel
                     }
-                } label: {
-                    chatButtonLabel
+                    .buttonStyle(.plain)
+                    .popoverTip(SingleNoteChatDiscoveryTip())
+
+                    Spacer()
                 }
-                .buttonStyle(.plain)
-                .popoverTip(SingleNoteChatDiscoveryTip())
-                
-                Spacer()
 
                 // Button 4: Edit / Append
                 Menu {
