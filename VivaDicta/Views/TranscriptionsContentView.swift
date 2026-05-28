@@ -55,6 +55,7 @@ struct TranscriptionsContentView: View {
     @State private var selectedSourceTags: Set<String>
     @State private var selectedUserTagIds: Set<UUID>
     @State private var searchMode: TranscriptionSearchMode = .all
+    @State private var availableSourceTags: [String] = []
 
     private let topAnchorID = "topAnchor"
     private let logger = Logger(category: .transcriptionsContentView)
@@ -154,6 +155,7 @@ struct TranscriptionsContentView: View {
             smartSearchMatches = []
             semanticScoresByID = [:]
             previousTranscriptionCount = allTranscriptions.count
+            availableSourceTags = Self.computeAvailableSourceTags(from: allTranscriptions)
             syncDisplayedIDs()
         }
         .onChange(of: searchText) { _, newValue in
@@ -163,14 +165,20 @@ struct TranscriptionsContentView: View {
             performDebouncedSearch(with: newValue)
         }
         .onChange(of: allTranscriptions) { oldValue, newValue in
-            let shouldResetTagFilter = NotesFilterResetPolicy.shouldResetToAllAfterDeletion(
-                hasActiveFilter: hasActiveTagFilter,
-                isSearching: !searchText.isEmpty,
-                oldTranscriptionCount: oldValue.count,
-                newTranscriptionCount: newValue.count,
-                previousFilteredCount: filterTranscriptionsByActiveTags(oldValue).count,
-                remainingFilteredCount: filterTranscriptionsByActiveTags(newValue).count
-            )
+            availableSourceTags = Self.computeAvailableSourceTags(from: newValue)
+
+            let shouldResetTagFilter: Bool = if hasActiveTagFilter {
+                NotesFilterResetPolicy.shouldResetToAllAfterDeletion(
+                    hasActiveFilter: true,
+                    isSearching: !searchText.isEmpty,
+                    oldTranscriptionCount: oldValue.count,
+                    newTranscriptionCount: newValue.count,
+                    previousFilteredCount: filterTranscriptionsByActiveTags(oldValue).count,
+                    remainingFilteredCount: filterTranscriptionsByActiveTags(newValue).count
+                )
+            } else {
+                false
+            }
 
             // Detect newly inserted transcriptions
             if newValue.count > previousTranscriptionCount {
@@ -253,9 +261,9 @@ struct TranscriptionsContentView: View {
         keywordDisplayedTranscriptions.isEmpty && smartDisplayedTranscriptions.isEmpty
     }
 
-    private var availableSourceTags: [String] {
+    private static func computeAvailableSourceTags(from transcriptions: [Transcription]) -> [String] {
         var seen = Set<String>()
-        return allTranscriptions.compactMap { $0.sourceTag }.filter { seen.insert($0).inserted }
+        return transcriptions.compactMap(\.sourceTag).filter { seen.insert($0).inserted }
     }
 
     private var keywordDisplayedTranscriptions: [Transcription] {
@@ -264,8 +272,9 @@ struct TranscriptionsContentView: View {
     }
 
     private var smartDisplayedTranscriptions: [Transcription] {
-        smartSearchMatches.compactMap { match in
-            guard let transcription = transcription(for: match.transcriptionId) else { return nil }
+        let byID = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+        return smartSearchMatches.compactMap { match in
+            guard let transcription = byID[match.transcriptionId] else { return nil }
             return matchesActiveTags(for: transcription) ? transcription : nil
         }
     }
@@ -296,10 +305,6 @@ struct TranscriptionsContentView: View {
         case .keyword, .smart:
             displayedTranscriptionIDs = Set(displayedTranscriptions.map(\.id))
         }
-    }
-
-    private func transcription(for transcriptionID: UUID) -> Transcription? {
-        allTranscriptions.first { $0.id == transcriptionID }
     }
 
     private func filterTranscriptionsByActiveTags(_ transcriptions: [Transcription]) -> [Transcription] {
@@ -371,9 +376,8 @@ struct TranscriptionsContentView: View {
                         uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
                     )
                 case .smart:
-                    let orderedResults = smartMatches.compactMap { match in
-                        allTranscriptions.first(where: { $0.id == match.transcriptionId })
-                    }
+                    let byID = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+                    let orderedResults = smartMatches.compactMap { byID[$0.transcriptionId] }
                     filteredTranscriptions = orderedResults
                     smartSearchMatches = smartMatches
                     semanticScoresByID = Dictionary(
