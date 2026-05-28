@@ -71,7 +71,7 @@ struct AdvancedSettingsView: View {
                         .onChange(of: isChatEnabled) { _, _ in
                             HapticManager.selectionChanged()
                         }
-                    Text("Show chat buttons on the main screen and in note detail. Disable to hide chat entry points across the app.")
+                    Text("Show chat buttons on the main screen and in note detail. Disable to hide chat buttons across the app. Siri Shortcuts and deep links can still open chats.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
