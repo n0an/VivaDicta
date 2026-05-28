@@ -17,7 +17,11 @@ struct RecordingSheetView: View {
     @AppStorage(UserDefaultsStorage.Keys.isASCIIOrbEnabled)
     private var isASCIIOrbEnabled: Bool = true
 
+    @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
+
     @State private var recordingStartDate = Date()
+    @State private var detent: PresentationDetent = .collapsedHeight
+    @State private var isTagSelectorExpanded = false
 
     private var vm: RecordViewModel {
         appState.recordViewModel
@@ -74,23 +78,49 @@ struct RecordingSheetView: View {
                 }
                 
                 Spacer()
-                
-                Button {
-                    stopRecordingAndDismiss()
-                } label: {
-                    Image(systemName: "stop.fill")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
-                        .recordingSheetButtonBackground(color: .red)
+
+                if isTagSelectorExpanded {
+                    RecordingTagChipsRow(selectedTagIds: $appState.recordViewModel.pendingTagIds)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-                .accessibilityLabel("Stop Recording")
-                .disabled(vm.recordingState != .recording)
+
+                HStack {
+                    // Tag button - opens the inline tag selector (bottom-left corner)
+                    if allTags.isEmpty {
+                        Color.clear.frame(width: 44, height: 44)
+                    } else {
+                        RecordingTagButton(
+                            selectedCount: vm.pendingTagIds.count,
+                            isExpanded: isTagSelectorExpanded,
+                            action: toggleTagSelector
+                        )
+                    }
+
+                    Spacer()
+
+                    Button {
+                        stopRecordingAndDismiss()
+                    } label: {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .recordingSheetButtonBackground(color: .red)
+                    }
+                    .accessibilityLabel("Stop Recording")
+                    .disabled(vm.recordingState != .recording)
+
+                    Spacer()
+
+                    // Balances the leading tag button so the stop button stays centered
+                    Color.clear.frame(width: 44, height: 44)
+                }
+                .padding(.horizontal, 16)
                 .padding(.bottom)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationDetents([.height(340)])
+        .presentationDetents([.collapsedHeight, .expandedHeight], selection: $detent)
         .presentationDragIndicator(.hidden)
         .onAppear { recordingStartDate = Date() }
         .interactiveDismissDisabled(vm.recordingState == .recording)
@@ -109,11 +139,61 @@ struct RecordingSheetView: View {
         }
     }
 
+    private func toggleTagSelector() {
+        HapticManager.lightImpact()
+        withAnimation {
+            isTagSelectorExpanded.toggle()
+            detent = isTagSelectorExpanded ? .expandedHeight : .collapsedHeight
+        }
+    }
+
     private func stopRecordingAndDismiss() {
         vm.stopCaptureAudio(modelContext: modelContext)
         // Sheet will automatically dismiss when recordingState changes from .recording
         // This happens via the onChange modifier in MainView
     }
+}
+
+// MARK: - Recording Tag Button
+
+/// Bottom-left button that reveals the inline tag selector, with a badge showing
+/// how many tags are currently selected for the in-progress recording.
+private struct RecordingTagButton: View {
+    let selectedCount: Int
+    let isExpanded: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "tag")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(isExpanded ? Color.accentColor : .secondary)
+                .frame(width: 44, height: 44)
+                .recordingSheetButtonBackground(color: nil)
+                .contentShape(.circle)
+                .overlay(alignment: .topTrailing) {
+                    if selectedCount > 0 {
+                        Text(selectedCount, format: .number)
+                            .font(.caption2)
+                            .bold()
+                            .foregroundStyle(.white)
+                            .frame(minWidth: 18, minHeight: 18)
+                            .background(.red, in: .circle)
+                    }
+                }
+        }
+        .accessibilityLabel("Tags")
+        .accessibilityValue(selectedCount > 0 ? "\(selectedCount) selected" : "None selected")
+    }
+}
+
+// MARK: - Detent Heights
+
+extension PresentationDetent {
+    /// Recording sheet height with the tag selector collapsed.
+    fileprivate static let collapsedHeight = Self.height(340)
+    /// Recording sheet height with the tag selector expanded.
+    fileprivate static let expandedHeight = Self.height(440)
 }
 
 // MARK: - Recording Sheet Button Background

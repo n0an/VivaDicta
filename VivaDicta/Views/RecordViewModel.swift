@@ -156,6 +156,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     var recordError: RecordError = .other
     
     var audioPower = 0.0
+
+    /// Tag IDs the user selected while recording, applied to the new `Transcription` on save.
+    ///
+    /// The transcription does not exist yet during recording, so selections are buffered here
+    /// and turned into `TranscriptionTagAssignment` records in ``saveNewTranscription(...)``.
+    /// Cleared when a new recording starts, on cancel, and after the assignments are written.
+    var pendingTagIds: Set<UUID> = []
     var siriWaveFormOpacity: CGFloat {
         switch recordingState {
         case .recording: return 1
@@ -193,6 +200,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
 
             activeSourceTag = sourceTag
+            pendingTagIds.removeAll()
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
@@ -621,6 +629,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         pendingTranscription = nil
         activeRecordingDestination = .newNote
         activeSourceTag = SourceTag.app
+        pendingTagIds.removeAll()
 
         // Stop real capture if still recording
         if prewarmManager.isSessionActive && prewarmManager.audioEngine?.isRunning == true {
@@ -834,6 +843,12 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         )
 
         modelContext.insert(transcription)
+
+        // Apply tags chosen during recording.
+        for tagId in pendingTagIds {
+            modelContext.insert(TranscriptionTagAssignment(tagId: tagId, transcription: transcription))
+        }
+        pendingTagIds.removeAll()
 
         if let enhancedText {
             let variation = TranscriptionVariation(
