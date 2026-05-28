@@ -52,6 +52,12 @@ struct MainView: View {
     @State private var zipShareFile: ExportedShareFile?
     @State private var isPreparingZipShare = false
 
+    @AppStorage(UserDefaultsStorage.Keys.isChatEnabled)
+    private var isChatEnabled: Bool = true
+
+    @AppStorage(UserDefaultsStorage.Keys.isLiveTranslationEnabled)
+    private var isLiveTranslationEnabled: Bool = true
+
     private let logger = Logger(category: .mainView)
 
     @Namespace private var sheetTransitions
@@ -469,21 +475,23 @@ struct MainView: View {
                 .matchedTransitionSource(id: "NotesFilterSheetTransition", in: sheetTransitions)
             }
 
-            if #available(iOS 26.0, *) {
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-            }
-
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    HapticManager.lightImpact()
-                    showingLiveTranslation = true
-                    Task { await LiveTranslationDiscoveryTip.liveTranslationOpenedEvent.donate() }
-                } label: {
-                    Image(systemName: "globe.americas.fill")
+            if isLiveTranslationEnabled {
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 }
-                .accessibilityLabel("Live Translation")
-                .matchedTransitionSource(id: "LiveTranslationSheetTransition", in: sheetTransitions)
-                .popoverTip(LiveTranslationDiscoveryTip())
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        HapticManager.lightImpact()
+                        showingLiveTranslation = true
+                        Task { await LiveTranslationDiscoveryTip.liveTranslationOpenedEvent.donate() }
+                    } label: {
+                        Image(systemName: "globe.americas.fill")
+                    }
+                    .accessibilityLabel("Live Translation")
+                    .matchedTransitionSource(id: "LiveTranslationSheetTransition", in: sheetTransitions)
+                    .popoverTip(LiveTranslationDiscoveryTip())
+                }
             }
 
             if #available(iOS 26.0, *) {
@@ -583,17 +591,19 @@ struct MainView: View {
                 .disabled(selectedTranscriptionIDs.isEmpty)
             }
             
-            if #available(iOS 26.0, *) {
-                ToolbarSpacer(.fixed, placement: .bottomBar)
-            }
-            
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    startMultiNoteChatWithSelected()
-                } label: {
-                    Label("Create Chat", systemImage: "plus.bubble")
+            if isChatEnabled {
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.fixed, placement: .bottomBar)
                 }
-                .disabled(selectedTranscriptionIDs.isEmpty)
+
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        startMultiNoteChatWithSelected()
+                    } label: {
+                        Label("Create Chat", systemImage: "plus.bubble")
+                    }
+                    .disabled(selectedTranscriptionIDs.isEmpty)
+                }
             }
 
             if #available(iOS 26.0, *) {

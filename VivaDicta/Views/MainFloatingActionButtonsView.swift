@@ -7,11 +7,15 @@
 
 import SwiftUI
 import DesignSystem
+import AppGroup
 import TipKit
 
 struct MainFloatingActionButtonsView: View {
     @Environment(\.isSearching) private var isSearching
     @Environment(\.colorScheme) private var colorScheme
+
+    @AppStorage(UserDefaultsStorage.Keys.isChatEnabled)
+    private var isChatEnabled: Bool = true
 
     let sheetTransitions: Namespace.ID
     let onShowChats: () -> Void
@@ -21,9 +25,11 @@ struct MainFloatingActionButtonsView: View {
         ZStack {
             recordButton
 
-            HStack {
-                Spacer()
-                chatsButton
+            if isChatEnabled {
+                HStack {
+                    Spacer()
+                    chatsButton
+                }
             }
         }
         .padding(.horizontal)
