@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.4": release_3_4,
         "3.3": release_3_3,
         "3.2": release_3_2,
         "3.1": release_3_1,
@@ -39,6 +40,50 @@ enum WhatsNewCatalog {
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_4 = WhatsNewRelease(
+        id: "3.4",
+        headline: "What's New in VivaDicta 3.4.0",
+        features: [
+            WhatsNewFeature(
+                icon: "tag.fill",
+                iconColors: [.orange, .yellow],
+                title: "Tag While You Record",
+                description: "Add tags right from the recording sheet, so notes land already organized. The active filter carries over when you start a recording."
+            ),
+            WhatsNewFeature(
+                icon: "waveform.badge.plus",
+                iconColors: [.green, .mint],
+                title: "xAI Speech-to-Text",
+                description: "New cloud transcription provider powered by Grok. Add your xAI API key in Settings to try it."
+            ),
+            WhatsNewFeature(
+                icon: "globe.americas.fill",
+                iconColors: [.indigo, .cyan],
+                title: "Live Translation Save Options",
+                description: "Saving a Live Translation as a note now lets you choose what to keep: both languages, source only, or target only."
+            ),
+            WhatsNewFeature(
+                icon: "wand.and.stars",
+                iconColors: [.purple, .indigo],
+                title: "Default AI Mode",
+                description: "Pick a fallback AI mode so AI Actions are ready on every note, even when the current mode has no AI configured."
+            ),
+            WhatsNewFeature(
+                icon: "slider.horizontal.3",
+                iconColors: [.pink, .purple],
+                title: "Make It Yours",
+                description: "New Advanced toggles let you hide Chats and Live Translation if you don't use them, and Trim Trailing Period is now a single global setting."
+            ),
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.blue, .indigo],
+                title: "Latest AI Models",
+                description: "Added Claude Opus 4.8, refreshed the Grok, Z.AI, Kimi, and Gemini lineups, and removed retired models."
+            )
+        ],
+        tagline: "Tag as you talk. Make VivaDicta yours."
+    )
 
     private static let release_3_3 = WhatsNewRelease(
         id: "3.3",
