@@ -32,6 +32,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isLiveTranslationEnabled)
     private var isLiveTranslationEnabled: Bool = true
 
+    @AppStorage(UserDefaultsStorage.Keys.isStripTrailingPeriodEnabled)
+    private var isStripTrailingPeriodEnabled: Bool = false
+
     private var appendWithVoiceStyle: Binding<AppendWithVoiceStyle> {
         Binding(
             get: {
@@ -87,6 +90,20 @@ struct AdvancedSettingsView: View {
                 }
             } header: {
                 Text("Features")
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Trim Trailing Period", isOn: $isStripTrailingPeriodEnabled)
+                        .onChange(of: isStripTrailingPeriodEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    Text("Strips trailing \".\" or \"...\" from transcripts so casual messages like \"Okay.\" don't read as cold. Applies to all modes.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Text Processing")
             }
         }
         .navigationTitle("Advanced")

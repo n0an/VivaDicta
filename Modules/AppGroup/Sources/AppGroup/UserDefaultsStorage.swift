@@ -91,6 +91,7 @@ public enum UserDefaultsStorage {
         public static let appendWithVoiceStyle = "appendWithVoiceStyle"
         public static let isChatEnabled = "isChatEnabled"
         public static let isLiveTranslationEnabled = "isLiveTranslationEnabled"
+        public static let isStripTrailingPeriodEnabled = "isStripTrailingPeriodEnabled"
 
         // Notes filter
         public static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
