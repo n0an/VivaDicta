@@ -20,7 +20,6 @@ struct RecordingSheetView: View {
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
     @State private var recordingStartDate = Date()
-    @State private var detent: PresentationDetent = .collapsedHeight
     @State private var isTagSelectorExpanded = false
 
     private var vm: RecordViewModel {
@@ -81,6 +80,7 @@ struct RecordingSheetView: View {
 
                 if isTagSelectorExpanded {
                     RecordingTagChipsRow(tags: allTags, selectedTagIds: $appState.recordViewModel.pendingTagIds)
+                        .padding(.bottom, 20)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
@@ -120,7 +120,7 @@ struct RecordingSheetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationDetents([.collapsedHeight, .expandedHeight], selection: $detent)
+        .presentationDetents([.height(340)])
         .presentationDragIndicator(.hidden)
         .onAppear { recordingStartDate = Date() }
         .interactiveDismissDisabled(vm.recordingState == .recording)
@@ -141,9 +141,6 @@ struct RecordingSheetView: View {
 
     private func toggleTagSelector() {
         HapticManager.lightImpact()
-        // SwiftUI animates the detent change on its own timing; only the chip-row
-        // transition needs the explicit animation, so keep the detent assignment outside it.
-        detent = !isTagSelectorExpanded ? .expandedHeight : .collapsedHeight
         withAnimation {
             isTagSelectorExpanded.toggle()
         }
@@ -187,15 +184,6 @@ private struct RecordingTagButton: View {
         .accessibilityLabel("Tags")
         .accessibilityValue(selectedCount > 0 ? "\(selectedCount) selected" : "None selected")
     }
-}
-
-// MARK: - Detent Heights
-
-extension PresentationDetent {
-    /// Recording sheet height with the tag selector collapsed.
-    fileprivate static let collapsedHeight = Self.height(340)
-    /// Recording sheet height with the tag selector expanded.
-    fileprivate static let expandedHeight = Self.height(440)
 }
 
 // MARK: - Recording Sheet Button Background

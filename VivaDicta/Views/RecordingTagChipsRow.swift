@@ -37,9 +37,13 @@ struct RecordingTagChipsRow: View {
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
         }
+        
         .scrollIndicators(.hidden)
+        .padding(.horizontal)
+        .glassRowBackground()
     }
 
     private func toggle(_ tag: TranscriptionTag) {
@@ -49,5 +53,24 @@ struct RecordingTagChipsRow: View {
             selectedTagIds.insert(tag.id)
         }
         HapticManager.selectionChanged()
+    }
+}
+
+// MARK: - Glass Row Background
+
+private struct GlassRowBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular)
+        } else {
+            content.background(.ultraThinMaterial)
+        }
+    }
+}
+
+extension View {
+    /// Liquid Glass tray behind the tag chips so they stay legible over the recording orb.
+    fileprivate func glassRowBackground() -> some View {
+        modifier(GlassRowBackgroundModifier())
     }
 }
