@@ -54,6 +54,9 @@ struct TranscriptionDetailView: View {
     @AppStorage(UserDefaultsStorage.Keys.isChatEnabled)
     private var isChatEnabled: Bool = true
 
+    @AppStorage(UserDefaultsStorage.Keys.defaultAIModeId)
+    private var defaultAIModeId: String = ""
+
     @AppStorage(UserDefaultsStorage.Keys.isObsidianSendButtonEnabled)
     private var isObsidianSendButtonEnabled: Bool = false
 
@@ -463,6 +466,7 @@ struct TranscriptionDetailView: View {
                     appState.aiService.isProperlyConfigured(for: mode, requirePreset: false)
                 },
                 activeModeIsAIConfigured: isAIConfigured,
+                preselectedOverrideModeId: UUID(uuidString: defaultAIModeId),
                 onOpenSettings: {
                     showPresetPicker = false
                     appState.shouldNavigateToModeSettings = true
@@ -1560,6 +1564,43 @@ private struct PresetPickerSheet: View {
     @State private var selectedCategory: String?
     @State private var searchText = ""
     @State private var overrideModeId: UUID?
+
+    init(
+        presetManager: PresetManager,
+        existingVariationIds: Set<String>,
+        activeMode: VivaMode,
+        availableModes: [VivaMode],
+        activeModeIsAIConfigured: Bool,
+        preselectedOverrideModeId: UUID?,
+        onOpenSettings: @escaping () -> Void,
+        onReviewExtractedTasks: (() -> Void)?,
+        onExtractTasks: (() -> Void)?,
+        onSelect: @escaping (Preset, VivaMode?) -> Void
+    ) {
+        self.presetManager = presetManager
+        self.existingVariationIds = existingVariationIds
+        self.activeMode = activeMode
+        self.availableModes = availableModes
+        self.activeModeIsAIConfigured = activeModeIsAIConfigured
+        self.onOpenSettings = onOpenSettings
+        self.onReviewExtractedTasks = onReviewExtractedTasks
+        self.onExtractTasks = onExtractTasks
+        self.onSelect = onSelect
+
+        // When the active mode can't run AI actions, pre-select the user's default
+        // AI mode so presets appear immediately instead of the "not configured"
+        // empty state. Only honored if that mode still exists and is AI-configured.
+        //
+        // "Can run AI actions" means presence in `availableModes` (the
+        // `requirePreset: false` set), NOT `activeModeIsAIConfigured`
+        // (`requirePreset: true`): a mode with a provider/model but no mode-level
+        // preset is still usable here because the user picks a preset in this sheet.
+        // Gating on the stricter flag would wrongly override such a capable mode.
+        let activeModeIsAICapable = availableModes.contains { $0.id == activeMode.id }
+        let shouldPreselect = !activeModeIsAICapable
+            && availableModes.contains { $0.id == preselectedOverrideModeId }
+        _overrideModeId = State(initialValue: shouldPreselect ? preselectedOverrideModeId : nil)
+    }
 
     private var overrideMode: VivaMode? {
         guard let overrideModeId else { return nil }

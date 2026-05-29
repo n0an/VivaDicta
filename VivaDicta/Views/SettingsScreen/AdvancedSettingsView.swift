@@ -23,6 +23,8 @@ enum AppendWithVoiceStyle: String, CaseIterable, Identifiable {
 }
 
 struct AdvancedSettingsView: View {
+    @Environment(AppState.self) private var appState
+
     @AppStorage(UserDefaultsStorage.Keys.appendWithVoiceStyle)
     private var appendWithVoiceStyleRaw: String = AppendWithVoiceStyle.toolbar.rawValue
 
@@ -35,6 +37,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isStripTrailingPeriodEnabled)
     private var isStripTrailingPeriodEnabled: Bool = false
 
+    @AppStorage(UserDefaultsStorage.Keys.defaultAIModeId)
+    private var defaultAIModeId: String = ""
+
     private var appendWithVoiceStyle: Binding<AppendWithVoiceStyle> {
         Binding(
             get: {
@@ -42,6 +47,34 @@ struct AdvancedSettingsView: View {
             },
             set: { newValue in
                 appendWithVoiceStyleRaw = newValue.rawValue
+            }
+        )
+    }
+
+    /// Modes that have AI processing enabled and a provider/model configured
+    /// (a preset is not required - the user picks one in the AI Actions sheet).
+    ///
+    /// Must use the same `requirePreset: false` filter as the AI Actions sheet's
+    /// `availableModes` (`TranscriptionDetailView`). The sheet only honors a saved
+    /// default when that mode is still present in its `availableModes`, so if these
+    /// two filters ever diverge the default could silently never apply.
+    private var aiConfiguredModes: [VivaMode] {
+        appState.aiService.modes.filter {
+            appState.aiService.isProperlyConfigured(for: $0, requirePreset: false)
+        }
+    }
+
+    /// Falls back to "None" when the stored mode no longer exists or no longer
+    /// has AI configured, so the picker never shows a stale/blank selection.
+    private var defaultAIMode: Binding<String> {
+        Binding(
+            get: {
+                aiConfiguredModes.contains { $0.id.uuidString == defaultAIModeId }
+                    ? defaultAIModeId
+                    : ""
+            },
+            set: { newValue in
+                defaultAIModeId = newValue
             }
         )
     }
@@ -61,6 +94,23 @@ struct AdvancedSettingsView: View {
                         HapticManager.selectionChanged()
                     }
                     Text("Choose how to access the Append with Voice action on a note. Toolbar puts it inside the pencil menu in the bottom action bar; Floating Button shows a microphone shortcut in the bottom-right corner.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("Default AI Mode", selection: defaultAIMode) {
+                        Text("None").tag("")
+                        ForEach(aiConfiguredModes) { mode in
+                            Text(mode.name).tag(mode.id.uuidString)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(.primary)
+                    .onChange(of: defaultAIMode.wrappedValue) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+                    Text("Mode pre-selected for AI actions in a note when the current mode has no AI processing. You can still switch modes in the AI Actions sheet.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -116,5 +166,6 @@ struct AdvancedSettingsView: View {
     NavigationStack {
         AdvancedSettingsView()
     }
+    .environment(AppState())
 }
 #endif
