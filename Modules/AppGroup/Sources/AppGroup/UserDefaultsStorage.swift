@@ -93,6 +93,10 @@ public enum UserDefaultsStorage {
         public static let isLiveTranslationEnabled = "isLiveTranslationEnabled"
         public static let isStripTrailingPeriodEnabled = "isStripTrailingPeriodEnabled"
 
+        /// UUID string of the mode used for AI actions in note detail when the
+        /// currently selected mode has no AI processing configured. Empty = none.
+        public static let defaultAIModeId = "defaultAIModeId"
+
         // Notes filter
         public static let savedNotesFilterSourceTags = "savedNotesFilterSourceTags"
         public static let savedNotesFilterUserTagIds = "savedNotesFilterUserTagIds"
