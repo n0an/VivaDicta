@@ -933,6 +933,7 @@ struct TranscriptionDetailView: View {
                             .font(.system(size: 20))
                             .frame(width: 44, height: 44)
                     }
+                    .accessibilityLabel("Edit Text")
                 } else {
                     Menu {
                         Button("Edit Text", systemImage: "pencil") {
