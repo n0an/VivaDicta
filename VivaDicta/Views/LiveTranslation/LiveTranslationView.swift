@@ -501,7 +501,7 @@ private struct SaveOptionsSheet: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            .padding(.top, 8)
+            .padding(.top, 20)
             .frame(maxWidth: .infinity)
 
             VStack(spacing: 10) {
@@ -530,8 +530,6 @@ private struct SaveOptionsSheet: View {
                     }
                 }
             }
-
-            Spacer(minLength: 0)
 
             Button("Cancel", role: .cancel) { dismiss() }
                 .buttonStyle(.bordered)
