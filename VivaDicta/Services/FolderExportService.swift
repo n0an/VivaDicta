@@ -147,7 +147,10 @@ enum FolderExportService {
         }
         defer { folderURL.stopAccessingSecurityScopedResource() }
 
-        let destination = uniqueDestination(in: folderURL, baseFilename: item.filename)
+        // The filename is deterministic per note (derived from its timestamp),
+        // so re-exporting the same note overwrites its previous file rather than
+        // piling up `-2`, `-3` copies. Atomic write replaces any existing file.
+        let destination = folderURL.appending(path: item.filename, directoryHint: .notDirectory)
         do {
             try Data(item.text.utf8).write(to: destination, options: .atomic)
             logger.logInfo("📁 Folder export: wrote \(destination.lastPathComponent)")
@@ -156,29 +159,5 @@ enum FolderExportService {
             logger.logError("📁 Folder export: write failed for \(destination.lastPathComponent) - \(error.localizedDescription)")
             return .writeFailed(error.localizedDescription)
         }
-    }
-
-    /// Picks a non-conflicting filename inside `folder`. The base filename
-    /// from `TranscriptionMarkdownExportService` is already unique-per-second,
-    /// but if a file with the same name exists (e.g. duplicate save) we
-    /// append `-2`, `-3`, etc.
-    private static func uniqueDestination(in folder: URL, baseFilename: String) -> URL {
-        let initial = folder.appending(path: baseFilename, directoryHint: .notDirectory)
-        guard FileManager.default.fileExists(atPath: initial.path) else { return initial }
-
-        let pathExtension = (baseFilename as NSString).pathExtension
-        let baseStem = (baseFilename as NSString).deletingPathExtension
-        var index = 2
-        while index < 1_000 {
-            let candidateName = pathExtension.isEmpty
-                ? "\(baseStem)-\(index)"
-                : "\(baseStem)-\(index).\(pathExtension)"
-            let candidate = folder.appending(path: candidateName, directoryHint: .notDirectory)
-            if !FileManager.default.fileExists(atPath: candidate.path) {
-                return candidate
-            }
-            index += 1
-        }
-        return initial
     }
 }
