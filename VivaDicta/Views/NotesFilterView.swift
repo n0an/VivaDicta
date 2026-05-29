@@ -178,6 +178,7 @@ struct NotesFilterView: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(isSelected ? tint : Color.secondary)
             }
+            .contentShape(.rect)
         }
         .buttonStyle(.plain)
     }
