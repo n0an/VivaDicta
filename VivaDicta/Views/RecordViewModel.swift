@@ -201,8 +201,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
 
             activeSourceTag = sourceTag
-            // Clears any stale selection and seeds tags inherited from an active filter.
-            pendingTagIds = initialTagIds
+            // Clear any stale selection now; the filter-inherited tags are seeded only
+            // once capture has actually started, so failed/denied starts leave it empty.
+            pendingTagIds.removeAll()
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
@@ -220,6 +221,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 do {
                     // Use prewarm manager's AVAudioEngine for recording
                     try prewarmManager.startRealCapture(to: captureURL)
+
+                    // Recording is live - seed tags inherited from an active filter.
+                    pendingTagIds = initialTagIds
 
                     // Update audio levels from prewarmManager for visualization
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
@@ -270,6 +274,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     ]
                     
                     try audioRecordingService.startRecording(to: captureURL, settings: settings)
+
+                    // Recording is live - seed tags inherited from an active filter.
+                    pendingTagIds = initialTagIds
 
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in

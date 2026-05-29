@@ -264,8 +264,12 @@ struct TranscriptionsContentView: View {
     /// Propagates on-screen chip taps back to the persisted filter so the toolbar
     /// button and filter screen stay in sync (and the filter clears when all chips are off).
     private func syncFilterUpstream() {
-        if savedFilter.sourceTags != selectedSourceTags || savedFilter.userTagIds != selectedUserTagIds {
+        // Write only the field that actually changed so an external multi-field update
+        // (e.g. the filter screen) doesn't briefly revert the other field mid-sync.
+        if savedFilter.sourceTags != selectedSourceTags {
             savedFilter.sourceTags = selectedSourceTags
+        }
+        if savedFilter.userTagIds != selectedUserTagIds {
             savedFilter.userTagIds = selectedUserTagIds
         }
     }

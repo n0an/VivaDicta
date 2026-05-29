@@ -843,8 +843,11 @@ struct MainView: View {
             return
         }
 
-        // For a new note, inherit the tags from any active tag filter so the
+        // For a new note, inherit the user tags from any active tag filter so the
         // recording stays visible under the current filter once it's saved.
+        // Source-tag filtering is deliberately not bridged: the note is saved as
+        // SourceTag.app, so a filter that excludes "app" (e.g. Keyboard-only) won't
+        // show it - which is the correct behavior for a source filter.
         let initialTagIds = destination == .newNote ? savedNotesFilter.userTagIds : []
 
         // Start recording directly
