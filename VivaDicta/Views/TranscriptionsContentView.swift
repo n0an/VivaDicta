@@ -42,7 +42,7 @@ struct TranscriptionsContentView: View {
     @Binding var isSelectionMode: Bool
     @Binding var selectedTranscriptionIDs: Set<UUID>
     @Binding var displayedTranscriptionIDs: Set<UUID>
-    let savedFilter: SavedNotesFilter
+    @Binding var savedFilter: SavedNotesFilter
     let floatingControls: TranscriptionsFloatingControls?
 
     @State private var filteredTranscriptions: [Transcription] = []
@@ -67,16 +67,16 @@ struct TranscriptionsContentView: View {
         isSelectionMode: Binding<Bool>,
         selectedTranscriptionIDs: Binding<Set<UUID>>,
         displayedTranscriptionIDs: Binding<Set<UUID>>,
-        savedFilter: SavedNotesFilter,
+        savedFilter: Binding<SavedNotesFilter>,
         floatingControls: TranscriptionsFloatingControls? = nil
     ) {
         self._searchText = searchText
         self._isSelectionMode = isSelectionMode
         self._selectedTranscriptionIDs = selectedTranscriptionIDs
         self._displayedTranscriptionIDs = displayedTranscriptionIDs
-        self.savedFilter = savedFilter
-        self._selectedSourceTags = State(initialValue: savedFilter.sourceTags)
-        self._selectedUserTagIds = State(initialValue: savedFilter.userTagIds)
+        self._savedFilter = savedFilter
+        self._selectedSourceTags = State(initialValue: savedFilter.wrappedValue.sourceTags)
+        self._selectedUserTagIds = State(initialValue: savedFilter.wrappedValue.userTagIds)
         self.floatingControls = floatingControls
     }
 
@@ -218,13 +218,21 @@ struct TranscriptionsContentView: View {
         }
         .onChange(of: selectedSourceTags) {
             syncDisplayedIDs()
+            syncFilterUpstream()
         }
         .onChange(of: selectedUserTagIds) {
             syncDisplayedIDs()
+            syncFilterUpstream()
         }
         .onChange(of: savedFilter) { _, newValue in
-            selectedSourceTags = newValue.sourceTags
-            selectedUserTagIds = newValue.userTagIds
+            // Mirror an externally-applied filter (filter screen, sanitize) into the chip state.
+            // Guarded so it doesn't bounce against the upstream sync above.
+            if selectedSourceTags != newValue.sourceTags {
+                selectedSourceTags = newValue.sourceTags
+            }
+            if selectedUserTagIds != newValue.userTagIds {
+                selectedUserTagIds = newValue.userTagIds
+            }
         }
         .onChange(of: searchMode) {
             if searchMode == .smart {
@@ -251,6 +259,15 @@ struct TranscriptionsContentView: View {
 
     private var hasActiveTagFilter: Bool {
         !selectedSourceTags.isEmpty || !selectedUserTagIds.isEmpty
+    }
+
+    /// Propagates on-screen chip taps back to the persisted filter so the toolbar
+    /// button and filter screen stay in sync (and the filter clears when all chips are off).
+    private func syncFilterUpstream() {
+        if savedFilter.sourceTags != selectedSourceTags || savedFilter.userTagIds != selectedUserTagIds {
+            savedFilter.sourceTags = selectedSourceTags
+            savedFilter.userTagIds = selectedUserTagIds
+        }
     }
 
     private var showsCombinedResults: Bool {
@@ -894,7 +911,7 @@ private struct TranscriptionNavigationRow: View {
             isSelectionMode: $isSelectionMode,
             selectedTranscriptionIDs: $selectedIDs,
             displayedTranscriptionIDs: .constant([]),
-            savedFilter: SavedNotesFilter()
+            savedFilter: .constant(SavedNotesFilter())
         )
     }
     .environment(AppState())

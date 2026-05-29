@@ -225,7 +225,7 @@ struct MainView: View {
             isSelectionMode: $isSelectionMode,
             selectedTranscriptionIDs: $selectedTranscriptionIDs,
             displayedTranscriptionIDs: $displayedTranscriptionIDs,
-            savedFilter: savedNotesFilter,
+            savedFilter: $savedNotesFilter,
             floatingControls: .init(
                 sheetTransitions: sheetTransitions,
                 onShowChats: {
@@ -843,10 +843,15 @@ struct MainView: View {
             return
         }
 
+        // For a new note, inherit the tags from any active tag filter so the
+        // recording stays visible under the current filter once it's saved.
+        let initialTagIds = destination == .newNote ? savedNotesFilter.userTagIds : []
+
         // Start recording directly
         vm.startCaptureAudio(
             destination: destination,
-            sourceTag: SourceTag.app
+            sourceTag: SourceTag.app,
+            initialTagIds: initialTagIds
         )
     }
 
