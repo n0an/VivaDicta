@@ -388,15 +388,12 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .cerebras:
             return [
                 "gpt-oss-120b",
-                "llama3.1-8b",
-                "qwen-3-235b-a22b-instruct-2507",
                 "zai-glm-4.7"
             ]
         case .groq:
             return [
                 "llama-3.1-8b-instant",
                 "llama-3.3-70b-versatile",
-                "moonshotai/kimi-k2-instruct-0905",
                 "qwen/qwen3-32b",
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b"
@@ -407,7 +404,6 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "gemini-3.5-flash",
                 "gemini-3-flash-preview",
                 "gemini-3.1-flash-lite",
-                "gemini-3.1-flash-lite-preview",
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
                 "gemini-2.5-flash-lite"
@@ -439,24 +435,24 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .grok:
             return [
-                "grok-4.20-beta",
-                "grok-4.20-multi-agent-beta",
-                "grok-4-fast",
-                "grok-4-1-fast",
-                "grok-4",
-                "grok-4-heavy",
-                "grok-code-fast-1"
+                "grok-4.3",
+                "grok-4.20-reasoning",
+                "grok-4.20-non-reasoning",
+                "grok-4.20-multi-agent",
+                "grok-build-0.1"
             ]
         case .zai:
             return [
+                "glm-5.1",
+                "glm-5-turbo",
                 "glm-5",
                 "glm-4.7",
                 "glm-4.6"
             ]
         case .kimi:
             return [
+                "kimi-k2.6",
                 "kimi-k2.5",
-                "kimi-k2",
                 "moonshot-v1-128k",
                 "moonshot-v1-32k",
                 "moonshot-v1-8k"
