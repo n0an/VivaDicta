@@ -1587,11 +1587,17 @@ private struct PresetPickerSheet: View {
         self.onExtractTasks = onExtractTasks
         self.onSelect = onSelect
 
-        // When the active mode can't do AI, pre-select the user's default AI mode
-        // so presets appear immediately instead of the "not configured" empty state.
-        // Only honored if that mode still exists and is still AI-configured.
-        let shouldPreselect = !activeModeIsAIConfigured
-            && preselectedOverrideModeId != nil
+        // When the active mode can't run AI actions, pre-select the user's default
+        // AI mode so presets appear immediately instead of the "not configured"
+        // empty state. Only honored if that mode still exists and is AI-configured.
+        //
+        // "Can run AI actions" means presence in `availableModes` (the
+        // `requirePreset: false` set), NOT `activeModeIsAIConfigured`
+        // (`requirePreset: true`): a mode with a provider/model but no mode-level
+        // preset is still usable here because the user picks a preset in this sheet.
+        // Gating on the stricter flag would wrongly override such a capable mode.
+        let activeModeIsAICapable = availableModes.contains { $0.id == activeMode.id }
+        let shouldPreselect = !activeModeIsAICapable
             && availableModes.contains { $0.id == preselectedOverrideModeId }
         _overrideModeId = State(initialValue: shouldPreselect ? preselectedOverrideModeId : nil)
     }

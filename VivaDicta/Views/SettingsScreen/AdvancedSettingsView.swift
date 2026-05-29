@@ -53,6 +53,11 @@ struct AdvancedSettingsView: View {
 
     /// Modes that have AI processing enabled and a provider/model configured
     /// (a preset is not required - the user picks one in the AI Actions sheet).
+    ///
+    /// Must use the same `requirePreset: false` filter as the AI Actions sheet's
+    /// `availableModes` (`TranscriptionDetailView`). The sheet only honors a saved
+    /// default when that mode is still present in its `availableModes`, so if these
+    /// two filters ever diverge the default could silently never apply.
     private var aiConfiguredModes: [VivaMode] {
         appState.aiService.modes.filter {
             appState.aiService.isProperlyConfigured(for: $0, requirePreset: false)
