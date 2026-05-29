@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 /// Horizontal row of selectable tag chips shown inline in the recording sheet.
 ///
@@ -14,19 +13,19 @@ import SwiftData
 /// without touching SwiftData. The chosen tags are applied to the new `Transcription`
 /// when the recording is saved. Picks from existing tags only - tag creation lives in Settings.
 struct RecordingTagChipsRow: View {
+    let tags: [TranscriptionTag]
     @Binding var selectedTagIds: Set<UUID>
-    @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
     var body: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 6) {
-                ForEach(allTags) { tag in
+                ForEach(tags) { tag in
                     let isSelected = selectedTagIds.contains(tag.id)
                     let tagColor = Color(hex: tag.colorHex) ?? .blue
                     Button {
                         toggle(tag)
                     } label: {
-                        Label(tag.name, systemImage: isSelected ? "checkmark" : tag.icon)
+                        Label(tag.name, systemImage: tag.icon)
                             .font(.caption)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -35,6 +34,7 @@ struct RecordingTagChipsRow: View {
                             .clipShape(.capsule)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
             .padding(.horizontal)

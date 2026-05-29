@@ -700,6 +700,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 )
 
                 pending.modelContext.insert(transcription)
+                applyPendingTags(to: transcription, modelContext: pending.modelContext)
                 do {
                     try pending.modelContext.save()
                     logger.logInfo("📱 Saved transcription without enhancement")
@@ -844,11 +845,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
         modelContext.insert(transcription)
 
-        // Apply tags chosen during recording.
-        for tagId in pendingTagIds {
-            modelContext.insert(TranscriptionTagAssignment(tagId: tagId, transcription: transcription))
-        }
-        pendingTagIds.removeAll()
+        applyPendingTags(to: transcription, modelContext: modelContext)
 
         if let enhancedText {
             let variation = TranscriptionVariation(
@@ -889,6 +886,21 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         return transcription
     }
 
+    /// Applies the tags selected during recording to the saved transcription and clears the buffer.
+    ///
+    /// Skips tag IDs already assigned (relevant for the append-to-note path, where the
+    /// target transcription may already carry assignments). Called from every save path so
+    /// in-recording tag selections survive regardless of how the recording is finalized.
+    private func applyPendingTags(to transcription: Transcription, modelContext: ModelContext) {
+        guard !pendingTagIds.isEmpty else { return }
+
+        let alreadyAssigned = Set((transcription.tagAssignments ?? []).map(\.tagId))
+        for tagId in pendingTagIds where !alreadyAssigned.contains(tagId) {
+            modelContext.insert(TranscriptionTagAssignment(tagId: tagId, transcription: transcription))
+        }
+        pendingTagIds.removeAll()
+    }
+
     private func appendTranscribedText(
         _ transcribedText: String,
         to transcriptionID: UUID,
@@ -910,6 +922,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
             transcription.variations = []
             transcription.enhancedText = nil
+            applyPendingTags(to: transcription, modelContext: modelContext)
             try modelContext.save()
 
             let transcriptionEntity = transcription.entity

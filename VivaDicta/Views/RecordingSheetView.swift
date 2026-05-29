@@ -80,7 +80,7 @@ struct RecordingSheetView: View {
                 Spacer()
 
                 if isTagSelectorExpanded {
-                    RecordingTagChipsRow(selectedTagIds: $appState.recordViewModel.pendingTagIds)
+                    RecordingTagChipsRow(tags: allTags, selectedTagIds: $appState.recordViewModel.pendingTagIds)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
@@ -113,7 +113,7 @@ struct RecordingSheetView: View {
                     Spacer()
 
                     // Balances the leading tag button so the stop button stays centered
-                    Color.clear.frame(width: 44, height: 44)
+                    Spacer().frame(width: 44)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom)
@@ -141,9 +141,11 @@ struct RecordingSheetView: View {
 
     private func toggleTagSelector() {
         HapticManager.lightImpact()
+        // SwiftUI animates the detent change on its own timing; only the chip-row
+        // transition needs the explicit animation, so keep the detent assignment outside it.
+        detent = !isTagSelectorExpanded ? .expandedHeight : .collapsedHeight
         withAnimation {
             isTagSelectorExpanded.toggle()
-            detent = isTagSelectorExpanded ? .expandedHeight : .collapsedHeight
         }
     }
 
