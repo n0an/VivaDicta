@@ -414,6 +414,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             ]
         case .anthropic:
             return [
+                "claude-opus-4-8",
                 "claude-opus-4-7",
                 "claude-opus-4-6",
                 "claude-sonnet-4-6",
