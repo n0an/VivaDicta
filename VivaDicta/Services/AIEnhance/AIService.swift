@@ -336,7 +336,6 @@ class AIService {
 
             isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
             isSmartInsertEnabled: mode.isSmartInsertEnabled,
-            isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
             obsidianEnabled: mode.obsidianEnabled,
             folderExportEnabled: mode.folderExportEnabled
         )
@@ -409,7 +408,6 @@ class AIService {
 
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
-                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
                     folderExportEnabled: mode.folderExportEnabled
                 )
@@ -440,7 +438,6 @@ class AIService {
 
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
-                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
                     folderExportEnabled: mode.folderExportEnabled
                 )
@@ -471,7 +468,6 @@ class AIService {
 
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
-                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
                     folderExportEnabled: mode.folderExportEnabled
                 )
@@ -568,7 +564,6 @@ class AIService {
                 useClipboardContext: defaultMode.useClipboardContext,
                 isAutoTextFormattingEnabled: defaultMode.isAutoTextFormattingEnabled,
                 isSmartInsertEnabled: defaultMode.isSmartInsertEnabled,
-                isStripTrailingPeriodEnabled: defaultMode.isStripTrailingPeriodEnabled,
                 obsidianEnabled: defaultMode.obsidianEnabled,
                 folderExportEnabled: defaultMode.folderExportEnabled
             )
@@ -1810,7 +1805,6 @@ class AIService {
 
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
-                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
                     folderExportEnabled: mode.folderExportEnabled
                 )

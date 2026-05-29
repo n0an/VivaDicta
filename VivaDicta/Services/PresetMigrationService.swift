@@ -133,7 +133,6 @@ enum PresetMigrationService {
                     useClipboardContext: mode.useClipboardContext,
                     isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
-                    isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
                     folderExportEnabled: mode.folderExportEnabled
                 )
@@ -158,7 +157,6 @@ enum PresetMigrationService {
                         useClipboardContext: mode.useClipboardContext,
                         isAutoTextFormattingEnabled: mode.isAutoTextFormattingEnabled,
                         isSmartInsertEnabled: mode.isSmartInsertEnabled,
-                        isStripTrailingPeriodEnabled: mode.isStripTrailingPeriodEnabled,
                         obsidianEnabled: mode.obsidianEnabled,
                         folderExportEnabled: mode.folderExportEnabled
                     )

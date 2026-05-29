@@ -173,7 +173,7 @@ class TranscriptionManager {
             result = ReplacementsService.applyReplacements(to: result)
         }
 
-        if currentMode.isStripTrailingPeriodEnabled {
+        if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isStripTrailingPeriodEnabled) as? Bool ?? false {
             result = TranscriptionOutputFilter.stripTrailingPeriods(result)
         }
 
