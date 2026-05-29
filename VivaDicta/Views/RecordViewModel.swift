@@ -190,7 +190,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     /// Otherwise, delegates capture to ``AudioRecordingService``.
     func startCaptureAudio(
         destination: RecordingDestination = .newNote,
-        sourceTag: String = SourceTag.app
+        sourceTag: String = SourceTag.app,
+        initialTagIds: Set<UUID> = []
     ) {
         Task {
             // Guard against duplicate starts
@@ -200,7 +201,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
 
             activeSourceTag = sourceTag
-            pendingTagIds.removeAll()
+            // Clears any stale selection and seeds tags inherited from an active filter.
+            pendingTagIds = initialTagIds
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
