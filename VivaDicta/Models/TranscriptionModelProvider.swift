@@ -290,6 +290,19 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: cohereLanguages
             ),
+            
+            CloudModel(
+                name: "grok-stt",
+                displayName: "xAI Speech-to-Text",
+                description: "xAI's hosted speech-to-text endpoint with natural formatting and multilingual support. Uses the same xAI API key as Grok chat. No auto-detect - pick a language.",
+                provider: .xai,
+                recommended: true,
+                speed: 0.9,
+                accuracy: 0.95,
+                cost: 0.5,
+                supportManyLanguages: true,
+                supportedLanguages: xaiLanguages
+            ),
 
             CloudModel(
                 name: "ink-whisper",
@@ -431,18 +444,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
 
-            CloudModel(
-                name: "grok-stt",
-                displayName: "xAI Speech-to-Text",
-                description: "xAI's hosted speech-to-text endpoint with natural formatting and multilingual support. Uses the same xAI API key as Grok chat. No auto-detect - pick a language.",
-                provider: .xai,
-                recommended: true,
-                speed: 0.9,
-                accuracy: 0.95,
-                cost: 0.5,
-                supportManyLanguages: true,
-                supportedLanguages: xaiLanguages
-            )
         ]
     }
     
