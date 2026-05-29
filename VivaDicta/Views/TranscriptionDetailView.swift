@@ -923,22 +923,32 @@ struct TranscriptionDetailView: View {
                 }
 
                 // Button 4: Edit / Append
-                Menu {
-                    Button("Edit Text", systemImage: "pencil") {
+                if appendWithVoiceStyle == .floatingButton {
+                    // Voice append lives in the FAB, so the pencil opens the editor directly.
+                    Button {
                         HapticManager.lightImpact()
                         showTextEditor = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 20))
+                            .frame(width: 44, height: 44)
                     }
+                } else {
+                    Menu {
+                        Button("Edit Text", systemImage: "pencil") {
+                            HapticManager.lightImpact()
+                            showTextEditor = true
+                        }
 
-                    if appendWithVoiceStyle == .toolbar {
                         Button("Append with Voice", systemImage: "mic") {
                             startVoiceAppend()
                         }
                         .disabled(appState.recordViewModel.recordingState != .idle)
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 20))
+                            .frame(width: 44, height: 44)
                     }
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 20))
-                        .frame(width: 44, height: 44)
                 }
 
                 Spacer()
