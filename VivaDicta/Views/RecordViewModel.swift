@@ -156,6 +156,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     var recordError: RecordError = .other
     
     var audioPower = 0.0
+
+    /// Tag IDs the user selected while recording, applied to the new `Transcription` on save.
+    ///
+    /// The transcription does not exist yet during recording, so selections are buffered here
+    /// and turned into `TranscriptionTagAssignment` records in ``saveNewTranscription(...)``.
+    /// Cleared when a new recording starts, on cancel, and after the assignments are written.
+    var pendingTagIds: Set<UUID> = []
     var siriWaveFormOpacity: CGFloat {
         switch recordingState {
         case .recording: return 1
@@ -193,6 +200,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
 
             activeSourceTag = sourceTag
+            pendingTagIds.removeAll()
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
@@ -621,6 +629,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         pendingTranscription = nil
         activeRecordingDestination = .newNote
         activeSourceTag = SourceTag.app
+        pendingTagIds.removeAll()
 
         // Stop real capture if still recording
         if prewarmManager.isSessionActive && prewarmManager.audioEngine?.isRunning == true {
@@ -691,6 +700,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 )
 
                 pending.modelContext.insert(transcription)
+                applyPendingTags(to: transcription, modelContext: pending.modelContext)
                 do {
                     try pending.modelContext.save()
                     logger.logInfo("📱 Saved transcription without enhancement")
@@ -835,6 +845,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
         modelContext.insert(transcription)
 
+        applyPendingTags(to: transcription, modelContext: modelContext)
+
         if let enhancedText {
             let variation = TranscriptionVariation(
                 presetId: aiService.selectedMode.presetId ?? "regular",
@@ -874,6 +886,21 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         return transcription
     }
 
+    /// Applies the tags selected during recording to the saved transcription and clears the buffer.
+    ///
+    /// Skips tag IDs already assigned (relevant for the append-to-note path, where the
+    /// target transcription may already carry assignments). Called from every save path so
+    /// in-recording tag selections survive regardless of how the recording is finalized.
+    private func applyPendingTags(to transcription: Transcription, modelContext: ModelContext) {
+        guard !pendingTagIds.isEmpty else { return }
+
+        let alreadyAssigned = Set((transcription.tagAssignments ?? []).map(\.tagId))
+        for tagId in pendingTagIds where !alreadyAssigned.contains(tagId) {
+            modelContext.insert(TranscriptionTagAssignment(tagId: tagId, transcription: transcription))
+        }
+        pendingTagIds.removeAll()
+    }
+
     private func appendTranscribedText(
         _ transcribedText: String,
         to transcriptionID: UUID,
@@ -895,6 +922,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
             transcription.variations = []
             transcription.enhancedText = nil
+            applyPendingTags(to: transcription, modelContext: modelContext)
             try modelContext.save()
 
             let transcriptionEntity = transcription.entity
