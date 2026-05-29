@@ -1845,7 +1845,7 @@ private struct PresetPickerSheet: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: "brain")
+                Image(systemName: "sparkles")
                     .font(.caption2)
                 Text(effectiveModeName)
                     .font(.caption)
