@@ -82,7 +82,7 @@ struct LiveTranslationView: View {
                     showingSaveOptions = false
                     saveAsNote(content: content, snapshot: snapshot)
                 }
-                .presentationDetents([.medium])
+                .presentationDetents(.sizeToFit)
                 .presentationDragIndicator(.hidden)
             }
         }

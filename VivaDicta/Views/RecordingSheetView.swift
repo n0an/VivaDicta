@@ -113,7 +113,8 @@ struct RecordingSheetView: View {
                     Spacer()
 
                     // Balances the leading tag button so the stop button stays centered
-                    Spacer().frame(width: 44)
+                    Spacer()
+                        .frame(width: 44)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom)

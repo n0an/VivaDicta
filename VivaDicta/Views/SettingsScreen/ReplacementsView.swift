@@ -79,7 +79,7 @@ struct ReplacementsView: View {
                 item.replacementText = trimmedReplacement
                 replacementToEdit = nil
             }
-            .presentationDetents([.height(280)])
+            .presentationDetents(.sizeToFit)
         }
         .alert("Delete Replacements", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {

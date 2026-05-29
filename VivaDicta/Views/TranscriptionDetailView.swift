@@ -507,14 +507,14 @@ struct TranscriptionDetailView: View {
                 showConfigureAI = false
                 appState.shouldNavigateToModeSettings = true
             }
-            .presentationDetents([.height(240)])
+            .presentationDetents(.sizeToFit)
         }
         .sheet(isPresented: $showConfigureChat) {
             ConfigureChatSheet {
                 showConfigureChat = false
                 appState.shouldNavigateToModeSettings = true
             }
-            .presentationDetents([.height(240)])
+            .presentationDetents(.sizeToFit)
         }
         .fullScreenCover(isPresented: $showChat) {
             if let vm = chatViewModel {
@@ -1396,6 +1396,7 @@ private struct ConfigureAISheet: View {
             Image(systemName: "sparkles")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
+                .padding(.top, 20)
 
             Text("AI Processing Not Configured")
                 .font(.title3.bold())
@@ -1428,6 +1429,7 @@ private struct ConfigureChatSheet: View {
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
+                .padding(.top, 20)
 
             Text("Chat Not Available")
                 .font(.title3.bold())

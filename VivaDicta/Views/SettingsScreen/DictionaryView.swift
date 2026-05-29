@@ -73,7 +73,7 @@ struct WordsDictionaryView: View {
                 item.word = trimmed
                 wordToEdit = nil
             }
-            .presentationDetents([.height(180)])
+            .presentationDetents(.sizeToFit)
         }
         .alert("Delete Words", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
