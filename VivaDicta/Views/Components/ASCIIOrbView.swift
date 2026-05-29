@@ -80,15 +80,25 @@ struct ASCIIOrbView: View {
         }
         let lastIndex = resolvedRamp.count - 1
 
-        // Explicit outward-radiating wave: sin(rNorm*freq - time*speed) creates
-        // concentric rings whose phase advances inward over time, so each ring
-        // visibly emerges at the center and expands toward the rim. Combined
-        // with head-on lighting (so the brightest point is at the orb's screen
-        // center, not upper-left), this reads unambiguously as center-out.
+        // Outward-radiating wave: sin(waveR*freq - time*speed) creates concentric
+        // rings whose phase advances inward over time, so each ring emerges at the
+        // wave origin and expands outward. Lighting stays head-on/centered, so only
+        // the ripples move - the orb's 3D shape and bright center stay put.
         let waveSpeed = 1.2 + power * 1.6
         let waveFrequency = 9.0
         let secondaryFrequency = 14.5
         let secondarySpeed = 1.9 + power * 1.2
+
+        // Wandering wave origin in normalized sphere space (same nx/ny units, ~-1...1
+        // across the orb). Value noise with a ~1s period (wanderSpeed ≈ 1 advances the
+        // lattice once per second) picks a fresh random target each second and eases
+        // smoothly between them, so the rings emanate from a drifting off-center point
+        // instead of always the middle. `originReach` caps how far off-center it strays
+        // so the source stays inside the orb body.
+        let wanderSpeed = 0.9
+        let originReach = 0.4
+        let waveOriginX = (Self.valueNoise3D(time * wanderSpeed + 0.5, 3.0, 1.0) - 0.5) * 2 * originReach
+        let waveOriginY = (Self.valueNoise3D(8.0, 2.0, time * wanderSpeed + 0.5) - 0.5) * 2 * originReach
 
         // Slow ambient time for the noise texture, independent of wave phase
         // so the rings don't smear into directional drift.
@@ -130,12 +140,16 @@ struct ASCIIOrbView: View {
                 // light direction along +z, Lambertian diffuse simplifies to nz.
                 let diffuse = nz
 
-                // Two superimposed radial sine waves at different freqs/speeds.
-                // The pattern at any cell depends only on rNorm and time, so
-                // every ring of cells at the same radius pulses together; over
-                // time the pulse rolls outward.
-                let phase1 = rNorm * waveFrequency - time * waveSpeed
-                let phase2 = rNorm * secondaryFrequency - time * secondarySpeed + 1.7
+                // Two superimposed radial sine waves at different freqs/speeds,
+                // measured from the wandering origin rather than the orb center, so
+                // the rings roll outward from a drifting point. `waveR` can exceed 1
+                // on the side opposite the origin - intended; it just packs more
+                // rings across the far half.
+                let wx = nx - waveOriginX
+                let wy = ny - waveOriginY
+                let waveR = (wx * wx + wy * wy).squareRoot()
+                let phase1 = waveR * waveFrequency - time * waveSpeed
+                let phase2 = waveR * secondaryFrequency - time * secondarySpeed + 1.7
                 let rawRipple = sin(phase1) + 0.55 * sin(phase2)
                 let ripple = rawRipple / 1.55 * 0.5 + 0.5  // 0...1
 
