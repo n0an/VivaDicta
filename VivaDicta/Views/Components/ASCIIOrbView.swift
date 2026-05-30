@@ -9,13 +9,13 @@ import SwiftUI
 
 /// Audio-reactive ASCII-rendered orb. Drop-in alternative to `ParticleOrbView`:
 /// same `audioPower` binding (0...1), same outer behavior. The orb is rendered
-/// as a 50×50 grid of monospaced characters whose density follows a sphere
+/// as a 32×32 grid of monospaced characters whose density follows a sphere
 /// SDF + diffuse lighting + animated 3D value noise. Audio level drives noise
 /// speed, density, color saturation, and a subtle radius pulse.
 struct ASCIIOrbView: View {
     @Binding var audioPower: Double
 
-    private let gridSize: Int = 40
+    private let gridSize: Int = 32
 
     /// Ramp from light to dense. ~12 stops give a smooth shaded sphere
     /// without noticeable banding at this grid size.
@@ -30,12 +30,21 @@ struct ASCIIOrbView: View {
     private let smoothingSpeed: Double = 1.0
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        // Cap at ~20 fps. `.animation` alone drives one frame per display
+        // refresh, so on a 120 Hz ProMotion device the orb rendered up to 6x
+        // as often per second as this capped rate - a major contributor to the
+        // recording-screen freeze on lower-headroom devices.
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: false)) { timeline in
             let now = timeline.date.timeIntervalSinceReferenceDate
             let power = interpolatedPower(at: now)
             let elapsed = now - startTime
 
-            Canvas(rendersAsynchronously: true) { context, size in
+            // Synchronous Canvas: each frame finishes before the next is
+            // requested. With `rendersAsynchronously: true`, TimelineView queued
+            // draw closures faster than the heavy per-frame work could complete,
+            // building an unbounded backlog that progressively collapsed the
+            // frame rate and ultimately froze the app while recording.
+            Canvas { context, size in
                 drawOrb(in: &context, size: size, time: elapsed, power: power)
             }
         }
@@ -155,13 +164,9 @@ struct ASCIIOrbView: View {
 
                 // Ambient noise texture - same time axis at every cell, so the
                 // noise itself doesn't carry directional flow; only the wave does.
-                let n0 = Self.valueNoise3D(nx * 2.5, ny * 2.5, ambientTime)
-                let n1 = Self.valueNoise3D(
-                    nx * 5.0 + 13.7,
-                    ny * 5.0 - 7.2,
-                    ambientTime * 1.4 + 4.1
-                )
-                let baseNoise = n0 * 0.65 + n1 * 0.35
+                // Single octave: the high-frequency detail layer was dropped to
+                // halve the ambient-noise cost per cell during recording.
+                let baseNoise = Self.valueNoise3D(nx * 2.5, ny * 2.5, ambientTime)
 
                 // Mix: texture under, ripple on top.
                 let noise = baseNoise * 0.55 + ripple * 0.45

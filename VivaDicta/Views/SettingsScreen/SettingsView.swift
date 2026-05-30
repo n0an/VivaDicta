@@ -60,8 +60,8 @@ struct SettingsView: View {
     @State private var showRestartAlert = false
     @AppStorage(AppGroupCoordinator.isHapticsEnabled, store: UserDefaultsStorage.shared)
     private var isHapticsEnabled = true
-    @AppStorage(UserDefaultsStorage.Keys.isASCIIOrbEnabled)
-    private var isASCIIOrbEnabled: Bool = true
+    @AppStorage(UserDefaultsStorage.Keys.recordingOrbStyle)
+    private var orbStyle: RecordingOrbStyle = .particles
 
     @State private var showAddMode = false
     @State private var showMailCompose = false
@@ -237,8 +237,6 @@ struct SettingsView: View {
                                     Text(option.displayName).tag(option)
                                 }
                             }
-                            .pickerStyle(.menu)
-                            .tint(.primary)
                             Text("Applied to AI-enhanced output when it's in Chinese.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -316,8 +314,6 @@ struct SettingsView: View {
                             Text("30 minutes").tag(1800)
                             Text("1 hour").tag(3600)
                         }
-                        .pickerStyle(.menu)
-                        .tint(.primary)
                         .onChange(of: audioSessionTimeout) { _, _ in
                             HapticManager.selectionChanged()
                         }
@@ -370,16 +366,17 @@ struct SettingsView: View {
                         }
                     }
 
-                    Toggle(isOn: $isASCIIOrbEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("ASCII Recording Orb")
-                                .font(.body)
-                            Text("Show the recording sheet with an audio-reactive ASCII orb. Turn off to use the original particle visualization.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Picker("Recording Orb", selection: $orbStyle) {
+                            ForEach(RecordingOrbStyle.allCases) { style in
+                                Text(style.displayName).tag(style)
+                            }
                         }
+                        Text("The animation shown on the recording screen. Select None to hide it entirely.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .onChange(of: isASCIIOrbEnabled) { _, _ in
+                    .onChange(of: orbStyle) { _, _ in
                         HapticManager.selectionChanged()
                     }
                 }
@@ -410,9 +407,7 @@ struct SettingsView: View {
                             Text("14 days").tag(14)
                             Text("30 days").tag(30)
                         }
-                        .pickerStyle(.menu)
                         .padding(.leading)
-                        .tint(.primary)
                         .onChange(of: noteRetentionDays) { _, _ in
                             HapticManager.selectionChanged()
                         }
@@ -440,9 +435,7 @@ struct SettingsView: View {
                                 Text("14 days").tag(14)
                                 Text("30 days").tag(30)
                             }
-                            .pickerStyle(.menu)
                             .padding(.leading)
-                            .tint(.primary)
                             .onChange(of: audioRetentionDays) { _, _ in
                                 HapticManager.selectionChanged()
                             }
@@ -470,9 +463,7 @@ struct SettingsView: View {
                             Text("14 days").tag(14)
                             Text("30 days").tag(30)
                         }
-                        .pickerStyle(.menu)
                         .padding(.leading)
-                        .tint(.primary)
                         .onChange(of: chatRetentionDays) { _, _ in
                             HapticManager.selectionChanged()
                         }

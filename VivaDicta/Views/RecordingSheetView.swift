@@ -14,8 +14,8 @@ struct RecordingSheetView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(AppState.self) var appState
 
-    @AppStorage(UserDefaultsStorage.Keys.isASCIIOrbEnabled)
-    private var isASCIIOrbEnabled: Bool = true
+    @AppStorage(UserDefaultsStorage.Keys.recordingOrbStyle)
+    private var orbStyle: RecordingOrbStyle = .particles
 
     @Query(sort: \TranscriptionTag.sortOrder) private var allTags: [TranscriptionTag]
 
@@ -32,11 +32,14 @@ struct RecordingSheetView: View {
         ZStack(alignment: .center) {
             
             Group {
-                if isASCIIOrbEnabled {
+                switch orbStyle {
+                case .particles:
+                    ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)
+                case .ascii:
                     ASCIIOrbView(audioPower: $appState.recordViewModel.audioPower)
                         .offset(y: 10)
-                } else {
-                    ParticleOrbView(audioPower: $appState.recordViewModel.audioPower)
+                case .hidden:
+                    EmptyView()
                 }
             }
             .accessibilityHidden(true)
@@ -121,7 +124,7 @@ struct RecordingSheetView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .presentationDetents([.height(340)])
+        .presentationDetents([.height(orbStyle == .hidden ? 220 : 340)])
         .presentationDragIndicator(.hidden)
         .onAppear { recordingStartDate = Date() }
         .interactiveDismissDisabled(vm.recordingState == .recording)

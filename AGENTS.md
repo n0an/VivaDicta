@@ -167,6 +167,7 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 - Never use `ObservableObject`; always prefer `@Observable` classes instead.
 - Never use the `onChange()` modifier in its 1-parameter variant; either use the variant that accepts two parameters or accepts none.
 - Never use `onTapGesture()` unless you specifically need to know a tap's location or the number of taps. All other usages should use `Button`.
+- Don't add `.pickerStyle(.menu)` or `.tint(.primary)` to a `Picker` inside a `Form` (or `List`). A `Form` `Picker` already defaults to a menu where the entire row is tappable; adding those modifiers is redundant and makes only part of the row tappable. Leave them off so the whole row stays tappable.
 - Never use `Task.sleep(nanoseconds:)`; always use `Task.sleep(for:)` instead.
 - Never use `UIScreen.main.bounds` to read the size of the available space.
 - Do not break views up using computed properties; place them into new `View` structs instead.
