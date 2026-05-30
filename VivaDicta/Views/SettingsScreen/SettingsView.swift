@@ -606,6 +606,12 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                Section {
+                    AppVersionFooter()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .listRowBackground(Color.clear)
+                }
             }
             .navigationDestination(for: VivaMode.self) { mode in
                 ModeEditView(
@@ -812,6 +818,24 @@ iOS Version: \(systemVersion)
         .environment(AppState())
 }
 #endif
+
+// MARK: - App Version Footer
+
+private struct AppVersionFooter: View {
+    private var versionText: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+        return "VivaDicta \(version) (\(build))"
+    }
+
+    var body: some View {
+        Text(versionText)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .textSelection(.enabled)
+            .accessibilityLabel("App version \(versionText)")
+    }
+}
 
 // MARK: - Mode Info Row
 
