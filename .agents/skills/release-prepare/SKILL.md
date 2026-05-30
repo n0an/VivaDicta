@@ -177,7 +177,7 @@ Keep copy aligned with the in-app What's New and App Store release notes so mess
 
 Prepare a launch post for the **VivaDicta company page** on LinkedIn (not Anton's personal feed - the voice is announcement-style, not first-person story).
 
-Save to `llmtemp/linkedin-X.Y.Z-<slug>.md` in the iOS app repo. Include:
+Save to `Projects/VivaDicta/linkedin-posts/linkedin-X.Y.Z-<slug>.md` in the Obsidian vault (full path: `/Users/antonnovoselov/Documents/Vault/Projects/VivaDicta/linkedin-posts/`). Include:
 
 1. **Primary draft** - ready to paste. Lead with a one-line release announcement, one paragraph framing the headline feature, then a tight bullet list (4-6 items) of other release highlights, then a link.
 2. **Spartan alternate** - bullets only, no narrative paragraph. Mirrors the Summit AI Notes template (line 1 = announcement, then bullets, "and more.", link).
@@ -228,7 +228,7 @@ Before handing off to `asc-release-flow`:
 - [ ] `metadata/version/X.Y.Z/*.json` generated for all 10 locales
 - [ ] Feature changelog updated (Obsidian vault)
 - [ ] iOS website changelog updated (`vivadicta_website/app/ios/changelog/page.tsx` + push)
-- [ ] LinkedIn announcement drafted (`llmtemp/linkedin-X.Y.Z-<slug>.md`) - publish after App Store approval lands
+- [ ] LinkedIn announcement drafted (`Projects/VivaDicta/linkedin-posts/linkedin-X.Y.Z-<slug>.md` in the Obsidian vault) - publish after App Store approval lands
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
