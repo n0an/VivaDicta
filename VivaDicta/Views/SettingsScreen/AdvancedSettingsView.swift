@@ -88,8 +88,6 @@ struct AdvancedSettingsView: View {
                             Text(style.displayName).tag(style)
                         }
                     }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
                     .onChange(of: appendWithVoiceStyle.wrappedValue) { _, _ in
                         HapticManager.selectionChanged()
                     }
@@ -105,8 +103,6 @@ struct AdvancedSettingsView: View {
                             Text(mode.name).tag(mode.id.uuidString)
                         }
                     }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
                     .onChange(of: defaultAIMode.wrappedValue) { _, _ in
                         HapticManager.selectionChanged()
                     }

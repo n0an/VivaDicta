@@ -85,7 +85,7 @@ public enum UserDefaultsStorage {
         public static let lastSeenWhatsNewVersion = "lastSeenWhatsNewVersion"
 
         // Recording sheet visualization
-        public static let isASCIIOrbEnabled = "isASCIIOrbEnabled"
+        public static let recordingOrbStyle = "recordingOrbStyle"
 
         // Advanced settings
         public static let appendWithVoiceStyle = "appendWithVoiceStyle"

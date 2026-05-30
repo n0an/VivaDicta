@@ -139,7 +139,6 @@ struct PresetFormView: View {
                                 Text(cat).tag(cat)
                             }
                         }
-                        .pickerStyle(.menu)
                     }
                 }
 

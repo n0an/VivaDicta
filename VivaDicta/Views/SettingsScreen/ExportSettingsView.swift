@@ -46,8 +46,6 @@ struct ExportSettingsView: View {
                             Text(option.displayName).tag(option)
                         }
                     }
-                    .pickerStyle(.menu)
-                    .tint(.primary)
                     Text("Choose what to include when exporting notes as Markdown. Applies to manual share, the Export to Folder button, and the auto-export below.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
