@@ -73,11 +73,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         .mistral,
         .deepgram,
         .cohere,
+        .xai,
         .cartesia,
         .elevenLabs,
         .gemini,
         .openAI,
-        .xai,
         .customTranscription]
     
     var cloudTranscriptionModelsNames: [String] {
