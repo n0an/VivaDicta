@@ -172,7 +172,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Speaker Labels")
                                 .font(.body)
-                            Text("Identify and label different speakers for local Whisper, Deepgram, Mistral, Soniox, Gladia, and Speechmatics")
+                            Text("Identify and label different speakers for local Whisper, Deepgram, Mistral, Soniox, Gladia, Speechmatics, and AssemblyAI")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
