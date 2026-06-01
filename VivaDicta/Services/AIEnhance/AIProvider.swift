@@ -234,6 +234,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .ollamaCloud,
         .customOpenAI]
 
+    /// Cloud providers eligible to act as a reminder extractor.
+    ///
+    /// Excludes Ollama Cloud: reminder extraction relies on structured
+    /// (`json_schema`) outputs, which Ollama Cloud does not support
+    /// (https://docs.ollama.com/capabilities/structured-outputs). Local Ollama
+    /// does support them, so it stays eligible.
+    static let reminderExtractorCloudProviders: [AIProvider] = cloudProviders.filter { $0 != .ollamaCloud }
+
     /// Local AI providers that run on-device or local network (no API key needed)
     static let localProviders: [AIProvider] = [
         .apple,

@@ -2323,8 +2323,9 @@ class AIService {
     /// `ollamaCloudModels` property. Unlike the other model catalogs, Ollama
     /// Cloud's listing requires the API key, so the Bearer header is attached.
     public func fetchOllamaCloudModels() async {
-        guard let apiKey = AIProvider.ollamaCloud.apiKey else {
-            logger.logError("Cannot fetch Ollama Cloud models: no API key configured")
+        guard let apiKey = AIProvider.ollamaCloud.apiKey, !apiKey.isEmpty else {
+            // No key yet (pre-config or just deleted) is an expected state, not an error.
+            logger.logDebug("Skipping Ollama Cloud model fetch: no API key configured")
             return
         }
 

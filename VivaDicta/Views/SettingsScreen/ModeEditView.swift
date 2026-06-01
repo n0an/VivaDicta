@@ -667,7 +667,7 @@ struct ModeEditView: View {
                                 }
 
                                 Section("Cloud") {
-                                    ForEach(AIProvider.cloudProviders) { provider in
+                                    ForEach(AIProvider.reminderExtractorCloudProviders) { provider in
                                         if viewModel.isProviderReady(provider) {
                                             Text(provider.displayName).tag(provider)
                                         } else {

@@ -494,7 +494,7 @@ class ModeEditViewModel {
     func selectFirstReminderExtractorProviderIfNeeded() {
         guard reminderExtractorProvider == nil else { return }
 
-        if let provider = preferredProviderForSelection() {
+        if let provider = preferredProviderForSelection(from: AIProvider.reminderExtractorCloudProviders) {
             reminderExtractorProvider = provider
             reminderExtractorModel = defaultModel(for: provider)
             logger.logInfo("Auto-selected reminder extractor provider: \(provider.rawValue)")
@@ -522,6 +522,7 @@ class ModeEditViewModel {
         if reminderExtractorProvider == nil {
             if let provider = aiProvider,
                isProviderReady(provider),
+               provider == .apple || AIProvider.reminderExtractorCloudProviders.contains(provider),
                let model = aiModel,
                !model.isEmpty {
                 reminderExtractorProvider = provider
@@ -569,16 +570,18 @@ class ModeEditViewModel {
         refreshModelSelection(for: provider, target: .reminderExtraction)
     }
 
-    private func preferredProviderForSelection() -> AIProvider? {
+    private func preferredProviderForSelection(
+        from candidates: [AIProvider] = AIProvider.cloudProviders
+    ) -> AIProvider? {
         if aiService.connectedProviders.contains(.apple) {
             return .apple
         }
 
-        let firstConnectedProvider = AIProvider.cloudProviders.first { provider in
+        let firstConnectedProvider = candidates.first { provider in
             aiService.connectedProviders.contains(provider)
         }
 
-        return firstConnectedProvider ?? AIProvider.cloudProviders.first
+        return firstConnectedProvider ?? candidates.first
     }
 
     private func defaultModel(for provider: AIProvider?) -> String? {
