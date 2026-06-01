@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/iOS-18%2B-orange?logo=apple&logoColor=white" alt="iOS 18.0+">
   <img src="https://img.shields.io/badge/watchOS-10%2B-orange?logo=apple&logoColor=white" alt="watchOS 10.0+">
   <img src="https://img.shields.io/badge/swift-6.2-orange" alt="Swift 6.2">
-  <img src="https://img.shields.io/github/license/n0an/VivaDicta" alt="License">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT">
 </p>
 
 ---
