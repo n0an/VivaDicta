@@ -33,6 +33,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case huggingFace
     case copilot
     case ollama
+    case ollamaCloud
     case customOpenAI
 
     var displayName: String {
@@ -83,6 +84,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "GitHub Copilot"
         case .ollama:
             "Ollama"
+        case .ollamaCloud:
+            "Ollama Cloud"
         case .customOpenAI:
             "Custom"
         }
@@ -137,6 +140,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "githubcopilot"
         case .ollama:
             "ollama"
+        case .ollamaCloud:
+            "ollama"
         case .customOpenAI:
             nil // Use SF Symbol "server.rack" directly in view
         }
@@ -166,6 +171,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
              .vercelAIGateway,
              .huggingFace,
              .ollama,
+             .ollamaCloud,
              .customOpenAI:
             true
         default:
@@ -196,6 +202,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .minimax: URL(string: "https://platform.minimax.io/user-center/basic-information/interface-key")
         case .cohere: URL(string: "https://dashboard.cohere.com/api-keys")
         case .cartesia: URL(string: "https://play.cartesia.ai/keys")
+        case .ollamaCloud: URL(string: "https://ollama.com/settings/keys")
         default: nil
         }
     }
@@ -224,6 +231,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .vercelAIGateway,
         .huggingFace,
         .ollama,
+        .ollamaCloud,
         .customOpenAI]
 
     /// Local AI providers that run on-device or local network (no API key needed)
@@ -235,6 +243,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     static let generalProviders: [AIProvider] = [
         .apple,
         .ollama,
+        .ollamaCloud,
         .customOpenAI,
         .anthropic,
         .openAI,
@@ -299,6 +308,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.individual.githubcopilot.com/chat/completions"
         case .ollama:
             return "" // URL is configurable, stored in UserDefaults
+        case .ollamaCloud:
+            return "https://ollama.com/v1/chat/completions"
         case .customOpenAI:
             return "" // URL is configurable, stored in UserDefaults
         }
@@ -359,6 +370,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "gpt-4o"
         case .ollama:
             return "llama3.2"
+        case .ollamaCloud:
+            return "gpt-oss:120b"
         case .customOpenAI:
             return "" // Model is configurable, stored in UserDefaults
         }
@@ -391,6 +404,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
+        case .ollamaCloud: "ollamaCloudAPIKey"
         case .apple, .ollama, .copilot: ""
         }
     }
@@ -512,6 +526,19 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return [] // Models are fetched dynamically from Copilot API
         case .ollama:
             return [] // Models are fetched dynamically from Ollama server
+        case .ollamaCloud:
+            // Curated fallback list of Ollama Cloud models. Refreshed at runtime
+            // via `AIService.fetchOllamaCloudModels()` once an API key is added.
+            return [
+                "gpt-oss:120b",
+                "gpt-oss:20b",
+                "deepseek-v3.1:671b",
+                "qwen3-coder:480b",
+                "qwen3-vl:235b",
+                "glm-4.6",
+                "kimi-k2:1t",
+                "minimax-m2"
+            ]
         case .customOpenAI:
             return [] // Model is configured by user
         }

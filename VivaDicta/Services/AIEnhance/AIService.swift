@@ -86,6 +86,7 @@ class AIService {
     public var vercelAIGatewayModels: [String] = []
     public var huggingFaceModels: [String] = []
     public var ollamaModels: [String] = []
+    public var ollamaCloudModels: [String] = []
     public var modes: [VivaMode] = []
 
     /// Ollama server URL (configurable, defaults to localhost:11434)
@@ -219,6 +220,7 @@ class AIService {
         loadSavedVercelAIGatewayModels()
         loadSavedHuggingFaceModels()
         loadSavedOllamaModels()
+        loadSavedOllamaCloudModels()
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task {
@@ -236,6 +238,9 @@ class AIService {
             }
             if connectedProviders.contains(.huggingFace) {
                 await fetchHuggingFaceModels()
+            }
+            if connectedProviders.contains(.ollamaCloud) {
+                await fetchOllamaCloudModels()
             }
             // Ollama models are fetched on-demand when user configures Ollama
         }
@@ -648,6 +653,16 @@ class AIService {
 
     private func saveOllamaModels() {
         userDefaults.set(ollamaModels, forKey: UserDefaultsStorage.Keys.ollamaModels)
+    }
+
+    private func loadSavedOllamaCloudModels() {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.ollamaCloudModels) as? [String] {
+            ollamaCloudModels = savedModels
+        }
+    }
+
+    private func saveOllamaCloudModels() {
+        userDefaults.set(ollamaCloudModels, forKey: UserDefaultsStorage.Keys.ollamaCloudModels)
     }
 
     // MARK: - Configuration validation
@@ -1892,6 +1907,9 @@ class AIService {
         if isValid && provider == .huggingFace {
             await fetchHuggingFaceModels()
         }
+        if isValid && provider == .ollamaCloud {
+            await fetchOllamaCloudModels()
+        }
 
         return isValid
     }
@@ -2134,6 +2152,11 @@ class AIService {
         if provider == .ollama {
             return ollamaModels
         }
+        if provider == .ollamaCloud {
+            // Use the live catalog once fetched, falling back to the curated
+            // static list so the picker is never empty before the first fetch.
+            return ollamaCloudModels.isEmpty ? provider.availableModels : ollamaCloudModels
+        }
         if provider == .customOpenAI {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
@@ -2291,6 +2314,54 @@ class AIService {
 
         } catch {
             logger.logError("Error fetching HuggingFace models: \(error.localizedDescription)")
+            // Preserve existing cached models on failure
+        }
+    }
+
+    /// Fetches the available Ollama Cloud models from the OpenAI-compatible
+    /// `/v1/models` endpoint, then publishes them to the `@Observable`
+    /// `ollamaCloudModels` property. Unlike the other model catalogs, Ollama
+    /// Cloud's listing requires the API key, so the Bearer header is attached.
+    public func fetchOllamaCloudModels() async {
+        guard let apiKey = AIProvider.ollamaCloud.apiKey else {
+            logger.logError("Cannot fetch Ollama Cloud models: no API key configured")
+            return
+        }
+
+        let url = URL(string: "https://ollama.com/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+            guard httpResponse.statusCode == 200 else {
+                logger.logError("Failed to fetch Ollama Cloud models: Invalid HTTP response")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.logError("Failed to parse Ollama Cloud models JSON")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            let models = dataArray.compactMap { $0["id"] as? String }
+            guard !models.isEmpty else {
+                logger.logWarning("Ollama Cloud returned no models; keeping existing list.")
+                return
+            }
+
+            self.ollamaCloudModels = models.sorted()
+            self.saveOllamaCloudModels()
+            logger.logInfo("Successfully fetched \(models.count) Ollama Cloud models.")
+
+        } catch {
+            logger.logError("Error fetching Ollama Cloud models: \(error.localizedDescription)")
             // Preserve existing cached models on failure
         }
     }
