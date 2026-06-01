@@ -318,6 +318,15 @@ class TranscriptionManager {
                 translationTargetLanguage: translationTarget
             ))
 
+        case .assemblyAI:
+            return .assemblyAI(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: model.name,
+                language: selectedLanguage,
+                vocabulary: CustomVocabulary.getTerms(),
+                isSpeakerDiarizationEnabled: diarizationEnabled
+            ))
+
         case .cohere:
             let language = normalizedLanguage(
                 for: selectedLanguage,

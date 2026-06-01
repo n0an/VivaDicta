@@ -22,6 +22,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case cohere
     case cartesia
     case xai
+    case assemblyAI
     case customTranscription
     
     var id: Self { self }
@@ -56,6 +57,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             "Cartesia"
         case .xai:
             "xAI"
+        case .assemblyAI:
+            "AssemblyAI"
         case .customTranscription:
             "Custom"
         }
@@ -70,6 +73,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         .soniox,
         .gladia,
         .speechmatics,
+        .assemblyAI,
         .mistral,
         .deepgram,
         .cohere,
@@ -125,6 +129,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .cohere: "cohere-transcribe-03-2026"
         case .cartesia: "ink-whisper"
         case .xai: "grok-stt"
+        case .assemblyAI: "universal-3-pro"
         default: nil
         }
     }
@@ -155,6 +160,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return .cartesia
         case .xai:
             return .grok
+        case .assemblyAI:
+            return .assemblyAI
         default:
             return nil
         }
@@ -290,7 +297,32 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportManyLanguages: true,
                 supportedLanguages: cohereLanguages
             ),
-            
+
+            CloudModel(
+                name: "universal-3-pro",
+                displayName: "AssemblyAI Universal-3 Pro",
+                description: "AssemblyAI's most accurate Universal model with broad multilingual coverage, automatic language detection and speaker diarization. New accounts get free credits.",
+                provider: .assemblyAI,
+                recommended: true,
+                speed: 0.85,
+                accuracy: 0.98,
+                cost: 0.5,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "universal-2",
+                displayName: "AssemblyAI Universal-2",
+                description: "AssemblyAI's fast, cost-effective Universal model with strong accuracy across major languages, automatic language detection and speaker diarization.",
+                provider: .assemblyAI,
+                speed: 0.9,
+                accuracy: 0.95,
+                cost: 0.4,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
             CloudModel(
                 name: "grok-stt",
                 displayName: "xAI Speech-to-Text",
