@@ -28,6 +28,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case cartesia
     case zai
     case kimi
+    case minimax
     case vercelAIGateway
     case huggingFace
     case copilot
@@ -72,6 +73,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Z.AI"
         case .kimi:
             "Kimi (Moonshot)"
+        case .minimax:
+            "MiniMax"
         case .vercelAIGateway:
             "Vercel AI Gateway"
         case .huggingFace:
@@ -108,6 +111,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "zai"
         case .kimi:
             "moonshot"
+        case .minimax:
+            "minimax-color"
         case .openRouter:
             "openrouter"
         case .elevenLabs:
@@ -157,6 +162,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
              .mistral,
              .zai,
              .kimi,
+             .minimax,
              .vercelAIGateway,
              .huggingFace,
              .ollama,
@@ -187,6 +193,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .huggingFace: URL(string: "https://huggingface.co/settings/tokens")
         case .zai: URL(string: "https://open.z.ai/")
         case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
+        case .minimax: URL(string: "https://platform.minimax.io/user-center/basic-information/interface-key")
         case .cohere: URL(string: "https://dashboard.cohere.com/api-keys")
         case .cartesia: URL(string: "https://play.cartesia.ai/keys")
         default: nil
@@ -212,6 +219,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .grok,
         .zai,
         .kimi,
+        .minimax,
         .openRouter,
         .vercelAIGateway,
         .huggingFace,
@@ -238,6 +246,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .grok,
         .zai,
         .kimi,
+        .minimax,
         .openRouter,
         .vercelAIGateway,
         .huggingFace]
@@ -264,6 +273,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.z.ai/api/paas/v4/chat/completions"
         case .kimi:
             return "https://api.moonshot.ai/v1/chat/completions"
+        case .minimax:
+            return "https://api.minimax.io/v1/chat/completions"
         case .elevenLabs:
             return "https://api.elevenlabs.io/v1/speech-to-text"
         case .deepgram:
@@ -316,6 +327,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "glm-5"
         case .kimi:
             return "kimi-k2.5"
+        case .minimax:
+            return "MiniMax-M3"
         case .elevenLabs:
             return "scribe_v1"
         case .deepgram:
@@ -366,6 +379,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .grok: "grokAPIKey"
         case .zai: "zaiAPIKey"
         case .kimi: "kimiAPIKey"
+        case .minimax: "minimaxAPIKey"
         case .elevenLabs: "elevenLabsAPIKey"
         case .deepgram: "deepgramAPIKey"
         case .mistral: "mistralAPIKey"
@@ -456,6 +470,17 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
                 "moonshot-v1-128k",
                 "moonshot-v1-32k",
                 "moonshot-v1-8k"
+            ]
+        case .minimax:
+            return [
+                "MiniMax-M3",
+                "MiniMax-M2.7",
+                "MiniMax-M2.7-highspeed",
+                "MiniMax-M2.5",
+                "MiniMax-M2.5-highspeed",
+                "MiniMax-M2.1",
+                "MiniMax-M2.1-highspeed",
+                "MiniMax-M2"
             ]
         case .elevenLabs:
             return []
