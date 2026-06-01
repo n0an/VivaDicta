@@ -138,6 +138,8 @@ public actor DefaultTranscriptionEngine {
             return GladiaTranscriptionService(config: config)
         case .speechmatics(let config):
             return SpeechmaticsTranscriptionService(config: config)
+        case .assemblyAI(let config):
+            return AssemblyAITranscriptionService(config: config)
         case .xai(let config):
             return XaiTranscriptionService(config: config)
         case .custom(let config):

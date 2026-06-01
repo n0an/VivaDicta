@@ -1941,6 +1941,8 @@ class AIService {
             return await verifyCohereAPIKey(key)
         case .cartesia:
             return await verifyCartesiaAPIKey(key)
+        case .assemblyAI:
+            return await verifyAssemblyAIAPIKey(key)
         case .cerebras:
             return await verifyCerebrasAPIKey(key)
         case .vercelAIGateway:
@@ -2124,6 +2126,27 @@ class AIService {
             return httpResponse.statusCode == 200
         } catch {
             logger.logError("Cartesia API key verification failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Lists transcripts (capped at 1) as a cheap auth probe. AssemblyAI sends
+    /// the raw key in the `Authorization` header - no `Bearer` prefix. A valid
+    /// key returns 200; an invalid one returns 401.
+    private func verifyAssemblyAIAPIKey(_ key: String) async -> Bool {
+        guard let url = URL(string: "https://api.assemblyai.com/v2/transcript?limit=1") else {
+            return false
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue(key, forHTTPHeaderField: "Authorization")
+
+        do {
+            let (_, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+            return httpResponse.statusCode == 200
+        } catch {
+            logger.logError("AssemblyAI API key verification failed: \(error.localizedDescription)")
             return false
         }
     }

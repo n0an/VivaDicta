@@ -28,6 +28,7 @@ public enum TranscriptionProvider: Sendable {
     case soniox(SonioxTranscriptionService.Config)
     case gladia(GladiaTranscriptionService.Config)
     case speechmatics(SpeechmaticsTranscriptionService.Config)
+    case assemblyAI(AssemblyAITranscriptionService.Config)
     case xai(XaiTranscriptionService.Config)
     case custom(CustomTranscriptionService.Config)
     case whisperKit(

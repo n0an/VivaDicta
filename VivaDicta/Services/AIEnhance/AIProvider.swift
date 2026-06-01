@@ -26,6 +26,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case speechmatics
     case cohere
     case cartesia
+    case assemblyAI
     case zai
     case kimi
     case minimax
@@ -64,6 +65,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "Cohere"
         case .cartesia:
             "Cartesia"
+        case .assemblyAI:
+            "AssemblyAI"
         case .anthropic:
             "Anthropic"
         case .openRouter:
@@ -132,6 +135,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             "cohere-color"
         case .cartesia:
             "cartesia"
+        case .assemblyAI:
+            "assemblyai-color"
         case .vercelAIGateway:
             "vercel"
         case .huggingFace:
@@ -202,6 +207,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .minimax: URL(string: "https://platform.minimax.io/user-center/basic-information/interface-key")
         case .cohere: URL(string: "https://dashboard.cohere.com/api-keys")
         case .cartesia: URL(string: "https://play.cartesia.ai/keys")
+        case .assemblyAI: URL(string: "https://www.assemblyai.com/app/api-keys")
         case .ollamaCloud: URL(string: "https://ollama.com/settings/keys")
         default: nil
         }
@@ -308,6 +314,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "https://api.cohere.com/v2"
         case .cartesia:
             return "https://api.cartesia.ai"
+        case .assemblyAI:
+            return "https://api.assemblyai.com/v2"
         case .vercelAIGateway:
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
         case .huggingFace:
@@ -366,6 +374,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
             return "cohere-transcribe-03-2026"
         case .cartesia:
             return "ink-whisper"
+        case .assemblyAI:
+            return "universal-3-pro"
         case .vercelAIGateway:
             // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
             // (e.g., "claude-sonnet-4.6") unlike direct Anthropic API which uses hyphens
@@ -409,6 +419,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .speechmatics: "speechmaticsAPIKey"
         case .cohere: "cohereAPIKey"
         case .cartesia: "cartesiaAPIKey"
+        case .assemblyAI: "assemblyaiAPIKey"
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
@@ -523,6 +534,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         case .cohere:
             return [] // Transcription-only provider, no chat models
         case .cartesia:
+            return [] // Transcription-only provider, no chat models
+        case .assemblyAI:
             return [] // Transcription-only provider, no chat models
         case .openRouter:
             return []
