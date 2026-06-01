@@ -88,6 +88,11 @@ final class CloudReminderExtractionProvider {
             return false
         case .ollama:
             return true
+        case .ollamaCloud:
+            // Reminder extraction sends `response_format: json_schema`, which
+            // Ollama Cloud does not support (only local Ollama does).
+            // https://docs.ollama.com/capabilities/structured-outputs
+            return false
         case .customOpenAI:
             return !aiService.customOpenAIEndpointURL.isEmpty && !aiService.customOpenAIModelName.isEmpty
         case .copilot:
