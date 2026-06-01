@@ -108,12 +108,19 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
         request.setValue(config.apiKey, forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let models = config.modelName.isEmpty ? ["universal-3-pro"] : [config.modelName]
+        // `speech_models` is required and is a priority list: AssemblyAI routes
+        // the request to the first model that supports the audio's language.
+        // Universal-3 Pro covers only en/es/de/fr/pt/it, so we append Universal-2
+        // (99 languages) as a fallback to keep broad language coverage.
+        let models: [String]
+        if config.modelName.isEmpty || config.modelName == "universal-3-pro" {
+            models = ["universal-3-pro", "universal-2"]
+        } else {
+            models = [config.modelName]
+        }
 
         var payload: [String: Any] = [
             "audio_url": audioURL,
-            // `speech_models` is required and has no default. The list is a
-            // priority order; we send the user's selected model.
             "speech_models": models
         ]
 
@@ -128,9 +135,11 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
             payload["speaker_labels"] = true
         }
 
-        // `word_boost` is AssemblyAI's custom-vocabulary mechanism.
+        // `keyterms_prompt` is the custom-vocabulary mechanism for the Universal
+        // models (both Universal-2 and Universal-3 Pro). The legacy `word_boost`
+        // param is rejected by Universal-3.
         if !config.vocabulary.isEmpty {
-            payload["word_boost"] = config.vocabulary
+            payload["keyterms_prompt"] = config.vocabulary
             logger.logInfo("Adding \(config.vocabulary.count) custom vocabulary terms to AssemblyAI request")
         }
 
@@ -180,7 +189,10 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
                     return try extractResult(from: data)
                 case "error":
                     logger.logError("AssemblyAI transcription failed: \(status.error ?? "Unknown error")")
-                    throw CloudTranscriptionError.apiRequestFailed(statusCode: 500, message: status.error ?? "Transcription failed")
+                    // Job-level failure (e.g. unsupported language, bad audio), not a
+                    // server outage - use -1 so the user sees the actual error message
+                    // rather than a "service unavailable, try again later" notice.
+                    throw CloudTranscriptionError.apiRequestFailed(statusCode: -1, message: status.error ?? "Transcription failed")
                 default:
                     break
                 }
@@ -196,9 +208,10 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
     }
 
     private func extractResult(from data: Data) throws -> TranscriptionServiceResult {
-        guard let decoded = try? JSONDecoder().decode(TranscriptResponse.self, from: data) else {
-            throw CloudTranscriptionError.noTranscriptionReturned
-        }
+        // The job already reported `completed`, so a decode failure here means
+        // the response schema changed - let it surface rather than masking it
+        // as an empty-transcription error.
+        let decoded = try JSONDecoder().decode(TranscriptResponse.self, from: data)
 
         if config.isSpeakerDiarizationEnabled,
            let diarizedText = makeSpeakerAttributedText(from: decoded.utterances) {

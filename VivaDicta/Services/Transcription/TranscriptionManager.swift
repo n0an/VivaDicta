@@ -319,11 +319,13 @@ class TranscriptionManager {
             ))
 
         case .assemblyAI:
+            // AssemblyAI keyterms_prompt allows up to 200 terms on Universal-2
+            // (the lower of the two limits, and the language fallback model).
             return .assemblyAI(.init(
                 apiKey: try requireAPIKey(model),
                 modelName: model.name,
                 language: selectedLanguage,
-                vocabulary: CustomVocabulary.getTerms(),
+                vocabulary: CustomVocabulary.getTerms(maxTerms: 200),
                 isSpeakerDiarizationEnabled: diarizationEnabled
             ))
 
