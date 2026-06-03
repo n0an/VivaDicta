@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.5": release_3_5,
         "3.4": release_3_4,
         "3.3": release_3_3,
         "3.2": release_3_2,
@@ -40,6 +41,44 @@ enum WhatsNewCatalog {
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_5 = WhatsNewRelease(
+        id: "3.5",
+        headline: "What's New in VivaDicta 3.5.0",
+        features: [
+            WhatsNewFeature(
+                icon: "waveform.badge.plus",
+                iconColors: [.green, .mint],
+                title: "AssemblyAI Transcription",
+                description: "New cloud transcription provider with high accuracy, speaker labels, and broad language support. Add your AssemblyAI API key in Settings to try it."
+            ),
+            WhatsNewFeature(
+                icon: "cloud.fill",
+                iconColors: [.blue, .cyan],
+                title: "Ollama Cloud",
+                description: "Run Ollama's hosted AI models without your own server. Just add an API key - separate from the existing local Ollama option."
+            ),
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.purple, .indigo],
+                title: "MiniMax AI",
+                description: "New AI processing provider. Add your MiniMax API key in Settings to clean up and rewrite your text with its M-series models."
+            ),
+            WhatsNewFeature(
+                icon: "circle.hexagongrid.fill",
+                iconColors: [.pink, .orange],
+                title: "Recording Orb",
+                description: "Choose your recording visualization: Particles, ASCII, or None. Plus a lighter, smoother orb that won't bog down busy devices."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.yellow, .orange],
+                title: "Quality of Life",
+                description: "The app version now shows at the bottom of Settings, and a round of polish across the app."
+            )
+        ],
+        tagline: "More ways to transcribe, process, and personalize."
+    )
 
     private static let release_3_4 = WhatsNewRelease(
         id: "3.4",
