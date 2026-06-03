@@ -301,7 +301,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "universal-3-pro",
                 displayName: "AssemblyAI Universal-3 Pro",
-                description: "AssemblyAI's most accurate Universal model with broad multilingual coverage, automatic language detection and speaker diarization. New accounts get free credits.",
+                description: "AssemblyAI's most accurate Universal model with broad multilingual coverage, automatic language detection and speaker diarization. New accounts get $50 in free credits, no credit card required.",
                 provider: .assemblyAI,
                 recommended: true,
                 speed: 0.85,
@@ -314,7 +314,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "universal-2",
                 displayName: "AssemblyAI Universal-2",
-                description: "AssemblyAI's fast, cost-effective Universal model with strong accuracy across major languages, automatic language detection and speaker diarization.",
+                description: "AssemblyAI's fast, cost-effective Universal model with strong accuracy across major languages, automatic language detection and speaker diarization. New accounts get $50 in free credits, no credit card required.",
                 provider: .assemblyAI,
                 speed: 0.9,
                 accuracy: 0.95,
