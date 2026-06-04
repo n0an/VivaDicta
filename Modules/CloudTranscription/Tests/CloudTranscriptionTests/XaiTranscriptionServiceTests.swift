@@ -40,13 +40,15 @@ struct XaiTranscriptionServiceTests {
         networkService: MockNetworkService,
         apiKey: String = "xai-test-key",
         language: String = "en",
-        formatted: Bool = true
+        formatted: Bool = true,
+        isSpeakerDiarizationEnabled: Bool = false
     ) -> XaiTranscriptionService {
         XaiTranscriptionService(
             config: .init(
                 apiKey: apiKey,
                 language: language,
-                formatted: formatted
+                formatted: formatted,
+                isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled
             ),
             networkService: networkService
         )
@@ -179,6 +181,66 @@ struct XaiTranscriptionServiceTests {
         // reshuffle that happens to keep file last but breaks the rest.
         #expect(formatRange.lowerBound < languageRange.lowerBound)
         #expect(languageRange.lowerBound < fileRange.lowerBound)
+    }
+
+    // MARK: - Diarization
+
+    @Test func bodyOmitsDiarizeFieldByDefault() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
+        #expect(bodyString.contains("name=\"diarize\"") == false)
+    }
+
+    @Test func bodyIncludesDiarizeTrueWhenEnabled() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, isSpeakerDiarizationEnabled: true)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
+        #expect(bodyString.range(of: "name=\"diarize\"\\s*\\r\\n\\r\\ntrue", options: .regularExpression) != nil)
+    }
+
+    @Test func diarizationGroupsConsecutiveWordsBySpeaker() async throws {
+        let networkService = MockNetworkService()
+        let json = #"""
+        {"text":"Hello there Hi","words":[
+        {"text":"Hello","speaker":0},
+        {"text":"there","speaker":0},
+        {"text":"Hi","speaker":1}
+        ]}
+        """#
+        networkService.stubUploadResponse = .success((Data(json.utf8), makeHTTPResponse(200)))
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, isSpeakerDiarizationEnabled: true)
+
+        let result = try await sut.transcribe(audioURL: audio)
+
+        #expect(result.isSpeakerAttributed)
+        #expect(result.text == "Speaker A: Hello there\n\nSpeaker B: Hi")
+    }
+
+    @Test func diarizationDisabledReturnsPlainTextEvenWithSpeakerWords() async throws {
+        let networkService = MockNetworkService()
+        let json = #"{"text":"Hello there","words":[{"text":"Hello","speaker":0},{"text":"there","speaker":1}]}"#
+        networkService.stubUploadResponse = .success((Data(json.utf8), makeHTTPResponse(200)))
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, isSpeakerDiarizationEnabled: false)
+
+        let result = try await sut.transcribe(audioURL: audio)
+
+        #expect(result.isSpeakerAttributed == false)
+        #expect(result.text == "Hello there")
     }
 
     // MARK: - Validation / short-circuit

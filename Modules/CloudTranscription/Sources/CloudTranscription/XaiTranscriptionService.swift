@@ -22,11 +22,18 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
         /// When true the API returns naturally formatted text with Inverse
         /// Text Normalization (e.g. "$100" instead of "one hundred dollars").
         public let formatted: Bool
+        public let isSpeakerDiarizationEnabled: Bool
 
-        public init(apiKey: String, language: String, formatted: Bool = true) {
+        public init(
+            apiKey: String,
+            language: String,
+            formatted: Bool = true,
+            isSpeakerDiarizationEnabled: Bool = false
+        ) {
             self.apiKey = apiKey
             self.language = language
             self.formatted = formatted
+            self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
         }
     }
 
@@ -42,13 +49,12 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
-        let text = try await NetworkRetry.withRetry(logger: logger) {
+        try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL)
         }
-        return .plain(text)
     }
 
-    private func makeTranscriptionRequest(audioURL: URL) async throws -> String {
+    private func makeTranscriptionRequest(audioURL: URL) async throws -> TranscriptionServiceResult {
         guard !config.apiKey.isEmpty else {
             throw CloudTranscriptionError.missingAPIKey
         }
@@ -72,7 +78,13 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
 
         do {
             let transcriptionResponse = try JSONDecoder().decode(TranscriptionResponse.self, from: data)
-            return transcriptionResponse.text
+
+            if config.isSpeakerDiarizationEnabled,
+               let diarizedText = makeSpeakerAttributedText(from: transcriptionResponse.words) {
+                return .speakerAttributed(diarizedText)
+            }
+
+            return .plain(transcriptionResponse.text)
         } catch {
             logger.logError("Failed to decode xAI STT response: \(error.localizedDescription)")
             throw CloudTranscriptionError.noTranscriptionReturned
@@ -97,6 +109,13 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
         body.append(config.language.data(using: .utf8)!)
         body.append(crlf.data(using: .utf8)!)
 
+        if config.isSpeakerDiarizationEnabled {
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"diarize\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append("true".data(using: .utf8)!)
+            body.append(crlf.data(using: .utf8)!)
+        }
+
         // `file` must be the last field per xAI docs.
         body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(audioURL.lastPathComponent)\"\(crlf)".data(using: .utf8)!)
@@ -108,7 +127,50 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
         return body
     }
 
+    /// xAI reports a 0-based integer `speaker` per word (only when `diarize=true`)
+    /// and, unlike ElevenLabs, emits no spacing tokens - so words in a turn are
+    /// re-joined with single spaces and `SpeakerDiarizationFormatter` normalizes
+    /// the result.
+    private func makeSpeakerAttributedText(from words: [TranscriptionResponse.Word]?) -> String? {
+        guard let words, !words.isEmpty else {
+            return nil
+        }
+
+        var turns: [SpeakerTurn] = []
+        var currentSpeaker: Int?
+        var currentWords: [String] = []
+
+        for word in words {
+            let wordSpeaker = word.speaker
+            if turns.isEmpty && currentWords.isEmpty {
+                currentSpeaker = wordSpeaker
+                currentWords = [word.text]
+                continue
+            }
+
+            if wordSpeaker == currentSpeaker || wordSpeaker == nil {
+                currentWords.append(word.text)
+            } else {
+                turns.append(SpeakerTurn(speakerID: currentSpeaker.map(String.init), text: currentWords.joined(separator: " ")))
+                currentSpeaker = wordSpeaker
+                currentWords = [word.text]
+            }
+        }
+
+        if !currentWords.isEmpty {
+            turns.append(SpeakerTurn(speakerID: currentSpeaker.map(String.init), text: currentWords.joined(separator: " ")))
+        }
+
+        return SpeakerDiarizationFormatter.format(turns)
+    }
+
     private struct TranscriptionResponse: Decodable {
         let text: String
+        let words: [Word]?
+
+        struct Word: Decodable {
+            let text: String
+            let speaker: Int?
+        }
     }
 }
