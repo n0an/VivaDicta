@@ -16,11 +16,18 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
         public let modelName: String
         /// BCP-47 code, or `"auto"` to let ElevenLabs detect.
         public let language: String
+        public let isSpeakerDiarizationEnabled: Bool
 
-        public init(apiKey: String, modelName: String, language: String = "auto") {
+        public init(
+            apiKey: String,
+            modelName: String,
+            language: String = "auto",
+            isSpeakerDiarizationEnabled: Bool = false
+        ) {
             self.apiKey = apiKey
             self.modelName = modelName
             self.language = language
+            self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
         }
     }
 
@@ -36,13 +43,12 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
-        let text = try await NetworkRetry.withRetry(logger: logger) {
+        try await NetworkRetry.withRetry(logger: logger) {
             try await makeTranscriptionRequest(audioURL: audioURL)
         }
-        return .plain(text)
     }
 
-    private func makeTranscriptionRequest(audioURL: URL) async throws -> String {
+    private func makeTranscriptionRequest(audioURL: URL) async throws -> TranscriptionServiceResult {
         guard !config.apiKey.isEmpty else {
             throw CloudTranscriptionError.missingAPIKey
         }
@@ -65,7 +71,13 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
 
         do {
             let transcriptionResponse = try JSONDecoder().decode(ElevenLabsTranscriptionResponse.self, from: data)
-            return transcriptionResponse.text
+
+            if config.isSpeakerDiarizationEnabled,
+               let diarizedText = makeSpeakerAttributedText(from: transcriptionResponse.words) {
+                return .speakerAttributed(diarizedText)
+            }
+
+            return .plain(transcriptionResponse.text)
         } catch {
             throw CloudTranscriptionError.noTranscriptionReturned
         }
@@ -79,6 +91,10 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
         body.append(formField: "temperature", value: "0.0", boundary: boundary)
         body.append(formField: "tag_audio_events", value: "false", boundary: boundary)
 
+        if config.isSpeakerDiarizationEnabled {
+            body.append(formField: "diarize", value: "true", boundary: boundary)
+        }
+
         if config.language != "auto", !config.language.isEmpty {
             body.append(formField: "language_code", value: config.language, boundary: boundary)
         }
@@ -88,8 +104,56 @@ public struct ElevenLabsTranscriptionService: TranscriptionService, Sendable {
         return body
     }
 
+    /// ElevenLabs reports speakers only at the word level (no segment grouping),
+    /// so consecutive words sharing a `speaker_id` are merged into turns. The
+    /// `words` array interleaves `spacing` entries whose `text` is a literal
+    /// space, so concatenating `text` directly preserves word boundaries.
+    private func makeSpeakerAttributedText(from words: [ElevenLabsTranscriptionResponse.Word]?) -> String? {
+        guard let words, !words.isEmpty else {
+            return nil
+        }
+
+        var turns: [SpeakerTurn] = []
+        var currentSpeaker: String?
+        var currentText = ""
+
+        for word in words {
+            let wordSpeaker = word.speakerID
+            if turns.isEmpty && currentText.isEmpty {
+                currentSpeaker = wordSpeaker
+                currentText = word.text
+                continue
+            }
+
+            if wordSpeaker == currentSpeaker || wordSpeaker == nil {
+                currentText += word.text
+            } else {
+                turns.append(SpeakerTurn(speakerID: currentSpeaker, text: currentText))
+                currentSpeaker = wordSpeaker
+                currentText = word.text
+            }
+        }
+
+        if !currentText.isEmpty {
+            turns.append(SpeakerTurn(speakerID: currentSpeaker, text: currentText))
+        }
+
+        return SpeakerDiarizationFormatter.format(turns)
+    }
+
     private struct ElevenLabsTranscriptionResponse: Decodable {
         let text: String
+        let words: [Word]?
+
+        struct Word: Decodable {
+            let text: String
+            let speakerID: String?
+
+            enum CodingKeys: String, CodingKey {
+                case text
+                case speakerID = "speaker_id"
+            }
+        }
     }
 }
 

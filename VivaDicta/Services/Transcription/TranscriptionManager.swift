@@ -257,7 +257,12 @@ class TranscriptionManager {
             ))
 
         case .elevenLabs:
-            return .elevenLabs(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: selectedLanguage))
+            return .elevenLabs(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: model.name,
+                language: selectedLanguage,
+                isSpeakerDiarizationEnabled: diarizationEnabled
+            ))
 
         case .deepgram:
             // The app exposes `nova-3-multilingual` as a friendly alias; Deepgram
@@ -355,7 +360,8 @@ class TranscriptionManager {
             )
             return .xai(.init(
                 apiKey: try requireAPIKey(model),
-                language: language
+                language: language,
+                isSpeakerDiarizationEnabled: diarizationEnabled
             ))
 
         case .customTranscription:
