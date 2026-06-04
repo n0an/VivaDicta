@@ -110,9 +110,17 @@ final class BackgroundTaskManager {
     /// a BGProcessingTask, AppState (and thus BackgroundTaskManager) is always initialized
     /// because the task is scheduled from within the running app.
     static func registerBGTaskHandler() {
+        // `registerBGTaskHandler` is a static member of this @MainActor type, so the
+        // launch-handler closure below inherits @MainActor isolation. `BGTaskScheduler`'s
+        // launchHandler parameter is a non-isolated @Sendable closure, so the compiler
+        // inserts a *dynamic* main-executor assertion at the closure's entry. If iOS runs
+        // the handler off the main queue (which it does when `using:` is nil), that
+        // assertion fails and the runtime hard-crashes (dispatch_assert_queue_fail).
+        // Registering with `.main` guarantees the handler runs on the main queue so the
+        // inherited isolation actually holds.
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: bgTaskIdentifier,
-            using: nil
+            using: .main
         ) { task in
             guard let bgTask = task as? BGProcessingTask else { return }
             Task { @MainActor in
