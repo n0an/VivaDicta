@@ -193,13 +193,15 @@ struct LiveTranslationView: View {
             TranscriptColumn(
                 title: service.config.sourceLanguage.displayName,
                 tokens: service.originalTokens,
-                accent: .secondary
+                accent: .secondary,
+                copyButtonAlignment: .leading
             )
             Divider()
             TranscriptColumn(
                 title: service.config.targetLanguage.displayName,
                 tokens: service.translatedTokens,
-                accent: .indigo
+                accent: .indigo,
+                copyButtonAlignment: .trailing
             )
         }
     }
@@ -559,6 +561,9 @@ private struct TranscriptColumn: View {
     let title: String
     let tokens: [LiveTranslationToken]
     let accent: Color
+    var copyButtonAlignment: Alignment = .leading
+
+    @State private var showCopied = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -581,8 +586,32 @@ private struct TranscriptColumn: View {
                     withAnimation { proxy.scrollTo(scrollAnchor, anchor: .bottom) }
                 }
             }
+
+            if !plainText.isEmpty {
+                copyButton
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var copyButton: some View {
+        Button(showCopied ? "Copied" : "Copy", systemImage: showCopied ? "checkmark" : "doc.on.doc") {
+            ClipboardManager.copyToClipboard(plainText)
+            HapticManager.success()
+            showCopied = true
+            Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                showCopied = false
+            }
+        }
+        .font(.caption.weight(.medium))
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .tint(showCopied ? .green : accent)
+        .contentTransition(.symbolEffect(.replace))
+        .frame(maxWidth: .infinity, alignment: copyButtonAlignment)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 12)
     }
 
     private var renderedText: AttributedString {
@@ -595,6 +624,10 @@ private struct TranscriptColumn: View {
             attributed.append(part)
         }
         return attributed
+    }
+
+    private var plainText: String {
+        tokens.map(\.text).joined().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private let scrollAnchor = "transcriptBottom"
