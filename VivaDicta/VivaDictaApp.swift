@@ -260,7 +260,7 @@ struct VivaDictaApp: App {
                     }
                     .onChange(of: scenePhase) { oldPhase, newPhase in
                         if oldPhase == .active && newPhase == .inactive {
-                            appState.showKeyboardFlowToast = false
+                            appState.showKeyboardReturnPrompt = false
                         }
                         
                         switch newPhase {
@@ -324,13 +324,13 @@ struct VivaDictaApp: App {
                     // Check if we have a transcription model selected
                     guard let vm = appState.recordViewModel else {
                         logger.logError("❌ RecordViewModel not available")
-                        appState.showKeyboardFlowToast = true
+                        appState.showKeyboardReturnPrompt = true
                         return
                     }
                     
                     if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
                         logger.logWarning("⚠️ No transcription model selected - showing keyboard flow toast")
-                        appState.showKeyboardFlowToast = true
+                        appState.showKeyboardReturnPrompt = true
                         return
                     }
                     
@@ -352,7 +352,7 @@ struct VivaDictaApp: App {
                 } else {
                     logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
                     // Can't open URL - don't start recording, show keyboard flow toast
-                    appState.showKeyboardFlowToast = true
+                    appState.showKeyboardReturnPrompt = true
                 }
             }
         } else {
@@ -365,7 +365,7 @@ struct VivaDictaApp: App {
                     logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
                     vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                 }
-                appState.showKeyboardFlowToast = true
+                appState.showKeyboardReturnPrompt = true
             }
 
             // Known system services that have no URL scheme - don't log as unrecognized
@@ -455,7 +455,7 @@ struct VivaDictaApp: App {
                             logger.logInfo("🎙️ Starting recording before showing manual switch toast (no hostId)")
                             vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                         }
-                        appState.showKeyboardFlowToast = true
+                        appState.showKeyboardReturnPrompt = true
                     }
                     
                     
@@ -464,7 +464,7 @@ struct VivaDictaApp: App {
                 } catch {
                     logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
                     // If prewarm fails, still try to show keyboard flow toast as fallback
-                    appState.showKeyboardFlowToast = true
+                    appState.showKeyboardReturnPrompt = true
                 }
             }
         } else if url.absoluteString.starts(with: "vivadicta://activate-for-keyboard") {
@@ -489,11 +489,11 @@ struct VivaDictaApp: App {
                     if let hostId = hostId {
                         returnToHost(hostId: hostId)
                     } else {
-                        appState.showKeyboardFlowToast = true
+                        appState.showKeyboardReturnPrompt = true
                     }
                 } catch {
                     logger.logError("⚠️ Failed to start prewarm session for text processing: \(error.localizedDescription)")
-                    appState.showKeyboardFlowToast = true
+                    appState.showKeyboardReturnPrompt = true
                 }
             }
         } else if url.absoluteString == "startRecordFromWidget" {
@@ -563,12 +563,12 @@ struct VivaDictaApp: App {
                     }
                 } else {
                     logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                    appState.showKeyboardFlowToast = true
+                    appState.showKeyboardReturnPrompt = true
                 }
             }
         } else {
             logger.logInfo("❌ No URL scheme for host: \(hostId)")
-            appState.showKeyboardFlowToast = true
+            appState.showKeyboardReturnPrompt = true
         }
     }
 
