@@ -172,13 +172,6 @@ struct VivaDictaApp: App {
                         PendingAppIntentAction.shared.drain()
 #endif
 
-                        // Migrate dictionary data from UserDefaults to SwiftData (one-time)
-                        DictionaryMigrationService.shared.migrateIfNeeded(context: modelContainer.mainContext)
-
-                        // Migrate API keys from UserDefaults to Keychain for iCloud sync (one-time)
-                        APIKeyMigrationService.shared.migrateIfNeeded()
-
-
                         if SmartSearchFeature.isEnabled {
                             // Index all transcriptions for RAG Smart Search
                             Task {
