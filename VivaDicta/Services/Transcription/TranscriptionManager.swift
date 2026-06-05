@@ -160,9 +160,16 @@ class TranscriptionManager {
             progress: progressHandler
         )
 
+        // When inline translation is active (e.g. Soniox Spanish → Russian) the
+        // output text is in the TARGET language, so the filler set must match the
+        // target, not the source transcription language - otherwise target-language
+        // fillers (e.g. Russian "э-э") survive.
         var result = TranscriptionOutputFilter.filter(
             transcriptionResult.text,
-            language: currentMode.transcriptionLanguage
+            language: Self.outputLanguage(
+                transcriptionLanguage: currentMode.transcriptionLanguage,
+                translationTargetLanguage: currentMode.translationTargetLanguage
+            )
         )
 
         if currentMode.isAutoTextFormattingEnabled && transcriptionResult.isSpeakerAttributed == false {
@@ -185,6 +192,22 @@ class TranscriptionManager {
         ))
 
         return result
+    }
+
+    /// Resolves the language of the transcription *output* for post-processing.
+    ///
+    /// When inline translation is active the output is in the translation target
+    /// language; otherwise it's the source transcription language. Returns the
+    /// target language whenever it's set (non-nil and non-empty), falling back to
+    /// the source language.
+    static func outputLanguage(
+        transcriptionLanguage: String?,
+        translationTargetLanguage: String?
+    ) -> String? {
+        if let target = translationTargetLanguage, !target.isEmpty {
+            return target
+        }
+        return transcriptionLanguage
     }
 
     /// Preloads the WhisperKit model if the current mode uses it. Best-effort

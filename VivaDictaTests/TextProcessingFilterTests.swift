@@ -344,3 +344,58 @@ struct AIProcessingOutputFilterTests {
         #expect(result == "The final result.")
     }
 }
+
+// MARK: - Output Language Resolution (inline translation)
+
+// `TranscriptionManager.outputLanguage` inherits MainActor isolation from its
+// enclosing `@MainActor` type, so these tests run on the main actor to call it
+// synchronously.
+@MainActor
+struct TranscriptionOutputLanguageTests {
+
+    @Test func outputLanguage_noTranslation_usesTranscriptionLanguage() {
+        let result = TranscriptionManager.outputLanguage(
+            transcriptionLanguage: "es",
+            translationTargetLanguage: nil
+        )
+
+        #expect(result == "es")
+    }
+
+    @Test func outputLanguage_emptyTranslationTarget_usesTranscriptionLanguage() {
+        let result = TranscriptionManager.outputLanguage(
+            transcriptionLanguage: "es",
+            translationTargetLanguage: ""
+        )
+
+        #expect(result == "es")
+    }
+
+    @Test func outputLanguage_translationActive_usesTargetLanguage() {
+        // Spanish audio translated to Russian → output is Russian, so the
+        // filler set must be chosen from the target language.
+        let result = TranscriptionManager.outputLanguage(
+            transcriptionLanguage: "es",
+            translationTargetLanguage: "ru"
+        )
+
+        #expect(result == "ru")
+    }
+
+    @Test func filter_spanishToRussian_stripsRussianFillers() {
+        // Regression: Soniox Spanish → Russian produced Russian text full of
+        // "э-э" fillers because the filter was given the source language ("es").
+        // Resolving the output language to the translation target fixes it.
+        let translatedOutput = "Э-э, привет, э-э, сейчас я говорю по-испански."
+        let language = TranscriptionManager.outputLanguage(
+            transcriptionLanguage: "es",
+            translationTargetLanguage: "ru"
+        )
+
+        let result = TranscriptionOutputFilter.filter(translatedOutput, language: language)
+
+        #expect(result.contains("э-э") == false, "expected Russian fillers stripped; got: \(result)")
+        #expect(result.contains("привет"))
+        #expect(result.contains("по-испански"))
+    }
+}
