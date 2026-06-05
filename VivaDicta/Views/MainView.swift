@@ -138,14 +138,16 @@ struct MainView: View {
             .onChange(of: appState.pendingCloudTranscriptionProvider) { _, newValue in
                 if newValue != nil { showingSettings = true }
             }
-            .overlay(alignment: .top) {
-                if appState.showKeyboardFlowToast {
-                    KeyboardFlowToast()
-                        .padding(.top, 60)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+            .onChange(of: appState.showKeyboardReturnPrompt) { _, isShowing in
+                // The keyboard return prompt is a full-screen cover; SwiftUI can't
+                // present it alongside the recording sheet, so hide the sheet while
+                // the prompt is up and restore it if recording is still running.
+                if isShowing {
+                    showingRecordingSheet = false
+                } else if appState.recordViewModel?.recordingState == .recording {
+                    showingRecordingSheet = true
                 }
             }
-            .animation(.spring(duration: 0.4, bounce: 0.2), value: appState.showKeyboardFlowToast)
     }
 
     @ViewBuilder
@@ -155,7 +157,10 @@ struct MainView: View {
             .overlay { hudOverlay }
             .animation(.default, value: appState.recordViewModel?.recordingState)
             .onChange(of: appState.recordViewModel?.recordingState) { _, newState in
-                showingRecordingSheet = (newState == .recording)
+                // Suppress the recording sheet while the full-screen keyboard
+                // return prompt is up; recording still runs in the background.
+                let isRecording = newState == .recording
+                showingRecordingSheet = isRecording && !appState.showKeyboardReturnPrompt
             }
             .onChange(of: appState.shouldStartRecording) { _, newValue in
                 if newValue {
@@ -220,6 +225,7 @@ struct MainView: View {
 
     @ViewBuilder
     private var mainContentView: some View {
+        @Bindable var appState = appState
         TranscriptionsContentView(
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
@@ -244,6 +250,9 @@ struct MainView: View {
         .toolbar { leadingToolbarContent }
         .toolbar { bottomToolbarContent }
         .sheet(isPresented: $showingRecordingSheet) { recordingSheetContent }
+        .fullScreenCover(isPresented: $appState.showKeyboardReturnPrompt) {
+            KeyboardReturnPromptView()
+        }
         .fullScreenCover(isPresented: $showingSettings) {
             SettingsView()
                 .interactiveDismissDisabled(true)
@@ -346,6 +355,7 @@ struct MainView: View {
             set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
         )
     }
+
 
     @ViewBuilder
     private var recordingSheetContent: some View {

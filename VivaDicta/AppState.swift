@@ -114,8 +114,9 @@ class AppState {
     /// Describes what the next recording should do after transcription finishes.
     var pendingRecordingDestination: RecordingDestination = .newNote
 
-    /// Controls display of the keyboard flow toast.
-    var showKeyboardFlowToast: Bool = false
+    /// Controls display of the full-screen "swipe back to continue" prompt
+    /// shown when the keyboard dictation flow can't auto-return to the host app.
+    var showKeyboardReturnPrompt: Bool = false
 
     /// Indicates pending shared audio from the Share Extension.
     var shouldTranscribeSharedAudio: Bool = false
