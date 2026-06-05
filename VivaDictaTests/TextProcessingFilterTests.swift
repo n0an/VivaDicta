@@ -382,6 +382,17 @@ struct TranscriptionOutputLanguageTests {
         #expect(result == "ru")
     }
 
+    @Test func outputLanguage_translationTargetWithoutSource_usesTargetLanguage() {
+        // Target set with no explicit source ("auto" source) → still resolves
+        // to the target, since that's the language of the output text.
+        let result = TranscriptionManager.outputLanguage(
+            transcriptionLanguage: nil,
+            translationTargetLanguage: "ru"
+        )
+
+        #expect(result == "ru")
+    }
+
     @Test func filter_spanishToRussian_stripsRussianFillers() {
         // Regression: Soniox Spanish → Russian produced Russian text full of
         // "э-э" fillers because the filter was given the source language ("es").

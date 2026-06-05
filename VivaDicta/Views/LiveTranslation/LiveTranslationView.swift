@@ -561,7 +561,7 @@ private struct TranscriptColumn: View {
     let title: String
     let tokens: [LiveTranslationToken]
     let accent: Color
-    var copyButtonAlignment: HorizontalAlignment = .leading
+    var copyButtonAlignment: Alignment = .leading
 
     @State private var showCopied = false
 
@@ -609,7 +609,7 @@ private struct TranscriptColumn: View {
         .controlSize(.small)
         .tint(showCopied ? .green : accent)
         .contentTransition(.symbolEffect(.replace))
-        .frame(maxWidth: .infinity, alignment: copyButtonAlignment == .trailing ? .trailing : .leading)
+        .frame(maxWidth: .infinity, alignment: copyButtonAlignment)
         .padding(.horizontal, 12)
         .padding(.bottom, 12)
     }
