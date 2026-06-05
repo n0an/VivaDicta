@@ -57,8 +57,13 @@ struct KeyboardReturnPromptView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task {
             HapticManager.mediumImpact()
-            try? await Task.sleep(for: .seconds(Self.autoDismissSeconds))
-            dismiss()
+            do {
+                try await Task.sleep(for: .seconds(Self.autoDismissSeconds))
+                dismiss()
+            } catch {
+                // Cancelled because the view is going away (swipe-back, Dismiss,
+                // or scene-phase reset) - nothing to do.
+            }
         }
     }
 
@@ -78,8 +83,8 @@ struct KeyboardReturnPromptView: View {
     }
 
     private func dismiss() {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            appState.showKeyboardReturnPrompt = false
-        }
+        // fullScreenCover uses the system modal-dismissal transition, so an
+        // explicit withAnimation here would have no effect.
+        appState.showKeyboardReturnPrompt = false
     }
 }

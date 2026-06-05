@@ -305,7 +305,7 @@ struct VivaDictaApp: App {
         // Keyboard session flow:
         // 1. If we CAN return to host app: Start recording → Return to host
         //    User sees recording already happening when they arrive
-        // 2. If we CANNOT return: Start recording → Show toast → User manually switches
+        // 2. If we CANNOT return: Start recording → Show return prompt → User manually switches
         //    User sees recording already happening when they arrive
         
         logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
@@ -329,7 +329,7 @@ struct VivaDictaApp: App {
                     }
                     
                     if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
-                        logger.logWarning("⚠️ No transcription model selected - showing keyboard flow toast")
+                        logger.logWarning("⚠️ No transcription model selected - showing keyboard return prompt")
                         appState.showKeyboardReturnPrompt = true
                         return
                     }
@@ -351,13 +351,13 @@ struct VivaDictaApp: App {
                     }
                 } else {
                     logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                    // Can't open URL - don't start recording, show keyboard flow toast
+                    // Can't open URL - don't start recording, show keyboard return prompt
                     appState.showKeyboardReturnPrompt = true
                 }
             }
         } else {
             logger.logInfo("❌ No URL scheme available for host: \(hostId)")
-            // No URL scheme found - start recording and show keyboard flow toast
+            // No URL scheme found - start recording and show keyboard return prompt
             // so user can switch back manually and find recording already in progress
             Task {
                 if let vm = appState.recordViewModel,
@@ -449,10 +449,10 @@ struct VivaDictaApp: App {
                         attemptReturnToHost(hostId: hostId)
                     } else {
                         // No host ID available (e.g. iOS 26.4 broke hostApplicationBundleId)
-                        // Start recording and show toast so user can manually switch back
+                        // Start recording and show return prompt so user can manually switch back
                         if let vm = appState.recordViewModel,
                            vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
-                            logger.logInfo("🎙️ Starting recording before showing manual switch toast (no hostId)")
+                            logger.logInfo("🎙️ Starting recording before showing manual switch prompt (no hostId)")
                             vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                         }
                         appState.showKeyboardReturnPrompt = true
@@ -463,7 +463,7 @@ struct VivaDictaApp: App {
                     
                 } catch {
                     logger.logError("⚠️ Failed to start prewarm session: \(error.localizedDescription)")
-                    // If prewarm fails, still try to show keyboard flow toast as fallback
+                    // If prewarm fails, still try to show keyboard return prompt as fallback
                     appState.showKeyboardReturnPrompt = true
                 }
             }

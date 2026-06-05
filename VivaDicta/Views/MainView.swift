@@ -225,6 +225,7 @@ struct MainView: View {
 
     @ViewBuilder
     private var mainContentView: some View {
+        @Bindable var appState = appState
         TranscriptionsContentView(
             searchText: $searchText,
             isSelectionMode: $isSelectionMode,
@@ -249,7 +250,7 @@ struct MainView: View {
         .toolbar { leadingToolbarContent }
         .toolbar { bottomToolbarContent }
         .sheet(isPresented: $showingRecordingSheet) { recordingSheetContent }
-        .fullScreenCover(isPresented: keyboardReturnPromptBinding) {
+        .fullScreenCover(isPresented: $appState.showKeyboardReturnPrompt) {
             KeyboardReturnPromptView()
         }
         .fullScreenCover(isPresented: $showingSettings) {
@@ -355,12 +356,6 @@ struct MainView: View {
         )
     }
 
-    private var keyboardReturnPromptBinding: Binding<Bool> {
-        Binding(
-            get: { appState.showKeyboardReturnPrompt },
-            set: { appState.showKeyboardReturnPrompt = $0 }
-        )
-    }
 
     @ViewBuilder
     private var recordingSheetContent: some View {
