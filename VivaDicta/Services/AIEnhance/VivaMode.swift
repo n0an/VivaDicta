@@ -166,7 +166,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
         } else if container.contains(.userPrompt) {
             // Fall back to old format: decode embedded UserPrompt and preserve its title as the preset ID
             let legacyPrompt = try container.decodeIfPresent(LegacyUserPrompt.self, forKey: .userPrompt)
-            presetId = legacyPrompt?.title
+            // Lowercase so legacy display titles ("Regular") map to built-in preset IDs ("regular")
+            presetId = legacyPrompt?.title.lowercased()
         } else {
             presetId = nil
         }

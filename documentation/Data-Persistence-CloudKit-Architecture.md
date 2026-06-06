@@ -280,7 +280,7 @@ All API keys are stored with `kSecAttrSynchronizable = true`. The iOS app and ma
 
 ### API Key Migration
 
-`APIKeyMigrationService` is a one-time migration that runs on first launch after the Keychain storage change was introduced. It reads each provider's key from the old App Group UserDefaults location and writes it to Keychain, then sets a `HasMigratedAPIKeysToKeychain` flag in `UserDefaults.standard` to prevent re-running.
+A one-time `APIKeyMigrationService` previously moved each provider's key from the old App Group UserDefaults location into Keychain on first launch (gated by a `HasMigratedAPIKeysToKeychain` flag). It completed across the active install base and has since been removed; new keys are written straight to Keychain.
 
 ## PresetSyncService
 
@@ -327,27 +327,17 @@ Each method inserts, updates, or deletes a `RewritePreset` record in `ModelConte
 
 ### Preset Migration Chain
 
-On first launch after schema introduction, three one-time migrations run in order:
+The standalone one-time migrators that drained data out of UserDefaults on first launch (vocabulary/replacements → SwiftData, API keys → Keychain, legacy `UserPrompt`s → presets) have completed across the active install base and been removed. The CloudKit-bridging steps that still run on launch live in `PresetSyncService`:
 
 ```
-1. DictionaryMigrationService.migrateIfNeeded(context:)
-   └── Moves VocabularyWord / WordReplacement from UserDefaults to SwiftData
-
-2. APIKeyMigrationService.migrateIfNeeded()
-   └── Moves API keys from App Group UserDefaults to iCloud Keychain
-
-3. VariationMigrationService.migrateIfNeeded(context:)
-   └── Creates TranscriptionVariation(presetId: "regular") for each
-       Transcription.enhancedText, preserving model/provider/duration
-
-4. PresetSyncService.migrateExistingCustomPresets(presetManager:)
+1. PresetSyncService.migrateExistingCustomPresets(presetManager:)
    └── Writes existing UserDefaults custom presets to RewritePreset
 
-5. PresetSyncService.migrateOldCustomRewritePresets()
+2. PresetSyncService.migrateOldCustomRewritePresets()
    └── Copies CustomRewritePreset records → RewritePreset, deletes originals
 ```
 
-Each migration is gated by a `UserDefaults.standard.bool(forKey: migrationKey)` flag so it runs exactly once regardless of how many times the app is launched.
+Each step is gated by a `UserDefaults.standard.bool(forKey: migrationKey)` flag so it runs exactly once regardless of how many times the app is launched.
 
 ## In-Memory Fallback
 
@@ -393,7 +383,3 @@ These rules apply to every model in the container and must not be violated when 
 | `VivaDicta/Models/WordReplacement.swift` | Text substitution rules synced via CloudKit |
 | `VivaDicta/Services/KeychainService.swift` | iCloud Keychain storage for API keys |
 | `VivaDicta/Services/PresetSyncService.swift` | Bridge between `RewritePreset` (CloudKit) and `PresetManager` (in-memory) |
-| `VivaDicta/Services/APIKeyMigrationService.swift` | One-time UserDefaults → Keychain migration |
-| `VivaDicta/Services/VariationMigrationService.swift` | One-time `enhancedText` → `TranscriptionVariation` migration |
-| `VivaDicta/Services/DictionaryMigrationService.swift` | One-time UserDefaults → SwiftData migration for vocabulary and replacements |
-| `VivaDicta/Services/PresetMigrationService.swift` | Additional preset migration utilities |

@@ -209,5 +209,5 @@ This prevents "My Preset" and "my preset" or "My  Preset" from coexisting.
 ### From UserPrompt to Preset
 - Old `VivaMode` format embedded a `UserPrompt` struct directly
 - New format uses `presetId` string reference
-- Backward-compatible decoding: if `presetId` missing, decode `userPrompt.title` as fallback
-- `PresetMigrationService` handles one-time conversion on app update
+- Backward-compatible decoding: if `presetId` missing, decode `userPrompt.title` (lowercased) as the preset ID
+- The standalone one-time `PresetMigrationService` completed across the install base and has been removed; the decode fallback above keeps legacy modes loading
