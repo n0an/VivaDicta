@@ -140,7 +140,6 @@ class AppState {
             ChatCleanupService.shared
         ])
         aiService.presetManager = self.presetManager
-        PresetMigrationService.migrateIfNeeded(presetManager: self.presetManager, aiService: aiService)
 
         // Set up preset sync service for CloudKit sync
         presetSyncService = PresetSyncService()

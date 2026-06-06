@@ -35,20 +35,6 @@
                ReferencedContainer = "container:VivaDicta.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "NO"
-            buildForRunning = "NO"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "18BA24082F7ED0D700C4F68B"
-               BuildableName = "VivaDictaWatch Watch AppUITests.xctest"
-               BlueprintName = "VivaDictaWatch Watch AppUITests"
-               ReferencedContainer = "container:VivaDicta.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

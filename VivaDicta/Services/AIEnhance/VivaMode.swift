@@ -164,11 +164,10 @@ struct VivaMode: Identifiable, Hashable, Codable {
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
             presetId = preset
         } else if container.contains(.userPrompt) {
-            // Fall back to old format: decode embedded UserPrompt and extract a preset ID
-            // The actual mapping happens in PresetMigrationService; here we just preserve the title
-            // so the mode remains functional until migration runs
+            // Fall back to old format: decode embedded UserPrompt and preserve its title as the preset ID
             let legacyPrompt = try container.decodeIfPresent(LegacyUserPrompt.self, forKey: .userPrompt)
-            presetId = legacyPrompt?.title
+            // Lowercase so legacy display titles ("Regular") map to built-in preset IDs ("regular")
+            presetId = legacyPrompt?.title.lowercased()
         } else {
             presetId = nil
         }
