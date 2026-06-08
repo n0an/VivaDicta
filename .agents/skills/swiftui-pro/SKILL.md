@@ -4,7 +4,7 @@ description: Comprehensively reviews SwiftUI code for best practices on modern A
 license: MIT
 metadata:
   author: Paul Hudson
-  version: "1.0"
+  version: "1.1"
 ---
 
 Review Swift and SwiftUI code for correctness, modern API usage, and adherence to project conventions. Report only genuine problems - do not nitpick or invent issues.

@@ -7,7 +7,7 @@ Swift Testing is built to be async and run tests in parallel; special care must 
 
 The `serialized` trait allows tests to be run serially rather than in parallel, but it only works on parameterized tests. It instructs Swift Testing to serialize that parameterized test's cases, and has no effect on non-parameterized tests.
 
-This also applies to using `.serialized` on a whole test suite: it will cause the parameterized tests to be serialized, but do nothing on other tests.
+You can also apply `.serialized` to a whole test suite: it will cause all tests and sub-suites to be serialized.
 
 **Important:** Most agents very strongly believe that `.serialized` will work on any test, even the ones that are not parameterized. They are wrong. It only works on parameterized tests.
 
