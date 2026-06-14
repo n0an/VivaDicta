@@ -28,10 +28,17 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
 
     private let logger = Logger(category: .analytics)
 
+    /// Guards against double registration, which would make MetricKit deliver
+    /// every payload twice and double all reported counts. Only ever touched
+    /// from `start()`, which is called on the main thread at launch.
+    private var isStarted = false
+
     private override init() { super.init() }
 
-    /// Registers as a MetricKit subscriber. Call once at launch.
+    /// Registers as a MetricKit subscriber. Idempotent; call once at launch.
     func start() {
+        guard !isStarted else { return }
+        isStarted = true
         MXMetricManager.shared.add(self)
         logger.logInfo("📈 MetricKit subscriber registered")
     }
@@ -77,8 +84,11 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
 
     private func reportMemory(_ payload: MXMetricPayload) {
         guard let memory = payload.memoryMetrics else { return }
-        let peakMB = Int(memory.peakMemoryUsage.converted(to: .megabytes).value)
-        let suspendedMB = Int(memory.averageSuspendedMemory.averageMeasurement.converted(to: .megabytes).value)
+        // Report MiB (bytes / 1024²), not Measurement's decimal `.megabytes`
+        // (1e6 bytes), so these line up with DeviceConditions.currentMemoryFootprintMB
+        // and the Jetsam limit, both of which are MiB-based.
+        let peakMB = Int(memory.peakMemoryUsage.converted(to: .bytes).value) / (1024 * 1024)
+        let suspendedMB = Int(memory.averageSuspendedMemory.averageMeasurement.converted(to: .bytes).value) / (1024 * 1024)
         AnalyticsService.track(.appMemoryMetric(peakMB: peakMB, averageSuspendedMB: suspendedMB))
     }
 
