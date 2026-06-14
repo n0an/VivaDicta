@@ -9,12 +9,37 @@ import AVFoundation
 import SwiftData
 import SwiftUI
 
+/// Thin wrapper that constructs ``LiveTranslationService`` exactly once.
+///
+/// `@State`'s default-value initializer is not an `@autoclosure`, so an inline
+/// `@State private var service = LiveTranslationService()` re-runs the service's
+/// `init` - rebuilding its `AVAudioEngine` node graph - every time SwiftUI
+/// re-creates this view, which `.fullScreenCover` does on each parent body
+/// re-render. Holding the service in an optional and building it in `onAppear`
+/// constructs the audio graph a single time per presentation.
 struct LiveTranslationView: View {
+    @State private var service: LiveTranslationService?
+
+    var body: some View {
+        ZStack {
+            if let service {
+                LiveTranslationSessionView(service: service)
+            }
+        }
+        .onAppear {
+            if service == nil {
+                service = LiveTranslationService()
+            }
+        }
+    }
+}
+
+private struct LiveTranslationSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self) private var appState
 
-    @State private var service = LiveTranslationService()
+    let service: LiveTranslationService
     @State private var savedSnapshot: SavedSnapshot?
     @State private var saveError: SaveErrorAlert?
     @State private var headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
