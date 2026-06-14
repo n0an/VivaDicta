@@ -98,6 +98,28 @@ enum AnalyticsEvent {
     /// Fires when a session fails (missing key, mic denied, WS error, etc.).
     /// `reason` is a stable category identifier, not the localized message.
     case liveTranslationFailed(reason: String)
+
+    // MARK: - Performance Monitoring (MetricKit, passive)
+
+    /// Daily MetricKit launch-time report: bucket-weighted average time to first
+    /// draw, with the number of launches the average is drawn from.
+    case appLaunchMetric(averageMs: Double, sampleCount: Int)
+
+    /// Daily MetricKit responsiveness report: bucket-weighted average hang time
+    /// across the reporting window.
+    case appHangMetric(averageMs: Double, sampleCount: Int)
+
+    /// Daily MetricKit memory report: peak footprint and average suspended
+    /// memory (both in MB).
+    case appMemoryMetric(peakMB: Int, averageSuspendedMB: Int)
+
+    /// A single MetricKit hang diagnostic - the app was unresponsive on the main
+    /// thread for `hangSeconds`.
+    case appHangDiagnostic(hangSeconds: Double)
+
+    /// A single MetricKit CPU-exception diagnostic - the app burned an unusual
+    /// amount of CPU over the sampling window.
+    case appCPUExceptionDiagnostic(cpuSeconds: Double, sampledSeconds: Double)
 }
 
 extension AnalyticsEvent {
@@ -122,6 +144,26 @@ extension AnalyticsEvent {
         case .liveTranslationStopped: "live_translation_stopped"
         case .liveTranslationSavedAsNote: "live_translation_saved_as_note"
         case .liveTranslationFailed: "live_translation_failed"
+        case .appLaunchMetric: "app_launch_metric"
+        case .appHangMetric: "app_hang_metric"
+        case .appMemoryMetric: "app_memory_metric"
+        case .appHangDiagnostic: "app_hang_diagnostic"
+        case .appCPUExceptionDiagnostic: "app_cpu_exception_diagnostic"
+        }
+    }
+
+    /// Whether ``DeviceConditions`` (thermal state, Low Power Mode, memory) are
+    /// merged into this event. True for interactive events, where the live
+    /// device state is meaningful. False for the MetricKit-sourced events, whose
+    /// payloads are aggregated over the past day - the device state at delivery
+    /// time is unrelated to when the metrics were recorded.
+    nonisolated var attachesDeviceConditions: Bool {
+        switch self {
+        case .appLaunchMetric, .appHangMetric, .appMemoryMetric,
+             .appHangDiagnostic, .appCPUExceptionDiagnostic:
+            false
+        default:
+            true
         }
     }
 
@@ -223,6 +265,21 @@ extension AnalyticsEvent {
 
         case .liveTranslationFailed(let reason):
             return ["reason": reason]
+
+        case .appLaunchMetric(let averageMs, let sampleCount):
+            return ["average_ms": averageMs, "sample_count": sampleCount]
+
+        case .appHangMetric(let averageMs, let sampleCount):
+            return ["average_ms": averageMs, "sample_count": sampleCount]
+
+        case .appMemoryMetric(let peakMB, let averageSuspendedMB):
+            return ["peak_mb": peakMB, "average_suspended_mb": averageSuspendedMB]
+
+        case .appHangDiagnostic(let hangSeconds):
+            return ["hang_seconds": hangSeconds]
+
+        case .appCPUExceptionDiagnostic(let cpuSeconds, let sampledSeconds):
+            return ["cpu_seconds": cpuSeconds, "sampled_seconds": sampledSeconds]
         }
     }
 }
@@ -237,7 +294,14 @@ enum AnalyticsService {
 
     nonisolated static func track(_ event: AnalyticsEvent) {
         let name = event.name
-        let params = event.parameters
+
+        var merged = event.parameters ?? [:]
+        if event.attachesDeviceConditions {
+            // Event-specific keys win on the (unexpected) collision.
+            merged.merge(DeviceConditions.parameters) { current, _ in current }
+        }
+        let params: [String: Any]? = merged.isEmpty ? nil : merged
+
         Analytics.logEvent(name, parameters: params)
 
         if let params {
