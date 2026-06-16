@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.6": release_3_6,
         "3.5": release_3_5,
         "3.4": release_3_4,
         "3.3": release_3_3,
@@ -41,6 +42,38 @@ enum WhatsNewCatalog {
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_6 = WhatsNewRelease(
+        id: "3.6",
+        headline: "What's New in VivaDicta 3.6.0",
+        features: [
+            WhatsNewFeature(
+                icon: "person.2.wave.2.fill",
+                iconColors: [.teal, .cyan],
+                title: "Speaker Labels for ElevenLabs & xAI",
+                description: "Turn on Speaker Labels and these two cloud providers now return speaker-separated transcripts, so it's clear who said what."
+            ),
+            WhatsNewFeature(
+                icon: "keyboard.fill",
+                iconColors: [.purple, .pink],
+                title: "Clearer Keyboard Return",
+                description: "When the keyboard needs you to swipe back to finish dictating, a full-screen prompt now makes the next step obvious."
+            ),
+            WhatsNewFeature(
+                icon: "doc.on.doc.fill",
+                iconColors: [.indigo, .blue],
+                title: "Copy from Live Translation",
+                description: "New copy buttons on each Live Translation column let you grab the original or the translated text with one tap."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.yellow, .orange],
+                title: "Performance & Polish",
+                description: "Cleaner filler removal on translated notes, faster Live Translation startup, and a fix for a rare background-transcription crash."
+            )
+        ],
+        tagline: "Clearer transcripts, smoother dictation."
+    )
 
     private static let release_3_5 = WhatsNewRelease(
         id: "3.5",
