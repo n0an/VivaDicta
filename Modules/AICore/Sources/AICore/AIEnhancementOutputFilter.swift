@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct AIEnhancementOutputFilter {
-    static func filter(_ text: String) -> String {
+public struct AIEnhancementOutputFilter {
+    public static func filter(_ text: String) -> String {
         var processedText = text
 
         // Step 1: Remove thinking/reasoning tags WITH their content (discard AI's chain-of-thought)
