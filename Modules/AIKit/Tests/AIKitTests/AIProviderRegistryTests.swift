@@ -1,3 +1,5 @@
+// Copyright © 2026 Anton Novoselov. All rights reserved.
+
 import Testing
 import Foundation
 import os
