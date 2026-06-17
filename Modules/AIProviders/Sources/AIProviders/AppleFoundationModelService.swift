@@ -10,13 +10,13 @@ import FoundationModels
 import os
 import AICore
 
-enum AppleFoundationModelSamplingProfile: Equatable {
+public enum AppleFoundationModelSamplingProfile: Equatable, Sendable {
     case extractive
     case balanced
     case conversational
     case creative
 
-    static func profile(for presetID: String?) -> Self {
+    public static func profile(for presetID: String?) -> Self {
         switch presetID {
         case "summary", "action_points", "key_points", "takeaways", "mind_map":
             .extractive
@@ -31,8 +31,8 @@ enum AppleFoundationModelSamplingProfile: Equatable {
         }
     }
 
-    @available(iOS 26, *)
-    var generationOptions: GenerationOptions {
+    @available(iOS 26, macOS 26, *)
+    public var generationOptions: GenerationOptions {
         switch self {
         case .extractive:
             GenerationOptions(sampling: .greedy)
@@ -61,10 +61,12 @@ enum AppleFoundationModelSamplingProfile: Equatable {
 ///
 /// Uses the same system message + user message pattern as cloud providers.
 /// The system message becomes session instructions, the user message becomes the prompt.
-@available(iOS 26, *)
+@available(iOS 26, macOS 26, *)
 @MainActor
-final class AppleFoundationModelService {
-    private let logger = Logger(category: .aiService)
+public final class AppleFoundationModelService {
+    private let logger = Logger(aiProvidersCategory: "AppleFoundationModel")
+
+    public init() {}
 
     /// Enhance text using Apple's on-device Foundation Model.
     /// - Parameters:
@@ -72,7 +74,7 @@ final class AppleFoundationModelService {
     ///   - userMessage: The formatted user message (transcript, optionally wrapped in tags)
     ///   - samplingProfile: Sampling profile chosen for the current preset goal
     /// - Returns: The enhanced text
-    func enhance(
+    public func enhance(
         systemMessage: String,
         userMessage: String,
         samplingProfile: AppleFoundationModelSamplingProfile = .balanced
@@ -132,7 +134,7 @@ final class AppleFoundationModelService {
     ///   - samplingProfile: Sampling profile chosen for the current preset goal
     ///   - onPartialResponse: Called with the latest partial response snapshot.
     /// - Returns: The final enhanced text
-    func enhanceStreaming(
+    public func enhanceStreaming(
         systemMessage: String,
         userMessage: String,
         samplingProfile: AppleFoundationModelSamplingProfile = .balanced,
@@ -201,14 +203,14 @@ final class AppleFoundationModelService {
 
 // MARK: - Availability Status
 
-enum AppleFoundationModelAvailability {
+public enum AppleFoundationModelAvailability: Sendable {
     case available
     case deviceNotEligible
     case appleIntelligenceNotEnabled
     case modelNotReady
     case unavailable
 
-    var description: String {
+    public var description: String {
         switch self {
         case .available:
             return "Apple Intelligence is available"
@@ -225,8 +227,8 @@ enum AppleFoundationModelAvailability {
 
     /// Check if Apple Foundation Models are available on this device
     @MainActor
-    static var isAvailable: Bool {
-        if #available(iOS 26, *) {
+    public static var isAvailable: Bool {
+        if #available(iOS 26, macOS 26, *) {
             return SystemLanguageModel.default.availability == .available
         }
         return false
@@ -234,8 +236,8 @@ enum AppleFoundationModelAvailability {
 
     /// Detailed availability status for UI display
     @MainActor
-    static var currentStatus: AppleFoundationModelAvailability {
-        if #available(iOS 26, *) {
+    public static var currentStatus: AppleFoundationModelAvailability {
+        if #available(iOS 26, macOS 26, *) {
             switch SystemLanguageModel.default.availability {
             case .available:
                 return .available
@@ -258,13 +260,13 @@ enum AppleFoundationModelAvailability {
 
 // MARK: - Errors
 
-enum AppleFoundationModelError: LocalizedError {
+public enum AppleFoundationModelError: LocalizedError, Sendable {
     case notAvailable
     case generationFailed(String)
     case guardrailViolation
     case refusal(String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .notAvailable:
             return "Apple Foundation Model not available"
@@ -277,7 +279,7 @@ enum AppleFoundationModelError: LocalizedError {
         }
     }
 
-    var failureReason: String {
+    public var failureReason: String {
         switch self {
         case .notAvailable:
             return "Apple Intelligence is not available on this device. Please ensure you have a compatible device with Apple Intelligence enabled."

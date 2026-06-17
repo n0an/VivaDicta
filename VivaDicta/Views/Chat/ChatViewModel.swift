@@ -10,6 +10,7 @@ import FoundationModels
 import SwiftData
 import os
 import AICore
+import AIProviders
 
 /// View model for the "Chat with Note" feature.
 ///

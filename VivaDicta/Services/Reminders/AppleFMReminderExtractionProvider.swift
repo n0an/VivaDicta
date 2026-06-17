@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import os
+import AIProviders
 
 @available(iOS 26, *)
 @MainActor

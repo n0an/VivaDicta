@@ -10,6 +10,7 @@ import Testing
 import Presets
 @testable import VivaDicta
 import AICore
+import AIProviders
 
 struct AIServiceConfigurationTests {
 

@@ -9,6 +9,7 @@ import SwiftUI
 import os
 import Presets
 import AICore
+import AIProviders
 
 @Observable
 class ModeEditViewModel {

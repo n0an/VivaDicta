@@ -14,6 +14,7 @@ import TipKit
 import os
 import Presets
 import AICore
+import AIProviders
 
 private let logger = Logger(category: .transcriptionDetailView)
 
