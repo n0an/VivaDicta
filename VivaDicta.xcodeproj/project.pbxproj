@@ -63,6 +63,7 @@
 		BFBF000000000000000000D1 /* AIProviders in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000D1 /* AIProviders */; };
 		BFBF000000000000000000D2 /* AIProviders in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000D2 /* AIProviders */; };
 		BFBF000000000000000000E1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E1 /* AIKit */; };
+		BFBF000000000000000000E2 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E2 /* AIKit */; };
 		E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */ = {isa = PBXBuildFile; productRef = F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */; };
 /* End PBXBuildFile section */
 
@@ -525,6 +526,7 @@
 				188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */,
 				BFBF000000000000000000C2 /* AICore in Frameworks */,
 				BFBF000000000000000000D2 /* AIProviders in Frameworks */,
+				BFBF000000000000000000E2 /* AIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -755,6 +757,7 @@
 				188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */,
 				AEAE000000000000000000C2 /* AICore */,
 				AEAE000000000000000000D2 /* AIProviders */,
+				AEAE000000000000000000E2 /* AIKit */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2597,6 +2600,10 @@
 			productName = AIProviders;
 		};
 		AEAE000000000000000000E1 /* AIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIKit;
+		};
+		AEAE000000000000000000E2 /* AIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AIKit;
 		};
