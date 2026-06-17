@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ReasoningConfig {
+public struct ReasoningConfig {
     // 2.5-flash and 2.5-flash-lite support "none" to fully turn off thinking
     static let geminiNoneReasoningModels: Set<String> = [
         "gemini-2.5-flash",
@@ -60,7 +60,7 @@ struct ReasoningConfig {
         "qwen/qwen3-32b"
     ]
 
-    static func getReasoningParameter(for modelName: String) -> String? {
+    public static func getReasoningParameter(for modelName: String) -> String? {
         if geminiNoneReasoningModels.contains(modelName) { return "none" }
         else if geminiMinimalReasoningModels.contains(modelName) { return "minimal" }
         else if openAINoneReasoningModels.contains(modelName) { return "none" }
@@ -72,7 +72,7 @@ struct ReasoningConfig {
     }
 
     // For models that need custom params instead of reasoning_effort
-    static func getExtraBodyParameters(for modelName: String) -> [String: Any]? {
+    public static func getExtraBodyParameters(for modelName: String) -> [String: Any]? {
         if cerebrasDisableReasoningModels.contains(modelName) {
             return ["disable_reasoning": true]
         }
