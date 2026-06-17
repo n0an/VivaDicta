@@ -4,6 +4,7 @@ import Foundation
 import Networking
 import os
 import OAuth
+import AICore
 
 /// Client for OpenAI's backend API using OAuth tokens.
 enum OpenAIOAuthClient {

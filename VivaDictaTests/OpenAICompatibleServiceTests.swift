@@ -6,6 +6,7 @@ import NetworkingMocks
 import os
 import Testing
 @testable import VivaDicta
+import AICore
 
 /// Tests cover `OpenAICompatibleService` in isolation: the static body
 /// builder and SSE delta parser (pure functions, fully exercised),
