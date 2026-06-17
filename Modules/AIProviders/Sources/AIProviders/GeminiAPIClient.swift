@@ -9,17 +9,17 @@ import AICore
 /// Client for Gemini API using OAuth tokens.
 /// Uses the Cloud Code Assist endpoint (same as Gemini CLI / VS Code extension),
 /// NOT the standard generativelanguage.googleapis.com endpoint.
-enum GeminiAPIClient {
-    private static let logger = Logger(category: .geminiOAuthAPI)
+public enum GeminiAPIClient {
+    private static let logger = Logger(aiProvidersCategory: "GeminiAPIClient")
 
     /// Default model for Gemini OAuth requests.
     /// Matches `AIProvider.gemini.defaultModel` so picker defaults agree across auth modes.
-    static let defaultModel = "gemini-3.5-flash"
+    public static let defaultModel = "gemini-3.5-flash"
 
     /// Models available via Gemini OAuth (Cloud Code Assist endpoint).
     /// Kept in sync with `AIProvider.gemini.availableModels` since the Cloud Code Assist
     /// endpoint exposes the same generateContent surface as the standard API.
-    static let supportedModels: [String] = [
+    public static let supportedModels: [String] = [
         "gemini-3.1-pro-preview",
         "gemini-3.5-flash",
         "gemini-3-flash-preview",
@@ -35,13 +35,13 @@ enum GeminiAPIClient {
     private static let streamingEndpoint = "https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse"
 
     /// Returns the model to use. Falls back to default if empty.
-    static func resolveModel(_ requestedModel: String) -> String {
+    public static func resolveModel(_ requestedModel: String) -> String {
         if requestedModel.isEmpty { return defaultModel }
         return requestedModel
     }
 
     /// Sends an AI enhancement request via Cloud Code Assist API using OAuth token.
-    static func enhance(
+    public static func enhance(
         text: String,
         systemPrompt: String,
         model: String,
@@ -135,7 +135,7 @@ enum GeminiAPIClient {
         return resultText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    static func enhanceStreaming(
+    public static func enhanceStreaming(
         text: String,
         systemPrompt: String,
         model: String,
@@ -240,7 +240,7 @@ enum GeminiAPIClient {
         }
 
         let finalResult = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        onPartialResult(finalResult)
+        await onPartialResult(finalResult)
         return finalResult
     }
 
@@ -272,13 +272,13 @@ enum GeminiAPIClient {
             } else {
                 aggregatedText += chunkText
             }
-            onPartialResult(aggregatedText)
+            await onPartialResult(aggregatedText)
         }
 
         return aggregatedText
     }
 
-    static func streamingText(from event: [String: Any]) -> String? {
+    public static func streamingText(from event: [String: Any]) -> String? {
         let geminiResponse: [String: Any]
         if let wrapped = event["response"] as? [String: Any] {
             geminiResponse = wrapped
@@ -304,7 +304,7 @@ enum GeminiAPIClient {
     /// - Parameter messages: conversation turns as `[{"role": "user"|"assistant", "content": "..."}]`.
     ///   System entries are ignored; the system prompt goes into `systemInstruction`.
     ///   The `assistant` role is translated to Gemini's `model` role.
-    static func chatStreaming(
+    public static func chatStreaming(
         systemMessage: String,
         messages: [[String: String]],
         model: String,
@@ -426,7 +426,7 @@ enum GeminiAPIClient {
                 } else {
                     aggregatedText += chunkText
                 }
-                onPartialResponse(aggregatedText)
+                await onPartialResponse(aggregatedText)
             }
         }
 
@@ -438,13 +438,13 @@ enum GeminiAPIClient {
         let trimmed = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = AIEnhancementOutputFilter.filter(trimmed)
         if filtered != aggregatedText {
-            onPartialResponse(filtered)
+            await onPartialResponse(filtered)
         }
         return filtered
     }
 
     /// Multi-turn non-streaming chat. Implemented by buffering the streaming helper.
-    static func chat(
+    public static func chat(
         systemMessage: String,
         messages: [[String: String]],
         model: String,

@@ -7,8 +7,8 @@ import OAuth
 import AICore
 
 /// Client for OpenAI's backend API using OAuth tokens.
-enum OpenAIOAuthClient {
-    private static let logger = Logger(category: .openAIOAuthAPI)
+public enum OpenAIOAuthClient {
+    private static let logger = Logger(aiProvidersCategory: "OpenAIOAuthClient")
 
     /// URL session used for all OpenAI OAuth API calls. Override only from tests.
     nonisolated(unsafe) static var networkService: any NetworkService = DefaultNetworkService(category: "AppClient")
@@ -17,10 +17,10 @@ enum OpenAIOAuthClient {
     private static let originator = "codex_cli_rs"
 
     /// Default model for OpenAI OAuth requests.
-    static let defaultModel = "gpt-5.4-mini"
+    public static let defaultModel = "gpt-5.4-mini"
 
     /// Models supported by the Codex endpoint (OpenAI OAuth).
-    static let supportedModels: [String] = [
+    public static let supportedModels: [String] = [
         "gpt-5.5",
         "gpt-5.4",
         "gpt-5.4-mini",
@@ -30,7 +30,7 @@ enum OpenAIOAuthClient {
 
     /// Returns the model to use for the Codex endpoint.
     /// Falls back to default if the requested model isn't supported.
-    static func resolveModel(_ requestedModel: String) -> String {
+    public static func resolveModel(_ requestedModel: String) -> String {
         if requestedModel.isEmpty {
             return defaultModel
         }
@@ -41,7 +41,7 @@ enum OpenAIOAuthClient {
     }
 
     /// Sends a single-turn AI enhancement request via OpenAI's backend API.
-    static func enhance(
+    public static func enhance(
         text: String,
         systemPrompt: String,
         model: String,
@@ -80,7 +80,7 @@ enum OpenAIOAuthClient {
     ///
     /// - Parameter messages: conversation turns as `[{"role": "user"|"assistant", "content": "..."}]`.
     ///   System entries are ignored here; the system prompt goes into `instructions`.
-    static func chatStreaming(
+    public static func chatStreaming(
         systemMessage: String,
         messages: [[String: String]],
         model: String,
@@ -117,13 +117,13 @@ enum OpenAIOAuthClient {
 
         let filtered = AIEnhancementOutputFilter.filter(raw)
         if filtered != raw {
-            onPartialResponse(filtered)
+            await onPartialResponse(filtered)
         }
         return filtered
     }
 
     /// Multi-turn non-streaming chat. Implemented by buffering the streaming helper.
-    static func chat(
+    public static func chat(
         systemMessage: String,
         messages: [[String: String]],
         model: String,
@@ -141,7 +141,7 @@ enum OpenAIOAuthClient {
     }
 
     /// Fetches available models from OpenAI's backend.
-    static func fetchModels(accessToken: String) async throws -> [String] {
+    public static func fetchModels(accessToken: String) async throws -> [String] {
         guard let url = URL(string: OpenAIOAuthProvider.modelsEndpoint) else {
             return [defaultModel]
         }
@@ -235,7 +235,7 @@ enum OpenAIOAuthClient {
                let delta = event["delta"] as? String {
                 result += delta
                 if let onPartialResult {
-                    onPartialResult(result)
+                    await onPartialResult(result)
                 }
             }
         }
@@ -247,7 +247,7 @@ enum OpenAIOAuthClient {
 
         let finalResult = result.trimmingCharacters(in: .whitespacesAndNewlines)
         if let onPartialResult {
-            onPartialResult(finalResult)
+            await onPartialResult(finalResult)
         }
 
         return finalResult

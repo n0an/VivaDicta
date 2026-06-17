@@ -14,6 +14,7 @@ let package = Package(
     dependencies: [
         .package(path: "../AICore"),
         .package(path: "../Networking"),
+        .package(path: "../OAuth"),
     ],
     targets: [
         .target(
@@ -21,6 +22,7 @@ let package = Package(
             dependencies: [
                 .product(name: "AICore", package: "AICore"),
                 .product(name: "Networking", package: "Networking"),
+                .product(name: "OAuth", package: "OAuth"),
             ]
         ),
         .testTarget(

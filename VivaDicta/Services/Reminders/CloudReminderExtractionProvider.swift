@@ -10,6 +10,7 @@ import Networking
 import os
 import OAuth
 import AICore
+import AIProviders
 
 private struct CloudReminderDraftPayload: Codable {
     var title: String

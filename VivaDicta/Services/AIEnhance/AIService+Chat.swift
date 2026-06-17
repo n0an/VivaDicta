@@ -11,6 +11,7 @@ import Networking
 import os
 import OAuth
 import AICore
+import AIProviders
 
 /// Multi-turn chat support for AIService.
 ///
