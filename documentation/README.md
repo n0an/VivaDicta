@@ -4,6 +4,7 @@
 
 | Document | Description |
 |----------|-------------|
+| [Module Architecture](Module-Architecture.md) | SPM module structure: onion layering, dependency graph, AI/transcription stacks, API/Impl direction |
 | [Recording & Audio Pipeline](Recording-Audio-Pipeline-Architecture.md) | AVAudioRecorder setup, audio session management, file handling |
 | [Transcription System](Transcription-System-Architecture.md) | On-device (WhisperKit/Parakeet) and cloud transcription routing |
 | [AI Processing](AI-Processing-Architecture.md) | Multi-provider AI text processing, prompt building, mode/preset routing |
