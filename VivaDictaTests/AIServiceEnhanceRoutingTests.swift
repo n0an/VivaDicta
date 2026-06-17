@@ -195,6 +195,33 @@ struct AIServiceEnhanceRoutingTests {
         #expect(net.capturedRequest?.value(forHTTPHeaderField: "x-api-key") == "ANTHROPIC_STREAM_KEY")
     }
 
+    /// Ollama streams via the `.openAICompatibleEndpoint` route, which must carry
+    /// the caller's server URL, the local-inference timeout (120s, not the cloud
+    /// 300s), and no auth header. `MockNetworkService.bytes` captures the request
+    /// before throwing, so the route config is assertable.
+    @Test func ollamaStreamingRouteSendsToServerEndpointWithLocalTimeout() async {
+        let net = MockNetworkService()
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: MockKeychainService(),
+            networkService: net,
+            oauthManager: MockOAuthManager()
+        )
+        sut.ollamaServerURL = "http://localhost:11434"
+        let mode = makeMode(aiProvider: .ollama, aiModel: "llama3")
+
+        _ = try? await sut.generateVariation(
+            text: "hello world",
+            preset: PresetCatalog.regular,
+            modeOverride: mode,
+            onPartialResult: { _ in }
+        )
+
+        #expect(net.capturedRequest?.url?.absoluteString == "http://localhost:11434/v1/chat/completions")
+        #expect(net.capturedRequest?.timeoutInterval == 120)                              // local-inference timeout from the route
+        #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == nil)   // Ollama needs no auth
+    }
+
     private func http(_ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }
