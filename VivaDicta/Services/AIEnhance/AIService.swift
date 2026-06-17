@@ -1106,13 +1106,10 @@ class AIService {
                 throw EnhancementError.notConfigured
             }
         case .anthropic:
-            guard self.getAPIKey(for: aiProvider) != nil else {
-                throw EnhancementError.notConfigured
-            }
-
             logger.logDebug("AI Processing - Using Anthropic streaming")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
+            // The registry reads the API key and throws `.notConfigured` if it's missing.
             let provider = try await aiProviderRegistry.makeTextProvider(for: .anthropic, model: mode.aiModel)
             return try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
         case .copilot:
@@ -1151,13 +1148,10 @@ class AIService {
                 }
             }
         case .openAICompatibleCloud:
-            guard self.getAPIKey(for: aiProvider) != nil else {
-                throw EnhancementError.notConfigured
-            }
-
             logger.logDebug("AI Processing - Using \(aiProvider.displayName) streaming")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
+            // The registry reads the API key and throws `.notConfigured` if it's missing.
             let provider = try await aiProviderRegistry.makeTextProvider(for: .cloud(aiProvider), model: mode.aiModel)
             return try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
         case .ollama:
@@ -1414,11 +1408,6 @@ class AIService {
             }
         }
 
-        // Cloud providers require API key
-        guard self.getAPIKey(for: aiProvider) != nil else {
-            throw EnhancementError.notConfigured
-        }
-
         // Store for TranscriptionVariation
         lastSystemMessageSent = resolvedSystemMessage
         lastUserMessageSent = formattedText
@@ -1427,8 +1416,9 @@ class AIService {
         logger.logDebug("AI Processing - User Message: \(formattedText)")
 
         // Anthropic uses its own Messages API; every other cloud provider is
-        // OpenAI-compatible. The registry reads the API key from the Keychain
-        // and builds the configured provider (key existence is guarded above).
+        // OpenAI-compatible. The registry is the single source of the API-key
+        // precondition: it reads the key from the Keychain and throws
+        // `.notConfigured` if it's missing.
         let route: AIProviderRoute = aiProvider == .anthropic ? .anthropic : .cloud(aiProvider)
         let provider = try await aiProviderRegistry.makeTextProvider(for: route, model: mode.aiModel)
         return try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
