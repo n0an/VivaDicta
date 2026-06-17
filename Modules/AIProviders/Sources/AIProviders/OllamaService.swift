@@ -7,8 +7,7 @@ import os
 /// Pure HTTP wrapper for the local Ollama server's model-discovery and
 /// connection-check endpoints. Stateless apart from its dependencies.
 ///
-/// Lives in the app target as the first step of the AIService decomposition
-/// (Phase 2a of the architecture migration). `AIService` retains ownership
+/// Lives in the `AIProviders` module. `AIService` retains ownership
 /// of the `@Observable` `ollamaModels` state and the user-configurable
 /// `ollamaServerURL`; `OllamaService` just runs the HTTP calls and returns
 /// values.

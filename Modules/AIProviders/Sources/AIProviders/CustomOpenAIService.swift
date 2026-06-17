@@ -7,9 +7,7 @@ import os
 /// Pure HTTP wrapper for testing a user-configured "Custom OpenAI"
 /// endpoint. Stateless apart from its dependencies.
 ///
-/// Lives in the app target alongside `OllamaService` as the second step of
-/// the AIService decomposition (Phase 2a of the architecture migration).
-/// `AIService` retains ownership of the `@Observable` configuration state
+/// Lives in the `AIProviders` module. `AIService` retains ownership of the `@Observable` configuration state
 /// (`customOpenAIEndpointURL`, `customOpenAIModelName`,
 /// `customOpenAIIsVerified`); this struct just runs the HTTP probe and
 /// returns a structured result.

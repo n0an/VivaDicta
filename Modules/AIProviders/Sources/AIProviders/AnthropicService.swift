@@ -8,9 +8,7 @@ import AICore
 /// Pure HTTP wrapper for Anthropic's Messages API. Stateless apart from
 /// its dependencies.
 ///
-/// Lives in the app target alongside `OllamaService` and `CustomOpenAIService`
-/// as the third step of the AIService decomposition (Phase 2a of the
-/// architecture migration). `AIService` retains ownership of routing
+/// Lives in the `AIProviders` module. `AIService` retains ownership of routing
 /// decisions (CLI Server fallback, model selection, API-key lookup) and
 /// the observable connection state; this struct just runs the HTTP calls.
 ///
