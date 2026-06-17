@@ -125,6 +125,7 @@ VivaDicta records speech, transcribes it using on-device or cloud models, and op
 - Apple Foundation Models for free, private on-device AI processing
 - On-device STT via WhisperKit and NVIDIA Parakeet (CoreML / Apple Neural Engine)
 - Swift 6 with strict concurrency
+- Modular Swift Package architecture - layered, dependency-inverted modules with protocol-based DI
 - SwiftUI + Liquid Glass
 - SwiftData with CloudKit sync
 - watchOS companion app with WatchConnectivity file transfer and background transcription
@@ -152,6 +153,61 @@ graph LR
     Chat -.- Chat1[Single · Multi · Smart Search]
 ```
 
+### Module structure
+
+The app composes a ring of local Swift Package modules (`Modules/`) under layered, dependency-inverted boundaries: dependencies point inward, consumers depend on protocols (`any NetworkService`, `any AITextProvider`, …), and the app target is the composition root that wires the `Default*` implementations. The transcription stack (`TranscriptionCore` / `CloudTranscription` / `LocalTranscription` / `TranscriptionKit`) and the AI stack (`AICore` / `AIProviders` / `AIKit`) are two instances of the same shape.
+
+```mermaid
+graph BT
+  classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
+  classDef adapter fill:#332306,stroke:#ffa657,color:#ffa657
+  classDef orchestrator fill:#3b0e26,stroke:#f778ba,color:#f778ba
+  classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
+
+  Networking[Networking]:::core
+  Keychain[Keychain]:::core
+  AICore[AICore]:::core
+  TranscriptionCore[TranscriptionCore]:::core
+  Presets[Presets]:::core
+
+  OAuth[OAuth]:::adapter
+  AIProviders[AIProviders]:::adapter
+  CloudTranscription[CloudTranscription]:::adapter
+  LocalTranscription[LocalTranscription]:::adapter
+
+  TranscriptionKit[TranscriptionKit]:::orchestrator
+  AIKit[AIKit]:::orchestrator
+
+  App[VivaDicta app + extensions]:::app
+
+  OAuth --> Keychain
+  OAuth --> Networking
+  AIProviders --> AICore
+  AIProviders --> Networking
+  CloudTranscription --> TranscriptionCore
+  CloudTranscription --> Networking
+  LocalTranscription --> TranscriptionCore
+  TranscriptionKit --> CloudTranscription
+  TranscriptionKit --> LocalTranscription
+  AIKit --> AICore
+  AIKit --> AIProviders
+  AIKit --> OAuth
+  AIKit --> Keychain
+  AIKit --> Networking
+  App --> TranscriptionKit
+  App --> AIKit
+  App --> Presets
+```
+
+| Layer | Modules |
+|-------|---------|
+| **Core** (no module deps; protocols + value types) | `Networking` · `Keychain` · `Presets` · `TranscriptionCore` · `AICore` · `AppGroup` · `DesignSystem` |
+| **Adapters** (protocol + `Default` impl + `Mock`) | `OAuth` · `CloudTranscription` · `LocalTranscription` · `AIProviders` |
+| **Orchestrators** (compose adapters) | `TranscriptionKit` · `AIKit` |
+| **App** (composition root) | `VivaDicta` + keyboard / widget / share / action / watch targets |
+
+Full breakdown, mocks, and the AI request flow: **[Module Architecture](documentation/Module-Architecture.md)**.
+
 Main app ↔ extensions IPC via `AppGroupCoordinator` (Darwin Notifications + Shared UserDefaults):
 
 ```mermaid
@@ -161,19 +217,6 @@ graph LR
     WA[Watch App] <-->|WatchConnectivity<br/>transferFile + sendMessage| M
     SE[Share Extension] <--> M
     AE[Action Extension] <--> M
-```
-
-Watch app ↔ iPhone communication via WatchConnectivity:
-
-```mermaid
-graph LR
-    WR[Watch Recorder] -->|transferFile<br/>audio + modeId| PC[PhoneWatchConnectivityService]
-    PC --> WP[WatchAudioProcessor]
-    WP --> T[TranscriptionManager]
-    WP --> AI[AIService]
-    WP --> S[SwiftData]
-    PC -->|updateApplicationContext<br/>mode list| WR
-    WR -->|sendMessage<br/>wake ping| PC
 ```
 
 On-device RAG pipeline:
@@ -249,6 +292,19 @@ VivaDicta/
 ├── ActionExtension/        # Action extension
 ├── VivaDictaWatch Watch App/ # watchOS companion app
 ├── VivaDictaWatchWidget/   # Watch complications + Control Center control
+├── Modules/                # Local Swift Package modules (layered, dependency-inverted)
+│   ├── AICore/             # AI kernel: AITextProvider, AIProvider enum, errors, filters
+│   ├── AIProviders/        # Per-LLM clients + AITextProvider wrappers
+│   ├── AIKit/              # AIProviderRegistry, TextEnhancer, CLIServerEnhancer
+│   ├── Networking/         # NetworkService + DefaultNetworkService
+│   ├── Keychain/           # KeychainService
+│   ├── OAuth/              # OAuth managers (ChatGPT / Gemini / Copilot)
+│   ├── TranscriptionCore/  # TranscriptionService protocol + value types
+│   ├── CloudTranscription/ # Cloud STT provider services
+│   ├── LocalTranscription/ # WhisperKit / Parakeet wrappers
+│   ├── TranscriptionKit/   # Cloud/local transcription routing
+│   ├── Presets/            # Preset domain + management
+│   └── AppGroup · DesignSystem · TestUtilities
 ├── documentation/          # Architecture docs, references
 └── .github/workflows/      # CI: build check, Claude review, GitGuardian
 ```
