@@ -201,6 +201,24 @@ class AIService {
         )
     }
 
+    /// Runs the non-streaming cloud/CLI/OAuth routing + fallback chain for a
+    /// resolved request. Built from the registry + the injected CLI seam.
+    private var textEnhancer: TextEnhancer {
+        TextEnhancer(registry: aiProviderRegistry, cliServerEnhancer: cliServerEnhancer, logger: logger)
+    }
+
+    /// Whether `provider` is currently OAuth-signed-in (used to resolve an
+    /// `EnhancementInput`). Mirrors the per-provider sign-in checks the routing
+    /// previously inlined.
+    private func isOAuthSignedIn(for provider: AIProvider) -> Bool {
+        switch provider {
+        case .openAI: return isOpenAISignedIn
+        case .gemini: return isGeminiSignedIn
+        case .copilot: return isCopilotSignedIn
+        default: return false
+        }
+    }
+
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
     private var _appleFoundationModelService: Any?
 
@@ -1250,157 +1268,24 @@ class AIService {
             return try await makeCustomOpenAIRequest(text: text, systemMessage: systemMessage, preFormattedUserMessage: preFormattedUserMessage)
         }
 
-        // Cloud providers - compute system message only when needed
+        // Cloud / CLI / OAuth providers: resolve the messages, then hand off
+        // to the AIKit enhancer, which runs the routing + fallback chain.
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
-
-        // Anthropic CLI Server: route Anthropic requests through remote server when enabled
-        if aiProvider == .anthropic && cliServerEnhancer.isCliActive(for: .anthropic),
-           let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
-            let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            logger.logDebug("AI Processing - Using Anthropic CLI Server at \(serverURL)")
-            do {
-                let result = try await cliServerEnhancer.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: mode.aiModel,
-                    provider: .anthropic
-                )
-                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-                return filteredResult
-            } catch {
-                // Fall back to API key if server fails and key exists
-                if self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Anthropic CLI Server failed, falling back to API key: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.localizedDescription)
-                }
-            }
-        }
-
-        // Use pre-formatted text if provided (variation mode), otherwise format using selected mode's preset
         let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
 
-        // OpenAI OAuth: route OpenAI requests through OpenAI backend API when signed in
-        if aiProvider == .openAI && isOpenAISignedIn {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            do {
-                let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
-                let provider = try await aiProviderRegistry.makeTextProvider(for: .openAIOAuth, model: model)
-                let result = try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
-                return AIEnhancementOutputFilter.filter(result)
-            } catch let error as OAuthError {
-                // If OAuth fails, fall through to CLI or API key
-                if cliServerEnhancer.isCliActive(for: .codex) || self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("OpenAI OAuth failed, falling back: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
-                }
-            }
-        }
-
-        // Gemini OAuth: route Gemini requests through OAuth when signed in
-        if aiProvider == .gemini && isGeminiSignedIn {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            do {
-                let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
-                let provider = try await aiProviderRegistry.makeTextProvider(for: .geminiOAuth, model: model)
-                let result = try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
-                return AIEnhancementOutputFilter.filter(result)
-            } catch let error as EnhancementError {
-                // Rate limit etc. - don't fall through, surface directly
-                throw error
-            } catch let error as OAuthError {
-                // If OAuth fails, fall through to CLI or API key
-                if cliServerEnhancer.isCliActive(for: .gemini) || self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Gemini OAuth failed, falling back: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
-                }
-            }
-        }
-
-        // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
-        if aiProvider == .openAI && cliServerEnhancer.isCliActive(for: .codex),
-           let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            logger.logDebug("AI Processing - Using Codex CLI Server at \(serverURL)")
-            do {
-                let result = try await cliServerEnhancer.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: mode.aiModel,
-                    provider: .codex
-                )
-                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-                return filteredResult
-            } catch {
-                if self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Codex CLI Server failed, falling back to API key: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.localizedDescription)
-                }
-            }
-        }
-
-        // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
-        if aiProvider == .gemini && cliServerEnhancer.isCliActive(for: .gemini),
-           let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            logger.logDebug("AI Processing - Using Gemini CLI Server at \(serverURL)")
-            do {
-                let result = try await cliServerEnhancer.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: mode.aiModel,
-                    provider: .gemini
-                )
-                let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-                return filteredResult
-            } catch {
-                if self.getAPIKey(for: aiProvider) != nil {
-                    logger.logWarning("Gemini CLI Server failed, falling back to API key: \(error.localizedDescription)")
-                } else {
-                    throw EnhancementError.customError(error.localizedDescription)
-                }
-            }
-        }
-
-        // GitHub Copilot: route through Copilot API when signed in
-        if aiProvider == .copilot && isCopilotSignedIn {
-            lastSystemMessageSent = resolvedSystemMessage
-            lastUserMessageSent = formattedText
-            do {
-                let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
-                let provider = try await aiProviderRegistry.makeTextProvider(for: .copilot, model: model)
-                let result = try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
-                return AIEnhancementOutputFilter.filter(result)
-            } catch let error as EnhancementError {
-                throw error
-            } catch {
-                throw EnhancementError.customError(error.localizedDescription)
-            }
-        }
-
-        // Store for TranscriptionVariation
+        // Store for TranscriptionVariation (every route below recorded these same values).
         lastSystemMessageSent = resolvedSystemMessage
         lastUserMessageSent = formattedText
 
-        logger.logDebug("AI Processing - System Message: \(resolvedSystemMessage)")
-        logger.logDebug("AI Processing - User Message: \(formattedText)")
-
-        // Anthropic uses its own Messages API; every other cloud provider is
-        // OpenAI-compatible. The registry is the single source of the API-key
-        // precondition: it reads the key from the Keychain and throws
-        // `.notConfigured` if it's missing.
-        let route: AIProviderRoute = aiProvider == .anthropic ? .anthropic : .cloud(aiProvider)
-        let provider = try await aiProviderRegistry.makeTextProvider(for: route, model: mode.aiModel)
-        return try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
+        let input = EnhancementInput(
+            provider: aiProvider,
+            model: mode.aiModel,
+            systemMessage: resolvedSystemMessage,
+            userMessage: formattedText,
+            isOAuthSignedIn: isOAuthSignedIn(for: aiProvider),
+            hasAPIKey: getAPIKey(for: aiProvider) != nil
+        )
+        return try await textEnhancer.enhance(input)
     }
 
     // MARK: - System Message (Cloud Providers)
