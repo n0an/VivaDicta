@@ -15,6 +15,7 @@ import os
 import OAuth
 import CloudTranscription
 import AICore
+import AIProviders
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
 ///
