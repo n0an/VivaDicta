@@ -7,10 +7,6 @@ import os
 /// intentionally `internal` so they don't collide with the app target's
 /// identically named extensions on `Logger`.
 extension Logger {
-    init(aiProvidersCategory category: String) {
-        self.init(subsystem: "com.antonnovoselov.VivaDicta", category: category)
-    }
-
     func logInfo(_ message: String) {
         self.info("\(message, privacy: .public)")
     }
