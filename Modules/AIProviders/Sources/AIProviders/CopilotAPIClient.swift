@@ -8,17 +8,17 @@ import AICore
 
 /// Client for GitHub Copilot's OpenAI-compatible API.
 /// Uses the Copilot token obtained via device code OAuth flow.
-enum CopilotAPIClient {
-    private static let logger = Logger(category: .copilotAPI)
+public enum CopilotAPIClient {
+    private static let logger = Logger(aiProvidersCategory: "CopilotAPIClient")
 
     /// URL session used for all Copilot API calls. Override only from tests.
     nonisolated(unsafe) static var networkService: any NetworkService = DefaultNetworkService(category: "AppClient")
 
     /// Base URL for Copilot's API.
-    static let baseURL = "https://api.individual.githubcopilot.com"
+    public static let baseURL = "https://api.individual.githubcopilot.com"
 
     /// Default model for Copilot requests.
-    static let defaultModel = "gpt-4o"
+    public static let defaultModel = "gpt-4o"
 
     /// Headers required by Copilot API.
     private static let staticHeaders: [String: String] = [
@@ -30,14 +30,14 @@ enum CopilotAPIClient {
     ]
 
     /// Returns headers for chat requests including the Copilot token.
-    static func chatHeaders(copilotToken: String) -> [String: String] {
+    public static func chatHeaders(copilotToken: String) -> [String: String] {
         var headers = staticHeaders
         headers["Authorization"] = "Bearer \(copilotToken)"
         return headers
     }
 
     /// Sends an AI enhancement request via Copilot's API.
-    static func enhance(
+    public static func enhance(
         text: String,
         systemPrompt: String,
         model: String,
@@ -52,7 +52,7 @@ enum CopilotAPIClient {
         }
     }
 
-    static func enhanceStreaming(
+    public static func enhanceStreaming(
         text: String,
         systemPrompt: String,
         model: String,
@@ -282,7 +282,7 @@ enum CopilotAPIClient {
         for try await line in bytes.lines {
             if let delta = streamingDelta(from: line) {
                 aggregatedText += delta
-                onPartialResult(aggregatedText)
+                await onPartialResult(aggregatedText)
             }
         }
 
@@ -291,11 +291,11 @@ enum CopilotAPIClient {
         }
 
         let finalResult = aggregatedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        onPartialResult(finalResult)
+        await onPartialResult(finalResult)
         return finalResult
     }
 
-    static func streamingDelta(from line: String) -> String? {
+    public static func streamingDelta(from line: String) -> String? {
         guard line.hasPrefix("data:") else {
             return nil
         }
@@ -331,7 +331,7 @@ enum CopilotAPIClient {
     // MARK: - Fetch Available Models
 
     /// Fetches the list of models available for the user's Copilot plan.
-    static func fetchModels(copilotToken: String) async -> [String] {
+    public static func fetchModels(copilotToken: String) async -> [String] {
         guard let url = URL(string: "\(baseURL)/models") else { return [defaultModel] }
 
         var request = URLRequest(url: url)
