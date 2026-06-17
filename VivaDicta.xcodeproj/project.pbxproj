@@ -197,6 +197,9 @@
 		186C04412FB7762100102432 /* Exceptions for "Modules" folder in "VivaDicta" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AICore,
+				AIKit,
+				AIProviders,
 				AppGroup,
 				AudioRecording,
 				CloudTranscription,
@@ -215,6 +218,9 @@
 		186C04422FB7762100102432 /* Exceptions for "Modules" folder in "ActionExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AICore,
+				AIKit,
+				AIProviders,
 				AppGroup,
 				AudioRecording,
 				CloudTranscription,
