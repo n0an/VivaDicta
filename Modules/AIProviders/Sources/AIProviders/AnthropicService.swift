@@ -27,12 +27,12 @@ import AICore
 /// - Streaming uses `content_block_delta` SSE events with a `delta.text`
 ///   payload, not OpenAI's `data: {choices: [{delta: {content: ...}}]}`
 ///   shape
-struct AnthropicService: Sendable {
+public struct AnthropicService: Sendable {
     private let networkService: any NetworkService
     private let logger: Logger
     private let baseTimeout: TimeInterval
 
-    init(networkService: any NetworkService, logger: Logger, baseTimeout: TimeInterval) {
+    public init(networkService: any NetworkService, logger: Logger, baseTimeout: TimeInterval) {
         self.networkService = networkService
         self.logger = logger
         self.baseTimeout = baseTimeout
@@ -44,7 +44,7 @@ struct AnthropicService: Sendable {
     /// Throws `EnhancementError.rateLimitExceeded` on 429,
     /// `.serverError` on 5xx, `.customError(_)` on other non-200,
     /// `.enhancementFailed` on malformed body.
-    func enhance(
+    public func enhance(
         systemMessage: String,
         userMessage: String,
         apiKey: String,
@@ -113,7 +113,7 @@ struct AnthropicService: Sendable {
     /// Calls `onPartialResponse` on the main actor as each delta arrives,
     /// then once more if the post-filter text differs from the raw
     /// aggregate. Returns the filtered/trimmed final text.
-    func enhanceStreaming(
+    public func enhanceStreaming(
         systemMessage: String,
         userMessage: String,
         apiKey: String,
@@ -210,7 +210,7 @@ struct AnthropicService: Sendable {
 
     /// Probes the Anthropic API with a minimal Messages request and
     /// returns whether the key is accepted. Never throws.
-    func verifyAPIKey(_ key: String) async -> Bool {
+    public func verifyAPIKey(_ key: String) async -> Bool {
         let url = URL(string: AIProvider.anthropic.baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

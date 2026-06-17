@@ -13,17 +13,24 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../AICore"),
+        .package(path: "../Networking"),
     ],
     targets: [
         .target(
             name: "AIProviders",
             dependencies: [
                 .product(name: "AICore", package: "AICore"),
+                .product(name: "Networking", package: "Networking"),
             ]
         ),
         .testTarget(
             name: "AIProvidersTests",
-            dependencies: ["AIProviders"]
+            dependencies: [
+                "AIProviders",
+                .product(name: "AICore", package: "AICore"),
+                .product(name: "Networking", package: "Networking"),
+                .product(name: "NetworkingMocks", package: "Networking"),
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]
