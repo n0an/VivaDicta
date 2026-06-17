@@ -45,7 +45,16 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
 
     // MARK: - MXMetricManagerSubscriber
 
-    func didReceive(_ payloads: [MXMetricPayload]) {
+    // `nonisolated` is load-bearing: with `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`
+    // these would be implicitly `@MainActor`, and the `@objc` thunk for an
+    // `@MainActor` method runs a runtime executor precondition on entry. MetricKit
+    // calls subscribers synchronously on its own background queue, so on iOS 26
+    // (trapping variant) that precondition crashes before the body runs. The bodies
+    // only read the payload and call the `nonisolated` `AnalyticsService.track`, so
+    // running off the main actor is safe. The helpers below are `nonisolated` for
+    // the same reason (they're reached only from here).
+
+    nonisolated func didReceive(_ payloads: [MXMetricPayload]) {
         for payload in payloads {
             reportLaunchTime(payload)
             reportHangTime(payload)
@@ -53,7 +62,7 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
         }
     }
 
-    func didReceive(_ payloads: [MXDiagnosticPayload]) {
+    nonisolated func didReceive(_ payloads: [MXDiagnosticPayload]) {
         for payload in payloads {
             for hang in payload.hangDiagnostics ?? [] {
                 let seconds = hang.hangDuration.converted(to: .seconds).value
@@ -70,19 +79,19 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
 
     // MARK: - Metric extraction
 
-    private func reportLaunchTime(_ payload: MXMetricPayload) {
+    nonisolated private func reportLaunchTime(_ payload: MXMetricPayload) {
         guard let launch = payload.applicationLaunchMetrics,
               let stats = weightedAverageMs(launch.histogrammedTimeToFirstDraw) else { return }
         AnalyticsService.track(.appLaunchMetric(averageMs: stats.averageMs, sampleCount: stats.count))
     }
 
-    private func reportHangTime(_ payload: MXMetricPayload) {
+    nonisolated private func reportHangTime(_ payload: MXMetricPayload) {
         guard let responsiveness = payload.applicationResponsivenessMetrics,
               let stats = weightedAverageMs(responsiveness.histogrammedApplicationHangTime) else { return }
         AnalyticsService.track(.appHangMetric(averageMs: stats.averageMs, sampleCount: stats.count))
     }
 
-    private func reportMemory(_ payload: MXMetricPayload) {
+    nonisolated private func reportMemory(_ payload: MXMetricPayload) {
         guard let memory = payload.memoryMetrics else { return }
         // Report MiB (bytes / 1024²), not Measurement's decimal `.megabytes`
         // (1e6 bytes), so these line up with DeviceConditions.currentMemoryFootprintMB
@@ -95,7 +104,7 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
     /// Collapses a duration histogram into a single bucket-weighted average (in
     /// milliseconds) plus the total sample count. MetricKit reports distributions
     /// rather than scalars, so we approximate each bucket by its midpoint.
-    private func weightedAverageMs(_ histogram: MXHistogram<UnitDuration>) -> (averageMs: Double, count: Int)? {
+    nonisolated private func weightedAverageMs(_ histogram: MXHistogram<UnitDuration>) -> (averageMs: Double, count: Int)? {
         let enumerator = histogram.bucketEnumerator
         var totalCount = 0
         var weightedSum = 0.0
