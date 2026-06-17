@@ -12,20 +12,36 @@ let package = Package(
         .library(name: "AIKit", targets: ["AIKit"]),
     ],
     dependencies: [
-        // AIKit depends on the AICore API only - never on AIProviders (the impl).
-        // The composition root injects concrete providers into AIKit's registry.
+        // AIKit is the AI orchestration module: it builds and routes providers,
+        // so it depends on the provider impls + the infra they need (mirroring
+        // how TranscriptionKit depends on Cloud/Local transcription).
         .package(path: "../AICore"),
+        .package(path: "../AIProviders"),
+        .package(path: "../Keychain"),
+        .package(path: "../OAuth"),
+        .package(path: "../Networking"),
     ],
     targets: [
         .target(
             name: "AIKit",
             dependencies: [
                 .product(name: "AICore", package: "AICore"),
+                .product(name: "AIProviders", package: "AIProviders"),
+                .product(name: "Keychain", package: "Keychain"),
+                .product(name: "OAuth", package: "OAuth"),
+                .product(name: "Networking", package: "Networking"),
             ]
         ),
         .testTarget(
             name: "AIKitTests",
-            dependencies: ["AIKit"]
+            dependencies: [
+                "AIKit",
+                .product(name: "AICore", package: "AICore"),
+                .product(name: "AIProviders", package: "AIProviders"),
+                .product(name: "KeychainMocks", package: "Keychain"),
+                .product(name: "OAuthMocks", package: "OAuth"),
+                .product(name: "NetworkingMocks", package: "Networking"),
+            ]
         ),
     ],
     swiftLanguageModes: [.v6]
