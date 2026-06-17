@@ -5,7 +5,7 @@ import Networking
 import NetworkingMocks
 import os
 import Testing
-@testable import VivaDicta
+import AIProviders
 import AICore
 
 /// Tests cover `OpenAICompatibleService` in isolation: the static body

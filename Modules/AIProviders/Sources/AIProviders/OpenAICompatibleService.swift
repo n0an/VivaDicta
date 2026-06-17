@@ -26,11 +26,11 @@ import AICore
 /// the body shape and the SSE delta parser. Cloud providers that match
 /// the standard 429/5xx/default error mapping can call the instance
 /// `enhance` / `enhanceStreaming` methods directly.
-struct OpenAICompatibleService: Sendable {
+public struct OpenAICompatibleService: Sendable {
     private let networkService: any NetworkService
     private let logger: Logger
 
-    init(networkService: any NetworkService, logger: Logger) {
+    public init(networkService: any NetworkService, logger: Logger) {
         self.networkService = networkService
         self.logger = logger
     }
@@ -41,7 +41,7 @@ struct OpenAICompatibleService: Sendable {
     /// quirks: GPT-5 series omits `temperature` (uses `reasoning_effort`
     /// instead); reasoning models pick up extra body parameters from
     /// `ReasoningConfig`.
-    static func buildRequestBody(
+    public static func buildRequestBody(
         modelName: String,
         systemMessage: String,
         userMessage: String,
@@ -80,7 +80,7 @@ struct OpenAICompatibleService: Sendable {
     /// non-data lines, the `[DONE]` sentinel, or malformed payloads.
     /// Handles both string-content deltas and the newer array-of-text
     /// deltas (responses-API shape).
-    static func streamingDelta(from line: String) -> String? {
+    public static func streamingDelta(from line: String) -> String? {
         guard line.hasPrefix("data:") else {
             return nil
         }
@@ -120,7 +120,7 @@ struct OpenAICompatibleService: Sendable {
     ///
     /// Returns the filtered/trimmed `choices[0].message.content`. Throws
     /// `.enhancementFailed` on a malformed 200 body.
-    func enhance(
+    public func enhance(
         url: URL,
         modelName: String,
         systemMessage: String,
@@ -195,7 +195,7 @@ struct OpenAICompatibleService: Sendable {
     /// Calls `onPartialResponse` on the main actor as each SSE delta
     /// arrives. Returns the filtered/trimmed final text. Throws
     /// `.enhancementFailed` if no deltas arrived.
-    func enhanceStreaming(
+    public func enhanceStreaming(
         url: URL,
         modelName: String,
         systemMessage: String,
@@ -284,7 +284,7 @@ struct OpenAICompatibleService: Sendable {
     /// Gateway (`/v1/credits`).
     ///
     /// Never throws. `providerName` is used only for log lines.
-    func verifyGETEndpoint(
+    public func verifyGETEndpoint(
         _ key: String,
         url: URL,
         providerName: String
@@ -330,7 +330,7 @@ struct OpenAICompatibleService: Sendable {
     /// can be slow enough to risk false-negative timeouts.
     ///
     /// Never throws. `providerName` is used only for log lines.
-    func verifyChatCompletionsAPIKey(
+    public func verifyChatCompletionsAPIKey(
         _ key: String,
         baseURL: String,
         defaultModel: String,

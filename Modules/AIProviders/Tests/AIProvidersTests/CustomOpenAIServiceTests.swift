@@ -5,7 +5,7 @@ import Networking
 import NetworkingMocks
 import os
 import Testing
-@testable import VivaDicta
+import AIProviders
 
 /// Tests cover `CustomOpenAIService` in isolation: the status-code mapping,
 /// API-key forwarding, body shape, and URLError handling - both raw and
