@@ -2,7 +2,7 @@
 
 ## Overview
 
-VivaDicta is one app target plus a ring of local Swift Package modules under `Modules/`. The modules follow an **onion layering**: dependencies point inward only, and each layer composes the layers inside it.
+VivaDicta is one app target plus a ring of local Swift Package modules under `Modules/`. The modules follow an **layers**: dependencies point inward only, and each layer composes the layers inside it.
 
 - **Core** — no dependencies on other app modules; pure protocols + value types (and small kernels).
 - **Adapter** — a single concern behind a protocol, with a `Default*` impl and a `Mock*` test double.
