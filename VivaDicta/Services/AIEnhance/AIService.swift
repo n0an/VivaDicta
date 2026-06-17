@@ -1065,23 +1065,6 @@ class AIService {
         OpenAICompatibleService.streamingDelta(from: line)
     }
 
-    private func makeAnthropicStreamingRequest(
-        systemMessage: String,
-        userMessage: String,
-        apiKey: String,
-        model: String,
-        onPartialResponse: @escaping @MainActor (String) -> Void
-    ) async throws -> String {
-        let service = AnthropicService(networkService: networkService, logger: logger, baseTimeout: baseTimeout)
-        return try await service.enhanceStreaming(
-            systemMessage: systemMessage,
-            userMessage: userMessage,
-            apiKey: apiKey,
-            model: model,
-            onPartialResponse: onPartialResponse
-        )
-    }
-
     private func makeStreamingRequest(
         text: String,
         mode: VivaMode,
@@ -1123,45 +1106,25 @@ class AIService {
                 throw EnhancementError.notConfigured
             }
         case .anthropic:
-            guard let apiKey = self.getAPIKey(for: aiProvider) else {
+            guard self.getAPIKey(for: aiProvider) != nil else {
                 throw EnhancementError.notConfigured
             }
 
             logger.logDebug("AI Processing - Using Anthropic streaming")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
-            return try await makeAnthropicStreamingRequest(
-                systemMessage: sysMsg,
-                userMessage: userMsg,
-                apiKey: apiKey,
-                model: mode.aiModel,
-                onPartialResponse: onPartialResponse
-            )
+            let provider = try await aiProviderRegistry.makeTextProvider(for: .anthropic, model: mode.aiModel)
+            return try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
         case .copilot:
-            let token = try await copilotOAuthManager.validCopilotToken()
             let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
-            let result = try await CopilotAPIClient.enhanceStreaming(
-                text: userMsg,
-                systemPrompt: sysMsg,
-                model: model,
-                copilotToken: token,
-                onPartialResult: onPartialResponse
-            )
+            let provider = try await aiProviderRegistry.makeTextProvider(for: .copilot, model: model)
+            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .geminiOAuth:
             do {
-                let provider = GeminiOAuthProvider()
-                let (token, _, projectId) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
-                let result = try await GeminiAPIClient.enhanceStreaming(
-                    text: userMsg,
-                    systemPrompt: sysMsg,
-                    model: model,
-                    accessToken: token,
-                    projectId: projectId,
-                    onPartialResult: onPartialResponse,
-                    networkService: networkService
-                )
+                let provider = try await aiProviderRegistry.makeTextProvider(for: .geminiOAuth, model: model)
+                let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
                 return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
             } catch let error as EnhancementError {
                 throw error
@@ -1175,17 +1138,9 @@ class AIService {
             }
         case .openAIOAuth:
             do {
-                let provider = OpenAIOAuthProvider()
-                let (token, accountId, _) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
-                let result = try await OpenAIOAuthClient.enhance(
-                    text: userMsg,
-                    systemPrompt: sysMsg,
-                    model: model,
-                    accessToken: token,
-                    accountId: accountId,
-                    onPartialResult: onPartialResponse
-                )
+                let provider = try await aiProviderRegistry.makeTextProvider(for: .openAIOAuth, model: model)
+                let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
                 return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
             } catch let error as OAuthError {
                 if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
@@ -1196,23 +1151,15 @@ class AIService {
                 }
             }
         case .openAICompatibleCloud:
-            guard let apiKey = self.getAPIKey(for: aiProvider) else {
+            guard self.getAPIKey(for: aiProvider) != nil else {
                 throw EnhancementError.notConfigured
             }
 
             logger.logDebug("AI Processing - Using \(aiProvider.displayName) streaming")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
-            return try await makeOpenAICompatibleStreamingRequest(
-                url: URL(string: aiProvider.baseURL)!,
-                modelName: mode.aiModel,
-                systemMessage: sysMsg,
-                userMessage: userMsg,
-                headers: ["Authorization": "Bearer \(apiKey)"],
-                timeout: baseTimeout,
-                errorPrefix: "\(aiProvider.displayName) error",
-                onPartialResponse: onPartialResponse
-            )
+            let provider = try await aiProviderRegistry.makeTextProvider(for: .cloud(aiProvider), model: mode.aiModel)
+            return try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
         case .ollama:
             let serverURL = ollamaServerURL
             guard let url = URL(string: "\(serverURL)/v1/chat/completions") else {

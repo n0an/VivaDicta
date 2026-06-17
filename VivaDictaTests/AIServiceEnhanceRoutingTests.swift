@@ -70,4 +70,34 @@ struct AIServiceEnhanceRoutingTests {
         #expect(net.capturedRequest?.url?.absoluteString.contains("cloudcode-pa.googleapis.com") == true)
         #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer GEM_TOKEN")
     }
+
+    /// Streaming counterpart: passing an `onPartialResult` to a signed-in Gemini
+    /// mode routes through `makeStreamingRequest`'s `.geminiOAuth` case, which
+    /// must still fetch the Gemini OAuth token and stream from the cloudcode
+    /// streaming endpoint with that token.
+    @Test func geminiOAuthStreamingRouteSendsOAuthTokenToCloudCodeEndpoint() async {
+        let oauth = MockOAuthManager()
+        oauth.stubValidAccessTokenResponse = .success((token: "GEM_STREAM_TOKEN", accountId: nil, projectId: "proj-1"))
+        let net = MockNetworkService()
+        net.stubSendResponse = .failure(URLError(.badServerResponse)) // request is captured before the call; response irrelevant
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            networkService: net,
+            oauthManager: oauth
+        )
+        sut.isGeminiSignedIn = true
+        let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-3-flash-preview")
+
+        _ = try? await sut.generateVariation(
+            text: "hello world",
+            preset: PresetCatalog.regular,
+            modeOverride: mode,
+            onPartialResult: { _ in }
+        )
+
+        #expect(oauth.capturedValidAccessTokenProviderKey == "geminiOAuthCredential")
+        #expect(net.capturedRequest?.url?.absoluteString.contains("cloudcode-pa.googleapis.com") == true)
+        #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer GEM_STREAM_TOKEN")
+    }
 }
