@@ -168,6 +168,8 @@ public struct OpenAIOAuthTextProvider: AITextProvider {
     }
 
     public func enhanceStreaming(systemMessage: String, userMessage: String, onPartialResponse: @escaping @MainActor (String) -> Void) async throws -> String {
+        // OpenAIOAuthClient has no separate enhanceStreaming - its single enhance
+        // streams when given an onPartialResult callback. This is intentional.
         try await OpenAIOAuthClient.enhance(text: userMessage, systemPrompt: systemMessage, model: model, accessToken: accessToken, accountId: accountId, onPartialResult: onPartialResponse)
     }
 }
