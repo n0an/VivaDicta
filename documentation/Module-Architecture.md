@@ -146,4 +146,33 @@ The next phase introduces a **physical** split using SPM's per-target compilatio
 - Every consumer imports only `<Module>API`.
 - The **composition root** (the app `@main` / an `AppDependencies`, and each extension's entry - each executable target is its own process and its own root) is the only thing that depends on the impl product; it constructs `Default<Name>` and injects it as `any <Name>`.
 
+```mermaid
+graph BT
+  classDef api fill:#0e2a16,stroke:#7ee787,color:#7ee787
+  classDef impl fill:#332306,stroke:#ffa657,color:#ffa657
+  classDef consumer fill:#1c2128,stroke:#8b949e,color:#8b949e
+  classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
+
+  NetworkingAPI["NetworkingAPI<br/>(protocols + DTOs, rarely changes)"]:::api
+  Networking["Networking<br/>(DefaultNetworkService, churns)"]:::impl
+
+  AIProviders[AIProviders]:::consumer
+  OAuth[OAuth]:::consumer
+  CloudTranscription[CloudTranscription]:::consumer
+  AIKit[AIKit]:::consumer
+
+  App["VivaDicta app + extensions<br/>(composition root)"]:::app
+
+  %% Everyone imports ONLY the API - impl churn doesn't cascade
+  Networking --> NetworkingAPI
+  AIProviders --> NetworkingAPI
+  OAuth --> NetworkingAPI
+  CloudTranscription --> NetworkingAPI
+  AIKit --> NetworkingAPI
+  App --> NetworkingAPI
+
+  %% The ONLY edge to the impl: the composition root, which wires DefaultNetworkService
+  App -. "only the root<br/>depends on the impl" .-> Networking
+```
+
 This also means **retiring the `networkService: any NetworkService = DefaultNetworkService(...)` default-parameter idiom** - the impl is named only at the composition root, never as a consumer's default. Rolled out by cascade value (`Networking` first), each as its own behavior-preserving PR.
