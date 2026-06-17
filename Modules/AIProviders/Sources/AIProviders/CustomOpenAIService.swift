@@ -21,20 +21,20 @@ import os
 /// "user", "content": "test" }]`). Verifies the endpoint responds with
 /// `200`; maps other status codes and `URLError` cases to user-readable
 /// failure messages so the settings UI can surface them directly.
-struct CustomOpenAIService: Sendable {
+public struct CustomOpenAIService: Sendable {
     /// Structured outcome of a Custom OpenAI endpoint test. Either side
     /// carries a user-facing message suitable for display in the settings
     /// UI.
-    enum TestResult: Equatable, Sendable {
+    public enum TestResult: Equatable, Sendable {
         case success(message: String)
         case failure(message: String)
 
-        var isSuccess: Bool {
+        public var isSuccess: Bool {
             if case .success = self { return true }
             return false
         }
 
-        var message: String {
+        public var message: String {
             switch self {
             case let .success(message), let .failure(message):
                 return message
@@ -45,7 +45,7 @@ struct CustomOpenAIService: Sendable {
     private let networkService: any NetworkService
     private let logger: Logger
 
-    init(networkService: any NetworkService, logger: Logger) {
+    public init(networkService: any NetworkService, logger: Logger) {
         self.networkService = networkService
         self.logger = logger
     }
@@ -53,7 +53,7 @@ struct CustomOpenAIService: Sendable {
     /// Probes a Custom OpenAI endpoint with a minimal chat-completions
     /// request and returns a structured result. Never throws - all errors
     /// (URLError, bad status, bad body) map to `.failure(message:)`.
-    func testEndpoint(
+    public func testEndpoint(
         endpointURL: String,
         modelName: String,
         apiKey: String?

@@ -5,7 +5,7 @@ import Networking
 import NetworkingMocks
 import os
 import Testing
-@testable import VivaDicta
+import AIProviders
 
 /// Tests cover `OllamaService` in isolation: the HTTP shape of model
 /// fetching (OpenAI-compatible + native fallback) and connection checks.

@@ -22,11 +22,11 @@ import os
 /// `fetchModels` tries the OpenAI-compatible endpoint first and falls back
 /// to the native endpoint. `checkConnection` always uses the native endpoint
 /// because that one is guaranteed to exist on every Ollama install.
-struct OllamaService: Sendable {
+public struct OllamaService: Sendable {
     private let networkService: any NetworkService
     private let logger: Logger
 
-    init(networkService: any NetworkService, logger: Logger) {
+    public init(networkService: any NetworkService, logger: Logger) {
         self.networkService = networkService
         self.logger = logger
     }
@@ -37,7 +37,7 @@ struct OllamaService: Sendable {
     ///
     /// Returns the (sorted) model names. Throws only if both endpoints fail
     /// to produce a usable response.
-    func fetchModels(serverURL: String) async throws -> [String] {
+    public func fetchModels(serverURL: String) async throws -> [String] {
         do {
             return try await fetchModelsViaOpenAICompatibleEndpoint(serverURL: serverURL)
         } catch {
@@ -49,7 +49,7 @@ struct OllamaService: Sendable {
     /// Lightweight reachability check. Pings the native `/api/tags` endpoint
     /// with a 3s timeout. Returns `false` for any non-200 / transport error,
     /// never throws.
-    func checkConnection(serverURL: String) async -> Bool {
+    public func checkConnection(serverURL: String) async -> Bool {
         guard let url = URL(string: "\(serverURL)/api/tags") else {
             return false
         }
@@ -121,7 +121,7 @@ struct OllamaService: Sendable {
     }
 }
 
-enum OllamaServiceError: Error, Equatable {
+public enum OllamaServiceError: Error, Equatable, Sendable {
     case unexpectedStatus(Int)
     case malformedResponse
 }
