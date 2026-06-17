@@ -3,6 +3,7 @@
 import Foundation
 import Networking
 import os
+import AICore
 
 /// Pure HTTP wrapper for OpenAI-compatible chat-completions endpoints
 /// (`POST /v1/chat/completions` with Bearer auth and standard `messages`

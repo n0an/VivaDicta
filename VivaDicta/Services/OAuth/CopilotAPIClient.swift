@@ -4,6 +4,7 @@ import Foundation
 import Networking
 import os
 import OAuth
+import AICore
 
 /// Client for GitHub Copilot's OpenAI-compatible API.
 /// Uses the Copilot token obtained via device code OAuth flow.
