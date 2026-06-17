@@ -32,6 +32,10 @@
 		18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497F12F268B2700538830 /* FirebaseCrashlytics */; };
 		18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18B89BC22FB875530007FA96 /* TranscriptionKit */; };
 		18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 18B8BEB02FB8BD7D0007FA96 /* DesignSystem */; };
+		BFBF000000000000000000C1 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C1 /* AICore */; };
+		BFBF000000000000000000D1 /* AIProviders in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000D1 /* AIProviders */; };
+		BFBF000000000000000000E1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E1 /* AIKit */; };
+		BFBF000000000000000000C2 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C2 /* AICore */; };
 		18B8CF2C2FB8C4690007FA96 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 18B8CF2B2FB8C4690007FA96 /* DesignSystem */; };
 		18BA24132F7ED0D700C4F68B /* VivaDictaWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18BA29262F7F29FD00C4F68B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */; };
@@ -197,6 +201,9 @@
 		186C04412FB7762100102432 /* Exceptions for "Modules" folder in "VivaDicta" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AICore,
+				AIKit,
+				AIProviders,
 				AppGroup,
 				AudioRecording,
 				CloudTranscription,
@@ -215,6 +222,9 @@
 		186C04422FB7762100102432 /* Exceptions for "Modules" folder in "ActionExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AICore,
+				AIKit,
+				AIProviders,
 				AppGroup,
 				AudioRecording,
 				CloudTranscription,
@@ -490,6 +500,9 @@
 				188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */,
 				18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */,
 				18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */,
+				BFBF000000000000000000C1 /* AICore in Frameworks */,
+				BFBF000000000000000000D1 /* AIProviders in Frameworks */,
+				BFBF000000000000000000E1 /* AIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -509,6 +522,7 @@
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 				E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */,
 				188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */,
+				BFBF000000000000000000C2 /* AICore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -696,6 +710,9 @@
 				18B89BC22FB875530007FA96 /* TranscriptionKit */,
 				18B8BEB02FB8BD7D0007FA96 /* DesignSystem */,
 				188E02562FC3BCB4007B8BC1 /* AudioRecording */,
+				AEAE000000000000000000C1 /* AICore */,
+				AEAE000000000000000000D1 /* AIProviders */,
+				AEAE000000000000000000E1 /* AIKit */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -731,6 +748,7 @@
 				18F76A332FB85C0B00280269 /* AppGroup */,
 				F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */,
 				188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */,
+				AEAE000000000000000000C2 /* AICore */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2474,6 +2492,22 @@
 		18B89BC22FB875530007FA96 /* TranscriptionKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TranscriptionKit;
+		};
+		AEAE000000000000000000C1 /* AICore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AICore;
+		};
+		AEAE000000000000000000D1 /* AIProviders */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIProviders;
+		};
+		AEAE000000000000000000E1 /* AIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIKit;
+		};
+		AEAE000000000000000000C2 /* AICore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AICore;
 		};
 		18B8BEB02FB8BD7D0007FA96 /* DesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;
