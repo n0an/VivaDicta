@@ -95,6 +95,27 @@
         "identifier" : "AudioRecordingTests",
         "name" : "AudioRecordingTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/AIKit",
+        "identifier" : "AIKitTests",
+        "name" : "AIKitTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/AICore",
+        "identifier" : "AICoreTests",
+        "name" : "AICoreTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/AIProviders",
+        "identifier" : "AIProvidersTests",
+        "name" : "AIProvidersTests"
+      }
     }
   ],
   "version" : 1
