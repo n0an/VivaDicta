@@ -167,6 +167,34 @@ struct AIServiceEnhanceRoutingTests {
         #expect(net.capturedRequest == nil)   // failed the precondition before any network call
     }
 
+    /// Streaming counterpart of the Anthropic cloud route - covers the streaming
+    /// `.anthropic` guard removal. `MockNetworkService.bytes` can't return a
+    /// stubbed `AsyncBytes`, but it captures the request before throwing, so we
+    /// can still assert the request reached `/v1/messages` with the `x-api-key`.
+    @Test func anthropicStreamingCloudRouteSendsApiKeyHeaderToMessagesEndpoint() async {
+        let keychain = MockKeychainService()
+        _ = keychain.save("ANTHROPIC_STREAM_KEY", forKey: "anthropicAPIKey")
+        let net = MockNetworkService()
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: keychain,
+            networkService: net,
+            oauthManager: MockOAuthManager()
+        )
+        let mode = makeMode(aiProvider: .anthropic, aiModel: "claude-sonnet-4-6")
+
+        _ = try? await sut.generateVariation(
+            text: "hello world",
+            preset: PresetCatalog.regular,
+            modeOverride: mode,
+            onPartialResult: { _ in }
+        )
+
+        #expect(net.capturedRequest?.url?.absoluteString == "https://api.anthropic.com/v1/messages")
+        #expect(net.capturedRequest?.value(forHTTPHeaderField: "x-api-key") == "ANTHROPIC_STREAM_KEY")
+    }
+
     private func http(_ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }
