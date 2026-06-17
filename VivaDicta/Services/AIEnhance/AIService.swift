@@ -16,6 +16,7 @@ import OAuth
 import CloudTranscription
 import AICore
 import AIProviders
+import AIKit
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
 ///
@@ -182,6 +183,22 @@ class AIService {
     let oauthManager: any OAuthManager
     let copilotOAuthManager: any CopilotOAuthManager
     private let baseTimeout: TimeInterval = 300
+
+    /// The AI stack's composition point: turns a resolved `AIProviderRoute` into
+    /// a configured `any AITextProvider`. Built from this service's injected
+    /// dependencies so it reads the same Keychain / OAuth state the rest of
+    /// `AIService` does. Cheap to construct (it just binds references), so a
+    /// computed property keeps it always in sync with the current dependencies.
+    private var aiProviderRegistry: AIProviderRegistry {
+        AIProviderRegistry(
+            keychain: keychain,
+            oauthManager: oauthManager,
+            copilotOAuthManager: copilotOAuthManager,
+            networkService: networkService,
+            logger: logger,
+            baseTimeout: baseTimeout
+        )
+    }
 
     /// Service for Apple's on-device Foundation Models (type-erased for iOS version compatibility)
     private var _appleFoundationModelService: Any?
@@ -1350,16 +1367,9 @@ class AIService {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             do {
-                let provider = OpenAIOAuthProvider()
-                let (token, accountId, _) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? OpenAIOAuthClient.defaultModel : mode.aiModel
-                let result = try await OpenAIOAuthClient.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: model,
-                    accessToken: token,
-                    accountId: accountId
-                )
+                let provider = try await aiProviderRegistry.makeTextProvider(for: .openAIOAuth, model: model)
+                let result = try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as OAuthError {
                 // If OAuth fails, fall through to CLI or API key
@@ -1376,17 +1386,9 @@ class AIService {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             do {
-                let provider = GeminiOAuthProvider()
-                let (token, _, projectId) = try await oauthManager.validAccessToken(for: provider)
                 let model = mode.aiModel.isEmpty ? GeminiAPIClient.defaultModel : mode.aiModel
-                let result = try await GeminiAPIClient.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: model,
-                    accessToken: token,
-                    projectId: projectId,
-                    networkService: networkService
-                )
+                let provider = try await aiProviderRegistry.makeTextProvider(for: .geminiOAuth, model: model)
+                let result = try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as EnhancementError {
                 // Rate limit etc. - don't fall through, surface directly
@@ -1454,14 +1456,9 @@ class AIService {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             do {
-                let token = try await copilotOAuthManager.validCopilotToken()
                 let model = mode.aiModel.isEmpty ? CopilotAPIClient.defaultModel : mode.aiModel
-                let result = try await CopilotAPIClient.enhance(
-                    text: formattedText,
-                    systemPrompt: resolvedSystemMessage,
-                    model: model,
-                    copilotToken: token
-                )
+                let provider = try await aiProviderRegistry.makeTextProvider(for: .copilot, model: model)
+                let result = try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as EnhancementError {
                 throw error
@@ -1471,7 +1468,7 @@ class AIService {
         }
 
         // Cloud providers require API key
-        guard let apiKey = self.getAPIKey(for: aiProvider) else {
+        guard self.getAPIKey(for: aiProvider) != nil else {
             throw EnhancementError.notConfigured
         }
 
@@ -1482,27 +1479,12 @@ class AIService {
         logger.logDebug("AI Processing - System Message: \(resolvedSystemMessage)")
         logger.logDebug("AI Processing - User Message: \(formattedText)")
 
-        switch aiProvider {
-        case .anthropic:
-            let service = AnthropicService(networkService: networkService, logger: logger, baseTimeout: baseTimeout)
-            return try await service.enhance(
-                systemMessage: resolvedSystemMessage,
-                userMessage: formattedText,
-                apiKey: apiKey,
-                model: mode.aiModel
-            )
-
-        default:
-            let service = OpenAICompatibleService(networkService: networkService, logger: logger)
-            return try await service.enhance(
-                url: URL(string: aiProvider.baseURL)!,
-                modelName: mode.aiModel,
-                systemMessage: resolvedSystemMessage,
-                userMessage: formattedText,
-                headers: ["Authorization": "Bearer \(apiKey)"],
-                timeout: baseTimeout
-            )
-        }
+        // Anthropic uses its own Messages API; every other cloud provider is
+        // OpenAI-compatible. The registry reads the API key from the Keychain
+        // and builds the configured provider (key existence is guarded above).
+        let route: AIProviderRoute = aiProvider == .anthropic ? .anthropic : .cloud(aiProvider)
+        let provider = try await aiProviderRegistry.makeTextProvider(for: route, model: mode.aiModel)
+        return try await provider.enhance(systemMessage: resolvedSystemMessage, userMessage: formattedText)
     }
 
     // MARK: - System Message (Cloud Providers)
