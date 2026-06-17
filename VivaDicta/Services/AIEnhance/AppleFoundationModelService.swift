@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import os
+import AICore
 
 enum AppleFoundationModelSamplingProfile: Equatable {
     case extractive
