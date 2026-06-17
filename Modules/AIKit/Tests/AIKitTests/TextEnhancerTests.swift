@@ -49,11 +49,12 @@ struct TextEnhancerTests {
     private func makeSUT(
         keychain: MockKeychainService = MockKeychainService(),
         net: MockNetworkService = MockNetworkService(),
-        cli: MockCLIServerEnhancer = MockCLIServerEnhancer()
+        cli: MockCLIServerEnhancer = MockCLIServerEnhancer(),
+        oauth: MockOAuthManager = MockOAuthManager()
     ) -> TextEnhancer {
         let registry = AIProviderRegistry(
             keychain: keychain,
-            oauthManager: MockOAuthManager(),
+            oauthManager: oauth,
             copilotOAuthManager: MockCopilotOAuthManager(),
             networkService: net,
             logger: Logger(subsystem: "test", category: "TextEnhancerTests"),
@@ -121,5 +122,54 @@ struct TextEnhancerTests {
         #expect(cli.enhanceCallCount == 1)            // CLI was attempted
         #expect(result == "CLOUD_OK")                 // then fell through to the cloud route
         #expect(net.capturedRequest?.url?.absoluteString == "https://api.anthropic.com/v1/messages")
+    }
+
+    // MARK: - OAuth branches (the subtle rethrow / fallthrough behavior)
+
+    /// Gemini OAuth throwing an `EnhancementError` (e.g. a 429 rate limit) must
+    /// surface directly - the `catch EnhancementError` precedes `catch OAuthError`,
+    /// so it does NOT fall through to the cloud route.
+    @Test func geminiOAuthEnhancementErrorSurfacesDirectlyWithoutFallthrough() async {
+        let oauth = MockOAuthManager()
+        oauth.stubValidAccessTokenResponse = .success((token: "GEM_TOK", accountId: nil, projectId: nil))
+        let net = MockNetworkService()
+        net.stubSendResponse = .success((Data("rate limited".utf8), http(429))) // Gemini maps 429 -> EnhancementError
+        let sut = makeSUT(net: net, oauth: oauth)
+
+        await #expect(throws: EnhancementError.self) {
+            _ = try await sut.enhance(input(provider: .gemini, isOAuthSignedIn: true, hasAPIKey: true))
+        }
+        // Only the Gemini OAuth (cloudcode) request was made - no cloud fallthrough.
+        #expect(net.capturedRequest?.url?.absoluteString.contains("cloudcode-pa.googleapis.com") == true)
+    }
+
+    /// OAuth token failure (an `OAuthError`) falls through to the cloud route when
+    /// an API key exists.
+    @Test func geminiOAuthFailureFallsThroughToCloudWhenKeyExists() async throws {
+        let oauth = MockOAuthManager()
+        oauth.stubValidAccessTokenResponse = .failure(OAuthError.noCredential)
+        let keychain = MockKeychainService()
+        _ = keychain.save("GEMINI_KEY", forKey: "geminiAPIKey")
+        let net = MockNetworkService()
+        net.stubSendResponse = .success((Data(#"{"choices":[{"message":{"content":"CLOUD_OK"}}]}"#.utf8), http(200)))
+        let sut = makeSUT(keychain: keychain, net: net, oauth: oauth)
+
+        let result = try await sut.enhance(input(provider: .gemini, isOAuthSignedIn: true, hasAPIKey: true))
+
+        #expect(result == "CLOUD_OK")
+        // Fell through to the cloud (OpenAI-compatible) Gemini endpoint with the Bearer key.
+        #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer GEMINI_KEY")
+    }
+
+    /// OAuth token failure with no API key and no active CLI surfaces as
+    /// `EnhancementError.customError` (no silent fall-through).
+    @Test func openAIOAuthFailureWithoutKeyOrCliThrowsCustomError() async {
+        let oauth = MockOAuthManager()
+        oauth.stubValidAccessTokenResponse = .failure(OAuthError.noCredential)
+        let sut = makeSUT(oauth: oauth) // no CLI active, no key
+
+        await #expect(throws: EnhancementError.self) {
+            _ = try await sut.enhance(input(provider: .openAI, isOAuthSignedIn: true, hasAPIKey: false))
+        }
     }
 }
