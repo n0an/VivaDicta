@@ -16,6 +16,7 @@ import os
 import TipKit
 import Presets
 import AICore
+import AIProviders
 
 enum RecordingDestination: Equatable {
     case newNote

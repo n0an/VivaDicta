@@ -39,6 +39,7 @@
 		BFBF000000000000000000D1 /* AIProviders in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000D1 /* AIProviders */; };
 		BFBF000000000000000000E1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E1 /* AIKit */; };
 		BFBF000000000000000000C2 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C2 /* AICore */; };
+		BFBF000000000000000000D2 /* AIProviders in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000D2 /* AIProviders */; };
 		18B8CF2C2FB8C4690007FA96 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 18B8CF2B2FB8C4690007FA96 /* DesignSystem */; };
 		18BA24132F7ED0D700C4F68B /* VivaDictaWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 18BA23F32F7ED0D500C4F68B /* VivaDictaWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18BA29262F7F29FD00C4F68B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */; };
@@ -523,6 +524,7 @@
 				E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */,
 				188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */,
 				BFBF000000000000000000C2 /* AICore in Frameworks */,
+				BFBF000000000000000000D2 /* AIProviders in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -752,6 +754,7 @@
 				F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */,
 				188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */,
 				AEAE000000000000000000C2 /* AICore */,
+				AEAE000000000000000000D2 /* AIProviders */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2526,6 +2529,10 @@
 		AEAE000000000000000000C2 /* AICore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AICore;
+		};
+		AEAE000000000000000000D2 /* AIProviders */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIProviders;
 		};
 		18B8BEB02FB8BD7D0007FA96 /* DesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;

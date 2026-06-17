@@ -10,6 +10,7 @@ import NaturalLanguage
 import SwiftData
 import os
 import AICore
+import AIProviders
 
 enum ReminderExtractionError: LocalizedError {
     case unsupportedOS

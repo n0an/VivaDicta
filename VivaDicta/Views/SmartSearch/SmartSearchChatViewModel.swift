@@ -11,6 +11,7 @@ import SwiftData
 import TipKit
 import os
 import AICore
+import AIProviders
 
 /// View model for RAG-powered Smart Search conversations.
 ///
