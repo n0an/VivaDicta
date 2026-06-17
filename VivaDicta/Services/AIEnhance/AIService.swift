@@ -1034,33 +1034,6 @@ class AIService {
         )
     }
 
-    private func makeOpenAICompatibleStreamingRequest(
-        url: URL,
-        modelName: String,
-        systemMessage: String,
-        userMessage: String,
-        headers: [String: String],
-        timeout: TimeInterval,
-        errorPrefix: String,
-        notFoundMessage: String? = nil,
-        unauthorizedMessage: String? = nil,
-        onPartialResponse: @escaping @MainActor (String) -> Void
-    ) async throws -> String {
-        let service = OpenAICompatibleService(networkService: networkService, logger: logger)
-        return try await service.enhanceStreaming(
-            url: url,
-            modelName: modelName,
-            systemMessage: systemMessage,
-            userMessage: userMessage,
-            headers: headers,
-            timeout: timeout,
-            errorPrefix: errorPrefix,
-            notFoundMessage: notFoundMessage,
-            unauthorizedMessage: unauthorizedMessage,
-            onPartialResponse: onPartialResponse
-        )
-    }
-
     static func openAICompatibleStreamingDelta(from line: String) -> String? {
         OpenAICompatibleService.streamingDelta(from: line)
     }
@@ -1163,17 +1136,17 @@ class AIService {
             logger.logDebug("AI Processing - Using Ollama streaming at \(serverURL)")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
 
-            return try await makeOpenAICompatibleStreamingRequest(
-                url: url,
-                modelName: mode.aiModel,
-                systemMessage: sysMsg,
-                userMessage: userMsg,
-                headers: [:],
-                timeout: 120,
-                errorPrefix: "Ollama error",
-                notFoundMessage: "Model '\(mode.aiModel)' not found. Run 'ollama pull \(mode.aiModel)' on your Mac/server to download it.",
-                onPartialResponse: onPartialResponse
+            let provider = try await aiProviderRegistry.makeTextProvider(
+                for: .openAICompatibleEndpoint(
+                    url: url,
+                    headers: [:],
+                    timeout: 120,
+                    errorPrefix: "Ollama error",
+                    notFoundMessage: "Model '\(mode.aiModel)' not found. Run 'ollama pull \(mode.aiModel)' on your Mac/server to download it."
+                ),
+                model: mode.aiModel
             )
+            return try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
         case .customOpenAI:
             let endpointURL = customOpenAIRequestURL
             let modelName = customOpenAIModelName
@@ -1198,18 +1171,18 @@ class AIService {
             logger.logDebug("AI Processing - Using Custom OpenAI streaming at \(endpointURL)")
             logger.logDebug("AI Processing - Model: \(modelName)")
 
-            return try await makeOpenAICompatibleStreamingRequest(
-                url: url,
-                modelName: modelName,
-                systemMessage: sysMsg,
-                userMessage: userMsg,
-                headers: headers,
-                timeout: 120,
-                errorPrefix: "Custom AI provider error",
-                notFoundMessage: "Model '\(modelName)' not found on the server.",
-                unauthorizedMessage: "Authentication failed. Check your API key.",
-                onPartialResponse: onPartialResponse
+            let provider = try await aiProviderRegistry.makeTextProvider(
+                for: .openAICompatibleEndpoint(
+                    url: url,
+                    headers: headers,
+                    timeout: 120,
+                    errorPrefix: "Custom AI provider error",
+                    notFoundMessage: "Model '\(modelName)' not found on the server.",
+                    unauthorizedMessage: "Authentication failed. Check your API key."
+                ),
+                model: modelName
             )
+            return try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
         case nil:
             break
         }
