@@ -11,7 +11,7 @@ VivaDicta is one app target plus a ring of local Swift Package modules under `Mo
 
 The transcription stack (`TranscriptionCore` / `CloudTranscription` / `LocalTranscription` / `TranscriptionKit`) and the AI stack (`AICore` / `AIProviders` / `AIKit`) are the two reference shapes - same pattern, two domains.
 
-## Layered view (onion)
+## Layered view
 
 Inner rings = no dependencies on other modules. Outer rings = compose what's inside. Dependencies only point inward.
 
