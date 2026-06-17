@@ -220,3 +220,9 @@ graph BT
 ```
 
 This also means **retiring the `networkService: any NetworkService = DefaultNetworkService(...)` default-parameter idiom** - the impl is named only at the composition root, never as a consumer's default. Rolled out by cascade value (`Networking` first), each as its own behavior-preserving PR.
+
+## Codebase size
+
+Production vs. test Swift LOC over the project's git history (non-blank, non-line-comment lines; `*Tests` / `TestUtilities` count as test). The modular structure above is what keeps this ~57k-line production codebase navigable.
+
+![Production vs test Swift LOC over git history](assets/loc_history.png)
