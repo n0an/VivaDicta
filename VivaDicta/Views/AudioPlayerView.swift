@@ -132,7 +132,16 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     }
     
     // MARK: - AVAudioPlayerDelegate
-    
+
+    // Deliberately NOT `nonisolated`: this stays `@MainActor` (the target builds
+    // with SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor) so it can touch `isPlaying`
+    // / the timer / `seek` directly. `AVAudioPlayer` delivers its delegate
+    // callbacks on the run loop of the thread that started playback - main here,
+    // since playback always starts on the main actor - so the `@objc` thunk's
+    // main-actor precondition passes. If playback is ever started off the main
+    // actor, this would hit the same trap as the MetricKit subscriber and must
+    // become `nonisolated` with a `Task { @MainActor in ... }` hop (see
+    // RecordViewModel.audioPlayerDidFinishPlaying).
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         isPlaying = false
         stopTimer()
