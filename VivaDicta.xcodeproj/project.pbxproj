@@ -33,6 +33,9 @@
 		18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18B89BC22FB875530007FA96 /* TranscriptionKit */; };
 		18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 18B8BEB02FB8BD7D0007FA96 /* DesignSystem */; };
 		BFBF000000000000000000C1 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C1 /* AICore */; };
+		BFBF000000000000000000C3 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C3 /* AICore */; };
+		BFBF000000000000000000C4 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C4 /* AICore */; };
+		BFBF000000000000000000C5 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C5 /* AICore */; };
 		BFBF000000000000000000D1 /* AIProviders in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000D1 /* AIProviders */; };
 		BFBF000000000000000000E1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E1 /* AIKit */; };
 		BFBF000000000000000000C2 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C2 /* AICore */; };
@@ -266,7 +269,6 @@
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,
 				PrivacyInfo.xcprivacy,
-				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
 				Utilities/LoggerExtension.swift,
@@ -292,7 +294,6 @@
 				Models/TranscriptionModelProvider.swift,
 				Models/WhisperKitModel.swift,
 				PrivacyInfo.xcprivacy,
-				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
 				Utilities/LoggerExtension.swift,
@@ -374,7 +375,6 @@
 				Models/WhisperKitModel.swift,
 				PrivacyInfo.xcprivacy,
 				Resources/Haptics/TranscriptionComplete.ahap,
-				Services/AIEnhance/AIProvider.swift,
 				Services/AIEnhance/UserPrompt.swift,
 				Services/AIEnhance/VivaMode.swift,
 				Shared/MicButton.swift,
@@ -532,6 +532,7 @@
 			files = (
 				18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */,
 				186C058B2FB779C200102432 /* Presets in Frameworks */,
+				BFBF000000000000000000C3 /* AICore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +543,7 @@
 				186C058D2FB779CB00102432 /* Presets in Frameworks */,
 				18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */,
 				189C7AB02F0D84E2004BAFBF /* UniformTypeIdentifiers.framework in Frameworks */,
+				BFBF000000000000000000C4 /* AICore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -576,6 +578,7 @@
 				18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */,
 				18F76D862FB8617C00280269 /* AppGroup in Frameworks */,
 				18B8CF2C2FB8C4690007FA96 /* DesignSystem in Frameworks */,
+				BFBF000000000000000000C5 /* AICore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -773,6 +776,7 @@
 			packageProductDependencies = (
 				186C058A2FB779C200102432 /* Presets */,
 				18F76A392FB85C2300280269 /* AppGroup */,
+				AEAE000000000000000000C3 /* AICore */,
 			);
 			productName = ShareExtension;
 			productReference = 189C7A8B2F0C6822004BAFBF /* ShareExtension.appex */;
@@ -798,6 +802,7 @@
 			packageProductDependencies = (
 				186C058C2FB779CB00102432 /* Presets */,
 				18F76A3B2FB85C2A00280269 /* AppGroup */,
+				AEAE000000000000000000C4 /* AICore */,
 			);
 			productName = ActionExtension;
 			productReference = 189C7AAE2F0D84E2004BAFBF /* ActionExtension.appex */;
@@ -893,6 +898,7 @@
 				186C058E2FB779D200102432 /* Presets */,
 				18F76D852FB8617C00280269 /* AppGroup */,
 				18B8CF2B2FB8C4690007FA96 /* DesignSystem */,
+				AEAE000000000000000000C5 /* AICore */,
 			);
 			productName = VivaDictaKeyboard;
 			productReference = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */;
@@ -2504,6 +2510,18 @@
 		AEAE000000000000000000E1 /* AIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AIKit;
+		};
+		AEAE000000000000000000C3 /* AICore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AICore;
+		};
+		AEAE000000000000000000C4 /* AICore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AICore;
+		};
+		AEAE000000000000000000C5 /* AICore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AICore;
 		};
 		AEAE000000000000000000C2 /* AICore */ = {
 			isa = XCSwiftPackageProductDependency;

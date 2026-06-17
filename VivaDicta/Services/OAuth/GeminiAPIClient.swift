@@ -4,6 +4,7 @@ import Foundation
 import Networking
 import os
 import OAuth
+import AICore
 
 /// Client for Gemini API using OAuth tokens.
 /// Uses the Cloud Code Assist endpoint (same as Gemini CLI / VS Code extension),

@@ -7,6 +7,7 @@
 
 import Foundation
 import Keychain
+import AICore
 
 // File-private keychain instance so the extension can read API keys
 // without forcing every consumer of `AIProvider.apiKey` to inject one.

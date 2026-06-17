@@ -8,6 +8,7 @@
 import SwiftUI
 import DesignSystem
 import SwiftData
+import AICore
 
 private struct MultiNoteSourceCitationDisplay: Identifiable {
     let transcription: Transcription

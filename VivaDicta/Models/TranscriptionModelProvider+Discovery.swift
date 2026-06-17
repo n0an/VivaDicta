@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AICore
 
 // Main-target-only extension because it transitively depends on
 // `AIProvider.apiKey`, which uses the Keychain package that extensions

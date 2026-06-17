@@ -13,6 +13,7 @@ import SwiftUI
 import TranscriptionCore
 import TranscriptionKit
 import os
+import AICore
 
 /// Central manager coordinating all transcription services in VivaDicta.
 ///

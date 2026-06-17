@@ -2,6 +2,7 @@
 
 import SwiftUI
 import OAuth
+import AICore
 
 struct GeminiConfigurationView: View {
     @Environment(\.dismiss) private var dismiss

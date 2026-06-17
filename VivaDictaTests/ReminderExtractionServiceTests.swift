@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 @testable import VivaDicta
+import AICore
 
 /// `ReminderExtractionService.extractAndPersist` makes real cloud/Apple FM
 /// calls and is out of scope for unit tests. `canExtractReminders` is the

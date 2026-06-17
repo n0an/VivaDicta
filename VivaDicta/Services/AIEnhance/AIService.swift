@@ -14,6 +14,7 @@ import TipKit
 import os
 import OAuth
 import CloudTranscription
+import AICore
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
 ///

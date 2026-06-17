@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import os
+import AICore
 
 struct CrossNoteSearchPlan: Codable, Sendable {
     let shouldSearch: Bool

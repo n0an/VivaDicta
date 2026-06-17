@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AICore
 
 struct AnthropicConfigurationView: View {
     @Environment(\.dismiss) private var dismiss

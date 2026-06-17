@@ -11,6 +11,7 @@ import AppGroup
 import UniformTypeIdentifiers
 import os
 import Presets
+import AICore
 
 // MARK: - Action Extension View Model
 

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AICore
 
 /// Narrow chat-request surface of ``AIService`` consumed by chat view models.
 ///

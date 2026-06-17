@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import os
+import AICore
 
 /// Manages context assembly for RAG-powered Smart Search conversations.
 ///

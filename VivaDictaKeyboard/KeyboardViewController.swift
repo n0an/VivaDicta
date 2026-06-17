@@ -11,6 +11,7 @@ import KeyboardKit
 import SwiftUI
 import AppGroup
 import os
+import AICore
 
 class KeyboardViewController: KeyboardInputViewController {
 

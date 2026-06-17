@@ -7,8 +7,8 @@
 
 import Foundation
 
-enum AIProvider: String, CaseIterable, Identifiable, Codable {
-    var id: Self { self }
+public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
+    public var id: Self { self }
 
     case apple
     case cerebras
@@ -37,7 +37,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     case ollamaCloud
     case customOpenAI
 
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .apple:
             "Apple"
@@ -95,7 +95,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Returns the icon name for this provider (SF Symbol for Apple, asset name for others)
-    var iconName: String? {
+    public var iconName: String? {
         switch self {
         case .apple:
             nil // Use SF Symbol "apple.logo" directly in view
@@ -153,12 +153,12 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Returns true if this provider uses an SF Symbol instead of an asset
-    var usesSFSymbol: Bool {
+    public var usesSFSymbol: Bool {
         self == .apple || self == .customOpenAI
     }
 
     /// Returns true when the selected model can stream text responses incrementally.
-    func supportsResponseStreaming(model: String) -> Bool {
+    public func supportsResponseStreaming(model: String) -> Bool {
         switch self {
         case .apple,
              .anthropic,
@@ -185,7 +185,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// URL to obtain an API key for this provider.
-    var apiKeyURL: URL? {
+    public var apiKeyURL: URL? {
         switch self {
         case .groq: URL(string: "https://console.groq.com/keys")
         case .openAI: URL(string: "https://platform.openai.com/api-keys")
@@ -215,13 +215,13 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
 
     /// Returns true if this provider requires an API key
     /// Note: customOpenAI doesn't require API key through the standard flow - it's handled separately
-    var requiresAPIKey: Bool {
+    public var requiresAPIKey: Bool {
         self != .apple && self != .ollama && self != .customOpenAI && self != .copilot
     }
 
     /// Cloud-based AI providers (require API key, network connection)
     /// Note: Ollama and customOpenAI are included here for UI purposes but don't require API key through standard flow
-    static let cloudProviders: [AIProvider] = [
+    public static let cloudProviders: [AIProvider] = [
         .anthropic,
         .openAI,
         .gemini,
@@ -246,15 +246,15 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     /// (`json_schema`) outputs, which Ollama Cloud does not support
     /// (https://docs.ollama.com/capabilities/structured-outputs). Local Ollama
     /// does support them, so it stays eligible.
-    static let reminderExtractorCloudProviders: [AIProvider] = cloudProviders.filter { $0 != .ollamaCloud }
+    public static let reminderExtractorCloudProviders: [AIProvider] = cloudProviders.filter { $0 != .ollamaCloud }
 
     /// Local AI providers that run on-device or local network (no API key needed)
-    static let localProviders: [AIProvider] = [
+    public static let localProviders: [AIProvider] = [
         .apple,
         .ollama]
 
     /// All general-purpose AI providers including on-device and local
-    static let generalProviders: [AIProvider] = [
+    public static let generalProviders: [AIProvider] = [
         .apple,
         .ollama,
         .ollamaCloud,
@@ -274,7 +274,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         .vercelAIGateway,
         .huggingFace]
     
-    var baseURL: String {
+    public var baseURL: String {
         switch self {
         case .apple:
             return "" // On-device, no URL needed
@@ -332,9 +332,9 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     /// Default Ollama server URL
-    static let ollamaDefaultServerURL = "http://host:11434"
+    public static let ollamaDefaultServerURL = "http://host:11434"
 
-    var defaultModel: String {
+    public var defaultModel: String {
         switch self {
         case .apple:
             return "foundation-model"
@@ -399,7 +399,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
 
     /// Keychain account name for this provider's API key.
     /// Must match the macOS app's `APIKeyManager` key identifiers for iCloud Keychain sync.
-    var keychainKey: String {
+    public var keychainKey: String {
         switch self {
         case .cerebras: "cerebrasAPIKey"
         case .groq: "groqAPIKey"
@@ -428,7 +428,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    var availableModels: [String] {
+    public var availableModels: [String] {
         switch self {
         case .apple:
             return ["foundation-model"]

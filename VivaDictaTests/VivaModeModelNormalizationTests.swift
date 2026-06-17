@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 @testable import VivaDicta
+import AICore
 
 struct VivaModeModelNormalizationTests {
 

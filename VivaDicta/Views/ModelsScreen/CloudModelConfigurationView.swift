@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AICore
 
 struct CloudModelConfigurationView: View {
     @Environment(\.dismiss) var dismiss

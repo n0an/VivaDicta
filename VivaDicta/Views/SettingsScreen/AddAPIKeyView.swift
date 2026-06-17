@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AICore
 
 struct AddAPIKeyView: View {
     @Environment(\.dismiss) var dismiss

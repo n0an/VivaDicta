@@ -8,6 +8,7 @@
 import SwiftUI
 import DesignSystem
 import Presets
+import AICore
 
 /// Displays a VivaMode picker and categorized preset list for AI text processing in the keyboard.
 ///

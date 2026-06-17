@@ -10,6 +10,7 @@ import FoundationModels
 import Networking
 import os
 import OAuth
+import AICore
 
 /// Multi-turn chat support for AIService.
 ///

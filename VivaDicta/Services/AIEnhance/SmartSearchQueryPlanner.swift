@@ -8,6 +8,7 @@
 import Foundation
 import FoundationModels
 import os
+import AICore
 
 struct SmartSearchQueryPlan: Codable, Sendable {
     let shouldSearch: Bool
