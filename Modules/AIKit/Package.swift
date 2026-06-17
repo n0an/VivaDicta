@@ -1,22 +1,27 @@
-// swift-tools-version: 6.3
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version: 6.2
 
 import PackageDescription
 
 let package = Package(
     name: "AIKit",
+    platforms: [
+        .iOS(.v18),
+        .macOS(.v14),
+    ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "AIKit",
-            targets: ["AIKit"]
-        ),
+        .library(name: "AIKit", targets: ["AIKit"]),
+    ],
+    dependencies: [
+        // AIKit depends on the AICore API only - never on AIProviders (the impl).
+        // The composition root injects concrete providers into AIKit's registry.
+        .package(path: "../AICore"),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "AIKit"
+            name: "AIKit",
+            dependencies: [
+                .product(name: "AICore", package: "AICore"),
+            ]
         ),
         .testTarget(
             name: "AIKitTests",
