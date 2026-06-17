@@ -270,6 +270,52 @@ struct AIServiceEnhanceRoutingTests {
         #expect(result == "CLI_RESULT")
     }
 
+    /// OpenAI (not OAuth-signed-in) with the Codex CLI active routes through the
+    /// CLI enhancer with the `.codex` backend.
+    @Test func codexCliServerRouteEnhancesViaCliServerEnhancer() async throws {
+        let cli = MockCLIServerEnhancer()
+        cli.activeProviders = [.codex]
+        cli.serverURL = "http://mac.local:4000"
+        cli.stubEnhanceResult = "CODEX_RESULT"
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: MockKeychainService(),
+            networkService: MockNetworkService(),
+            oauthManager: MockOAuthManager(),
+            cliServerEnhancer: cli
+        )
+        let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-test")
+
+        let (result, _) = try await sut.generateVariation(text: "hi", preset: PresetCatalog.regular, modeOverride: mode)
+
+        #expect(cli.capturedProvider == .codex)
+        #expect(result == "CODEX_RESULT")
+    }
+
+    /// Gemini (not OAuth-signed-in) with the Gemini CLI active routes through the
+    /// CLI enhancer with the `.gemini` backend.
+    @Test func geminiCliServerRouteEnhancesViaCliServerEnhancer() async throws {
+        let cli = MockCLIServerEnhancer()
+        cli.activeProviders = [.gemini]
+        cli.serverURL = "http://mac.local:4000"
+        cli.stubEnhanceResult = "GEMINI_RESULT"
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: MockKeychainService(),
+            networkService: MockNetworkService(),
+            oauthManager: MockOAuthManager(),
+            cliServerEnhancer: cli
+        )
+        let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-test")
+
+        let (result, _) = try await sut.generateVariation(text: "hi", preset: PresetCatalog.regular, modeOverride: mode)
+
+        #expect(cli.capturedProvider == .gemini)
+        #expect(result == "GEMINI_RESULT")
+    }
+
     private func http(_ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }

@@ -12,7 +12,7 @@ import AIKit
 ///
 /// Adapts the app's all-static CLI-server client to the `AIKit` boundary so the
 /// enhancement orchestration depends on the protocol rather than the global.
-/// Stateless, so `Sendable` is trivial; every call forwards to `VivAgentsClient`.
+/// Stateless; every call forwards to `VivAgentsClient`.
 struct DefaultCLIServerEnhancer: CLIServerEnhancer {
     func isCliActive(for provider: CLIServerProvider) -> Bool {
         guard VivAgentsClient.isEnabled else { return false }
