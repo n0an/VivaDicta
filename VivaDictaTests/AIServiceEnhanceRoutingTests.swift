@@ -10,7 +10,29 @@ import OAuthMocks
 import Presets
 import Testing
 import AICore
+import AIKit
 @testable import VivaDicta
+
+/// Test double for the CLI-server boundary. `@MainActor` to satisfy the
+/// `@MainActor` protocol. Records the `enhance` call so tests can assert the
+/// orchestration routed through the CLI server (previously untestable, since
+/// the orchestration reached `VivAgentsClient` statics directly).
+@MainActor
+private final class MockCLIServerEnhancer: CLIServerEnhancer {
+    var activeProviders: Set<CLIServerProvider> = []
+    var serverURL: String?
+    var stubEnhanceResult = ""
+    private(set) var enhanceCallCount = 0
+    private(set) var capturedProvider: CLIServerProvider?
+
+    func isCliActive(for provider: CLIServerProvider) -> Bool { activeProviders.contains(provider) }
+
+    func enhance(text: String, systemPrompt: String, model: String, provider: CLIServerProvider) async throws -> String {
+        enhanceCallCount += 1
+        capturedProvider = provider
+        return stubEnhanceResult
+    }
+}
 
 /// Characterization tests for `AIService`'s enhancement routing.
 ///
@@ -220,6 +242,78 @@ struct AIServiceEnhanceRoutingTests {
         #expect(net.capturedRequest?.url?.absoluteString == "http://localhost:11434/v1/chat/completions")
         #expect(net.capturedRequest?.timeoutInterval == 120)                              // local-inference timeout from the route
         #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == nil)   // Ollama needs no auth
+    }
+
+    /// When the Anthropic CLI server is active, the non-streaming orchestration
+    /// routes through the injected `CLIServerEnhancer` (not the registry/network).
+    /// This path was untestable before the CLI seam - it reached `VivAgentsClient`
+    /// statics directly.
+    @Test func anthropicCliServerRouteEnhancesViaCliServerEnhancer() async throws {
+        let cli = MockCLIServerEnhancer()
+        cli.activeProviders = [.anthropic]
+        cli.serverURL = "http://mac.local:4000"
+        cli.stubEnhanceResult = "CLI_RESULT"
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: MockKeychainService(),
+            networkService: MockNetworkService(),
+            oauthManager: MockOAuthManager(),
+            cliServerEnhancer: cli
+        )
+        let mode = makeMode(aiProvider: .anthropic, aiModel: "claude-sonnet-4-6")
+
+        let (result, _) = try await sut.generateVariation(text: "hi", preset: PresetCatalog.regular, modeOverride: mode)
+
+        #expect(cli.enhanceCallCount == 1)
+        #expect(cli.capturedProvider == .anthropic)   // routed to the Anthropic CLI backend
+        #expect(result == "CLI_RESULT")
+    }
+
+    /// OpenAI (not OAuth-signed-in) with the Codex CLI active routes through the
+    /// CLI enhancer with the `.codex` backend.
+    @Test func codexCliServerRouteEnhancesViaCliServerEnhancer() async throws {
+        let cli = MockCLIServerEnhancer()
+        cli.activeProviders = [.codex]
+        cli.serverURL = "http://mac.local:4000"
+        cli.stubEnhanceResult = "CODEX_RESULT"
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: MockKeychainService(),
+            networkService: MockNetworkService(),
+            oauthManager: MockOAuthManager(),
+            cliServerEnhancer: cli
+        )
+        let mode = makeMode(aiProvider: .openAI, aiModel: "gpt-test")
+
+        let (result, _) = try await sut.generateVariation(text: "hi", preset: PresetCatalog.regular, modeOverride: mode)
+
+        #expect(cli.capturedProvider == .codex)
+        #expect(result == "CODEX_RESULT")
+    }
+
+    /// Gemini (not OAuth-signed-in) with the Gemini CLI active routes through the
+    /// CLI enhancer with the `.gemini` backend.
+    @Test func geminiCliServerRouteEnhancesViaCliServerEnhancer() async throws {
+        let cli = MockCLIServerEnhancer()
+        cli.activeProviders = [.gemini]
+        cli.serverURL = "http://mac.local:4000"
+        cli.stubEnhanceResult = "GEMINI_RESULT"
+
+        let sut = AIService(
+            userDefaults: makeDefaults(),
+            keychain: MockKeychainService(),
+            networkService: MockNetworkService(),
+            oauthManager: MockOAuthManager(),
+            cliServerEnhancer: cli
+        )
+        let mode = makeMode(aiProvider: .gemini, aiModel: "gemini-test")
+
+        let (result, _) = try await sut.generateVariation(text: "hi", preset: PresetCatalog.regular, modeOverride: mode)
+
+        #expect(cli.capturedProvider == .gemini)
+        #expect(result == "GEMINI_RESULT")
     }
 
     private func http(_ code: Int) -> HTTPURLResponse {

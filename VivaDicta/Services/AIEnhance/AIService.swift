@@ -182,6 +182,7 @@ class AIService {
     let networkService: any NetworkService
     let oauthManager: any OAuthManager
     let copilotOAuthManager: any CopilotOAuthManager
+    private let cliServerEnhancer: any CLIServerEnhancer
     private let baseTimeout: TimeInterval = 300
 
     /// The AI stack's composition point: turns a resolved `AIProviderRoute` into
@@ -217,12 +218,14 @@ class AIService {
         keychain: any KeychainService = DefaultKeychainService(),
         networkService: any NetworkService = DefaultNetworkService(category: "AIService"),
         oauthManager: any OAuthManager = DefaultOAuthManager.shared,
-        copilotOAuthManager: any CopilotOAuthManager = DefaultCopilotOAuthManager.shared
+        copilotOAuthManager: any CopilotOAuthManager = DefaultCopilotOAuthManager.shared,
+        cliServerEnhancer: any CLIServerEnhancer = DefaultCLIServerEnhancer()
     ) {
         self.keychain = keychain
         self.networkService = networkService
         self.oauthManager = oauthManager
         self.copilotOAuthManager = copilotOAuthManager
+        self.cliServerEnhancer = cliServerEnhancer
         self.userDefaults = UserDefaultsStorage.shared
         self.modesStorageKey = AppGroupCoordinator.vivaModesKey
         self.selectedModeStorageKey = AppGroupCoordinator.selectedVivaModeKey
@@ -273,12 +276,14 @@ class AIService {
         keychain: any KeychainService = DefaultKeychainService(),
         networkService: any NetworkService = DefaultNetworkService(category: "AIService"),
         oauthManager: any OAuthManager = DefaultOAuthManager.shared,
-        copilotOAuthManager: any CopilotOAuthManager = DefaultCopilotOAuthManager.shared
+        copilotOAuthManager: any CopilotOAuthManager = DefaultCopilotOAuthManager.shared,
+        cliServerEnhancer: any CLIServerEnhancer = DefaultCLIServerEnhancer()
     ) {
         self.keychain = keychain
         self.networkService = networkService
         self.oauthManager = oauthManager
         self.copilotOAuthManager = copilotOAuthManager
+        self.cliServerEnhancer = cliServerEnhancer
         self.userDefaults = userDefaults
         self.modesStorageKey = modesStorageKey
         self.selectedModeStorageKey = selectedModeStorageKey
@@ -977,8 +982,8 @@ class AIService {
             if isOpenAISignedIn {
                 return .openAIOAuth
             }
-            if VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive,
-               let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+            if cliServerEnhancer.isCliActive(for: .codex),
+               let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
                 return nil
             }
             return aiProvider.supportsResponseStreaming(model: mode.aiModel) ? .openAICompatibleCloud : nil
@@ -986,14 +991,14 @@ class AIService {
             if isGeminiSignedIn {
                 return .geminiOAuth
             }
-            if VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
-               let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+            if cliServerEnhancer.isCliActive(for: .gemini),
+               let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
                 return nil
             }
             return aiProvider.supportsResponseStreaming(model: mode.aiModel) ? .openAICompatibleCloud : nil
         case .anthropic:
-            if VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive,
-               let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+            if cliServerEnhancer.isCliActive(for: .anthropic),
+               let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
                 return nil
             }
             return .anthropic
@@ -1099,7 +1104,7 @@ class AIService {
             } catch let error as EnhancementError {
                 throw error
             } catch let error as OAuthError {
-                if (VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                if cliServerEnhancer.isCliActive(for: .gemini) || self.getAPIKey(for: aiProvider) != nil {
                     logger.logWarning("Gemini OAuth streaming failed, falling back: \(error.localizedDescription)")
                     break
                 } else {
@@ -1113,7 +1118,7 @@ class AIService {
                 let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
                 return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
             } catch let error as OAuthError {
-                if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                if cliServerEnhancer.isCliActive(for: .codex) || self.getAPIKey(for: aiProvider) != nil {
                     logger.logWarning("OpenAI OAuth streaming failed, falling back: \(error.localizedDescription)")
                     break
                 } else {
@@ -1249,17 +1254,18 @@ class AIService {
         let resolvedSystemMessage = systemMessage ?? getSystemMessage()
 
         // Anthropic CLI Server: route Anthropic requests through remote server when enabled
-        if aiProvider == .anthropic && VivAgentsClient.isEnabled && VivAgentsClient.isAnthropicCliActive,
-           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+        if aiProvider == .anthropic && cliServerEnhancer.isCliActive(for: .anthropic),
+           let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
             let formattedText = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             logger.logDebug("AI Processing - Using Anthropic CLI Server at \(serverURL)")
             do {
-                let result = try await VivAgentsClient.enhance(
+                let result = try await cliServerEnhancer.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
-                    model: mode.aiModel
+                    model: mode.aiModel,
+                    provider: .anthropic
                 )
                 let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
                 return filteredResult
@@ -1287,7 +1293,7 @@ class AIService {
                 return AIEnhancementOutputFilter.filter(result)
             } catch let error as OAuthError {
                 // If OAuth fails, fall through to CLI or API key
-                if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                if cliServerEnhancer.isCliActive(for: .codex) || self.getAPIKey(for: aiProvider) != nil {
                     logger.logWarning("OpenAI OAuth failed, falling back: \(error.localizedDescription)")
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
@@ -1309,7 +1315,7 @@ class AIService {
                 throw error
             } catch let error as OAuthError {
                 // If OAuth fails, fall through to CLI or API key
-                if (VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive) || self.getAPIKey(for: aiProvider) != nil {
+                if cliServerEnhancer.isCliActive(for: .gemini) || self.getAPIKey(for: aiProvider) != nil {
                     logger.logWarning("Gemini OAuth failed, falling back: \(error.localizedDescription)")
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
@@ -1318,17 +1324,17 @@ class AIService {
         }
 
         // Codex CLI via Mac server: route OpenAI requests through CLI server when enabled
-        if aiProvider == .openAI && VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive,
-           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+        if aiProvider == .openAI && cliServerEnhancer.isCliActive(for: .codex),
+           let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             logger.logDebug("AI Processing - Using Codex CLI Server at \(serverURL)")
             do {
-                let result = try await VivAgentsClient.enhance(
+                let result = try await cliServerEnhancer.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: mode.aiModel,
-                    provider: "codex"
+                    provider: .codex
                 )
                 let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
                 return filteredResult
@@ -1342,17 +1348,17 @@ class AIService {
         }
 
         // Gemini CLI via Mac server: route Gemini requests through CLI server when enabled
-        if aiProvider == .gemini && VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive,
-           let serverURL = VivAgentsClient.serverURL, !serverURL.isEmpty {
+        if aiProvider == .gemini && cliServerEnhancer.isCliActive(for: .gemini),
+           let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
             lastSystemMessageSent = resolvedSystemMessage
             lastUserMessageSent = formattedText
             logger.logDebug("AI Processing - Using Gemini CLI Server at \(serverURL)")
             do {
-                let result = try await VivAgentsClient.enhance(
+                let result = try await cliServerEnhancer.enhance(
                     text: formattedText,
                     systemPrompt: resolvedSystemMessage,
                     model: mode.aiModel,
-                    provider: "gemini"
+                    provider: .gemini
                 )
                 let filteredResult = AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
                 return filteredResult
