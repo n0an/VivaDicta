@@ -13,6 +13,7 @@ import CoreSpotlight
 import TipKit
 import os
 import Presets
+import AICore
 
 private let logger = Logger(category: .transcriptionDetailView)
 

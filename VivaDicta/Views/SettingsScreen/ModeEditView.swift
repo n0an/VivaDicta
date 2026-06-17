@@ -9,6 +9,7 @@ import SwiftUI
 import AppGroup
 import TipKit
 import Presets
+import AICore
 
 struct ModeEditView: View {
     @Environment(\.dismiss) private var dismiss

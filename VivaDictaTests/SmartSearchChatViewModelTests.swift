@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import Testing
 @testable import VivaDicta
+import AICore
 
 /// Proof-of-pattern: tests the real ``SmartSearchChatViewModel`` against a
 /// hand-rolled ``MockAIChatService`` injected through the ``AIChatService``

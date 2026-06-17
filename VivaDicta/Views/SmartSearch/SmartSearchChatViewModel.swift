@@ -10,6 +10,7 @@ import FoundationModels
 import SwiftData
 import TipKit
 import os
+import AICore
 
 /// View model for RAG-powered Smart Search conversations.
 ///

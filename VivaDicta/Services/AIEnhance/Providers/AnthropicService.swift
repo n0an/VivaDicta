@@ -3,6 +3,7 @@
 import Foundation
 import Networking
 import os
+import AICore
 
 /// Pure HTTP wrapper for Anthropic's Messages API. Stateless apart from
 /// its dependencies.

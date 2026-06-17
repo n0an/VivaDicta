@@ -11,6 +11,7 @@ import AppIntents
 import TipKit
 import MessageUI
 import Presets
+import AICore
 
 struct SettingsView: View {
     @Environment(AppState.self) var appState

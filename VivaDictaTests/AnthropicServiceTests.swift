@@ -6,6 +6,7 @@ import NetworkingMocks
 import os
 import Testing
 @testable import VivaDicta
+import AICore
 
 /// Tests cover `AnthropicService` in isolation: the request shape
 /// (`x-api-key`, `anthropic-version`, system top-level, max_tokens

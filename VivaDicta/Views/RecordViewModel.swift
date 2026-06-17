@@ -15,6 +15,7 @@ import SwiftData
 import os
 import TipKit
 import Presets
+import AICore
 
 enum RecordingDestination: Equatable {
     case newNote

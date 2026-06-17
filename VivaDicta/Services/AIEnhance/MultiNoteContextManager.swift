@@ -7,6 +7,7 @@
 
 import Foundation
 import FoundationModels
+import AICore
 
 /// Manages context window for multi-note chat conversations.
 ///

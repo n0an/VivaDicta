@@ -7,6 +7,7 @@
 
 import SwiftUI
 import os
+import AICore
 
 private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "CustomOpenAIConfig")
 

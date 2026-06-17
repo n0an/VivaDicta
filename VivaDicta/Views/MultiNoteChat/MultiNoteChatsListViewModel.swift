@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import AICore
 
 /// View model for the chats list screen (multi-note, single-note, and smart search).
 @Observable

@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import Testing
 @testable import VivaDicta
+import AICore
 
 /// Proof-of-pattern: tests the real ``MultiNoteChatViewModel`` against a
 /// hand-rolled ``MockAIChatService`` injected through ``AIChatService``.

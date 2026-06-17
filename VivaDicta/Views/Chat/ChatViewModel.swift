@@ -9,6 +9,7 @@ import Foundation
 import FoundationModels
 import SwiftData
 import os
+import AICore
 
 /// View model for the "Chat with Note" feature.
 ///

@@ -9,6 +9,7 @@ import Foundation
 import Networking
 import os
 import OAuth
+import AICore
 
 private struct CloudReminderDraftPayload: Codable {
     var title: String

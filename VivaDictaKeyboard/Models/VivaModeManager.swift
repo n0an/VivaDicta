@@ -8,6 +8,7 @@
 import Foundation
 import AppGroup
 import os
+import AICore
 
 @Observable
 final class VivaModeManager {

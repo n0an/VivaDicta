@@ -11,6 +11,7 @@ import AVFoundation
 import CoreMedia
 import os
 import TipKit
+import AICore
 
 /// Processes audio files received from Apple Watch in the background.
 ///

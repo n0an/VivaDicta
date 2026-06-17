@@ -7,6 +7,7 @@
 
 import Foundation
 @testable import VivaDicta
+import AICore
 
 /// Hand-rolled mock for ``AIChatService`` following the Bev pattern:
 /// per-method `stub...` for return values, `...CallCount` for invocation

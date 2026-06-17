@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AICore
 
 enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identifiable {
     case parakeet

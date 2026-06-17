@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AICore
 
 struct AIProviders: View {
     @Environment(AppState.self) private var appState

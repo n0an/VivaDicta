@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppGroup
+import AICore
 
 /// A configuration preset combining transcription and AI processing settings.
 ///

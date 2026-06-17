@@ -8,6 +8,7 @@
 import UIKit
 import AppGroup
 import os
+import AICore
 
 /// Orchestrates the text processing pipeline from the keyboard extension:
 /// 1. Read text from host text field via `UITextDocumentProxy`

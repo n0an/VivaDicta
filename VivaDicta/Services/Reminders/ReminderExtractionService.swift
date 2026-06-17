@@ -9,6 +9,7 @@ import Foundation
 import NaturalLanguage
 import SwiftData
 import os
+import AICore
 
 enum ReminderExtractionError: LocalizedError {
     case unsupportedOS
