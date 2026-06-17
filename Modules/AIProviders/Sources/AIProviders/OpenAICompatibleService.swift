@@ -9,8 +9,7 @@ import AICore
 /// (`POST /v1/chat/completions` with Bearer auth and standard `messages`
 /// body). Stateless apart from its dependencies.
 ///
-/// The fourth provider service in Phase 2a/2b of the AIService
-/// decomposition. Used by ~10 cloud providers (OpenAI, Groq, Cerebras,
+/// Lives in the `AIProviders` module. Used by ~10 cloud providers (OpenAI, Groq, Cerebras,
 /// Mistral, xAI/Grok, OpenRouter, Z.AI, Kimi, Vercel AI Gateway,
 /// HuggingFace) that all share the OpenAI shape. Indirectly used by
 /// Ollama and Custom OpenAI through the static `buildRequestBody` and
