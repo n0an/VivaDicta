@@ -11,6 +11,50 @@ VivaDicta is one app target plus a ring of local Swift Package modules under `Mo
 
 The transcription stack (`TranscriptionCore` / `CloudTranscription` / `LocalTranscription` / `TranscriptionKit`) and the AI stack (`AICore` / `AIProviders` / `AIKit`) are the two reference shapes - same pattern, two domains.
 
+## Layered view (onion)
+
+Inner rings = no dependencies on other modules. Outer rings = compose what's inside. Dependencies only point inward.
+
+```
+                       +-----------------------------------------------------+
+                       |                     VivaDicta (app)                 |
+                       |   Views, AIService, ViewModels, SwiftData store     |
+                       |   Extensions: Keyboard, Widget, Share, Action       |
+                       +--------------------+--------------------------------+
+                                            |
+                       +--------------------+--------------------------------+
+                       |    Orchestrators (depend on multiple adapters)      |
+                       |  +------------------+        +------------------+    |
+                       |  | TranscriptionKit |        |      AIKit       |    |
+                       |  +------------------+        +------------------+    |
+                       +--------------------+--------------------------------+
+                                            |
+        +---------------+---------------+---+-----+-----------+--------------+
+        |                                                                    |
+        |    Adapters (single concern; protocol + Default + Mock)            |
+        |                                                                    |
+        |  +-------+  +--------------------+  +-------------------+          |
+        |  | OAuth |  | CloudTranscription |  | LocalTranscription |         |
+        |  +-------+  +--------------------+  +-------------------+          |
+        |  +--------------------+                                            |
+        |  |    AIProviders     |  (per-LLM clients + AITextProvider wraps)  |
+        |  +--------------------+                                            |
+        +--------------------+----------+----------+----------+--------------+
+                             |          |          |          |
+        +--------------------+----------+----------+----------+--------------+
+        |                                                                    |
+        |              Core (no module deps; pure protocols + value types)   |
+        |                                                                    |
+        |  +-----------+  +----------+  +---------+  +-------------------+   |
+        |  | Networking|  | Keychain |  | Presets |  | TranscriptionCore |   |
+        |  +-----------+  +----------+  +---------+  +-------------------+   |
+        |                                                                    |
+        |  +--------+  +------------+  +-----------+  +---------------+      |
+        |  | AICore |  | DesignSystem|  | AppGroup |  | TestUtilities |     |
+        |  +--------+  +------------+  +-----------+  +---------------+      |
+        +--------------------------------------------------------------------+
+```
+
 ## Module dependency graph
 
 Solid arrow = production dependency. Each `<Module>Mocks` target depends on its own `<Module>` (or its API) + `TestUtilities`; mock targets are omitted here for clarity.
