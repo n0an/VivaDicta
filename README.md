@@ -201,7 +201,7 @@ graph BT
 
 | Layer | Modules |
 |-------|---------|
-| **Core** (no module deps; protocols + value types) | `Networking` · `Keychain` · `Presets` · `TranscriptionCore` · `AICore` · `AppGroup` · `DesignSystem` |
+| **Core** (no module deps; protocols + value types) | `Networking` · `Keychain` · `Presets` · `TranscriptionCore` · `AICore` · `AudioRecording` · `AppGroup` · `DesignSystem` |
 | **Adapters** (protocol + `Default` impl + `Mock`) | `OAuth` · `CloudTranscription` · `LocalTranscription` · `AIProviders` |
 | **Orchestrators** (compose adapters) | `TranscriptionKit` · `AIKit` |
 | **App** (composition root) | `VivaDicta` + keyboard / widget / share / action / watch targets |
@@ -281,9 +281,14 @@ VivaDicta/
 │   ├── Views/              # SwiftUI views + view models
 │   ├── Models/             # SwiftData models (Transcription, Preset, etc.)
 │   ├── Services/           # Core services
-│   │   ├── AIEnhance/      # AIService, providers, prompts
+│   │   ├── AIEnhance/      # AIService, prompts, VivAgents CLI bridge
+│   │   ├── Analytics/      # AnalyticsService, MetricKit performance monitoring
+│   │   ├── LiveTranslation/# Live translation
+│   │   ├── OAuth/          # OAuth sign-in flows
 │   │   ├── RAG/            # RAGIndexingService, vector search, chunking
-│   │   └── Transcription/  # TranscriptionManager, STT providers
+│   │   ├── Reminders/      # AI reminder extraction
+│   │   └── Transcription/  # TranscriptionManager, STT routing
+│   ├── AppIntents/         # Siri / Shortcuts intents
 │   ├── Shared/             # AppGroupCoordinator, shared utilities
 │   └── VivaDicta.docc/     # DocC documentation catalog
 ├── VivaDictaKeyboard/      # Custom keyboard extension
@@ -292,6 +297,7 @@ VivaDicta/
 ├── ActionExtension/        # Action extension
 ├── VivaDictaWatch Watch App/ # watchOS companion app
 ├── VivaDictaWatchWidget/   # Watch complications + Control Center control
+├── VivaDictaTests/         # Unit tests (Swift Testing)
 ├── Modules/                # Local Swift Package modules (layered, dependency-inverted)
 │   ├── AICore/             # AI kernel: AITextProvider, AIProvider enum, errors, filters
 │   ├── AIProviders/        # Per-LLM clients + AITextProvider wrappers
@@ -303,6 +309,7 @@ VivaDicta/
 │   ├── CloudTranscription/ # Cloud STT provider services
 │   ├── LocalTranscription/ # WhisperKit / Parakeet wrappers
 │   ├── TranscriptionKit/   # Cloud/local transcription routing
+│   ├── AudioRecording/     # AudioRecordingService + AudioFileService
 │   ├── Presets/            # Preset domain + management
 │   └── AppGroup · DesignSystem · TestUtilities
 ├── documentation/          # Architecture docs, references

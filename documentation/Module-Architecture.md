@@ -138,6 +138,7 @@ graph BT
 | `AICore` | core | AI-stack API + kernel (Foundation only): `AITextProvider` protocol, `AIProvider` id enum, `EnhancementError`, `AIEnhancementOutputFilter`, `ReasoningConfig`, Apple FM sampling types. | n/a |
 | `AppGroup` | core | App-Group coordination keys shared between the app and extensions. | n/a |
 | `DesignSystem` | core | SwiftUI design tokens, colors, typography, shared components. | n/a |
+| `AudioRecording` | core | `AudioRecordingService` + `AudioFileService` protocols + `Default*` impls. | `MockAudioRecordingService`, `MockAudioFileService` |
 | `OAuth` | adapter | `OAuthManager` + `CopilotOAuthManager` protocols + `Default*` impls (PKCE / device-code). Depends on `Keychain` + `Networking`. | `MockOAuthManager`, `MockCopilotOAuthManager` |
 | `CloudTranscription` | adapter | Per-provider speech-to-text services conforming to `TranscriptionService`. Depends on `TranscriptionCore` + `Networking`. | `MockTranscriptionService` |
 | `LocalTranscription` | adapter | On-device transcription (WhisperKit + Parakeet/FluidAudio). | `LocalTranscriptionMocks` |
