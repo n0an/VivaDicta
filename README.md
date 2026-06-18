@@ -157,48 +157,77 @@ graph LR
 
 The app composes a ring of local Swift Package modules (`Modules/`) under layered, dependency-inverted boundaries: dependencies point inward, consumers depend on protocols (`any NetworkService`, `any AITextProvider`, …), and the app target is the composition root that wires the `Default*` implementations. The transcription stack (`TranscriptionCore` / `CloudTranscription` / `LocalTranscription` / `TranscriptionKit`) and the AI stack (`AICore` / `AIProviders` / `AIKit`) are two instances of the same shape.
 
+Solid arrow = production code dependency. `<Module>Mocks` targets always depend on their own `<Module>` + `TestUtilities` and are omitted for clarity.
+
 ```mermaid
 graph BT
   classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
   classDef adapter fill:#332306,stroke:#ffa657,color:#ffa657
   classDef orchestrator fill:#3b0e26,stroke:#f778ba,color:#f778ba
   classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
+  classDef external fill:#1c2128,stroke:#8b949e,color:#8b949e
 
+  %% Core
   Networking[Networking]:::core
   Keychain[Keychain]:::core
-  AICore[AICore]:::core
+  Presets[Presets]:::core
   TranscriptionCore[TranscriptionCore]:::core
+  AICore[AICore]:::core
+  AudioRecording[AudioRecording]:::core
+  AppGroup[AppGroup]:::core
+  DesignSystem[DesignSystem]:::core
+  TestUtilities[TestUtilities]:::core
 
+  %% Adapters
   OAuth[OAuth]:::adapter
-  AIProviders[AIProviders]:::adapter
   CloudTranscription[CloudTranscription]:::adapter
   LocalTranscription[LocalTranscription]:::adapter
+  AIProviders[AIProviders]:::adapter
 
+  %% Orchestrators
   TranscriptionKit[TranscriptionKit]:::orchestrator
   AIKit[AIKit]:::orchestrator
 
-  App["VivaDicta app + extensions"]:::app
+  %% App
+  VivaDicta[VivaDicta app + extensions]:::app
+
+  %% External
+  WhisperKit[WhisperKit / FluidAudio]:::external
 
   OAuth --> Keychain
   OAuth --> Networking
-  AIProviders --> AICore
-  AIProviders --> Networking
   CloudTranscription --> TranscriptionCore
   CloudTranscription --> Networking
   LocalTranscription --> TranscriptionCore
+  LocalTranscription --> WhisperKit
+  AIProviders --> AICore
+  AIProviders --> Networking
+
+  TranscriptionKit --> TranscriptionCore
   TranscriptionKit --> CloudTranscription
   TranscriptionKit --> LocalTranscription
+  TranscriptionKit --> Networking
   AIKit --> AICore
   AIKit --> AIProviders
-  AIKit --> OAuth
   AIKit --> Keychain
+  AIKit --> OAuth
   AIKit --> Networking
 
-  App --> TranscriptionKit
-  App --> AIKit
+  VivaDicta --> TranscriptionKit
+  VivaDicta --> AIKit
+  VivaDicta --> CloudTranscription
+  VivaDicta --> LocalTranscription
+  VivaDicta --> OAuth
+  VivaDicta --> AIProviders
+  VivaDicta --> TranscriptionCore
+  VivaDicta --> AICore
+  VivaDicta --> Keychain
+  VivaDicta --> Networking
+  VivaDicta --> Presets
+  VivaDicta --> AudioRecording
+  VivaDicta --> AppGroup
+  VivaDicta --> DesignSystem
 ```
-
-*The app composes the two stacks through their orchestrators (shown). As the composition root it also depends directly on the infra + leaf modules it wires (`Networking`, `Keychain`, `Presets`, `AudioRecording`, `AppGroup`, `DesignSystem`, `TestUtilities`) - those edges are omitted so the two stacks stay legible (see the layer table below).*
 
 | Layer | Modules |
 |-------|---------|

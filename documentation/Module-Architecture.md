@@ -52,7 +52,7 @@ flowchart TB
 
 ## Module dependency graph
 
-Solid arrow = production dependency - the **two domain stacks** plus how the **app** composes them (through the two orchestrators). The app is the composition root, so it *also* depends directly on the infra + leaf modules it wires (`Networking`, `Keychain`, `Presets`, `AudioRecording`, `AppGroup`, `DesignSystem`, …) - those edges are omitted to keep the stacks legible (showing all ~10 was pure noise). The `*Mocks` targets are omitted too. Full module list: the layered view + catalogue.
+Solid arrow = production code dependency. `<Module>Mocks` targets always depend on their own `<Module>` + `TestUtilities` and are omitted from the graph below for clarity.
 
 ```mermaid
 graph BT
@@ -62,11 +62,16 @@ graph BT
   classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
   classDef external fill:#1c2128,stroke:#8b949e,color:#8b949e
 
-  %% Core (only those with in-graph dependents)
+  %% Core
   Networking[Networking]:::core
   Keychain[Keychain]:::core
+  Presets[Presets]:::core
   TranscriptionCore[TranscriptionCore]:::core
   AICore[AICore]:::core
+  AudioRecording[AudioRecording]:::core
+  AppGroup[AppGroup]:::core
+  DesignSystem[DesignSystem]:::core
+  TestUtilities[TestUtilities]:::core
 
   %% Adapters
   OAuth[OAuth]:::adapter
@@ -78,8 +83,8 @@ graph BT
   TranscriptionKit[TranscriptionKit]:::orchestrator
   AIKit[AIKit]:::orchestrator
 
-  %% App - composes the two stacks via their orchestrators
-  App["VivaDicta app + extensions"]:::app
+  %% App
+  VivaDicta[VivaDicta app + extensions]:::app
 
   %% External
   WhisperKit[WhisperKit / FluidAudio]:::external
@@ -98,15 +103,28 @@ graph BT
   TranscriptionKit --> TranscriptionCore
   TranscriptionKit --> CloudTranscription
   TranscriptionKit --> LocalTranscription
+  TranscriptionKit --> Networking
   AIKit --> AICore
   AIKit --> AIProviders
   AIKit --> Keychain
   AIKit --> OAuth
   AIKit --> Networking
 
-  %% App composes the two stacks via their orchestrators (direct infra deps omitted - see note)
-  App --> TranscriptionKit
-  App --> AIKit
+  %% App -> everything it composes
+  VivaDicta --> TranscriptionKit
+  VivaDicta --> AIKit
+  VivaDicta --> CloudTranscription
+  VivaDicta --> LocalTranscription
+  VivaDicta --> OAuth
+  VivaDicta --> AIProviders
+  VivaDicta --> TranscriptionCore
+  VivaDicta --> AICore
+  VivaDicta --> Keychain
+  VivaDicta --> Networking
+  VivaDicta --> Presets
+  VivaDicta --> AudioRecording
+  VivaDicta --> AppGroup
+  VivaDicta --> DesignSystem
 ```
 
 **Note on "core":** the green layer means *no module dependencies* - a graph property. It spans two different *roles*: **generic infrastructure** (`Networking`, `Keychain`, `DesignSystem`, `AppGroup`) and **domain API kernels** (`AICore`, `TranscriptionCore`, `Presets` - the protocol + value-type kernel of a domain). Same dependency level, different roles.
