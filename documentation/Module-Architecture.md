@@ -52,13 +52,14 @@ flowchart TB
 
 ## Module dependency graph
 
-Solid arrow = production dependency. This shows the **two domain stacks** (transcription, AI). Deliberately omitted to keep it legible: the **app / extensions** (the composition root) depend on *every* module - that's a given and would add ~10 crossing edges; **leaf core modules** with no inter-module deps (`Presets`, `AudioRecording`, `AppGroup`, `DesignSystem`, `TestUtilities`) - see the layered view + catalogue for the full list; and the `*Mocks` targets.
+Solid arrow = production dependency - the **two domain stacks** plus how the **app** composes them (through the two orchestrators). The app is the composition root, so it *also* depends directly on the infra + leaf modules it wires (`Networking`, `Keychain`, `Presets`, `AudioRecording`, `AppGroup`, `DesignSystem`, …) - those edges are omitted to keep the stacks legible (showing all ~10 was pure noise). The `*Mocks` targets are omitted too. Full module list: the layered view + catalogue.
 
 ```mermaid
 graph BT
   classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
   classDef adapter fill:#332306,stroke:#ffa657,color:#ffa657
   classDef orchestrator fill:#3b0e26,stroke:#f778ba,color:#f778ba
+  classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
   classDef external fill:#1c2128,stroke:#8b949e,color:#8b949e
 
   %% Core (only those with in-graph dependents)
@@ -76,6 +77,9 @@ graph BT
   %% Orchestrators
   TranscriptionKit[TranscriptionKit]:::orchestrator
   AIKit[AIKit]:::orchestrator
+
+  %% App - composes the two stacks via their orchestrators
+  App["VivaDicta app + extensions"]:::app
 
   %% External
   WhisperKit[WhisperKit / FluidAudio]:::external
@@ -99,6 +103,10 @@ graph BT
   AIKit --> Keychain
   AIKit --> OAuth
   AIKit --> Networking
+
+  %% App composes the two stacks via their orchestrators (direct infra deps omitted - see note)
+  App --> TranscriptionKit
+  App --> AIKit
 ```
 
 **Note on "core":** the green layer means *no module dependencies* - a graph property. It spans two different *roles*: **generic infrastructure** (`Networking`, `Keychain`, `DesignSystem`, `AppGroup`) and **domain API kernels** (`AICore`, `TranscriptionCore`, `Presets` - the protocol + value-type kernel of a domain). Same dependency level, different roles.

@@ -162,6 +162,7 @@ graph BT
   classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
   classDef adapter fill:#332306,stroke:#ffa657,color:#ffa657
   classDef orchestrator fill:#3b0e26,stroke:#f778ba,color:#f778ba
+  classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
 
   Networking[Networking]:::core
   Keychain[Keychain]:::core
@@ -175,6 +176,8 @@ graph BT
 
   TranscriptionKit[TranscriptionKit]:::orchestrator
   AIKit[AIKit]:::orchestrator
+
+  App["VivaDicta app + extensions"]:::app
 
   OAuth --> Keychain
   OAuth --> Networking
@@ -190,9 +193,12 @@ graph BT
   AIKit --> OAuth
   AIKit --> Keychain
   AIKit --> Networking
+
+  App --> TranscriptionKit
+  App --> AIKit
 ```
 
-*The app + extensions (the composition root) depend on every module - omitted here so the two stacks stay legible. `Presets` · `AudioRecording` · `AppGroup` · `DesignSystem` · `TestUtilities` are leaf modules with no inter-module deps (see the layer table below).*
+*The app composes the two stacks through their orchestrators (shown). As the composition root it also depends directly on the infra + leaf modules it wires (`Networking`, `Keychain`, `Presets`, `AudioRecording`, `AppGroup`, `DesignSystem`, `TestUtilities`) - those edges are omitted so the two stacks stay legible (see the layer table below).*
 
 | Layer | Modules |
 |-------|---------|
