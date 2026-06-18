@@ -13,46 +13,41 @@ The transcription stack (`TranscriptionCore` / `CloudTranscription` / `LocalTran
 
 ## Layered view
 
-Inner rings = no dependencies on other modules. Outer rings = compose what's inside. Dependencies only point inward.
+Each layer composes the layers inside it; dependencies point inward only (app → orchestrators → adapters → core). The arrows are conceptual band-to-band; the concrete edges are in the dependency graph below.
 
-```
-                       +-----------------------------------------------------+
-                       |                     VivaDicta (app)                 |
-                       |   Views, AIService, ViewModels, SwiftData store     |
-                       |   Extensions: Keyboard, Widget, Share, Action       |
-                       +--------------------+--------------------------------+
-                                            |
-                       +--------------------+--------------------------------+
-                       |    Orchestrators (depend on multiple adapters)      |
-                       |  +------------------+        +------------------+    |
-                       |  | TranscriptionKit |        |      AIKit       |    |
-                       |  +------------------+        +------------------+    |
-                       +--------------------+--------------------------------+
-                                            |
-        +---------------+---------------+---+-----+-----------+--------------+
-        |                                                                    |
-        |    Adapters (single concern; protocol + Default + Mock)            |
-        |                                                                    |
-        |  +-------+  +--------------------+  +-------------------+          |
-        |  | OAuth |  | CloudTranscription |  | LocalTranscription |         |
-        |  +-------+  +--------------------+  +-------------------+          |
-        |  +--------------------+                                            |
-        |  |    AIProviders     |  (per-LLM clients + AITextProvider wraps)  |
-        |  +--------------------+                                            |
-        +--------------------+----------+----------+----------+--------------+
-                             |          |          |          |
-        +--------------------+----------+----------+----------+--------------+
-        |                                                                    |
-        |              Core (no module deps; pure protocols + value types)   |
-        |                                                                    |
-        |  +-----------+  +----------+  +---------+  +-------------------+   |
-        |  | Networking|  | Keychain |  | Presets |  | TranscriptionCore |   |
-        |  +-----------+  +----------+  +---------+  +-------------------+   |
-        |                                                                    |
-        |  +--------+  +------------+  +-----------+  +---------------+      |
-        |  | AICore |  | DesignSystem|  | AppGroup |  | TestUtilities |     |
-        |  +--------+  +------------+  +-----------+  +---------------+      |
-        +--------------------------------------------------------------------+
+```mermaid
+flowchart TB
+  classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
+  classDef adapter fill:#332306,stroke:#ffa657,color:#ffa657
+  classDef orchestrator fill:#3b0e26,stroke:#f778ba,color:#f778ba
+  classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
+
+  subgraph APP["App + extensions (composition root)"]
+    VivaDicta["VivaDicta — Views · AIService · ViewModels · SwiftData<br/>Keyboard · Widget · Share · Action"]:::app
+  end
+  subgraph ORCH["Orchestrators (compose adapters)"]
+    TranscriptionKit:::orchestrator
+    AIKit:::orchestrator
+  end
+  subgraph ADAPT["Adapters (single concern; protocol + Default + Mock)"]
+    OAuth:::adapter
+    CloudTranscription:::adapter
+    LocalTranscription:::adapter
+    AIProviders["AIProviders — per-LLM clients + AITextProvider wraps"]:::adapter
+  end
+  subgraph CORE["Core (no module deps; protocols + value types)"]
+    Networking:::core
+    Keychain:::core
+    Presets:::core
+    TranscriptionCore:::core
+    AICore:::core
+    AudioRecording:::core
+    AppGroup:::core
+    DesignSystem:::core
+    TestUtilities:::core
+  end
+
+  APP --> ORCH --> ADAPT --> CORE
 ```
 
 ## Module dependency graph
