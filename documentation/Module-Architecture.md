@@ -52,25 +52,20 @@ flowchart TB
 
 ## Module dependency graph
 
-Solid arrow = production dependency. Each `<Module>Mocks` target depends on its own `<Module>` (or its API) + `TestUtilities`; mock targets are omitted here for clarity.
+Solid arrow = production dependency. This shows the **two domain stacks** (transcription, AI). Deliberately omitted to keep it legible: the **app / extensions** (the composition root) depend on *every* module - that's a given and would add ~10 crossing edges; **leaf core modules** with no inter-module deps (`Presets`, `AudioRecording`, `AppGroup`, `DesignSystem`, `TestUtilities`) - see the layered view + catalogue for the full list; and the `*Mocks` targets.
 
 ```mermaid
 graph BT
   classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
   classDef adapter fill:#332306,stroke:#ffa657,color:#ffa657
   classDef orchestrator fill:#3b0e26,stroke:#f778ba,color:#f778ba
-  classDef app fill:#3b0d0d,stroke:#ff7b72,color:#ff7b72
   classDef external fill:#1c2128,stroke:#8b949e,color:#8b949e
 
-  %% Core
+  %% Core (only those with in-graph dependents)
   Networking[Networking]:::core
   Keychain[Keychain]:::core
-  Presets[Presets]:::core
   TranscriptionCore[TranscriptionCore]:::core
   AICore[AICore]:::core
-  AppGroup[AppGroup]:::core
-  DesignSystem[DesignSystem]:::core
-  TestUtilities[TestUtilities]:::core
 
   %% Adapters
   OAuth[OAuth]:::adapter
@@ -81,9 +76,6 @@ graph BT
   %% Orchestrators
   TranscriptionKit[TranscriptionKit]:::orchestrator
   AIKit[AIKit]:::orchestrator
-
-  %% App
-  VivaDicta[VivaDicta app + extensions]:::app
 
   %% External
   WhisperKit[WhisperKit / FluidAudio]:::external
@@ -107,19 +99,9 @@ graph BT
   AIKit --> Keychain
   AIKit --> OAuth
   AIKit --> Networking
-
-  %% App -> what it composes
-  VivaDicta --> TranscriptionKit
-  VivaDicta --> AIKit
-  VivaDicta --> AICore
-  VivaDicta --> AIProviders
-  VivaDicta --> OAuth
-  VivaDicta --> Keychain
-  VivaDicta --> Networking
-  VivaDicta --> Presets
-  VivaDicta --> AppGroup
-  VivaDicta --> DesignSystem
 ```
+
+**Note on "core":** the green layer means *no module dependencies* - a graph property. It spans two different *roles*: **generic infrastructure** (`Networking`, `Keychain`, `DesignSystem`, `AppGroup`) and **domain API kernels** (`AICore`, `TranscriptionCore`, `Presets` - the protocol + value-type kernel of a domain). Same dependency level, different roles.
 
 ## Module catalogue
 
