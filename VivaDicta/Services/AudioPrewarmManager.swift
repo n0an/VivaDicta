@@ -368,7 +368,7 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
     private var _audioFile: AVAudioFile?
     private var _currentAudioLevel: Float = 0.0
 
-    nonisolated init() {}
+    init() {}
 
     var isCapturing: Bool {
         get {
@@ -402,7 +402,7 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
         return _currentAudioLevel
     }
 
-    nonisolated func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer, updateLevel: @escaping (Float) -> Void) {
+    func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer, updateLevel: @escaping (Float) -> Void) {
         // Calculate audio level from PCM buffer
         let level = calculateAudioLevel(from: buffer)
 

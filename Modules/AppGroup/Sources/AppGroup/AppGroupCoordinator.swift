@@ -83,7 +83,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     public static let kPendingLanguageOverride = "pendingLanguageOverride"
     public static let kPendingSourceTag = "pendingSourceTag"
 
-    nonisolated private enum UserDefaultsKeys {
+    private enum UserDefaultsKeys {
         static let isRecording = "isRecording"
         static let lastRecordingTimestamp = "lastRecordingTimestamp"
         static let transcribedText = "transcribedText"
@@ -111,7 +111,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         static let pendingObsidianClipboard = "pendingObsidianClipboard"
     }
 
-    nonisolated private enum NotificationNames {
+    private enum NotificationNames {
         static let startRecording = "com.antonnovoselov.VivaDicta.startRecording"
         static let stopRecording = "com.antonnovoselov.VivaDicta.stopRecording"
         static let cancelRecording = "com.antonnovoselov.VivaDicta.cancelRecording"
@@ -148,7 +148,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 
     // MARK: - Properties
     private let sharedDefaults: UserDefaults?
-    nonisolated private let notificationCenter = CFNotificationCenterGetDarwinNotifyCenter()
+    private let notificationCenter = CFNotificationCenterGetDarwinNotifyCenter()
 
     @MainActor public var onStartRecordingRequested: (() -> Void)?
     @MainActor public var onStopRecordingRequested: (() -> Void)?
@@ -185,7 +185,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         sharedDefaults = userDefaults
     }
 
-    nonisolated deinit {
+    deinit {
         removeNotificationObservers()
     }
 
@@ -833,7 +833,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 
     // MARK: - Darwin Notifications (Real-time Communication)
 
-    nonisolated private func setupNotificationObservers() {
+    private func setupNotificationObservers() {
         guard let center = notificationCenter else { return }
 
         CFNotificationCenterAddObserver(
@@ -1098,12 +1098,12 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         )
     }
 
-    nonisolated private func removeNotificationObservers() {
+    private func removeNotificationObservers() {
         guard let center = notificationCenter else { return }
         CFNotificationCenterRemoveEveryObserver(center, Unmanaged.passUnretained(self).toOpaque())
     }
 
-    nonisolated private func postDarwinNotification(_ name: String) {
+    private func postDarwinNotification(_ name: String) {
         guard let center = notificationCenter else { return }
         CFNotificationCenterPostNotification(
             center,
@@ -1116,56 +1116,56 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 
     // MARK: - Notification Handlers
 
-    nonisolated private func handleStartRecordingNotification() {
+    private func handleStartRecordingNotification() {
         Task { @MainActor in
             onStartRecordingRequested?()
         }
     }
 
-    nonisolated private func handleStopRecordingNotification() {
+    private func handleStopRecordingNotification() {
         Task { @MainActor in
             onStopRecordingRequested?()
         }
     }
 
-    nonisolated private func handleCancelRecordingNotification() {
+    private func handleCancelRecordingNotification() {
         Task { @MainActor in
             onCancelRecordingRequested?()
         }
     }
 
-    nonisolated private func handlePauseRecordingNotification() {
+    private func handlePauseRecordingNotification() {
         Task { @MainActor in
             onPauseRecordingRequested?()
         }
     }
 
-    nonisolated private func handleResumeRecordingNotification() {
+    private func handleResumeRecordingNotification() {
         Task { @MainActor in
             onResumeRecordingRequested?()
         }
     }
 
-    nonisolated private func handleTranscriptionTranscribingNotification() {
+    private func handleTranscriptionTranscribingNotification() {
         Task { @MainActor in
             onTranscriptionTranscribing?()
         }
     }
 
-    nonisolated private func handleTranscriptionEnhancingNotification() {
+    private func handleTranscriptionEnhancingNotification() {
         Task { @MainActor in
             onTranscriptionEnhancing?()
         }
     }
 
-    nonisolated private func handleTranscriptionCompletedNotification() {
+    private func handleTranscriptionCompletedNotification() {
         Task { @MainActor in
             let text = getAndConsumeTranscribedText() ?? ""
             onTranscriptionCompleted?(text)
         }
     }
 
-    nonisolated private func handleTranscriptionErrorNotification() {
+    private func handleTranscriptionErrorNotification() {
         Task { @MainActor in
             let message = getAndConsumeTranscriptionErrorMessage() ?? ""
             onTranscriptionError?()
@@ -1175,51 +1175,51 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         }
     }
 
-    nonisolated private func handleTranscriptionCancelledNotification() {
+    private func handleTranscriptionCancelledNotification() {
         Task { @MainActor in
             onTranscriptionCancelled?()
         }
     }
 
-    nonisolated private func handleAudioLevelUpdatedNotification() {
+    private func handleAudioLevelUpdatedNotification() {
         Task { @MainActor in
             let level = currentAudioLevel
             onAudioLevelUpdated?(level)
         }
     }
 
-    nonisolated private func handleRecordingStateChangedNotification() {
+    private func handleRecordingStateChangedNotification() {
         Task { @MainActor in
             let recording = isRecording
             onRecordingStateChanged?(recording)
         }
     }
 
-    nonisolated private func handleKeyboardSessionActivatedNotification() {
+    private func handleKeyboardSessionActivatedNotification() {
         Task { @MainActor in
             onKeyboardSessionActivated?()
         }
     }
 
-    nonisolated private func handleKeyboardSessionExpiredNotification() {
+    private func handleKeyboardSessionExpiredNotification() {
         Task { @MainActor in
             onKeyboardSessionExpired?()
         }
     }
 
-    nonisolated private func handleStartRecordingFromControlNotification() {
+    private func handleStartRecordingFromControlNotification() {
         Task { @MainActor in
             onStartRecordingFromControl?()
         }
     }
 
-    nonisolated private func handleTerminateSessionFromLiveActivityNotification() {
+    private func handleTerminateSessionFromLiveActivityNotification() {
         Task { @MainActor in
             onTerminateSessionFromLiveActivity?()
         }
     }
 
-    nonisolated private func handleVivaModeChangedNotification() {
+    private func handleVivaModeChangedNotification() {
         Task { @MainActor in
             onVivaModeChanged?()
         }
@@ -1227,13 +1227,13 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 
     // Text processing (keyboard rewrite)
 
-    nonisolated private func handleTextProcessingRequestedNotification() {
+    private func handleTextProcessingRequestedNotification() {
         Task { @MainActor in
             onTextProcessingRequested?()
         }
     }
 
-    nonisolated private func handleTextProcessingCompletedNotification() {
+    private func handleTextProcessingCompletedNotification() {
         Task { @MainActor in
             // Only consume the result if a callback is set — prevents the main app
             // from racing with the keyboard extension and deleting the result first.
@@ -1243,7 +1243,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         }
     }
 
-    nonisolated private func handleTextProcessingErrorNotification() {
+    private func handleTextProcessingErrorNotification() {
         Task { @MainActor in
             guard let callback = onTextProcessingError else { return }
             let message = getAndConsumeTextProcessingError() ?? "Text processing failed"
